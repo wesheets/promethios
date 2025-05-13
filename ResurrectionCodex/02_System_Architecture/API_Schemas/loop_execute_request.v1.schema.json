@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LoopExecuteRequestV1",
+  "description": "Schema for the request body of the /loop/execute endpoint, version 1.",
+  "type": "object",
+  "properties": {
+    "request_id": {
+      "description": "A unique identifier for this execution request.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "plan_input": {
+      "description": "The input plan or task details to be processed by the GovernanceCore. The exact structure of this object will depend on the specific plan schema being used by GovernanceCore for a given task.",
+      "type": "object"
+    },
+    "operator_override_signal": {
+      "description": "An optional field to pass an operator override signal. If provided, this object must conform to the operator_override.schema.v1.json.",
+      "type": ["object", "null"],
+      "$ref": "../../01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/operator_override.schema.v1.json"
+    }
+  },
+  "required": [
+    "request_id",
+    "plan_input"
+  ]
+}
