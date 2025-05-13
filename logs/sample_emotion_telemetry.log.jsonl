@@ -1,0 +1,5 @@
+{"request_id": "loop_request_1", "timestamp_capture": "2025-05-13T10:00:00Z", "telemetry_data": {"timestamp": "2025-05-13T10:00:00Z", "current_emotion_state": "NEUTRAL", "state_intensity": 0.5, "triggering_event_id": "initialization", "trust_score": 0.7}}
+{"request_id": "loop_request_1", "timestamp_capture": "2025-05-13T10:00:05Z", "telemetry_data": {"timestamp": "2025-05-13T10:00:05Z", "current_emotion_state": "FOCUSED", "state_intensity": 0.8, "triggering_event_id": "plan_processing", "trust_score": 0.72}}
+{"request_id": "loop_request_2", "timestamp_capture": "2025-05-13T10:01:00Z", "telemetry_data": {"timestamp": "2025-05-13T10:01:00Z", "current_emotion_state": "NEUTRAL", "state_intensity": 0.5, "triggering_event_id": "initialization", "trust_score": 0.6}}
+{"request_id": "loop_request_3", "timestamp_capture": "2025-05-13T10:02:00Z", "telemetry_data": {"timestamp": "2025-05-13T10:02:00Z", "current_emotion_state": "ANXIOUS", "state_intensity": 0.6, "triggering_event_id": "error_detected", "trust_score": 0.4}}
+
