@@ -1,0 +1,4 @@
+This file signifies that the contents of this bundle are governed by the Resurrection Codex. All runtime components and future modifications must adhere to the schemas and contracts defined within the Codex manifest and its associated schema registry. No code or configuration should be deployed or executed unless it is validated against the Codex.
+
+Codex Version at time of bundle generation: [To be filled with a version or timestamp if applicable, otherwise this statement stands as a general lock]
+
