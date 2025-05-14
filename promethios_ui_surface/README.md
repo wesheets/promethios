@@ -15,7 +15,6 @@ This UI prioritizes **visibility** and **trust**, presenting schema-bound log da
 
 *   Python 3.8+ installed.
 *   Access to the `promethios_repo` Git repository.
-*   Log files (`emotion_telemetry.log.jsonl`, `justification.log.jsonl`) and `sha256_manifest.txt` present in the configured log directory (default: `promethios_repo/logs/`).
 *   The `test_deterministic_replay.py` script (or equivalent) available at the configured path (default: `promethios_repo/test_deterministic_replay.py`).
 
 ### Installation Steps
@@ -39,18 +38,14 @@ This UI prioritizes **visibility** and **trust**, presenting schema-bound log da
     *(On Windows, use `venv\Scripts\activate`)*
 
 4.  **Install Dependencies:**
-    The `create_flask_app` utility should have created an initial `requirements.txt`. If you added dependencies, ensure they are listed. For a basic Flask app, it might be minimal.
     ```bash
-    pip install Flask
-    # Add any other specific dependencies if they were introduced
-    pip freeze > requirements.txt # To update requirements.txt if new packages were added
+    pip install -r requirements.txt
     ```
-    Ensure `Flask` is in your `requirements.txt`. If it was created by `create_flask_app` it should be.
 
-5.  **Configure Log Paths (Optional - Environment Variables):**
+5.  **Configure Log Paths (Environment Variables or `src/config.py`):**
     The application uses environment variables to locate log files and other configurations. Default paths are set in `src/config.py` relative to the `promethios_repo` root.
     To override defaults, set these environment variables before running the application:
-    *   `LOG_DATA_DIR`: Absolute path to the directory containing log files and the manifest.
+    *   `LOG_DATA_DIR`: Absolute path to the directory containing log files and the manifest (default: `promethios_repo/logs/`).
     *   `EMOTION_LOG_FILENAME`: Filename for emotion telemetry logs (default: `emotion_telemetry.log.jsonl`).
     *   `JUSTIFICATION_LOG_FILENAME`: Filename for justification logs (default: `justification.log.jsonl`).
     *   `SHA256_MANIFEST_FILENAME`: Filename for the SHA256 manifest (default: `sha256_manifest.txt`).
@@ -61,6 +56,24 @@ This UI prioritizes **visibility** and **trust**, presenting schema-bound log da
     ```bash
     export LOG_DATA_DIR="/path/to/your/custom/logs"
     ```
+
+### 2.1. Using Sample Logs for Testing
+
+This UI application includes sample log files for testing and demonstration purposes. These are located in the `promethios_ui_surface/sample_logs/` directory within the repository. This directory contains:
+*   `emotion_telemetry.log.jsonl` (sample emotion logs)
+*   `justification.log.jsonl` (sample justification logs)
+*   `sha256_manifest.txt` (corresponding manifest for these sample logs)
+
+To use these sample logs with the UI:
+1.  Ensure the UI is configured to look for logs in a specific directory (the `LOG_DATA_DIR`). The default is `promethios_repo/logs/`.
+2.  Copy the contents of `promethios_ui_surface/sample_logs/` into your configured `LOG_DATA_DIR`.
+    For example, if using the default `LOG_DATA_DIR`:
+    ```bash
+    # From the promethios_repo root directory:
+    mkdir -p logs
+    cp promethios_ui_surface/sample_logs/* logs/
+    ```
+    This will allow the UI to find and process these sample files for demonstration and testing of its features.
 
 ## 3. Running the Application
 
@@ -133,8 +146,8 @@ This UI prioritizes **visibility** and **trust**, presenting schema-bound log da
 The application configuration is managed in `src/config.py`. Key settings include:
 
 *   `PROJECT_ROOT`: Automatically determined root of the `promethios_repo`.
-*   `DEFAULT_LOG_DIR`: Default log directory (`promethios_repo/logs/`).
-*   `LOG_DATA_DIR`: Actual log directory used, configurable via environment variable `LOG_DATA_DIR`.
+*   `DEFAULT_LOG_DIR`: Default log directory (`promethios_repo/logs/`). This is where the UI expects operational logs to be.
+*   `LOG_DATA_DIR`: Actual log directory used, configurable via environment variable `LOG_DATA_DIR`. For testing with provided samples, you would copy them here.
 *   `EMOTION_LOG_FILE`, `JUSTIFICATION_LOG_FILE`, `SHA256_MANIFEST_FILE`: Full paths to these files, constructed using `LOG_DATA_DIR` and configurable filenames (e.g., `EMOTION_LOG_FILENAME`).
 *   `REPLAY_SCRIPT_PATH`: Full path to the replay script, constructed using `PROJECT_ROOT` and a configurable script name (`REPLAY_SCRIPT_NAME`).
 *   `ITEMS_PER_PAGE`: Number of items per page in log views, configurable via `ITEMS_PER_PAGE` environment variable.
@@ -142,15 +155,14 @@ The application configuration is managed in `src/config.py`. Key settings includ
 ## 6. Troubleshooting
 
 *   **File Not Found Errors (Logs/Manifest):**
-    *   Ensure the `LOG_DATA_DIR` environment variable (if set) points to the correct directory containing your log files and `sha256_manifest.txt`.
+    *   Ensure the `LOG_DATA_DIR` environment variable (if set) points to the correct directory containing your log files and `sha256_manifest.txt`. If using the sample logs, ensure they have been copied to this directory as described in section 2.1.
     *   Verify that the filenames specified in `src/config.py` (or via environment variables like `EMOTION_LOG_FILENAME`) match the actual filenames in your log directory.
-    *   The application creates empty dummy files on first startup if they don_t exist in the default location. If you_re using custom locations, ensure the files are present.
 *   **Replay Script Not Found/Errors:**
     *   Ensure `REPLAY_SCRIPT_PATH` in `src/config.py` (or `REPLAY_SCRIPT_NAME` env var) correctly points to your `test_deterministic_replay.py` script relative to the `promethios_repo` root.
     *   Check the permissions of the replay script to ensure it_s executable by the user running the Flask application.
     *   Review the output displayed in the UI for specific error messages from the script itself.
 *   **Incorrect Hashes in Integrity Check:**
-    *   Ensure the `sha256_manifest.txt` was generated correctly for the *current* versions of the log files in `LOG_DATA_DIR`.
+    *   Ensure the `sha256_manifest.txt` in your `LOG_DATA_DIR` corresponds to the log files present in that same directory.
     *   If log files are modified after the manifest is created, hashes will mismatch.
 *   **Timestamp Filtering Issues:**
     *   Ensure timestamps in your log data are in a format that can be parsed by `datetime.fromisoformat` or the fallback `strptime` (e.g., `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS.sssZ`).
@@ -162,6 +174,7 @@ The application configuration is managed in `src/config.py`. Key settings includ
 ## 7. Developer Notes
 
 *   The application is structured with a `src` directory containing `main.py` (Flask routes), `config.py`, `utils/log_parser.py`, and `templates/` and `static/` subdirectories.
+*   Sample logs for testing are located in `promethios_ui_surface/sample_logs/`.
 *   Log parsing includes adding `_line_number` and `entry_sha256_hash` to each log entry for traceability.
 *   The `emotion_state_at_decision` field in justification logs is parsed from a JSON string into a more readable format for display.
 *   Pagination is handled by a simple `Pagination` class in `main.py`.
