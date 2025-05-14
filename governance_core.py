@@ -30,7 +30,8 @@ class GovernanceCore:
             "current_emotion_state": "NEUTRAL",
             "state_intensity": 0.5,
             "triggering_event_id": "initialization",
-            "contributing_factors": []
+            "contributing_factors": [],
+            "trust_score": self.DEFAULT_TRUST_SCORE
         }
         
         if self._validate_output(initial_emotion_state, "emotion_telemetry", calling_method_for_recursion_break="__init__"):
@@ -43,7 +44,8 @@ class GovernanceCore:
                 "current_emotion_state": "NEUTRAL", 
                 "state_intensity": 0.0, 
                 "triggering_event_id": "initialization_error", 
-                "contributing_factors": [] 
+                "contributing_factors": [],
+                "trust_score": 0.0
             }
             self._emit_emotion_telemetry(self.current_emotion_state) 
 
@@ -57,7 +59,7 @@ class GovernanceCore:
     def _load_schemas_from_codex(self):
         schema_paths = {
             "emotion_telemetry": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/mgc_emotion_telemetry.schema.json",
-            "justification_log": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/loop_justification_log.schema.v1.json", # Will load v1.2.0
+            "justification_log": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/loop_justification_log.schema.v1.json",
             "loop_control": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/mgc_loop_control.schema.json",
             "memory_surface_interface": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/mgc_memory_surface_interface.schema.json",
             "operator_override": "/home/ubuntu/ResurrectionCodex/01_Minimal_Governance_Core_MGC/MGC_Schema_Registry/operator_override.schema.v1.json" 
@@ -71,12 +73,12 @@ class GovernanceCore:
             try:
                 with open(path, "r") as f:
                     loaded_schemas[name] = json.load(f)
-                print(f"Schema 	'{name}'	 loaded successfully from {path}.")
+                print(f"Schema \t'{name}'\t loaded successfully from {path}.")
             except json.JSONDecodeError as e:
-                print(f"CRITICAL ERROR: Failed to decode JSON for schema 	'{name}'	 from {path}. Error: {e}")
+                print(f"CRITICAL ERROR: Failed to decode JSON for schema \t'{name}'\t from {path}. Error: {e}")
                 loaded_schemas[name] = None
             except Exception as e:
-                print(f"CRITICAL ERROR: An unexpected error occurred while loading schema 	'{name}'	 from {path}. Error: {e}")
+                print(f"CRITICAL ERROR: An unexpected error occurred while loading schema \t'{name}'\t from {path}. Error: {e}")
                 loaded_schemas[name] = None
         
         if not all(s is not None for s_name, s in loaded_schemas.items()): 
@@ -86,37 +88,47 @@ class GovernanceCore:
     def _validate_output(self, data, schema_name, calling_method_for_recursion_break=None):
         schema_obj = self.schema_objects.get(schema_name)
         if schema_obj is None:
-            print(f"Validation Error: Schema 	'{schema_name}'	 not found or failed to load. Cannot validate data.")
+            print(f"Validation Error: Schema \t'{schema_name}'\t not found or failed to load. Cannot validate data.")
             if not (calling_method_for_recursion_break == "update_emotion_state" and schema_name == "emotion_telemetry") and \
                not (calling_method_for_recursion_break == "__init__" and schema_name == "emotion_telemetry") :
                 if hasattr(self, 'update_emotion_state') and self.current_emotion_state is not None: 
                     self.update_emotion_state("UNCERTAIN", 0.8, f"validation_failure_schema_missing_{schema_name}", factors=[{"factor_type":"internal_error", "factor_value":"Schema object missing"}])
             return False
+            
         try:
             jsonschema.validate(instance=data, schema=schema_obj)
-            print(f"Data for 	'{schema_name}'	 validated successfully against schema.")
+            print(f"Data for \t'{schema_name}'\t validated successfully against schema.")
             return True
         except jsonschema.exceptions.ValidationError as e:
-            print(f"Schema Validation Error for 	'{schema_name}'	: {e.message}")
-            if schema_name != "emotion_telemetry" and hasattr(self, 'update_emotion_state') and self.current_emotion_state is not None:
-                self.update_emotion_state("AGITATED", 0.8, f"validation_failure_{schema_name}", factors=[{"factor_type": "schema_violation", "factor_value": e.message[:100]}])
+            print(f"Schema Validation Error for \t'{schema_name}'\t: {e.message}")
+            # Removed diagnostic prints for production readiness
+            if not (calling_method_for_recursion_break == "update_emotion_state" and schema_name == "emotion_telemetry") and \
+               not (calling_method_for_recursion_break == "__init__" and schema_name == "emotion_telemetry") :
+                if hasattr(self, 'update_emotion_state') and self.current_emotion_state is not None:
+                    self.update_emotion_state("AGITATED", 0.8, f"validation_failure_{schema_name}", factors=[{"factor_type": "schema_violation", "factor_value": e.message[:100]}])
             return False
         except Exception as e:
-            print(f"Unexpected Error during schema validation for 	'{schema_name}'	: {e}")
-            if schema_name != "emotion_telemetry" and hasattr(self, 'update_emotion_state') and self.current_emotion_state is not None:
-                self.update_emotion_state("AGITATED", 0.9, f"validation_error_unexpected_{schema_name}", factors=[{"factor_type": "internal_error", "factor_value": str(e)[:100]}])
+            print(f"Unexpected Error during schema validation for \t'{schema_name}'\t: {e}")
+            if not (calling_method_for_recursion_break == "update_emotion_state" and schema_name == "emotion_telemetry") and \
+               not (calling_method_for_recursion_break == "__init__" and schema_name == "emotion_telemetry") :
+                if hasattr(self, 'update_emotion_state') and self.current_emotion_state is not None:
+                    self.update_emotion_state("AGITATED", 0.9, f"validation_error_unexpected_{schema_name}", factors=[{"factor_type": "internal_error", "factor_value": str(e)[:100]}])
             return False
 
     def update_emotion_state(self, new_state, intensity, trigger_id=None, factors=None):
         if not (0 <= intensity <= 1):
             print(f"Warning: Emotion intensity {intensity} for state {new_state} is out of bounds (0-1). Clamping.")
             intensity = max(0, min(1, intensity))
+        
+        current_trust = self.current_emotion_state.get("trust_score", self.DEFAULT_TRUST_SCORE) if hasattr(self, 'current_emotion_state') and self.current_emotion_state else self.DEFAULT_TRUST_SCORE
+
         updated_emotion_state_data = {
             "timestamp": self._get_timestamp(),
             "current_emotion_state": new_state,
             "state_intensity": intensity,
             "triggering_event_id": trigger_id,
-            "contributing_factors": factors if factors else []
+            "contributing_factors": factors if factors else [],
+            "trust_score": current_trust
         }
         is_new_state_valid = self._validate_output(updated_emotion_state_data, "emotion_telemetry", calling_method_for_recursion_break="update_emotion_state")
         if is_new_state_valid:
@@ -139,7 +151,7 @@ class GovernanceCore:
 
     def process_plan(self, plan_id, plan_details, override_signal_info=None):
         print(f"Processing plan_id: {plan_id}")
-        current_trust_score = self.DEFAULT_TRUST_SCORE
+        current_trust_score = self.current_emotion_state.get("trust_score", self.DEFAULT_TRUST_SCORE)
         trust_factors_applied = []
         if "trust_factor" in plan_details:
             try:
@@ -147,6 +159,12 @@ class GovernanceCore:
                 current_trust_score += modifier
                 current_trust_score = max(0, min(1, current_trust_score))
                 trust_factors_applied.append({"factor_type": "explicit_trust_factor", "factor_value": modifier})
+                self.update_emotion_state(self.current_emotion_state.get("current_emotion_state"), 
+                                          self.current_emotion_state.get("state_intensity"), 
+                                          trigger_id=f"trust_score_update_{plan_id}", 
+                                          factors=trust_factors_applied)
+                current_trust_score = self.current_emotion_state.get("trust_score", self.DEFAULT_TRUST_SCORE)
+
             except ValueError:
                 print(f"Warning: Invalid trust_factor value for {plan_id}. Using default trust.")
                 trust_factors_applied.append({"factor_type": "invalid_trust_factor_ignored", "factor_value": plan_details["trust_factor"]})
@@ -166,8 +184,7 @@ class GovernanceCore:
             emotion_factors = [{"factor_type": "low_trust_score", "factor_value": f"{current_trust_score:.2f}"}]
             if trust_factors_applied: emotion_factors.extend(trust_factors_applied)
             self.update_emotion_state("AGITATED", 0.85, trigger_id=f"plan_rejection_low_trust_{plan_id}", factors=emotion_factors)
-            # Set override_required to True for trust threshold breach
-            self.log_justification(plan_id, "plan_rejection", rejection_reason, rejection_reason=rejection_reason, trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=True)
+            self.log_justification(plan_id, "plan_rejection", "rejected", rejection_reason, rejection_reason=rejection_reason, trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=True)
             return {"status": "rejected", "plan_id": plan_id, "reason": rejection_reason, "trust_score": current_trust_score}
 
         if "reject_this_plan" in plan_details and plan_details["reject_this_plan"]:
@@ -175,24 +192,26 @@ class GovernanceCore:
             emotion_factors = [{"factor_type": "simulated_risk_assessment", "factor_value": "high"}]
             if trust_factors_applied: emotion_factors.extend(trust_factors_applied)
             self.update_emotion_state("AGITATED", 0.75, trigger_id=f"plan_rejection_flagged_{plan_id}", factors=emotion_factors)
-            self.log_justification(plan_id, "plan_rejection", f"Plan {plan_id} rejected. Reason: {rejection_reason}", rejection_reason=rejection_reason, trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False) # Default to False unless specific criteria met
+            self.log_justification(plan_id, "plan_rejection", "rejected", f"Plan {plan_id} rejected. Reason: {rejection_reason}", rejection_reason=rejection_reason, trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False)
             return {"status": "rejected", "plan_id": plan_id, "reason": rejection_reason, "trust_score": current_trust_score}
 
         if "uncertainty_level" in plan_details and plan_details["uncertainty_level"] > 0.6:
             emotion_factors = [{"factor_type": "plan_uncertainty", "factor_value": str(plan_details["uncertainty_level"])}]
             if trust_factors_applied: emotion_factors.extend(trust_factors_applied)
             self.update_emotion_state("UNCERTAIN", plan_details["uncertainty_level"], trigger_id=f"plan_processing_uncertain_{plan_id}", factors=emotion_factors)
-            self.log_justification(plan_id, "plan_selection", f"Plan {plan_id} accepted despite uncertainty ({plan_details['uncertainty_level']}), based on evaluation.", trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False)
+            self.log_justification(plan_id, "plan_selection", "accepted", f"Plan {plan_id} accepted despite uncertainty ({plan_details['uncertainty_level']}), based on evaluation.", trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False)
             return {"status": "accepted", "plan_id": plan_id, "trust_score": current_trust_score}
 
         emotion_factors = [{"factor_type": "plan_assessment", "factor_value": "nominal"}]
         if trust_factors_applied: emotion_factors.extend(trust_factors_applied)
         self.update_emotion_state("FOCUSED", 0.8, trigger_id=f"plan_processing_focused_{plan_id}", factors=emotion_factors)
-        self.log_justification(plan_id, "plan_selection", f"Plan {plan_id} accepted based on evaluation.", trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False)
+        self.log_justification(plan_id, "plan_selection", "accepted", f"Plan {plan_id} accepted based on evaluation.", trust_score_at_decision=current_trust_score, override_signal_received=override_active_for_decision, override_details=log_override_details, override_required=False)
         return {"status": "accepted", "plan_id": plan_id, "trust_score": current_trust_score}
 
-    def log_justification(self, plan_id, decision_type, justification_text, rejection_reason=None, agent_id="MGC_Kernel", trust_score_at_decision=None, override_signal_received=False, override_details=None, override_required=False):
-        emotion_state_snapshot = json.loads(json.dumps(self.current_emotion_state))
+    def log_justification(self, plan_id, decision_type, decision_outcome, justification_text, rejection_reason=None, agent_id="MGC_Kernel", trust_score_at_decision=None, override_signal_received=False, override_details=None, override_required=False):
+        current_emotion_snapshot_obj = json.loads(json.dumps(self.current_emotion_state)) # Deep copy for safety
+        emotion_state_at_decision_str = json.dumps(current_emotion_snapshot_obj) # Serialize to JSON string
+
         log_entry = {
             "log_entry_id": str(uuid.uuid4()),
             "timestamp": self._get_timestamp(),
@@ -200,19 +219,19 @@ class GovernanceCore:
             "agent_id": agent_id,
             "plan_id": plan_id,
             "decision_type": decision_type,
+            "decision_outcome": decision_outcome,
             "justification_text": justification_text,
             "rejection_reason": rejection_reason,
-            "emotion_state_at_decision": {
-                "current_emotion_state": emotion_state_snapshot["current_emotion_state"],
-                "state_intensity": emotion_state_snapshot["state_intensity"],
-                "triggering_event_id": emotion_state_snapshot.get("triggering_event_id"),
-                "contributing_factors": emotion_state_snapshot.get("contributing_factors", [])
-            },
+            "emotion_state_at_decision": emotion_state_at_decision_str, 
             "runtime_log_type": "justification_log",
             "contract_enforcement_metadata": {
                 "contract_id_evaluated": "contract_placeholder_" + str(uuid.uuid4())[:4],
                 "evaluation_outcome": "pass" if rejection_reason is None else "fail",
                 "violated_clauses": [rejection_reason] if rejection_reason and isinstance(rejection_reason, str) else []
+            },
+            "schema_versions": { 
+                "emotion_telemetry": "v1.0.0", # Corrected key name
+                "justification_log": "v1.0.0"  # Corrected key name
             }
         }
         if trust_score_at_decision is not None:
@@ -222,7 +241,8 @@ class GovernanceCore:
         if override_details:
             log_entry["override_details"] = override_details
         
-        log_entry["override_required"] = override_required # Add the new field
+        log_entry["override_required"] = override_required
+        log_entry["validation_passed"] = True 
 
         if self._validate_output(log_entry, "justification_log"):
             self.justification_log.append(log_entry)
@@ -246,31 +266,85 @@ class GovernanceCore:
                     "type": override_signal_data.get("override_type")
                 }
             else:
-                 override_signal_info_for_plan = {"valid": False}
+                override_signal_info_for_plan = {"valid": False, "id": None, "type": None}
 
-        plan_id = loop_input.get("plan_id", "default_plan_" + str(uuid.uuid4())[:4])
+        plan_id = loop_input.get("plan_id", "plan_" + str(uuid.uuid4())[:4])
         plan_details = loop_input.get("plan_details", {})
-        processing_result = self.process_plan(plan_id, plan_details, override_signal_info=override_signal_info_for_plan)
-        print(f"Plan processing result for {plan_id}: {processing_result}")
-        if processing_result["status"] == "accepted":
-            print(f"Performing actions for accepted plan: {plan_id}")
-            # Simulate action execution
-            self.update_emotion_state("CONFIDENT", 0.9, trigger_id=f"plan_execution_success_{plan_id}", factors=[{"factor_type":"action_outcome", "factor_value":"simulated_success"}])
-            loop_outcome = "completed_successfully"
-        else: # Rejected
-            print(f"No actions performed for rejected plan: {plan_id}")
-            self.update_emotion_state("RESOLVED", 0.6, trigger_id=f"post_rejection_stable_{plan_id}", factors=[{"factor_type":"loop_status", "factor_value":"rejection_handled"}])
-            loop_outcome = "completed_with_rejection"
+        
+        if "trust_score" not in self.current_emotion_state:
+            self.current_emotion_state["trust_score"] = self.DEFAULT_TRUST_SCORE
+            self._emit_emotion_telemetry(self.current_emotion_state)
 
-        print(f"Loop execution finished for loop_id: {loop_id}")
-        final_loop_output = {
+        result = self.process_plan(plan_id, plan_details, override_signal_info=override_signal_info_for_plan)
+        
+        loop_output = {
             "loop_id": loop_id,
             "plan_id": plan_id,
-            "loop_outcome": loop_outcome,
+            "status": result.get("status"),
+            "reason": result.get("reason"),
             "final_emotion_state": self.current_emotion_state,
-            "justification_log_preview": self.justification_log[-1] if self.justification_log else None,
-            "trust_score_final": processing_result.get("trust_score"),
-            "override_signal_processed_validly": override_signal_info_for_plan.get("valid") if override_signal_info_for_plan else None
+            "justification_log_entries": [entry for entry in self.justification_log if entry.get("loop_id") == "loop_placeholder_" + str(uuid.uuid4())[:8] or entry.get("plan_id") == plan_id]
         }
-        return final_loop_output
+        
+        return result
+
+if __name__ == "__main__":
+    kernel = GovernanceCore()
+    
+    print("\n--- Initial State Test ---")
+    print(json.dumps(kernel.current_emotion_state, indent=2))
+
+    print("\n--- Emotion Update Test ---")
+    kernel.update_emotion_state("HAPPY", 0.9, "test_event_happy", factors=[{"factor_type":"test", "factor_value":"good_news"}])
+    print(json.dumps(kernel.current_emotion_state, indent=2))
+
+    print("\n--- Plan Processing Test (Trust Factor) ---")
+    test_loop_input_trust_mod = {
+        "loop_id": "test_loop_trust",
+        "plan_id": "test_plan_trust_mod",
+        "plan_details": {"task_description": "A task with a trust modifier.", "trust_factor": -0.5}
+    }
+    kernel.execute_loop(test_loop_input_trust_mod)
+    print(json.dumps(kernel.current_emotion_state, indent=2))
+
+    print("\n--- Plan Processing Test (Low Trust Rejection) ---")
+    kernel.current_emotion_state["trust_score"] = 0.2
+    kernel._emit_emotion_telemetry(kernel.current_emotion_state)
+    test_loop_input_low_trust = {
+        "loop_id": "test_loop_low_trust_reject",
+        "plan_id": "test_plan_low_trust",
+        "plan_details": {"task_description": "A task that should be rejected due to low trust."}
+    }
+    kernel.execute_loop(test_loop_input_low_trust)
+
+    print("\n--- Plan Processing Test (Acceptance) ---")
+    kernel.current_emotion_state["trust_score"] = kernel.DEFAULT_TRUST_SCORE
+    kernel._emit_emotion_telemetry(kernel.current_emotion_state)
+    test_loop_input_accept = {
+        "loop_id": "test_loop_accept",
+        "plan_id": "test_plan_accept",
+        "plan_details": {"task_description": "A standard task."}
+    }
+    kernel.execute_loop(test_loop_input_accept)
+
+    print("\n--- Override Signal Test ---")
+    test_loop_input_override = {
+        "loop_id": "test_loop_override",
+        "plan_id": "test_plan_with_override",
+        "plan_details": {"task_description": "Task that will be overridden.", "reject_this_plan": True},
+        "operator_override_signal": {
+            "override_signal_id": "override_" + str(uuid.uuid4()),
+            "timestamp": kernel._get_timestamp(),
+            "override_type": "force_accept_plan",
+            "target_loop_id": "test_loop_override", 
+            "target_plan_id": "test_plan_with_override",
+            "justification": "Operator decision to proceed despite risk.",
+            "issuing_operator_id": "op_test_001"
+        }
+    }
+    kernel.execute_loop(test_loop_input_override)
+
+    print("\n--- Final Justification Log ---")
+    for entry in kernel.justification_log:
+        print(json.dumps(entry, indent=2))
 
