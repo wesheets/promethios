@@ -5,25 +5,25 @@
 {% block content %}
     <h2>Justification Logs</h2>
 
-    <form method="get" action="{{ url_for(\'justification_logs\') }}" class="filter-form">
+    <form method="get" action="{{ url_for('justification_logs') }}" class="filter-form">
         <label for="decision_outcome">Filter by Decision Outcome:</label>
-        <input type="text" id="decision_outcome" name="decision_outcome" value="{{ request.args.get(\'decision_outcome\', \'\') }}">
+        <input type="text" id="decision_outcome" name="decision_outcome" value="{{ request.args.get('decision_outcome', '') }}">
         
         <label for="override_required">Filter by Override Required:</label>
         <select id="override_required" name="override_required">
-            <option value="" {% if request.args.get(\'override_required\', \'\') == \'\' %}selected{% endif %}>Any</option>
-            <option value="true" {% if request.args.get(\'override_required\') == \'true\' %}selected{% endif %}>True</option>
-            <option value="false" {% if request.args.get(\'override_required\') == \'false\' %}selected{% endif %}>False</option>
+            <option value="" {% if request.args.get('override_required', '') == '' %}selected{% endif %}>Any</option>
+            <option value="true" {% if request.args.get('override_required') == 'true' %}selected{% endif %}>True</option>
+            <option value="false" {% if request.args.get('override_required') == 'false' %}selected{% endif %}>False</option>
         </select>
 
         <label for="timestamp_start">Start Date/Time:</label>
-        <input type="datetime-local" id="timestamp_start" name="timestamp_start" value="{{ request.args.get(\'timestamp_start\', \'\') }}">
+        <input type="datetime-local" id="timestamp_start" name="timestamp_start" value="{{ request.args.get('timestamp_start', '') }}">
         
         <label for="timestamp_end">End Date/Time:</label>
-        <input type="datetime-local" id="timestamp_end" name="timestamp_end" value="{{ request.args.get(\'timestamp_end\', \'\') }}">
+        <input type="datetime-local" id="timestamp_end" name="timestamp_end" value="{{ request.args.get('timestamp_end', '') }}">
         
         <button type="submit">Filter</button>
-        <a href="{{ url_for(\'justification_logs\') }}">Clear Filters</a>
+        <a href="{{ url_for('justification_logs') }}">Clear Filters</a>
     </form>
 
     {% if error_message %}
@@ -61,43 +61,43 @@
                 {% for log in logs %}
                     <tr>
                         <td>{{ log._line_number }}</td>
-                        <td>{{ log.request_id | default(\'N/A\') }}</td>
-                        <td>{{ log.timestamp_capture | default(log.get(\'justification_data\', {}).get(\'timestamp_capture\'), \'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).log_entry_id | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).timestamp | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).loop_id | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).agent_id | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).plan_id | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).decision_type | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).decision_outcome | default(\'N/A\') }}</td>
-                        <td><pre>{{ log.get(\'justification_data\', {}).justification_text | default(\'N/A\') }}</pre></td>
-                        <td>{{ log.get(\'justification_data\', {}).rejection_reason | default(\'N/A\') }}</td>
-                        <td><pre>{{ log.get(\'justification_data\', {}).emotion_state_at_decision | default(\'N/A\') }}</pre></td>
-                        <td>{{ log.get(\'justification_data\', {}).trust_score_at_decision | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).override_signal_received | default(\'N/A\') }}</td>
+                        <td>{{ log.request_id | default('N/A') }}</td>
+                        <td>{{ log.timestamp_capture | default(log.get('justification_data', {}).get('timestamp_capture'), 'N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).log_entry_id | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).timestamp | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).loop_id | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).agent_id | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).plan_id | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).decision_type | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).decision_outcome | default('N/A') }}</td>
+                        <td><pre>{{ log.get('justification_data', {}).justification_text | default('N/A') }}</pre></td>
+                        <td>{{ log.get('justification_data', {}).rejection_reason | default('N/A') }}</td>
+                        <td><pre>{{ log.get('justification_data', {}).emotion_state_at_decision | default('N/A') }}</pre></td>
+                        <td>{{ log.get('justification_data', {}).trust_score_at_decision | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).override_signal_received | default('N/A') }}</td>
                         <td>
-                            {% if log.get(\'justification_data\', {}).override_signal_received and log.get(\'justification_data\', {}).override_details %}
-                                Signal ID: {{ log.get(\'justification_data\', {}).override_details.signal_id | default(\'N/A\') }}<br>
-                                Type: {{ log.get(\'justification_data\', {}).override_details.type | default(\'N/A\') }}
+                            {% if log.get('justification_data', {}).override_signal_received and log.get('justification_data', {}).override_details %}
+                                Signal ID: {{ log.get('justification_data', {}).override_details.signal_id | default('N/A') }}<br>
+                                Type: {{ log.get('justification_data', {}).override_details.type | default('N/A') }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </td>
-                        <td>{{ log.get(\'justification_data\', {}).override_required | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'justification_data\', {}).validation_passed | default(\'N/A\') }}</td>
+                        <td>{{ log.get('justification_data', {}).override_required | default('N/A') }}</td>
+                        <td>{{ log.get('justification_data', {}).validation_passed | default('N/A') }}</td>
                         <td>
-                            {% if log.get(\'justification_data\', {}).schema_versions %}
-                                Emotion: {{ log.get(\'justification_data\', {}).schema_versions.emotion_telemetry | default(\'N/A\') }}<br>
-                                Justification: {{ log.get(\'justification_data\', {}).schema_versions.justification_log | default(\'N/A\') }}
+                            {% if log.get('justification_data', {}).schema_versions %}
+                                Emotion: {{ log.get('justification_data', {}).schema_versions.emotion_telemetry | default('N/A') }}<br>
+                                Justification: {{ log.get('justification_data', {}).schema_versions.justification_log | default('N/A') }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </td>
-                        <td><small>{{ log.entry_sha256_hash | default(\'N/A\') }}</small></td>
+                        <td><small>{{ log.entry_sha256_hash | default('N/A') }}</small></td>
                         <td>
-                            {% if log.get(\'component_versions\") %}
-                                Gov: {{ log.component_versions.governance_core | default(\'N/A\') }}<br>
-                                Run: {{ log.component_versions.runtime_executor | default(\'N/A\') }}
+                            {% if log.get('component_versions') %}
+                                Gov: {{ log.component_versions.governance_core | default('N/A') }}<br>
+                                Run: {{ log.component_versions.runtime_executor | default('N/A') }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -109,11 +109,11 @@
 
         <div class="pagination">
             {% if pagination.has_prev %}
-                <a href="{{ url_for(\'justification_logs\', page=pagination.prev_num, decision_outcome=request.args.get(\'decision_outcome\'), override_required=request.args.get(\'override_required\'), timestamp_start=request.args.get(\'timestamp_start\'), timestamp_end=request.args.get(\'timestamp_end\')) }}">&laquo; Previous</a>
+                <a href="{{ url_for('justification_logs', page=pagination.prev_num, decision_outcome=request.args.get('decision_outcome'), override_required=request.args.get('override_required'), timestamp_start=request.args.get('timestamp_start'), timestamp_end=request.args.get('timestamp_end')) }}">&laquo; Previous</a>
             {% endif %}
             Page {{ pagination.page }} of {{ pagination.pages }}.
             {% if pagination.has_next %}
-                <a href="{{ url_for(\'justification_logs\', page=pagination.next_num, decision_outcome=request.args.get(\'decision_outcome\'), override_required=request.args.get(\'override_required\'), timestamp_start=request.args.get(\'timestamp_start\'), timestamp_end=request.args.get(\'timestamp_end\')) }}">Next &raquo;</a>
+                <a href="{{ url_for('justification_logs', page=pagination.next_num, decision_outcome=request.args.get('decision_outcome'), override_required=request.args.get('override_required'), timestamp_start=request.args.get('timestamp_start'), timestamp_end=request.args.get('timestamp_end')) }}">Next &raquo;</a>
             {% endif %}
         </div>
 

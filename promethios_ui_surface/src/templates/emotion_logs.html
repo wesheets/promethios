@@ -5,18 +5,18 @@
 {% block content %}
     <h2>Emotion Telemetry Logs</h2>
 
-    <form method="get" action="{{ url_for(\'emotion_logs\') }}" class="filter-form">
+    <form method="get" action="{{ url_for('emotion_logs') }}" class="filter-form">
         <label for="emotion_state">Filter by Emotion State:</label>
-        <input type="text" id="emotion_state" name="emotion_state" value="{{ request.args.get(\'emotion_state\', \'\') }}">
+        <input type="text" id="emotion_state" name="emotion_state" value="{{ request.args.get('emotion_state', '') }}">
         
         <label for="timestamp_start">Start Date/Time:</label>
-        <input type="datetime-local" id="timestamp_start" name="timestamp_start" value="{{ request.args.get(\'timestamp_start\', \'\') }}">
+        <input type="datetime-local" id="timestamp_start" name="timestamp_start" value="{{ request.args.get('timestamp_start', '') }}">
         
         <label for="timestamp_end">End Date/Time:</label>
-        <input type="datetime-local" id="timestamp_end" name="timestamp_end" value="{{ request.args.get(\'timestamp_end\', \'\') }}">
+        <input type="datetime-local" id="timestamp_end" name="timestamp_end" value="{{ request.args.get('timestamp_end', '') }}">
         
         <button type="submit">Filter</button>
-        <a href="{{ url_for(\'emotion_logs\') }}">Clear Filters</a>
+        <a href="{{ url_for('emotion_logs') }}">Clear Filters</a>
     </form>
 
     {% if error_message %}
@@ -44,17 +44,17 @@
                 {% for log in logs %}
                     <tr>
                         <td>{{ log._line_number }}</td>
-                        <td>{{ log.request_id | default(\'N/A\') }}</td>
-                        <td>{{ log.timestamp_capture | default(log.get(\'telemetry_data\', {}).get(\'timestamp_capture\'), \'N/A\') }}</td>
-                        <td>{{ log.get(\'telemetry_data\', {}).timestamp | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'telemetry_data\', {}).current_emotion_state | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'telemetry_data\', {}).state_intensity | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'telemetry_data\', {}).trust_score | default(\'N/A\') }}</td>
-                        <td>{{ log.get(\'telemetry_data\', {}).triggering_event_id | default(\'N/A\') }}</td>
+                        <td>{{ log.request_id | default('N/A') }}</td>
+                        <td>{{ log.timestamp_capture | default(log.get('telemetry_data', {}).get('timestamp_capture'), 'N/A') }}</td>
+                        <td>{{ log.get('telemetry_data', {}).timestamp | default('N/A') }}</td>
+                        <td>{{ log.get('telemetry_data', {}).current_emotion_state | default('N/A') }}</td>
+                        <td>{{ log.get('telemetry_data', {}).state_intensity | default('N/A') }}</td>
+                        <td>{{ log.get('telemetry_data', {}).trust_score | default('N/A') }}</td>
+                        <td>{{ log.get('telemetry_data', {}).triggering_event_id | default('N/A') }}</td>
                         <td>
-                            {% if log.get(\'telemetry_data\', {}).contributing_factors %}
+                            {% if log.get('telemetry_data', {}).contributing_factors %}
                                 <ul>
-                                {% for factor in log.get(\'telemetry_data\', {}).contributing_factors %}
+                                {% for factor in log.get('telemetry_data', {}).contributing_factors %}
                                     <li>{{ factor.factor }}: {{ factor.influence }}</li>
                                 {% endfor %}
                                 </ul>
@@ -62,11 +62,11 @@
                                 N/A
                             {% endif %}
                         </td>
-                        <td><small>{{ log.entry_sha256_hash | default(\'N/A\') }}</small></td>
+                        <td><small>{{ log.entry_sha256_hash | default('N/A') }}</small></td>
                         <td>
-                            {% if log.get(\'component_versions\') %}
-                                Gov: {{ log.component_versions.governance_core | default(\'N/A\') }}<br>
-                                Run: {{ log.component_versions.runtime_executor | default(\'N/A\') }}
+                            {% if log.get('component_versions') %}
+                                Gov: {{ log.component_versions.governance_core | default('N/A') }}<br>
+                                Run: {{ log.component_versions.runtime_executor | default('N/A') }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -78,11 +78,11 @@
 
         <div class="pagination">
             {% if pagination.has_prev %}
-                <a href="{{ url_for(\'emotion_logs\', page=pagination.prev_num, emotion_state=request.args.get(\'emotion_state\'), timestamp_start=request.args.get(\'timestamp_start\'), timestamp_end=request.args.get(\'timestamp_end\')) }}">&laquo; Previous</a>
+                <a href="{{ url_for('emotion_logs', page=pagination.prev_num, emotion_state=request.args.get('emotion_state'), timestamp_start=request.args.get('timestamp_start'), timestamp_end=request.args.get('timestamp_end')) }}">&laquo; Previous</a>
             {% endif %}
             Page {{ pagination.page }} of {{ pagination.pages }}.
             {% if pagination.has_next %}
-                <a href="{{ url_for(\'emotion_logs\', page=pagination.next_num, emotion_state=request.args.get(\'emotion_state\'), timestamp_start=request.args.get(\'timestamp_start\'), timestamp_end=request.args.get(\'timestamp_end\')) }}">Next &raquo;</a>
+                <a href="{{ url_for('emotion_logs', page=pagination.next_num, emotion_state=request.args.get('emotion_state'), timestamp_start=request.args.get('timestamp_start'), timestamp_end=request.args.get('timestamp_end')) }}">Next &raquo;</a>
             {% endif %}
         </div>
 
