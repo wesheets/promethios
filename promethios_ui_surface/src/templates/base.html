@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}Promethios UI Justification Surface{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/style.css\') }}">
+</head>
+<body>
+    <header>
+        <h1>Promethios UI Justification Surface</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for(\'index\') }}">Home</a></li>
+            <li><a href="{{ url_for(\'emotion_logs\') }}">Emotion Telemetry Logs</a></li>
+            <li><a href="{{ url_for(\'justification_logs\') }}">Justification Logs</a></li>
+            <li><a href="{{ url_for(\'integrity_check\') }}">Log Integrity Check</a></li>
+            <li><a href="{{ url_for(\'replay\') }}">Manual Replay</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    <footer>
+        <p style="text-align:center; margin-top: 20px;">&copy; 2025 Promethios Project</p>
+    </footer>
+</body>
+</html>
+

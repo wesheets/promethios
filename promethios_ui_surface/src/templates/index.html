@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Promethios UI{% endblock %}
+
+{% block content %}
+    <h2>Welcome to the Promethios UI Justification Surface</h2>
+    <p>This interface provides tools to review and analyze the cognitive logs of the Promethios system.</p>
+    <p>Please use the navigation bar above to access:</p>
+    <ul>
+        <li><b>Emotion Telemetry Logs:</b> View and filter emotion telemetry log entries.</li>
+        <li><b>Justification Logs:</b> View and filter justification log entries, including decision-making attributes.</li>
+        <li><b>Log Integrity Check:</b> Verify the integrity of log files using SHA256 hashes.</li>
+        <li><b>Manual Replay:</b> Initiate manual deterministic replays of specific scenarios.</li>
+    </ul>
+    <p>This UI is designed for visibility and trust, presenting schema-bound log data from Codex-sealed surfaces.</p>
+{% endblock %}
+
