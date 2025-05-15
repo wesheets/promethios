@@ -16,8 +16,9 @@ EMOTION_LOG_FILE = os.path.join(LOG_DATA_DIR, os.getenv('EMOTION_LOG_FILENAME', 
 JUSTIFICATION_LOG_FILE = os.path.join(LOG_DATA_DIR, os.getenv('JUSTIFICATION_LOG_FILENAME', 'justification.log.jsonl'))
 SHA256_MANIFEST_FILE = os.path.join(LOG_DATA_DIR, os.getenv('SHA256_MANIFEST_FILENAME', 'sha256_manifest.txt'))
 
-# Path to the replay script, relative to project root
-REPLAY_SCRIPT_PATH = os.path.join(PROJECT_ROOT, os.getenv('REPLAY_SCRIPT_NAME', 'test_deterministic_replay.py'))
+# Path to the replay script, now located within the src directory of the UI surface app
+# os.path.dirname(__file__) gives the directory of the current file (config.py), which is src/
+REPLAY_SCRIPT_PATH = os.path.join(os.path.dirname(__file__), os.getenv('REPLAY_SCRIPT_NAME', 'test_deterministic_replay.py'))
 
 # Pagination settings
 ITEMS_PER_PAGE = int(os.getenv('ITEMS_PER_PAGE', 20))
