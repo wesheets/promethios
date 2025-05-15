@@ -1,4 +1,5 @@
-# /home/ubuntu/promethios_repo/promethios_ui_surface/src/main.py
+#!/usr/bin/env python3
+# /home/ubuntu/promethios_clean_pr/promethios_ui_surface/src/main.py
 import sys
 import os
 import json # For parsing emotion_state_at_decision
@@ -9,8 +10,10 @@ from flask import Flask, render_template, request, url_for, flash
 from datetime import datetime
 import logging # Added for enhanced logging
 
-# Assuming config.py and log_parser.py are in the same 'src' directory or accessible via PYTHONPATH
-from src.config import EMOTION_LOG_FILE, JUSTIFICATION_LOG_FILE, SHA256_MANIFEST_FILE, REPLAY_SCRIPT_PATH, ITEMS_PER_PAGE, LOG_DATA_DIR, PROJECT_ROOT
+# Import config directly
+from src.config import *
+
+# Assuming log_parser.py is in the same 'src' directory or accessible via PYTHONPATH
 from src.utils.log_parser import parse_jsonl_log, calculate_file_sha256
 
 app = Flask(__name__)
@@ -25,9 +28,6 @@ else:
     # In debug mode, Flask's default logger is usually sufficient
     # but we can set level explicitly if needed
     app.logger.setLevel(logging.DEBUG)
-
-
-# app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{os.getenv('DB_USERNAME', 'root')}:{os.getenv('DB_PASSWORD', 'password')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3306')}/{os.getenv('DB_NAME', 'mydb')}"
 
 # Ensure the log directory exists, otherwise create it
 if not os.path.exists(LOG_DATA_DIR):
@@ -303,7 +303,7 @@ def replay():
 
         app.logger.info(f"Executing replay command: {' '.join(cmd)}")
         try:
-            process = subprocess.run(cmd, capture_output=True, text=True, check=False, cwd=PROJECT_ROOT, timeout=60)
+            process = subprocess.run(cmd, capture_output=True, text=True, check=False, cwd=REPO_ROOT, timeout=60)
             
             stdout_content = process.stdout.strip()
             stderr_content = process.stderr.strip()
@@ -341,4 +341,3 @@ def replay():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
-

@@ -10,27 +10,34 @@ import time
 from datetime import datetime
 import requests # Ensure 'requests' is installed: pip3 install requests
 
+# Get the absolute path of the repository root directory
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# Define absolute paths for logs
+LOG_DIR = os.path.join(REPO_ROOT, "logs")
+
 # Configuration
 NUM_REPLAYS = 3
-LOG_DIR = "./logs" # Assumes script is run from promethios_repo root
-RUNTIME_EXECUTOR_ENDPOINT = "http://localhost:8000/loop/execute"
+RUNTIME_EXECUTOR_ENDPOINT = "http://localhost:8002/loop/execute"  # Updated to port 8002
 
 # Ensure PROMETHIOS_KERNEL_PATH is set in the environment where runtime_executor.py is started.
 # This script does not directly control the kernel path for a separate server process.
 
-FIXED_REQUEST_ID_FOR_REPLAY_TEST = f"audit_replay_test_{datetime.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
+# Generate a proper UUID for the request_id to comply with schema requirements
+FIXED_REQUEST_ID_FOR_REPLAY_TEST = str(uuid.uuid4())
 
+# Modified to match the expected structure in runtime_executor.py
 SAMPLE_LOOP_EXECUTE_INPUT = {
-    "request_id": FIXED_REQUEST_ID_FOR_REPLAY_TEST, # This will be the *same* for each of the 3+ calls
+    "request_id": FIXED_REQUEST_ID_FOR_REPLAY_TEST,
     "plan_input": {
-        "task_description": "Execute a deterministic task for audit replay testing.",
+        "task": "Execute a deterministic task for audit replay testing.",
         "complexity_level": "medium",
         "context_data": {
             "previous_attempts": 0,
             "relevant_knowledge_ids": ["kn_audit_replay_1", "kn_audit_replay_2"]
         }
     },
-    "operator_override_signal": None # Ensuring no override for pure determinism test
+    "operator_override_signal": None
 }
 
 def run_single_execution(input_payload, execution_num):
@@ -55,7 +62,7 @@ def main():
     print("Starting Deterministic Replay Test for Audit...")
     print(f"IMPORTANT: Ensure the Promethios runtime_executor.py FastAPI server is running and accessible at {RUNTIME_EXECUTOR_ENDPOINT}")
     print(f"IMPORTANT: Ensure runtime_executor.py is started with PROMETHIOS_KERNEL_PATH pointing to the correct actual kernel.")
-    print(f"Log files will be appended to in the '{LOG_DIR}' directory (relative to where runtime_executor.py is running).")
+    print(f"Log files will be appended to in the '{LOG_DIR}' directory.")
     
     # Create LOG_DIR if it doesn't exist locally for saving the input payload
     # Note: runtime_executor.py will handle creation of its own log directory if needed.
@@ -81,8 +88,8 @@ def main():
     
     if successful_runs == NUM_REPLAYS:
         print("\nAll replay executions attempted. Please verify the contents of:")
-        print(f"  - Emotion Telemetry Log: {os.path.join(LOG_DIR, 'emotion_telemetry.log.jsonl')}") # Path relative to runtime_executor
-        print(f"  - Justification Log: {os.path.join(LOG_DIR, 'justification.log.jsonl')}") # Path relative to runtime_executor
+        print(f"  - Emotion Telemetry Log: {os.path.join(LOG_DIR, 'emotion_telemetry.log.jsonl')}")
+        print(f"  - Justification Log: {os.path.join(LOG_DIR, 'justification.log.jsonl')}")
         print(f"Ensure that {NUM_REPLAYS} entries corresponding to the request_id "
               f"'{FIXED_REQUEST_ID_FOR_REPLAY_TEST}' are present in each log and are identical where expected.")
         print(f"The input payload used is saved at: {input_payload_file}")
@@ -91,4 +98,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
