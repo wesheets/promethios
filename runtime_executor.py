@@ -8,6 +8,9 @@ import sys
 import hashlib
 import io
 import contextlib
+from fastapi import FastAPI, Request, HTTPException
+import uvicorn
+from typing import Any, Dict, Optional
 
 # --- Dynamically Import GovernanceCore --- #
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -149,10 +152,9 @@ class RuntimeExecutor:
         plan_input_from_request = request_data.get("plan_input")
         operator_override_signal = request_data.get("operator_override_signal")
         timestamp_capture = datetime.datetime.utcnow().isoformat() + "Z"
-        schema_validation_errors = []
         loop_input_for_kernel = {
             "loop_id": request_id,
-            "plan_details": plan_input_from_request,
+            "plan_details": plan_input_from_request, 
             "operator_override_signal": operator_override_signal
         }
         core_output = None
@@ -165,7 +167,6 @@ class RuntimeExecutor:
                 core_output = self.governance_core.execute_loop(loop_input_for_kernel)
             
             stdout_full_text = captured_stdout_io.getvalue()
-            print(f"DEBUG: Captured stdout from kernel:\n---\n{stdout_full_text}\n---")
 
             EMOTION_PREFIX = "Emitting Emotion Telemetry: "
             JUSTIFICATION_PREFIX = "Logging Validated Justification: "
@@ -186,7 +187,7 @@ class RuntimeExecutor:
                     next_prefix_pos = justification_start_index
                     is_emotion = False
                 else:
-                    break # No more known prefixes
+                    break 
                 
                 prefix_len = len(EMOTION_PREFIX) if is_emotion else len(JUSTIFICATION_PREFIX)
                 json_text_start_offset = next_prefix_pos + prefix_len
@@ -199,17 +200,11 @@ class RuntimeExecutor:
                     if is_emotion:
                         if self.validate_against_schema(obj, emotion_telemetry_schema, "stdout_emotion_telemetry_candidate") is None:
                             emotion_telemetry_from_stdout = obj
-                            print(f"DEBUG: Successfully parsed EMOTION telemetry from stdout using raw_decode.")
-                    else: # justification
+                    else: 
                         if self.validate_against_schema(obj, justification_log_schema, "stdout_justification_log_candidate") is None:
                             justification_log_from_stdout = obj
-                            print(f"DEBUG: Successfully parsed JUSTIFICATION log from stdout using raw_decode.")
-                        else:
-                            val_error = self.validate_against_schema(obj, justification_log_schema, "stdout_justification_log_candidate_failed")
-                            print(f"DEBUG: Failed to validate parsed JUSTIFICATION log from stdout: {val_error}")
                     current_pos = json_text_start_offset + end_index_offset
-                except json.JSONDecodeError as e:
-                    print(f"DEBUG: JSONDecodeError while parsing from stdout (prefix: {'EMOTION' if is_emotion else 'JUSTIFICATION'}): {e}. Skipping to next potential prefix.")
+                except json.JSONDecodeError:
                     current_pos = next_prefix_pos + prefix_len 
                     if current_pos >= len(stdout_full_text): break
             
@@ -250,6 +245,7 @@ class RuntimeExecutor:
             }
 
         except Exception as e:
+            print(f"ERROR in execute_core_loop: {e}") # Log the exception
             response = {
                 "request_id": request_id,
                 "execution_status": "FAILURE",
@@ -263,100 +259,28 @@ class RuntimeExecutor:
             }
         return response
 
-def verify_logged_hashes(log_file_path: str):
-    if not os.path.exists(log_file_path):
-        print(f"Verification: Log file {log_file_path} not found. Skipping.")
-        return False, 0, 0
-    verified_count = 0
-    failed_count = 0
-    print(f"--- Verifying hashes in {os.path.basename(log_file_path)} ---")
-    with open(log_file_path, 'r') as f:
-        for i, line in enumerate(f):
-            try:
-                entry_with_hash = json.loads(line.strip())
-                stored_hash = entry_with_hash.pop("entry_sha256_hash", None)
-                if stored_hash is None:
-                    print(f"  Line {i+1}: No entry_sha256_hash field. Skipping.")
-                    failed_count +=1
-                    continue
-                original_content_str = _canonical_json_string(entry_with_hash)
-                recalculated_hash = _calculate_sha256_hash(original_content_str)
-                if stored_hash == recalculated_hash:
-                    verified_count += 1
-                else:
-                    print(f"  Line {i+1}: Hash mismatch! Stored: {stored_hash}, Recalculated: {recalculated_hash}")
-                    failed_count += 1
-            except json.JSONDecodeError:
-                print(f"  Line {i+1}: Invalid JSON. Skipping.")
-                failed_count += 1
-            except Exception as e:
-                print(f"  Line {i+1}: Error verifying hash: {e}. Skipping.")
-                failed_count += 1
-    print(f"Verification for {os.path.basename(log_file_path)}: {verified_count} verified, {failed_count} failed.")
-    return failed_count == 0 and verified_count >= 0, verified_count, failed_count
+app = FastAPI()
+
+if not os.path.exists(EMOTION_TELEMETRY_SCHEMA_PATH) or not os.path.exists(JUSTIFICATION_LOG_SCHEMA_PATH):
+    print("FATAL: Core output validation schemas not found in project's ResurrectionCodex. Exiting.")
+    sys.exit(1)
+
+runtime_executor_instance = RuntimeExecutor()
+print(f"Logging to directory: {runtime_executor_instance.log_directory}")
+if os.path.exists(runtime_executor_instance.emotion_log_file):
+    os.remove(runtime_executor_instance.emotion_log_file)
+if os.path.exists(runtime_executor_instance.justification_log_file):
+    os.remove(runtime_executor_instance.justification_log_file)
+
+@app.post("/loop/execute")
+async def loop_execute_endpoint(request: Request):
+    try:
+        request_data_dict = await request.json()
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    return runtime_executor_instance.execute_core_loop(request_data_dict)
 
 if __name__ == "__main__":
-    if not os.path.exists(EMOTION_TELEMETRY_SCHEMA_PATH) or not os.path.exists(JUSTIFICATION_LOG_SCHEMA_PATH):
-        print("FATAL: Core output validation schemas not found in project's ResurrectionCodex. Exiting.")
-        sys.exit(1)
-    executor = RuntimeExecutor()
-    print(f"Logging to directory: {executor.log_directory}")
-    if os.path.exists(executor.emotion_log_file):
-        os.remove(executor.emotion_log_file)
-    if os.path.exists(executor.justification_log_file):
-        os.remove(executor.justification_log_file)
-
-    mock_request_valid = {
-        "request_id": str(uuid.uuid4()),
-        "plan_input": {"task": "test valid execution", "some_detail": "detail_for_valid_plan"},
-        "operator_override_signal": None
-    }
-    print("\n--- Testing Valid Request (Scenario 1) ---")
-    result_valid = executor.execute_core_loop(mock_request_valid)
-    print(json.dumps(result_valid, indent=2))
-
-    mock_request_with_override_simple = {
-        "request_id": str(uuid.uuid4()),
-        "plan_input": {
-            "task": "test with simple override"
-        },
-        "operator_override_signal": {
-            "override_signal_id": str(uuid.uuid4()),
-            "override_type": "HALT_IMMEDIATE", 
-            "reason": "Test simple override signal",
-            "issuing_operator_id": "Operator_Test_Simple"
-        }
-    }
-    print("\n--- Testing Request with Simple Override (Scenario 2) ---")
-    result_override_simple = executor.execute_core_loop(mock_request_with_override_simple)
-    print(json.dumps(result_override_simple, indent=2))
-    
-    # This test case is known to cause emotion telemetry schema validation issues within the kernel
-    # due to how 'trust_factor' is handled and 'factor' being reported as missing in contributing_factors.
-    # It's kept here for observing that specific kernel behavior if needed, but might not produce valid logs.
-    mock_request_with_trust_factor_issue = {
-        "request_id": str(uuid.uuid4()),
-        "plan_input": {
-            "task": "test with trust_factor known to cause kernel internal emotion schema issue", 
-            "trust_factor": -0.5 
-        },
-        "operator_override_signal": None
-    }
-    print("\n--- Testing Request with Trust Factor (Known Kernel Issue Observation - Scenario 3) ---")
-    result_trust_issue = executor.execute_core_loop(mock_request_with_trust_factor_issue)
-    print(json.dumps(result_trust_issue, indent=2))
-
-
-    print(f"\n--- Post-Execution Log Hash Verification ---")
-    emotion_ok, emo_verified, emo_failed = verify_logged_hashes(executor.emotion_log_file)
-    justification_ok, just_verified, just_failed = verify_logged_hashes(executor.justification_log_file)
-
-    # Adjusted success criteria: Check if at least one type of log was produced if expected.
-    # For now, we want to see if *any* logs are correctly captured and hashed.
-    if (emo_verified > 0 or just_verified > 0) and emo_failed == 0 and just_failed == 0:
-        print("\nSUCCESS: All captured log entries verified successfully in standalone test.")
-    elif emo_failed == 0 and just_failed == 0 and emo_verified == 0 and just_verified == 0:
-        print("\nWARNING: No log entries were produced and/or captured for file logging, but no hash failures occurred.")
-    else:
-        print("\nFAILURE: Some logged entries failed hash verification or logs were not properly produced/captured.")
+    print("Starting FastAPI server for Promethios Runtime Executor...")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
