@@ -15,7 +15,7 @@ from src.utils.log_parser import parse_jsonl_log, calculate_file_sha256
 app = Flask(__name__)
 app.secret_key = os.urandom(24) # Needed for flash messages
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{os.getenv(\'DB_USERNAME\', \'root\')}:{os.getenv(\'DB_PASSWORD\', \'password\')}@{os.getenv(\'DB_HOST\', \'localhost\')}:{os.getenv(\'DB_PORT\', \'3306\')}/{os.getenv(\'DB_NAME\', \'mydb\')}"
+# app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{os.getenv('DB_USERNAME', 'root')}:{os.getenv('DB_PASSWORD', 'password')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3306')}/{os.getenv('DB_NAME', 'mydb')}"
 
 # Ensure the log directory exists, otherwise create it
 if not os.path.exists(LOG_DATA_DIR):
@@ -269,18 +269,17 @@ def replay():
             error_message_str = f"Replay script not found at {REPLAY_SCRIPT_PATH}"
             return render_template('replay.html', error_message=error_message_str, replay_output=replay_output_str)
         
-        # Construct the command
-        # Ensure to use the python from the virtual environment if the script needs it
-        # Assuming the script is executable and has a shebang, or python is in PATH
-        # For robustness, one might specify the venv python explicitly: 
-        # python_executable = os.path.join(PROJECT_ROOT, 'promethios_ui_surface', 'venv', 'bin', 'python3')
-        # However, test_deterministic_replay.py is in the main promethios_repo, so it might use the global python or its own venv setup.
-        # For now, assume it's executable directly or via `python3` in path.
-        cmd = ['python3', REPLAY_SCRIPT_PATH, '--scenario', scenario_id]
+        # Use sys.executable to ensure the correct Python interpreter is used
+        python_executable = sys.executable 
+        cmd = [python_executable, REPLAY_SCRIPT_PATH, '--scenario', scenario_id]
         if loop_input_path:
             # Security: Basic check for path traversal, though more robust validation is better
-            if '..' in loop_input_path or not loop_input_path.startswith(LOG_DATA_DIR):
-                 error_message_str = "Invalid loop input path."
+            # Ensure loop_input_path is within an expected directory if it's user-provided and not a fixed set of options
+            # For this example, we assume LOG_DATA_DIR is a safe base if the script expects files from there.
+            # More robust validation might involve checking against a list of allowed paths or ensuring it's a subpath of a trusted root.
+            abs_loop_input_path = os.path.abspath(loop_input_path)
+            if '..' in loop_input_path or not abs_loop_input_path.startswith(os.path.abspath(LOG_DATA_DIR)):
+                 error_message_str = "Invalid loop input path. Path must be within the configured LOG_DATA_DIR."
                  return render_template('replay.html', error_message=error_message_str, replay_output=replay_output_str)
             cmd.extend(['--loop_input', loop_input_path])
 
@@ -291,14 +290,16 @@ def replay():
             replay_output_str += "STDOUT:\n" + process.stdout + "\n"
             replay_output_str += "STDERR:\n" + process.stderr
             if process.returncode != 0:
-                 flash(f"Replay script exited with error code: {process.returncode}", "error")
+                 flash(f"Replay script exited with error code: {process.returncode}. STDERR: {process.stderr}", "error")
 
         except subprocess.TimeoutExpired:
             error_message_str = "Replay script timed out after 60 seconds."
             replay_output_str = "Timeout occurred."
+            flash(error_message_str, "error")
         except Exception as e:
             error_message_str = f"Error executing replay script: {e}"
             replay_output_str = f"Execution failed: {e}"
+            flash(error_message_str, "error")
             
     return render_template('replay.html', replay_output=replay_output_str, error_message=error_message_str)
 
