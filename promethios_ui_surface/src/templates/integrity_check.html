@@ -24,8 +24,8 @@
                     <tr>
                         <td>{{ result.file_path }}</td>
                         <td><small>{{ result.expected_hash }}</small></td>
-                        <td><small>{{ result.calculated_hash | default(\'N/A\', true) }}</small></td>
-                        <td class="status-{{ result.status.lower().replace(\' \	enderline\', \'\') }}">
+                        <td><small>{{ result.calculated_hash | default("N/A", true) }}</small></td>
+                        <td class="status-{{ result.status.lower().replace(" ", "-") }}">
                             {{ result.status }}
                         </td>
                     </tr>
