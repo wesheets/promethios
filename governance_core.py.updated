@@ -40,11 +40,10 @@ class GovernanceCore:
         """Initialize the governance core with default state."""
         self.current_emotion_state = {
             "timestamp": self._get_timestamp(),
-            "current_emotion_state": "NEUTRAL",  # Changed from emotion_state to current_emotion_state
+            "emotion_state": "NEUTRAL",
             "intensity": 0.5,
             "trust_score": self.DEFAULT_TRUST_SCORE,
-            "trigger_id": "initialization",
-            "contributing_factors": []  # Added contributing_factors array
+            "trigger_id": "initialization"
         }
         self.justification_log = []
         self._load_schemas()
@@ -97,7 +96,7 @@ class GovernanceCore:
         if self._validate_output(emotion_state, "emotion_telemetry"):
             with open(EMOTION_TELEMETRY_LOG, 'a') as f:
                 f.write(json.dumps(emotion_state) + "\n")
-            print(f"Emotion telemetry logged: {emotion_state['current_emotion_state']} (trust: {emotion_state['trust_score']})")
+            print(f"Emotion telemetry logged: {emotion_state['emotion_state']} (trust: {emotion_state['trust_score']})")
         else:
             print(f"CRITICAL: Failed to validate emotion telemetry. Logging aborted. Data: {json.dumps(emotion_state, indent=2)}")
     
@@ -105,23 +104,16 @@ class GovernanceCore:
         """Update the current emotion state."""
         prev_state = self.current_emotion_state.copy()
         
-        # Create contributing factors array if provided
-        contributing_factors = []
-        if factors:
-            for factor in factors:
-                contributing_factors.append({
-                    "factor": factor.get("factor_type", "unknown"),
-                    "influence": factor.get("factor_value", 0.5)
-                })
-        
         self.current_emotion_state = {
             "timestamp": self._get_timestamp(),
-            "current_emotion_state": emotion,  # Changed from emotion_state to current_emotion_state
+            "emotion_state": emotion,
             "intensity": intensity,
             "trust_score": prev_state.get("trust_score", self.DEFAULT_TRUST_SCORE),
-            "trigger_id": trigger_id,
-            "contributing_factors": contributing_factors  # Added contributing_factors array
+            "trigger_id": trigger_id
         }
+        
+        if factors:
+            self.current_emotion_state["factors"] = factors
         
         self._emit_emotion_telemetry(self.current_emotion_state)
         return self.current_emotion_state
@@ -224,7 +216,7 @@ class GovernanceCore:
         """Execute a governance loop with the given input."""
         loop_id = loop_input.get("loop_id", "loop_" + str(uuid.uuid4())[:8])
         print(f"Executing loop_id: {loop_id} with input: {loop_input}")
-        self.update_emotion_state("NEUTRAL", 0.5, trigger_id=f"loop_start_{loop_id}", factors=[{"factor_type": "initialization", "factor_value": 0.5}])
+        self.update_emotion_state("NEUTRAL", 0.5, trigger_id=f"loop_start_{loop_id}")
         
         override_signal_data = loop_input.get("operator_override_signal")
         override_signal_info_for_plan = None
