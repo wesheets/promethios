@@ -59,6 +59,11 @@ class GovernanceCore:
             core_output["status"] = "mock_forced_rejection"
             core_output["details"] = "GovernanceCore mock execution was overridden to REJECT."
 
+        # Print emotion telemetry and justification log with the expected prefixes
+        # This is required for runtime_executor to capture and log them
+        print(f"Emitting Emotion Telemetry: {json.dumps(emotion_telemetry)}")
+        print(f"Logging Validated Justification: {json.dumps(justification_log)}")
+
         return core_output, emotion_telemetry, justification_log
 
 # Example usage (for testing purposes, not part of the actual runtime)
@@ -99,4 +104,3 @@ if __name__ == "__main__":
     print(json.dumps(emotion_force_reject, indent=2))
     print("--- Justification Log (With FORCE_REJECT Override) ---")
     print(json.dumps(justification_force_reject, indent=2))
-
