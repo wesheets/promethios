@@ -23,21 +23,19 @@ RUNTIME_EXECUTOR_ENDPOINT = "http://localhost:8000/loop/execute"
 # Ensure PROMETHIOS_KERNEL_PATH is set in the environment where runtime_executor.py is started.
 # This script does not directly control the kernel path for a separate server process.
 
-# Generate a proper UUID for the request_id to comply with schema requirements
-FIXED_REQUEST_ID_FOR_REPLAY_TEST = str(uuid.uuid4())
+FIXED_REQUEST_ID_FOR_REPLAY_TEST = f"audit_replay_test_{datetime.now().strftime('%Y%m%d%H%M%S')}_{str(uuid.uuid4())[:8]}"
 
-# Modified to match the expected structure in runtime_executor.py
 SAMPLE_LOOP_EXECUTE_INPUT = {
-    "request_id": FIXED_REQUEST_ID_FOR_REPLAY_TEST,
+    "request_id": FIXED_REQUEST_ID_FOR_REPLAY_TEST, # This will be the *same* for each of the 3+ calls
     "plan_input": {
-        "task": "Execute a deterministic task for audit replay testing.",
+        "task_description": "Execute a deterministic task for audit replay testing.",
         "complexity_level": "medium",
         "context_data": {
             "previous_attempts": 0,
             "relevant_knowledge_ids": ["kn_audit_replay_1", "kn_audit_replay_2"]
         }
     },
-    "operator_override_signal": None
+    "operator_override_signal": None # Ensuring no override for pure determinism test
 }
 
 def run_single_execution(input_payload, execution_num):
