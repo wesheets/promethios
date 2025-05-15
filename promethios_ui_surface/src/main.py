@@ -35,13 +35,13 @@ if not os.path.exists(LOG_DATA_DIR):
 
 # Create dummy log files if they don\'t exist, to prevent errors on first run
 if not os.path.exists(EMOTION_LOG_FILE):
-    with open(EMOTION_LOG_FILE, \'w\') as f:
+    with open(EMOTION_LOG_FILE, 'w') as f:
         pass # Create empty file
 if not os.path.exists(JUSTIFICATION_LOG_FILE):
-    with open(JUSTIFICATION_LOG_FILE, \'w\') as f:
+    with open(JUSTIFICATION_LOG_FILE, 'w') as f:
         pass # Create empty file
 if not os.path.exists(SHA256_MANIFEST_FILE):
-    with open(SHA256_MANIFEST_FILE, \'w\') as f:
+    with open(SHA256_MANIFEST_FILE, 'w') as f:
         f.write(f"{os.path.basename(EMOTION_LOG_FILE)} sha256_placeholder\n")
         f.write(f"{os.path.basename(JUSTIFICATION_LOG_FILE)} sha256_placeholder\n")
 
