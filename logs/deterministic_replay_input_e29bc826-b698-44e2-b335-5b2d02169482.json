@@ -1,0 +1,15 @@
+{
+  "request_id": "e29bc826-b698-44e2-b335-5b2d02169482",
+  "plan_input": {
+    "task": "Execute a deterministic task for audit replay testing.",
+    "complexity_level": "medium",
+    "context_data": {
+      "previous_attempts": 0,
+      "relevant_knowledge_ids": [
+        "kn_audit_replay_1",
+        "kn_audit_replay_2"
+      ]
+    }
+  },
+  "operator_override_signal": null
+}
