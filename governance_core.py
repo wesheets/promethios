@@ -7,6 +7,7 @@ import json
 import os
 import uuid
 import time
+import hashlib
 from datetime import datetime
 import jsonschema
 
@@ -29,6 +30,28 @@ EMOTION_TELEMETRY_SCHEMA = os.path.join(SCHEMA_DIR, "mgc_emotion_telemetry.schem
 JUSTIFICATION_LOG_SCHEMA = os.path.join(SCHEMA_DIR, "loop_justification_log.schema.v1.json")
 OPERATOR_OVERRIDE_SCHEMA = os.path.join(SCHEMA_DIR, "operator_override.schema.v1.json")
 
+def calculate_entry_hash(entry_dict):
+    """Calculate SHA256 hash for a log entry.
+    
+    Args:
+        entry_dict: Dictionary containing the log entry data (without hash field)
+        
+    Returns:
+        String containing the hex digest of the SHA256 hash
+    """
+    # Create a copy of the entry to avoid modifying the original
+    entry_copy = entry_dict.copy()
+    
+    # Remove the hash field if it exists
+    if 'entry_sha256_hash' in entry_copy:
+        del entry_copy['entry_sha256_hash']
+        
+    # Sort keys for deterministic serialization
+    entry_json = json.dumps(entry_copy, sort_keys=True)
+    
+    # Calculate hash
+    return hashlib.sha256(entry_json.encode('utf-8')).hexdigest()
+
 class GovernanceCore:
     """Core governance module implementing trust logic, override handling, and justification mapping."""
     
@@ -39,6 +62,10 @@ class GovernanceCore:
     
     def __init__(self):
         """Initialize the governance core with default state."""
+        # Track the last hash for each log file to enable chain integrity
+        self.last_emotion_hash = None
+        self.last_justification_hash = None
+        
         self.current_emotion_state = {
             "timestamp": self._get_timestamp(),
             "current_emotion_state": "NEUTRAL",
@@ -98,11 +125,26 @@ class GovernanceCore:
             return False
     
     def _emit_emotion_telemetry(self, emotion_state):
-        """Emit emotion telemetry to log file."""
+        """Emit emotion telemetry to log file with embedded hash."""
         if self._validate_output(emotion_state, "emotion_telemetry"):
+            # Create a copy of the emotion state for logging
+            entry = emotion_state.copy()
+            
+            # Optional: Add previous entry hash for chain integrity
+            if self.last_emotion_hash is not None:
+                entry["previous_entry_hash"] = self.last_emotion_hash
+            
+            # Calculate and add the hash
+            entry["entry_sha256_hash"] = calculate_entry_hash(entry)
+            
+            # Update the last hash
+            self.last_emotion_hash = entry["entry_sha256_hash"]
+            
+            # Write to log file
             with open(EMOTION_TELEMETRY_LOG, 'a') as f:
-                f.write(json.dumps(emotion_state) + "\n")
-            print(f"Emotion telemetry logged: {emotion_state['current_emotion_state']} (trust: {emotion_state['trust_score']})")
+                f.write(json.dumps(entry) + "\n")
+            
+            print(f"Emotion telemetry logged: {entry['current_emotion_state']} (trust: {entry['trust_score']}, hash: {entry['entry_sha256_hash'][:8]}...)")
         else:
             print(f"CRITICAL: Failed to validate emotion telemetry. Logging aborted. Data: {json.dumps(emotion_state, indent=2)}")
     
@@ -200,7 +242,7 @@ class GovernanceCore:
         }
     
     def _log_justification(self, plan_id, trust_score, decision, rejection_reason, override_required, override_details):
-        """Log justification for plan decision."""
+        """Log justification for plan decision with embedded hash."""
         # Map decision to decision_outcome format required by schema
         decision_outcome_map = {
             "ACCEPTED": "ACCEPTED",
@@ -227,10 +269,23 @@ class GovernanceCore:
             log_entry["override_details"] = override_details
         
         if self._validate_output(log_entry, "justification_log"):
+            # Optional: Add previous entry hash for chain integrity
+            if self.last_justification_hash is not None:
+                log_entry["previous_entry_hash"] = self.last_justification_hash
+            
+            # Calculate and add the hash
+            log_entry["entry_sha256_hash"] = calculate_entry_hash(log_entry)
+            
+            # Update the last hash
+            self.last_justification_hash = log_entry["entry_sha256_hash"]
+            
             self.justification_log.append(log_entry)
+            
+            # Write to log file
             with open(JUSTIFICATION_LOG, 'a') as f:
                 f.write(json.dumps(log_entry) + "\n")
-            print(f"Logging Validated Justification: {json.dumps(log_entry, indent=2)}")
+            
+            print(f"Logging Validated Justification: Decision={decision}, Hash={log_entry['entry_sha256_hash'][:8]}...")
         else:
             print(f"CRITICAL: Failed to validate justification log entry. Logging aborted. Data: {json.dumps(log_entry, indent=2)}")
     
