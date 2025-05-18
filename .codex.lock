@@ -1,6 +1,6 @@
 This file signifies that the contents of this bundle are governed by the Resurrection Codex. All runtime components and future modifications must adhere to the schemas and contracts defined within the Codex manifest and its associated schema registry. No code or configuration should be deployed or executed unless it is validated against the Codex.
 
 Codex Version at time of bundle generation: v2025.05.18
-Phase ID: 5.1
-Schema Registry: ["external_trigger.schema.v1.json", "webhook_payload.schema.v1.json", "cli_args.schema.v1.json"]
+Phase ID: 5.2
+Schema Registry: ["replay_seal.schema.v1.json", "execution_log.schema.v1.json", "deterministic_replay.schema.v1.json"]
 Contract Hash: 8f7d3e2c1b5a9f0e6d4c7b2a1e5d8f9c0b3a6e9d2c5b8a7f4e1d0c3b6a9e2d5f8

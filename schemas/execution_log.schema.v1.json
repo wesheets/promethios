@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Execution Log Schema",
+  "description": "Schema for execution logs that capture all events during kernel execution",
+  "type": "object",
+  "required": ["execution_id", "entries", "metadata"],
+  "properties": {
+    "execution_id": {
+      "type": "string",
+      "description": "Unique identifier for this execution",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    },
+    "entries": {
+      "type": "array",
+      "description": "Sequential log entries capturing all events during execution",
+      "items": {
+        "type": "object",
+        "required": ["entry_id", "timestamp", "event_type", "event_data", "previous_hash", "current_hash"],
+        "properties": {
+          "entry_id": {
+            "type": "integer",
+            "description": "Sequential ID of this log entry"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when the entry was created"
+          },
+          "event_type": {
+            "type": "string",
+            "description": "Type of event being logged",
+            "enum": ["input", "state_transition", "decision", "output", "api_call", "random_value", "override", "trust_evaluation"]
+          },
+          "event_data": {
+            "type": "object",
+            "description": "Data associated with this event"
+          },
+          "previous_hash": {
+            "type": "string",
+            "description": "SHA-256 hash of the previous entry",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "current_hash": {
+            "type": "string",
+            "description": "SHA-256 hash of this entry (entry_id + timestamp + event_type + event_data + previous_hash)",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["contract_version", "phase_id", "trigger_type", "start_time", "end_time"],
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "description": "Codex contract version used for this execution",
+          "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+        },
+        "phase_id": {
+          "type": "string",
+          "description": "Phase ID for this execution",
+          "pattern": "^\\d+(\\.\\d+)*$"
+        },
+        "trigger_type": {
+          "type": "string",
+          "description": "Type of trigger that initiated this execution",
+          "enum": ["cli", "webhook", "saas_flow", "replay"]
+        },
+        "trigger_id": {
+          "type": "string",
+          "description": "ID of the trigger that initiated this execution"
+        },
+        "start_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when execution started"
+        },
+        "end_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when execution completed"
+        },
+        "random_seed": {
+          "type": "string",
+          "description": "Seed used for random number generation during execution"
+        },
+        "environment_hash": {
+          "type": "string",
+          "description": "Hash of the execution environment configuration",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}
