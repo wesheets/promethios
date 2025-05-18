@@ -1,0 +1,30 @@
+services:
+  # API Service
+  - type: web
+    name: promethios-kernel-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PROMETHIOS_KERNEL_PATH
+        value: /opt/render/project/src/governance_core.py
+
+  # UI Service
+  - type: web
+    name: promethios-ui
+    env: python
+    buildCommand: cd promethios_ui_surface && pip install -r requirements.txt
+    startCommand: cd promethios_ui_surface && python -m src.main
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_APP
+        value: src.main
+      - key: FLASK_ENV
+        value: production
+      - key: LOG_DATA_DIR
+        value: /opt/render/project/src/logs
+      - key: API_URL
+        value: https://promethios-kernel-api.onrender.com
