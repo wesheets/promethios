@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from consensus_service import ConsensusService, ThresholdSignature, pre_loop_tether_check
+from src.core.verification.consensus_service import ConsensusService, ThresholdSignature, pre_loop_tether_check
 
 
 class TestConsensusService(unittest.TestCase):

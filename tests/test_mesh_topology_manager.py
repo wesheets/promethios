@@ -21,8 +21,8 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mesh_topology_manager import MeshTopologyManager
-from schema_validator import SchemaValidator
+from src.core.governance.mesh_topology_manager import MeshTopologyManager
+from src.core.common.schema_validator import SchemaValidator
 
 class TestMeshTopologyManager(unittest.TestCase):
     """Test cases for the MeshTopologyManager class."""

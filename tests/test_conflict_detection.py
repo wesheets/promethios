@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from conflict_detection import ConflictDetector
+from src.core.merkle.conflict_detection import ConflictDetector
 
 
 class TestConflictDetector(unittest.TestCase):

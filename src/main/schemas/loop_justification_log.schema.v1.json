@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loop Justification Log Schema",
+  "version": "1.2.0", 
+  "description": "Schema for logging justifications related to loop execution, including plan selection, rejection reasons, associated emotional states, trust scores, override information, and whether an override is deemed required.",
+  "type": "object",
+  "properties": {
+    "log_entry_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this log entry."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of when the justification event occurred."
+    },
+    "loop_id": {
+      "type": "string",
+      "description": "Identifier of the control loop instance this justification pertains to."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Identifier of the agent or MGC component making the decision or providing the justification (e.g., MGC_Controller, MGC_Critic)."
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Identifier of the plan being considered, selected, or rejected."
+    },
+    "decision_type": {
+      "type": "string",
+      "enum": ["plan_selection", "plan_rejection", "plan_modification_proposal", "action_execution_approval", "action_execution_rejection"],
+      "description": "The type of decision being justified."
+    },
+    "justification_text": {
+      "type": "string",
+      "description": "Narrative justification for the decision."
+    },
+    "rejection_reason": {
+      "type": ["string", "null"],
+      "description": "Specific reason for rejection, if applicable (e.g., \"schema_violation\", \"risk_threshold_exceeded\", \"invariant_conflict\", \"low_trust_score\")."
+    },
+    "trust_score_at_decision": {
+        "type": ["number", "null"],
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The calculated trust score at the moment of decision, if applicable."
+    },
+    "override_signal_received": {
+        "type": "boolean",
+        "description": "Indicates if an operator override signal was present or considered during this decision event.",
+        "default": false
+    },
+    "override_details": {
+        "type": ["object", "null"],
+        "description": "Details of the operator override signal if one was received and relevant to this justification. Structure may vary or reference operator_override.schema.v1.json.",
+        "properties": {
+            "override_signal_id": {"type": "string", "format": "uuid"},
+            "override_type": {"type": "string"}
+        }
+    },
+    "override_required": {
+        "type": "boolean",
+        "description": "Indicates if the system determined that an operator override is required or highly recommended due to the current state or decision (e.g., critical trust failure).",
+        "default": false
+    },
+    "emotion_state_at_decision": {
+      "$ref": "#/definitions/emotionState",
+      "description": "The MGC's emotional state at the time of the decision, referencing mgc_emotion_telemetry.schema.json structure."
+    },
+    "runtime_log_type": {
+      "type": "string",
+      "default": "justification_log",
+      "description": "Indicates the type of log entry, for categorization."
+    },
+    "contract_enforcement_metadata": {
+      "type": "object",
+      "properties": {
+        "contract_id_evaluated": {
+          "type": ["string", "null"],
+          "description": "Identifier of the contract that was evaluated as part of this justification."
+        },
+        "evaluation_outcome": {
+          "type": ["string", "null"],
+          "enum": ["pass", "fail", "not_applicable", null],
+          "description": "Outcome of the contract evaluation."
+        },
+        "violated_clauses": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          },
+          "description": "Specific clauses of the contract that were violated, if any."
+        }
+      },
+      "description": "Metadata related to contract enforcement relevant to this justification."
+    }
+  },
+  "required": [
+    "log_entry_id",
+    "timestamp",
+    "loop_id",
+    "agent_id",
+    "plan_id",
+    "decision_type",
+    "justification_text"
+  ],
+  "definitions": {
+    "emotionState": {
+      "type": "object",
+      "description": "Mirrors the structure of mgc_emotion_telemetry.schema.json for embedding.",
+      "properties": {
+        "current_emotion_state": {
+          "type": "string",
+          "enum": ["NEUTRAL", "FOCUSED", "AGITATED", "UNCERTAIN", "CONFIDENT", "RESOLVED", "OVERRIDDEN"]
+        },
+        "state_intensity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "triggering_event_id": {
+          "type": ["string", "null"]
+        },
+        "contributing_factors": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "properties": {
+              "factor_type": {"type": "string"},
+              "factor_value": {"type": "string"}
+            },
+            "required": ["factor_type", "factor_value"]
+          }
+        }
+      },
+      "required": ["current_emotion_state", "state_intensity"]
+    }
+  }
+}
+

@@ -21,7 +21,7 @@ MGC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "01_Minimal_Governance_
 sys.path.append(MGC_DIR)
 
 try:
-    from governance_core import GovernanceCore
+    from src.core.governance.governance_core import GovernanceCore
 except ImportError as e:
     print(f"CRITICAL ERROR: Could not import GovernanceCore. Ensure governance_core.py is in {MGC_DIR}. Error: {e}")
     sys.exit(1)

@@ -21,8 +21,8 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from repository_hygiene_validator import RepositoryHygieneValidator
-from schema_validator import SchemaValidator
+from src.utils.repository_hygiene_validator import RepositoryHygieneValidator
+from src.core.common.schema_validator import SchemaValidator
 
 class TestRepositoryHygieneValidator(unittest.TestCase):
     """Test cases for the RepositoryHygieneValidator class."""

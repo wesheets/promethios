@@ -1,0 +1,254 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust View Schema",
+  "description": "Consolidated schema for Trust Log UI Viewer and Trust Surface Visualization",
+  "type": "object",
+  "required": ["view_id", "contract_version", "timestamp", "trust_data"],
+  "properties": {
+    "view_id": {
+      "type": "string",
+      "description": "Unique identifier for this trust view instance",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    },
+    "contract_version": {
+      "type": "string",
+      "description": "Version of the Codex contract",
+      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$",
+      "const": "v2025.05.18"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when this view was generated",
+      "format": "date-time"
+    },
+    "trust_data": {
+      "type": "object",
+      "required": ["logs", "merkle_seals", "trust_surface"],
+      "properties": {
+        "logs": {
+          "type": "array",
+          "description": "Trust log entries",
+          "items": {
+            "type": "object",
+            "required": ["entry_id", "timestamp", "event_type", "event_data", "previous_hash", "current_hash"],
+            "properties": {
+              "entry_id": {
+                "type": "integer",
+                "description": "Sequential ID of this log entry"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 timestamp of when the entry was created"
+              },
+              "event_type": {
+                "type": "string",
+                "description": "Type of event being logged",
+                "enum": ["input", "state_transition", "decision", "output", "api_call", "random_value", "override", "trust_evaluation"]
+              },
+              "event_data": {
+                "type": "object",
+                "description": "Data associated with this event"
+              },
+              "previous_hash": {
+                "type": "string",
+                "description": "SHA-256 hash of the previous entry",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "current_hash": {
+                "type": "string",
+                "description": "SHA-256 hash of this entry",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "merkle_seals": {
+          "type": "array",
+          "description": "Merkle tree seals for tamper-evidence",
+          "items": {
+            "type": "object",
+            "required": ["seal_id", "root_hash", "timestamp", "conflict_metadata"],
+            "properties": {
+              "seal_id": {
+                "type": "string",
+                "description": "Unique identifier for this seal",
+                "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+              },
+              "root_hash": {
+                "type": "string",
+                "description": "Merkle root hash",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 timestamp of when the seal was created"
+              },
+              "conflict_metadata": {
+                "type": "object",
+                "description": "Metadata about conflicts",
+                "properties": {
+                  "conflict_type": {
+                    "type": "string",
+                    "description": "Type of conflict",
+                    "enum": ["none", "trust_threshold", "override", "schema_violation", "tether_failure"]
+                  },
+                  "agent_ids": {
+                    "type": "array",
+                    "description": "IDs of agents involved in the conflict",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "timestamp_hash": {
+                    "type": "string",
+                    "description": "Hash of the timestamp for verification",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "trust_surface": {
+          "type": "object",
+          "required": ["trust_scores", "justifications", "override_status"],
+          "properties": {
+            "trust_scores": {
+              "type": "object",
+              "description": "Trust scores for various components",
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "justifications": {
+              "type": "array",
+              "description": "Justifications for trust evaluations",
+              "items": {
+                "type": "object",
+                "required": ["component_id", "justification_text", "trust_score"],
+                "properties": {
+                  "component_id": {
+                    "type": "string",
+                    "description": "ID of the component being justified"
+                  },
+                  "justification_text": {
+                    "type": "string",
+                    "description": "Textual justification"
+                  },
+                  "trust_score": {
+                    "type": "number",
+                    "description": "Trust score for this component",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            },
+            "override_status": {
+              "type": "object",
+              "description": "Status of overrides",
+              "required": ["active_overrides", "pending_overrides"],
+              "properties": {
+                "active_overrides": {
+                  "type": "array",
+                  "description": "Currently active overrides",
+                  "items": {
+                    "type": "object",
+                    "required": ["override_id", "component_id", "reason"],
+                    "properties": {
+                      "override_id": {
+                        "type": "string",
+                        "description": "ID of the override"
+                      },
+                      "component_id": {
+                        "type": "string",
+                        "description": "ID of the component being overridden"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "description": "Reason for the override"
+                      }
+                    }
+                  }
+                },
+                "pending_overrides": {
+                  "type": "array",
+                  "description": "Pending overrides",
+                  "items": {
+                    "type": "object",
+                    "required": ["override_id", "component_id", "reason"],
+                    "properties": {
+                      "override_id": {
+                        "type": "string",
+                        "description": "ID of the override"
+                      },
+                      "component_id": {
+                        "type": "string",
+                        "description": "ID of the component being overridden"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "description": "Reason for the override"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "validation_status": {
+      "type": "object",
+      "required": ["is_valid", "validation_timestamp", "validation_method"],
+      "properties": {
+        "is_valid": {
+          "type": "boolean",
+          "description": "Whether the trust data is valid"
+        },
+        "validation_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when validation was performed"
+        },
+        "validation_method": {
+          "type": "string",
+          "description": "Method used for validation",
+          "enum": ["hash_chain", "merkle_tree", "cryptographic_witness"]
+        },
+        "validation_errors": {
+          "type": "array",
+          "description": "Validation errors, if any",
+          "items": {
+            "type": "object",
+            "required": ["error_code", "error_message"],
+            "properties": {
+              "error_code": {
+                "type": "string",
+                "description": "Error code"
+              },
+              "error_message": {
+                "type": "string",
+                "description": "Error message"
+              }
+            }
+          }
+        }
+      }
+    },
+    "codex_clauses": {
+      "type": "array",
+      "description": "Codex clauses governing this trust view",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d+(\\.\\d+)*$"
+      },
+      "const": ["5.3", "11.0", "12.0", "6.2"]
+    }
+  }
+}

@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from seal_distribution_service import SealDistributionService, pre_loop_tether_check
+from src.core.verification.seal_distribution_service import SealDistributionService, pre_loop_tether_check
 
 
 class TestSealDistributionService(unittest.TestCase):

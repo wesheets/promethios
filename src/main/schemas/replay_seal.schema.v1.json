@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Replay Seal Schema",
+  "description": "Schema for cryptographic seals that guarantee reproducibility of execution",
+  "type": "object",
+  "required": ["execution_id", "input_hash", "output_hash", "log_hash", "timestamp", "contract_version"],
+  "properties": {
+    "execution_id": {
+      "type": "string",
+      "description": "Unique identifier for this execution",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    },
+    "input_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of all inputs",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "output_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of all outputs",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "log_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the complete execution log",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the seal was created"
+    },
+    "contract_version": {
+      "type": "string",
+      "description": "Codex contract version used for this execution",
+      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+    },
+    "phase_id": {
+      "type": "string",
+      "description": "Phase ID for this execution",
+      "pattern": "^\\d+(\\.\\d+)*$"
+    },
+    "trigger_metadata": {
+      "type": "object",
+      "description": "Metadata about the trigger that initiated this execution",
+      "required": ["trigger_id", "trigger_type"],
+      "properties": {
+        "trigger_id": {
+          "type": "string",
+          "description": "ID of the trigger that initiated this execution"
+        },
+        "trigger_type": {
+          "type": "string",
+          "description": "Type of trigger that initiated this execution",
+          "enum": ["cli", "webhook", "saas_flow", "replay"]
+        }
+      }
+    },
+    "seal_version": {
+      "type": "string",
+      "description": "Version of the sealing protocol used",
+      "default": "1.0"
+    }
+  }
+}

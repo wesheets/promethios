@@ -17,8 +17,8 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 # Import schema validator and improved test data generator
-from schema_validator import SchemaValidator
-from test_data_generator import generate_test_data
+from src.core.common.schema_validator import SchemaValidator
+from src.utils.test_data_generator import generate_test_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
