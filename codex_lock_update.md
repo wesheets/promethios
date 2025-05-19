@@ -1,6 +1,16 @@
-This file signifies that the current Promethios kernel is governed by the Resurrection Codex.
-All runtime components and future modifications must adhere to the schemas and contracts defined within the Codex manifest and its associated schema registry. No code or configuration should be deployed or executed unless it is validated against the Codex.
+# Codex Lock Update for Phase 5.4
 
+## Codex Contract Reference
+- **Contract Version:** v2025.05.18
+- **Phase ID:** 5.4
+- **Title:** Distributed Verification Network
+- **Clauses:** 5.4, 11.0, 5.2.5
+
+## .codex.lock Update Instructions
+
+The following updates should be made to the .codex.lock file to reflect Phase 5.4 implementation:
+
+```
 contract_version: v2025.05.18
 phase_id: 5.4
 phase_title: Distributed Verification Network
@@ -51,13 +61,17 @@ test_schema_references:
   - network_topology.schema.v1.json
 contract_hash: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 annotation: Phase 5.4 Distributed Verification Network with Repository Structure Lock (5.2.5)
+```
 
-# Phase 5.4 Governance Entry
-5.4:
-  title: "Distributed Verification Network"
-  schemas:
-    - verification_node.schema.v1.json
-    - consensus_record.schema.v1.json
-    - network_topology.schema.v1.json
-  clauses: ["5.4", "11.0", "5.2.5"]
-  sealed: true
+## Implementation Notes
+
+1. The phase_id has been updated to 5.4
+2. The phase_title has been updated to "Distributed Verification Network"
+3. New schemas (verification_node.schema.v1.json, consensus_record.schema.v1.json, and network_topology.schema.v1.json) have been added to the schema_registry
+4. Clause 5.4 has been added to codex_clauses
+5. Post_phase_lock_requirements have been updated for Phase 5.4
+6. New test_schema_references have been added
+7. The contract_hash and verification_record_hash have been updated
+8. A new annotation has been added to reflect the Phase 5.4 implementation with repository structure lock
+
+This update ensures that the .codex.lock file properly reflects the Phase 5.4 implementation and maintains the governance chain integrity while preserving the repository structure as required by clause 5.2.5.

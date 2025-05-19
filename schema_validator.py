@@ -1,163 +1,102 @@
 """
-Schema validation utilities for Phase 5.3 components.
+Schema validation utilities for Promethios.
 
-This module implements Phase 5.3 of the Promethios roadmap.
+This module provides utilities for validating data against JSON schemas.
 Codex Contract: v2025.05.18
-Phase ID: 5.3
-Clauses: 5.3, 11.0, 5.2.5
+Phase ID: 5.4
+Clauses: 5.4, 11.0, 5.2.5
 """
 
 import json
 import os
 import jsonschema
-from typing import Dict, Any, Optional, Tuple, List
 
-
-def pre_loop_tether_check(contract_version: str, phase_id: str) -> bool:
+def validate_against_schema(data, schema_path):
     """
-    Perform pre-loop tether check to verify contract compliance.
+    Validate data against a JSON schema.
     
     Args:
-        contract_version: Version of the Codex contract
-        phase_id: Phase ID of the implementation
+        data (dict): The data to validate.
+        schema_path (str): Path to the schema file.
         
     Returns:
-        Boolean indicating whether the tether check passed
+        tuple: (is_valid, error_message) where is_valid is a boolean indicating
+            whether the data is valid, and error_message is a string containing
+            the error message if validation fails, or None if validation succeeds.
     """
-    if contract_version != "v2025.05.18":
-        return False
-    if phase_id != "5.3":
-        return False
-    return True
+    try:
+        # Load schema
+        with open(schema_path, 'r') as f:
+            schema = json.load(f)
+        
+        # Validate data
+        jsonschema.validate(instance=data, schema=schema)
+        
+        # If validation succeeds, return True and None
+        return True, None
+    
+    except FileNotFoundError as e:
+        return False, str(e)
+    
+    except json.JSONDecodeError as e:
+        return False, f"Invalid JSON schema: {str(e)}"
+    
+    except jsonschema.exceptions.ValidationError as e:
+        return False, str(e)
+    
+    except Exception as e:
+        return False, f"Validation error: {str(e)}"
 
 
-class SchemaValidator:
+def pre_loop_tether_check(contract_version, phase_id):
     """
-    Validates data structures against JSON schemas.
-    
-    This component implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
-    Phase ID: 5.3
-    Clauses: 5.3, 11.0, 5.2.5
-    """
-    
-    def __init__(self, schema_dir: str = "schemas"):
-        """
-        Initialize the schema validator.
-        
-        Args:
-            schema_dir: Directory containing schema files
-        """
-        # Perform pre-loop tether check
-        if not pre_loop_tether_check("v2025.05.18", "5.3"):
-            raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
-            
-        self.schema_dir = schema_dir
-        self.schema_cache: Dict[str, Dict[str, Any]] = {}
-    
-    def load_schema(self, schema_file: str) -> Dict[str, Any]:
-        """
-        Load a JSON schema from file.
-        
-        Args:
-            schema_file: Name of the schema file
-            
-        Returns:
-            Loaded schema
-        """
-        if schema_file in self.schema_cache:
-            return self.schema_cache[schema_file]
-        
-        schema_path = os.path.join(self.schema_dir, schema_file)
-        try:
-            with open(schema_path, 'r') as f:
-                schema = json.load(f)
-            self.schema_cache[schema_file] = schema
-            return schema
-        except Exception as e:
-            raise ValueError(f"Failed to load schema {schema_file}: {str(e)}")
-    
-    def validate(self, data: Dict[str, Any], schema_file: str) -> Tuple[bool, Optional[str]]:
-        """
-        Validate data against a JSON schema.
-        
-        Args:
-            data: Data to validate
-            schema_file: Name of the schema file
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        try:
-            schema = self.load_schema(schema_file)
-            jsonschema.validate(data, schema)
-            return True, None
-        except jsonschema.exceptions.ValidationError as e:
-            return False, str(e)
-        except Exception as e:
-            return False, f"Validation error: {str(e)}"
-    
-    def validate_merkle_seal(self, seal: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-        """
-        Validate a Merkle seal against its schema.
-        
-        Args:
-            seal: Merkle seal to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        return self.validate(seal, "merkle_seal.schema.v1.json")
-    
-    def validate_conflict_metadata(self, metadata: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-        """
-        Validate conflict metadata against its schema.
-        
-        Args:
-            metadata: Conflict metadata to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        return self.validate(metadata, "conflict_metadata.schema.v1.json")
-    
-    def validate_all_schemas(self, data_objects: Dict[str, Dict[str, Any]]) -> Dict[str, Tuple[bool, Optional[str]]]:
-        """
-        Validate multiple data objects against their respective schemas.
-        
-        Args:
-            data_objects: Dictionary mapping object names to data objects and their schema files
-                          Format: {"object_name": {"data": {...}, "schema": "schema_file.json"}}
-            
-        Returns:
-            Dictionary mapping object names to validation results
-        """
-        results = {}
-        for name, obj_info in data_objects.items():
-            data = obj_info.get("data", {})
-            schema = obj_info.get("schema", "")
-            if not schema:
-                results[name] = (False, "No schema specified")
-                continue
-            
-            results[name] = self.validate(data, schema)
-        
-        return results
-
-
-# Create a global instance for convenience
-validator = SchemaValidator()
-
-
-def validate_against_schema(data: Dict[str, Any], schema_file: str) -> Tuple[bool, Optional[str]]:
-    """
-    Validate data against a JSON schema using the global validator.
+    Perform pre-loop tether check to ensure compliance with Codex Contract.
     
     Args:
-        data: Data to validate
-        schema_file: Name of the schema file
+        contract_version (str): The contract version to check against.
+        phase_id (str): The phase ID to check against.
         
     Returns:
-        Tuple of (is_valid, error_message)
+        bool: True if tether check passes, False otherwise.
     """
-    return validator.validate(data, schema_file)
+    return contract_version == "v2025.05.18" and phase_id == "5.4"
+
+
+def validate_schema_file(schema_path):
+    """
+    Validate that a schema file exists and contains valid JSON Schema.
+    
+    Args:
+        schema_path (str): Path to the schema file.
+        
+    Returns:
+        tuple: (is_valid, error_message) where is_valid is a boolean indicating
+            whether the schema is valid, and error_message is a string containing
+            the error message if validation fails, or None if validation succeeds.
+    """
+    try:
+        # Check if file exists
+        if not os.path.exists(schema_path):
+            return False, f"Schema file not found: {schema_path}"
+        
+        # Load schema
+        with open(schema_path, 'r') as f:
+            schema = json.load(f)
+        
+        # Validate schema
+        jsonschema.Draft7Validator.check_schema(schema)
+        
+        # If validation succeeds, return True and None
+        return True, None
+    
+    except FileNotFoundError as e:
+        return False, str(e)
+    
+    except json.JSONDecodeError as e:
+        return False, f"Invalid JSON schema: {str(e)}"
+    
+    except jsonschema.exceptions.SchemaError as e:
+        return False, str(e)
+    
+    except Exception as e:
+        return False, f"Schema validation error: {str(e)}"
