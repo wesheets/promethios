@@ -1,0 +1,48 @@
+{
+  "registry_version": "v2025.05.18",
+  "last_updated": "2025-05-19",
+  "modules": {
+    "governance": {
+      "trust_boundary_manager": {
+        "path": "src/governance/trust_boundary_manager.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.6",
+        "schemas": ["trust_boundary.schema.v1.json"],
+        "depends_on": ["governance_mesh_integration.py"],
+        "purpose": "Define and enforce trust boundaries between Promethios instances"
+      },
+      "trust_surface_protocol": {
+        "path": "src/governance/trust_surface_protocol.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.6",
+        "schemas": ["trust_surface_protocol.schema.v1.json"],
+        "depends_on": ["trust_boundary_manager.py"],
+        "purpose": "Define communication protocol for trust surface interactions"
+      },
+      "attestation_service": {
+        "path": "src/governance/attestation_service.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.6",
+        "schemas": ["trust_attestation.schema.v1.json"],
+        "depends_on": ["trust_boundary_manager.py"],
+        "purpose": "Generate and validate trust attestations"
+      },
+      "trust_propagation_engine": {
+        "path": "src/governance/trust_propagation_engine.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.6",
+        "schemas": ["trust_boundary.schema.v1.json", "trust_attestation.schema.v1.json"],
+        "depends_on": ["trust_boundary_manager.py", "attestation_service.py"],
+        "purpose": "Manage propagation of trust across distributed network"
+      },
+      "boundary_enforcement": {
+        "path": "src/governance/boundary_enforcement.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.6",
+        "schemas": ["trust_boundary.schema.v1.json"],
+        "depends_on": ["trust_boundary_manager.py"],
+        "purpose": "Enforce trust boundary policies and access control"
+      }
+    }
+  }
+}
