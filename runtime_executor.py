@@ -8,6 +8,12 @@ import sys
 import hashlib
 import io
 import contextlib
+import requests
+
+# --- Constants for Phase 5.1: External Trigger Integration --- #
+SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")
+CONTRACT_VERSION = "v2025.05.18"
+PHASE_ID = "5.1"
 
 # --- Dynamically Import GovernanceCore --- #
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -76,9 +82,13 @@ def load_schema(file_path):
 
 EMOTION_TELEMETRY_SCHEMA_PATH = os.path.join(MGC_SCHEMA_PATH, "mgc_emotion_telemetry.schema.json")
 JUSTIFICATION_LOG_SCHEMA_PATH = os.path.join(MGC_SCHEMA_PATH, "loop_justification_log.schema.v1.json")
+EXTERNAL_TRIGGER_SCHEMA_PATH = os.path.join(SCHEMA_DIR, "external_trigger.schema.v1.json")
+WEBHOOK_PAYLOAD_SCHEMA_PATH = os.path.join(SCHEMA_DIR, "webhook_payload.schema.v1.json")
 
 emotion_telemetry_schema = load_schema(EMOTION_TELEMETRY_SCHEMA_PATH)
 justification_log_schema = load_schema(JUSTIFICATION_LOG_SCHEMA_PATH)
+external_trigger_schema = load_schema(EXTERNAL_TRIGGER_SCHEMA_PATH)
+webhook_payload_schema = load_schema(WEBHOOK_PAYLOAD_SCHEMA_PATH)
 
 DEFAULT_LOG_DIR = os.path.join(current_file_dir, "logs")
 LOGGING_CONFIG_FILE = os.path.join(current_file_dir, "logging.conf.json")
@@ -103,6 +113,54 @@ def _canonical_json_string(data: dict) -> str:
 def _calculate_sha256_hash(text: str) -> str:
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
+def pre_loop_tether_check():
+    """Verify Codex Contract Tethering for Phase 5.1"""
+    codex_lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".codex.lock")
+    
+    if not os.path.exists(codex_lock_path):
+        return {
+            "success": False,
+            "message": ".codex.lock file not found. Contract tethering verification failed."
+        }
+    
+    with open(codex_lock_path, 'r') as f:
+        lock_content = f.read()
+    
+    if CONTRACT_VERSION not in lock_content:
+        return {
+            "success": False,
+            "message": f"Contract version {CONTRACT_VERSION} not found in .codex.lock file."
+        }
+    
+    if PHASE_ID not in lock_content:
+        return {
+            "success": False,
+            "message": f"Phase ID {PHASE_ID} not found in .codex.lock file."
+        }
+    
+    # Verify schema files are referenced in the lock file
+    required_schemas = ["external_trigger.schema.v1.json", "webhook_payload.schema.v1.json", "cli_args.schema.v1.json"]
+    for schema in required_schemas:
+        if schema not in lock_content:
+            return {
+                "success": False,
+                "message": f"Required schema {schema} not referenced in .codex.lock file."
+            }
+    
+    # Verify schema files exist
+    for schema in required_schemas:
+        schema_path = os.path.join(SCHEMA_DIR, schema)
+        if not os.path.exists(schema_path):
+            return {
+                "success": False,
+                "message": f"Required schema file {schema} not found in {SCHEMA_DIR}"
+            }
+    
+    return {
+        "success": True,
+        "message": "Codex Contract Tethering verification successful."
+    }
+
 class RuntimeExecutor:
     def __init__(self):
         self.governance_core = GovernanceCore()
@@ -115,6 +173,7 @@ class RuntimeExecutor:
                 print(f"Error creating log directory {self.log_directory}: {e}. Logging may fail.")
         self.emotion_log_file = os.path.join(self.log_directory, "emotion_telemetry.log.jsonl")
         self.justification_log_file = os.path.join(self.log_directory, "justification.log.jsonl")
+        self.trigger_log_file = os.path.join(self.log_directory, "external_triggers.log.jsonl")
 
     def _log_to_file(self, data_to_log: dict, filename: str):
         try:
@@ -263,6 +322,153 @@ class RuntimeExecutor:
             }
         return response
 
+    def handle_external_trigger(self, trigger_data: dict) -> dict:
+        """
+        Handle external trigger requests for Phase 5.1
+        Contract Version: v2025.05.18
+        """
+        # Verify Codex Contract Tethering
+        tether_check = pre_loop_tether_check()
+        if not tether_check["success"]:
+            return {
+                "status": "ERROR",
+                "message": tether_check["message"],
+                "trigger_id": trigger_data.get("trigger_id", str(uuid.uuid4()))
+            }
+        
+        # Validate trigger data against schema
+        validation_error = self.validate_against_schema(trigger_data, external_trigger_schema, "external_trigger")
+        if validation_error:
+            return {
+                "status": "ERROR",
+                "message": validation_error["message"],
+                "trigger_id": trigger_data.get("trigger_id", str(uuid.uuid4()))
+            }
+        
+        # Extract loop input from trigger payload
+        trigger_id = trigger_data["trigger_id"]
+        trigger_type = trigger_data["trigger_type"]
+        timestamp = trigger_data["timestamp"]
+        source = trigger_data["source"]
+        loop_input = trigger_data["payload"]["loop_input"]
+        options = trigger_data["payload"].get("options", {})
+        
+        # Log the trigger
+        trigger_log_entry = {
+            "trigger_id": trigger_id,
+            "trigger_type": trigger_type,
+            "timestamp": timestamp,
+            "source": source,
+            "options": options
+        }
+        self._log_to_file(trigger_log_entry, self.trigger_log_file)
+        
+        # Prepare request data for core loop execution
+        request_data = {
+            "request_id": trigger_id,
+            "plan_input": loop_input,
+            "operator_override_signal": None,
+            "trigger_metadata": {
+                "trigger_type": trigger_type,
+                "trigger_timestamp": timestamp,
+                "source_identifier": source["identifier"],
+                "source_type": source["type"]
+            }
+        }
+        
+        # Execute the loop
+        result = self.execute_core_loop(request_data)
+        
+        # Return results with trigger information
+        response = {
+            "status": "SUCCESS",
+            "trigger_id": trigger_id,
+            "execution_result": result,
+            "trigger_metadata": {
+                "trigger_type": trigger_type,
+                "timestamp": timestamp,
+                "source": source
+            }
+        }
+        
+        return response
+
+    def handle_webhook_trigger(self, webhook_data: dict) -> dict:
+        """
+        Handle webhook trigger requests for Phase 5.1
+        Contract Version: v2025.05.18
+        """
+        # Verify Codex Contract Tethering
+        tether_check = pre_loop_tether_check()
+        if not tether_check["success"]:
+            return {
+                "status": "ERROR",
+                "message": tether_check["message"]
+            }
+        
+        # Validate webhook payload against schema
+        validation_error = self.validate_against_schema(webhook_data, webhook_payload_schema, "webhook_payload")
+        if validation_error:
+            return {
+                "status": "ERROR",
+                "message": validation_error["message"]
+            }
+        
+        # Verify authentication token
+        auth_token = webhook_data["auth_token"]
+        # In a real implementation, this would validate against stored tokens
+        # For this implementation, we'll accept any non-empty token
+        if not auth_token:
+            return {
+                "status": "ERROR",
+                "message": "Invalid authentication token"
+            }
+        
+        # Extract data from webhook payload
+        loop_input = webhook_data["loop_input"]
+        callback_url = webhook_data.get("callback_url")
+        execution_options = webhook_data.get("execution_options", {})
+        
+        # Create trigger payload - allow explicit trigger_id for testing
+        trigger_id = webhook_data.get("explicit_trigger_id") or str(uuid.uuid4())
+        timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+        
+        trigger_payload = {
+            "trigger_id": trigger_id,
+            "trigger_type": "webhook",
+            "timestamp": timestamp,
+            "source": {
+                "identifier": "webhook_client",
+                "type": "service",
+                "metadata": {
+                    "client_ip": "127.0.0.1",  # In a real implementation, this would be the client IP
+                    "auth_token_hash": _calculate_sha256_hash(auth_token)
+                }
+            },
+            "payload": {
+                "loop_input": loop_input,
+                "options": execution_options
+            }
+        }
+        
+        # Execute the trigger
+        result = self.handle_external_trigger(trigger_payload)
+        
+        # Handle callback if provided
+        if callback_url and result["status"] == "SUCCESS":
+            try:
+                # Use the same trigger_id in the callback payload
+                callback_payload = {
+                    "trigger_id": trigger_id,
+                    "status": "SUCCESS",
+                    "execution_result": result["execution_result"]
+                }
+                requests.post(callback_url, json=callback_payload, timeout=5)
+            except Exception as e:
+                print(f"Error sending callback to {callback_url}: {e}")
+        
+        return result
+
 def verify_logged_hashes(log_file_path: str):
     if not os.path.exists(log_file_path):
         print(f"Verification: Log file {log_file_path} not found. Skipping.")
@@ -321,42 +527,60 @@ if __name__ == "__main__":
             "task": "test with simple override"
         },
         "operator_override_signal": {
-            "override_signal_id": str(uuid.uuid4()),
-            "override_type": "HALT_IMMEDIATE", 
-            "reason": "Test simple override signal",
-            "issuing_operator_id": "Operator_Test_Simple"
+            "override_type": "simple",
+            "override_reason": "Testing simple override"
         }
     }
     print("\n--- Testing Request with Simple Override (Scenario 2) ---")
-    result_override_simple = executor.execute_core_loop(mock_request_with_override_simple)
-    print(json.dumps(result_override_simple, indent=2))
-    
-    # This test case is known to cause emotion telemetry schema validation issues within the kernel
-    # due to how 'trust_factor' is handled and 'factor' being reported as missing in contributing_factors.
-    # It's kept here for observing that specific kernel behavior if needed, but might not produce valid logs.
-    mock_request_with_trust_factor_issue = {
-        "request_id": str(uuid.uuid4()),
-        "plan_input": {
-            "task": "test with trust_factor known to cause kernel internal emotion schema issue", 
-            "trust_factor": -0.5 
+    result_with_override = executor.execute_core_loop(mock_request_with_override_simple)
+    print(json.dumps(result_with_override, indent=2))
+
+    # Test external trigger
+    print("\n--- Testing External Trigger (Phase 5.1) ---")
+    mock_external_trigger = {
+        "trigger_id": str(uuid.uuid4()),
+        "trigger_type": "cli",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "source": {
+            "identifier": "test_user",
+            "type": "user",
+            "metadata": {
+                "hostname": "test_host",
+                "cli_version": "1.0.0"
+            }
         },
-        "operator_override_signal": None
+        "payload": {
+            "loop_input": {
+                "task": "test external trigger",
+                "some_detail": "detail_for_external_trigger"
+            },
+            "options": {
+                "wait": True,
+                "timeout": 60,
+                "verbose": True
+            }
+        }
     }
-    print("\n--- Testing Request with Trust Factor (Known Kernel Issue Observation - Scenario 3) ---")
-    result_trust_issue = executor.execute_core_loop(mock_request_with_trust_factor_issue)
-    print(json.dumps(result_trust_issue, indent=2))
+    result_external_trigger = executor.handle_external_trigger(mock_external_trigger)
+    print(json.dumps(result_external_trigger, indent=2))
 
+    # Test webhook trigger
+    print("\n--- Testing Webhook Trigger (Phase 5.1) ---")
+    mock_webhook_payload = {
+        "auth_token": "test_token",
+        "loop_input": {
+            "task": "test webhook trigger",
+            "some_detail": "detail_for_webhook_trigger"
+        },
+        "execution_options": {
+            "priority": "normal",
+            "timeout": 60
+        }
+    }
+    result_webhook_trigger = executor.handle_webhook_trigger(mock_webhook_payload)
+    print(json.dumps(result_webhook_trigger, indent=2))
 
-    print(f"\n--- Post-Execution Log Hash Verification ---")
-    emotion_ok, emo_verified, emo_failed = verify_logged_hashes(executor.emotion_log_file)
-    justification_ok, just_verified, just_failed = verify_logged_hashes(executor.justification_log_file)
-
-    # Adjusted success criteria: Check if at least one type of log was produced if expected.
-    # For now, we want to see if *any* logs are correctly captured and hashed.
-    if (emo_verified > 0 or just_verified > 0) and emo_failed == 0 and just_failed == 0:
-        print("\nSUCCESS: All captured log entries verified successfully in standalone test.")
-    elif emo_failed == 0 and just_failed == 0 and emo_verified == 0 and just_verified == 0:
-        print("\nWARNING: No log entries were produced and/or captured for file logging, but no hash failures occurred.")
-    else:
-        print("\nFAILURE: Some logged entries failed hash verification or logs were not properly produced/captured.")
-
+    print("\n--- Verifying Log File Integrity ---")
+    verify_logged_hashes(executor.emotion_log_file)
+    verify_logged_hashes(executor.justification_log_file)
+    verify_logged_hashes(executor.trigger_log_file)

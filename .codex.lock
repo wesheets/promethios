@@ -1,3 +1,4 @@
+phase-5.2-ui-freeze
 This file signifies that the current Promethios kernel is governed by the Resurrection Codex.
 All runtime components and future modifications must adhere to the schemas and contracts defined within the Codex manifest and its associated schema registry. No code or configuration should be deployed or executed unless it is validated against the Codex.
 

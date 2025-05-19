@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promethios - Trigger History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>Promethios</h1>
+            <span class="version">v2025.05.18 - Phase 5.1</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('logs') }}">Logs</a></li>
+                <li><a href="{{ url_for('trigger_history') }}" class="active">Trigger History</a></li>
+                <li><a href="{{ url_for('settings') }}">Settings</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="content-header">
+            <h2>External Trigger History</h2>
+            <div class="filters">
+                <select id="trigger-type-filter">
+                    <option value="all">All Trigger Types</option>
+                    <option value="cli">CLI</option>
+                    <option value="webhook">Webhook</option>
+                    <option value="saas_flow">SaaS Flow</option>
+                </select>
+                <input type="date" id="date-filter" placeholder="Filter by date">
+                <button id="refresh-btn">Refresh</button>
+            </div>
+        </section>
+
+        <section class="trigger-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trigger ID</th>
+                        <th>Type</th>
+                        <th>Timestamp</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trigger in triggers %}
+                    <tr data-trigger-type="{{ trigger.trigger_type }}">
+                        <td>{{ trigger.trigger_id }}</td>
+                        <td>{{ trigger.trigger_type }}</td>
+                        <td>{{ trigger.timestamp }}</td>
+                        <td>{{ trigger.source.identifier }} ({{ trigger.source.type }})</td>
+                        <td class="status-{{ trigger.status|lower }}">{{ trigger.status }}</td>
+                        <td>
+                            <button class="view-details-btn" data-trigger-id="{{ trigger.trigger_id }}">View Details</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="no-data">No trigger history available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <div id="trigger-details-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Trigger Details</h3>
+                <div id="trigger-details-content">
+                    <!-- Details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Promethios - Governed by the Resurrection Codex</p>
+        <p>Contract Version: v2025.05.18 | Phase ID: 5.1</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter functionality
+            const triggerTypeFilter = document.getElementById('trigger-type-filter');
+            const dateFilter = document.getElementById('date-filter');
+            const refreshBtn = document.getElementById('refresh-btn');
+            const triggerRows = document.querySelectorAll('tbody tr[data-trigger-type]');
+            
+            function applyFilters() {
+                const selectedType = triggerTypeFilter.value;
+                const selectedDate = dateFilter.value;
+                
+                triggerRows.forEach(row => {
+                    const rowType = row.getAttribute('data-trigger-type');
+                    const rowDate = row.querySelector('td:nth-child(3)').textContent.split('T')[0];
+                    
+                    let showRow = true;
+                    
+                    if (selectedType !== 'all' && rowType !== selectedType) {
+                        showRow = false;
+                    }
+                    
+                    if (selectedDate && rowDate !== selectedDate) {
+                        showRow = false;
+                    }
+                    
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+            
+            triggerTypeFilter.addEventListener('change', applyFilters);
+            dateFilter.addEventListener('change', applyFilters);
+            refreshBtn.addEventListener('click', function() {
+                window.location.reload();
+            });
+            
+            // Modal functionality
+            const modal = document.getElementById('trigger-details-modal');
+            const detailsContent = document.getElementById('trigger-details-content');
+            const closeBtn = document.querySelector('.close');
+            const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
+            
+            viewDetailsBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const triggerId = this.getAttribute('data-trigger-id');
+                    
+                    // In a real implementation, this would fetch details from the server
+                    // For this implementation, we'll just show a placeholder
+                    detailsContent.innerHTML = `
+                        <div class="details-section">
+                            <h4>Trigger Information</h4>
+                            <p><strong>ID:</strong> ${triggerId}</p>
+                            <p><strong>Type:</strong> ${this.closest('tr').querySelector('td:nth-child(2)').textContent}</p>
+                            <p><strong>Timestamp:</strong> ${this.closest('tr').querySelector('td:nth-child(3)').textContent}</p>
+                            <p><strong>Source:</strong> ${this.closest('tr').querySelector('td:nth-child(4)').textContent}</p>
+                            <p><strong>Status:</strong> ${this.closest('tr').querySelector('td:nth-child(5)').textContent}</p>
+                        </div>
+                        <div class="details-section">
+                            <h4>Execution Result</h4>
+                            <pre>{ "request_id": "${triggerId}", "execution_status": "SUCCESS", ... }</pre>
+                        </div>
+                    `;
+                    
+                    modal.style.display = 'block';
+                });
+            });
+            
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
