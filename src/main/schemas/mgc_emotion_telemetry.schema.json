@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MGC Emotion Telemetry Schema",
+  "description": "Schema for Minimal Governance Core (MGC) internal emotion state model.",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of when the emotion state was recorded."
+    },
+    "current_emotion_state": {
+      "type": "string",
+      "enum": ["NEUTRAL", "FOCUSED", "AGITATED", "UNCERTAIN", "CONFIDENT", "RESOLVED"],
+      "description": "The dominant emotional state of the MGC."
+    },
+    "state_intensity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Intensity of the current emotion state (0.0 to 1.0)."
+    },
+    "triggering_event_id": {
+      "type": "string",
+      "description": "Identifier of the event or loop that primarily influenced this state."
+    },
+    "contributing_factors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "factor_type": {
+            "type": "string",
+            "description": "Type of factor (e.g., uncertainty_level, risk_assessment, override_conflict)."
+          },
+          "factor_value": {
+            "type": "string",
+            "description": "Value or summary of the contributing factor."
+          }
+        },
+        "required": ["factor_type", "factor_value"]
+      },
+      "description": "List of factors contributing to the current emotion state."
+    }
+  },
+  "required": ["timestamp", "current_emotion_state", "state_intensity"]
+}

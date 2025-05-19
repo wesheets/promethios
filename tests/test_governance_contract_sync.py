@@ -21,8 +21,8 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from governance_contract_sync import GovernanceContractSync
-from schema_validator import SchemaValidator
+from schemas.governance.governance_contract_sync import GovernanceContractSync
+from src.core.common.schema_validator import SchemaValidator
 
 class TestGovernanceContractSync(unittest.TestCase):
     """Test cases for the GovernanceContractSync class."""

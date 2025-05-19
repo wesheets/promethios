@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from network_topology_manager import NetworkTopologyManager, pre_loop_tether_check
+from src.core.verification.network_topology_manager import NetworkTopologyManager, pre_loop_tether_check
 
 
 class TestNetworkTopologyManager(unittest.TestCase):

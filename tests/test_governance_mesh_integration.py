@@ -21,8 +21,8 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from governance_mesh_integration import GovernanceMeshIntegration
-from schema_validator import SchemaValidator
+from src.core.governance.governance_mesh_integration import GovernanceMeshIntegration
+from src.core.common.schema_validator import SchemaValidator
 
 class TestGovernanceMeshIntegration(unittest.TestCase):
     """Test cases for the GovernanceMeshIntegration class."""

@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from trust_aggregation_service import TrustAggregationService, pre_loop_tether_check
+from src.core.verification.trust_aggregation_service import TrustAggregationService, pre_loop_tether_check
 
 
 class TestTrustAggregationService(unittest.TestCase):

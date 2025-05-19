@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from verification_node_manager import VerificationNodeManager, NodeDiscoveryService, HealthMonitor, pre_loop_tether_check
+from src.core.verification.verification_node_manager import VerificationNodeManager, NodeDiscoveryService, HealthMonitor, pre_loop_tether_check
 
 
 class TestVerificationNodeManager(unittest.TestCase):

@@ -16,7 +16,7 @@ import os
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from merkle_tree import MerkleTree, pre_loop_tether_check
+from src.core.merkle.merkle_tree import MerkleTree, pre_loop_tether_check
 
 
 class TestMerkleTree(unittest.TestCase):

@@ -11,8 +11,8 @@ class TestTrustLogWriter(unittest.TestCase):
     def setUp(self):
         # Import the necessary classes
         # These imports are placed here to allow for module implementation before test execution
-        from seal_verification import ReplayVerifier
-        from trust_log_writer import TrustLogWriter
+        from src.core.verification.seal_verification import ReplayVerifier
+        from src.core.trust.trust_log_writer import TrustLogWriter
         
         self.verifier = ReplayVerifier()
         self.writer = TrustLogWriter()

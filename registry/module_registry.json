@@ -1,0 +1,600 @@
+{
+  "registry_version": "1.0.0",
+  "last_updated": "2025-05-19T05:36:00Z",
+  "modules": {
+    "core": {
+      "merkle": {
+        "merkle_tree.py": {
+          "purpose": "Implements the Merkle tree data structure for cryptographic verification",
+          "phase": "5.3",
+          "dependencies": [],
+          "canonical_path": "src/core/merkle/merkle_tree.py"
+        },
+        "merkle_sealing.py": {
+          "purpose": "Provides sealing mechanism for outputs using Merkle trees",
+          "phase": "5.3",
+          "dependencies": ["merkle_tree.py", "schema_validator.py"],
+          "canonical_path": "src/core/merkle/merkle_sealing.py"
+        },
+        "conflict_detection.py": {
+          "purpose": "Detects and records conflicts in execution outputs",
+          "phase": "5.3",
+          "dependencies": ["merkle_tree.py", "schema_validator.py"],
+          "canonical_path": "src/core/merkle/conflict_detection.py"
+        },
+        "output_capture.py": {
+          "purpose": "Captures execution outputs for sealing",
+          "phase": "5.3",
+          "dependencies": ["schema_validator.py"],
+          "canonical_path": "src/core/merkle/output_capture.py"
+        }
+      },
+      "verification": {
+        "network_topology_manager.py": {
+          "purpose": "Manages network topology for distributed verification",
+          "phase": "5.4",
+          "dependencies": ["schema_validator.py"],
+          "canonical_path": "src/core/verification/network_topology_manager.py"
+        },
+        "verification_node_manager.py": {
+          "purpose": "Manages verification nodes in the network",
+          "phase": "5.4",
+          "dependencies": ["network_topology_manager.py", "schema_validator.py"],
+          "canonical_path": "src/core/verification/verification_node_manager.py"
+        },
+        "consensus_service.py": {
+          "purpose": "Implements consensus mechanisms for verification results",
+          "phase": "5.4",
+          "dependencies": ["verification_node_manager.py", "schema_validator.py"],
+          "canonical_path": "src/core/verification/consensus_service.py"
+        },
+        "seal_distribution_service.py": {
+          "purpose": "Distributes seals to verification nodes",
+          "phase": "5.4",
+          "dependencies": ["verification_node_manager.py", "merkle_sealing.py"],
+          "canonical_path": "src/core/verification/seal_distribution_service.py"
+        },
+        "trust_aggregation_service.py": {
+          "purpose": "Calculates trust scores based on verification results",
+          "phase": "5.4",
+          "dependencies": ["consensus_service.py", "verification_node_manager.py"],
+          "canonical_path": "src/core/verification/trust_aggregation_service.py"
+        },
+        "seal_verification.py": {
+          "purpose": "Verifies seal integrity and authenticity",
+          "phase": "5.4",
+          "dependencies": ["merkle_sealing.py", "schema_validator.py"],
+          "canonical_path": "src/core/verification/seal_verification.py"
+        }
+      },
+      "governance": {
+        "governance_contract_sync.py": {
+          "purpose": "Synchronizes governance contracts across nodes",
+          "phase": "5.5",
+          "dependencies": ["schema_validator.py", "network_topology_manager.py"],
+          "canonical_path": "src/core/governance/governance_contract_sync.py"
+        },
+        "governance_mesh_integration.py": {
+          "purpose": "Integrates governance mesh with verification network",
+          "phase": "5.5",
+          "dependencies": ["governance_contract_sync.py", "mesh_topology_manager.py"],
+          "canonical_path": "src/core/governance/governance_mesh_integration.py"
+        },
+        "governance_proposal_protocol.py": {
+          "purpose": "Implements protocol for governance proposals",
+          "phase": "5.5",
+          "dependencies": ["governance_contract_sync.py", "schema_validator.py"],
+          "canonical_path": "src/core/governance/governance_proposal_protocol.py"
+        },
+        "mesh_topology_manager.py": {
+          "purpose": "Manages mesh topology for governance network",
+          "phase": "5.5",
+          "dependencies": ["network_topology_manager.py", "schema_validator.py"],
+          "canonical_path": "src/core/governance/mesh_topology_manager.py"
+        },
+        "governance_core.py": {
+          "purpose": "Provides core governance functionality",
+          "phase": "5.5",
+          "dependencies": ["governance_contract_sync.py", "governance_proposal_protocol.py"],
+          "canonical_path": "src/core/governance/governance_core.py"
+        }
+      },
+      "trust": {
+        "trust_log_writer.py": {
+          "purpose": "Writes trust logs for execution outputs",
+          "phase": "5.3",
+          "dependencies": ["schema_validator.py"],
+          "canonical_path": "src/core/trust/trust_log_writer.py"
+        }
+      },
+      "common": {
+        "schema_validator.py": {
+          "purpose": "Validates data against JSON schemas",
+          "phase": "5.3",
+          "dependencies": [],
+          "canonical_path": "src/core/common/schema_validator.py"
+        }
+      }
+    },
+    "integration": {
+      "runtime_executor_integration.py": {
+        "purpose": "Integrates runtime executor with sealing mechanism",
+        "phase": "5.3",
+        "dependencies": ["merkle_sealing.py", "runtime_executor.py", "output_capture.py"],
+        "canonical_path": "src/integration/runtime_executor_integration.py"
+      },
+      "trust_log_integration.py": {
+        "purpose": "Integrates trust logs with UI components",
+        "phase": "5.3",
+        "dependencies": ["trust_log_writer.py", "schema_validator.py"],
+        "canonical_path": "src/integration/trust_log_integration.py"
+      },
+      "distributed_verification_integration.py": {
+        "purpose": "Integrates distributed verification with core components",
+        "phase": "5.4",
+        "dependencies": [
+          "verification_node_manager.py",
+          "consensus_service.py",
+          "seal_distribution_service.py",
+          "trust_aggregation_service.py"
+        ],
+        "canonical_path": "src/integration/distributed_verification_integration.py"
+      }
+    },
+    "utils": {
+      "validate_schema.py": {
+        "purpose": "Validates schemas for correctness",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "src/utils/validate_schema.py"
+      },
+      "validate_schema_compliance.py": {
+        "purpose": "Validates data compliance with schemas",
+        "phase": "5.3",
+        "dependencies": ["validate_schema.py"],
+        "canonical_path": "src/utils/validate_schema_compliance.py"
+      },
+      "verify_log_hashes.py": {
+        "purpose": "Verifies integrity of log hashes",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "src/utils/verify_log_hashes.py"
+      },
+      "view_logs.py": {
+        "purpose": "Provides utilities for viewing logs",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "src/utils/view_logs.py"
+      },
+      "package_logs.py": {
+        "purpose": "Packages logs for distribution",
+        "phase": "5.3",
+        "dependencies": ["verify_log_hashes.py"],
+        "canonical_path": "src/utils/package_logs.py"
+      },
+      "test_data_generator.py": {
+        "purpose": "Generates test data for various components",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "src/utils/test_data_generator.py"
+      },
+      "repository_hygiene_validator.py": {
+        "purpose": "Validates repository structure compliance",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "src/utils/repository_hygiene_validator.py"
+      },
+      "analyze_component_usage.py": {
+        "purpose": "Analyzes component usage patterns",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "src/utils/analyze_component_usage.py"
+      }
+    },
+    "api": {
+      "saas_connector.py": {
+        "purpose": "Connects to SaaS APIs",
+        "phase": "5.2",
+        "dependencies": ["schema_validator.py"],
+        "canonical_path": "src/api/saas_connector.py"
+      }
+    },
+    "cli": {
+      "cli_trigger.py": {
+        "purpose": "Provides CLI interface for triggering operations",
+        "phase": "5.2",
+        "dependencies": ["schema_validator.py"],
+        "canonical_path": "src/cli/cli_trigger.py"
+      }
+    },
+    "main": {
+      "main.py": {
+        "purpose": "Main application entry point",
+        "phase": "5.2",
+        "dependencies": [
+          "runtime_executor.py",
+          "trust_log_writer.py",
+          "schema_validator.py"
+        ],
+        "canonical_path": "src/main.py"
+      },
+      "runtime_executor.py": {
+        "purpose": "Executes runtime operations",
+        "phase": "5.2",
+        "dependencies": ["schema_validator.py"],
+        "canonical_path": "src/main/runtime_executor.py"
+      }
+    },
+    "replay": {
+      "replay_sealing.py": {
+        "purpose": "Implements sealing for replay operations",
+        "phase": "5.2",
+        "dependencies": ["schema_validator.py"],
+        "canonical_path": "src/replay/replay_sealing.py"
+      },
+      "deterministic_execution.py": {
+        "purpose": "Provides deterministic execution for replays",
+        "phase": "5.2",
+        "dependencies": ["replay_sealing.py", "schema_validator.py"],
+        "canonical_path": "src/replay/deterministic_execution.py"
+      }
+    }
+  },
+  "schemas": {
+    "core": {
+      "merkle_seal.schema.v1.json": {
+        "purpose": "Defines structure for Merkle seals",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/core/merkle_seal.schema.v1.json"
+      },
+      "conflict_metadata.schema.v1.json": {
+        "purpose": "Defines structure for conflict metadata",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/core/conflict_metadata.schema.v1.json"
+      },
+      "execution_log.schema.v1.json": {
+        "purpose": "Defines structure for execution logs",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/execution_log.schema.v1.json"
+      },
+      "loop_justification_log.schema.v1.json": {
+        "purpose": "Defines structure for loop justification logs",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/loop_justification_log.schema.v1.json"
+      },
+      "external_trigger.schema.v1.json": {
+        "purpose": "Defines structure for external triggers",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/external_trigger.schema.v1.json"
+      },
+      "cli_args.schema.v1.json": {
+        "purpose": "Defines structure for CLI arguments",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/cli_args.schema.v1.json"
+      },
+      "webhook_payload.schema.v1.json": {
+        "purpose": "Defines structure for webhook payloads",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/webhook_payload.schema.v1.json"
+      },
+      "operator_override.schema.v1.json": {
+        "purpose": "Defines structure for operator overrides",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/core/operator_override.schema.v1.json"
+      }
+    },
+    "verification": {
+      "verification_node.schema.v1.json": {
+        "purpose": "Defines structure for verification nodes",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "schemas/verification/verification_node.schema.v1.json"
+      },
+      "consensus_record.schema.v1.json": {
+        "purpose": "Defines structure for consensus records",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "schemas/verification/consensus_record.schema.v1.json"
+      },
+      "network_topology.schema.v1.json": {
+        "purpose": "Defines structure for network topology",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "schemas/verification/network_topology.schema.v1.json"
+      }
+    },
+    "governance": {
+      "governance_contract_sync.schema.v1.json": {
+        "purpose": "Defines structure for governance contract synchronization",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "schemas/governance/governance_contract_sync.schema.v1.json"
+      },
+      "governance_proposal.schema.v1.json": {
+        "purpose": "Defines structure for governance proposals",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "schemas/governance/governance_proposal.schema.v1.json"
+      },
+      "governance_mesh_topology.schema.v1.json": {
+        "purpose": "Defines structure for governance mesh topology",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "schemas/governance/governance_mesh_topology.schema.v1.json"
+      }
+    },
+    "replay": {
+      "deterministic_replay.schema.v1.json": {
+        "purpose": "Defines structure for deterministic replay",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/replay/deterministic_replay.schema.v1.json"
+      },
+      "replay_seal.schema.v1.json": {
+        "purpose": "Defines structure for replay seals",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/replay/replay_seal.schema.v1.json"
+      }
+    },
+    "ui": {
+      "trust_view.schema.v1.json": {
+        "purpose": "Defines structure for trust view UI",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/ui/trust_view.schema.v1.json"
+      },
+      "replay_verification.schema.v1.json": {
+        "purpose": "Defines structure for replay verification UI",
+        "phase": "5.2",
+        "dependencies": [],
+        "canonical_path": "schemas/ui/replay_verification.schema.v1.json"
+      },
+      "trust_log_replay_binding.schema.v1.json": {
+        "purpose": "Defines structure for trust log replay binding",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/ui/trust_log_replay_binding.schema.v1.json"
+      },
+      "ui_schema_registry.json": {
+        "purpose": "Registry of UI schemas and their relationships",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/ui/ui_schema_registry.json"
+      },
+      "codex_ui_contract_map.json": {
+        "purpose": "Maps UI components to Codex contract clauses",
+        "phase": "5.3",
+        "dependencies": [],
+        "canonical_path": "schemas/ui/codex_ui_contract_map.json"
+      }
+    }
+  },
+  "tests": {
+    "unit": {
+      "core": {
+        "test_merkle_tree.py": {
+          "purpose": "Tests for Merkle tree implementation",
+          "phase": "5.3",
+          "dependencies": ["merkle_tree.py"],
+          "canonical_path": "tests/unit/core/test_merkle_tree.py"
+        },
+        "test_merkle_sealing.py": {
+          "purpose": "Tests for Merkle sealing mechanism",
+          "phase": "5.3",
+          "dependencies": ["merkle_sealing.py"],
+          "canonical_path": "tests/unit/core/test_merkle_sealing.py"
+        },
+        "test_conflict_detection.py": {
+          "purpose": "Tests for conflict detection",
+          "phase": "5.3",
+          "dependencies": ["conflict_detection.py"],
+          "canonical_path": "tests/unit/core/test_conflict_detection.py"
+        },
+        "test_output_capture.py": {
+          "purpose": "Tests for output capture",
+          "phase": "5.3",
+          "dependencies": ["output_capture.py"],
+          "canonical_path": "tests/unit/core/test_output_capture.py"
+        },
+        "test_network_topology_manager.py": {
+          "purpose": "Tests for network topology manager",
+          "phase": "5.4",
+          "dependencies": ["network_topology_manager.py"],
+          "canonical_path": "tests/unit/core/test_network_topology_manager.py"
+        },
+        "test_verification_node_manager.py": {
+          "purpose": "Tests for verification node manager",
+          "phase": "5.4",
+          "dependencies": ["verification_node_manager.py"],
+          "canonical_path": "tests/unit/core/test_verification_node_manager.py"
+        },
+        "test_consensus_service.py": {
+          "purpose": "Tests for consensus service",
+          "phase": "5.4",
+          "dependencies": ["consensus_service.py"],
+          "canonical_path": "tests/unit/core/test_consensus_service.py"
+        },
+        "test_seal_distribution_service.py": {
+          "purpose": "Tests for seal distribution service",
+          "phase": "5.4",
+          "dependencies": ["seal_distribution_service.py"],
+          "canonical_path": "tests/unit/core/test_seal_distribution_service.py"
+        },
+        "test_trust_aggregation_service.py": {
+          "purpose": "Tests for trust aggregation service",
+          "phase": "5.4",
+          "dependencies": ["trust_aggregation_service.py"],
+          "canonical_path": "tests/unit/core/test_trust_aggregation_service.py"
+        },
+        "test_governance_contract_sync.py": {
+          "purpose": "Tests for governance contract sync",
+          "phase": "5.5",
+          "dependencies": ["governance_contract_sync.py"],
+          "canonical_path": "tests/unit/core/test_governance_contract_sync.py"
+        },
+        "test_governance_mesh_integration.py": {
+          "purpose": "Tests for governance mesh integration",
+          "phase": "5.5",
+          "dependencies": ["governance_mesh_integration.py"],
+          "canonical_path": "tests/unit/core/test_governance_mesh_integration.py"
+        },
+        "test_governance_proposal_protocol.py": {
+          "purpose": "Tests for governance proposal protocol",
+          "phase": "5.5",
+          "dependencies": ["governance_proposal_protocol.py"],
+          "canonical_path": "tests/unit/core/test_governance_proposal_protocol.py"
+        },
+        "test_mesh_topology_manager.py": {
+          "purpose": "Tests for mesh topology manager",
+          "phase": "5.5",
+          "dependencies": ["mesh_topology_manager.py"],
+          "canonical_path": "tests/unit/core/test_mesh_topology_manager.py"
+        },
+        "test_trust_log_writer.py": {
+          "purpose": "Tests for trust log writer",
+          "phase": "5.3",
+          "dependencies": ["trust_log_writer.py"],
+          "canonical_path": "tests/unit/core/test_trust_log_writer.py"
+        },
+        "test_schema_validator.py": {
+          "purpose": "Tests for schema validator",
+          "phase": "5.3",
+          "dependencies": ["schema_validator.py"],
+          "canonical_path": "tests/unit/core/test_schema_validator.py"
+        }
+      },
+      "integration": {
+        "test_trust_log_integration.py": {
+          "purpose": "Tests for trust log integration",
+          "phase": "5.3",
+          "dependencies": ["trust_log_integration.py"],
+          "canonical_path": "tests/unit/integration/test_trust_log_integration.py"
+        },
+        "test_distributed_verification_integration.py": {
+          "purpose": "Tests for distributed verification integration",
+          "phase": "5.4",
+          "dependencies": ["distributed_verification_integration.py"],
+          "canonical_path": "tests/unit/integration/test_distributed_verification_integration.py"
+        }
+      },
+      "utils": {
+        "test_repository_hygiene_validator.py": {
+          "purpose": "Tests for repository hygiene validator",
+          "phase": "5.2",
+          "dependencies": ["repository_hygiene_validator.py"],
+          "canonical_path": "tests/unit/utils/test_repository_hygiene_validator.py"
+        }
+      }
+    },
+    "integration": {
+      "test_phase_5_3.py": {
+        "purpose": "Integration tests for Phase 5.3",
+        "phase": "5.3",
+        "dependencies": [
+          "merkle_tree.py",
+          "merkle_sealing.py",
+          "conflict_detection.py",
+          "output_capture.py",
+          "trust_log_integration.py"
+        ],
+        "canonical_path": "tests/integration/test_phase_5_3.py"
+      }
+    },
+    "end_to_end": {
+      "test_phase_5_2.py": {
+        "purpose": "End-to-end tests for Phase 5.2",
+        "phase": "5.2",
+        "dependencies": [
+          "replay_sealing.py",
+          "deterministic_execution.py"
+        ],
+        "canonical_path": "tests/end_to_end/test_phase_5_2.py"
+      },
+      "test_api.py": {
+        "purpose": "End-to-end tests for API",
+        "phase": "5.2",
+        "dependencies": ["saas_connector.py"],
+        "canonical_path": "tests/end_to_end/test_api.py"
+      },
+      "test_deterministic_replay.py": {
+        "purpose": "End-to-end tests for deterministic replay",
+        "phase": "5.2",
+        "dependencies": ["deterministic_execution.py", "replay_sealing.py"],
+        "canonical_path": "tests/end_to_end/test_deterministic_replay.py"
+      },
+      "test_external_trigger.py": {
+        "purpose": "End-to-end tests for external triggers",
+        "phase": "5.2",
+        "dependencies": ["cli_trigger.py"],
+        "canonical_path": "tests/end_to_end/test_external_trigger.py"
+      },
+      "test_seal_verification.py": {
+        "purpose": "End-to-end tests for seal verification",
+        "phase": "5.4",
+        "dependencies": ["seal_verification.py"],
+        "canonical_path": "tests/end_to_end/test_seal_verification.py"
+      }
+    }
+  },
+  "ui": {
+    "justification_surface": {
+      "purpose": "UI for reviewing cognitive logs",
+      "phase": "5.2",
+      "dependencies": [],
+      "canonical_path": "ui/justification_surface"
+    },
+    "trust_log": {
+      "purpose": "UI component for trust log visualization",
+      "phase": "5.3",
+      "dependencies": [],
+      "canonical_path": "ui/trust_log"
+    }
+  },
+  "docs": {
+    "architecture": {
+      "phase_5_4_architecture.md": {
+        "purpose": "Architecture document for Phase 5.4",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "docs/architecture/phase_5_4_architecture.md"
+      },
+      "phase_5_5_architecture.md": {
+        "purpose": "Architecture document for Phase 5.5",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "docs/architecture/phase_5_5_architecture.md"
+      }
+    },
+    "implementation": {
+      "phase_5_4_implementation_guidance.md": {
+        "purpose": "Implementation guidance for Phase 5.4",
+        "phase": "5.4",
+        "dependencies": [],
+        "canonical_path": "docs/implementation/phase_5_4_implementation_guidance.md"
+      }
+    },
+    "governance": {
+      "pr_governance_process.md": {
+        "purpose": "Documentation for PR governance process",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "docs/governance/pr_governance_process.md"
+      },
+      "governance_deviation_record.md": {
+        "purpose": "Record of governance deviations",
+        "phase": "5.5",
+        "dependencies": [],
+        "canonical_path": "docs/governance/governance_deviation_record.md"
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
-from distributed_verification_integration import DistributedVerificationIntegration, pre_loop_tether_check
+from src.integration.distributed_verification_integration import DistributedVerificationIntegration, pre_loop_tether_check
 
 
 class TestDistributedVerificationIntegration(unittest.TestCase):
@@ -507,7 +507,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.integration = MagicMock()
         
         # Import create_api_endpoints function
-        from distributed_verification_integration import create_api_endpoints
+        from src.integration.distributed_verification_integration import create_api_endpoints
         self.create_api_endpoints = create_api_endpoints
     
     def test_create_api_endpoints(self):
