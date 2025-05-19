@@ -1,7 +1,7 @@
 {
   "contract_version": "v2025.05.18",
   "registry_version": "v1.0",
-  "last_updated": "2025-05-18T23:54:00Z",
+  "last_updated": "2025-05-19T02:46:24Z",
   "schemas": [
     {
       "id": "UI-12.20",
@@ -9,8 +9,9 @@
       "schema_file": "trust_log.schema.v1.json",
       "schema_version": "v1",
       "build_ready": true,
-      "contract_clauses": ["5.3", "11.0"],
-      "depends_on": ["5.3", "11.0"]
+      "pending_data": false,
+      "contract_clauses": ["5.3", "5.4", "11.0"],
+      "depends_on": ["5.3", "5.4", "11.0"]
     },
     {
       "id": "UI-12.21",
@@ -18,8 +19,9 @@
       "schema_file": "contract_registry.schema.v1.json",
       "schema_version": "v1",
       "build_ready": true,
-      "contract_clauses": ["6.06", "11.3"],
-      "depends_on": ["6.06", "11.3"]
+      "pending_data": false,
+      "contract_clauses": ["5.4", "6.06", "11.3"],
+      "depends_on": ["5.4", "6.06", "11.3"]
     },
     {
       "id": "UI-12.24",
@@ -27,8 +29,9 @@
       "schema_file": "log_chain.schema.v1.json",
       "schema_version": "v1",
       "build_ready": true,
-      "contract_clauses": ["5.3", "11.0"],
-      "depends_on": ["5.3", "11.0"]
+      "pending_data": false,
+      "contract_clauses": ["5.3", "5.4", "11.0"],
+      "depends_on": ["5.3", "5.4", "11.0"]
     },
     {
       "id": "UI-12.22",
@@ -71,14 +74,14 @@
       "depends_on": ["12.1", "11.3"]
     },
     {
-      "id": "UI-12.21",
-      "name": "Explainable AI Visualization",
-      "schema_file": "explainable_ai.schema.v1.json",
+      "id": "UI-12.33",
+      "name": "Schema/Contract Drift Alert",
+      "schema_file": "schema_drift.schema.v1.json",
       "schema_version": "v1",
-      "build_ready": false,
-      "reason": "Requires Phase 12.2 (Kernel-Level Explainable AI Integration) to be triggered and contract-frozen",
-      "contract_clauses": ["12.2", "6.06"],
-      "depends_on": ["12.2", "6.06"]
+      "build_ready": true,
+      "pending_data": false,
+      "contract_clauses": ["5.4", "11.0", "5.2.5"],
+      "depends_on": ["5.4", "11.0"]
     },
     {
       "id": "UI-12.31",
