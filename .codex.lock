@@ -1,4 +1,3 @@
-phase-5.2-ui-freeze
 This file signifies that the current Promethios kernel is governed by the Resurrection Codex.
 All runtime components and future modifications must adhere to the schemas and contracts defined within the Codex manifest and its associated schema registry. No code or configuration should be deployed or executed unless it is validated against the Codex.
 
@@ -23,9 +22,17 @@ codex_clauses:
   - 5.2: Replay Reproducibility Seal
   - 5.3: Merkle Sealing of Output + Conflict Metadata
   - 11.0: Immutable Log Chain + Sequential Hashing
+  - 11.1: Hash Chain Integrity Verification
   - 11.9: Cryptographic Verification Protocol
   - 12.20: Trust Log UI Viewer
 post_phase_lock_requirements:
   - seal_verification.py must be replaced with Phase 11.9-backed ZKP or Merkle quorum
   - Replay logs must be routed to trust_log.schema.v1.json and exposed to UI-12.20 Trust Log Viewer
+verification_record_hash: 7a9e8d2c1b5f6a0e3d4c7b2a1e5d8f9c0b3a6e9d2c5b8a7f4e1d0c3b6a9e2d5f
+trust_log_routing_activation: UI-12.20-ACTIVE
+test_schema_references:
+  - replay_verification.schema.v1.json
+  - trust_log_replay_binding.schema.v1.json
+  - trust_view.schema.v1.json
 contract_hash: 8f7d3e2c1b5a9f6e0d4c7b3a2e1d5f9c8b7a6e5d4c3b2a1
+annotation: Phase 5.2 Post-Freeze Sealing Path Complete
