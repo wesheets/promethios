@@ -32,8 +32,8 @@ def validate_against_schema(data: Dict[str, Any], schema_file: str) -> tuple[boo
         import jsonschema
         import os
         
-        # Load schema
-        schema_path = os.path.join("schemas", schema_file)
+        # Load schema from canonical location
+        schema_path = os.path.join("/home/ubuntu/promethios/schemas/merkle", schema_file)
         with open(schema_path, 'r') as f:
             schema = json.load(f)
         
@@ -103,10 +103,50 @@ class MerkleSealGenerator:
         # Prepare conflict metadata if not provided
         if not conflict_metadata:
             conflict_metadata = {
+                "conflict_id": str(uuid.uuid4()),
                 "conflict_type": "none",
                 "agent_ids": [str(uuid.uuid4())],  # Generate a placeholder agent ID
-                "timestamp_hash": hashlib.sha256(timestamp.encode()).hexdigest()
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp_hash": hashlib.sha256(timestamp.encode()).hexdigest(),
+                "contract_version": "v2025.05.18",
+                "phase_id": "5.3",
+                "severity": "low",
+                "resolution_status": "unresolved",
+                "conflict_details": {
+                    "description": "No conflict detected",
+                    "affected_components": [],
+                    "evidence": []
+                },
+                "resolution_path": [],
+                "arbitration_metadata": {
+                    "arbitration_status": "not_required"
+                },
+                "codex_clauses": ["5.3", "11.0"]
             }
+        else:
+            # Ensure conflict metadata has all required fields
+            if "conflict_id" not in conflict_metadata:
+                conflict_metadata["conflict_id"] = str(uuid.uuid4())
+            if "timestamp" not in conflict_metadata:
+                conflict_metadata["timestamp"] = datetime.utcnow().isoformat() + "Z"
+            if "contract_version" not in conflict_metadata:
+                conflict_metadata["contract_version"] = "v2025.05.18"
+            if "phase_id" not in conflict_metadata:
+                conflict_metadata["phase_id"] = "5.3"
+            if "conflict_details" not in conflict_metadata:
+                conflict_metadata["conflict_details"] = {
+                    "description": f"{conflict_metadata.get('conflict_type', 'unknown')} conflict detected",
+                    "affected_components": [],
+                    "evidence": []
+                }
+            if "resolution_path" not in conflict_metadata:
+                conflict_metadata["resolution_path"] = []
+            if "arbitration_metadata" not in conflict_metadata:
+                conflict_metadata["arbitration_metadata"] = {
+                    "arbitration_status": "not_required"
+                }
+            if "codex_clauses" not in conflict_metadata:
+                conflict_metadata["codex_clauses"] = ["5.3", "11.0"]
         
         # Create the seal object
         seal = {

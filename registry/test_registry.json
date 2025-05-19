@@ -1,0 +1,190 @@
+{
+  "registry_version": "1.0.0",
+  "last_updated": "2025-05-19T13:00:00Z",
+  "test_registry": {
+    "phase_2_3": {
+      "unit": {
+        "test_core_kernel.py": {
+          "purpose": "Tests for core kernel components",
+          "phase": "2.3",
+          "dependencies": [],
+          "canonical_path": "tests/phase_2_3/unit/test_core_kernel.py",
+          "markers": ["phase_2_3"]
+        }
+      }
+    },
+    "phase_5_1": {
+      "unit": {
+        "test_utils.py": {
+          "purpose": "Tests for utility functions",
+          "phase": "5.1",
+          "dependencies": [],
+          "canonical_path": "tests/phase_5_1/unit/test_utils.py",
+          "markers": ["phase_5_1"]
+        },
+        "test_repository_hygiene_validator.py": {
+          "purpose": "Tests for repository hygiene validator",
+          "phase": "5.1",
+          "dependencies": ["repository_hygiene_validator.py"],
+          "canonical_path": "tests/phase_5_1/unit/test_repository_hygiene_validator.py",
+          "markers": ["phase_5_1"]
+        }
+      }
+    },
+    "phase_5_2": {
+      "integration": {
+        "test_phase_5_2.py": {
+          "purpose": "Integration tests for Phase 5.2 components",
+          "phase": "5.2",
+          "dependencies": ["replay_sealing.py", "deterministic_execution.py"],
+          "canonical_path": "tests/phase_5_2/integration/test_phase_5_2.py",
+          "markers": ["phase_5_2"]
+        },
+        "test_deterministic_replay.py": {
+          "purpose": "Tests for deterministic replay functionality",
+          "phase": "5.2",
+          "dependencies": ["deterministic_execution.py", "replay_sealing.py"],
+          "canonical_path": "tests/phase_5_2/integration/test_deterministic_replay.py",
+          "markers": ["phase_5_2"]
+        },
+        "test_seal_verification.py": {
+          "purpose": "Tests for seal verification",
+          "phase": "5.2",
+          "dependencies": ["replay_sealing.py", "seal_verification.py"],
+          "canonical_path": "tests/phase_5_2/integration/test_seal_verification.py",
+          "markers": ["phase_5_2"]
+        }
+      }
+    },
+    "phase_5_3": {
+      "unit": {
+        "test_merkle_tree.py": {
+          "purpose": "Tests for Merkle tree implementation",
+          "phase": "5.3",
+          "dependencies": ["merkle_tree.py"],
+          "canonical_path": "tests/phase_5_3/unit/test_merkle_tree.py",
+          "markers": ["phase_5_3"]
+        },
+        "test_merkle_sealing.py": {
+          "purpose": "Tests for Merkle sealing mechanism",
+          "phase": "5.3",
+          "dependencies": ["merkle_sealing.py"],
+          "canonical_path": "tests/phase_5_3/unit/test_merkle_sealing.py",
+          "markers": ["phase_5_3"]
+        },
+        "test_conflict_detection.py": {
+          "purpose": "Tests for conflict detection",
+          "phase": "5.3",
+          "dependencies": ["conflict_detection.py"],
+          "canonical_path": "tests/phase_5_3/unit/test_conflict_detection.py",
+          "markers": ["phase_5_3"]
+        },
+        "test_output_capture.py": {
+          "purpose": "Tests for output capture",
+          "phase": "5.3",
+          "dependencies": ["output_capture.py"],
+          "canonical_path": "tests/phase_5_3/unit/test_output_capture.py",
+          "markers": ["phase_5_3"]
+        }
+      }
+    },
+    "phase_5_4": {
+      "unit": {
+        "test_network_topology_manager.py": {
+          "purpose": "Tests for network topology manager",
+          "phase": "5.4",
+          "dependencies": ["network_topology_manager.py"],
+          "canonical_path": "tests/phase_5_4/unit/test_network_topology_manager.py",
+          "markers": ["phase_5_4"]
+        },
+        "test_consensus_service.py": {
+          "purpose": "Tests for consensus service",
+          "phase": "5.4",
+          "dependencies": ["consensus_service.py"],
+          "canonical_path": "tests/phase_5_4/unit/test_consensus_service.py",
+          "markers": ["phase_5_4"]
+        },
+        "test_seal_distribution_service.py": {
+          "purpose": "Tests for seal distribution service",
+          "phase": "5.4",
+          "dependencies": ["seal_distribution_service.py"],
+          "canonical_path": "tests/phase_5_4/unit/test_seal_distribution_service.py",
+          "markers": ["phase_5_4"]
+        },
+        "test_trust_aggregation_service.py": {
+          "purpose": "Tests for trust aggregation service",
+          "phase": "5.4",
+          "dependencies": ["trust_aggregation_service.py"],
+          "canonical_path": "tests/phase_5_4/unit/test_trust_aggregation_service.py",
+          "markers": ["phase_5_4"]
+        }
+      }
+    },
+    "phase_5_5": {
+      "unit": {
+        "test_governance_contract_sync.py": {
+          "purpose": "Tests for governance contract synchronization",
+          "phase": "5.5",
+          "dependencies": ["governance_contract_sync.py"],
+          "canonical_path": "tests/phase_5_5/unit/test_governance_contract_sync.py",
+          "markers": ["phase_5_5"]
+        },
+        "test_governance_mesh_integration.py": {
+          "purpose": "Tests for governance mesh integration",
+          "phase": "5.5",
+          "dependencies": ["governance_mesh_integration.py"],
+          "canonical_path": "tests/phase_5_5/unit/test_governance_mesh_integration.py",
+          "markers": ["phase_5_5"]
+        },
+        "test_governance_proposal_protocol.py": {
+          "purpose": "Tests for governance proposal protocol",
+          "phase": "5.5",
+          "dependencies": ["governance_proposal_protocol.py"],
+          "canonical_path": "tests/phase_5_5/unit/test_governance_proposal_protocol.py",
+          "markers": ["phase_5_5"]
+        }
+      }
+    },
+    "common": {
+      "conftest.py": {
+        "purpose": "Common test configuration and fixtures",
+        "phase": "5.1",
+        "dependencies": [],
+        "canonical_path": "tests/conftest.py",
+        "markers": []
+      }
+    },
+    "end_to_end": {
+      "test_api.py": {
+        "purpose": "End-to-end tests for API functionality",
+        "phase": "5.2",
+        "dependencies": ["main.py"],
+        "canonical_path": "tests/end_to_end/test_api.py",
+        "markers": ["end_to_end"]
+      }
+    }
+  },
+  "validation": {
+    "phase_order": [
+      "phase_2_3",
+      "phase_5_1",
+      "phase_5_2",
+      "phase_5_3",
+      "phase_5_4",
+      "phase_5_5"
+    ],
+    "validation_script": {
+      "purpose": "Runs tests for each phase in sequential order",
+      "canonical_path": "scripts/validate_phases.py",
+      "dependencies": []
+    },
+    "governance_compliance": {
+      "codex_clauses": [
+        "5.2.6",
+        "5.2.5",
+        "11.0"
+      ],
+      "contract_version": "v2025.05.18"
+    }
+  }
+}

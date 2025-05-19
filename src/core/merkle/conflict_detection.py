@@ -31,8 +31,8 @@ def validate_against_schema(data: Dict[str, Any], schema_file: str) -> tuple[boo
         import jsonschema
         import os
         
-        # Load schema
-        schema_path = os.path.join("schemas", schema_file)
+        # Load schema from canonical location
+        schema_path = os.path.join("/home/ubuntu/promethios/schemas/merkle", schema_file)
         with open(schema_path, 'r') as f:
             schema = json.load(f)
         
