@@ -1,119 +1,105 @@
 """
-Trust Aggregation Service for Promethios.
+Trust Aggregation Service for aggregating verification results from multiple nodes.
 
-This module provides the TrustAggregationService component for Phase 5.4.
+This module implements Phase 5.4 of the Promethios roadmap.
 Codex Contract: v2025.05.18
 Phase ID: 5.4
 Clauses: 5.4, 11.0, 5.2.5
 """
 
-import os
 import json
 import uuid
+import hashlib
 from datetime import datetime
-import logging
-import statistics
+from typing import Dict, List, Any, Optional, Tuple, Set
 
-def validate_against_schema(data, schema_path):
-    """
-    Validate data against a JSON schema.
-    
-    Args:
-        data: The data to validate
-        schema_path: Path to the schema file
-        
-    Returns:
-        tuple: (is_valid, error_message)
-    """
-    try:
-        # In a real implementation, this would use jsonschema to validate
-        # For now, we'll just check if the schema file exists
-        if not os.path.exists(schema_path):
-            return (False, f"Schema file not found: {schema_path}")
-        
-        # For testing purposes, we'll assume the data is valid
-        return (True, None)
-    except Exception as e:
-        return (False, str(e))
+# Import from verification_node_manager.py
+from src.core.verification.verification_node_manager import pre_loop_tether_check, validate_against_schema
 
-def pre_loop_tether_check():
-    """
-    Check if the tether file exists before executing the core loop.
-    
-    Returns:
-        bool: True if tether check passes, False otherwise
-    """
-    # For testing purposes, always return True
-    return True
 
 class TrustAggregationService:
     """
-    Service for aggregating trust scores for seals.
+    Aggregates verification results from multiple nodes in the distributed verification network.
     
-    This service is responsible for:
-    - Aggregating verification results from consensus records
-    - Calculating trust scores for seals
-    - Tracking trust history
-    - Providing trust summaries
+    This component implements Phase 5.4 of the Promethios roadmap.
+    Codex Contract: v2025.05.18
+    Phase ID: 5.4
+    Clauses: 5.4, 11.0, 5.2.5
     """
     
     def __init__(self):
-        """Initialize the TrustAggregationService."""
-        self.trust_records = {}
-        self.seal_trust_scores = {}
-        self.historical_records = {}
-        self.logger = logging.getLogger(__name__)
+        """Initialize the trust aggregation service."""
+        # Perform pre-loop tether check
+        if not pre_loop_tether_check("v2025.05.18", "5.4"):
+            raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
+            
+        self.trust_records: Dict[str, Dict[str, Any]] = {}
+        self.seal_trust_scores: Dict[str, float] = {}
+        self.historical_records: Dict[str, List[Dict[str, Any]]] = {}
     
-    def aggregate_verification_results(self, seal_id, consensus_record, node_trust_scores):
+    def aggregate_verification_results(
+        self, 
+        seal_id: str, 
+        consensus_record: Dict[str, Any],
+        node_trust_scores: Dict[str, float]
+    ) -> Dict[str, Any]:
         """
         Aggregate verification results from a consensus record.
         
         Args:
-            seal_id: ID of the seal
-            consensus_record: Consensus record with verification results
-            node_trust_scores: Dictionary of node trust scores
+            seal_id: ID of the Merkle seal
+            consensus_record: Consensus record containing verification results
+            node_trust_scores: Trust scores for verification nodes
             
         Returns:
-            dict: Trust record
-            
-        Raises:
-            ValueError: If consensus record is invalid or has no participating nodes
+            Trust aggregation record
         """
         # Validate consensus record
-        schema_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__), 
-            "../../../schemas/verification/trust/trust_record.schema.v1.json"
-        ))
-        is_valid, error = validate_against_schema(consensus_record, schema_path)
+        is_valid, error = validate_against_schema(
+            consensus_record, 
+            "consensus_record.schema.v1.json"
+        )
         if not is_valid:
             raise ValueError(f"Invalid consensus record: {error}")
         
-        # Check if consensus record has participating nodes
-        if not consensus_record["participating_nodes"]:
+        # Create trust record ID
+        trust_record_id = str(uuid.uuid4())
+        timestamp = datetime.utcnow().isoformat() + "Z"
+        
+        # Calculate weighted verification results
+        participating_nodes = consensus_record.get("participating_nodes", [])
+        if not participating_nodes:
             raise ValueError("Consensus record has no participating nodes")
         
-        # Create trust record
-        trust_record_id = str(uuid.uuid4())
-        
-        # Calculate weighted results
         weighted_results = []
-        for node_result in consensus_record["participating_nodes"]:
-            node_id = node_result["node_id"]
+        total_weight = 0.0
+        positive_weighted_sum = 0.0
+        
+        for node_result in participating_nodes:
+            node_id = node_result.get("node_id")
+            if not node_id:
+                continue
+            
+            # Get node trust score
             node_trust = node_trust_scores.get(node_id, 0.5)  # Default to 0.5 if not provided
             
-            weighted_result = {
+            # Calculate weighted result
+            result_value = 1.0 if node_result.get("verification_result") else 0.0
+            weighted_result = result_value * node_trust
+            
+            weighted_results.append({
                 "node_id": node_id,
-                "verification_result": node_result["verification_result"],
-                "node_trust": node_trust,
-                "weighted_value": 1.0 if node_result["verification_result"] else 0.0,
-                "weight": node_trust
-            }
-            weighted_results.append(weighted_result)
+                "verification_result": node_result.get("verification_result"),
+                "node_trust_score": node_trust,
+                "weighted_result": weighted_result
+            })
+            
+            total_weight += node_trust
+            positive_weighted_sum += weighted_result
         
-        # Calculate overall trust score
-        total_weight = sum(result["weight"] for result in weighted_results)
+        # Calculate aggregate trust score
         if total_weight > 0:
-            trust_score = sum(result["weighted_value"] * result["weight"] for result in weighted_results) / total_weight
+            trust_score = positive_weighted_sum / total_weight
         else:
             trust_score = 0.0
         
@@ -121,11 +107,13 @@ class TrustAggregationService:
         trust_record = {
             "trust_record_id": trust_record_id,
             "seal_id": seal_id,
-            "consensus_id": consensus_record["consensus_id"],
+            "consensus_id": consensus_record.get("consensus_id"),
+            "timestamp": timestamp,
             "trust_score": trust_score,
             "weighted_results": weighted_results,
-            "node_count": len(weighted_results),
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "total_weight": total_weight,
+            "positive_weighted_sum": positive_weighted_sum,
+            "node_count": len(participating_nodes),
             "contract_version": "v2025.05.18",
             "phase_id": "5.4",
             "codex_clauses": ["5.4", "11.0"]
@@ -144,7 +132,7 @@ class TrustAggregationService:
         
         return trust_record
     
-    def get_trust_record(self, trust_record_id):
+    def get_trust_record(self, trust_record_id: str) -> Dict[str, Any]:
         """
         Get a trust record by ID.
         
@@ -152,41 +140,38 @@ class TrustAggregationService:
             trust_record_id: ID of the trust record
             
         Returns:
-            dict: Trust record
-            
-        Raises:
-            ValueError: If trust record not found
+            Trust record
         """
         if trust_record_id not in self.trust_records:
-            raise ValueError(f"Trust record not found: {trust_record_id}")
+            raise ValueError(f"Trust record {trust_record_id} not found")
         
         return self.trust_records[trust_record_id]
     
-    def get_seal_trust_score(self, seal_id):
+    def get_seal_trust_score(self, seal_id: str) -> float:
         """
-        Get the trust score for a seal.
+        Get the trust score for a Merkle seal.
         
         Args:
-            seal_id: ID of the seal
+            seal_id: ID of the Merkle seal
             
         Returns:
-            float: Trust score (0.0 to 1.0)
+            Trust score between 0.0 and 1.0
         """
         return self.seal_trust_scores.get(seal_id, 0.0)
     
-    def get_seal_trust_history(self, seal_id):
+    def get_seal_trust_history(self, seal_id: str) -> List[Dict[str, Any]]:
         """
-        Get the trust history for a seal.
+        Get the trust history for a Merkle seal.
         
         Args:
-            seal_id: ID of the seal
+            seal_id: ID of the Merkle seal
             
         Returns:
-            list: Trust records for the seal
+            List of trust records
         """
         return self.historical_records.get(seal_id, [])
     
-    def calculate_confidence_metrics(self, trust_record_id):
+    def calculate_confidence_metrics(self, trust_record_id: str) -> Dict[str, Any]:
         """
         Calculate confidence metrics for a trust record.
         
@@ -194,18 +179,15 @@ class TrustAggregationService:
             trust_record_id: ID of the trust record
             
         Returns:
-            dict: Confidence metrics
-            
-        Raises:
-            ValueError: If trust record not found
+            Confidence metrics
         """
         if trust_record_id not in self.trust_records:
-            raise ValueError(f"Trust record not found: {trust_record_id}")
+            raise ValueError(f"Trust record {trust_record_id} not found")
         
         trust_record = self.trust_records[trust_record_id]
+        weighted_results = trust_record.get("weighted_results", [])
         
-        # Calculate confidence metrics
-        if not trust_record["weighted_results"]:
+        if not weighted_results:
             return {
                 "confidence": 0.0,
                 "variance": 0.0,
@@ -213,18 +195,22 @@ class TrustAggregationService:
             }
         
         # Calculate variance
-        values = [result["weighted_value"] for result in trust_record["weighted_results"]]
-        if len(values) > 1:
-            variance = statistics.variance(values)
-        else:
-            variance = 0.0
+        mean = trust_record.get("trust_score", 0.0)
+        squared_diffs = []
+        
+        for result in weighted_results:
+            result_value = 1.0 if result.get("verification_result") else 0.0
+            squared_diff = (result_value - mean) ** 2
+            squared_diffs.append(squared_diff)
+        
+        variance = sum(squared_diffs) / len(weighted_results)
         
         # Calculate agreement ratio
-        positive_results = sum(1 for result in trust_record["weighted_results"] if result["verification_result"])
-        agreement_ratio = max(positive_results, len(values) - positive_results) / len(values)
+        positive_count = sum(1 for result in weighted_results if result.get("verification_result"))
+        agreement_ratio = max(positive_count, len(weighted_results) - positive_count) / len(weighted_results)
         
         # Calculate confidence
-        confidence = 1.0 - variance
+        confidence = agreement_ratio * (1.0 - variance)
         
         return {
             "confidence": confidence,
@@ -232,75 +218,75 @@ class TrustAggregationService:
             "agreement_ratio": agreement_ratio
         }
     
-    def get_trust_summary(self, seal_id):
+    def get_trust_summary(self, seal_id: str) -> Dict[str, Any]:
         """
-        Get a trust summary for a seal.
+        Get a summary of trust information for a Merkle seal.
         
         Args:
-            seal_id: ID of the seal
+            seal_id: ID of the Merkle seal
             
         Returns:
-            dict: Trust summary
+            Trust summary
         """
-        trust_history = self.get_seal_trust_history(seal_id)
+        trust_score = self.get_seal_trust_score(seal_id)
+        history = self.get_seal_trust_history(seal_id)
         
-        if not trust_history:
+        if not history:
             return {
                 "seal_id": seal_id,
-                "trust_score": 0.0,
+                "trust_score": trust_score,
                 "verification_count": 0,
                 "last_verified": None,
                 "confidence_metrics": None
             }
         
-        # Sort by timestamp (newest first)
-        trust_history.sort(key=lambda r: r["timestamp"], reverse=True)
-        latest_record = trust_history[0]
+        # Get latest trust record
+        latest_record = max(history, key=lambda record: record.get("timestamp", ""))
         
         # Calculate confidence metrics
-        confidence_metrics = self.calculate_confidence_metrics(latest_record["trust_record_id"])
+        confidence_metrics = self.calculate_confidence_metrics(latest_record.get("trust_record_id"))
         
         return {
             "seal_id": seal_id,
-            "trust_score": self.get_seal_trust_score(seal_id),
-            "verification_count": len(trust_history),
-            "last_verified": latest_record["timestamp"],
+            "trust_score": trust_score,
+            "verification_count": len(history),
+            "last_verified": latest_record.get("timestamp"),
             "confidence_metrics": confidence_metrics
         }
     
-    def get_all_seal_trust_scores(self):
+    def get_all_seal_trust_scores(self) -> Dict[str, float]:
         """
-        Get trust scores for all seals.
+        Get trust scores for all Merkle seals.
         
         Returns:
-            dict: Dictionary of seal IDs to trust scores
+            Dictionary mapping seal IDs to trust scores
         """
-        return self.seal_trust_scores
+        return self.seal_trust_scores.copy()
     
-    def get_high_trust_seals(self, threshold=0.8):
+    def get_high_trust_seals(self, threshold: float = 0.8) -> List[str]:
         """
-        Get seals with high trust scores.
+        Get IDs of Merkle seals with high trust scores.
         
         Args:
-            threshold: Trust score threshold (default: 0.8)
+            threshold: Trust score threshold
             
         Returns:
-            list: Seal IDs with trust scores above the threshold
+            List of seal IDs
         """
         return [
             seal_id for seal_id, score in self.seal_trust_scores.items()
             if score >= threshold
         ]
     
-    def get_low_trust_seals(self, threshold=0.2):
+    def get_low_trust_seals(self, threshold: float = 0.3) -> List[str]:
         """
-        Get seals with low trust scores.
+        Get IDs of Merkle seals with low trust scores.
         
         Args:
-            threshold: Trust score threshold (default: 0.2)
+            threshold: Trust score threshold
             
         Returns:
-            list: Seal IDs with trust scores below the threshold
+            List of seal IDs
         """
         return [
             seal_id for seal_id, score in self.seal_trust_scores.items()
