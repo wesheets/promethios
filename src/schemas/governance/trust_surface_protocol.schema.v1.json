@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Surface Protocol",
+  "description": "Schema for trust surface protocol messages",
+  "type": "object",
+  "required": [
+    "message_id",
+    "message_type",
+    "created_at",
+    "source_instance_id",
+    "target_instance_id",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "description": "Unique identifier for the message",
+      "pattern": "^tsp-[0-9a-f]{32}$"
+    },
+    "message_type": {
+      "type": "string",
+      "description": "Type of trust surface protocol message",
+      "enum": [
+        "boundary_proposal",
+        "attestation_request",
+        "attestation_response",
+        "boundary_update",
+        "revocation_notice",
+        "operation_request",
+        "operation_response",
+        "trust_query",
+        "trust_response"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the message was created"
+    },
+    "source_instance_id": {
+      "type": "string",
+      "description": "Identifier of the source Promethios instance",
+      "pattern": "^pi-[0-9a-f]{32}$"
+    },
+    "target_instance_id": {
+      "type": "string",
+      "description": "Identifier of the target Promethios instance",
+      "pattern": "^pi-[0-9a-f]{32}$"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Message-specific payload"
+    },
+    "signature": {
+      "type": "object",
+      "description": "Cryptographic signature of the message",
+      "required": [
+        "algorithm",
+        "value",
+        "public_key"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm used",
+          "enum": [
+            "ed25519",
+            "secp256k1",
+            "rsa-sha256"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "description": "Signature value",
+          "pattern": "^0x[0-9a-f]+$"
+        },
+        "public_key": {
+          "type": "string",
+          "description": "Public key used for verification",
+          "pattern": "^0x[0-9a-f]+$"
+        }
+      }
+    },
+    "sequence_number": {
+      "type": "integer",
+      "description": "Sequence number for message ordering",
+      "minimum": 0
+    },
+    "reply_to": {
+      "type": "string",
+      "description": "Message ID this message is replying to",
+      "pattern": "^tsp-[0-9a-f]{32}$"
+    },
+    "ttl": {
+      "type": "integer",
+      "description": "Time-to-live in seconds",
+      "minimum": 0
+    },
+    "routing": {
+      "type": "object",
+      "description": "Routing information for the message",
+      "properties": {
+        "route_type": {
+          "type": "string",
+          "description": "Type of routing",
+          "enum": [
+            "direct",
+            "broadcast",
+            "multicast"
+          ],
+          "default": "direct"
+        },
+        "route_path": {
+          "type": "array",
+          "description": "Path the message should take",
+          "items": {
+            "type": "string",
+            "description": "Instance ID in the route path",
+            "pattern": "^pi-[0-9a-f]{32}$"
+          }
+        }
+      }
+    }
+  }
+}

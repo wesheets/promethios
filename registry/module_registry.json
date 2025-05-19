@@ -4,7 +4,7 @@
   "modules": {
     "governance": {
       "trust_boundary_manager": {
-        "path": "src/governance/trust_boundary_manager.py",
+        "path": "src/core/governance/trust_boundary_manager.py",
         "codex_contract_version": "v2025.05.18",
         "phase": "5.6",
         "schemas": ["trust_boundary.schema.v1.json"],
@@ -12,7 +12,7 @@
         "purpose": "Define and enforce trust boundaries between Promethios instances"
       },
       "trust_surface_protocol": {
-        "path": "src/governance/trust_surface_protocol.py",
+        "path": "src/core/governance/trust_surface_protocol.py",
         "codex_contract_version": "v2025.05.18",
         "phase": "5.6",
         "schemas": ["trust_surface_protocol.schema.v1.json"],
@@ -20,7 +20,7 @@
         "purpose": "Define communication protocol for trust surface interactions"
       },
       "attestation_service": {
-        "path": "src/governance/attestation_service.py",
+        "path": "src/core/governance/attestation_service.py",
         "codex_contract_version": "v2025.05.18",
         "phase": "5.6",
         "schemas": ["trust_attestation.schema.v1.json"],
@@ -28,19 +28,19 @@
         "purpose": "Generate and validate trust attestations"
       },
       "trust_propagation_engine": {
-        "path": "src/governance/trust_propagation_engine.py",
+        "path": "src/core/governance/trust_propagation_engine.py",
         "codex_contract_version": "v2025.05.18",
         "phase": "5.6",
         "schemas": ["trust_boundary.schema.v1.json", "trust_attestation.schema.v1.json"],
         "depends_on": ["trust_boundary_manager.py", "attestation_service.py"],
         "purpose": "Manage propagation of trust across distributed network"
       },
-      "boundary_enforcement": {
-        "path": "src/governance/boundary_enforcement.py",
+      "boundary_enforcement_module": {
+        "path": "src/core/governance/boundary_enforcement_module.py",
         "codex_contract_version": "v2025.05.18",
         "phase": "5.6",
         "schemas": ["trust_boundary.schema.v1.json"],
-        "depends_on": ["trust_boundary_manager.py"],
+        "depends_on": ["trust_boundary_manager.py", "attestation_service.py", "trust_propagation_engine.py"],
         "purpose": "Enforce trust boundary policies and access control"
       }
     }
