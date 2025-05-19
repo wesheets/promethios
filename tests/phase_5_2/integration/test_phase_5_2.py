@@ -9,7 +9,6 @@ import json
 import unittest
 import uuid
 from datetime import datetime
-import pytest
 
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,7 +18,6 @@ from src.replay.replay_sealing import ReplaySealer, pre_loop_tether_check, compu
 from src.replay.deterministic_execution import DeterministicExecutionManager
 from src.core.verification.seal_verification import SealVerificationService
 
-@pytest.mark.phase_5_2
 class TestReplaySealing(unittest.TestCase):
     """Test cases for the Replay Sealing Engine"""
     
@@ -97,7 +95,6 @@ class TestReplaySealing(unittest.TestCase):
         self.assertIsNotNone(seal["output_hash"], "Output hash should not be None")
         self.assertIsNotNone(seal["log_hash"], "Log hash should not be None")
 
-@pytest.mark.phase_5_2
 class TestDeterministicExecution(unittest.TestCase):
     """Test cases for the Deterministic Execution Manager"""
     
@@ -166,7 +163,6 @@ class TestDeterministicExecution(unittest.TestCase):
         self.assertEqual(seal["contract_version"], "v2025.05.18", "Contract version should be correct")
         self.assertEqual(seal["phase_id"], "5.2", "Phase ID should be correct")
 
-@pytest.mark.phase_5_2
 class TestSealVerification(unittest.TestCase):
     """Test cases for the Seal Verification Service"""
     
@@ -213,7 +209,6 @@ class TestSealVerification(unittest.TestCase):
                 
         self.assertTrue(found, f"Test execution {self.execution_id} should be in the list")
 
-@pytest.mark.phase_5_2
 class TestIntegration(unittest.TestCase):
     """Integration tests for Phase 5.2 components"""
     

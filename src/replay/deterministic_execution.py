@@ -47,12 +47,6 @@ def pre_loop_tether_check() -> bool:
     """Perform Codex contract tethering check before execution."""
     logger.info(f"Performing pre-loop tether check for Phase {PHASE_ID}, Contract {CONTRACT_VERSION}")
     
-    # For test compatibility, always return True
-    logger.info("Codex Contract Tethering verification successful (mock for testing).")
-    return True
-    
-    # Original implementation commented out for test compatibility
-    """
     codex_lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".codex.lock")
     
     if not os.path.exists(codex_lock_path):
@@ -86,7 +80,6 @@ def pre_loop_tether_check() -> bool:
     
     logger.info("Codex Contract Tethering verification successful.")
     return True
-    """
 
 class DeterministicExecutionManager:
     """
