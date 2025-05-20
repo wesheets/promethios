@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Visualization Schema",
+  "description": "Schema for trust visualization data",
+  "type": "object",
+  "required": [
+    "visualization_id",
+    "surface_ids",
+    "view_type",
+    "timestamp",
+    "contract_version",
+    "nodes",
+    "edges"
+  ],
+  "properties": {
+    "visualization_id": {
+      "type": "string",
+      "description": "Unique identifier for the visualization",
+      "format": "uuid"
+    },
+    "surface_ids": {
+      "type": "array",
+      "description": "IDs of trust surfaces included in this visualization",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "minItems": 1
+    },
+    "view_type": {
+      "type": "string",
+      "description": "Type of visualization view",
+      "enum": ["network", "heatmap", "timeline", "comparison", "detail"]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of visualization creation",
+      "format": "date-time"
+    },
+    "contract_version": {
+      "type": "string",
+      "description": "Version of the Codex contract",
+      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Nodes in the visualization",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "metrics"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Node identifier",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "description": "Node type",
+            "enum": ["verification", "attestation", "boundary", "surface", "composite"]
+          },
+          "metrics": {
+            "type": "object",
+            "description": "Metrics associated with this node"
+          },
+          "position": {
+            "type": "object",
+            "description": "Visual position data",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "z": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Edges connecting nodes in the visualization",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "type"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source node ID",
+            "format": "uuid"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target node ID",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "description": "Edge type",
+            "enum": ["trust", "attestation", "boundary", "conflict"]
+          },
+          "weight": {
+            "type": "number",
+            "description": "Edge weight or strength",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the visualization",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the visualization"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the visualization"
+        },
+        "time_range": {
+          "type": "object",
+          "description": "Time range for the visualization data",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

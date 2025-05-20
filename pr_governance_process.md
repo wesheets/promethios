@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the required process for all future Promethios phases (Phase 5.6 and beyond) to ensure proper governance, code quality, and compliance with the Codex Contract. All contributors must follow this process without exception.
+This document outlines the required process for all Promethios phases to ensure proper governance, code quality, and compliance with the Codex Contract. All contributors must follow this process without exception.
 
 ## Process Requirements
 
@@ -135,10 +135,10 @@ Exceptions to this process require:
 
 ## References
 
-- Codex Contract: v2025.05.18
+- Codex Contract: v2025.05.19
 - Governance Deviation Record for Phase 5.5
 - Promethios Repository Structure Guidelines
 
 ---
 
-This document is effective immediately for all future phases (Phase 5.6 and beyond) and may only be modified through the same PR process described herein.
+This document is effective immediately for all phases and may only be modified through the same PR process described herein.

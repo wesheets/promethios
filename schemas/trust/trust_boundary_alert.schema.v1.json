@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Boundary Alert Schema",
+  "description": "Schema for trust boundary violation alerts",
+  "type": "object",
+  "required": [
+    "alert_id",
+    "surface_id",
+    "boundary_id",
+    "severity",
+    "timestamp",
+    "description",
+    "contract_version"
+  ],
+  "properties": {
+    "alert_id": {
+      "type": "string",
+      "description": "Unique identifier for the alert",
+      "format": "uuid"
+    },
+    "surface_id": {
+      "type": "string",
+      "description": "ID of the trust surface with the boundary violation",
+      "format": "uuid"
+    },
+    "boundary_id": {
+      "type": "string",
+      "description": "ID of the specific boundary that was violated",
+      "format": "uuid"
+    },
+    "severity": {
+      "type": "string",
+      "description": "Severity level of the alert",
+      "enum": ["info", "warning", "critical", "emergency"]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of alert creation",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the alert"
+    },
+    "contract_version": {
+      "type": "string",
+      "description": "Version of the Codex contract",
+      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the alert",
+      "properties": {
+        "affected_nodes": {
+          "type": "array",
+          "description": "List of node IDs affected by this alert",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "recommended_action": {
+          "type": "string",
+          "description": "Recommended action to resolve the alert"
+        },
+        "evidence": {
+          "type": "object",
+          "description": "Evidence supporting the alert"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
