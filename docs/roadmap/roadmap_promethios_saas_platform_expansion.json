@@ -1,0 +1,468 @@
+{
+  "phases": [
+    {
+      "id": "0.0",
+      "title": "Resurrection Codex Initialization",
+      "description": "Establish core Codex structure, schemas, and component registry."
+    },
+    {
+      "id": "0.1",
+      "title": "Codex Lock-In + Schema Versioning",
+      "description": "Seal schemas, record version hashes, and enforce Codex control over execution."
+    },
+    {
+      "id": "1.0",
+      "title": "GovernanceCore Scaffold + First Test Loop",
+      "description": "Implement base cognition loop with emotion telemetry and trust scaffolds."
+    },
+    {
+      "id": "1.1",
+      "title": "Trust Threshold + Override Surface Declaration",
+      "description": "Add trust scoring, loop rejection thresholds, and Codex-bound override inputs."
+    },
+    {
+      "id": "2.0",
+      "title": "Codex Promotion to Runtime Repo",
+      "description": "Commit kernel to public repository and begin runtime interface preparation."
+    },
+    {
+      "id": "2.1",
+      "title": "API Route Definition + /loop/execute Trigger",
+      "description": "Implement and validate `/loop/execute` via FastAPI."
+    },
+    {
+      "id": "2.2",
+      "title": "Memory Surface Activation + Override Input Handler",
+      "description": "Connect emotion telemetry and justification surfaces; allow operator override input."
+    },
+    {
+      "id": "2.3",
+      "title": "Replay Logging + Operator Observability",
+      "description": "Run real kernel, log decisions, expose CLI trace, hash logs, prove auditability."
+    },
+    {
+      "id": "2.4",
+      "title": "POC Audit Finalization",
+      "description": "Package logs, replay reports, validation tools, and CLI output into formal audit bundle."
+    },
+    {
+      "id": "5.0",
+      "title": "UI Justification Surface",
+      "description": "Develop operator UI for viewing justifications, emotion scores, and override events."
+    },
+    {
+      "id": "5.1",
+      "title": "External Trigger Integration",
+      "description": "Enable loop triggering via CLI, webhook, or embedded SaaS flows."
+    },
+    {
+      "id": "5.2",
+      "title": "Replay Reproducibility Seal",
+      "description": "Hash replay logs, seal execution loop, align with Phase 41.8 deterministic standards."
+    },
+    {
+      "id": "5.2.6.1",
+      "title": "Repo Structure Normalization",
+      "description": "Establish canonical repository structure with proper directory organization for source code, tests, schemas, and documentation.",
+      "status": "complete",
+      "completed_at": "2025-05-19T15:00:00Z",
+      "clauses": ["5.2.5", "5.2.6"],
+      "depends_on": ["5.2", "5.3", "5.4", "5.5"]
+    },
+    {
+      "id": "5.2.6.2",
+      "title": "Test Validation Layer",
+      "description": "Establish phase-tagged tests, sequential execution, and CI lock-in for Codex governance integrity. All phases must pass prior validation before execution.",
+      "status": "complete",
+      "completed_at": "2025-05-19T17:30:00Z",
+      "clauses": ["5.2.6", "11.0"],
+      "depends_on": ["5.2.6.1", "2.3"],
+      "validation_pipeline": "scripts/validate_phases.py"
+    },
+    {
+      "id": "5.3",
+      "title": "Merkle Sealing of Output + Conflict Metadata",
+      "description": "Add Merkle tree hashes to logs for tamper-evidence, include `conflict_type`, `agent_ids`, and `timestamp_hash` fields for arbitration prep.",
+      "status": "complete",
+      "completed_at": "2025-05-18T14:30:00Z"
+    },
+    {
+      "id": "5.4",
+      "title": "Distributed Verification Network",
+      "description": "Implement verification node management, network topology, and seal distribution services for distributed trust verification.",
+      "status": "complete",
+      "completed_at": "2025-05-19T10:15:00Z",
+      "clauses": ["5.4", "11.0", "11.1"],
+      "depends_on": ["5.3"]
+    },
+    {
+      "id": "5.5",
+      "title": "Governance Mesh Integration",
+      "description": "Synchronize contract states, policy proposals, and attestation boundaries across Promethios kernels.",
+      "status": "complete",
+      "completed_at": "2025-05-19T14:45:00Z",
+      "clauses": ["5.5", "5.4", "11.0", "11.1"],
+      "depends_on": ["5.4"]
+    },
+    {
+      "id": "5.6",
+      "title": "Distributed Trust Surface",
+      "description": "Implement trust propagation, consensus verification, and distributed attestation for multi-node trust evaluation.",
+      "status": "complete",
+      "completed_at": "2025-05-19T18:00:00Z",
+      "clauses": ["5.6", "5.5", "11.0", "11.1", "11.4"],
+      "depends_on": ["5.5", "5.4"],
+      "validation_record": "validation_phases.py:all_tests_passed"
+    },
+    {
+      "id": "5.15",
+      "title": "External Kernel Invocation Protocol",
+      "description": "Define a versioned and authenticated API contract for invoking kernel cognition from external systems. Include rate limits, payload schemas, and compatibility guarantees."
+    },
+    {
+      "id": "6.0",
+      "title": "Kernel Drift Prevention & Contract Freezing",
+      "description": "Fingerprint kernel contracts, enforce codex_contract_version, and block unauthorized mutation by verticals or agents. Run Z3 proof stubs before contract commit."
+    },
+    {
+      "id": "6.1",
+      "title": "Vertical Execution Isolation + Kernel API Interface",
+      "description": "Define kernel surface contract; allow verticals to access loop execution, trust evaluation, and memory only via explicit API."
+    },
+    {
+      "id": "6.2",
+      "title": "UI Boundary Contract + Agent Display Protocol",
+      "description": "Specify schemas for agent UI interaction, kernel summary translation, and protected override interfaces."
+    },
+    {
+      "id": "6.05",
+      "title": "Agent Schema Registry + Validation Layer",
+      "description": "Centralized schema enforcement for agents. Validate input/output schemas before loop execution. Require explicit contracts for all registered agents."
+    },
+    {
+      "id": "6.06",
+      "title": "Codex Contract Tethering + Phantom Detection",
+      "description": "Implement pre_loop_tether_check, justification enforcement, drift quarantine, and reflection prompts for all subsystem execution."
+    },
+    {
+      "id": "6.06.1",
+      "title": "Legacy Tether Bridge",
+      "description": "Define upgrade paths for early or pre-tether components to gradually adopt Codex contract validation."
+    },
+    {
+      "id": "6.06.2",
+      "title": "Distributed Contract Consensus",
+      "description": "Implement quorum-based contract verification for distributed kernel deployments."
+    },
+    {
+      "id": "6.06.3",
+      "title": "Codex Contract Evolution Protocol",
+      "description": "Define procedures for versioning, compatibility, and dual-execution of Codex contracts."
+    },
+    {
+      "id": "6.06.4",
+      "title": "CI/CD Contract Compliance Testing",
+      "description": "Auto-lint manifests, reject schema violations, and prevent deployment of untethered components."
+    },
+    {
+      "id": "6.06.5",
+      "title": "Graceful Quarantine Degradation",
+      "description": "Allow fallback execution for critical quarantined components with restricted permissions and read-only memory."
+    },
+    {
+      "id": "7.0",
+      "title": "Full Override Logic",
+      "description": "Promethios acts on override signals with fallback behavior and justification trail."
+    },
+    {
+      "id": "7.1",
+      "title": "Runtime Escalation Handling",
+      "description": "Escalate trust failure, override collision, or ungoverned behavior via Codex rules."
+    },
+    {
+      "id": "7.2",
+      "title": "Operator Dashboard + Intervention History",
+      "description": "Display override logs, trust collapse events, and loop interruptions."
+    },
+    {
+      "id": "9.0",
+      "title": "Codex Fork for SaaS Integration",
+      "description": "Create scoped, vertical forks of the kernel for domain-specific use cases (e.g., legal, finance)."
+    },
+    {
+      "id": "9.1",
+      "title": "Permissioned Execution for External Components",
+      "description": "Enforce role-based component execution and agent input constraints."
+    },
+    {
+      "id": "9.2",
+      "title": "Agent-Built Vertical Scaffold",
+      "description": "Enable agents to generate loop plans for new verticals, propose execution, and call kernel for validation without human authorship."
+    },
+    {
+      "id": "10.0",
+      "title": "Loop Seal for Reproducible Cognition",
+      "description": "Finalize override-enforced, Codex-bound execution loop; replay trace, no drift."
+    },
+    {
+      "id": "10.1",
+      "title": "Agent Registry + Codex Forking",
+      "description": "Introduce external agent registration, Codex sub-forks, and agent-specific trust policies. Log trust decay for every agent-triggered loop."
+    },
+    {
+      "id": "10.2",
+      "title": "Inter-Agent Trust Propagation",
+      "description": "Propagate trust decay, override requests, or schema violations across agents. Implement passive decay and Page-Hinkley detection. Add cross-agent memory consistency logging."
+    },
+    {
+      "id": "10.3",
+      "title": "Multi-Agent Replay Validator",
+      "description": "Hash and replay logs from multiple agents; confirm deterministic group cognition. Use quorum-based arbitration and fork replay analysis."
+    },
+    {
+      "id": "10.4",
+      "title": "Override Mesh + Arbitration Kernel",
+      "description": "Introduce inter-agent override logic, adjudicator kernel, and distributed justification resolution via co-signed quorum logs."
+    },
+    {
+      "id": "10.5",
+      "title": "Tool Registry + Agent Capability Enforcement",
+      "description": "Define a declarative tool registry and bind agent access by role, trust threshold, and justification requirements. Log all tool usage as Merkle-sealed execution events with replayable traces and schema-validated input."
+    },
+    {
+      "id": "10.5.1",
+      "title": "Dynamic Tool Revocation & Audit",
+      "description": "Enable real-time revocation of agent tool access based on integrity or trust score. Log all revocations and capability changes as Merkle-sealed events."
+    },
+    {
+      "id": "10.6",
+      "title": "Agent Emotional Role Enforcement",
+      "description": "Require all agents to declare cognitive role, emotional state, trust threshold, tool contract, and reflection prompt justification prior to plan execution. Block stateless, unscoped, or unjustified plans."
+    },
+    {
+      "id": "10.6.1",
+      "title": "Emotion Anomaly Detection",
+      "description": "Monitor agent emotional state transitions for outliers or unjustified changes. Trigger trust review or intervention on detection."
+    },
+    {
+      "id": "10.7",
+      "title": "Agent Memory Drift Tracking",
+      "description": "Log and analyze changes in agent trust behavior, emotional state, and justification structure across loop cycles to detect long-term drift."
+    },
+    {
+      "id": "10.8",
+      "title": "Agent Integrity Score",
+      "description": "Track each agent\u2019s override history, reflection compliance, and trust volatility. Use this score to gate delegation authority and future execution rights."
+    },
+    {
+      "id": "10.9",
+      "title": "Reflection Failure Recovery",
+      "description": "Log, block, and alert when agents fail to respond to required prompts. Initiate repair loops or quarantine behavior for oversight."
+    },
+    {
+      "id": "10.10",
+      "title": "Cognitive Role Rotation Governance",
+      "description": "Define and enforce trusted protocols for agents that rotate cognitive roles. Log transitions, approve memory transfers, and validate rotation clauses."
+    },
+    {
+      "id": "10.11",
+      "title": "Agent Communication Protocols",
+      "description": "Define and enforce schemas, trust gating, and justification requirements for direct agent-to-agent communication and data sharing."
+    },
+    {
+      "id": "10.12",
+      "title": "Agent Decommissioning & Memory Archival",
+      "description": "Formalize agent retirement, memory export, and log sealing procedures for decommissioned or failed agents."
+    },
+    {
+      "id": "10.13",
+      "title": "Schema Evolution Management",
+      "description": "Support versioned, backward-compatible schema upgrades for agent tools, memory, and emotion states. Enable dual-execution and migration logging."
+    },
+    {
+      "id": "10.14",
+      "title": "Operator Drift Intervention",
+      "description": "Expose flagged drift events (emotional, memory, justification) to operators for manual review, override, or agent quarantine."
+    },
+    {
+      "id": "10.15",
+      "title": "Agent Escalation Requests + Oversight Triggers",
+      "description": "Enable agents to formally request new tools, agent roles, or overrides when outside their permission scope. All requests must include justification, emotional state, and codex_contract_version alignment. Requests are reviewed by Codex or operators for gated approval."
+    },
+    {
+      "id": "10.16",
+      "title": "Proactive Agent Feedback & Reflection Requests",
+      "description": "Allow agents to proactively request human input, flag trust conflicts, or suggest new loops based on cognitive or emotional anomalies. All requests must be justified, schema-validated, and non-coercive."
+    },
+    {
+      "id": "11.0",
+      "title": "Immutable Log Chain + Sequential Hashing",
+      "description": "Embed SHA256 and previous_entry_hash into every log entry; enforce append-only structure for full audit chain."
+    },
+    {
+      "id": "11.1",
+      "title": "Cryptographic Witness Protocol",
+      "description": "Implement multi-agent witnessing, quorum-based validation, and log co-signing to prevent single-point compromise."
+    },
+    {
+      "id": "11.2",
+      "title": "Formal Verification Hooks",
+      "description": "Integrate interfaces for mathematical validation of policy enforcement, trust scoring, override constraints, and multi-agent liveness/safety proofs."
+    },
+    {
+      "id": "11.3",
+      "title": "Governance Metadata Registry",
+      "description": "Centralize schema versions, contract definitions, policy rules, and validation metadata with runtime access and registration."
+    },
+    {
+      "id": "11.4",
+      "title": "Cross-System Trust Attestation",
+      "description": "Support integrity verification across external systems via attestations and federated logging."
+    },
+    {
+      "id": "11.5",
+      "title": "Distributed Kernel Execution",
+      "description": "Enable horizontal kernel scaling via consensus protocols, distributed override arbitration, and trust propagation synchronization."
+    },
+    {
+      "id": "11.6",
+      "title": "Kernel Telemetry & Performance Monitoring",
+      "description": "Track trust latency, loop throughput, anomaly detection, and governance system health via real-time metrics."
+    },
+    {
+      "id": "11.7",
+      "title": "Ethical & Legal Policy Enforcement",
+      "description": "Integrate external policy modules for legal and ethical compliance. Log all policy checks and exceptions."
+    },
+    {
+      "id": "12.0",
+      "title": "Agent UI Integration (External to Kernel)",
+      "description": "Build standalone frontend agent UIs that call kernel APIs only. Define trust-verified render layers, override input scaffolds, and cognitive replay visualizations."
+    },
+    {
+      "id": "12.1",
+      "title": "Automated Policy Learning and Adaptive Governance",
+      "description": "Allow the kernel to propose governance policy updates based on agent behavior, trust drift, or operator feedback, subject to human review and quorum approval."
+    },
+    {
+      "id": "12.2",
+      "title": "Kernel-Level Explainable AI Integration",
+      "description": "Require every decision, override, or arbitration to include a causal, machine-readable explanation as part of its justification surface."
+    },
+    {
+      "id": "12.3",
+      "title": "Differential Privacy & Data Minimization Controls",
+      "description": "Add support for privacy budgets, minimization enforcement, and differential privacy at the kernel memory interface level."
+    },
+    {
+      "id": "12.4",
+      "title": "Zero-Knowledge Proofs for Policy Compliance",
+      "description": "Enable agents to prove policy adherence without revealing sensitive data, using zero-knowledge proof protocols."
+    },
+    {
+      "id": "12.5",
+      "title": "Self-Healing and Autonomous Recovery Protocols",
+      "description": "Allow the kernel to propose and execute repair/rollback plans for drifted agents or verticals, under operator oversight."
+    },
+    {
+      "id": "12.6",
+      "title": "Federated/Inter-Org Governance Mesh",
+      "description": "Enable multiple Promethios kernels to coordinate, attest, and cross-verify governance data across organizational boundaries."
+    },
+    {
+      "id": "12.7",
+      "title": "Economic and Tokenized Incentive Layers",
+      "description": "Optionally support incentive structures (credits, staking, penalties) to align agent behavior with governance expectations."
+    },
+    {
+      "id": "12.8",
+      "title": "Adversarial Simulation & Red-Teaming",
+      "description": "Simulate exploits, trust violations, and prompt injection scenarios within Promethios agents, loops, and kernel entrypoints."
+    },
+    {
+      "id": "12.9",
+      "title": "Ethical/Legal Policy Plug-ins & Compliance Engine",
+      "description": "Allow pluggable legal or ethical modules to enforce policy logic at loop time. Log all evaluations and exceptions."
+    },
+    {
+      "id": "12.10",
+      "title": "Human-Agent Collective Cognition Protocols",
+      "description": "Define protocols for human-agent shared decision-making, including voting, veto, and group cognition outcomes."
+    },
+    {
+      "id": "12.11",
+      "title": "Agent Genome and Lineage Tracking",
+      "description": "Log every agent\u2019s origin, fork history, contract evolution, override record, and migration trail as part of its identity record."
+    },
+    {
+      "id": "12.12",
+      "title": "AI Ethics Board Integration",
+      "description": "Allow external ethics boards to review, approve, or reject agent behaviors via formal governance interfaces."
+    },
+    {
+      "id": "12.13",
+      "title": "Regulatory Compliance Frameworks",
+      "description": "Add support for regulatory frameworks (e.g., EU AI Act, NIST AI RMF) via policy modules and compliance reporting."
+    },
+    {
+      "id": "12.14",
+      "title": "Governance Visualization & Explainability",
+      "description": "Create visual representations of governance decisions, trust flows, and override chains for operator understanding."
+    },
+    {
+      "id": "12.15",
+      "title": "Agent Cognitive Role Registry",
+      "description": "Define and enforce cognitive roles (e.g., planner, executor, validator) with role-specific trust thresholds and justification requirements."
+    },
+    {
+      "id": "12.16",
+      "title": "Kernel Upgrade & Migration Protocol",
+      "description": "Define safe procedures for kernel upgrades, including dual-execution, state migration, and rollback capabilities."
+    },
+    {
+      "id": "12.17",
+      "title": "External System Integration & Trust Boundary",
+      "description": "Define trust boundaries and verification protocols for external system integration (e.g., databases, APIs, models)."
+    },
+    {
+      "id": "12.18",
+      "title": "Human-in-the-Loop Governance",
+      "description": "Formalize human oversight roles, intervention protocols, and approval workflows within the governance framework."
+    },
+    {
+      "id": "12.19",
+      "title": "Governance Analytics & Reporting",
+      "description": "Generate governance reports, compliance metrics, and trust analytics for operators and stakeholders."
+    },
+    {
+      "id": "12.20",
+      "title": "Trust Surface Visualization",
+      "description": "Create interactive visualizations of trust surfaces, override events, and justification trails for operator understanding."
+    },
+    {
+      "id": "12.21",
+      "title": "Agent Cognitive Safety Protocols",
+      "description": "Implement safety protocols for agent cognition, including halt conditions, reflection requirements, and oversight triggers."
+    },
+    {
+      "id": "12.22",
+      "title": "Governance Policy Authoring Tools",
+      "description": "Create tools for authoring, testing, and deploying governance policies with formal verification and simulation capabilities."
+    },
+    {
+      "id": "12.23",
+      "title": "Agent Capability Evolution Framework",
+      "description": "Define protocols for safely evolving agent capabilities over time, with governance guardrails and approval workflows."
+    },
+    {
+      "id": "12.24",
+      "title": "Governance Audit & Compliance Reporting",
+      "description": "Generate audit trails, compliance reports, and governance metrics for external review and regulatory compliance."
+    },
+    {
+      "id": "12.25",
+      "title": "Trust Surface UI Components",
+      "description": "Create reusable UI components for visualizing trust surfaces, override events, and justification trails across applications."
+    }
+  ]
+}

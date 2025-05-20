@@ -1,0 +1,179 @@
+{
+  "timestamp": "2025-05-19T14:01:00Z",
+  "schema_moves": [
+    {
+      "from": "/home/ubuntu/promethios/src/main/schemas/mgc_emotion_telemetry.schema.json",
+      "to": "/home/ubuntu/promethios/schemas/core/mgc_emotion_telemetry.schema.json"
+    },
+    {
+      "from": "/home/ubuntu/promethios/src/main/schemas/mgc_loop_control.schema.json",
+      "to": "/home/ubuntu/promethios/schemas/core/mgc_loop_control.schema.json"
+    },
+    {
+      "from": "/home/ubuntu/promethios/src/main/schemas/mgc_memory_surface_interface.schema.json",
+      "to": "/home/ubuntu/promethios/schemas/core/mgc_memory_surface_interface.schema.json"
+    }
+  ],
+  "schema_deletions": [
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/cli_args.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/codex_ui_contract_map.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/conflict_metadata.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/consensus_record.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/deterministic_replay.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/execution_log.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/external_trigger.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/governance_contract_sync.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/governance_mesh_topology.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/governance_proposal.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/loop_justification_log.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/merkle_seal.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/network_topology.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/operator_override.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/replay_seal.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/replay_verification.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/trust_log_replay_binding.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/trust_view.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/ui_schema_registry.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/verification_node.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/src/main/schemas/webhook_payload.schema.v1.json",
+      "reason": "Duplicate of canonical schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/cli_args.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/conflict_metadata.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/consensus_record.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/deterministic_replay.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/execution_log.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/external_trigger.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/governance_contract_sync.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/governance_mesh_topology.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/governance_proposal.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/loop_justification_log.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/merkle_seal.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/mgc_emotion_telemetry.schema.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/mgc_loop_control.schema.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/mgc_memory_surface_interface.schema.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/network_topology.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/operator_override.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/replay_seal.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/verification_node.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    },
+    {
+      "path": "/home/ubuntu/promethios/schemas/webhook_payload.schema.v1.json",
+      "reason": "Duplicate of domain-specific schema"
+    }
+  ]
+}

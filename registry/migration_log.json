@@ -1,0 +1,438 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-05-19T01:41:48.073965",
+  "migrations": [
+    {
+      "timestamp": "2025-05-19T01:40:29.896921",
+      "source": "schemas/merkle_seal.schema.v1.json",
+      "destination": "schemas/core/merkle_seal.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "merkle_seal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.897204",
+      "source": "schemas/conflict_metadata.schema.v1.json",
+      "destination": "schemas/core/conflict_metadata.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "conflict_metadata.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.897378",
+      "source": "schemas/execution_log.schema.v1.json",
+      "destination": "schemas/core/execution_log.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "execution_log.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.897607",
+      "source": "schemas/loop_justification_log.schema.v1.json",
+      "destination": "schemas/core/loop_justification_log.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "loop_justification_log.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.897789",
+      "source": "schemas/external_trigger.schema.v1.json",
+      "destination": "schemas/core/external_trigger.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "external_trigger.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.897951",
+      "source": "schemas/cli_args.schema.v1.json",
+      "destination": "schemas/core/cli_args.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "cli_args.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.898101",
+      "source": "schemas/webhook_payload.schema.v1.json",
+      "destination": "schemas/core/webhook_payload.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "webhook_payload.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.898331",
+      "source": "schemas/operator_override.schema.v1.json",
+      "destination": "schemas/core/operator_override.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "operator_override.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.898664",
+      "source": "schemas/verification_node.schema.v1.json",
+      "destination": "schemas/verification/verification_node.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "verification_node.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.898844",
+      "source": "schemas/consensus_record.schema.v1.json",
+      "destination": "schemas/verification/consensus_record.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "consensus_record.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.898994",
+      "source": "schemas/network_topology.schema.v1.json",
+      "destination": "schemas/verification/network_topology.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "network_topology.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.899244",
+      "source": "schemas/governance_contract_sync.schema.v1.json",
+      "destination": "schemas/governance/governance_contract_sync.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_contract_sync.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.899431",
+      "source": "schemas/governance_proposal.schema.v1.json",
+      "destination": "schemas/governance/governance_proposal.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_proposal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.899671",
+      "source": "schemas/governance_mesh_topology.schema.v1.json",
+      "destination": "schemas/governance/governance_mesh_topology.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_mesh_topology.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.902083",
+      "source": "schemas/deterministic_replay.schema.v1.json",
+      "destination": "schemas/replay/deterministic_replay.schema.v1.json",
+      "type": "schema",
+      "category": "replay",
+      "name": "deterministic_replay.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.902330",
+      "source": "schemas/replay_seal.schema.v1.json",
+      "destination": "schemas/replay/replay_seal.schema.v1.json",
+      "type": "schema",
+      "category": "replay",
+      "name": "replay_seal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.907518",
+      "source": "tests/test_phase_5_3.py",
+      "destination": "tests/integration/test_phase_5_3.py",
+      "type": "test",
+      "category": "integration",
+      "name": "test_phase_5_3.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.907904",
+      "source": "test_phase_5_2.py",
+      "destination": "tests/end_to_end/test_phase_5_2.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_phase_5_2.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.908082",
+      "source": "test_api.py",
+      "destination": "tests/end_to_end/test_api.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_api.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.908248",
+      "source": "test_deterministic_replay.py",
+      "destination": "tests/end_to_end/test_deterministic_replay.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_deterministic_replay.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.908529",
+      "source": "test_external_trigger.py",
+      "destination": "tests/end_to_end/test_external_trigger.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_external_trigger.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.908687",
+      "source": "test_seal_verification.py",
+      "destination": "tests/end_to_end/test_seal_verification.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_seal_verification.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.909563",
+      "source": "phase_5_4_architecture.md",
+      "destination": "docs/architecture/phase_5_4_architecture.md",
+      "type": "doc",
+      "category": "architecture",
+      "name": "phase_5_4_architecture.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.909912",
+      "source": "phase_5_5_architecture.md",
+      "destination": "docs/architecture/phase_5_5_architecture.md",
+      "type": "doc",
+      "category": "architecture",
+      "name": "phase_5_5_architecture.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.910206",
+      "source": "phase_5_4_implementation_guidance.md",
+      "destination": "docs/implementation/phase_5_4_implementation_guidance.md",
+      "type": "doc",
+      "category": "implementation",
+      "name": "phase_5_4_implementation_guidance.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.910573",
+      "source": "pr_governance_process.md",
+      "destination": "docs/governance/pr_governance_process.md",
+      "type": "doc",
+      "category": "governance",
+      "name": "pr_governance_process.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:40:29.910742",
+      "source": "governance_deviation_record.md",
+      "destination": "docs/governance/governance_deviation_record.md",
+      "type": "doc",
+      "category": "governance",
+      "name": "governance_deviation_record.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.060179",
+      "source": "schemas/merkle_seal.schema.v1.json",
+      "destination": "schemas/core/merkle_seal.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "merkle_seal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.060405",
+      "source": "schemas/conflict_metadata.schema.v1.json",
+      "destination": "schemas/core/conflict_metadata.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "conflict_metadata.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.060608",
+      "source": "schemas/execution_log.schema.v1.json",
+      "destination": "schemas/core/execution_log.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "execution_log.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.060845",
+      "source": "schemas/loop_justification_log.schema.v1.json",
+      "destination": "schemas/core/loop_justification_log.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "loop_justification_log.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.061037",
+      "source": "schemas/external_trigger.schema.v1.json",
+      "destination": "schemas/core/external_trigger.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "external_trigger.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.061223",
+      "source": "schemas/cli_args.schema.v1.json",
+      "destination": "schemas/core/cli_args.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "cli_args.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.061404",
+      "source": "schemas/webhook_payload.schema.v1.json",
+      "destination": "schemas/core/webhook_payload.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "webhook_payload.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.061595",
+      "source": "schemas/operator_override.schema.v1.json",
+      "destination": "schemas/core/operator_override.schema.v1.json",
+      "type": "schema",
+      "category": "core",
+      "name": "operator_override.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.061824",
+      "source": "schemas/verification_node.schema.v1.json",
+      "destination": "schemas/verification/verification_node.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "verification_node.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.062007",
+      "source": "schemas/consensus_record.schema.v1.json",
+      "destination": "schemas/verification/consensus_record.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "consensus_record.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.062193",
+      "source": "schemas/network_topology.schema.v1.json",
+      "destination": "schemas/verification/network_topology.schema.v1.json",
+      "type": "schema",
+      "category": "verification",
+      "name": "network_topology.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.062431",
+      "source": "schemas/governance_contract_sync.schema.v1.json",
+      "destination": "schemas/governance/governance_contract_sync.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_contract_sync.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.062622",
+      "source": "schemas/governance_proposal.schema.v1.json",
+      "destination": "schemas/governance/governance_proposal.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_proposal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.062839",
+      "source": "schemas/governance_mesh_topology.schema.v1.json",
+      "destination": "schemas/governance/governance_mesh_topology.schema.v1.json",
+      "type": "schema",
+      "category": "governance",
+      "name": "governance_mesh_topology.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.063023",
+      "source": "schemas/deterministic_replay.schema.v1.json",
+      "destination": "schemas/replay/deterministic_replay.schema.v1.json",
+      "type": "schema",
+      "category": "replay",
+      "name": "deterministic_replay.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.063195",
+      "source": "schemas/replay_seal.schema.v1.json",
+      "destination": "schemas/replay/replay_seal.schema.v1.json",
+      "type": "schema",
+      "category": "replay",
+      "name": "replay_seal.schema.v1.json"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.070111",
+      "source": "tests/test_phase_5_3.py",
+      "destination": "tests/integration/test_phase_5_3.py",
+      "type": "test",
+      "category": "integration",
+      "name": "test_phase_5_3.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.070508",
+      "source": "test_phase_5_2.py",
+      "destination": "tests/end_to_end/test_phase_5_2.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_phase_5_2.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.070826",
+      "source": "test_api.py",
+      "destination": "tests/end_to_end/test_api.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_api.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.071110",
+      "source": "test_deterministic_replay.py",
+      "destination": "tests/end_to_end/test_deterministic_replay.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_deterministic_replay.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.071331",
+      "source": "test_external_trigger.py",
+      "destination": "tests/end_to_end/test_external_trigger.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_external_trigger.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.071534",
+      "source": "test_seal_verification.py",
+      "destination": "tests/end_to_end/test_seal_verification.py",
+      "type": "test",
+      "category": "end_to_end",
+      "name": "test_seal_verification.py"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.072681",
+      "source": "phase_5_4_architecture.md",
+      "destination": "docs/architecture/phase_5_4_architecture.md",
+      "type": "doc",
+      "category": "architecture",
+      "name": "phase_5_4_architecture.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.073362",
+      "source": "phase_5_5_architecture.md",
+      "destination": "docs/architecture/phase_5_5_architecture.md",
+      "type": "doc",
+      "category": "architecture",
+      "name": "phase_5_5_architecture.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.073577",
+      "source": "phase_5_4_implementation_guidance.md",
+      "destination": "docs/implementation/phase_5_4_implementation_guidance.md",
+      "type": "doc",
+      "category": "implementation",
+      "name": "phase_5_4_implementation_guidance.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.073748",
+      "source": "pr_governance_process.md",
+      "destination": "docs/governance/pr_governance_process.md",
+      "type": "doc",
+      "category": "governance",
+      "name": "pr_governance_process.md"
+    },
+    {
+      "timestamp": "2025-05-19T01:41:48.073956",
+      "source": "governance_deviation_record.md",
+      "destination": "docs/governance/governance_deviation_record.md",
+      "type": "doc",
+      "category": "governance",
+      "name": "governance_deviation_record.md"
+    }
+  ]
+}

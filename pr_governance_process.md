@@ -135,7 +135,8 @@ Exceptions to this process require:
 
 ## References
 
-- Codex Contract: v2025.05.18
+- Codex Contract: v2025.05.19
+- Governance Deviation Record for Phase 5.5
 - Promethios Repository Structure Guidelines
 
 ---

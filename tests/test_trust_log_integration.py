@@ -19,9 +19,9 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from trust_log_integration import TrustLogIntegration
-from merkle_sealing import MerkleSealGenerator
-from conflict_detection import ConflictDetector
+from src.integration.trust_log_integration import TrustLogIntegration
+from src.core.merkle.merkle_sealing import MerkleSealGenerator
+from src.core.merkle.conflict_detection import ConflictDetector
 
 
 class TestTrustLogIntegration(unittest.TestCase):

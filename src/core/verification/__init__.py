@@ -1,5 +1,12 @@
 """
-Python package initialization file for verification module.
+Python package initialization for verification module.
 
-This file marks the directory as a Python package and allows importing modules from it.
+This module contains components for verifying execution integrity and seals.
+Codex Contract: v2025.05.20
+Phase ID: 5.2
+Clauses: 5.2, 11.9
 """
+
+from src.core.verification.seal_verification import ReplayVerifier, SealVerificationService
+
+__all__ = ['ReplayVerifier', 'SealVerificationService']

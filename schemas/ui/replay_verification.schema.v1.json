@@ -1,129 +1,64 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Replay Verification Schema",
-  "description": "Schema for verification of replay logs using Merkle consensus or ZKP",
+  "title": "Replay Verification Result Schema",
+  "description": "Schema for the result of a replay verification operation",
   "type": "object",
-  "required": ["verification_id", "contract_version", "timestamp", "execution_id", "verification_method", "verification_result"],
+  "required": [
+    "verification_id",
+    "contract_version",
+    "timestamp",
+    "execution_id",
+    "verification_method",
+    "verification_result",
+    "hash_verification",
+    "chain_verification",
+    "codex_clauses",
+    "verification_timestamp",
+    "witnesses",
+    "signatures"
+  ],
   "properties": {
     "verification_id": {
       "type": "string",
-      "description": "Unique identifier for this verification instance",
-      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+      "description": "Unique identifier for this verification operation"
     },
     "contract_version": {
       "type": "string",
-      "description": "Version of the Codex contract",
-      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$",
-      "const": "v2025.05.20"
+      "description": "Version of the contract used for verification"
     },
     "timestamp": {
       "type": "string",
-      "description": "ISO 8601 timestamp of when this verification was performed",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the verification was performed"
     },
     "execution_id": {
       "type": "string",
-      "description": "ID of the execution being verified",
-      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+      "description": "ID of the execution being verified"
     },
     "verification_method": {
       "type": "string",
-      "description": "Method used for verification",
-      "enum": ["merkle_consensus", "zero_knowledge_proof", "multi_agent_witness"]
+      "enum": ["replay", "attestation", "consensus"],
+      "description": "Method used for verification"
     },
     "verification_result": {
       "type": "object",
-      "required": ["is_valid", "verification_timestamp"],
+      "required": ["is_valid", "consensus_details"],
       "properties": {
         "is_valid": {
           "type": "boolean",
-          "description": "Whether the execution log is valid"
+          "description": "Whether the verification was successful"
         },
-        "verification_timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "ISO 8601 timestamp of when verification was completed"
+        "error": {
+          "type": ["string", "null"],
+          "description": "Error message if verification failed"
         },
         "consensus_details": {
           "type": "object",
-          "description": "Details of the consensus verification (for merkle_consensus method)",
+          "required": ["merkle_root"],
           "properties": {
-            "quorum_size": {
-              "type": "integer",
-              "description": "Number of nodes required for consensus",
-              "minimum": 1
-            },
-            "participating_nodes": {
-              "type": "integer",
-              "description": "Number of nodes that participated in consensus",
-              "minimum": 0
-            },
-            "consensus_achieved": {
-              "type": "boolean",
-              "description": "Whether consensus was achieved"
-            },
             "merkle_root": {
               "type": "string",
-              "description": "Merkle root hash of the consensus tree",
-              "pattern": "^[a-f0-9]{64}$"
-            }
-          }
-        },
-        "zkp_details": {
-          "type": "object",
-          "description": "Details of the zero-knowledge proof verification (for zero_knowledge_proof method)",
-          "properties": {
-            "proof_type": {
-              "type": "string",
-              "description": "Type of zero-knowledge proof",
-              "enum": ["snark", "stark", "bulletproof"]
-            },
-            "proof_verified": {
-              "type": "boolean",
-              "description": "Whether the proof was verified"
-            },
-            "verification_key_hash": {
-              "type": "string",
-              "description": "Hash of the verification key",
-              "pattern": "^[a-f0-9]{64}$"
-            }
-          }
-        },
-        "witness_details": {
-          "type": "object",
-          "description": "Details of the multi-agent witness verification (for multi_agent_witness method)",
-          "properties": {
-            "witness_count": {
-              "type": "integer",
-              "description": "Number of witnesses",
-              "minimum": 0
-            },
-            "quorum_achieved": {
-              "type": "boolean",
-              "description": "Whether witness quorum was achieved"
-            },
-            "witness_signatures": {
-              "type": "array",
-              "description": "Signatures from witnesses",
-              "items": {
-                "type": "object",
-                "required": ["witness_id", "signature", "timestamp"],
-                "properties": {
-                  "witness_id": {
-                    "type": "string",
-                    "description": "ID of the witness"
-                  },
-                  "signature": {
-                    "type": "string",
-                    "description": "Cryptographic signature"
-                  },
-                  "timestamp": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "ISO 8601 timestamp of when the signature was created"
-                  }
-                }
-              }
+              "description": "Merkle root of the execution log"
             }
           }
         }
@@ -131,121 +66,89 @@
     },
     "hash_verification": {
       "type": "object",
-      "description": "Verification of hashes in the execution log",
-      "required": ["input_hash", "output_hash", "log_hash"],
+      "required": ["is_valid"],
       "properties": {
-        "input_hash": {
-          "type": "object",
-          "required": ["expected", "actual", "valid"],
-          "properties": {
-            "expected": {
-              "type": "string",
-              "description": "Expected hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "actual": {
-              "type": "string",
-              "description": "Actual hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "valid": {
-              "type": "boolean",
-              "description": "Whether the hash is valid"
-            }
-          }
+        "is_valid": {
+          "type": "boolean",
+          "description": "Whether the hash verification was successful"
         },
-        "output_hash": {
-          "type": "object",
-          "required": ["expected", "actual", "valid"],
-          "properties": {
-            "expected": {
-              "type": "string",
-              "description": "Expected hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "actual": {
-              "type": "string",
-              "description": "Actual hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "valid": {
-              "type": "boolean",
-              "description": "Whether the hash is valid"
-            }
-          }
-        },
-        "log_hash": {
-          "type": "object",
-          "required": ["expected", "actual", "valid"],
-          "properties": {
-            "expected": {
-              "type": "string",
-              "description": "Expected hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "actual": {
-              "type": "string",
-              "description": "Actual hash",
-              "pattern": "^[a-f0-9]{64}$"
-            },
-            "valid": {
-              "type": "boolean",
-              "description": "Whether the hash is valid"
-            }
-          }
+        "error": {
+          "type": ["string", "null"],
+          "description": "Error message if hash verification failed"
         }
       }
     },
     "chain_verification": {
       "type": "object",
-      "description": "Verification of the hash chain in the execution log",
-      "required": ["is_valid", "entries_verified"],
+      "required": ["is_valid"],
       "properties": {
         "is_valid": {
           "type": "boolean",
-          "description": "Whether the hash chain is valid"
+          "description": "Whether the chain verification was successful"
         },
-        "entries_verified": {
-          "type": "integer",
-          "description": "Number of entries verified",
-          "minimum": 0
-        },
-        "errors": {
-          "type": "array",
-          "description": "Errors in the hash chain, if any",
-          "items": {
-            "type": "object",
-            "required": ["entry_id", "error"],
-            "properties": {
-              "entry_id": {
-                "type": "integer",
-                "description": "ID of the entry with the error"
-              },
-              "error": {
-                "type": "string",
-                "description": "Error description"
-              },
-              "expected": {
-                "type": "string",
-                "description": "Expected value"
-              },
-              "actual": {
-                "type": "string",
-                "description": "Actual value"
-              }
-            }
-          }
+        "error": {
+          "type": ["string", "null"],
+          "description": "Error message if chain verification failed"
         }
       }
     },
     "codex_clauses": {
       "type": "array",
-      "description": "Codex clauses governing this verification",
+      "description": "List of codex clauses that apply to this verification",
       "items": {
-        "type": "string",
-        "pattern": "^\\d+(\\.\\d+)*$"
-      },
-      "const": ["5.2", "11.9", "11.1"]
+        "type": "string"
+      }
+    },
+    "verification_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the verification was performed"
+    },
+    "witnesses": {
+      "type": "array",
+      "description": "List of witnesses who have attested to this verification",
+      "items": {
+        "type": "object",
+        "required": ["witness_id", "signature", "timestamp"],
+        "properties": {
+          "witness_id": {
+            "type": "string",
+            "description": "ID of the witness"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when the signature was created"
+          }
+        }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "description": "List of signatures for this verification",
+      "items": {
+        "type": "object",
+        "required": ["signer_id", "signature", "timestamp"],
+        "properties": {
+          "signer_id": {
+            "type": "string",
+            "description": "ID of the signer"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when the signature was created"
+          }
+        }
+      }
     }
   }
 }

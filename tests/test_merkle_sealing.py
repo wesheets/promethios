@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from merkle_sealing import MerkleSealGenerator
+from src.core.merkle.merkle_sealing import MerkleSealGenerator
 
 
 class TestMerkleSealGenerator(unittest.TestCase):

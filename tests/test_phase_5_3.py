@@ -18,12 +18,12 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from merkle_tree import MerkleTree
-from merkle_sealing import MerkleSealGenerator
-from conflict_detection import ConflictDetector
-from output_capture import OutputCapture
-from trust_log_integration import TrustLogIntegration
-from runtime_executor_integration import process_execution, get_execution_log, get_merkle_seal
+from src.core.merkle.merkle_tree import MerkleTree
+from src.core.merkle.merkle_sealing import MerkleSealGenerator
+from src.core.merkle.conflict_detection import ConflictDetector
+from src.core.merkle.output_capture import OutputCapture
+from src.integration.trust_log_integration import TrustLogIntegration
+from src.integration.runtime_executor_integration import process_execution, get_execution_log, get_merkle_seal
 
 
 class TestPhase53(unittest.TestCase):
