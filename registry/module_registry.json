@@ -42,6 +42,30 @@
         "schemas": ["trust_boundary.schema.v1.json"],
         "depends_on": ["trust_boundary_manager.py", "attestation_service.py", "trust_propagation_engine.py"],
         "purpose": "Enforce trust boundary policies and access control"
+      },
+      "contract_sealer": {
+        "path": "src/core/governance/contract_sealer.py",
+        "codex_contract_version": "v2025.05.20",
+        "phase": "5.8",
+        "schemas": ["contract_seal.schema.v1.json"],
+        "depends_on": [],
+        "purpose": "Create and verify cryptographic seals of contracts"
+      },
+      "evolution_protocol": {
+        "path": "src/core/governance/evolution_protocol.py",
+        "codex_contract_version": "v2025.05.20",
+        "phase": "5.8",
+        "schemas": ["evolution_proposal.schema.v1.json", "evolution_record.schema.v1.json"],
+        "depends_on": ["contract_sealer.py"],
+        "purpose": "Manage the contract evolution process through formal approval"
+      },
+      "codex_lock": {
+        "path": "src/core/governance/codex_lock.py",
+        "codex_contract_version": "v2025.05.20",
+        "phase": "5.8",
+        "schemas": ["contract_seal.schema.v1.json", "evolution_proposal.schema.v1.json", "evolution_record.schema.v1.json"],
+        "depends_on": ["contract_sealer.py", "evolution_protocol.py", "src/core/trust/mutation_detector.py"],
+        "purpose": "Main implementation of the Codex Mutation Lock system"
       }
     },
     "trust": {
@@ -60,6 +84,14 @@
         "schemas": ["trust_metrics.schema.v1.json"],
         "depends_on": ["src/core/trust/trust_surface_analytics.py"],
         "purpose": "Collect and normalize metrics from multiple nodes"
+      },
+      "mutation_detector": {
+        "path": "src/core/trust/mutation_detector.py",
+        "codex_contract_version": "v2025.05.20",
+        "phase": "5.8",
+        "schemas": ["mutation_detection.schema.v1.json"],
+        "depends_on": ["src/core/governance/contract_sealer.py"],
+        "purpose": "Detect unauthorized modifications to sealed contracts"
       }
     },
     "verification": {
@@ -91,6 +123,16 @@
         "schemas": ["trust_visualization.schema.v1.json"],
         "depends_on": ["src/core/trust/trust_surface_analytics.py", "src/core/trust/trust_metrics_aggregator.py", "src/core/visualization/visualization_data_transformer.py"],
         "purpose": "Provide interactive visualization of trust surfaces and metrics"
+      }
+    },
+    "integration": {
+      "codex_lock_api": {
+        "path": "src/integration/codex_lock_api.py",
+        "codex_contract_version": "v2025.05.20",
+        "phase": "5.8",
+        "schemas": ["contract_seal.schema.v1.json", "evolution_proposal.schema.v1.json", "evolution_record.schema.v1.json", "mutation_detection.schema.v1.json"],
+        "depends_on": ["src/core/governance/codex_lock.py"],
+        "purpose": "API integration for the Codex Mutation Lock system"
       }
     }
   }

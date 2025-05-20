@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evolution Proposal",
+  "description": "A proposal to evolve a contract",
+  "type": "object",
+  "required": [
+    "proposal_id",
+    "timestamp",
+    "proposer_id",
+    "current_contract",
+    "proposed_contract",
+    "justification",
+    "status",
+    "approvals",
+    "rejections",
+    "comments"
+  ],
+  "properties": {
+    "proposal_id": {
+      "type": "string",
+      "description": "Unique identifier for the proposal",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Timestamp when the proposal was created",
+      "format": "date-time"
+    },
+    "proposer_id": {
+      "type": "string",
+      "description": "Identifier of the proposer"
+    },
+    "current_contract": {
+      "type": "object",
+      "description": "The current version of the contract"
+    },
+    "proposed_contract": {
+      "type": "object",
+      "description": "The proposed version of the contract"
+    },
+    "justification": {
+      "type": "string",
+      "description": "Justification for the proposed changes"
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the proposal",
+      "enum": ["PROPOSED", "APPROVED", "REJECTED", "FINALIZED"]
+    },
+    "approvals": {
+      "type": "array",
+      "description": "List of approvals",
+      "items": {
+        "type": "object",
+        "required": ["approver_id", "timestamp"],
+        "properties": {
+          "approver_id": {
+            "type": "string",
+            "description": "Identifier of the approver"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when the approval was made",
+            "format": "date-time"
+          },
+          "comments": {
+            "type": ["string", "null"],
+            "description": "Optional comments from the approver"
+          }
+        }
+      }
+    },
+    "rejections": {
+      "type": "array",
+      "description": "List of rejections",
+      "items": {
+        "type": "object",
+        "required": ["rejector_id", "timestamp", "reason"],
+        "properties": {
+          "rejector_id": {
+            "type": "string",
+            "description": "Identifier of the rejector"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when the rejection was made",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for rejection"
+          }
+        }
+      }
+    },
+    "comments": {
+      "type": "array",
+      "description": "List of comments",
+      "items": {
+        "type": "object",
+        "required": ["commenter_id", "timestamp", "comment"],
+        "properties": {
+          "commenter_id": {
+            "type": "string",
+            "description": "Identifier of the commenter"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when the comment was made",
+            "format": "date-time"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment text"
+          }
+        }
+      }
+    }
+  }
+}
