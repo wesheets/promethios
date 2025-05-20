@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Monitoring Schema",
+  "description": "Schema for trust monitoring configuration and alerts",
+  "type": "object",
+  "required": ["alert_id", "timestamp", "entity_id", "level", "metric_type", "value", "threshold"],
+  "properties": {
+    "alert_id": {
+      "type": "string",
+      "description": "Unique identifier for the alert"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time when the alert was generated"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "Identifier of the entity triggering the alert"
+    },
+    "level": {
+      "type": "string",
+      "enum": ["critical", "warning", "notice"],
+      "description": "Severity level of the alert"
+    },
+    "metric_type": {
+      "type": "string",
+      "description": "Type of metric triggering the alert (aggregate or dimension name)"
+    },
+    "value": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Current value of the metric"
+    },
+    "threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Threshold that was crossed"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable alert message"
+    },
+    "resolved": {
+      "type": "boolean",
+      "description": "Whether the alert has been resolved"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time when the alert was resolved"
+    },
+    "codex_contract": {
+      "type": "object",
+      "description": "Codex contract tethering information",
+      "required": ["contract_version", "phase_id"],
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$",
+          "description": "Version of the Codex contract"
+        },
+        "phase_id": {
+          "type": "string",
+          "pattern": "^5\\.9$",
+          "description": "Phase ID for this component"
+        },
+        "codex_clauses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Codex clauses implemented by this component"
+        }
+      }
+    }
+  }
+}
