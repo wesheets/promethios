@@ -6,7 +6,7 @@ import datetime
 app = Flask(__name__)
 
 # Constants for Phase 5.1: External Trigger Integration
-CONTRACT_VERSION = "v2025.05.18"
+CONTRACT_VERSION = "v2025.05.20"
 PHASE_ID = "5.1"
 
 # Mock data for trigger history

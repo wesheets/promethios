@@ -11,7 +11,7 @@ class TestTrustLogWriter(unittest.TestCase):
     def setUp(self):
         # Import the necessary classes
         # These imports are placed here to allow for module implementation before test execution
-        from seal_verification import ReplayVerifier
+        from src.core.verification.seal_verification import ReplayVerifier
         from trust_log_writer import TrustLogWriter
         
         self.verifier = ReplayVerifier()
@@ -64,7 +64,7 @@ class TestTrustLogWriter(unittest.TestCase):
         self.assertIn("codex_clauses", binding)
         
         # Verify contract version
-        self.assertEqual(binding["contract_version"], "v2025.05.18")
+        self.assertEqual(binding["contract_version"], "v2025.05.20")
         
         # Verify clauses
         self.assertIn("5.2", binding["codex_clauses"])

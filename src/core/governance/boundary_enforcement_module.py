@@ -1,7 +1,7 @@
 """
 Boundary Enforcement Module for Promethios Distributed Trust Surface
 
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase: 5.6
 Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
 """
@@ -402,7 +402,7 @@ class BoundaryEnforcementModule:
             A dictionary with tethering information
         """
         return {
-            "codex_contract_version": "v2025.05.18",
+            "codex_contract_version": "v2025.05.20",
             "phase_id": "5.6",
             "clauses": ["5.6", "5.5", "5.4", "11.0", "11.1", "5.2.6"],
             "component": "BoundaryEnforcementModule",

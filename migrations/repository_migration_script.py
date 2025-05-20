@@ -2,7 +2,7 @@
 """
 Repository Migration Script for Promethios Phase 5.6
 
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase: 5.6
 Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
 """
@@ -96,7 +96,7 @@ class RepositoryMigrator:
         else:
             logger.warning("Module registry not found, creating empty registry")
             self.module_registry = {
-                "registry_version": "v2025.05.18",
+                "registry_version": "v2025.05.20",
                 "last_updated": datetime.now().strftime("%Y-%m-%d"),
                 "modules": {}
             }

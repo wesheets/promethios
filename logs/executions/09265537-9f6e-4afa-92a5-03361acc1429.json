@@ -1,0 +1,111 @@
+{
+  "execution_id": "09265537-9f6e-4afa-92a5-03361acc1429",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T13:56:35.295868Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "api",
+        "trigger_id": "88e19009-735a-4e2e-9060-c090584da311",
+        "random_seed": "5e78682a-fa6f-4f23-b0d5-4b348b602730"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "18eb550bd121b6a911b490c9e5e1f8b74bf2991da5f25578f68f22a7dddf2a64"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T13:56:35.295909Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "loop_input",
+        "content": {
+          "loop_id": "88e19009-735a-4e2e-9060-c090584da311",
+          "plan_details": {
+            "task_description": "Test valid execution with override via API"
+          },
+          "operator_override_signal": {
+            "override_type": "HALT_IMMEDIATE",
+            "reason": "API test override",
+            "override_signal_id": "8050643d-2593-4e18-8c14-2eedc541cc78",
+            "issuing_operator_id": "test-operator"
+          }
+        }
+      },
+      "previous_hash": "18eb550bd121b6a911b490c9e5e1f8b74bf2991da5f25578f68f22a7dddf2a64",
+      "current_hash": "07dbe4ee382f91d4529038f863323277ab473e85059909fb690ff55276deb912"
+    },
+    {
+      "entry_id": 2,
+      "timestamp": "2025-05-20T13:56:35.296018Z",
+      "event_type": "output",
+      "event_data": {
+        "type": "core_output",
+        "content": [
+          {
+            "status": "mock_success",
+            "details": "GovernanceCore mock executed successfully.",
+            "received_plan_input": {
+              "loop_id": "88e19009-735a-4e2e-9060-c090584da311",
+              "plan_details": {
+                "task_description": "Test valid execution with override via API"
+              },
+              "operator_override_signal": {
+                "override_type": "HALT_IMMEDIATE",
+                "reason": "API test override",
+                "override_signal_id": "8050643d-2593-4e18-8c14-2eedc541cc78",
+                "issuing_operator_id": "test-operator"
+              }
+            },
+            "received_override": null
+          },
+          {
+            "timestamp": "2025-05-20T13:56:35.295958Z",
+            "current_emotion_state": "MOCK_FOCUSED",
+            "contributing_factors": [
+              {
+                "factor": "Mock Clarity of Task",
+                "influence": 0.9
+              }
+            ],
+            "trust_score": 0.95
+          },
+          {
+            "agent_id": "Promethios_MGC_v1_mock",
+            "timestamp": "2025-05-20T13:56:35.295958Z",
+            "plan_id": "mock_plan_id_6411ca15-3dcb-4779-880f-da6da71e4b65",
+            "loop_id": "84d4f0cf-e72f-4afa-892c-8497f7643ef1",
+            "decision_outcome": "MOCK_ACCEPTED",
+            "rejection_reason": null,
+            "override_required": false,
+            "trust_score_at_decision": 0.95,
+            "emotion_state_at_decision": "MOCK_FOCUSED",
+            "validation_passed": true,
+            "schema_versions": {
+              "emotion_telemetry": "mgc_emotion_telemetry.schema.json#v_mock",
+              "justification_log": "loop_justification_log.schema.v1.json#v1.2.0_mock"
+            },
+            "override_active": false,
+            "override_type": null,
+            "override_reason": null,
+            "override_parameters": null,
+            "override_issuing_operator_id": null
+          }
+        ]
+      },
+      "previous_hash": "07dbe4ee382f91d4529038f863323277ab473e85059909fb690ff55276deb912",
+      "current_hash": "a51b527402206f0a6964a6b34866b4815b32f4a24fa7c81916f3595be42bc712"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "88e19009-735a-4e2e-9060-c090584da311",
+    "start_time": "2025-05-20T13:56:35.295541Z",
+    "end_time": "2025-05-20T13:56:35.296078Z",
+    "random_seed": "30aa2dc0-d86d-4166-91cf-43349ffca806",
+    "environment_hash": "606d0074b780fbb7aa63cef33319a005ab3d8d85b01cec285d6ff90264b097ef"
+  }
+}

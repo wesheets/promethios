@@ -5,7 +5,7 @@ seal_verification.py - Replay Verification Module
 This module implements the ReplayVerifier class for cryptographic verification
 of execution replay logs according to the Codex Contract Tethering Protocol.
 
-Contract Version: v2025.05.18
+Contract Version: v2025.05.20
 Phase ID: 5.2
 Clauses: 5.2, 11.9, 11.1
 Schema: replay_verification.schema.v1.json
@@ -94,7 +94,7 @@ class ReplayVerifier:
     
     def __init__(self):
         """Initialize the ReplayVerifier."""
-        self.contract_version = "v2025.05.18"
+        self.contract_version = "v2025.05.20"
         self.schema_version = "v1"
         self.clauses = ["5.2", "11.9", "11.1"]
         self.module_id = "replay_verification"

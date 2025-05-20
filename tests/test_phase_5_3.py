@@ -2,7 +2,7 @@
 End-to-end tests for Phase 5.3 implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0, 10.4, 5.2.5
 """
@@ -74,7 +74,7 @@ class TestPhase53(unittest.TestCase):
         self.assertIn("seal_id", merkle_seal)
         self.assertIn("root_hash", merkle_seal)
         self.assertIn("contract_version", merkle_seal)
-        self.assertEqual(merkle_seal["contract_version"], "v2025.05.18")
+        self.assertEqual(merkle_seal["contract_version"], "v2025.05.20")
         self.assertEqual(merkle_seal["phase_id"], "5.3")
         
         # Verify Trust Log

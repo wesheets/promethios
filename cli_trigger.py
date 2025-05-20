@@ -2,7 +2,7 @@
 """
 CLI Trigger for Promethios Kernel
 Phase 5.1: External Trigger Integration
-Contract Version: v2025.05.18
+Contract Version: v2025.05.20
 """
 
 import argparse
@@ -16,7 +16,7 @@ import jsonschema
 
 # Constants
 SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")
-CONTRACT_VERSION = "v2025.05.18"
+CONTRACT_VERSION = "v2025.05.20"
 PHASE_ID = "5.1"
 
 def load_schema(schema_name):

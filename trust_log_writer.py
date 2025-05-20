@@ -5,7 +5,7 @@ trust_log_writer.py - Trust Log Writer Module
 This module implements the TrustLogWriter class for routing replay logs
 to the Trust Log UI according to the Codex Contract Tethering Protocol.
 
-Contract Version: v2025.05.18
+Contract Version: v2025.05.20
 Phase ID: 5.2
 Clauses: 5.2, 5.3, 11.0, 12.20
 Schema: trust_log_replay_binding.schema.v1.json
@@ -60,21 +60,31 @@ def pre_loop_tether_check(module_id, contract_version, schema_version, clauses):
     # Load .codex.lock to verify contract version and clauses
     try:
         with open(".codex.lock", "r") as f:
-            codex_lock = f.read()
+            # Parse as JSON instead of plain text
+            codex_lock = json.load(f)
             
         # Verify contract version
-        if f"contract_version: {contract_version}" not in codex_lock:
-            logger.error(f"[TETHER FAILURE] Contract version mismatch: {contract_version}")
+        if codex_lock.get("contract_version") != contract_version:
+            logger.error(f"[TETHER FAILURE] Contract version mismatch: expected {contract_version}, got {codex_lock.get('contract_version')}")
             return False
             
         # Verify clauses
+        codex_clauses = codex_lock.get("codex_clauses", [])
         for clause in clauses:
-            if f"- {clause}:" not in codex_lock:
+            # Check if any clause in codex_clauses starts with this clause number
+            clause_found = False
+            for codex_clause in codex_clauses:
+                if codex_clause.startswith(clause + ":") or codex_clause == clause:
+                    clause_found = True
+                    break
+                    
+            if not clause_found:
                 logger.error(f"[TETHER FAILURE] Missing clause: {clause}")
                 return False
                 
         # Verify schema
-        if f"- trust_log_replay_binding.schema.v1.json" not in codex_lock:
+        schema_registry = codex_lock.get("schema_registry", [])
+        if "trust_log_replay_binding.schema.v1.json" not in schema_registry:
             logger.error(f"[TETHER FAILURE] Missing schema: trust_log_replay_binding.schema.v1.json")
             return False
             
@@ -94,7 +104,7 @@ class TrustLogWriter:
     
     def __init__(self):
         """Initialize the TrustLogWriter."""
-        self.contract_version = "v2025.05.18"
+        self.contract_version = "v2025.05.20"
         self.schema_version = "v1"
         self.clauses = ["5.2", "5.3", "11.0", "12.20"]
         self.module_id = "trust_log_writer"

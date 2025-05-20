@@ -2,7 +2,7 @@
 Runtime Executor integration for Merkle sealing and conflict detection.
 
 This module integrates Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0, 10.4, 5.2.5
 """
@@ -61,7 +61,7 @@ def process_execution(execution_data: Dict[str, Any]) -> Dict[str, Any]:
     Process an execution with Merkle sealing and conflict detection.
     
     This function implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
+    Codex Contract: v2025.05.20
     Phase ID: 5.3
     Clauses: 5.3, 11.0, 10.4, 5.2.5
     
@@ -72,7 +72,7 @@ def process_execution(execution_data: Dict[str, Any]) -> Dict[str, Any]:
         Processed execution data with Merkle seal and conflict metadata
     """
     # Perform pre-loop tether check
-    if not pre_loop_tether_check("v2025.05.18", "5.3"):
+    if not pre_loop_tether_check("v2025.05.20", "5.3"):
         raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
     
     # Generate execution ID if not provided

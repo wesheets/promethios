@@ -2,7 +2,7 @@
 Output Capture Mechanism for execution outputs.
 
 This module implements Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0
 """
@@ -47,7 +47,7 @@ class OutputCapture:
     Captures and normalizes execution outputs for Merkle sealing.
     
     This component implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
+    Codex Contract: v2025.05.20
     Phase ID: 5.3
     Clauses: 5.3, 11.0
     """
@@ -55,7 +55,7 @@ class OutputCapture:
     def __init__(self):
         """Initialize the output capture mechanism."""
         # Perform pre-loop tether check
-        if not pre_loop_tether_check("v2025.05.18", "5.3"):
+        if not pre_loop_tether_check("v2025.05.20", "5.3"):
             raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
             
         self.captured_outputs: List[Dict[str, Any]] = []
@@ -88,7 +88,7 @@ class OutputCapture:
             "source": source,
             "output": normalized_output,
             "metadata": metadata or {},
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3"
         }
         

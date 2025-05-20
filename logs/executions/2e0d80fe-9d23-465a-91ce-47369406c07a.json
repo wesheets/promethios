@@ -1,0 +1,62 @@
+{
+  "execution_id": "2e0d80fe-9d23-465a-91ce-47369406c07a",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T13:52:58.863935Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "cli",
+        "trigger_id": "a7d97861-f4b3-4a56-aef4-e7220a1a9095",
+        "random_seed": "6672d6fe-4946-4595-86b4-a301fb0c23ed"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "0c45942ec59607d6b7618c7cf451aaf3d762f518fdc9047ae7deab788b50ab0f"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T13:52:58.863967Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "external_trigger",
+        "content": {
+          "trigger_id": "a7d97861-f4b3-4a56-aef4-e7220a1a9095",
+          "trigger_type": "cli",
+          "timestamp": "2025-05-20T13:52:58.860997Z",
+          "source": {
+            "identifier": "test_user",
+            "type": "user",
+            "metadata": {
+              "hostname": "test_host",
+              "cli_version": "1.0.0"
+            }
+          },
+          "payload": {
+            "loop_input": {
+              "task": "test external trigger",
+              "some_detail": "detail_for_external_trigger"
+            },
+            "options": {
+              "wait": true,
+              "timeout": 60,
+              "verbose": true
+            }
+          }
+        }
+      },
+      "previous_hash": "0c45942ec59607d6b7618c7cf451aaf3d762f518fdc9047ae7deab788b50ab0f",
+      "current_hash": "73b0e7f4344e8cc8365c7bba134fbf23a80b25728185e4a997f8257aefe6c7e6"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "a7d97861-f4b3-4a56-aef4-e7220a1a9095",
+    "start_time": "2025-05-20T13:52:58.863665Z",
+    "end_time": "2025-05-20T13:52:58.864261Z",
+    "random_seed": "c6e1f831-ff59-40be-bc69-de12c500a949",
+    "environment_hash": "85c4c045db169fd7e1e54d7cdd17429a3dcd35d21a014dcea9c9aace5875d536"
+  }
+}

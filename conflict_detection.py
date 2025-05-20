@@ -2,7 +2,7 @@
 Conflict Detection System for identifying and recording conflicts.
 
 This module implements Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 10.4
 """
@@ -48,7 +48,7 @@ class ConflictDetector:
     Detects and records conflicts during execution.
     
     This component implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
+    Codex Contract: v2025.05.20
     Phase ID: 5.3
     Clauses: 5.3, 10.4
     """
@@ -56,7 +56,7 @@ class ConflictDetector:
     def __init__(self):
         """Initialize the conflict detector."""
         # Perform pre-loop tether check
-        if not pre_loop_tether_check("v2025.05.18", "5.3"):
+        if not pre_loop_tether_check("v2025.05.20", "5.3"):
             raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
             
         self.active_conflicts: Dict[str, Dict[str, Any]] = {}
@@ -90,7 +90,7 @@ class ConflictDetector:
             "agent_ids": agent_ids,
             "timestamp": timestamp,
             "timestamp_hash": timestamp_hash,
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3",
             "severity": severity,
             "resolution_status": "unresolved",

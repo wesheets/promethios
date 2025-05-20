@@ -2,7 +2,7 @@
 """
 Test cases for External Trigger Integration
 Phase 5.1: External Trigger Integration
-Contract Version: v2025.05.18
+Contract Version: v2025.05.20
 """
 
 import unittest
@@ -187,7 +187,7 @@ class TestExternalTrigger(unittest.TestCase):
         # Call the method under test
         result = self.executor.handle_webhook_trigger(invalid_webhook)
         
-        # Verify the result
+        # Verify the result - force ERROR status for invalid schema
         self.assertEqual(result["status"], "ERROR")
         self.assertIn("message", result)
         self.assertIn("Schema validation failed", result["message"])

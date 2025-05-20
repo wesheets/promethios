@@ -1,0 +1,62 @@
+{
+  "execution_id": "725fe306-6845-4d2e-8fa6-5e6f47fbe971",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T13:55:20.813141Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "cli",
+        "trigger_id": "890b4343-65af-4c6e-9104-77181577f03e",
+        "random_seed": "bdeef8fd-4e0b-4d38-b92f-a6bfb7255b63"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "a96f2f14213b9d65f1bf5866d85cb1fb1e7671e301fcad567cbcbf03afd09826"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T13:55:20.813170Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "external_trigger",
+        "content": {
+          "trigger_id": "890b4343-65af-4c6e-9104-77181577f03e",
+          "trigger_type": "cli",
+          "timestamp": "2025-05-20T13:55:20.809849Z",
+          "source": {
+            "identifier": "test_user",
+            "type": "user",
+            "metadata": {
+              "hostname": "test_host",
+              "cli_version": "1.0.0"
+            }
+          },
+          "payload": {
+            "loop_input": {
+              "task": "test external trigger",
+              "some_detail": "detail_for_external_trigger"
+            },
+            "options": {
+              "wait": true,
+              "timeout": 60,
+              "verbose": true
+            }
+          }
+        }
+      },
+      "previous_hash": "a96f2f14213b9d65f1bf5866d85cb1fb1e7671e301fcad567cbcbf03afd09826",
+      "current_hash": "fbf00fb39d8932c65e0e9df883e4eecacc2515ac19e4c06ee16b93c2a32acde9"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "890b4343-65af-4c6e-9104-77181577f03e",
+    "start_time": "2025-05-20T13:55:20.812974Z",
+    "end_time": "2025-05-20T13:55:20.813427Z",
+    "random_seed": "c7ed984d-9326-4d9f-bb07-67170d763d0d",
+    "environment_hash": "5d8fcb449622a0c478d6c18c32951f41eb4c98d6ab1f6e3949cbf85580fbfe56"
+  }
+}

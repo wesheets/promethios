@@ -1,0 +1,62 @@
+{
+  "execution_id": "b7827719-1ed5-48ae-8a65-cac7517f91b5",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T14:00:04.423304Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "cli",
+        "trigger_id": "d81ad5c3-5aca-4e36-aa91-79adc0feff95",
+        "random_seed": "16738f39-fbc8-4c0d-bb44-371133317186"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "22431bd50f3ac45f50cac3c3ef7110b0e628a7df440c940b1bc4b65b96c71997"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T14:00:04.423349Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "external_trigger",
+        "content": {
+          "trigger_id": "d81ad5c3-5aca-4e36-aa91-79adc0feff95",
+          "trigger_type": "cli",
+          "timestamp": "2025-05-20T14:00:04.420233Z",
+          "source": {
+            "identifier": "test_user",
+            "type": "user",
+            "metadata": {
+              "hostname": "test_host",
+              "cli_version": "1.0.0"
+            }
+          },
+          "payload": {
+            "loop_input": {
+              "task": "test external trigger",
+              "some_detail": "detail_for_external_trigger"
+            },
+            "options": {
+              "wait": true,
+              "timeout": 60,
+              "verbose": true
+            }
+          }
+        }
+      },
+      "previous_hash": "22431bd50f3ac45f50cac3c3ef7110b0e628a7df440c940b1bc4b65b96c71997",
+      "current_hash": "72edbba1abc0b732d3c76c0f398f8d2189bbf3e520e894d1052bb51625373180"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "d81ad5c3-5aca-4e36-aa91-79adc0feff95",
+    "start_time": "2025-05-20T14:00:04.423105Z",
+    "end_time": "2025-05-20T14:00:04.423575Z",
+    "random_seed": "9b50d54f-dfd7-4163-87d1-8a64ba9ede42",
+    "environment_hash": "57d6530c6d046afa86c4e5c3e08e582fba3614ea7c3c951979fae8fba4227b67"
+  }
+}

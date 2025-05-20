@@ -2,7 +2,7 @@
 Trust Log integration for Merkle seals and conflict metadata.
 
 This module implements Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0, 12.20
 """
@@ -50,7 +50,7 @@ class TrustLogIntegration:
     Integrates Merkle seals and conflict metadata with the Trust Log UI.
     
     This component implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
+    Codex Contract: v2025.05.20
     Phase ID: 5.3
     Clauses: 5.3, 11.0, 12.20
     """
@@ -64,7 +64,7 @@ class TrustLogIntegration:
             conflict_detector: ConflictDetector instance
         """
         # Perform pre-loop tether check
-        if not pre_loop_tether_check("v2025.05.18", "5.3"):
+        if not pre_loop_tether_check("v2025.05.20", "5.3"):
             raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
             
         self.merkle_seal_generator = merkle_seal_generator
@@ -96,7 +96,7 @@ class TrustLogIntegration:
             "execution_id": execution_id,
             "timestamp": timestamp,
             "merkle_seal": merkle_seal,
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3",
             "codex_clauses": ["5.3", "11.0", "12.20"],
             "trust_surface": {

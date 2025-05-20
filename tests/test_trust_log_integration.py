@@ -2,7 +2,7 @@
 Integration tests for Trust Log Integration implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0, 12.20
 """
@@ -42,7 +42,7 @@ class TestTrustLogIntegration(unittest.TestCase):
             "seal_id": str(uuid.uuid4()),
             "root_hash": "a" * 64,
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3",
             "conflict_metadata": {
                 "conflict_type": "none",
@@ -108,7 +108,7 @@ class TestTrustLogIntegration(unittest.TestCase):
         self.assertIn("entry_hash", entry)
         
         # Verify contract details
-        self.assertEqual(entry["contract_version"], "v2025.05.18")
+        self.assertEqual(entry["contract_version"], "v2025.05.20")
         self.assertEqual(entry["phase_id"], "5.3")
         self.assertEqual(entry["codex_clauses"], ["5.3", "11.0", "12.20"])
         
@@ -145,7 +145,7 @@ class TestTrustLogIntegration(unittest.TestCase):
             "execution_id": self.execution_id,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "merkle_seal": self.mock_merkle_seal_generator.create_seal.return_value,
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3",
             "codex_clauses": ["5.3", "11.0", "12.20"],
             "trust_surface": {

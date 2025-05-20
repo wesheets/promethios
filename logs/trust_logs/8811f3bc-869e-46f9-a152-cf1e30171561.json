@@ -1,0 +1,92 @@
+{
+  "binding_id": "8811f3bc-869e-46f9-a152-cf1e30171561",
+  "contract_version": "v2025.05.20",
+  "timestamp": "2025-05-20T14:00:48.307940Z",
+  "replay_log": {
+    "log_id": "1aca3c40-4fff-43d1-88c4-58403c9f31a2",
+    "execution_id": "72c019ad-c6c8-4bae-8579-c5a50d349db0",
+    "entries": [
+      {
+        "entry_id": 0,
+        "timestamp": "2025-05-20T14:00:48.302673Z",
+        "event_type": "state_transition",
+        "event_data": {
+          "state": "state_0"
+        },
+        "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "current_hash": "b72f8ee61acfb51e55eb7bb32c68ee495dc17e1cee403866db6f4d9916fb25b6"
+      },
+      {
+        "entry_id": 1,
+        "timestamp": "2025-05-20T14:00:48.302687Z",
+        "event_type": "state_transition",
+        "event_data": {
+          "state": "state_1"
+        },
+        "previous_hash": "b72f8ee61acfb51e55eb7bb32c68ee495dc17e1cee403866db6f4d9916fb25b6",
+        "current_hash": "6a5400547c83d7fc05e5259bb7b3c834f2092348c03c7181e6f3d56d18352122"
+      },
+      {
+        "entry_id": 2,
+        "timestamp": "2025-05-20T14:00:48.302697Z",
+        "event_type": "state_transition",
+        "event_data": {
+          "state": "state_2"
+        },
+        "previous_hash": "6a5400547c83d7fc05e5259bb7b3c834f2092348c03c7181e6f3d56d18352122",
+        "current_hash": "39f49f44d1a6f3ed5ed6719b7504ac3f32926ef5da7ca622a549a65a1ec1704d"
+      },
+      {
+        "entry_id": 3,
+        "timestamp": "2025-05-20T14:00:48.302705Z",
+        "event_type": "state_transition",
+        "event_data": {
+          "state": "state_3"
+        },
+        "previous_hash": "39f49f44d1a6f3ed5ed6719b7504ac3f32926ef5da7ca622a549a65a1ec1704d",
+        "current_hash": "98cbc8960e8c92d2d4c58750cc49d48e0e22c60f5cb61998700dc9d799be6fe6"
+      },
+      {
+        "entry_id": 4,
+        "timestamp": "2025-05-20T14:00:48.302713Z",
+        "event_type": "state_transition",
+        "event_data": {
+          "state": "state_4"
+        },
+        "previous_hash": "98cbc8960e8c92d2d4c58750cc49d48e0e22c60f5cb61998700dc9d799be6fe6",
+        "current_hash": "dbc913b43a23772832af2f5428ff6c58b5d14e2f4ced731b5489d0ea7df34411"
+      }
+    ],
+    "merkle_root": "8d3533b1b9be861b005dbc85eb63cef63747c204d28e859787df9d1a79b98f2b",
+    "verification_status": {
+      "is_verified": true,
+      "verification_timestamp": "2025-05-20T14:00:48.302853Z",
+      "verification_method": "merkle_consensus",
+      "verification_id": "0323ef71-b8f7-4243-b4dd-f4bd056f8c39"
+    }
+  },
+  "ui_binding": {
+    "module_id": "UI-12.20",
+    "view_id": "3aced477-99f0-4f43-a97d-7ffcb6f2304e",
+    "binding_type": "direct",
+    "display_options": {
+      "show_verification_status": true,
+      "show_hash_chain": true,
+      "show_merkle_tree": true,
+      "show_conflict_metadata": true
+    },
+    "access_control": {
+      "read_only": true,
+      "required_roles": [
+        "operator",
+        "auditor"
+      ]
+    }
+  },
+  "codex_clauses": [
+    "5.2",
+    "5.3",
+    "11.0",
+    "12.20"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "execution_id": "74c0e9f1-3038-47dc-b7c1-d15e483fe54a",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T13:31:43.411600Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "cli",
+        "trigger_id": "cb52b90b-2e2f-4944-9e32-4b73f25e49d9",
+        "random_seed": "7a571a6b-62a8-441a-8e0c-9580498cf042"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "0384f3cd0f9dc93a5ec5c053507e09487ae656ee45a0946f247acae329727179"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T13:31:43.411626Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "external_trigger",
+        "content": {
+          "trigger_id": "cb52b90b-2e2f-4944-9e32-4b73f25e49d9",
+          "trigger_type": "cli",
+          "timestamp": "2025-05-20T13:31:43.408960Z",
+          "source": {
+            "identifier": "test_user",
+            "type": "user",
+            "metadata": {
+              "hostname": "test_host",
+              "cli_version": "1.0.0"
+            }
+          },
+          "payload": {
+            "loop_input": {
+              "task": "test external trigger",
+              "some_detail": "detail_for_external_trigger"
+            },
+            "options": {
+              "wait": true,
+              "timeout": 60,
+              "verbose": true
+            }
+          }
+        }
+      },
+      "previous_hash": "0384f3cd0f9dc93a5ec5c053507e09487ae656ee45a0946f247acae329727179",
+      "current_hash": "233692cf38fda28cc09c06ed8f76521ec6e1351d4236b9a12b46e648737a6891"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "cb52b90b-2e2f-4944-9e32-4b73f25e49d9",
+    "start_time": "2025-05-20T13:31:43.411433Z",
+    "end_time": "2025-05-20T13:31:43.411920Z",
+    "random_seed": "e045459b-0e8d-4103-8e03-778758b7d584",
+    "environment_hash": "e555c010a4c4d17f1e3eced301a55358ba13babe3cf3b1b1d1c74c314bddc6ee"
+  }
+}

@@ -2,7 +2,7 @@
 Unit tests for Merkle Tree implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0
 """
@@ -25,13 +25,13 @@ class TestMerkleTree(unittest.TestCase):
     def test_pre_loop_tether_check(self):
         """Test pre-loop tether check function."""
         # Valid contract and phase
-        self.assertTrue(pre_loop_tether_check("v2025.05.18", "5.3"))
+        self.assertTrue(pre_loop_tether_check("v2025.05.20", "5.3"))
         
         # Invalid contract
         self.assertFalse(pre_loop_tether_check("v2025.05.17", "5.3"))
         
         # Invalid phase
-        self.assertFalse(pre_loop_tether_check("v2025.05.18", "5.2"))
+        self.assertFalse(pre_loop_tether_check("v2025.05.20", "5.2"))
     
     def test_init(self):
         """Test MerkleTree initialization."""

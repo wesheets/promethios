@@ -2,7 +2,7 @@
 Merkle Seal Generator for execution outputs and conflict metadata.
 
 This module implements Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0
 """
@@ -49,7 +49,7 @@ class MerkleSealGenerator:
     Generates Merkle seals for execution outputs and conflict metadata.
     
     This component implements Phase 5.3 of the Promethios roadmap.
-    Codex Contract: v2025.05.18
+    Codex Contract: v2025.05.20
     Phase ID: 5.3
     Clauses: 5.3, 11.0
     """
@@ -57,7 +57,7 @@ class MerkleSealGenerator:
     def __init__(self):
         """Initialize the Merkle seal generator."""
         # Perform pre-loop tether check
-        if not pre_loop_tether_check("v2025.05.18", "5.3"):
+        if not pre_loop_tether_check("v2025.05.20", "5.3"):
             raise ValueError("Pre-loop tether check failed: Invalid contract version or phase ID")
             
         self.merkle_tree = MerkleTree()
@@ -113,7 +113,7 @@ class MerkleSealGenerator:
             "seal_id": seal_id,
             "root_hash": root_hash,
             "timestamp": timestamp,
-            "contract_version": "v2025.05.18",
+            "contract_version": "v2025.05.20",
             "phase_id": "5.3",
             "conflict_metadata": conflict_metadata,
             "tree_metadata": {

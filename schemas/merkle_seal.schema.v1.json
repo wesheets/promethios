@@ -24,7 +24,7 @@
       "type": "string",
       "description": "Version of the Codex contract",
       "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$",
-      "const": "v2025.05.18"
+      "const": "v2025.05.20"
     },
     "phase_id": {
       "type": "string",

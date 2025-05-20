@@ -1,0 +1,14 @@
+{
+  "execution_id": "794e304f-466e-4918-8a7d-060deb43da43",
+  "input_hash": "4ef08c0095b2a42c5ca46756457bed45abfc1731c123703ebc8cea62dfee2a24",
+  "output_hash": "ea4add4839c5dcf37d63f437a9b4ca2ae9ef9989d6ab1a49d8bab145703820fb",
+  "log_hash": "19078a54eb52fb5753bb45cbaabffcd028c2340e688e14fb85acd848f2052ae8",
+  "timestamp": "2025-05-20T14:00:48.102453Z",
+  "contract_version": "v2025.05.20",
+  "phase_id": "5.2",
+  "trigger_metadata": {
+    "trigger_id": "test-trigger-004",
+    "trigger_type": "cli"
+  },
+  "seal_version": "1.0"
+}

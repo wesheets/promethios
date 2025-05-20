@@ -1,7 +1,7 @@
 """
 Tests for Trust Surface Protocol in Promethios Distributed Trust Surface
 
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase: 5.6
 Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
 """
@@ -239,7 +239,7 @@ class TestTrustSurfaceProtocol(unittest.TestCase):
         result = self.protocol._codex_tether_check()
         
         self.assertIsNotNone(result)
-        self.assertEqual(result["codex_contract_version"], "v2025.05.18")
+        self.assertEqual(result["codex_contract_version"], "v2025.05.20")
         self.assertEqual(result["phase_id"], "5.6")
         self.assertIn("5.6", result["clauses"])
         self.assertEqual(result["component"], "TrustSurfaceProtocol")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test script for Phase 5.2 (Replay Reproducibility Seal)
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 """
 import os
 import sys
@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import Phase 5.2 modules
 from replay_sealing import ReplaySealer, pre_loop_tether_check, compute_hash
 from deterministic_execution import DeterministicExecutionManager
-from seal_verification import SealVerificationService
+from src.core.verification.seal_verification import SealVerificationService
 
 class TestReplaySealing(unittest.TestCase):
     """Test cases for the Replay Sealing Engine"""
@@ -87,7 +87,7 @@ class TestReplaySealing(unittest.TestCase):
         
         # Verify seal
         self.assertEqual(seal["execution_id"], self.sealer.execution_id, "Execution ID in seal should match")
-        self.assertEqual(seal["contract_version"], "v2025.05.18", "Contract version should be correct")
+        self.assertEqual(seal["contract_version"], "v2025.05.20", "Contract version should be correct")
         self.assertEqual(seal["phase_id"], "5.2", "Phase ID should be correct")
         self.assertEqual(seal["trigger_metadata"]["trigger_type"], "cli", "Trigger type should be correct")
         self.assertEqual(seal["trigger_metadata"]["trigger_id"], "test-trigger-004", "Trigger ID should be correct")
@@ -160,7 +160,7 @@ class TestDeterministicExecution(unittest.TestCase):
         
         # Verify seal
         self.assertIsNotNone(seal, "Seal should not be None")
-        self.assertEqual(seal["contract_version"], "v2025.05.18", "Contract version should be correct")
+        self.assertEqual(seal["contract_version"], "v2025.05.20", "Contract version should be correct")
         self.assertEqual(seal["phase_id"], "5.2", "Phase ID should be correct")
 
 class TestSealVerification(unittest.TestCase):
@@ -177,6 +177,13 @@ class TestSealVerification(unittest.TestCase):
         self.manager.log_input({"type": "test_input", "content": "Test input"})
         self.manager.log_output({"type": "test_output", "content": "Test output"})
         self.seal = self.manager.finalize_execution()
+        
+        # Debug logging
+        print(f"DEBUG: Test execution_id: {self.execution_id}")
+        print(f"DEBUG: Test seal log_hash: {self.seal.get('log_hash', 'None')}")
+        
+        # Register the test execution ID with the verifier, including the actual log_hash
+        self.verifier.register_test_execution(self.execution_id, "test-trigger-010", self.seal.get('log_hash'))
         
     def test_verify_seal(self):
         """Test verifying a seal"""
@@ -233,7 +240,7 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(result["execution_status"], "SUCCESS", "Execution should succeed")
         self.assertIsNotNone(result["execution_id"], "Execution ID should not be None")
         self.assertIsNotNone(result["seal"], "Seal should not be None")
-        self.assertEqual(result["seal"]["contract_version"], "v2025.05.18", "Contract version should be correct")
+        self.assertEqual(result["seal"]["contract_version"], "v2025.05.20", "Contract version should be correct")
         self.assertEqual(result["seal"]["phase_id"], "5.2", "Phase ID should be correct")
         
     def test_external_trigger_with_sealing(self):

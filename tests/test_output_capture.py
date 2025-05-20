@@ -2,7 +2,7 @@
 Unit tests for Output Capture Mechanism implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0
 """
@@ -51,7 +51,7 @@ class TestOutputCapture(unittest.TestCase):
         self.assertEqual(output_obj["output_type"], "log")
         self.assertEqual(output_obj["source"], "test_source")
         self.assertEqual(output_obj["output"], "Test output")
-        self.assertEqual(output_obj["contract_version"], "v2025.05.18")
+        self.assertEqual(output_obj["contract_version"], "v2025.05.20")
         self.assertEqual(output_obj["phase_id"], "5.3")
     
     def test_capture_output_dict(self):

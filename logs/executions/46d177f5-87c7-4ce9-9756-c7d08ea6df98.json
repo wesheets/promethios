@@ -1,0 +1,50 @@
+{
+  "execution_id": "46d177f5-87c7-4ce9-9756-c7d08ea6df98",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T12:35:11.566220Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "cli",
+        "trigger_id": "test-trigger-010",
+        "random_seed": "d3675b03-6d70-4855-a95e-068dcc720f85"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "93ba12d1114f888e56bf50c5ac4c87a56bad14225fd1e6903d51dc2996a76964"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T12:35:11.566244Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "test_input",
+        "content": "Test input"
+      },
+      "previous_hash": "93ba12d1114f888e56bf50c5ac4c87a56bad14225fd1e6903d51dc2996a76964",
+      "current_hash": "4949e047907eba37e6a5fd553443d354311177ab388d700e833f4dcf67ed3c30"
+    },
+    {
+      "entry_id": 2,
+      "timestamp": "2025-05-20T12:35:11.566260Z",
+      "event_type": "output",
+      "event_data": {
+        "type": "test_output",
+        "content": "Test output"
+      },
+      "previous_hash": "4949e047907eba37e6a5fd553443d354311177ab388d700e833f4dcf67ed3c30",
+      "current_hash": "24c259571375c2baea45a2a96695d1d8a0a448d99d8194a5ae4aa970ddc71c37"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "cli",
+    "trigger_id": "test-trigger-010",
+    "start_time": "2025-05-20T12:35:11.566087Z",
+    "end_time": "2025-05-20T12:35:11.566274Z",
+    "random_seed": "2a75b5b4-4f9c-487a-bb66-3b1dd1b1dbe4",
+    "environment_hash": "a908b4978b6b59f34c42dbf6a6893422a36d9cd4a76d811ee1d023a44a5aaf1f"
+  }
+}

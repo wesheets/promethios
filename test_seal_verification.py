@@ -11,7 +11,7 @@ class TestReplayVerifier(unittest.TestCase):
     def setUp(self):
         # Import the ReplayVerifier class
         # This import is placed here to allow for module implementation before test execution
-        from seal_verification import ReplayVerifier
+        from src.core.verification.seal_verification import ReplayVerifier
         
         self.verifier = ReplayVerifier()
         self.execution_id = str(uuid.uuid4())
@@ -62,7 +62,7 @@ class TestReplayVerifier(unittest.TestCase):
         self.assertIn("codex_clauses", result)
         
         # Verify contract version
-        self.assertEqual(result["contract_version"], "v2025.05.18")
+        self.assertEqual(result["contract_version"], "v2025.05.20")
         
         # Verify clauses
         self.assertIn("5.2", result["codex_clauses"])
@@ -118,7 +118,7 @@ class TestReplayVerifier(unittest.TestCase):
         
         # For now, we'll just verify that the contract version is correct in the result
         result = self.verifier.verify_execution(self.execution_id, self.replay_log)
-        self.assertEqual(result["contract_version"], "v2025.05.18")
+        self.assertEqual(result["contract_version"], "v2025.05.20")
         
 if __name__ == "__main__":
     unittest.main()

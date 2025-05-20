@@ -1,0 +1,103 @@
+{
+  "execution_id": "1adc7dc6-95c4-4109-a5a2-ed9fae7fc22f",
+  "entries": [
+    {
+      "entry_id": 0,
+      "timestamp": "2025-05-20T12:51:35.872614Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "execution_initialization",
+        "trigger_type": "webhook",
+        "trigger_id": "7a9816da-0f9b-4e4c-88f8-0ad679f70a63",
+        "random_seed": "9606420b-eee0-464e-bf18-66ae3333191e"
+      },
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "current_hash": "d619fb104c061ef3cfdeb934f93f6269e36238fbdffdaa4b467578a60d806509"
+    },
+    {
+      "entry_id": 1,
+      "timestamp": "2025-05-20T12:51:35.872694Z",
+      "event_type": "input",
+      "event_data": {
+        "type": "loop_input",
+        "content": {
+          "loop_id": "7a9816da-0f9b-4e4c-88f8-0ad679f70a63",
+          "plan_details": {
+            "task": "test webhook trigger",
+            "some_detail": "detail_for_webhook_trigger"
+          },
+          "operator_override_signal": null
+        }
+      },
+      "previous_hash": "d619fb104c061ef3cfdeb934f93f6269e36238fbdffdaa4b467578a60d806509",
+      "current_hash": "75db2bbddf3427183665404ad5b413f76d9bfe0aebedae0341d61cbc56281ae2"
+    },
+    {
+      "entry_id": 2,
+      "timestamp": "2025-05-20T12:51:35.872866Z",
+      "event_type": "output",
+      "event_data": {
+        "type": "core_output",
+        "content": [
+          {
+            "status": "mock_success",
+            "details": "GovernanceCore mock executed successfully.",
+            "received_plan_input": {
+              "loop_id": "7a9816da-0f9b-4e4c-88f8-0ad679f70a63",
+              "plan_details": {
+                "task": "test webhook trigger",
+                "some_detail": "detail_for_webhook_trigger"
+              },
+              "operator_override_signal": null
+            },
+            "received_override": null
+          },
+          {
+            "timestamp": "2025-05-20T12:51:35.872756Z",
+            "current_emotion_state": "MOCK_FOCUSED",
+            "contributing_factors": [
+              {
+                "factor": "Mock Clarity of Task",
+                "influence": 0.9
+              }
+            ],
+            "trust_score": 0.95
+          },
+          {
+            "agent_id": "Promethios_MGC_v1_mock",
+            "timestamp": "2025-05-20T12:51:35.872756Z",
+            "plan_id": "mock_plan_id_7e049a0f-983a-4ebc-a19e-ca423b9c3faa",
+            "loop_id": "54928332-b857-4553-b217-ca1fb5bf0392",
+            "decision_outcome": "MOCK_ACCEPTED",
+            "rejection_reason": null,
+            "override_required": false,
+            "trust_score_at_decision": 0.95,
+            "emotion_state_at_decision": "MOCK_FOCUSED",
+            "validation_passed": true,
+            "schema_versions": {
+              "emotion_telemetry": "mgc_emotion_telemetry.schema.json#v_mock",
+              "justification_log": "loop_justification_log.schema.v1.json#v1.2.0_mock"
+            },
+            "override_active": false,
+            "override_type": null,
+            "override_reason": null,
+            "override_parameters": null,
+            "override_issuing_operator_id": null
+          }
+        ]
+      },
+      "previous_hash": "75db2bbddf3427183665404ad5b413f76d9bfe0aebedae0341d61cbc56281ae2",
+      "current_hash": "f4edeb6d07e56b69e702923a363032a477d00d9bfae8020b7251853275620727"
+    }
+  ],
+  "metadata": {
+    "contract_version": "v2025.05.20",
+    "phase_id": "5.2",
+    "trigger_type": "webhook",
+    "trigger_id": "7a9816da-0f9b-4e4c-88f8-0ad679f70a63",
+    "start_time": "2025-05-20T12:51:35.872440Z",
+    "end_time": "2025-05-20T12:51:35.872941Z",
+    "random_seed": "2edd757f-9c4c-4fb9-ae3c-70fd458d4688",
+    "environment_hash": "a13fd860551835f87d79bbe2674e152b9d7da66e3c592465a0fdffd51b3a1af8"
+  }
+}

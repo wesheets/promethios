@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Promethios Replay Sealing Engine - Phase 5.2
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 """
 import hashlib
 import json
@@ -18,7 +18,7 @@ logger = logging.getLogger("promethios-replay-seal")
 
 # Constants
 SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")
-CONTRACT_VERSION = "v2025.05.18"
+CONTRACT_VERSION = "v2025.05.20"
 PHASE_ID = "5.2"
 
 def load_schema(schema_name: str) -> Dict[str, Any]:

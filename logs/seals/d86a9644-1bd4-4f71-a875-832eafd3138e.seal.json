@@ -1,0 +1,14 @@
+{
+  "execution_id": "d86a9644-1bd4-4f71-a875-832eafd3138e",
+  "input_hash": "52bd82bee50dc74184fb728d93ae15d981a645cfbbd5512c21b3410f51503726",
+  "output_hash": "c8195e1629877107fc9e5e11df175b940cf1593c8697741fa92c1739d105fd72",
+  "log_hash": "48e838f8065175a786797074b0377928f1fc8627d08c9431583eb2a0ec9b7949",
+  "timestamp": "2025-05-20T12:12:22.198190Z",
+  "contract_version": "v2025.05.20",
+  "phase_id": "5.2",
+  "trigger_metadata": {
+    "trigger_id": "5d35de09-0b19-4213-a632-0aace1b1ef7c",
+    "trigger_type": "webhook"
+  },
+  "seal_version": "1.0"
+}

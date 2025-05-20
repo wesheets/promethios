@@ -2,7 +2,7 @@
 Unit tests for Conflict Detection System implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 10.4
 """
@@ -74,7 +74,7 @@ class TestConflictDetector(unittest.TestCase):
         self.assertIn("codex_clauses", conflict)
         
         # Verify contract details
-        self.assertEqual(conflict["contract_version"], "v2025.05.18")
+        self.assertEqual(conflict["contract_version"], "v2025.05.20")
         self.assertEqual(conflict["phase_id"], "5.3")
         self.assertEqual(conflict["codex_clauses"], ["5.3", "10.4"])
         

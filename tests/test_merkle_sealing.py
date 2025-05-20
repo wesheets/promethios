@@ -2,7 +2,7 @@
 Unit tests for Merkle Seal Generator implementation.
 
 This module tests Phase 5.3 of the Promethios roadmap.
-Codex Contract: v2025.05.18
+Codex Contract: v2025.05.20
 Phase ID: 5.3
 Clauses: 5.3, 11.0
 """
@@ -70,7 +70,7 @@ class TestMerkleSealGenerator(unittest.TestCase):
         self.assertIn("codex_clauses", seal)
         
         # Verify contract details
-        self.assertEqual(seal["contract_version"], "v2025.05.18")
+        self.assertEqual(seal["contract_version"], "v2025.05.20")
         self.assertEqual(seal["phase_id"], "5.3")
         self.assertEqual(seal["codex_clauses"], ["5.3", "11.0"])
         
