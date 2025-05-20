@@ -127,6 +127,27 @@
           "phase": "5.6",
           "dependencies": ["attestation_service.py", "boundary_enforcement_module.py"],
           "canonical_path": "src/core/governance/trust_surface_protocol.py"
+        },
+        "contract_sealer.py": {
+          "purpose": "Create and verify cryptographic seals of contracts",
+          "phase": "5.8",
+          "dependencies": [],
+          "canonical_path": "src/core/governance/contract_sealer.py",
+          "codex_contract_version": "v2025.05.20"
+        },
+        "evolution_protocol.py": {
+          "purpose": "Manage the contract evolution process through formal approval",
+          "phase": "5.8",
+          "dependencies": ["contract_sealer.py"],
+          "canonical_path": "src/core/governance/evolution_protocol.py",
+          "codex_contract_version": "v2025.05.20"
+        },
+        "codex_lock.py": {
+          "purpose": "Main implementation of the Codex Mutation Lock system",
+          "phase": "5.8",
+          "dependencies": ["contract_sealer.py", "evolution_protocol.py", "src/core/trust/mutation_detector.py"],
+          "canonical_path": "src/core/governance/codex_lock.py",
+          "codex_contract_version": "v2025.05.20"
         }
       },
       "trust": {
@@ -147,6 +168,13 @@
           "phase": "5.7",
           "dependencies": ["trust_surface_analytics.py", "schema_validator.py"],
           "canonical_path": "src/core/trust/trust_metrics_aggregator.py"
+        },
+        "mutation_detector.py": {
+          "purpose": "Detect unauthorized modifications to sealed contracts",
+          "phase": "5.8",
+          "dependencies": ["src/core/governance/contract_sealer.py"],
+          "canonical_path": "src/core/trust/mutation_detector.py",
+          "codex_contract_version": "v2025.05.20"
         }
       },
       "visualization": {
@@ -189,6 +217,13 @@
           "trust_aggregation_service.py"
         ],
         "canonical_path": "src/integration/distributed_verification_integration.py"
+      },
+      "codex_lock_api.py": {
+        "purpose": "API endpoints for interacting with the Codex Lock system",
+        "phase": "5.8",
+        "dependencies": ["src/core/governance/codex_lock.py"],
+        "canonical_path": "src/integration/codex_lock_api.py",
+        "codex_contract_version": "v2025.05.20"
       }
     },
     "verification": {
@@ -325,66 +360,24 @@
             "canonical_path": "src/ui/trust_surface_dashboard/components/surface_view.py"
           },
           "metrics_panel.py": {
-            "purpose": "Displays key trust metrics and indicators",
+            "purpose": "Displays trust metrics in the dashboard",
             "phase": "5.7",
             "dependencies": ["trust_surface_dashboard.py", "trust_metrics_aggregator.py"],
             "canonical_path": "src/ui/trust_surface_dashboard/components/metrics_panel.py"
           },
           "boundary_alerts.py": {
-            "purpose": "Shows notifications for trust boundary violations",
+            "purpose": "Displays trust boundary alerts in the dashboard",
             "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "trust_surface_analytics.py"],
+            "dependencies": ["trust_surface_dashboard.py", "trust_boundary_manager.py"],
             "canonical_path": "src/ui/trust_surface_dashboard/components/boundary_alerts.py"
           },
           "trend_charts.py": {
-            "purpose": "Visualizes historical trust data trends",
+            "purpose": "Displays trust trend charts in the dashboard",
             "phase": "5.7",
             "dependencies": ["trust_surface_dashboard.py", "trust_metrics_aggregator.py"],
             "canonical_path": "src/ui/trust_surface_dashboard/components/trend_charts.py"
           }
-        },
-        "layouts": {
-          "dashboard_layout.py": {
-            "purpose": "Defines overall layout of the trust surface dashboard",
-            "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/layouts/dashboard_layout.py"
-          }
         }
-      }
-    }
-  },
-  "schemas": {
-    "core": {
-      "merkle_seal.schema.v1.json": {
-        "purpose": "Defines structure for Merkle seals",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "schemas/core/merkle_seal.schema.v1.json"
-      },
-      "conflict_metadata.schema.v1.json": {
-        "purpose": "Defines structure for conflict metadata",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "schemas/core/conflict_metadata.schema.v1.json"
-      },
-      "execution_log.schema.v1.json": {
-        "purpose": "Defines structure for execution logs",
-        "phase": "5.2",
-        "dependencies": [],
-        "canonical_path": "schemas/core/execution_log.schema.v1.json"
-      },
-      "loop_justification_log.schema.v1.json": {
-        "purpose": "Defines structure for loop justification logs",
-        "phase": "5.2",
-        "dependencies": [],
-        "canonical_path": "schemas/core/loop_justification_log.schema.v1.json"
-      },
-      "external_trigger.schema.v1.json": {
-        "purpose": "Defines structure for external triggers",
-        "phase": "5.1",
-        "dependencies": [],
-        "canonical_path": "schemas/core/external_trigger.schema.v1.json"
       }
     }
   }

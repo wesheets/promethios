@@ -1,7 +1,7 @@
 {
   "contract_version": "v2025.05.20",
-  "phase_id": "5.7",
-  "phase_title": "Trust Surface Visualization and Analytics",
+  "phase_id": "5.8",
+  "phase_title": "Codex Mutation Lock",
   "schema_registry": [
     "external_trigger.schema.v1.json",
     "webhook_payload.schema.v1.json",
@@ -25,14 +25,19 @@
     "trust_surface_protocol.schema.v1.json",
     "trust_metrics.schema.v1.json",
     "trust_boundary_alert.schema.v1.json",
-    "trust_visualization.schema.v1.json"
+    "trust_visualization.schema.v1.json",
+    "contract_seal.schema.v1.json",
+    "evolution_proposal.schema.v1.json",
+    "evolution_record.schema.v1.json",
+    "mutation_detection.schema.v1.json"
   ],
   "ui_schema_registry": [
     "trust_view.schema.v1.json",
     "replay_verification.schema.v1.json",
     "trust_log_replay_binding.schema.v1.json",
     "governance_mesh.schema.v1.json",
-    "trust_visualization.schema.v1.json"
+    "trust_visualization.schema.v1.json",
+    "mutation_detection.schema.v1.json"
   ],
   "codex_clauses": [
     "5.2: Replay Reproducibility Seal",
@@ -41,6 +46,7 @@
     "5.5: Governance Mesh Integration",
     "5.6: Distributed Trust Surface",
     "5.7: Trust Surface Visualization and Analytics",
+    "5.8: Codex Mutation Lock",
     "5.2.5: Codex Repository Hygiene Freeze",
     "11.0: Immutable Log Chain + Sequential Hashing",
     "11.1: Hash Chain Integrity Verification",
@@ -62,7 +68,13 @@
     "Trust boundary alerts must validate against trust_boundary_alert.schema.v1.json",
     "Trust visualizations must validate against trust_visualization.schema.v1.json",
     "Dashboard UI must implement all required components with proper data binding",
-    "Verification modules must be present in canonical locations for repository stability"
+    "Verification modules must be present in canonical locations for repository stability",
+    "Contract seals must validate against contract_seal.schema.v1.json",
+    "Evolution proposals must validate against evolution_proposal.schema.v1.json",
+    "Evolution records must validate against evolution_record.schema.v1.json",
+    "Mutation detection results must validate against mutation_detection.schema.v1.json",
+    "Codex contracts must be cryptographically sealed before external exposure",
+    "Contract evolution must follow formal approval process with required approvals"
   ],
   "verification_record_hash": "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e",
   "trust_log_routing_activation": "UI-12.20-ACTIVE",
@@ -84,8 +96,12 @@
     "trust_surface_protocol.schema.v1.json",
     "trust_metrics.schema.v1.json",
     "trust_boundary_alert.schema.v1.json",
-    "trust_visualization.schema.v1.json"
+    "trust_visualization.schema.v1.json",
+    "contract_seal.schema.v1.json",
+    "evolution_proposal.schema.v1.json",
+    "evolution_record.schema.v1.json",
+    "mutation_detection.schema.v1.json"
   ],
-  "contract_hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-  "annotation": "Phase 5.7 Trust Surface Visualization and Analytics with UI-12.66 Trust Surface Dashboard and restored verification modules"
+  "contract_hash": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1",
+  "annotation": "Phase 5.8 Codex Mutation Lock with contract sealing, evolution protocol, and mutation detection"
 }

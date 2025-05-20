@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evolution Record",
+  "description": "A record of a contract evolution",
+  "type": "object",
+  "required": [
+    "evolution_id",
+    "timestamp",
+    "proposal_id",
+    "previous_version",
+    "new_version",
+    "sealed_contract",
+    "approvals",
+    "justification"
+  ],
+  "properties": {
+    "evolution_id": {
+      "type": "string",
+      "description": "Unique identifier for the evolution",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Timestamp when the evolution was finalized",
+      "format": "date-time"
+    },
+    "proposal_id": {
+      "type": "string",
+      "description": "Identifier of the proposal that led to this evolution",
+      "format": "uuid"
+    },
+    "previous_version": {
+      "type": "string",
+      "description": "Version of the contract before evolution"
+    },
+    "new_version": {
+      "type": "string",
+      "description": "Version of the contract after evolution"
+    },
+    "sealed_contract": {
+      "type": "object",
+      "description": "The sealed contract after evolution"
+    },
+    "approvals": {
+      "type": "array",
+      "description": "List of approvals that led to this evolution",
+      "items": {
+        "type": "object",
+        "required": ["approver_id", "timestamp"],
+        "properties": {
+          "approver_id": {
+            "type": "string",
+            "description": "Identifier of the approver"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when the approval was made",
+            "format": "date-time"
+          },
+          "comments": {
+            "type": ["string", "null"],
+            "description": "Optional comments from the approver"
+          }
+        }
+      }
+    },
+    "justification": {
+      "type": "string",
+      "description": "Justification for the evolution"
+    }
+  }
+}
