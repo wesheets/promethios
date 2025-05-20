@@ -1,5 +1,5 @@
 {
-  "contract_version": "v2025.05.19",
+  "contract_version": "v2025.05.20",
   "phase_id": "5.7",
   "phase_title": "Trust Surface Visualization and Analytics",
   "schema_registry": [
@@ -61,7 +61,8 @@
     "Trust surface analytics must validate against trust_metrics.schema.v1.json",
     "Trust boundary alerts must validate against trust_boundary_alert.schema.v1.json",
     "Trust visualizations must validate against trust_visualization.schema.v1.json",
-    "Dashboard UI must implement all required components with proper data binding"
+    "Dashboard UI must implement all required components with proper data binding",
+    "Verification modules must be present in canonical locations for repository stability"
   ],
   "verification_record_hash": "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e",
   "trust_log_routing_activation": "UI-12.20-ACTIVE",
@@ -86,5 +87,5 @@
     "trust_visualization.schema.v1.json"
   ],
   "contract_hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-  "annotation": "Phase 5.7 Trust Surface Visualization and Analytics with UI-12.66 Trust Surface Dashboard"
+  "annotation": "Phase 5.7 Trust Surface Visualization and Analytics with UI-12.66 Trust Surface Dashboard and restored verification modules"
 }

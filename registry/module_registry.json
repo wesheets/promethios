@@ -1,6 +1,6 @@
 {
-  "registry_version": "v2025.05.19",
-  "last_updated": "2025-05-19",
+  "registry_version": "v2025.05.20",
+  "last_updated": "2025-05-20",
   "modules": {
     "governance": {
       "trust_boundary_manager": {
@@ -60,6 +60,16 @@
         "schemas": ["trust_metrics.schema.v1.json"],
         "depends_on": ["src/core/trust/trust_surface_analytics.py"],
         "purpose": "Collect and normalize metrics from multiple nodes"
+      }
+    },
+    "verification": {
+      "seal_verification": {
+        "path": "src/core/verification/seal_verification.py",
+        "codex_contract_version": "v2025.05.18",
+        "phase": "5.2",
+        "schemas": ["replay_verification.schema.v1.json"],
+        "depends_on": [],
+        "purpose": "Provide cryptographic verification of execution replay logs"
       }
     },
     "visualization": {
