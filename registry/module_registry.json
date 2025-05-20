@@ -1,5 +1,5 @@
 {
-  "registry_version": "v2025.05.18",
+  "registry_version": "v2025.05.19",
   "last_updated": "2025-05-19",
   "modules": {
     "governance": {
@@ -42,6 +42,45 @@
         "schemas": ["trust_boundary.schema.v1.json"],
         "depends_on": ["trust_boundary_manager.py", "attestation_service.py", "trust_propagation_engine.py"],
         "purpose": "Enforce trust boundary policies and access control"
+      }
+    },
+    "trust": {
+      "trust_surface_analytics": {
+        "path": "src/core/trust/trust_surface_analytics.py",
+        "codex_contract_version": "v2025.05.19",
+        "phase": "5.7",
+        "schemas": ["trust_metrics.schema.v1.json", "trust_boundary_alert.schema.v1.json"],
+        "depends_on": ["src/core/governance/trust_boundary_manager.py", "src/core/governance/trust_surface_protocol.py"],
+        "purpose": "Analyze trust surfaces to generate metrics and detect anomalies"
+      },
+      "trust_metrics_aggregator": {
+        "path": "src/core/trust/trust_metrics_aggregator.py",
+        "codex_contract_version": "v2025.05.19",
+        "phase": "5.7",
+        "schemas": ["trust_metrics.schema.v1.json"],
+        "depends_on": ["src/core/trust/trust_surface_analytics.py"],
+        "purpose": "Collect and normalize metrics from multiple nodes"
+      }
+    },
+    "visualization": {
+      "visualization_data_transformer": {
+        "path": "src/core/visualization/visualization_data_transformer.py",
+        "codex_contract_version": "v2025.05.19",
+        "phase": "5.7",
+        "schemas": ["trust_visualization.schema.v1.json"],
+        "depends_on": ["src/core/trust/trust_metrics_aggregator.py"],
+        "purpose": "Transform trust data into visualization-ready format"
+      }
+    },
+    "ui": {
+      "trust_surface_dashboard": {
+        "path": "src/ui/trust_surface_dashboard/trust_surface_dashboard.py",
+        "codex_contract_version": "v2025.05.19",
+        "phase": "5.7",
+        "ui_component": "UI-12.66",
+        "schemas": ["trust_visualization.schema.v1.json"],
+        "depends_on": ["src/core/trust/trust_surface_analytics.py", "src/core/trust/trust_metrics_aggregator.py", "src/core/visualization/visualization_data_transformer.py"],
+        "purpose": "Provide interactive visualization of trust surfaces and metrics"
       }
     }
   }
