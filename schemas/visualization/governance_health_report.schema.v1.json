@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Governance Health Report Schema",
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "enum": ["compliance", "attestation", "boundary", "expansion", "combined"],
+      "description": "The type of governance health report"
+    },
+    "time_period": {
+      "type": "string",
+      "enum": ["daily", "weekly", "monthly", "quarterly"],
+      "description": "The time period covered by the report"
+    },
+    "format": {
+      "type": "string",
+      "enum": ["summary", "detailed", "technical", "executive"],
+      "description": "The format of the report"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The sections to include in the report"
+    },
+    "include_metrics": {
+      "type": "boolean",
+      "description": "Whether to include metrics in the report"
+    },
+    "include_recommendations": {
+      "type": "boolean",
+      "description": "Whether to include recommendations in the report"
+    },
+    "include_visualizations": {
+      "type": "boolean",
+      "description": "Whether to include visualizations in the report"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the report was generated"
+        },
+        "generated_by": {
+          "type": "string",
+          "description": "The entity that generated the report"
+        },
+        "version": {
+          "type": "string",
+          "description": "The version of the report schema"
+        }
+      },
+      "description": "Metadata about the report"
+    },
+    "codex_tethering": {
+      "type": "object",
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "description": "The ID of the Codex contract this report is tethered to"
+        },
+        "seal": {
+          "type": "string",
+          "description": "The cryptographic seal for the report data"
+        },
+        "verification_status": {
+          "type": "string",
+          "enum": ["verified", "unverified", "invalid"],
+          "description": "The verification status of the report data"
+        }
+      },
+      "required": ["contract_id", "seal"],
+      "description": "Codex contract tethering information for the report"
+    },
+    "governance_references": {
+      "type": "object",
+      "properties": {
+        "attestation_framework_id": {
+          "type": "string",
+          "description": "The ID of the Attestation Framework referenced in the report"
+        },
+        "governance_primitives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The IDs of the Governance Primitives referenced in the report"
+        },
+        "trust_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The IDs of the Trust Boundaries referenced in the report"
+        }
+      },
+      "description": "References to governance components in the report"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the issue"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["info", "low", "medium", "high", "critical"],
+            "description": "The severity level of the issue"
+          },
+          "description": {
+            "type": "string",
+            "description": "A description of the issue"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Recommendations for addressing the issue"
+          }
+        },
+        "required": ["id", "severity", "description"],
+        "description": "An issue identified in the governance health report"
+      },
+      "description": "Issues identified in the governance health report"
+    }
+  },
+  "required": ["report_type", "time_period", "format"],
+  "additionalProperties": false
+}
