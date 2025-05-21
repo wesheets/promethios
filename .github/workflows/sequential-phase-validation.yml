@@ -3,11 +3,9 @@ name: Sequential Phase Validation
 on:
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/**'
-      - '!.github/workflows/sequential-phase-validation.yml'
+  push:
+    branches: [ feature/phase-5-13-trust-boundary-definition ]
+  workflow_dispatch:
 
 jobs:
   validate-phases:
