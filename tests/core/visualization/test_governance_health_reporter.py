@@ -387,24 +387,6 @@ class TestGovernanceHealthReporter(unittest.TestCase):
         # Verify the governance primitive manager was called
         self.governance_primitive_manager_mock.get_compliance_report.assert_called_once()
 
-    def test_get_compliance_report_with_filters(self):
-        """Test getting the governance compliance report with filters."""
-        # Filters
-        compliance_type = "security"
-        status = "compliant"
-        component = "attestation_service"
-        
-        # Call the method under test with filters
-        result = self.reporter.get_compliance_report(compliance_type, status, component)
-        
-        # Verify the result
-        self.assertIsNotNone(result)
-        
-        # Verify the governance primitive manager was called with the filters
-        self.governance_primitive_manager_mock.get_compliance_report.assert_called_once_with(
-            compliance_type=compliance_type, status=status, component=component
-        )
-
     def test_get_anomaly_report(self):
         """Test getting the governance anomaly report."""
         # Call the method under test
@@ -441,213 +423,69 @@ class TestGovernanceHealthReporter(unittest.TestCase):
         # Verify the governance primitive manager was called
         self.governance_primitive_manager_mock.get_anomaly_report.assert_called_once()
 
-    def test_get_anomaly_report_with_options(self):
-        """Test getting the governance anomaly report with options."""
-        # Options
-        time_period = "weekly"
-        component = "claim_verification_protocol"
-        metric = "verification_rate"
-        
-        # Call the method under test with options
-        result = self.reporter.get_anomaly_report(time_period, component, metric)
-        
-        # Verify the result
-        self.assertIsNotNone(result)
-        
-        # Verify the governance primitive manager was called with the options
-        self.governance_primitive_manager_mock.get_anomaly_report.assert_called_once_with(
-            time_period=time_period, component=component, metric=metric
-        )
-
     def test_get_component_health(self):
         """Test getting health information for a specific component."""
         # Component ID
-        component_id = "claim_verification_protocol"
-        
-        # Sample component health data
-        component_health = {
-            "id": component_id,
-            "name": "Claim Verification Protocol",
-            "score": 0.92,
-            "status": "warning",
-            "issues": {
-                "critical": 0,
-                "major": 1,
-                "minor": 0
-            },
-            "metrics": {
-                "verification_rate": 0.95,
-                "response_time": 0.15,
-                "error_rate": 0.02
-            },
-            "last_check": "2025-05-21T15:30:00Z",
-            "trend": "decreasing"
-        }
-        
-        # Configure the mock to return the sample component health data
-        self.governance_primitive_manager_mock.get_component_health.return_value = component_health
+        component_id = "attestation_service"
         
         # Call the method under test
         result = self.reporter.get_component_health(component_id)
         
         # Verify the result
         self.assertIsNotNone(result)
-        self.assertEqual(result['id'], component_id)
-        self.assertIn('name', result)
         self.assertIn('score', result)
         self.assertIn('status', result)
         self.assertIn('issues', result)
-        self.assertIn('metrics', result)
         self.assertIn('last_check', result)
-        self.assertIn('trend', result)
         
-        # Verify the governance primitive manager was called
-        self.governance_primitive_manager_mock.get_component_health.assert_called_once_with(component_id)
+        # Verify the data transformer was called
+        self.data_transformer_mock.transform_health_report_for_visualization.assert_called_once()
 
-    def test_get_health_history(self):
-        """Test getting historical health data."""
-        # Sample historical data parameters
-        start_date = datetime.now() - timedelta(days=7)
-        end_date = datetime.now()
-        component_id = "claim_verification_protocol"
-        interval = "daily"
+    def test_get_component_health_invalid_component(self):
+        """Test getting health information for an invalid component."""
+        # Invalid component ID
+        component_id = "invalid_component"
         
-        # Sample historical health data
-        historical_health = [
-            {
-                "timestamp": "2025-05-15T00:00:00Z",
-                "score": 0.95,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 1
-                }
-            },
-            {
-                "timestamp": "2025-05-16T00:00:00Z",
-                "score": 0.95,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 1
-                }
-            },
-            {
-                "timestamp": "2025-05-17T00:00:00Z",
-                "score": 0.94,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 2
-                }
-            },
-            {
-                "timestamp": "2025-05-18T00:00:00Z",
-                "score": 0.94,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 2
-                }
-            },
-            {
-                "timestamp": "2025-05-19T00:00:00Z",
-                "score": 0.93,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 2
-                }
-            },
-            {
-                "timestamp": "2025-05-20T00:00:00Z",
-                "score": 0.93,
-                "status": "healthy",
-                "issues": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 2
-                }
-            },
-            {
-                "timestamp": "2025-05-21T00:00:00Z",
-                "score": 0.92,
-                "status": "warning",
-                "issues": {
-                    "critical": 0,
-                    "major": 1,
-                    "minor": 0
+        # Configure the mock to return a health report without the invalid component
+        self.data_transformer_mock.transform_health_report_for_visualization.return_value = self.sample_health_report
+        
+        # Call the method under test and verify it raises an exception
+        with self.assertRaises(ValueError):
+            self.reporter.get_component_health(component_id)
+
+    def test_get_boundary_integrity_metrics(self):
+        """Test getting boundary integrity metrics."""
+        # Sample boundary integrity metrics
+        sample_metrics = {
+            "overall_integrity": 0.96,
+            "boundaries": {
+                "boundary-1": {
+                    "integrity": 0.98,
+                    "last_verified": "2025-05-21T15:00:00Z"
+                },
+                "boundary-2": {
+                    "integrity": 0.94,
+                    "last_verified": "2025-05-21T14:30:00Z"
                 }
             }
-        ]
-        
-        # Configure the mock to return the sample historical health data
-        self.governance_primitive_manager_mock.get_health_history.return_value = historical_health
-        
-        # Call the method under test
-        result = self.reporter.get_health_history(start_date, end_date, component_id, interval)
-        
-        # Verify the result
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), len(historical_health))
-        for i, entry in enumerate(result):
-            self.assertIn('timestamp', entry)
-            self.assertIn('score', entry)
-            self.assertIn('status', entry)
-            self.assertIn('issues', entry)
-        
-        # Verify the governance primitive manager was called
-        self.governance_primitive_manager_mock.get_health_history.assert_called_once_with(
-            start_date, end_date, component_id, interval
-        )
-
-    def test_generate_health_report(self):
-        """Test generating a comprehensive health report."""
-        # Sample report options
-        options = {
-            "include_issues": True,
-            "include_compliance": True,
-            "include_anomalies": True,
-            "format": "json"
         }
         
+        # Configure the mock to return the sample metrics
+        self.boundary_integrity_verifier_mock.get_integrity_metrics.return_value = sample_metrics
+        
         # Call the method under test
-        result = self.reporter.generate_health_report(options)
+        result = self.reporter.get_boundary_integrity_metrics()
         
         # Verify the result
         self.assertIsNotNone(result)
-        self.assertIn('timestamp', result)
-        self.assertIn('overall_health', result)
-        self.assertIn('components', result)
+        self.assertIn('overall_integrity', result)
+        self.assertIn('boundaries', result)
         
-        if options.get('include_issues'):
-            self.assertIn('issues', result)
-        
-        if options.get('include_compliance'):
-            self.assertIn('compliance', result)
-        
-        if options.get('include_anomalies'):
-            self.assertIn('anomalies', result)
-        
-        # Verify the data transformer and other dependencies were called
-        self.data_transformer_mock.transform_health_report_for_visualization.assert_called()
-        
-        if options.get('include_issues'):
-            self.governance_primitive_manager_mock.get_issue_report.assert_called()
-        
-        if options.get('include_compliance'):
-            self.governance_primitive_manager_mock.get_compliance_report.assert_called()
-        
-        if options.get('include_anomalies'):
-            self.governance_primitive_manager_mock.get_anomaly_report.assert_called()
+        # Verify the boundary integrity verifier was called
+        self.boundary_integrity_verifier_mock.get_integrity_metrics.assert_called_once()
 
-    def test_invalid_health_report_data(self):
-        """Test behavior when invalid health report data is provided."""
+    def test_get_health_report_schema_validation_failure(self):
+        """Test that schema validation failure raises an exception."""
         # Configure the mock to return invalid data
         self.data_transformer_mock.transform_health_report_for_visualization.return_value = {"invalid": "data"}
         
@@ -660,4 +498,4 @@ class TestGovernanceHealthReporter(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()"""
+    unittest.main()

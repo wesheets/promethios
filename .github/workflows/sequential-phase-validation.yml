@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches: [ feature/phase-5-13-trust-boundary-definition ]
+    branches: [ feature/phase-5-13-trust-boundary-definition, feature/phase-5-14-governance-visualization ]
   workflow_dispatch:
 
 jobs:
@@ -140,6 +140,11 @@ jobs:
         run: |
           echo "Validating Phase 5.13..."
           python -m pytest tests/phase_5_13 -v
+      
+      - name: Validate Phase 5.14
+        run: |
+          echo "Validating Phase 5.14..."
+          python -m pytest tests/phase_5_14 -v
       
       - name: Run coverage report
         run: |
