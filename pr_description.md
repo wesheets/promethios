@@ -1,51 +1,34 @@
-# Pull Request: Phase 5.10 - Governance Attestation Framework
+# Pull Request: Phase 5.11 - Minimal Viable Governance
 
 ## Overview
-
-This PR implements Phase 5.10 of the Promethios project: the Governance Attestation Framework. This framework introduces a comprehensive system for creating, verifying, and managing cryptographically signed attestations within the Promethios governance ecosystem.
+This PR implements Phase 5.11 (Minimal Viable Governance) which provides a comprehensive governance framework for the Promethios system. The implementation includes core governance primitives, decision framework, policy management, and requirement validation components.
 
 ## Key Components
-
-1. **Attestation Service**: Provides cryptographic signature generation, validation, and attestation chain management
-2. **Claim Verification Protocol**: Enables creation and verification of governance claims through evidence and attestations
-3. **Governance Audit Trail**: Implements Merkle tree-based immutable audit records for governance decisions
-4. **Attestation Authority Manager**: Handles registration, verification, and trust management of attestation authorities
+- **Governance Primitive Manager**: Manages governance primitives (constraints, rules, directives, controls, standards)
+- **Decision Framework Engine**: Provides flexible decision-making with multiple voting models
+- **Policy Management Module**: Manages governance policies with enforcement and exemption handling
+- **Requirement Validation Module**: Validates system components against governance requirements
 
 ## Integration Points
-
-- Integrates with the Trust Decay Engine (Phase 5.9) for trust scoring and regeneration
-- Leverages the Codex Mutation Lock (Phase 5.8) for contract state verification
-- Extends the Trust Surface Visualization (Phase 5.7) with attestation dashboards
-
-## Governance Compliance
-
-All components implement:
-- Codex Contract Tethering with proper contract IDs and versions
-- Pre-loop tether checks before any operations
-- Schema validation against canonical schemas
-- Immutable audit trail integration
-- Trust level enforcement for operations
+- Integrates with Codex Mutation Lock (Phase 5.8) for contract tethering
+- Integrates with Trust Decay Engine (Phase 5.9) for trust-based governance
+- Integrates with Governance Attestation Framework (Phase 5.10) for attestation verification
 
 ## Testing
-
 - Comprehensive unit tests for all core components
-- Integration tests for API and cross-component functionality
-- All tests passing with 100% success rate
+- Integration tests for cross-component functionality
+- All tests passing with proper mocking and validation
+
+## Compliance
+- All components implement Codex contract tethering
+- Pre-loop tether checks in all critical operations
+- Schema validation for all governance objects
+- Immutable audit trails for all governance actions
 
 ## Documentation
-
-- Detailed implementation documentation in Phase_5_10_Implementation_Documentation.md
-- Schema definitions with sample data for validation
+- Implementation documentation with architecture details
+- Security considerations and compliance measures
 - Integration documentation with previous phases
 
-## Security Considerations
-
-- All attestations are cryptographically signed
-- Support for authority key rotation and revocation
-- Trust thresholds for attestation validation
-- Time-bound attestations with expiration
-- Tamper-evident audit trail with Merkle proofs
-
-## Related Issues
-
-Closes #510: Implement Governance Attestation Framework
+## Reviewers
+@governance-team @security-team @integration-team

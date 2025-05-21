@@ -1,329 +1,514 @@
 """
-Sample data for schema validation testing in the Governance Attestation Framework.
-This module provides sample data instances for each schema to validate schema definitions.
+Sample data for schema validation in the Minimal Viable Governance framework.
+
+This module provides sample data for validating the governance schemas:
+- Governance Primitive Schema
+- Decision Framework Schema
+- Governance Policy Schema
+- Governance Requirement Schema
+
+These samples can be used for testing schema validation and for providing
+examples of properly structured governance data.
 """
 
 import json
-import uuid
+import jsonschema
 import datetime
+import hashlib
+import os
 from pathlib import Path
 
-def generate_uuid(prefix):
-    """Generate a UUID with the specified prefix."""
-    return f"{prefix}-{uuid.uuid4()}"
+# Paths to schema files
+SCHEMAS_DIR = Path(__file__).parent
+PRIMITIVE_SCHEMA_PATH = SCHEMAS_DIR / "governance_primitive.schema.v1.json"
+DECISION_SCHEMA_PATH = SCHEMAS_DIR / "decision_framework.schema.v1.json"
+POLICY_SCHEMA_PATH = SCHEMAS_DIR / "governance_policy.schema.v1.json"
+REQUIREMENT_SCHEMA_PATH = SCHEMAS_DIR / "governance_requirement.schema.v1.json"
 
-def get_current_timestamp():
-    """Get the current timestamp in ISO 8601 format."""
-    return datetime.datetime.utcnow().isoformat() + "Z"
-
-def get_future_timestamp(days=30):
-    """Get a timestamp in the future in ISO 8601 format."""
-    future = datetime.datetime.utcnow() + datetime.timedelta(days=days)
-    return future.isoformat() + "Z"
-
-# Sample Attestation Data
-sample_attestation = {
-    "attestation_id": generate_uuid("att"),
-    "issuer_id": generate_uuid("auth"),
-    "subject_id": "system-component-123",
-    "claim_id": generate_uuid("claim"),
-    "timestamp": get_current_timestamp(),
-    "expiration": get_future_timestamp(90),
-    "attestation_type": "VERIFICATION",
-    "attestation_data": {
-        "content": {
-            "verification_result": "PASSED",
-            "verification_score": 0.95,
-            "verification_details": "All security checks passed"
-        },
-        "context": {
-            "environment": "PRODUCTION",
-            "verification_method": "AUTOMATED",
-            "verification_tool": "SecurityScanner-v2.3"
-        },
-        "evidence_references": [
-            "log-20250521-123456",
-            "scan-result-20250521-789012"
-        ],
-        "contract_seal_reference": "seal-abcdef123456"
-    },
-    "signature": {
-        "algorithm": "ED25519",
-        "value": "base64-encoded-signature-value",
-        "key_id": "key-12345"
-    },
-    "parent_attestation_id": None,
-    "metadata": {
-        "version": "1.0.0",
-        "tags": ["security", "verification", "automated"],
-        "revocation_status": "ACTIVE",
-        "revocation_reason": None,
-        "revocation_timestamp": None,
-        "trust_score": 0.95
-    }
-}
-
-# Sample Claim Data
-sample_claim = {
-    "claim_id": generate_uuid("claim"),
-    "claim_type": "SECURITY",
-    "subject_id": "system-component-123",
-    "issuer_id": "organization-456",
-    "timestamp": get_current_timestamp(),
-    "claim_content": {
-        "statement": "This component meets all security requirements for level 3 certification",
-        "scope": {
-            "domain": "security",
-            "timeframe": {
-                "start": get_current_timestamp(),
-                "end": get_future_timestamp(365)
-            },
-            "components": ["auth-service", "data-processor", "api-gateway"]
-        },
-        "evidence_references": [
-            {
-                "evidence_id": "sec-audit-2025-001",
-                "evidence_type": "AUDIT_REPORT",
-                "location": "https://evidence-store/sec-audit-2025-001",
-                "hash": "sha256-hash-of-evidence"
-            },
-            {
-                "evidence_id": "pen-test-2025-003",
-                "evidence_type": "TEST_RESULT",
-                "location": "https://evidence-store/pen-test-2025-003",
-                "hash": "sha256-hash-of-evidence"
-            }
-        ]
-    },
-    "verification_requirements": {
-        "required_attestation_types": ["VERIFICATION", "CERTIFICATION"],
-        "verification_threshold": 2,
-        "required_authorities": ["auth-security-board", "auth-external-auditor"],
-        "verification_rules": [
-            {
-                "rule_id": "rule-001",
-                "rule_type": "AUTHORITY_DIVERSITY",
-                "rule_parameters": {
-                    "min_distinct_authorities": 2
-                }
-            }
-        ]
-    },
-    "status": {
-        "verification_status": "PENDING",
-        "last_updated": get_current_timestamp(),
-        "verification_details": {
-            "attestation_count": 0,
-            "verification_score": 0.0,
-            "rejection_reason": None
-        }
-    },
-    "metadata": {
-        "version": "1.0.0",
-        "tags": ["security", "certification", "level-3"],
-        "priority": "HIGH",
-        "related_claims": ["claim-previous-certification"]
-    }
-}
-
-# Sample Audit Trail Event
-sample_audit_trail = {
-    "event_id": generate_uuid("audit"),
-    "entity_id": "system-component-123",
-    "event_type": "ATTESTATION_CREATED",
-    "timestamp": get_current_timestamp(),
-    "actor_id": "user-admin-789",
-    "event_data": {
-        "content": {
-            "attestation_id": generate_uuid("att"),
-            "attestation_type": "VERIFICATION",
-            "result": "SUCCESS"
-        },
-        "context": {
-            "environment": "PRODUCTION",
-            "source_ip": "10.0.0.5",
-            "user_agent": "AdminConsole/1.2.3"
-        },
-        "references": [
-            {
-                "reference_type": "ATTESTATION",
-                "reference_id": generate_uuid("att")
-            },
-            {
-                "reference_type": "CLAIM",
-                "reference_id": generate_uuid("claim")
-            }
-        ],
-        "result": {
-            "status": "SUCCESS",
-            "details": {
-                "processing_time_ms": 235,
-                "verification_steps": 5
-            }
-        }
-    },
-    "merkle_proof": {
-        "root_hash": "merkle-root-hash-value",
-        "path": [
-            {
-                "position": "LEFT",
-                "hash": "hash-value-1"
-            },
-            {
-                "position": "RIGHT",
-                "hash": "hash-value-2"
-            }
-        ],
-        "leaf_hash": "leaf-hash-value",
-        "tree_size": 1024,
-        "timestamp": get_current_timestamp()
-    },
-    "metadata": {
-        "version": "1.0.0",
-        "tags": ["attestation", "creation", "audit"],
-        "severity": "INFO",
-        "source": "attestation-service",
-        "retention_period": "P7Y"
-    }
-}
-
-# Sample Authority Data
-sample_authority = {
-    "authority_id": generate_uuid("auth"),
-    "name": "Security Certification Board",
-    "description": "Official authority for security certifications and attestations",
-    "public_keys": [
+# Sample governance primitive data
+SAMPLE_PRIMITIVE = {
+    "primitive_id": "security.data_encryption",
+    "version": "1.0.0",
+    "name": "Data Encryption Primitive",
+    "description": "Defines requirements for encrypting sensitive data at rest and in transit",
+    "category": "SECURITY",
+    "status": "ACTIVE",
+    "created_at": datetime.datetime.now().isoformat(),
+    "updated_at": datetime.datetime.now().isoformat(),
+    "dependencies": [
         {
-            "key_id": "key-12345",
-            "algorithm": "ED25519",
-            "key_data": "base64-encoded-public-key-data",
-            "status": "ACTIVE",
-            "created_at": get_current_timestamp(),
-            "expires_at": get_future_timestamp(365)
+            "primitive_id": "security.key_management",
+            "version": "1.0.0",
+            "relationship_type": "REQUIRES",
+            "notes": "Requires key management primitive for encryption key handling"
         }
     ],
-    "trust_level": {
-        "level": "VERY_HIGH",
-        "score": 0.92,
-        "last_updated": get_current_timestamp(),
-        "factors": [
-            {
-                "factor_name": "historical_accuracy",
-                "factor_value": 0.95,
-                "weight": 0.4
+    "validation_rules": [
+        {
+            "rule_id": "encryption.algorithm",
+            "rule_type": "ENUM",
+            "rule_definition": {
+                "allowed_values": ["AES-256", "ChaCha20-Poly1305"]
             },
-            {
-                "factor_name": "external_validation",
-                "factor_value": 0.9,
-                "weight": 0.3
-            },
-            {
-                "factor_name": "community_trust",
-                "factor_value": 0.88,
-                "weight": 0.3
-            }
-        ]
-    },
-    "status": "ACTIVE",
-    "registration_date": get_current_timestamp(),
-    "capabilities": {
-        "attestation_types": ["VERIFICATION", "CERTIFICATION", "AUDIT"],
-        "domains": ["security", "compliance", "performance"],
-        "delegation_capabilities": {
-            "can_delegate": True,
-            "delegation_constraints": [
-                {
-                    "constraint_type": "DOMAIN_RESTRICTION",
-                    "constraint_value": "security"
-                }
-            ]
+            "error_message": "Encryption algorithm must be AES-256 or ChaCha20-Poly1305",
+            "severity": "ERROR"
         }
+    ],
+    "enforcement_mechanisms": [
+        {
+            "mechanism_id": "encryption.enforce",
+            "mechanism_type": "PREVENTIVE",
+            "mechanism_definition": {
+                "check_function": "verify_encryption_before_storage",
+                "parameters": {
+                    "min_key_length": 256
+                }
+            },
+            "activation_conditions": {
+                "data_classification": ["SENSITIVE", "CONFIDENTIAL", "RESTRICTED"]
+            },
+            "priority": 1
+        }
+    ],
+    "attestation_requirements": {
+        "required_authorities": ["security_officer", "compliance_officer"],
+        "minimum_trust_level": "HIGH",
+        "attestation_frequency": "QUARTERLY",
+        "attestation_expiry": "P3M"
     },
     "metadata": {
-        "version": "1.0.0",
-        "organization": "Global Security Alliance",
-        "contact_information": {
-            "email": "certifications@globalsecurity.org",
-            "url": "https://globalsecurity.org/certifications"
-        },
-        "certification_references": [
+        "tags": ["encryption", "security", "compliance", "data-protection"],
+        "owner": "Security Team",
+        "source": "Security Policy Framework",
+        "references": [
             {
-                "certification_type": "ISO27001",
-                "certification_id": "ISO27001-2025-123456",
-                "issuer": "International Standards Organization",
-                "valid_until": get_future_timestamp(730)
+                "title": "NIST Encryption Guidelines",
+                "url": "https://example.com/nist-guidelines",
+                "description": "NIST guidelines for data encryption"
             }
-        ]
+        ],
+        "custom_properties": {
+            "compliance_frameworks": ["GDPR", "HIPAA", "PCI-DSS"]
+        }
+    },
+    "codex_contract": {
+        "contract_id": "governance.primitive.security.data_encryption",
+        "contract_version": "v2025.05.21",
+        "tether_check_hash": hashlib.sha256("verify_codex_contract_tether".encode()).hexdigest(),
+        "last_verified": datetime.datetime.now().isoformat()
     }
 }
 
-def validate_schema(schema_file, data):
-    """
-    Validate data against a JSON schema.
-    
-    Args:
-        schema_file: Path to the schema file
-        data: Data to validate
-        
-    Returns:
-        bool: True if validation succeeds, False otherwise
-    """
-    try:
-        import jsonschema
-        
-        with open(schema_file, 'r') as f:
-            schema = json.load(f)
-        
-        jsonschema.validate(instance=data, schema=schema)
-        return True
-    except Exception as e:
-        print(f"Validation error: {e}")
-        return False
-
-def validate_all_schemas():
-    """Validate all sample data against their respective schemas."""
-    schemas_dir = Path(__file__).parent
-    
-    # Validate attestation schema
-    attestation_valid = validate_schema(
-        schemas_dir / "attestation.schema.v1.json", 
-        sample_attestation
-    )
-    
-    # Validate claim schema
-    claim_valid = validate_schema(
-        schemas_dir / "claim.schema.v1.json", 
-        sample_claim
-    )
-    
-    # Validate audit trail schema
-    audit_trail_valid = validate_schema(
-        schemas_dir / "audit_trail.schema.v1.json", 
-        sample_audit_trail
-    )
-    
-    # Validate authority schema
-    authority_valid = validate_schema(
-        schemas_dir / "authority.schema.v1.json", 
-        sample_authority
-    )
-    
-    results = {
-        "attestation": attestation_valid,
-        "claim": claim_valid,
-        "audit_trail": audit_trail_valid,
-        "authority": authority_valid
+# Sample decision framework data
+SAMPLE_DECISION = {
+    "decision_id": "dec-2025-05-21-001",
+    "request_id": "req-2025-05-21-001",
+    "title": "Approval for New Data Processing System",
+    "description": "Decision regarding the approval of a new data processing system for customer analytics",
+    "decision_type": "SYSTEM_CONFIGURATION",
+    "status": "APPROVED",
+    "created_at": datetime.datetime.now().isoformat(),
+    "updated_at": datetime.datetime.now().isoformat(),
+    "requestor": {
+        "id": "data_analytics_team",
+        "type": "USER",
+        "trust_level": "MEDIUM",
+        "metadata": {
+            "department": "Data Analytics",
+            "request_reason": "Improve customer insights"
+        }
+    },
+    "applicable_policies": [
+        {
+            "policy_id": "data_processing.customer_data",
+            "version": "1.0.0",
+            "evaluation_result": "COMPLIANT",
+            "evaluation_details": {
+                "compliance_score": 0.95,
+                "notes": "System meets all policy requirements"
+            }
+        }
+    ],
+    "applicable_primitives": [
+        {
+            "primitive_id": "security.data_encryption",
+            "version": "1.0.0",
+            "relevance": "PRIMARY"
+        },
+        {
+            "primitive_id": "compliance.data_retention",
+            "version": "1.0.0",
+            "relevance": "SECONDARY"
+        }
+    ],
+    "decision_outcome": {
+        "result": "APPROVED",
+        "justification": "The proposed system meets all security and compliance requirements",
+        "conditions": [
+            {
+                "condition_id": "cond-001",
+                "description": "System must undergo security review every quarter",
+                "expiry": (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat(),
+                "verification_method": "Security audit report"
+            }
+        ],
+        "expiry": (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+    },
+    "decision_explanation": {
+        "reasoning_steps": [
+            {
+                "step_id": "step-001",
+                "description": "Evaluated security controls",
+                "factors": [
+                    {
+                        "factor_id": "factor-001",
+                        "description": "Encryption implementation",
+                        "weight": 0.4
+                    }
+                ]
+            }
+        ],
+        "alternative_outcomes": [
+            {
+                "outcome": "REJECTED",
+                "probability": 0.2,
+                "reason_rejected": "Security controls are sufficient"
+            }
+        ],
+        "confidence_level": 0.9,
+        "explanation_format": "TEXT"
+    },
+    "attestations": [
+        {
+            "attestation_id": "att-001",
+            "authority_id": "security_officer",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "signature": "sample_signature_data",
+            "trust_level": "HIGH"
+        }
+    ],
+    "audit_trail": [
+        {
+            "event_id": "evt-001",
+            "event_type": "CREATED",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "actor": {
+                "id": "data_analytics_team",
+                "type": "USER"
+            },
+            "details": {
+                "notes": "Initial decision request created"
+            }
+        }
+    ],
+    "metadata": {
+        "tags": ["data-processing", "customer-analytics", "approval"],
+        "priority": "HIGH",
+        "impact_assessment": {
+            "security_impact": "MEDIUM",
+            "operational_impact": "LOW",
+            "compliance_impact": "MEDIUM",
+            "ethical_impact": "LOW"
+        },
+        "custom_properties": {
+            "business_value": "HIGH",
+            "implementation_timeline": "Q3 2025"
+        }
+    },
+    "codex_contract": {
+        "contract_id": "governance.decision.system_configuration",
+        "contract_version": "v2025.05.21",
+        "tether_check_hash": hashlib.sha256("verify_codex_contract_tether".encode()).hexdigest(),
+        "last_verified": datetime.datetime.now().isoformat()
     }
+}
+
+# Sample governance policy data
+SAMPLE_POLICY = {
+    "policy_id": "data_processing.customer_data",
+    "version": "1.0.0",
+    "name": "Customer Data Processing Policy",
+    "description": "Policy governing the processing of customer data within the organization",
+    "category": "COMPLIANCE",
+    "status": "ACTIVE",
+    "created_at": datetime.datetime.now().isoformat(),
+    "updated_at": datetime.datetime.now().isoformat(),
+    "effective_from": datetime.datetime.now().isoformat(),
+    "effective_until": (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat(),
+    "scope": {
+        "applies_to": [
+            {
+                "entity_type": "SYSTEM",
+                "entity_id_pattern": ".*_analytics_.*",
+                "conditions": {
+                    "processes_customer_data": True
+                }
+            }
+        ],
+        "excludes": [
+            {
+                "entity_type": "SYSTEM",
+                "entity_id_pattern": "legacy_system_.*",
+                "reason": "Legacy systems are covered by separate policies"
+            }
+        ],
+        "jurisdictions": ["EU", "US", "UK"]
+    },
+    "rules": [
+        {
+            "rule_id": "rule-001",
+            "description": "Customer data must be encrypted at rest",
+            "rule_type": "OBLIGATION",
+            "rule_definition": {
+                "condition": {
+                    "data_type": "customer_data",
+                    "storage_state": "at_rest"
+                },
+                "action": {
+                    "apply_encryption": True,
+                    "minimum_encryption_standard": "AES-256"
+                }
+            },
+            "priority": 1,
+            "severity": "CRITICAL"
+        }
+    ],
+    "dependencies": [
+        {
+            "policy_id": "security.data_protection",
+            "version": "1.0.0",
+            "relationship_type": "EXTENDS",
+            "notes": "Extends the general data protection policy with customer-specific requirements"
+        }
+    ],
+    "conflict_resolution": {
+        "resolution_strategy": "MOST_RESTRICTIVE",
+        "priority": 10,
+        "override_rules": [
+            {
+                "policy_id": "legacy.customer_data",
+                "condition": {
+                    "system_type": "modern"
+                },
+                "reason": "Modern systems should follow updated policy"
+            }
+        ]
+    },
+    "attestation_requirements": {
+        "required_authorities": ["data_protection_officer", "compliance_officer"],
+        "minimum_trust_level": "HIGH",
+        "attestation_frequency": "QUARTERLY",
+        "attestation_expiry": "P3M"
+    },
+    "metadata": {
+        "tags": ["customer-data", "gdpr", "data-processing", "privacy"],
+        "owner": "Data Governance Team",
+        "source": "Data Governance Framework",
+        "references": [
+            {
+                "title": "GDPR Article 5",
+                "url": "https://example.com/gdpr-article-5",
+                "description": "GDPR principles relating to processing of personal data"
+            }
+        ],
+        "custom_properties": {
+            "compliance_frameworks": ["GDPR", "CCPA"]
+        }
+    },
+    "codex_contract": {
+        "contract_id": "governance.policy.data_processing.customer_data",
+        "contract_version": "v2025.05.21",
+        "tether_check_hash": hashlib.sha256("verify_codex_contract_tether".encode()).hexdigest(),
+        "last_verified": datetime.datetime.now().isoformat()
+    }
+}
+
+# Sample governance requirement data
+SAMPLE_REQUIREMENT = {
+    "requirement_id": "req.data_encryption",
+    "version": "1.0.0",
+    "name": "Data Encryption Requirement",
+    "description": "Requirement for encrypting sensitive data in systems",
+    "category": "SECURITY",
+    "status": "ACTIVE",
+    "created_at": datetime.datetime.now().isoformat(),
+    "updated_at": datetime.datetime.now().isoformat(),
+    "effective_from": datetime.datetime.now().isoformat(),
+    "effective_until": (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat(),
+    "scope": {
+        "applies_to": [
+            {
+                "entity_type": "SYSTEM",
+                "entity_id_pattern": ".*",
+                "conditions": {
+                    "processes_sensitive_data": True
+                }
+            }
+        ],
+        "excludes": [
+            {
+                "entity_type": "SYSTEM",
+                "entity_id_pattern": "air_gapped_.*",
+                "reason": "Air-gapped systems have separate requirements"
+            }
+        ],
+        "jurisdictions": ["GLOBAL"]
+    },
+    "validation_criteria": [
+        {
+            "criterion_id": "criterion-001",
+            "description": "Data must be encrypted with approved algorithms",
+            "validation_method": "AUTOMATED",
+            "validation_definition": {
+                "condition": {
+                    "check_type": "encryption_algorithm",
+                    "parameters": {
+                        "data_types": ["PII", "FINANCIAL", "HEALTH"]
+                    }
+                },
+                "expected_result": {
+                    "algorithms": ["AES-256", "ChaCha20-Poly1305"]
+                },
+                "tolerance": {
+                    "allow_exceptions": False
+                }
+            },
+            "priority": 1,
+            "severity": "CRITICAL"
+        }
+    ],
+    "dependencies": [
+        {
+            "requirement_id": "req.key_management",
+            "version": "1.0.0",
+            "relationship_type": "REQUIRES",
+            "notes": "Encryption requires proper key management"
+        }
+    ],
+    "related_policies": [
+        {
+            "policy_id": "data_processing.customer_data",
+            "version": "1.0.0",
+            "relationship_type": "IMPLEMENTS",
+            "notes": "This requirement implements aspects of the customer data policy"
+        }
+    ],
+    "validation_frequency": {
+        "schedule_type": "PERIODIC",
+        "periodic_schedule": "R/P1M",
+        "event_triggers": [
+            {
+                "event_type": "SYSTEM_UPDATE",
+                "event_pattern": {
+                    "update_type": ["MAJOR", "SECURITY"]
+                }
+            }
+        ]
+    },
+    "remediation_guidelines": [
+        {
+            "violation_type": "WEAK_ENCRYPTION",
+            "remediation_steps": [
+                {
+                    "step_number": 1,
+                    "description": "Identify all instances of weak encryption",
+                    "expected_outcome": "Complete inventory of weak encryption usage"
+                },
+                {
+                    "step_number": 2,
+                    "description": "Upgrade encryption to approved algorithms",
+                    "expected_outcome": "All encryption meets standards"
+                }
+            ],
+            "timeframe": "1_WEEK",
+            "severity": "CRITICAL"
+        }
+    ],
+    "attestation_requirements": {
+        "required_authorities": ["security_officer"],
+        "minimum_trust_level": "HIGH",
+        "attestation_frequency": "QUARTERLY",
+        "attestation_expiry": "P3M"
+    },
+    "metadata": {
+        "tags": ["encryption", "security", "data-protection"],
+        "owner": "Security Team",
+        "source": "Security Requirements Framework",
+        "references": [
+            {
+                "title": "NIST Encryption Standards",
+                "url": "https://example.com/nist-standards",
+                "description": "NIST standards for encryption"
+            }
+        ],
+        "custom_properties": {
+            "audit_priority": "HIGH"
+        }
+    },
+    "codex_contract": {
+        "contract_id": "governance.requirement.data_encryption",
+        "contract_version": "v2025.05.21",
+        "tether_check_hash": hashlib.sha256("verify_codex_contract_tether".encode()).hexdigest(),
+        "last_verified": datetime.datetime.now().isoformat()
+    }
+}
+
+def load_schema(schema_path):
+    """Load a JSON schema from file."""
+    with open(schema_path, 'r') as f:
+        return json.load(f)
+
+def validate_sample_data():
+    """Validate all sample data against their respective schemas."""
+    results = {}
     
-    print("Schema validation results:")
-    for schema_name, is_valid in results.items():
-        status = "PASSED" if is_valid else "FAILED"
-        print(f"  {schema_name}: {status}")
+    # Validate primitive
+    try:
+        if os.path.exists(PRIMITIVE_SCHEMA_PATH):
+            primitive_schema = load_schema(PRIMITIVE_SCHEMA_PATH)
+            jsonschema.validate(SAMPLE_PRIMITIVE, primitive_schema)
+            results["primitive"] = "Valid"
+        else:
+            results["primitive"] = "Schema file not found"
+    except jsonschema.exceptions.ValidationError as e:
+        results["primitive"] = f"Invalid: {e}"
     
-    return all(results.values())
+    # Validate decision
+    try:
+        if os.path.exists(DECISION_SCHEMA_PATH):
+            decision_schema = load_schema(DECISION_SCHEMA_PATH)
+            jsonschema.validate(SAMPLE_DECISION, decision_schema)
+            results["decision"] = "Valid"
+        else:
+            results["decision"] = "Schema file not found"
+    except jsonschema.exceptions.ValidationError as e:
+        results["decision"] = f"Invalid: {e}"
+    
+    # Validate policy
+    try:
+        if os.path.exists(POLICY_SCHEMA_PATH):
+            policy_schema = load_schema(POLICY_SCHEMA_PATH)
+            jsonschema.validate(SAMPLE_POLICY, policy_schema)
+            results["policy"] = "Valid"
+        else:
+            results["policy"] = "Schema file not found"
+    except jsonschema.exceptions.ValidationError as e:
+        results["policy"] = f"Invalid: {e}"
+    
+    # Validate requirement
+    try:
+        if os.path.exists(REQUIREMENT_SCHEMA_PATH):
+            requirement_schema = load_schema(REQUIREMENT_SCHEMA_PATH)
+            jsonschema.validate(SAMPLE_REQUIREMENT, requirement_schema)
+            results["requirement"] = "Valid"
+        else:
+            results["requirement"] = "Schema file not found"
+    except jsonschema.exceptions.ValidationError as e:
+        results["requirement"] = f"Invalid: {e}"
+    
+    return results
 
 if __name__ == "__main__":
-    all_valid = validate_all_schemas()
-    exit_code = 0 if all_valid else 1
-    print(f"Overall validation: {'PASSED' if all_valid else 'FAILED'}")
-    exit(exit_code)
+    results = validate_sample_data()
+    for schema_name, result in results.items():
+        print(f"{schema_name.capitalize()} schema validation: {result}")

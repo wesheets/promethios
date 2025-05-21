@@ -1,0 +1,341 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Governance Primitive Schema",
+  "description": "Schema for governance primitives in the Minimal Viable Governance framework",
+  "type": "object",
+  "required": [
+    "primitive_id",
+    "version",
+    "name",
+    "description",
+    "category",
+    "status",
+    "created_at",
+    "updated_at",
+    "metadata"
+  ],
+  "properties": {
+    "primitive_id": {
+      "type": "string",
+      "description": "Unique identifier for the governance primitive",
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the governance primitive",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the governance primitive",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the governance primitive",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "category": {
+      "type": "string",
+      "description": "Category of the governance primitive",
+      "enum": [
+        "SECURITY",
+        "COMPLIANCE",
+        "OPERATIONAL",
+        "ETHICAL",
+        "TECHNICAL",
+        "ORGANIZATIONAL",
+        "LEGAL",
+        "FINANCIAL",
+        "SOCIAL",
+        "ENVIRONMENTAL"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the governance primitive",
+      "enum": [
+        "DRAFT",
+        "PROPOSED",
+        "ACTIVE",
+        "DEPRECATED",
+        "ARCHIVED"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the primitive was created",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the primitive was last updated",
+      "format": "date-time"
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of other primitives this primitive depends on",
+      "items": {
+        "type": "object",
+        "required": [
+          "primitive_id",
+          "version",
+          "relationship_type"
+        ],
+        "properties": {
+          "primitive_id": {
+            "type": "string",
+            "description": "ID of the dependency primitive",
+            "pattern": "^[a-zA-Z0-9_.-]+$"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the dependency primitive",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "relationship_type": {
+            "type": "string",
+            "description": "Type of dependency relationship",
+            "enum": [
+              "REQUIRES",
+              "EXTENDS",
+              "CONFLICTS_WITH",
+              "RECOMMENDS",
+              "SUGGESTS"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the dependency",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "validation_rules": {
+      "type": "array",
+      "description": "Rules for validating the primitive",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "rule_type",
+          "rule_definition"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "description": "Unique identifier for the validation rule",
+            "pattern": "^[a-zA-Z0-9_.-]+$"
+          },
+          "rule_type": {
+            "type": "string",
+            "description": "Type of validation rule",
+            "enum": [
+              "SCHEMA",
+              "REGEX",
+              "RANGE",
+              "ENUM",
+              "CUSTOM",
+              "LOGICAL",
+              "TEMPORAL"
+            ]
+          },
+          "rule_definition": {
+            "type": "object",
+            "description": "Definition of the validation rule"
+          },
+          "error_message": {
+            "type": "string",
+            "description": "Error message to display when validation fails",
+            "maxLength": 500
+          },
+          "severity": {
+            "type": "string",
+            "description": "Severity of validation failure",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "ERROR",
+              "CRITICAL"
+            ]
+          }
+        }
+      }
+    },
+    "enforcement_mechanisms": {
+      "type": "array",
+      "description": "Mechanisms for enforcing the primitive",
+      "items": {
+        "type": "object",
+        "required": [
+          "mechanism_id",
+          "mechanism_type",
+          "mechanism_definition"
+        ],
+        "properties": {
+          "mechanism_id": {
+            "type": "string",
+            "description": "Unique identifier for the enforcement mechanism",
+            "pattern": "^[a-zA-Z0-9_.-]+$"
+          },
+          "mechanism_type": {
+            "type": "string",
+            "description": "Type of enforcement mechanism",
+            "enum": [
+              "PREVENTIVE",
+              "DETECTIVE",
+              "CORRECTIVE",
+              "COMPENSATING",
+              "DIRECTIVE"
+            ]
+          },
+          "mechanism_definition": {
+            "type": "object",
+            "description": "Definition of the enforcement mechanism"
+          },
+          "activation_conditions": {
+            "type": "object",
+            "description": "Conditions under which the mechanism is activated"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Priority of the enforcement mechanism (lower is higher priority)",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      }
+    },
+    "attestation_requirements": {
+      "type": "object",
+      "description": "Requirements for attesting to the primitive",
+      "properties": {
+        "required_authorities": {
+          "type": "array",
+          "description": "Authorities required for attestation",
+          "items": {
+            "type": "string",
+            "description": "Authority ID",
+            "pattern": "^[a-zA-Z0-9_.-]+$"
+          }
+        },
+        "minimum_trust_level": {
+          "type": "string",
+          "description": "Minimum trust level required for attestation",
+          "enum": [
+            "NONE",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "MAXIMUM"
+          ]
+        },
+        "attestation_frequency": {
+          "type": "string",
+          "description": "How often attestation is required",
+          "enum": [
+            "ONCE",
+            "DAILY",
+            "WEEKLY",
+            "MONTHLY",
+            "QUARTERLY",
+            "ANNUALLY",
+            "ON_CHANGE"
+          ]
+        },
+        "attestation_expiry": {
+          "type": "string",
+          "description": "ISO 8601 duration for attestation expiry",
+          "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+W)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+S)?)?$"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the primitive",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "description": "Tags for categorizing the primitive",
+          "items": {
+            "type": "string",
+            "maxLength": 50
+          }
+        },
+        "owner": {
+          "type": "string",
+          "description": "Owner of the primitive",
+          "maxLength": 100
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of the primitive",
+          "maxLength": 200
+        },
+        "references": {
+          "type": "array",
+          "description": "References for the primitive",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Title of the reference",
+                "maxLength": 200
+              },
+              "url": {
+                "type": "string",
+                "description": "URL of the reference",
+                "format": "uri",
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the reference",
+                "maxLength": 500
+              }
+            }
+          }
+        },
+        "custom_properties": {
+          "type": "object",
+          "description": "Custom properties for the primitive"
+        }
+      }
+    },
+    "codex_contract": {
+      "type": "object",
+      "description": "Codex contract information for the primitive",
+      "required": [
+        "contract_id",
+        "contract_version",
+        "tether_check_hash"
+      ],
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "description": "ID of the Codex contract",
+          "pattern": "^[a-zA-Z0-9_.-]+$"
+        },
+        "contract_version": {
+          "type": "string",
+          "description": "Version of the Codex contract",
+          "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+        },
+        "tether_check_hash": {
+          "type": "string",
+          "description": "Hash of the pre-loop tether check",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "last_verified": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the contract was last verified",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
