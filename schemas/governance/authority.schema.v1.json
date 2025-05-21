@@ -1,0 +1,241 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Authority Schema",
+  "description": "Schema for attestation authorities in the Governance Attestation Framework",
+  "type": "object",
+  "required": [
+    "authority_id",
+    "name",
+    "description",
+    "public_keys",
+    "trust_level",
+    "status",
+    "registration_date",
+    "capabilities",
+    "metadata"
+  ],
+  "properties": {
+    "authority_id": {
+      "type": "string",
+      "description": "Unique identifier for the attestation authority",
+      "pattern": "^auth-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the attestation authority",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the attestation authority",
+      "minLength": 1
+    },
+    "public_keys": {
+      "type": "array",
+      "description": "Public keys associated with the authority",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["key_id", "algorithm", "key_data", "status"],
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "description": "Unique identifier for the key"
+          },
+          "algorithm": {
+            "type": "string",
+            "description": "Algorithm used for the key",
+            "enum": ["ED25519", "ECDSA_P256", "RSA_PSS_2048", "RSA_PSS_4096"]
+          },
+          "key_data": {
+            "type": "string",
+            "description": "Base64-encoded public key data"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the key",
+            "enum": ["ACTIVE", "REVOKED", "ROTATED", "EXPIRED"]
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when the key was created",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "description": "ISO 8601 timestamp when the key expires",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "trust_level": {
+      "type": "object",
+      "description": "Trust level of the authority",
+      "required": ["level", "score", "last_updated"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "description": "Categorical trust level",
+          "enum": ["LOW", "MEDIUM", "HIGH", "VERY_HIGH", "MAXIMUM"]
+        },
+        "score": {
+          "type": "number",
+          "description": "Numerical trust score",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when the trust level was last updated",
+          "format": "date-time"
+        },
+        "factors": {
+          "type": "array",
+          "description": "Factors contributing to the trust level",
+          "items": {
+            "type": "object",
+            "required": ["factor_name", "factor_value", "weight"],
+            "properties": {
+              "factor_name": {
+                "type": "string",
+                "description": "Name of the trust factor"
+              },
+              "factor_value": {
+                "type": "number",
+                "description": "Value of the trust factor",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "weight": {
+                "type": "number",
+                "description": "Weight of the trust factor in the overall score",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the authority",
+      "enum": ["ACTIVE", "SUSPENDED", "REVOKED", "PENDING"]
+    },
+    "registration_date": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the authority was registered",
+      "format": "date-time"
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Capabilities of the authority",
+      "required": ["attestation_types", "domains"],
+      "properties": {
+        "attestation_types": {
+          "type": "array",
+          "description": "Types of attestations the authority can issue",
+          "items": {
+            "type": "string",
+            "enum": ["VERIFICATION", "CERTIFICATION", "APPROVAL", "AUDIT", "COMPLIANCE", "DELEGATION"]
+          },
+          "minItems": 1
+        },
+        "domains": {
+          "type": "array",
+          "description": "Domains in which the authority can issue attestations",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "delegation_capabilities": {
+          "type": "object",
+          "description": "Delegation capabilities of the authority",
+          "properties": {
+            "can_delegate": {
+              "type": "boolean",
+              "description": "Whether the authority can delegate to other authorities"
+            },
+            "delegation_constraints": {
+              "type": "array",
+              "description": "Constraints on delegation",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "constraint_type": {
+                    "type": "string",
+                    "description": "Type of constraint"
+                  },
+                  "constraint_value": {
+                    "type": "string",
+                    "description": "Value of the constraint"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the authority",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Version of the authority schema"
+        },
+        "organization": {
+          "type": "string",
+          "description": "Organization to which the authority belongs"
+        },
+        "contact_information": {
+          "type": "object",
+          "description": "Contact information for the authority",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Contact email"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Contact URL"
+            }
+          }
+        },
+        "certification_references": {
+          "type": "array",
+          "description": "References to certifications held by the authority",
+          "items": {
+            "type": "object",
+            "properties": {
+              "certification_type": {
+                "type": "string",
+                "description": "Type of certification"
+              },
+              "certification_id": {
+                "type": "string",
+                "description": "Identifier of the certification"
+              },
+              "issuer": {
+                "type": "string",
+                "description": "Issuer of the certification"
+              },
+              "valid_until": {
+                "type": "string",
+                "description": "ISO 8601 timestamp until which the certification is valid",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "required": ["version"]
+    }
+  },
+  "additionalProperties": false
+}

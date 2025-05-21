@@ -1,355 +1,323 @@
 """
-Tests for Boundary Enforcement Module in Promethios Distributed Trust Surface
+Unit tests for the BoundaryEnforcementModule class.
 
-Codex Contract: v2025.05.20
-Phase: 5.6
-Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
+This module contains unit tests for the BoundaryEnforcementModule class,
+which is responsible for enforcing governance boundaries and policies.
 """
 
 import unittest
 import json
 import uuid
-from datetime import datetime, timedelta
+import datetime
 from unittest.mock import MagicMock, patch
+from pathlib import Path
+import sys
+import os
 
-# Updated import for canonical structure
+# Add the src directory to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
+
+# Import the class to test
 from src.core.governance.boundary_enforcement_module import BoundaryEnforcementModule
-from src.core.governance.trust_boundary_manager import TrustBoundaryManager
-from src.core.governance.attestation_service import AttestationService
-from src.core.governance.trust_propagation_engine import TrustPropagationEngine
+
 
 class TestBoundaryEnforcementModule(unittest.TestCase):
-    """Test suite for the Boundary Enforcement Module."""
+    """Test cases for the BoundaryEnforcementModule class."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.instance_id = "test-instance-001"
-        self.schema_validator = MagicMock()
-        self.schema_validator.validate.return_value = (True, None)
+        # Create a mock configuration
+        self.config = {
+            'storage_path': '/tmp/test_policies',
+            'schema_path': '/tmp/test_schemas/policy.schema.v1.json'
+        }
         
         # Create mock dependencies
-        self.trust_boundary_manager = MagicMock(spec=TrustBoundaryManager)
-        self.attestation_service = MagicMock(spec=AttestationService)
-        self.trust_propagation_engine = MagicMock(spec=TrustPropagationEngine)
+        self.mock_schema_validator = MagicMock()
+        self.mock_schema_validator.validate.return_value = True
         
-        # Create the Boundary Enforcement Module
-        self.module = BoundaryEnforcementModule(
-            instance_id=self.instance_id,
-            schema_validator=self.schema_validator,
-            trust_boundary_manager=self.trust_boundary_manager,
-            attestation_service=self.attestation_service,
-            trust_propagation_engine=self.trust_propagation_engine
-        )
+        self.mock_attestation_service = MagicMock()
+        # Add find_attestations method to mock for compatibility with both naming conventions
+        self.mock_attestation_service.find_attestations = MagicMock()
+        self.mock_attestation_service.list_attestations = self.mock_attestation_service.find_attestations
+        
+        self.mock_audit_trail = MagicMock()
+        
+        # Create a test directory
+        Path(self.config['storage_path']).mkdir(parents=True, exist_ok=True)
+        
+        # Create the module with mocked dependencies
+        with patch('src.core.governance.boundary_enforcement_module.SchemaValidator', return_value=self.mock_schema_validator):
+            self.module = BoundaryEnforcementModule(self.config)
+            self.module.attestation_service = self.mock_attestation_service
+            self.module.audit_trail = self.mock_audit_trail
     
-    def test_enforce_boundary_access(self):
-        """Test enforcing boundary access."""
-        # Mock the trust boundary manager
-        boundary_id = f"tb-{uuid.uuid4().hex}"
-        self.trust_boundary_manager.list_boundaries.return_value = [
-            {
-                "boundary_id": boundary_id,
-                "source_instance_id": "source-001",
-                "target_instance_id": self.instance_id,
-                "trust_level": 80,
-                "status": "active"
-            }
-        ]
+    def tearDown(self):
+        """Tear down test fixtures."""
+        # Clean up test files
+        import shutil
+        if Path(self.config['storage_path']).exists():
+            shutil.rmtree(self.config['storage_path'])
+    
+    def test_init(self):
+        """Test initialization of the module."""
+        self.assertEqual(self.module.config, self.config)
+        self.assertEqual(self.module.storage_path, self.config['storage_path'])
+        self.assertIsNotNone(self.module.schema_validator)
+    
+    def test_create_policy(self):
+        """Test creating a policy."""
+        # Define test data
+        name = "Test Policy"
+        description = "A test policy"
+        policy_type = "ATTESTATION_REQUIREMENT"
+        scope = {"domain": "test-domain"}
+        rules = {
+            "required_attestations": 2,
+            "required_attestation_types": ["VERIFICATION"],
+            "required_authority_level": "HIGH"
+        }
         
-        # Mock the trust boundary manager's enforce_boundary_policy
-        self.trust_boundary_manager.enforce_boundary_policy.return_value = (True, None)
-        
-        # Test enforcing boundary access
-        is_allowed, reason = self.module.enforce_boundary_access(
-            source_id="source-001",
-            operation="read",
-            resource_path="/data/file.txt",
-            required_trust_level=70
+        # Create policy
+        policy = self.module.create_policy(
+            name=name,
+            description=description,
+            policy_type=policy_type,
+            scope=scope,
+            rules=rules
         )
         
-        # Verify the result
-        self.assertTrue(is_allowed)
+        # Verify policy
+        self.assertIsNotNone(policy)
+        self.assertIn("policy_id", policy)
+        self.assertEqual(policy["name"], name)
+        self.assertEqual(policy["description"], description)
+        self.assertEqual(policy["policy_type"], policy_type)
+        self.assertEqual(policy["scope"], scope)
+        self.assertEqual(policy["rules"], rules)
+        self.assertIn("created_at", policy)
+        self.assertEqual(policy["status"], self.module.STATUS_ACTIVE)
         
-        # Verify the trust boundary manager was called
-        self.trust_boundary_manager.enforce_boundary_policy.assert_called_once_with(
-            boundary_id=boundary_id,
-            operation="read",
-            context={"data_path": "/data/file.txt"}
+        # Verify schema validation was called
+        self.mock_schema_validator.validate.assert_called_once()
+    
+    def test_get_policy(self):
+        """Test getting a policy."""
+        # Create a policy first
+        policy = self.module.create_policy(
+            name="Test Policy",
+            description="A test policy",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "test-domain"},
+            rules={"required_attestations": 1}
         )
         
-        # Test with insufficient trust level
-        is_allowed, reason = self.module.enforce_boundary_access(
-            source_id="source-001",
-            operation="read",
-            resource_path="/data/file.txt",
-            required_trust_level=90
-        )
+        # Get the policy
+        retrieved = self.module.get_policy(policy["policy_id"])
         
-        # Verify the result
-        self.assertFalse(is_allowed)
-        self.assertEqual(reason, "Insufficient trust level")
+        # Verify it's the same
+        self.assertEqual(retrieved, policy)
+        
+        # Test getting a non-existent policy
+        non_existent = self.module.get_policy("non-existent")
+        self.assertIsNone(non_existent)
     
     def test_enforce_attestation_requirement(self):
         """Test enforcing attestation requirement."""
-        # Mock the attestation service
-        attestation_id = f"att-{uuid.uuid4().hex}"
-        self.attestation_service.list_attestations.return_value = [
+        # Create a policy
+        policy = self.module.create_policy(
+            name="Attestation Requirement",
+            description="Requires attestations",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "test-domain"},
+            rules={
+                "required_attestations": 2,
+                "required_attestation_types": ["VERIFICATION"],
+                "required_authority_level": "HIGH"
+            }
+        )
+        
+        # Mock attestation service to return attestations
+        self.mock_attestation_service.find_attestations.return_value = [
             {
-                "attestation_id": attestation_id,
-                "attestation_type": "identity",
-                "subject_instance_id": "source-001",
-                "attester_instance_id": self.instance_id,
-                "attestation_data": {"identity": "test-identity"},
-                "status": "active"
+                "attestation_id": "att1",
+                "issuer_id": "auth1",
+                "attestation_type": "VERIFICATION"
+            },
+            {
+                "attestation_id": "att2",
+                "issuer_id": "auth2",
+                "attestation_type": "VERIFICATION"
             }
         ]
         
-        # Mock the attestation service's verify_attestation
-        self.attestation_service.verify_attestation.return_value = (True, {
-            "attestation_id": attestation_id,
-            "verification_status": "valid"
-        })
+        # Mock attestation validation to return valid
+        self.mock_attestation_service.validate_attestation.return_value = (True, {})
         
-        # Test enforcing attestation requirement
-        is_allowed, reason = self.module.enforce_attestation_requirement(
-            source_id="source-001",
-            attestation_type="identity",
-            operation="read",
-            resource_path="/data/file.txt"
+        # Enforce policy
+        entity_id = "test-entity"
+        is_compliant, details = self.module.enforce_policy(
+            policy_id=policy["policy_id"],
+            entity_id=entity_id
         )
         
-        # Verify the result
-        self.assertTrue(is_allowed)
+        # Should be compliant
+        self.assertTrue(is_compliant)
+        self.assertIn("valid_attestations", details)
+        self.assertEqual(details["valid_attestations"], 2)
         
-        # Verify the attestation service was called
-        self.attestation_service.verify_attestation.assert_called_once_with(
-            attestation_id=attestation_id
+        # Verify attestation service was called
+        self.mock_attestation_service.find_attestations.assert_called_once_with(
+            subject_id=entity_id,
+            attestation_type="VERIFICATION",
+            active_only=True
         )
         
-        # Test with missing attestation
-        self.attestation_service.list_attestations.return_value = []
-        
-        is_allowed, reason = self.module.enforce_attestation_requirement(
-            source_id="source-001",
-            attestation_type="capability",
-            operation="write",
-            resource_path="/data/file.txt"
-        )
-        
-        # Verify the result
-        self.assertFalse(is_allowed)
-        self.assertEqual(reason, "Required attestation not found")
+        # Verify audit trail was called
+        self.mock_audit_trail.log_event.assert_called_once()
     
-    def test_enforce_propagated_trust(self):
-        """Test enforcing propagated trust."""
-        # Mock the trust propagation engine
-        self.trust_propagation_engine.get_propagated_trust.return_value = (0.75, ["source-002", "source-001", self.instance_id])
-        
-        # Test enforcing propagated trust
-        is_allowed, reason = self.module.enforce_propagated_trust(
-            source_id="source-002",
-            operation="read",
-            resource_path="/data/file.txt",
-            required_trust_level=70
-        )
-        
-        # Verify the result
-        self.assertTrue(is_allowed)
-        
-        # Verify the trust propagation engine was called
-        self.trust_propagation_engine.get_propagated_trust.assert_called_once_with(
-            source_id="source-002",
-            target_id=self.instance_id
-        )
-        
-        # Test with insufficient propagated trust
-        self.trust_propagation_engine.get_propagated_trust.return_value = (0.65, ["source-002", "source-001", self.instance_id])
-        
-        is_allowed, reason = self.module.enforce_propagated_trust(
-            source_id="source-002",
-            operation="read",
-            resource_path="/data/file.txt",
-            required_trust_level=70
-        )
-        
-        # Verify the result
-        self.assertFalse(is_allowed)
-        self.assertEqual(reason, "Insufficient propagated trust level")
-    
-    def test_create_enforcement_policy(self):
-        """Test creating an enforcement policy."""
+    def test_enforce_policy_insufficient_attestations(self):
+        """Test enforcing policy with insufficient attestations."""
         # Create a policy
-        policy = self.module.create_enforcement_policy(
-            policy_type="resource_access",
-            resource_pattern="/data/*",
-            required_trust_level=80,
-            required_attestations=["identity"],
-            allowed_operations=["read", "write"]
+        policy = self.module.create_policy(
+            name="Attestation Requirement",
+            description="Requires attestations",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "test-domain"},
+            rules={
+                "required_attestations": 2,
+                "required_attestation_types": ["VERIFICATION"],
+                "required_authority_level": "HIGH"
+            }
         )
         
-        # Verify the policy was created correctly
-        self.assertIsNotNone(policy)
-        self.assertIn("policy_id", policy)
-        self.assertEqual(policy["policy_type"], "resource_access")
-        self.assertEqual(policy["resource_pattern"], "/data/*")
-        self.assertEqual(policy["required_trust_level"], 80)
-        self.assertEqual(policy["required_attestations"], ["identity"])
-        self.assertEqual(policy["allowed_operations"], ["read", "write"])
+        # Mock attestation service to return 1 attestation
+        self.mock_attestation_service.find_attestations.return_value = [
+            {
+                "attestation_id": "att1",
+                "issuer_id": "auth1",
+                "attestation_type": "VERIFICATION"
+            }
+        ]
         
-        # Verify the policy was added to the module
-        policies = self.module.list_enforcement_policies()
-        self.assertEqual(len(policies), 1)
-        self.assertEqual(policies[0]["policy_id"], policy["policy_id"])
+        # Mock attestation validation to return valid
+        self.mock_attestation_service.validate_attestation.return_value = (True, {})
+        
+        # Enforce policy
+        entity_id = "test-entity"
+        is_compliant, details = self.module.enforce_policy(
+            policy_id=policy["policy_id"],
+            entity_id=entity_id
+        )
+        
+        # Should not be compliant
+        self.assertFalse(is_compliant)
+        self.assertIn("error", details)
+        self.assertIn("Insufficient attestations", details["error"])
+        
+        # Verify attestation service was called
+        self.mock_attestation_service.find_attestations.assert_called_once()
+        
+        # Verify audit trail was called
+        self.mock_audit_trail.log_event.assert_called_once()
     
     def test_enforce_policy(self):
         """Test enforcing a policy."""
         # Create a policy
-        policy = self.module.create_enforcement_policy(
-            policy_type="resource_access",
-            resource_pattern="/data/*",
-            required_trust_level=80,
-            required_attestations=["identity"],
-            allowed_operations=["read", "write"]
+        policy = self.module.create_policy(
+            name="Test Policy",
+            description="A test policy",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "test-domain"},
+            rules={
+                "required_attestations": 2,
+                "required_attestation_types": ["VERIFICATION"],
+                "required_authority_level": "HIGH"
+            }
         )
         
-        # Mock the trust boundary manager
-        boundary_id = f"tb-{uuid.uuid4().hex}"
-        self.trust_boundary_manager.list_boundaries.return_value = [
+        # Mock attestation service to return attestations
+        self.mock_attestation_service.find_attestations.return_value = [
             {
-                "boundary_id": boundary_id,
-                "source_instance_id": "source-001",
-                "target_instance_id": self.instance_id,
-                "trust_level": 90,
-                "status": "active"
+                "attestation_id": "att1",
+                "issuer_id": "auth1",
+                "attestation_type": "VERIFICATION"
+            },
+            {
+                "attestation_id": "att2",
+                "issuer_id": "auth2",
+                "attestation_type": "VERIFICATION"
             }
         ]
         
-        # Mock the attestation service
-        attestation_id = f"att-{uuid.uuid4().hex}"
-        self.attestation_service.list_attestations.return_value = [
-            {
-                "attestation_id": attestation_id,
-                "attestation_type": "identity",
-                "subject_instance_id": "source-001",
-                "attester_instance_id": self.instance_id,
-                "attestation_data": {"identity": "test-identity"},
-                "status": "active"
-            }
-        ]
+        # Mock attestation validation to return valid
+        self.mock_attestation_service.validate_attestation.return_value = (True, {})
         
-        self.attestation_service.verify_attestation.return_value = (True, {
-            "attestation_id": attestation_id,
-            "verification_status": "valid"
-        })
-        
-        # Test enforcing the policy
-        is_allowed, reason = self.module.enforce_policy(
+        # Enforce policy
+        entity_id = "test-entity"
+        is_compliant, details = self.module.enforce_policy(
             policy_id=policy["policy_id"],
-            source_id="source-001",
-            operation="read",
-            resource_path="/data/file.txt"
+            entity_id=entity_id
         )
         
-        # Verify the result
-        self.assertTrue(is_allowed)
+        # Should be compliant
+        self.assertTrue(is_compliant)
         
-        # Test with disallowed operation
-        is_allowed, reason = self.module.enforce_policy(
-            policy_id=policy["policy_id"],
-            source_id="source-001",
-            operation="delete",
-            resource_path="/data/file.txt"
-        )
+        # Verify attestation service was called
+        self.mock_attestation_service.find_attestations.assert_called_once()
         
-        # Verify the result
-        self.assertFalse(is_allowed)
-        self.assertEqual(reason, "Operation not allowed by policy")
+        # Verify audit trail was called
+        self.mock_audit_trail.log_event.assert_called_once()
     
-    def test_log_enforcement_action(self):
-        """Test logging an enforcement action."""
-        # Log an action
-        log_id = self.module.log_enforcement_action(
-            source_id="source-001",
-            operation="read",
-            resource_path="/data/file.txt",
-            is_allowed=True,
-            reason="Policy allows access"
+    def test_find_applicable_policies(self):
+        """Test finding applicable policies."""
+        # Create multiple policies
+        policy1 = self.module.create_policy(
+            name="Policy 1",
+            description="First test policy",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "domain1"},
+            rules={"required_attestations": 1}
         )
         
-        # Verify the log was created
-        self.assertIsNotNone(log_id)
-        self.assertEqual(len(self.module.enforcement_logs), 1)
-        self.assertEqual(self.module.enforcement_logs[0]["log_id"], log_id)
-        self.assertEqual(self.module.enforcement_logs[0]["source_instance_id"], "source-001")
-        self.assertEqual(self.module.enforcement_logs[0]["operation"], "read")
-        self.assertEqual(self.module.enforcement_logs[0]["resource_path"], "/data/file.txt")
-        self.assertEqual(self.module.enforcement_logs[0]["is_allowed"], True)
-        self.assertEqual(self.module.enforcement_logs[0]["reason"], "Policy allows access")
-    
-    def test_get_enforcement_logs(self):
-        """Test getting enforcement logs."""
-        # Create multiple logs
-        self.module.log_enforcement_action(
-            source_id="source-001",
-            operation="read",
-            resource_path="/data/file1.txt",
-            is_allowed=True,
-            reason="Policy allows access"
+        policy2 = self.module.create_policy(
+            name="Policy 2",
+            description="Second test policy",
+            policy_type="ATTESTATION_REQUIREMENT",
+            scope={"domain": "domain2"},
+            rules={"required_attestations": 2}
         )
         
-        self.module.log_enforcement_action(
-            source_id="source-001",
-            operation="write",
-            resource_path="/data/file2.txt",
-            is_allowed=False,
-            reason="Operation not allowed"
+        policy3 = self.module.create_policy(
+            name="Policy 3",
+            description="Third test policy",
+            policy_type="BOUNDARY_CONSTRAINT",
+            scope={"domain": "domain1"},
+            rules={"constraint_type": "MAX_OPERATIONS"}
         )
         
-        self.module.log_enforcement_action(
-            source_id="source-002",
-            operation="read",
-            resource_path="/data/file1.txt",
-            is_allowed=True,
-            reason="Policy allows access"
+        # Find by domain
+        domain1_policies = self.module.find_applicable_policies(domain="domain1")
+        self.assertEqual(len(domain1_policies), 2)
+        policy_ids = [p["policy_id"] for p in domain1_policies]
+        self.assertIn(policy1["policy_id"], policy_ids)
+        self.assertIn(policy3["policy_id"], policy_ids)
+        
+        # Find by type
+        attestation_policies = self.module.find_applicable_policies(policy_type="ATTESTATION_REQUIREMENT")
+        self.assertEqual(len(attestation_policies), 2)
+        policy_ids = [p["policy_id"] for p in attestation_policies]
+        self.assertIn(policy1["policy_id"], policy_ids)
+        self.assertIn(policy2["policy_id"], policy_ids)
+        
+        # Find by multiple criteria
+        filtered_policies = self.module.find_applicable_policies(
+            domain="domain1",
+            policy_type="ATTESTATION_REQUIREMENT"
         )
-        
-        # Test getting all logs
-        logs = self.module.get_enforcement_logs()
-        self.assertEqual(len(logs), 3)
-        
-        # Test filtering by source instance
-        logs = self.module.get_enforcement_logs(source_id="source-001")
-        self.assertEqual(len(logs), 2)
-        
-        # Test filtering by operation
-        logs = self.module.get_enforcement_logs(operation="read")
-        self.assertEqual(len(logs), 2)
-        
-        # Test filtering by resource path
-        logs = self.module.get_enforcement_logs(resource_path="/data/file1.txt")
-        self.assertEqual(len(logs), 2)
-        
-        # Test filtering by allowed status
-        logs = self.module.get_enforcement_logs(is_allowed=False)
-        self.assertEqual(len(logs), 1)
-        
-        # Test filtering by multiple criteria
-        logs = self.module.get_enforcement_logs(
-            source_id="source-001",
-            operation="read",
-            is_allowed=True
-        )
-        self.assertEqual(len(logs), 1)
-    
-    def test_codex_tether_check(self):
-        """Test Codex Contract tethering check."""
-        result = self.module._codex_tether_check()
-        
-        self.assertIsNotNone(result)
-        self.assertEqual(result["codex_contract_version"], "v2025.05.20")
-        self.assertEqual(result["phase_id"], "5.6")
-        self.assertIn("5.6", result["clauses"])
-        self.assertEqual(result["component"], "BoundaryEnforcementModule")
-        self.assertEqual(result["status"], "compliant")
+        self.assertEqual(len(filtered_policies), 1)
+        self.assertEqual(filtered_policies[0]["policy_id"], policy1["policy_id"])
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Trail Schema",
+  "description": "Schema for governance audit trail events in the Governance Attestation Framework",
+  "type": "object",
+  "required": [
+    "event_id",
+    "entity_id",
+    "event_type",
+    "timestamp",
+    "actor_id",
+    "event_data",
+    "merkle_proof",
+    "metadata"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for the audit event",
+      "pattern": "^audit-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "Identifier of the entity being audited",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "description": "Type of audit event",
+      "enum": [
+        "ATTESTATION_CREATED",
+        "ATTESTATION_VERIFIED",
+        "ATTESTATION_REVOKED",
+        "CLAIM_CREATED",
+        "CLAIM_VERIFIED",
+        "CLAIM_REJECTED",
+        "AUTHORITY_REGISTERED",
+        "AUTHORITY_UPDATED",
+        "AUTHORITY_REVOKED",
+        "GOVERNANCE_DECISION",
+        "COMPLIANCE_CHECK",
+        "SECURITY_EVENT"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the event occurred",
+      "format": "date-time"
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Identifier of the actor who triggered the event",
+      "minLength": 1
+    },
+    "event_data": {
+      "type": "object",
+      "description": "Data specific to the event type",
+      "required": ["content", "context"],
+      "properties": {
+        "content": {
+          "type": "object",
+          "description": "Content of the event"
+        },
+        "context": {
+          "type": "object",
+          "description": "Context in which the event occurred"
+        },
+        "references": {
+          "type": "array",
+          "description": "References to related entities",
+          "items": {
+            "type": "object",
+            "required": ["reference_type", "reference_id"],
+            "properties": {
+              "reference_type": {
+                "type": "string",
+                "description": "Type of reference",
+                "enum": ["ATTESTATION", "CLAIM", "AUTHORITY", "CONTRACT", "DECISION"]
+              },
+              "reference_id": {
+                "type": "string",
+                "description": "Identifier of the referenced entity"
+              }
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "description": "Result of the event",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Status of the event result",
+              "enum": ["SUCCESS", "FAILURE", "PARTIAL", "PENDING"]
+            },
+            "details": {
+              "type": "object",
+              "description": "Details of the event result"
+            }
+          }
+        }
+      }
+    },
+    "merkle_proof": {
+      "type": "object",
+      "description": "Merkle proof for audit trail integrity",
+      "required": ["root_hash", "path", "leaf_hash"],
+      "properties": {
+        "root_hash": {
+          "type": "string",
+          "description": "Root hash of the Merkle tree"
+        },
+        "path": {
+          "type": "array",
+          "description": "Path from leaf to root",
+          "items": {
+            "type": "object",
+            "required": ["position", "hash"],
+            "properties": {
+              "position": {
+                "type": "string",
+                "description": "Position in the path (left or right)",
+                "enum": ["LEFT", "RIGHT"]
+              },
+              "hash": {
+                "type": "string",
+                "description": "Hash value at this position"
+              }
+            }
+          }
+        },
+        "leaf_hash": {
+          "type": "string",
+          "description": "Hash of the leaf node (this event)"
+        },
+        "tree_size": {
+          "type": "integer",
+          "description": "Size of the Merkle tree at the time of this event",
+          "minimum": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when the proof was created",
+          "format": "date-time"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the audit event",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Version of the audit trail schema"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags associated with the event",
+          "items": {
+            "type": "string"
+          }
+        },
+        "severity": {
+          "type": "string",
+          "description": "Severity of the event",
+          "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of the event"
+        },
+        "retention_period": {
+          "type": "string",
+          "description": "ISO 8601 duration for retention of this event",
+          "pattern": "^P(?!$)(\\d+Y)?(\\d+M)?(\\d+W)?(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?)?$"
+        }
+      },
+      "required": ["version", "severity"]
+    }
+  },
+  "additionalProperties": false
+}

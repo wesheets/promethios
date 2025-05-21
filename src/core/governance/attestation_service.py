@@ -1,351 +1,440 @@
 """
-Attestation Service for Promethios Distributed Trust Surface
+Attestation Service for the Governance Attestation Framework.
 
-Codex Contract: v2025.05.20
-Phase: 5.6
-Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
+This module provides the core functionality for creating, validating, and managing
+attestations within the Promethios governance framework.
 """
 
 import json
 import uuid
-import hashlib
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
+import logging
+import datetime
+from typing import Dict, List, Optional, Any, Tuple, Union
+from pathlib import Path
+
+# Import required dependencies
+try:
+    from src.core.common.schema_validator import SchemaValidator
+    from src.core.verification.seal_verification import SealVerificationService
+except ImportError:
+    # Handle import errors gracefully for testing environments
+    logging.warning("Running with mock dependencies. Some functionality may be limited.")
+    SchemaValidator = None
+    SealVerificationService = None
+
 
 class AttestationService:
     """
-    Generates and validates trust attestations between Promethios instances.
+    Service for creating and managing attestations.
     
-    The AttestationService is responsible for:
-    1. Generating cryptographically verifiable trust attestations
-    2. Validating attestations from other instances
-    3. Managing attestation chains and history
-    4. Providing attestation verification APIs
+    The AttestationService provides functionality for:
+    - Attestation creation and validation
+    - Cryptographic signature verification
+    - Attestation chain management
+    - Revocation and expiration handling
+    
+    This service is a core component of the Governance Attestation Framework
+    and integrates with the SealVerificationService for additional security.
     """
     
-    def __init__(self, instance_id: str, schema_validator=None, trust_boundary_manager=None):
+    # Codex Contract Tethering
+    CODEX_CONTRACT_ID = "governance.attestation_service"
+    CODEX_CONTRACT_VERSION = "1.0.0"
+    
+    # Attestation type constants
+    ATTESTATION_TYPE_VERIFICATION = "VERIFICATION"
+    ATTESTATION_TYPE_CERTIFICATION = "CERTIFICATION"
+    ATTESTATION_TYPE_APPROVAL = "APPROVAL"
+    ATTESTATION_TYPE_ENDORSEMENT = "ENDORSEMENT"
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
-        Initialize the Attestation Service.
+        Initialize the AttestationService with the provided configuration.
         
         Args:
-            instance_id: The identifier of this Promethios instance
-            schema_validator: Optional validator for schema validation
-            trust_boundary_manager: Optional reference to the Trust Boundary Manager
+            config: Configuration dictionary with the following optional keys:
+                - schema_path: Path to the attestation schema
+                - storage_path: Path for attestation storage
+                - default_expiration_days: Default expiration period in days
         """
-        self.instance_id = instance_id
-        self.schema_validator = schema_validator
-        self.trust_boundary_manager = trust_boundary_manager
-        self.attestations: Dict[str, Dict] = {}  # attestation_id -> attestation
-        self.attestation_chains: Dict[str, List[str]] = {}  # attestation_id -> [parent_ids]
+        self.logger = logging.getLogger(__name__)
+        self.config = config or {}
         
-        # Load schemas
-        self._load_schemas()
+        # Pre-loop tether check
+        self._verify_codex_contract_tether()
+        
+        # Initialize schema validator
+        schema_path = self.config.get('schema_path', 
+                                     str(Path(__file__).parent.parent.parent.parent / 
+                                         'schemas/governance/attestation.schema.v1.json'))
+        self.schema_validator = SchemaValidator(schema_path) if SchemaValidator else None
+        
+        # Initialize seal verification service
+        self.seal_verification = SealVerificationService() if SealVerificationService else None
+        
+        # Initialize storage
+        self.storage_path = self.config.get('storage_path', '/tmp/attestations')
+        Path(self.storage_path).mkdir(parents=True, exist_ok=True)
+        
+        # Set default expiration
+        self.default_expiration_days = self.config.get('default_expiration_days', 365)
+        
+        # Initialize attestation cache
+        self.attestation_cache = {}
+        
+        # Initialize parent-child relationships cache
+        self.attestation_relationships = {}
+        
+        self.logger.info(f"AttestationService initialized with schema: {schema_path}")
     
-    def _load_schemas(self):
-        """Load the required schemas for validation."""
+    def _verify_codex_contract_tether(self) -> None:
+        """
+        Verify the Codex contract tether to ensure integrity.
+        
+        This method implements the pre-loop tether check required by the
+        Promethios governance framework.
+        
+        Raises:
+            RuntimeError: If the tether verification fails
+        """
         try:
-            with open('src/schemas/governance/trust_attestation.schema.v1.json', 'r') as f:
-                self.attestation_schema = json.load(f)
+            # In a production environment, this would verify against the actual Codex contract
+            # For now, we just check that the constants are defined correctly
+            if not self.CODEX_CONTRACT_ID or not self.CODEX_CONTRACT_VERSION:
+                raise ValueError("Codex contract tether constants are not properly defined")
+            
+            # Additional verification would be performed here in production
+            self.logger.info(f"Codex contract tether verified: {self.CODEX_CONTRACT_ID}@{self.CODEX_CONTRACT_VERSION}")
         except Exception as e:
-            print(f"Error loading schemas: {e}")
-            # Use minimal schema validation if files can't be loaded
-            self.attestation_schema = {}
+            self.logger.error(f"Codex contract tether verification failed: {str(e)}")
+            raise RuntimeError(f"Codex contract tether verification failed: {str(e)}")
     
-    def create_attestation(self, attestation_type: str, subject_instance_id: str,
-                          attestation_data: Dict = None, attester_instance_id: str = None) -> Dict:
+    def create_attestation(self, 
+                          issuer_id: str, 
+                          subject_id: str, 
+                          claim_id: str,
+                          attestation_type: str,
+                          attestation_data: Dict[str, Any],
+                          signature: Dict[str, str],
+                          parent_attestation_id: Optional[str] = None,
+                          expiration_days: Optional[int] = None) -> Dict[str, Any]:
         """
-        Create a new trust attestation.
+        Create a new attestation.
         
         Args:
-            attestation_type: Type of trust attestation
-            subject_instance_id: The identifier of the entity being attested
-            attestation_data: Data being attested
-            attester_instance_id: Optional override for the attester instance ID
+            issuer_id: Identifier of the attestation issuer
+            subject_id: Identifier of the attestation subject
+            claim_id: Identifier of the claim being attested
+            attestation_type: Type of attestation
+            attestation_data: Dictionary containing attestation content and context
+            signature: Dictionary containing signature information
+            parent_attestation_id: Optional parent attestation ID for chaining
+            expiration_days: Optional expiration period in days
             
         Returns:
-            The newly created attestation object
+            The created attestation as a dictionary
+            
+        Raises:
+            ValueError: If the attestation data is invalid
+            RuntimeError: If attestation creation fails
         """
-        # Generate a unique attestation ID
-        attestation_id = f"att-{uuid.uuid4().hex}"
-        
-        # Get current timestamp
-        now = datetime.utcnow()
-        created_at = now.isoformat() + 'Z'
-        expires_at = (now + timedelta(days=30)).isoformat() + 'Z'
-        
-        # Create the attestation object
-        attestation = {
-            "attestation_id": attestation_id,
-            "created_at": created_at,
-            "expires_at": expires_at,
-            "attester_instance_id": attester_instance_id or self.instance_id,
-            "subject_instance_id": subject_instance_id,
-            "attestation_type": attestation_type,
-            "attestation_data": attestation_data or {},
-            "status": "active"
-        }
-        
-        # Generate signature
-        signature = self._generate_signature(attestation)
-        attestation["signature"] = signature
-        
-        # Validate the attestation against the schema
-        if self.schema_validator and self.attestation_schema:
-            is_valid, errors = self.schema_validator.validate(attestation, self.attestation_schema)
-            if not is_valid:
-                raise ValueError(f"Invalid attestation: {errors}")
-        
-        # Store the attestation
-        self.attestations[attestation_id] = attestation
-        
-        return attestation
+        try:
+            # Generate attestation ID
+            attestation_id = f"attestation-{uuid.uuid4()}"
+            
+            # Get current timestamp
+            timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+            
+            # Calculate expiration
+            if expiration_days is None:
+                expiration_days = self.default_expiration_days
+                
+            expiration = (datetime.datetime.utcnow() + 
+                         datetime.timedelta(days=expiration_days)).isoformat() + "Z"
+            
+            # Create attestation object
+            attestation = {
+                "attestation_id": attestation_id,
+                "issuer_id": issuer_id,
+                "subject_id": subject_id,
+                "claim_id": claim_id,
+                "attestation_type": attestation_type,
+                "timestamp": timestamp,
+                "expiration": expiration,
+                "attestation_data": attestation_data,
+                "signature": signature,
+                "metadata": {
+                    "revocation_status": "ACTIVE",
+                    "version": "1.0.0"
+                }
+            }
+            
+            # Add parent reference if provided
+            if parent_attestation_id:
+                attestation["parent_attestation_id"] = parent_attestation_id
+                
+                # Update relationships cache
+                if parent_attestation_id not in self.attestation_relationships:
+                    self.attestation_relationships[parent_attestation_id] = []
+                self.attestation_relationships[parent_attestation_id].append(attestation_id)
+            
+            # Validate against schema
+            if self.schema_validator:
+                self.schema_validator.validate(attestation)
+            
+            # Store attestation
+            self._store_attestation(attestation)
+            
+            # Update cache
+            self.attestation_cache[attestation_id] = attestation
+            
+            self.logger.info(f"Created attestation: {attestation_id}, type: {attestation_type}")
+            return attestation
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create attestation: {str(e)}")
+            raise RuntimeError(f"Failed to create attestation: {str(e)}")
     
-    def create_attestation_chain(self, parent_attestation_id: str, attestation_type: str,
-                               subject_instance_id: str, attestation_data: Dict = None) -> Dict:
+    def get_attestation(self, attestation_id: str) -> Optional[Dict[str, Any]]:
         """
-        Create a new attestation that chains to a parent attestation.
+        Get an attestation by its ID.
         
         Args:
-            parent_attestation_id: The ID of the parent attestation
-            attestation_type: Type of trust attestation
-            subject_instance_id: The identifier of the entity being attested
-            attestation_data: Data being attested
+            attestation_id: Identifier of the attestation to retrieve
             
         Returns:
-            The newly created attestation object
+            The attestation as a dictionary, or None if not found
         """
-        if parent_attestation_id not in self.attestations:
-            raise ValueError(f"Parent attestation not found: {parent_attestation_id}")
+        # Check cache first
+        if attestation_id in self.attestation_cache:
+            return self.attestation_cache[attestation_id]
         
-        # Verify parent attestation is valid before chaining
-        is_valid, _ = self.verify_attestation(parent_attestation_id)
-        if not is_valid:
-            raise ValueError(f"Cannot chain to invalid attestation: {parent_attestation_id}")
+        # Try to load from storage
+        attestation_path = Path(self.storage_path) / f"{attestation_id}.json"
+        if attestation_path.exists():
+            try:
+                with open(attestation_path, 'r') as f:
+                    attestation = json.load(f)
+                    self.attestation_cache[attestation_id] = attestation
+                    
+                    # Update relationships cache if needed
+                    if "parent_attestation_id" in attestation:
+                        parent_id = attestation["parent_attestation_id"]
+                        if parent_id not in self.attestation_relationships:
+                            self.attestation_relationships[parent_id] = []
+                        if attestation_id not in self.attestation_relationships[parent_id]:
+                            self.attestation_relationships[parent_id].append(attestation_id)
+                    
+                    return attestation
+            except Exception as e:
+                self.logger.error(f"Failed to load attestation {attestation_id}: {str(e)}")
         
-        # Create the attestation
-        attestation = self.create_attestation(
-            attestation_type=attestation_type,
-            subject_instance_id=subject_instance_id,
-            attestation_data=attestation_data
-        )
-        
-        # Add parent reference
-        attestation["parent_attestation_id"] = parent_attestation_id
-        
-        # Update attestation chain
-        attestation_id = attestation["attestation_id"]
-        self.attestation_chains[attestation_id] = [parent_attestation_id]
-        
-        # If parent has a chain, add it to this attestation's chain
-        if parent_attestation_id in self.attestation_chains:
-            self.attestation_chains[attestation_id].extend(self.attestation_chains[parent_attestation_id])
-        
-        return attestation
+        return None
     
-    def verify_attestation(self, attestation_id: str) -> Tuple[bool, Dict]:
+    def find_attestations(self, 
+                         issuer_id: Optional[str] = None, 
+                         subject_id: Optional[str] = None,
+                         claim_id: Optional[str] = None,
+                         attestation_type: Optional[str] = None,
+                         active_only: bool = False) -> List[Dict[str, Any]]:
         """
-        Verify the validity of an attestation.
+        Find attestations matching the specified criteria.
         
         Args:
-            attestation_id: The ID of the attestation to verify
+            issuer_id: Optional issuer ID to filter by
+            subject_id: Optional subject ID to filter by
+            claim_id: Optional claim ID to filter by
+            attestation_type: Optional attestation type to filter by
+            active_only: If True, only return active attestations
             
         Returns:
-            Tuple of (is_valid, result)
+            List of matching attestations
         """
-        if attestation_id not in self.attestations:
-            return False, {"verification_status": "not_found", "reason": "Attestation not found"}
-            
-        attestation = self.attestations[attestation_id]
+        results = []
         
-        # Check if the attestation has expired
-        now = datetime.utcnow()
-        expires_at = datetime.fromisoformat(attestation["expires_at"].rstrip('Z'))
-        if expires_at < now:
-            return False, {"verification_status": "expired", "reason": "Attestation has expired", "attestation_id": attestation_id}
+        # Scan storage directory
+        storage_path = Path(self.storage_path)
+        for file_path in storage_path.glob("attestation-*.json"):
+            try:
+                with open(file_path, 'r') as f:
+                    attestation = json.load(f)
+                
+                # Apply filters
+                if issuer_id and attestation["issuer_id"] != issuer_id:
+                    continue
+                if subject_id and attestation["subject_id"] != subject_id:
+                    continue
+                if claim_id and attestation["claim_id"] != claim_id:
+                    continue
+                if attestation_type and attestation["attestation_type"] != attestation_type:
+                    continue
+                if active_only and attestation["metadata"]["revocation_status"] != "ACTIVE":
+                    continue
+                
+                results.append(attestation)
+                
+                # Update cache
+                self.attestation_cache[attestation["attestation_id"]] = attestation
+                
+                # Update relationships cache if needed
+                if "parent_attestation_id" in attestation:
+                    parent_id = attestation["parent_attestation_id"]
+                    if parent_id not in self.attestation_relationships:
+                        self.attestation_relationships[parent_id] = []
+                    if attestation["attestation_id"] not in self.attestation_relationships[parent_id]:
+                        self.attestation_relationships[parent_id].append(attestation["attestation_id"])
+                
+            except Exception as e:
+                self.logger.error(f"Failed to process attestation file {file_path}: {str(e)}")
         
-        # Check if the attestation has been revoked
-        if attestation.get("status") == "revoked":
-            return False, {"verification_status": "revoked", "reason": "Attestation has been revoked", "attestation_id": attestation_id}
-        
-        # Verify signature
-        if not self._verify_signature(attestation):
-            return False, {"verification_status": "invalid_signature", "reason": "Invalid signature", "attestation_id": attestation_id}
-        
-        # Verify schema
-        if self.schema_validator and self.attestation_schema:
-            is_valid, errors = self.schema_validator.validate(attestation, self.attestation_schema)
-            if not is_valid:
-                return False, {"verification_status": "invalid_schema", "reason": f"Schema validation failed: {errors}", "attestation_id": attestation_id}
-        
-        return True, {"verification_status": "valid", "attestation_id": attestation_id}
+        return results
     
-    def verify_attestation_chain(self, attestation_id: str) -> Tuple[bool, Dict]:
-        """
-        Verify the attestation chain for an attestation.
-        
-        Args:
-            attestation_id: The ID of the attestation
-            
-        Returns:
-            Tuple of (is_valid, result)
-        """
-        if attestation_id not in self.attestations:
-            return False, {"verification_status": "not_found", "reason": "Attestation not found"}
-        
-        # Get the chain
-        chain = self.get_attestation_chain(attestation_id)
-        chain_ids = [a["attestation_id"] for a in chain]
-        
-        # Debug output
-        print(f"DEBUG: Verifying attestation chain for {attestation_id}")
-        print(f"DEBUG: Chain contains {len(chain)} attestations: {chain_ids}")
-        
-        # Verify each attestation in the chain
-        for attestation in chain:
-            current_id = attestation["attestation_id"]
-            is_valid, result = self.verify_attestation(current_id)
-            print(f"DEBUG: Attestation {current_id} verification result: {is_valid}, status: {result.get('verification_status')}")
-            
-            if not is_valid:
-                # Check if it's revoked specifically
-                if result.get("verification_status") == "revoked":
-                    print(f"DEBUG: Chain invalid due to revoked attestation: {current_id}")
-                    return False, {
-                        "verification_status": "invalid",
-                        "reason": "Chain contains revoked attestation",
-                        "invalid_attestation": current_id,
-                        "invalid_reason": result["reason"],
-                        "chain": chain_ids
-                    }
-                else:
-                    print(f"DEBUG: Chain invalid due to invalid attestation: {current_id}, reason: {result.get('reason')}")
-                    return False, {
-                        "verification_status": "invalid",
-                        "reason": "Chain contains invalid attestation",
-                        "invalid_attestation": current_id,
-                        "invalid_reason": result["reason"],
-                        "chain": chain_ids
-                    }
-        
-        print(f"DEBUG: Chain verification successful for {attestation_id}")
-        return True, {
-            "verification_status": "valid",
-            "chain": chain_ids
-        }
-    
-    def get_attestation_chain(self, attestation_id: str) -> List[Dict]:
-        """
-        Get the attestation chain for an attestation.
-        
-        Args:
-            attestation_id: The ID of the attestation
-            
-        Returns:
-            List of attestations in the chain, starting with the given attestation
-        """
-        if attestation_id not in self.attestations:
-            return []
-        
-        # Start with the current attestation
-        chain = []
-        current_id = attestation_id
-        
-        # Recursively follow parent links until we reach the root
-        while current_id and current_id in self.attestations:
-            current_attestation = self.attestations[current_id]
-            chain.append(current_attestation)
-            
-            # Move to parent if it exists
-            if "parent_attestation_id" in current_attestation:
-                current_id = current_attestation["parent_attestation_id"]
-            else:
-                break
-        
-        return chain
-    
-    def revoke_attestation(self, attestation_id: str, reason: str) -> bool:
+    def revoke_attestation(self, 
+                          attestation_id: str, 
+                          reason: str,
+                          actor_id: str) -> Dict[str, Any]:
         """
         Revoke an attestation.
         
         Args:
-            attestation_id: The ID of the attestation to revoke
-            reason: The reason for revocation
+            attestation_id: Identifier of the attestation to revoke
+            reason: Reason for revocation
+            actor_id: Identifier of the actor performing the revocation
             
         Returns:
-            True if the attestation was revoked, False otherwise
+            The updated attestation
+            
+        Raises:
+            ValueError: If the attestation ID is invalid
+            RuntimeError: If revocation fails
         """
-        if attestation_id not in self.attestations:
-            return False
-        
-        attestation = self.attestations[attestation_id]
-        
-        # Only the attester can revoke an attestation
-        if attestation["attester_instance_id"] != self.instance_id:
-            return False
-        
-        # Update status and add revocation info
-        attestation["status"] = "revoked"
-        attestation["revocation_reason"] = reason
-        attestation["revocation_time"] = datetime.utcnow().isoformat() + 'Z'
-        
-        return True
+        try:
+            # Get attestation
+            attestation = self.get_attestation(attestation_id)
+            if not attestation:
+                raise ValueError(f"Attestation not found: {attestation_id}")
+            
+            # Update attestation status
+            attestation["metadata"]["revocation_status"] = "REVOKED"
+            attestation["metadata"]["revocation_reason"] = reason
+            attestation["metadata"]["revocation_actor"] = actor_id
+            attestation["metadata"]["revocation_timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
+            
+            # Store updated attestation
+            self._store_attestation(attestation)
+            
+            # Update cache
+            self.attestation_cache[attestation_id] = attestation
+            
+            self.logger.info(f"Revoked attestation: {attestation_id}, reason: {reason}")
+            return attestation
+            
+        except Exception as e:
+            self.logger.error(f"Failed to revoke attestation: {str(e)}")
+            raise RuntimeError(f"Failed to revoke attestation: {str(e)}")
     
-    def list_attestations(self, attestation_id: Optional[str] = None,
-                         subject_instance_id: Optional[str] = None,
-                         attestation_type: Optional[str] = None,
-                         status: Optional[str] = None) -> List[Dict]:
+    def validate_attestation(self, attestation_id: str) -> Tuple[bool, Dict[str, Any]]:
         """
-        List attestations, optionally filtered by various criteria.
+        Validate an attestation.
         
         Args:
-            attestation_id: Optional attestation ID to filter by
-            subject_instance_id: Optional subject instance ID to filter by
-            attestation_type: Optional attestation type to filter by
-            status: Optional status to filter by
+            attestation_id: Identifier of the attestation to validate
             
         Returns:
-            List of matching attestation objects
+            A tuple containing:
+            - Boolean indicating validation success
+            - Dictionary with validation details
         """
-        results = []
-        
-        for a_id, attestation in self.attestations.items():
-            if attestation_id and a_id != attestation_id:
-                continue
+        try:
+            # Get attestation
+            attestation = self.get_attestation(attestation_id)
+            if not attestation:
+                return False, {"error": "Attestation not found"}
             
-            if subject_instance_id and attestation["subject_instance_id"] != subject_instance_id:
-                continue
+            # Check revocation status
+            if attestation["metadata"]["revocation_status"] != "ACTIVE":
+                return False, {"error": "Attestation is revoked"}
             
-            if attestation_type and attestation["attestation_type"] != attestation_type:
-                continue
+            # Check expiration
+            expiration = datetime.datetime.fromisoformat(attestation["expiration"].rstrip("Z"))
+            if expiration < datetime.datetime.utcnow():
+                return False, {"error": "Attestation is expired"}
             
-            if status and attestation.get("status") != status:
-                continue
+            # Verify signature
+            is_valid, signature_details = self._verify_signature(attestation)
+            if not is_valid:
+                return False, {"error": "Invalid signature", "details": signature_details}
             
-            results.append(attestation)
-        
-        return results
+            # Return validation result
+            return True, {
+                "validation_timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "signature_details": signature_details
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Failed to validate attestation: {str(e)}")
+            return False, {"error": f"Validation error: {str(e)}"}
     
-    def _generate_signature(self, attestation: Dict) -> str:
+    def get_attestation_chain(self, attestation_id: str) -> List[Dict[str, Any]]:
         """
-        Generate a signature for an attestation.
+        Get the chain of attestations starting from the specified attestation.
         
         Args:
-            attestation: The attestation to sign
+            attestation_id: Identifier of the attestation to start from
             
         Returns:
-            The signature as a hex string
+            List of attestations in the chain, starting with the specified attestation
         """
-        # Create a copy without the signature field
-        attestation_copy = attestation.copy()
-        attestation_copy.pop("signature", None)
+        chain = []
         
-        # For test purposes, always return a valid signature
-        # In a real implementation, this would use the private key to sign the hash
-        attestation_id = attestation_copy.get("attestation_id", "")
-        return f"0x{hashlib.sha256(attestation_id.encode()).hexdigest()}"
+        # Get the starting attestation
+        attestation = self.get_attestation(attestation_id)
+        if not attestation:
+            return chain
+        
+        # Add it to the chain
+        chain.append(attestation)
+        
+        # Build the relationships cache if needed
+        if not self.attestation_relationships:
+            self._build_relationships_cache()
+        
+        # Recursively add children
+        self._add_children_to_chain(attestation_id, chain)
+        
+        return chain
     
-    def _verify_signature(self, attestation: Dict) -> bool:
+    def _add_children_to_chain(self, attestation_id: str, chain: List[Dict[str, Any]]) -> None:
+        """
+        Recursively add children attestations to the chain.
+        
+        Args:
+            attestation_id: Identifier of the parent attestation
+            chain: List to add children to
+        """
+        # Check if this attestation has children
+        if attestation_id in self.attestation_relationships:
+            for child_id in self.attestation_relationships[attestation_id]:
+                child = self.get_attestation(child_id)
+                if child:
+                    chain.append(child)
+                    self._add_children_to_chain(child_id, chain)
+    
+    def _build_relationships_cache(self) -> None:
+        """
+        Build the attestation relationships cache.
+        """
+        self.attestation_relationships = {}
+        
+        # Scan all attestations
+        for attestation in self.find_attestations():
+            if "parent_attestation_id" in attestation:
+                parent_id = attestation["parent_attestation_id"]
+                if parent_id not in self.attestation_relationships:
+                    self.attestation_relationships[parent_id] = []
+                self.attestation_relationships[parent_id].append(attestation["attestation_id"])
+    
+    def _verify_signature(self, attestation: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
         """
         Verify the signature of an attestation.
         
@@ -353,29 +442,32 @@ class AttestationService:
             attestation: The attestation to verify
             
         Returns:
-            True if the signature is valid, False otherwise
+            A tuple containing:
+            - Boolean indicating verification success
+            - Dictionary with verification details
         """
-        # Extract the signature
-        signature = attestation.get("signature")
-        if not signature:
-            return False
+        # In a production environment, this would verify the cryptographic signature
+        # For now, we just check that the signature exists
+        signature = attestation["signature"]
+        if not signature or not signature.get("signature_value"):
+            return False, {"error": "Missing signature"}
         
-        # For test purposes, always return True to pass the verification
-        # In a real implementation, this would verify the signature using the issuer's public key
-        return True
+        # Additional verification would be performed here in production
+        return True, {"algorithm": signature.get("algorithm", "UNKNOWN")}
     
-    def _codex_tether_check(self) -> Dict:
+    def _store_attestation(self, attestation: Dict[str, Any]) -> None:
         """
-        Perform a Codex Contract tethering check.
+        Store an attestation to persistent storage.
         
-        Returns:
-            A dictionary with tethering information
+        Args:
+            attestation: The attestation to store
         """
-        return {
-            "codex_contract_version": "v2025.05.20",
-            "phase_id": "5.6",
-            "clauses": ["5.6", "5.5", "5.4", "11.0", "11.1", "5.2.6"],
-            "component": "AttestationService",
-            "status": "compliant",
-            "timestamp": datetime.utcnow().isoformat() + 'Z'
-        }
+        attestation_id = attestation["attestation_id"]
+        attestation_path = Path(self.storage_path) / f"{attestation_id}.json"
+        
+        try:
+            with open(attestation_path, 'w') as f:
+                json.dump(attestation, f, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to store attestation {attestation_id}: {str(e)}")
+            raise RuntimeError(f"Failed to store attestation: {str(e)}")

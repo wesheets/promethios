@@ -1,258 +1,313 @@
 """
-Tests for Attestation Service in Promethios Distributed Trust Surface
+Unit tests for the AttestationService class.
 
-Codex Contract: v2025.05.20
-Phase: 5.6
-Clauses: 5.6, 5.5, 5.4, 11.0, 11.1, 5.2.6
+This module contains unit tests for the AttestationService class,
+which is responsible for creating, validating, and managing attestations.
 """
 
 import unittest
 import json
 import uuid
-from datetime import datetime, timedelta
+import datetime
 from unittest.mock import MagicMock, patch
+from pathlib import Path
+import sys
+import os
 
-# Updated import for canonical structure
+# Add the src directory to the path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
+
+# Import the class to test
 from src.core.governance.attestation_service import AttestationService
-from src.core.governance.trust_boundary_manager import TrustBoundaryManager
+
 
 class TestAttestationService(unittest.TestCase):
-    """Test suite for the Attestation Service."""
+    """Test cases for the AttestationService class."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.instance_id = "test-instance-001"
-        self.schema_validator = MagicMock()
-        self.schema_validator.validate.return_value = (True, None)
+        # Create a mock configuration
+        self.config = {
+            'storage_path': '/tmp/test_attestations',
+            'schema_path': '/tmp/test_schemas/attestation.schema.v1.json'
+        }
         
-        # Create a mock Trust Boundary Manager
-        self.trust_boundary_manager = MagicMock(spec=TrustBoundaryManager)
+        # Create mock dependencies
+        self.mock_schema_validator = MagicMock()
+        self.mock_schema_validator.validate.return_value = True
         
-        # Create the Attestation Service
-        self.service = AttestationService(
-            instance_id=self.instance_id,
-            schema_validator=self.schema_validator,
-            trust_boundary_manager=self.trust_boundary_manager
-        )
+        # Create a test directory
+        Path(self.config['storage_path']).mkdir(parents=True, exist_ok=True)
+        
+        # Create the service with mocked dependencies
+        with patch('src.core.governance.attestation_service.SchemaValidator', return_value=self.mock_schema_validator):
+            with patch('src.core.governance.attestation_service.SealVerificationService'):
+                self.service = AttestationService(self.config)
+    
+    def tearDown(self):
+        """Tear down test fixtures."""
+        # Clean up test files
+        import shutil
+        if Path(self.config['storage_path']).exists():
+            shutil.rmtree(self.config['storage_path'])
+    
+    def test_init(self):
+        """Test initialization of the service."""
+        self.assertEqual(self.service.config, self.config)
+        self.assertEqual(self.service.storage_path, self.config['storage_path'])
+        self.assertIsNotNone(self.service.schema_validator)
     
     def test_create_attestation(self):
         """Test creating an attestation."""
-        # Create an attestation
-        attestation_type = "identity"
-        subject_id = "subject-001"
-        attestation_data = {"identity": "test-identity"}
+        # Define test data
+        issuer_id = "test-issuer"
+        subject_id = "test-subject"
+        claim_id = "test-claim"
+        attestation_type = "VERIFICATION"
+        attestation_data = {
+            "content": {"key": "value"},
+            "context": {"domain": "test-domain"},
+            "evidence_references": ["ref1", "ref2"]
+        }
+        signature = {
+            "signature_value": "test-signature",
+            "key_id": "test-key",
+            "algorithm": "test-algorithm"
+        }
         
+        # Create attestation
         attestation = self.service.create_attestation(
+            issuer_id=issuer_id,
+            subject_id=subject_id,
+            claim_id=claim_id,
             attestation_type=attestation_type,
-            subject_instance_id=subject_id,
-            attestation_data=attestation_data
+            attestation_data=attestation_data,
+            signature=signature
         )
         
-        # Verify the attestation was created correctly
+        # Verify attestation
         self.assertIsNotNone(attestation)
         self.assertIn("attestation_id", attestation)
+        self.assertEqual(attestation["issuer_id"], issuer_id)
+        self.assertEqual(attestation["subject_id"], subject_id)
+        self.assertEqual(attestation["claim_id"], claim_id)
         self.assertEqual(attestation["attestation_type"], attestation_type)
-        self.assertEqual(attestation["subject_instance_id"], subject_id)
-        self.assertEqual(attestation["attester_instance_id"], self.instance_id)
         self.assertEqual(attestation["attestation_data"], attestation_data)
-        self.assertEqual(attestation["status"], "active")
+        self.assertEqual(attestation["signature"], signature)
+        self.assertIn("timestamp", attestation)
+        self.assertIn("expiration", attestation)
+        self.assertIn("metadata", attestation)
+        self.assertEqual(attestation["metadata"]["revocation_status"], "ACTIVE")
         
-        # Verify the attestation was added to the service
-        attestations = self.service.list_attestations()
-        self.assertEqual(len(attestations), 1)
-        self.assertEqual(attestations[0]["attestation_id"], attestation["attestation_id"])
+        # Verify schema validation was called
+        self.mock_schema_validator.validate.assert_called_once()
     
-    def test_verify_attestation(self):
-        """Test verifying an attestation."""
-        # Create an attestation
+    def test_get_attestation(self):
+        """Test getting an attestation."""
+        # Create an attestation first
         attestation = self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-001",
-            attestation_data={"identity": "test-identity"}
+            issuer_id="test-issuer",
+            subject_id="test-subject",
+            claim_id="test-claim",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "value"}},
+            signature={"signature_value": "test-signature"}
         )
         
-        # Verify the attestation
-        is_valid, result = self.service.verify_attestation(
-            attestation_id=attestation["attestation_id"]
+        # Get the attestation
+        retrieved = self.service.get_attestation(attestation["attestation_id"])
+        
+        # Verify it's the same
+        self.assertEqual(retrieved, attestation)
+        
+        # Test getting a non-existent attestation
+        non_existent = self.service.get_attestation("non-existent")
+        self.assertIsNone(non_existent)
+    
+    def test_find_attestations(self):
+        """Test finding attestations by criteria."""
+        # Create multiple attestations
+        attestation1 = self.service.create_attestation(
+            issuer_id="issuer1",
+            subject_id="subject1",
+            claim_id="claim1",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "value1"}},
+            signature={"signature_value": "signature1"}
         )
         
-        # Verify the result
-        self.assertTrue(is_valid)
-        self.assertEqual(result["attestation_id"], attestation["attestation_id"])
-        self.assertEqual(result["verification_status"], "valid")
+        attestation2 = self.service.create_attestation(
+            issuer_id="issuer2",
+            subject_id="subject1",
+            claim_id="claim2",
+            attestation_type="CERTIFICATION",
+            attestation_data={"content": {"key": "value2"}},
+            signature={"signature_value": "signature2"}
+        )
+        
+        attestation3 = self.service.create_attestation(
+            issuer_id="issuer1",
+            subject_id="subject2",
+            claim_id="claim3",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "value3"}},
+            signature={"signature_value": "signature3"}
+        )
+        
+        # Find by issuer
+        issuer1_attestations = self.service.find_attestations(issuer_id="issuer1")
+        self.assertEqual(len(issuer1_attestations), 2)
+        self.assertIn(attestation1, issuer1_attestations)
+        self.assertIn(attestation3, issuer1_attestations)
+        
+        # Find by subject
+        subject1_attestations = self.service.find_attestations(subject_id="subject1")
+        self.assertEqual(len(subject1_attestations), 2)
+        self.assertIn(attestation1, subject1_attestations)
+        self.assertIn(attestation2, subject1_attestations)
+        
+        # Find by type
+        verification_attestations = self.service.find_attestations(attestation_type="VERIFICATION")
+        self.assertEqual(len(verification_attestations), 2)
+        self.assertIn(attestation1, verification_attestations)
+        self.assertIn(attestation3, verification_attestations)
+        
+        # Find by multiple criteria
+        filtered_attestations = self.service.find_attestations(
+            issuer_id="issuer1",
+            attestation_type="VERIFICATION"
+        )
+        self.assertEqual(len(filtered_attestations), 2)
+        self.assertIn(attestation1, filtered_attestations)
+        self.assertIn(attestation3, filtered_attestations)
     
     def test_revoke_attestation(self):
         """Test revoking an attestation."""
         # Create an attestation
         attestation = self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-001",
-            attestation_data={"identity": "test-identity"}
+            issuer_id="test-issuer",
+            subject_id="test-subject",
+            claim_id="test-claim",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "value"}},
+            signature={"signature_value": "test-signature"}
         )
         
-        # Revoke the attestation
+        # Verify it's active
+        self.assertEqual(attestation["metadata"]["revocation_status"], "ACTIVE")
+        
+        # Revoke it
+        reason = "Test revocation"
+        actor_id = "test-actor"
         revoked = self.service.revoke_attestation(
             attestation_id=attestation["attestation_id"],
-            reason="Test revocation"
+            reason=reason,
+            actor_id=actor_id
         )
         
-        # Verify the attestation was revoked
-        self.assertTrue(revoked)
+        # Verify it's revoked
+        self.assertEqual(revoked["metadata"]["revocation_status"], "REVOKED")
+        self.assertEqual(revoked["metadata"]["revocation_reason"], reason)
+        self.assertEqual(revoked["metadata"]["revocation_actor"], actor_id)
+        self.assertIn("revocation_timestamp", revoked["metadata"])
         
-        # Get the revoked attestation
-        attestations = self.service.list_attestations(
-            attestation_id=attestation["attestation_id"]
-        )
-        self.assertEqual(len(attestations), 1)
-        self.assertEqual(attestations[0]["status"], "revoked")
-        self.assertEqual(attestations[0]["revocation_reason"], "Test revocation")
-        
-        # Verify the revoked attestation
-        is_valid, result = self.service.verify_attestation(
-            attestation_id=attestation["attestation_id"]
-        )
-        self.assertFalse(is_valid)
-        self.assertEqual(result["verification_status"], "revoked")
+        # Get it again to verify persistence
+        retrieved = self.service.get_attestation(attestation["attestation_id"])
+        self.assertEqual(retrieved["metadata"]["revocation_status"], "REVOKED")
     
-    def test_list_attestations_with_filters(self):
-        """Test listing attestations with filters."""
-        # Create multiple attestations
-        self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-001",
-            attestation_data={"identity": "identity-001"}
+    def test_validate_attestation(self):
+        """Test validating an attestation."""
+        # Create an attestation
+        attestation = self.service.create_attestation(
+            issuer_id="test-issuer",
+            subject_id="test-subject",
+            claim_id="test-claim",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "value"}},
+            signature={"signature_value": "test-signature"}
         )
         
-        self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-002",
-            attestation_data={"identity": "identity-002"}
-        )
+        # Mock the signature verification
+        with patch.object(self.service, '_verify_signature', return_value=(True, {})):
+            # Validate it
+            is_valid, details = self.service.validate_attestation(attestation["attestation_id"])
+            
+            # Verify it's valid
+            self.assertTrue(is_valid)
+            self.assertIn("validation_timestamp", details)
         
-        self.service.create_attestation(
-            attestation_type="capability",
-            subject_instance_id="subject-001",
-            attestation_data={"capability": "capability-001"}
-        )
-        
-        # Test filtering by subject instance
-        attestations = self.service.list_attestations(
-            subject_instance_id="subject-001"
-        )
-        self.assertEqual(len(attestations), 2)
-        
-        # Test filtering by attestation type
-        attestations = self.service.list_attestations(
-            attestation_type="identity"
-        )
-        self.assertEqual(len(attestations), 2)
-        
-        # Test filtering by both subject and type
-        attestations = self.service.list_attestations(
-            subject_instance_id="subject-001",
-            attestation_type="identity"
-        )
-        self.assertEqual(len(attestations), 1)
-    
-    def test_create_attestation_chain(self):
-        """Test creating an attestation chain."""
-        # Create a root attestation
-        root_attestation = self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-001",
-            attestation_data={"identity": "identity-001"}
-        )
-        
-        # Create a chained attestation
-        chained_attestation = self.service.create_attestation_chain(
-            parent_attestation_id=root_attestation["attestation_id"],
-            attestation_type="capability",
-            subject_instance_id="subject-001",
-            attestation_data={"capability": "capability-001"}
-        )
-        
-        # Verify the chained attestation
-        self.assertIsNotNone(chained_attestation)
-        self.assertIn("attestation_id", chained_attestation)
-        self.assertEqual(chained_attestation["parent_attestation_id"], root_attestation["attestation_id"])
-        
-        # Verify the chain
-        chain = self.service.get_attestation_chain(
-            attestation_id=chained_attestation["attestation_id"]
-        )
-        self.assertEqual(len(chain), 2)
-        self.assertEqual(chain[0]["attestation_id"], chained_attestation["attestation_id"])
-        self.assertEqual(chain[1]["attestation_id"], root_attestation["attestation_id"])
-    
-    def test_verify_attestation_chain(self):
-        """Test verifying an attestation chain."""
-        # Create a root attestation
-        root_attestation = self.service.create_attestation(
-            attestation_type="identity",
-            subject_instance_id="subject-001",
-            attestation_data={"identity": "identity-001"}
-        )
-        
-        # Create a chained attestation
-        chained_attestation = self.service.create_attestation_chain(
-            parent_attestation_id=root_attestation["attestation_id"],
-            attestation_type="capability",
-            subject_instance_id="subject-001",
-            attestation_data={"capability": "capability-001"}
-        )
-        
-        # Verify the chain
-        is_valid, result = self.service.verify_attestation_chain(
-            attestation_id=chained_attestation["attestation_id"]
-        )
-        
-        # Verify the result
-        self.assertTrue(is_valid)
-        self.assertEqual(len(result["chain"]), 2)
-        self.assertEqual(result["verification_status"], "valid")
-        
-        # Revoke the root attestation
+        # Test validation of a revoked attestation
         self.service.revoke_attestation(
-            attestation_id=root_attestation["attestation_id"],
-            reason="Test revocation"
+            attestation_id=attestation["attestation_id"],
+            reason="Test revocation",
+            actor_id="test-actor"
         )
         
-        # Verify the chain again
-        is_valid, result = self.service.verify_attestation_chain(
-            attestation_id=chained_attestation["attestation_id"]
-        )
-        
-        # Chain should be invalid if root is revoked
+        is_valid, details = self.service.validate_attestation(attestation["attestation_id"])
         self.assertFalse(is_valid)
-        self.assertEqual(result["verification_status"], "invalid")
-        self.assertEqual(result["reason"], "Chain contains revoked attestation")
+        self.assertIn("error", details)
+        self.assertEqual(details["error"], "Attestation is revoked")
+        
+        # Test validation of a non-existent attestation
+        is_valid, details = self.service.validate_attestation("non-existent")
+        self.assertFalse(is_valid)
+        self.assertIn("error", details)
+        self.assertEqual(details["error"], "Attestation not found")
     
-    def test_schema_validation(self):
-        """Test schema validation during attestation creation."""
-        # Mock schema validator to fail
-        self.schema_validator.validate.return_value = (False, "Invalid schema")
+    def test_get_attestation_chain(self):
+        """Test getting an attestation chain."""
+        # Create a chain of attestations
+        root = self.service.create_attestation(
+            issuer_id="issuer1",
+            subject_id="subject1",
+            claim_id="claim1",
+            attestation_type="VERIFICATION",
+            attestation_data={"content": {"key": "root"}},
+            signature={"signature_value": "signature1"}
+        )
         
-        # Attempt to create an attestation
-        with self.assertRaises(ValueError):
-            self.service.create_attestation(
-                attestation_type="identity",
-                subject_instance_id="subject-001",
-                attestation_data={"identity": "test-identity"}
-            )
+        child1 = self.service.create_attestation(
+            issuer_id="issuer2",
+            subject_id="subject2",
+            claim_id="claim2",
+            attestation_type="CERTIFICATION",
+            attestation_data={"content": {"key": "child1"}},
+            signature={"signature_value": "signature2"},
+            parent_attestation_id=root["attestation_id"]
+        )
         
-        # Verify schema validator was called
-        self.schema_validator.validate.assert_called_once()
-    
-    def test_codex_tether_check(self):
-        """Test Codex Contract tethering check."""
-        result = self.service._codex_tether_check()
+        child2 = self.service.create_attestation(
+            issuer_id="issuer3",
+            subject_id="subject3",
+            claim_id="claim3",
+            attestation_type="APPROVAL",
+            attestation_data={"content": {"key": "child2"}},
+            signature={"signature_value": "signature3"},
+            parent_attestation_id=child1["attestation_id"]
+        )
         
-        self.assertIsNotNone(result)
-        self.assertEqual(result["codex_contract_version"], "v2025.05.20")
-        self.assertEqual(result["phase_id"], "5.6")
-        self.assertIn("5.6", result["clauses"])
-        self.assertEqual(result["component"], "AttestationService")
-        self.assertEqual(result["status"], "compliant")
+        # Get the chain from the root
+        chain = self.service.get_attestation_chain(root["attestation_id"])
+        self.assertEqual(len(chain), 3)
+        self.assertEqual(chain[0]["attestation_id"], root["attestation_id"])
+        self.assertEqual(chain[1]["attestation_id"], child1["attestation_id"])
+        self.assertEqual(chain[2]["attestation_id"], child2["attestation_id"])
+        
+        # Get the chain from a child
+        chain = self.service.get_attestation_chain(child1["attestation_id"])
+        self.assertEqual(len(chain), 2)
+        self.assertEqual(chain[0]["attestation_id"], child1["attestation_id"])
+        self.assertEqual(chain[1]["attestation_id"], child2["attestation_id"])
+        
+        # Get the chain from a leaf
+        chain = self.service.get_attestation_chain(child2["attestation_id"])
+        self.assertEqual(len(chain), 1)
+        self.assertEqual(chain[0]["attestation_id"], child2["attestation_id"])
+        
+        # Test getting a chain for a non-existent attestation
+        chain = self.service.get_attestation_chain("non-existent")
+        self.assertEqual(len(chain), 0)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     unittest.main()
