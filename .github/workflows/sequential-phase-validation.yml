@@ -1,0 +1,153 @@
+name: Sequential Phase Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ feature/phase-5-13-trust-boundary-definition ]
+  workflow_dispatch:
+
+jobs:
+  validate-phases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Validate Phase 2.3
+        run: |
+          echo "Validating Phase 2.3..."
+          python -m pytest tests/phase_2_3 -v
+      
+      - name: Validate Phase 2.4
+        run: |
+          echo "Validating Phase 2.4..."
+          python -m pytest tests/phase_2_4 -v
+      
+      - name: Validate Phase 2.5
+        run: |
+          echo "Validating Phase 2.5..."
+          python -m pytest tests/phase_2_5 -v
+      
+      - name: Validate Phase 3.0
+        run: |
+          echo "Validating Phase 3.0..."
+          python -m pytest tests/phase_3_0 -v
+      
+      - name: Validate Phase 3.1
+        run: |
+          echo "Validating Phase 3.1..."
+          python -m pytest tests/phase_3_1 -v
+      
+      - name: Validate Phase 3.2
+        run: |
+          echo "Validating Phase 3.2..."
+          python -m pytest tests/phase_3_2 -v
+      
+      - name: Validate Phase 4.0
+        run: |
+          echo "Validating Phase 4.0..."
+          python -m pytest tests/phase_4_0 -v
+      
+      - name: Validate Phase 4.1
+        run: |
+          echo "Validating Phase 4.1..."
+          python -m pytest tests/phase_4_1 -v
+      
+      - name: Validate Phase 4.2
+        run: |
+          echo "Validating Phase 4.2..."
+          python -m pytest tests/phase_4_2 -v
+      
+      - name: Validate Phase 5.0
+        run: |
+          echo "Validating Phase 5.0..."
+          python -m pytest tests/phase_5_0 -v
+      
+      - name: Validate Phase 5.1
+        run: |
+          echo "Validating Phase 5.1..."
+          python -m pytest tests/phase_5_1 -v
+      
+      - name: Validate Phase 5.2
+        run: |
+          echo "Validating Phase 5.2..."
+          python -m pytest tests/phase_5_2 -v
+      
+      - name: Validate Phase 5.3
+        run: |
+          echo "Validating Phase 5.3..."
+          python -m pytest tests/phase_5_3 -v
+      
+      - name: Validate Phase 5.4
+        run: |
+          echo "Validating Phase 5.4..."
+          python -m pytest tests/phase_5_4 -v
+      
+      - name: Validate Phase 5.5
+        run: |
+          echo "Validating Phase 5.5..."
+          python -m pytest tests/phase_5_5 -v
+      
+      - name: Validate Phase 5.6
+        run: |
+          echo "Validating Phase 5.6..."
+          python -m pytest tests/phase_5_6 -v
+      
+      - name: Validate Phase 5.7
+        run: |
+          echo "Validating Phase 5.7..."
+          python -m pytest tests/phase_5_7 -v
+      
+      - name: Validate Phase 5.8
+        run: |
+          echo "Validating Phase 5.8..."
+          python -m pytest tests/phase_5_8 -v
+      
+      - name: Validate Phase 5.9
+        run: |
+          echo "Validating Phase 5.9..."
+          python -m pytest tests/phase_5_9 -v
+      
+      - name: Validate Phase 5.10
+        run: |
+          echo "Validating Phase 5.10..."
+          python -m pytest tests/phase_5_10 -v
+      
+      - name: Validate Phase 5.11
+        run: |
+          echo "Validating Phase 5.11..."
+          python -m pytest tests/phase_5_11 -v
+      
+      - name: Validate Phase 5.12
+        run: |
+          echo "Validating Phase 5.12..."
+          python -m pytest tests/phase_5_12 -v
+      
+      - name: Validate Phase 5.13
+        run: |
+          echo "Validating Phase 5.13..."
+          python -m pytest tests/phase_5_13 -v
+      
+      - name: Run coverage report
+        run: |
+          python -m pytest --cov=src tests/
+          python -m pytest --cov=src --cov-report=xml tests/
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
