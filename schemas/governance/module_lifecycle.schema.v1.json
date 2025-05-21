@@ -1,0 +1,388 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Module Lifecycle Schema",
+  "description": "Schema for lifecycle management of governance module extensions",
+  "type": "object",
+  "required": [
+    "lifecycle_id",
+    "extension_id",
+    "extension_version",
+    "current_state",
+    "state_history",
+    "created_at"
+  ],
+  "properties": {
+    "lifecycle_id": {
+      "type": "string",
+      "description": "Unique identifier for the lifecycle record",
+      "pattern": "^[a-zA-Z0-9_\\-]+$"
+    },
+    "extension_id": {
+      "type": "string",
+      "description": "ID of the extension being managed",
+      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+    },
+    "extension_version": {
+      "type": "string",
+      "description": "Version of the extension being managed",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "current_state": {
+      "type": "string",
+      "description": "Current state in the lifecycle",
+      "enum": [
+        "registered",
+        "installed",
+        "activated",
+        "deactivated",
+        "updated",
+        "deprecated",
+        "retired"
+      ]
+    },
+    "state_history": {
+      "type": "array",
+      "description": "History of state transitions",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "state",
+          "timestamp",
+          "actor_id"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "State in the lifecycle",
+            "enum": [
+              "registered",
+              "installed",
+              "activated",
+              "deactivated",
+              "updated",
+              "deprecated",
+              "retired"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the state transition occurred",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "ID of the actor that triggered the state transition"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the state transition"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata for the state transition"
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the lifecycle record was created",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the lifecycle record was last updated",
+      "format": "date-time"
+    },
+    "installation_path": {
+      "type": "string",
+      "description": "Path where the extension is installed",
+      "pattern": "^[a-zA-Z0-9_/\\.]+$"
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Current configuration of the extension"
+    },
+    "health_status": {
+      "type": "object",
+      "required": [
+        "status",
+        "last_checked"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Current health status of the extension",
+          "enum": [
+            "healthy",
+            "degraded",
+            "unhealthy",
+            "unknown"
+          ]
+        },
+        "last_checked": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the health was last checked",
+          "format": "date-time"
+        },
+        "details": {
+          "type": "string",
+          "description": "Details about the health status"
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Health metrics for the extension"
+        }
+      }
+    },
+    "update_history": {
+      "type": "array",
+      "description": "History of updates to the extension",
+      "items": {
+        "type": "object",
+        "required": [
+          "from_version",
+          "to_version",
+          "timestamp",
+          "actor_id"
+        ],
+        "properties": {
+          "from_version": {
+            "type": "string",
+            "description": "Previous version of the extension",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "to_version": {
+            "type": "string",
+            "description": "New version of the extension",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the update occurred",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "ID of the actor that triggered the update"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the update"
+          },
+          "changelog": {
+            "type": "string",
+            "description": "Summary of changes in the update"
+          },
+          "compatibility_verification_id": {
+            "type": "string",
+            "description": "ID of the compatibility verification performed for the update"
+          }
+        }
+      }
+    },
+    "rollback_history": {
+      "type": "array",
+      "description": "History of rollbacks for the extension",
+      "items": {
+        "type": "object",
+        "required": [
+          "from_version",
+          "to_version",
+          "timestamp",
+          "actor_id",
+          "reason"
+        ],
+        "properties": {
+          "from_version": {
+            "type": "string",
+            "description": "Version being rolled back from",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "to_version": {
+            "type": "string",
+            "description": "Version being rolled back to",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the rollback occurred",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "ID of the actor that triggered the rollback"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the rollback"
+          },
+          "issues_encountered": {
+            "type": "array",
+            "description": "Issues that led to the rollback",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "dependencies_status": {
+      "type": "array",
+      "description": "Status of dependencies for the extension",
+      "items": {
+        "type": "object",
+        "required": [
+          "dependency_id",
+          "dependency_version",
+          "status"
+        ],
+        "properties": {
+          "dependency_id": {
+            "type": "string",
+            "description": "ID of the dependency"
+          },
+          "dependency_version": {
+            "type": "string",
+            "description": "Version of the dependency"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the dependency",
+            "enum": [
+              "available",
+              "unavailable",
+              "deprecated",
+              "retired"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the dependency"
+          }
+        }
+      }
+    },
+    "audit_trail": {
+      "type": "array",
+      "description": "Audit trail of significant lifecycle events",
+      "items": {
+        "type": "object",
+        "required": [
+          "event_type",
+          "timestamp",
+          "actor_id"
+        ],
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "description": "Type of lifecycle event",
+            "enum": [
+              "registration",
+              "installation",
+              "activation",
+              "deactivation",
+              "update",
+              "configuration_change",
+              "deprecation",
+              "retirement",
+              "rollback",
+              "health_check",
+              "security_scan",
+              "compatibility_check",
+              "other"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the event occurred",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "ID of the actor that triggered the event"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional details about the event"
+          }
+        }
+      }
+    },
+    "security_scans": {
+      "type": "array",
+      "description": "History of security scans performed on the extension",
+      "items": {
+        "type": "object",
+        "required": [
+          "scan_id",
+          "timestamp",
+          "result"
+        ],
+        "properties": {
+          "scan_id": {
+            "type": "string",
+            "description": "ID of the security scan"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the scan was performed",
+            "format": "date-time"
+          },
+          "scanner_id": {
+            "type": "string",
+            "description": "ID of the scanner that performed the scan"
+          },
+          "result": {
+            "type": "string",
+            "description": "Result of the security scan",
+            "enum": [
+              "passed",
+              "passed_with_warnings",
+              "failed"
+            ]
+          },
+          "findings": {
+            "type": "array",
+            "description": "Security findings from the scan",
+            "items": {
+              "type": "object",
+              "required": [
+                "severity",
+                "description"
+              ],
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "description": "Severity of the finding",
+                  "enum": [
+                    "info",
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of the finding"
+                },
+                "remediation": {
+                  "type": "string",
+                  "description": "Suggested remediation for the finding"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "codex_contract_version": {
+      "type": "string",
+      "description": "Version of the Codex contract this lifecycle record adheres to",
+      "pattern": "^v\\d{4}\\.\\d{2}\\.\\d{2}$"
+    }
+  },
+  "additionalProperties": false
+}
