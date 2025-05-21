@@ -1,0 +1,245 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Claim Schema",
+  "description": "Schema for governance claims in the Governance Attestation Framework",
+  "type": "object",
+  "required": [
+    "claim_id",
+    "claim_type",
+    "subject_id",
+    "issuer_id",
+    "timestamp",
+    "claim_content",
+    "verification_requirements",
+    "status",
+    "metadata"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "description": "Unique identifier for the claim",
+      "pattern": "^claim-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "claim_type": {
+      "type": "string",
+      "description": "Type of governance claim",
+      "enum": [
+        "COMPLIANCE",
+        "SECURITY",
+        "PERFORMANCE",
+        "FAIRNESS",
+        "TRANSPARENCY",
+        "ACCOUNTABILITY",
+        "EXPLAINABILITY",
+        "PRIVACY"
+      ]
+    },
+    "subject_id": {
+      "type": "string",
+      "description": "Identifier of the subject the claim is about",
+      "minLength": 1
+    },
+    "issuer_id": {
+      "type": "string",
+      "description": "Identifier of the entity issuing the claim",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the claim was created",
+      "format": "date-time"
+    },
+    "claim_content": {
+      "type": "object",
+      "description": "Content of the claim",
+      "required": ["statement", "scope"],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "description": "Statement being claimed",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "object",
+          "description": "Scope of the claim",
+          "required": ["domain", "timeframe"],
+          "properties": {
+            "domain": {
+              "type": "string",
+              "description": "Domain to which the claim applies"
+            },
+            "timeframe": {
+              "type": "object",
+              "description": "Timeframe for which the claim is valid",
+              "required": ["start", "end"],
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "description": "ISO 8601 timestamp for the start of the validity period",
+                  "format": "date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "description": "ISO 8601 timestamp for the end of the validity period",
+                  "format": "date-time"
+                }
+              }
+            },
+            "components": {
+              "type": "array",
+              "description": "Components to which the claim applies",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "evidence_references": {
+          "type": "array",
+          "description": "References to evidence supporting the claim",
+          "items": {
+            "type": "object",
+            "required": ["evidence_id", "evidence_type", "location"],
+            "properties": {
+              "evidence_id": {
+                "type": "string",
+                "description": "Identifier of the evidence"
+              },
+              "evidence_type": {
+                "type": "string",
+                "description": "Type of evidence",
+                "enum": ["DOCUMENT", "LOG", "TEST_RESULT", "AUDIT_REPORT", "CERTIFICATE", "CODE_REVIEW"]
+              },
+              "location": {
+                "type": "string",
+                "description": "Location where the evidence can be accessed"
+              },
+              "hash": {
+                "type": "string",
+                "description": "Hash of the evidence content for integrity verification"
+              }
+            }
+          }
+        }
+      }
+    },
+    "verification_requirements": {
+      "type": "object",
+      "description": "Requirements for verifying the claim",
+      "required": ["required_attestation_types", "verification_threshold"],
+      "properties": {
+        "required_attestation_types": {
+          "type": "array",
+          "description": "Types of attestations required for verification",
+          "items": {
+            "type": "string",
+            "enum": ["VERIFICATION", "CERTIFICATION", "APPROVAL", "AUDIT", "COMPLIANCE", "DELEGATION"]
+          },
+          "minItems": 1
+        },
+        "verification_threshold": {
+          "type": "number",
+          "description": "Threshold for verification (e.g., number of attestations required)",
+          "minimum": 1
+        },
+        "required_authorities": {
+          "type": "array",
+          "description": "Authorities required for verification",
+          "items": {
+            "type": "string"
+          }
+        },
+        "verification_rules": {
+          "type": "array",
+          "description": "Rules for verification",
+          "items": {
+            "type": "object",
+            "required": ["rule_id", "rule_type", "rule_parameters"],
+            "properties": {
+              "rule_id": {
+                "type": "string",
+                "description": "Identifier of the rule"
+              },
+              "rule_type": {
+                "type": "string",
+                "description": "Type of rule"
+              },
+              "rule_parameters": {
+                "type": "object",
+                "description": "Parameters for the rule"
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "description": "Status of the claim",
+      "required": ["verification_status", "last_updated"],
+      "properties": {
+        "verification_status": {
+          "type": "string",
+          "description": "Status of claim verification",
+          "enum": ["PENDING", "VERIFIED", "REJECTED", "EXPIRED", "REVOKED"]
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when the status was last updated",
+          "format": "date-time"
+        },
+        "verification_details": {
+          "type": "object",
+          "description": "Details of the verification result",
+          "properties": {
+            "attestation_count": {
+              "type": "integer",
+              "description": "Number of attestations received"
+            },
+            "verification_score": {
+              "type": "number",
+              "description": "Score of the verification result",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "rejection_reason": {
+              "type": ["string", "null"],
+              "description": "Reason for rejection if rejected"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the claim",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Version of the claim schema"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags associated with the claim",
+          "items": {
+            "type": "string"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority of the claim",
+          "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+        },
+        "related_claims": {
+          "type": "array",
+          "description": "Related claims",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["version"]
+    }
+  },
+  "additionalProperties": false
+}
