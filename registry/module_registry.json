@@ -1,440 +1,245 @@
 {
-  "registry_version": "v2025.05.21",
-  "last_updated": "2025-05-21",
-  "modules": {
-    "core": {
-      "merkle": {
-        "merkle_tree.py": {
-          "purpose": "Implements the Merkle tree data structure for cryptographic verification",
-          "phase": "5.3",
-          "dependencies": [],
-          "canonical_path": "src/core/merkle/merkle_tree.py"
+  "modules": [
+    {
+      "module_id": "trust_boundary_definition",
+      "name": "Trust Boundary Definition",
+      "version": "1.0.0",
+      "description": "Framework for defining, managing, and verifying trust boundaries within the system",
+      "status": "active",
+      "components": [
+        {
+          "component_id": "boundary_detection_engine",
+          "name": "Boundary Detection Engine",
+          "path": "src/core/trust/boundary_detection_engine.py",
+          "description": "Engine for detecting and managing trust boundaries",
+          "dependencies": [
+            "schema_validator",
+            "seal_verification_service"
+          ],
+          "interfaces": [
+            "register_boundary",
+            "get_boundary",
+            "update_boundary",
+            "delete_boundary",
+            "list_boundaries"
+          ]
         },
-        "merkle_sealing.py": {
-          "purpose": "Provides sealing mechanism for outputs using Merkle trees",
-          "phase": "5.3",
-          "dependencies": ["merkle_tree.py", "schema_validator.py"],
-          "canonical_path": "src/core/merkle/merkle_sealing.py"
+        {
+          "component_id": "boundary_crossing_protocol",
+          "name": "Boundary Crossing Protocol",
+          "path": "src/core/trust/boundary_crossing_protocol.py",
+          "description": "Protocol for managing boundary crossings",
+          "dependencies": [
+            "boundary_detection_engine",
+            "schema_validator",
+            "seal_verification_service"
+          ],
+          "interfaces": [
+            "register_crossing",
+            "get_crossing",
+            "update_crossing",
+            "delete_crossing",
+            "list_crossings",
+            "validate_crossing"
+          ]
         },
-        "conflict_detection.py": {
-          "purpose": "Detects and records conflicts in execution outputs",
-          "phase": "5.3",
-          "dependencies": ["merkle_tree.py", "schema_validator.py"],
-          "canonical_path": "src/core/merkle/conflict_detection.py"
+        {
+          "component_id": "boundary_integrity_verifier",
+          "name": "Boundary Integrity Verifier",
+          "path": "src/core/verification/boundary_integrity_verifier.py",
+          "description": "Verifier for ensuring the integrity of trust boundaries",
+          "dependencies": [
+            "boundary_detection_engine",
+            "boundary_crossing_protocol",
+            "seal_verification_service",
+            "mutation_detector",
+            "attestation_service",
+            "schema_validator"
+          ],
+          "interfaces": [
+            "verify_boundary_integrity",
+            "get_verification",
+            "list_verifications",
+            "get_boundary_violations",
+            "get_boundary_recommendations",
+            "report_violation"
+          ]
         },
-        "output_capture.py": {
-          "purpose": "Captures execution outputs for sealing",
-          "phase": "5.3",
-          "dependencies": ["schema_validator.py"],
-          "canonical_path": "src/core/merkle/output_capture.py"
+        {
+          "component_id": "trust_domain_manager",
+          "name": "Trust Domain Manager",
+          "path": "src/core/trust/trust_domain_manager.py",
+          "description": "Manager for trust domains within the Promethios system",
+          "dependencies": [
+            "boundary_detection_engine",
+            "governance_primitive_manager",
+            "attestation_service",
+            "evolution_protocol",
+            "schema_validator",
+            "seal_verification_service"
+          ],
+          "interfaces": [
+            "register_domain",
+            "get_domain",
+            "update_domain",
+            "delete_domain",
+            "list_domains",
+            "add_domain_relationship",
+            "remove_domain_relationship",
+            "get_domain_relationships",
+            "calculate_domain_trust_level",
+            "associate_governance_policy",
+            "remove_governance_policy",
+            "get_domain_governance_policies",
+            "add_domain_attestation",
+            "remove_domain_attestation",
+            "get_domain_attestations",
+            "add_domain_component",
+            "remove_domain_component",
+            "get_domain_components",
+            "associate_domain_with_boundary",
+            "remove_domain_boundary_association",
+            "get_domain_boundaries",
+            "get_domain_evolution_history",
+            "merge_domains",
+            "split_domain"
+          ]
+        },
+        {
+          "component_id": "sample_boundary_definitions",
+          "name": "Sample Boundary Definitions",
+          "path": "src/core/trust/sample_boundary_definitions.py",
+          "description": "Sample boundary definitions and implementations",
+          "dependencies": [
+            "boundary_detection_engine",
+            "boundary_crossing_protocol",
+            "boundary_integrity_verifier",
+            "trust_domain_manager"
+          ],
+          "interfaces": [
+            "create_sample_process_boundary",
+            "create_sample_network_boundary",
+            "create_sample_data_boundary",
+            "create_sample_governance_boundary",
+            "create_sample_trust_domain",
+            "create_sample_boundary_crossing",
+            "create_sample_boundary_integrity_verification",
+            "create_sample_domain_relationship",
+            "create_sample_domain_boundary_association",
+            "create_complete_sample_environment"
+          ]
         }
-      },
-      "verification": {
-        "network_topology_manager.py": {
-          "purpose": "Manages network topology for distributed verification",
-          "phase": "5.4",
-          "dependencies": ["schema_validator.py"],
-          "canonical_path": "src/core/verification/network_topology_manager.py"
+      ],
+      "schemas": [
+        {
+          "schema_id": "trust_boundary_schema",
+          "name": "Trust Boundary Schema",
+          "path": "schemas/trust/trust_boundary.schema.v1.json",
+          "description": "Schema for trust boundary definitions"
         },
-        "verification_node_manager.py": {
-          "purpose": "Manages verification nodes in the network",
-          "phase": "5.4",
-          "dependencies": ["network_topology_manager.py", "schema_validator.py"],
-          "canonical_path": "src/core/verification/verification_node_manager.py"
+        {
+          "schema_id": "boundary_crossing_schema",
+          "name": "Boundary Crossing Schema",
+          "path": "schemas/trust/boundary_crossing.schema.v1.json",
+          "description": "Schema for boundary crossing definitions"
         },
-        "consensus_service.py": {
-          "purpose": "Implements consensus mechanisms for verification results",
-          "phase": "5.4",
-          "dependencies": ["verification_node_manager.py", "schema_validator.py"],
-          "canonical_path": "src/core/verification/consensus_service.py"
+        {
+          "schema_id": "boundary_integrity_schema",
+          "name": "Boundary Integrity Schema",
+          "path": "schemas/verification/boundary_integrity.schema.v1.json",
+          "description": "Schema for boundary integrity verification records"
         },
-        "seal_distribution_service.py": {
-          "purpose": "Distributes seals to verification nodes",
-          "phase": "5.4",
-          "dependencies": ["verification_node_manager.py", "merkle_sealing.py"],
-          "canonical_path": "src/core/verification/seal_distribution_service.py"
-        },
-        "trust_aggregation_service.py": {
-          "purpose": "Calculates trust scores based on verification results",
-          "phase": "5.4",
-          "dependencies": ["consensus_service.py", "verification_node_manager.py"],
-          "canonical_path": "src/core/verification/trust_aggregation_service.py"
-        },
-        "seal_verification.py": {
-          "purpose": "Verifies seal integrity and authenticity",
-          "phase": "5.4",
-          "dependencies": ["merkle_sealing.py", "schema_validator.py"],
-          "canonical_path": "src/core/verification/seal_verification.py"
+        {
+          "schema_id": "trust_domain_schema",
+          "name": "Trust Domain Schema",
+          "path": "schemas/trust/trust_domain.schema.v1.json",
+          "description": "Schema for trust domain definitions"
         }
-      },
-      "governance": {
-        "governance_contract_sync.py": {
-          "purpose": "Synchronizes governance contracts across nodes",
-          "phase": "5.5",
-          "dependencies": ["schema_validator.py", "network_topology_manager.py"],
-          "canonical_path": "src/core/governance/governance_contract_sync.py"
+      ],
+      "dependencies": [
+        {
+          "module_id": "governance_attestation_framework",
+          "version": "1.0.0",
+          "components": [
+            "attestation_service",
+            "claim_verification_protocol",
+            "governance_audit_trail",
+            "attestation_authority_manager"
+          ]
         },
-        "governance_mesh_integration.py": {
-          "purpose": "Integrates governance mesh with verification network",
-          "phase": "5.5",
-          "dependencies": ["governance_contract_sync.py", "mesh_topology_manager.py"],
-          "canonical_path": "src/core/governance/governance_mesh_integration.py"
+        {
+          "module_id": "minimal_viable_governance",
+          "version": "1.0.0",
+          "components": [
+            "governance_primitive_manager",
+            "decision_framework_engine",
+            "policy_management_module",
+            "requirement_validation_module"
+          ]
         },
-        "governance_proposal_protocol.py": {
-          "purpose": "Implements protocol for governance proposals",
-          "phase": "5.5",
-          "dependencies": ["governance_contract_sync.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/governance_proposal_protocol.py"
+        {
+          "module_id": "governance_expansion_protocol",
+          "version": "1.0.0",
+          "components": [
+            "module_extension_registry",
+            "compatibility_verification_engine",
+            "module_lifecycle_manager",
+            "extension_point_framework"
+          ]
         },
-        "mesh_topology_manager.py": {
-          "purpose": "Manages mesh topology for governance network",
-          "phase": "5.5",
-          "dependencies": ["network_topology_manager.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/mesh_topology_manager.py"
+        {
+          "module_id": "trust_decay_engine",
+          "version": "1.0.0",
+          "components": [
+            "decay_calculation_engine",
+            "trust_level_manager",
+            "decay_factor_registry",
+            "decay_visualization_service"
+          ]
         },
-        "governance_core.py": {
-          "purpose": "Provides core governance functionality",
-          "phase": "5.5",
-          "dependencies": ["governance_contract_sync.py", "governance_proposal_protocol.py"],
-          "canonical_path": "src/core/governance/governance_core.py"
-        },
-        "trust_boundary_manager.py": {
-          "purpose": "Manages trust boundaries for governance",
-          "phase": "5.6",
-          "dependencies": ["governance_core.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/trust_boundary_manager.py"
-        },
-        "trust_propagation_engine.py": {
-          "purpose": "Propagates trust across the governance mesh",
-          "phase": "5.6",
-          "dependencies": ["trust_boundary_manager.py", "governance_mesh_integration.py"],
-          "canonical_path": "src/core/governance/trust_propagation_engine.py"
-        },
-        "attestation_service.py": {
-          "purpose": "Provides attestation services for trust",
-          "phase": "5.6",
-          "dependencies": ["trust_propagation_engine.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/attestation_service.py"
-        },
-        "boundary_enforcement_module.py": {
-          "purpose": "Enforces trust boundaries in the governance mesh",
-          "phase": "5.6",
-          "dependencies": ["trust_boundary_manager.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/boundary_enforcement_module.py"
-        },
-        "trust_surface_protocol.py": {
-          "purpose": "Implements protocol for trust surface operations",
-          "phase": "5.6",
-          "dependencies": ["attestation_service.py", "boundary_enforcement_module.py"],
-          "canonical_path": "src/core/governance/trust_surface_protocol.py"
-        },
-        "contract_sealer.py": {
-          "purpose": "Create and verify cryptographic seals of contracts",
-          "phase": "5.8",
-          "dependencies": [],
-          "canonical_path": "src/core/governance/contract_sealer.py",
-          "codex_contract_version": "v2025.05.20"
-        },
-        "evolution_protocol.py": {
-          "purpose": "Manage the contract evolution process through formal approval",
-          "phase": "5.8",
-          "dependencies": ["contract_sealer.py"],
-          "canonical_path": "src/core/governance/evolution_protocol.py",
-          "codex_contract_version": "v2025.05.20"
-        },
-        "codex_lock.py": {
-          "purpose": "Main implementation of the Codex Mutation Lock system",
-          "phase": "5.8",
-          "dependencies": ["contract_sealer.py", "evolution_protocol.py", "src/core/trust/mutation_detector.py"],
-          "canonical_path": "src/core/governance/codex_lock.py",
-          "codex_contract_version": "v2025.05.20"
-        },
-        "module_extension_registry.py": {
-          "purpose": "Central registry for managing governance module extensions and their metadata",
-          "phase": "5.12",
-          "dependencies": ["governance_primitive_manager.py", "seal_verification.py", "schema_validator.py"],
-          "canonical_path": "src/core/governance/module_extension_registry.py",
-          "codex_contract_version": "v2025.05.21"
-        },
-        "compatibility_verification_engine.py": {
-          "purpose": "Verifies that new governance modules are compatible with existing modules and core governance principles",
-          "phase": "5.12",
-          "dependencies": ["module_extension_registry.py", "governance_primitive_manager.py", "trust_metrics_calculator.py", "seal_verification.py"],
-          "canonical_path": "src/core/governance/compatibility_verification_engine.py",
-          "codex_contract_version": "v2025.05.21"
-        },
-        "module_lifecycle_manager.py": {
-          "purpose": "Manages the lifecycle of governance extension modules from installation to retirement",
-          "phase": "5.12",
-          "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "governance_audit_trail.py", "mutation_detector.py"],
-          "canonical_path": "src/core/governance/module_lifecycle_manager.py",
-          "codex_contract_version": "v2025.05.21"
-        },
-        "extension_point_framework.py": {
-          "purpose": "Provides a framework for defining and implementing extension points in the governance system",
-          "phase": "5.12",
-          "dependencies": ["module_extension_registry.py", "governance_primitive_manager.py", "attestation_service.py"],
-          "canonical_path": "src/core/governance/extension_point_framework.py",
-          "codex_contract_version": "v2025.05.21"
+        {
+          "module_id": "codex_mutation_lock",
+          "version": "1.0.0",
+          "components": [
+            "mutation_detector",
+            "seal_verification_service",
+            "evolution_protocol"
+          ]
         }
-      },
-      "trust": {
-        "trust_log_writer.py": {
-          "purpose": "Writes trust logs for execution outputs",
-          "phase": "5.3",
-          "dependencies": ["schema_validator.py"],
-          "canonical_path": "src/core/trust/trust_log_writer.py"
+      ],
+      "extension_points": [
+        {
+          "extension_point_id": "boundary_type_extension",
+          "name": "Boundary Type Extension",
+          "description": "Extension point for adding new boundary types",
+          "interface": "src/core/trust/boundary_detection_engine.py:BoundaryTypeExtension"
         },
-        "trust_surface_analytics.py": {
-          "purpose": "Analyzes trust surface data for metrics and anomalies",
-          "phase": "5.7",
-          "dependencies": ["schema_validator.py", "trust_surface_protocol.py"],
-          "canonical_path": "src/core/trust/trust_surface_analytics.py"
+        {
+          "extension_point_id": "crossing_validation_extension",
+          "name": "Crossing Validation Extension",
+          "description": "Extension point for adding new crossing validation methods",
+          "interface": "src/core/trust/boundary_crossing_protocol.py:CrossingValidationExtension"
         },
-        "trust_metrics_aggregator.py": {
-          "purpose": "Aggregates trust metrics from multiple nodes",
-          "phase": "5.7",
-          "dependencies": ["trust_surface_analytics.py", "schema_validator.py"],
-          "canonical_path": "src/core/trust/trust_metrics_aggregator.py"
+        {
+          "extension_point_id": "integrity_verification_extension",
+          "name": "Integrity Verification Extension",
+          "description": "Extension point for adding new integrity verification methods",
+          "interface": "src/core/verification/boundary_integrity_verifier.py:IntegrityVerificationExtension"
         },
-        "mutation_detector.py": {
-          "purpose": "Detect unauthorized modifications to sealed contracts",
-          "phase": "5.8",
-          "dependencies": ["src/core/governance/contract_sealer.py"],
-          "canonical_path": "src/core/trust/mutation_detector.py",
-          "codex_contract_version": "v2025.05.20"
+        {
+          "extension_point_id": "trust_calculation_extension",
+          "name": "Trust Calculation Extension",
+          "description": "Extension point for adding new trust calculation methods",
+          "interface": "src/core/trust/trust_domain_manager.py:TrustCalculationExtension"
         }
-      },
-      "visualization": {
-        "visualization_data_transformer.py": {
-          "purpose": "Transforms trust data for visualization",
-          "phase": "5.7",
-          "dependencies": ["trust_metrics_aggregator.py", "schema_validator.py"],
-          "canonical_path": "src/core/visualization/visualization_data_transformer.py"
-        }
-      },
-      "common": {
-        "schema_validator.py": {
-          "purpose": "Validates data against JSON schemas",
-          "phase": "5.3",
-          "dependencies": [],
-          "canonical_path": "src/core/common/schema_validator.py"
-        }
-      }
-    },
-    "integration": {
-      "runtime_executor_integration.py": {
-        "purpose": "Integrates runtime executor with sealing mechanism",
-        "phase": "5.3",
-        "dependencies": ["merkle_sealing.py", "runtime_executor.py", "output_capture.py"],
-        "canonical_path": "src/integration/runtime_executor_integration.py"
-      },
-      "trust_log_integration.py": {
-        "purpose": "Integrates trust logs with UI components",
-        "phase": "5.3",
-        "dependencies": ["trust_log_writer.py", "schema_validator.py"],
-        "canonical_path": "src/integration/trust_log_integration.py"
-      },
-      "distributed_verification_integration.py": {
-        "purpose": "Integrates distributed verification with core components",
-        "phase": "5.4",
-        "dependencies": [
-          "verification_node_manager.py",
-          "consensus_service.py",
-          "seal_distribution_service.py",
-          "trust_aggregation_service.py"
-        ],
-        "canonical_path": "src/integration/distributed_verification_integration.py"
-      },
-      "codex_lock_api.py": {
-        "purpose": "API endpoints for interacting with the Codex Lock system",
-        "phase": "5.8",
-        "dependencies": ["src/core/governance/codex_lock.py"],
-        "canonical_path": "src/integration/codex_lock_api.py",
-        "codex_contract_version": "v2025.05.20"
-      },
-      "governance_extension_api.py": {
-        "purpose": "Provides API endpoints for managing governance extensions",
-        "phase": "5.12",
-        "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "module_lifecycle_manager.py", "governance_integration_service.py"],
-        "canonical_path": "src/integration/governance_extension_api.py",
-        "codex_contract_version": "v2025.05.21"
-      },
-      "extension_visualization.py": {
-        "purpose": "Integrates extension data with the visualization framework",
-        "phase": "5.12",
-        "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "governance_visualization.py"],
-        "canonical_path": "src/integration/extension_visualization.py",
-        "codex_contract_version": "v2025.05.21"
-      }
-    },
-    "verification": {
-      "seal_verification": {
-        "path": "src/core/verification/seal_verification.py",
-        "codex_contract_version": "v2025.05.18",
-        "phase": "5.2",
-        "schemas": ["replay_verification.schema.v1.json"],
-        "depends_on": [],
-        "purpose": "Provide cryptographic verification of execution replay logs"
-      }
-    },
-    "utils": {
-      "validate_schema.py": {
-        "purpose": "Validates schemas for correctness",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "src/utils/validate_schema.py"
-      },
-      "validate_schema_compliance.py": {
-        "purpose": "Validates data compliance with schemas",
-        "phase": "5.3",
-        "dependencies": ["validate_schema.py"],
-        "canonical_path": "src/utils/validate_schema_compliance.py"
-      },
-      "verify_log_hashes.py": {
-        "purpose": "Verifies integrity of log hashes",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "src/utils/verify_log_hashes.py"
-      },
-      "view_logs.py": {
-        "purpose": "Provides utilities for viewing logs",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "src/utils/view_logs.py"
-      },
-      "package_logs.py": {
-        "purpose": "Packages logs for distribution",
-        "phase": "5.3",
-        "dependencies": ["verify_log_hashes.py"],
-        "canonical_path": "src/utils/package_logs.py"
-      },
-      "test_data_generator.py": {
-        "purpose": "Generates test data for various components",
-        "phase": "5.3",
-        "dependencies": [],
-        "canonical_path": "src/utils/test_data_generator.py"
-      },
-      "repository_hygiene_validator.py": {
-        "purpose": "Validates repository structure compliance",
-        "phase": "5.2",
-        "dependencies": [],
-        "canonical_path": "src/utils/repository_hygiene_validator.py"
-      },
-      "analyze_component_usage.py": {
-        "purpose": "Analyzes component usage patterns",
-        "phase": "5.4",
-        "dependencies": [],
-        "canonical_path": "src/utils/analyze_component_usage.py"
-      }
-    },
-    "visualization": {
-      "visualization_data_transformer": {
-        "path": "src/core/visualization/visualization_data_transformer.py",
-        "codex_contract_version": "v2025.05.19",
-        "phase": "5.7",
-        "schemas": ["trust_visualization.schema.v1.json"],
-        "depends_on": ["src/core/trust/trust_metrics_aggregator.py"],
-        "purpose": "Transform trust data into visualization-ready format"
-      }
-    },
-    "api": {
-      "saas_connector.py": {
-        "purpose": "Connects to SaaS APIs",
-        "phase": "5.2",
-        "dependencies": ["schema_validator.py"],
-        "canonical_path": "src/api/saas_connector.py"
-      }
-    },
-    "cli": {
-      "cli_trigger.py": {
-        "purpose": "Provides CLI interface for triggering operations",
-        "phase": "5.2",
-        "dependencies": ["schema_validator.py"],
-        "canonical_path": "src/cli/cli_trigger.py"
-      }
-    },
-    "main": {
-      "main.py": {
-        "purpose": "Main application entry point",
-        "phase": "5.2",
-        "dependencies": [
-          "runtime_executor.py",
-          "trust_log_writer.py",
-          "schema_validator.py"
-        ],
-        "canonical_path": "src/main.py"
-      },
-      "runtime_executor.py": {
-        "purpose": "Executes runtime operations",
-        "phase": "5.2",
-        "dependencies": ["schema_validator.py"],
-        "canonical_path": "src/main/runtime_executor.py"
-      }
-    },
-    "replay": {
-      "replay_sealing.py": {
-        "purpose": "Implements sealing for replay operations",
-        "phase": "5.2",
-        "dependencies": ["schema_validator.py"],
-        "canonical_path": "src/replay/replay_sealing.py"
-      },
-      "deterministic_execution.py": {
-        "purpose": "Provides deterministic execution for replays",
-        "phase": "5.2",
-        "dependencies": ["replay_sealing.py", "schema_validator.py"],
-        "canonical_path": "src/replay/deterministic_execution.py"
-      }
-    },
-    "ui": {
-      "trust_surface_dashboard": {
-        "trust_surface_dashboard.py": {
-          "purpose": "Main entry point for trust surface dashboard",
-          "phase": "5.7",
-          "dependencies": ["visualization_data_transformer.py", "schema_validator.py"],
-          "canonical_path": "src/ui/trust_surface_dashboard/trust_surface_dashboard.py"
-        },
-        "components": {
-          "surface_view.py": {
-            "purpose": "Provides interactive visualization of trust surfaces",
-            "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "visualization_data_transformer.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/surface_view.py"
-          },
-          "metrics_panel.py": {
-            "purpose": "Displays trust metrics in the dashboard",
-            "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "trust_metrics_aggregator.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/metrics_panel.py"
-          },
-          "boundary_alerts.py": {
-            "purpose": "Displays trust boundary alerts in the dashboard",
-            "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "trust_boundary_manager.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/boundary_alerts.py"
-          },
-          "trend_charts.py": {
-            "purpose": "Displays trust trend charts in the dashboard",
-            "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "trust_surface_analytics.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/trend_charts.py"
-          },
-          "extension_management_dashboard.py": {
-            "purpose": "Provides a dashboard for viewing and managing governance extensions",
-            "phase": "5.12",
-            "dependencies": ["governance_dashboard.py", "extension_visualization.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/extension_management_dashboard.py",
-            "codex_contract_version": "v2025.05.21"
-          },
-          "compatibility_explorer.py": {
-            "purpose": "Provides an interface for exploring compatibility between governance modules",
-            "phase": "5.12",
-            "dependencies": ["decision_explorer.py", "extension_visualization.py"],
-            "canonical_path": "src/ui/trust_surface_dashboard/components/compatibility_explorer.py",
-            "codex_contract_version": "v2025.05.21"
-          }
-        }
+      ],
+      "metadata": {
+        "created_at": "2025-05-21T14:22:00Z",
+        "updated_at": "2025-05-21T14:22:00Z",
+        "created_by": "system",
+        "phase": "5.13",
+        "priority": "high"
       }
     }
-  }
+  ]
 }

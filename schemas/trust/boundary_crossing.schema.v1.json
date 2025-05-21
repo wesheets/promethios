@@ -1,0 +1,394 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Boundary Crossing Schema",
+  "description": "Schema for defining boundary crossing requests and results within the Promethios system",
+  "type": "object",
+  "required": [
+    "crossing_id",
+    "boundary_id",
+    "source_domain_id",
+    "target_domain_id",
+    "request_type",
+    "timestamp",
+    "status"
+  ],
+  "properties": {
+    "crossing_id": {
+      "type": "string",
+      "description": "Unique identifier for the boundary crossing",
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "boundary_id": {
+      "type": "string",
+      "description": "Identifier of the boundary being crossed",
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "source_domain_id": {
+      "type": "string",
+      "description": "Identifier of the source trust domain",
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "target_domain_id": {
+      "type": "string",
+      "description": "Identifier of the target trust domain",
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "request_type": {
+      "type": "string",
+      "description": "Type of boundary crossing request",
+      "enum": [
+        "data_transfer",
+        "control_transfer",
+        "authentication",
+        "authorization",
+        "delegation",
+        "notification",
+        "query",
+        "update",
+        "system_operation"
+      ]
+    },
+    "requester_id": {
+      "type": "string",
+      "description": "Identifier of the entity requesting the crossing"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Payload data for the crossing request",
+      "properties": {
+        "data_type": {
+          "type": "string",
+          "description": "Type of data being transferred"
+        },
+        "data_classification": {
+          "type": "string",
+          "description": "Classification of data being transferred",
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted",
+            "critical"
+          ]
+        },
+        "data_size": {
+          "type": "integer",
+          "description": "Size of data being transferred in bytes",
+          "minimum": 0
+        },
+        "data_hash": {
+          "type": "string",
+          "description": "Hash of the data being transferred"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata for the payload",
+          "additionalProperties": true
+        }
+      }
+    },
+    "controls_applied": {
+      "type": "array",
+      "description": "Security controls applied during the crossing",
+      "items": {
+        "type": "object",
+        "required": [
+          "control_id",
+          "control_type",
+          "result"
+        ],
+        "properties": {
+          "control_id": {
+            "type": "string",
+            "description": "Identifier of the security control"
+          },
+          "control_type": {
+            "type": "string",
+            "description": "Type of security control",
+            "enum": [
+              "authentication",
+              "authorization",
+              "encryption",
+              "validation",
+              "monitoring",
+              "logging",
+              "filtering",
+              "rate_limiting",
+              "isolation"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "description": "Result of applying the control",
+            "enum": [
+              "passed",
+              "failed",
+              "warning",
+              "not_applicable",
+              "error"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "description": "Details about the control application"
+          }
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "description": "Authorization details for the crossing",
+      "properties": {
+        "authorized": {
+          "type": "boolean",
+          "description": "Whether the crossing is authorized"
+        },
+        "authorizer_id": {
+          "type": "string",
+          "description": "Identifier of the entity that authorized the crossing"
+        },
+        "authorization_timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the authorization occurred",
+          "format": "date-time"
+        },
+        "authorization_method": {
+          "type": "string",
+          "description": "Method used for authorization",
+          "enum": [
+            "automatic",
+            "manual",
+            "delegated",
+            "policy_based",
+            "attestation_based"
+          ]
+        },
+        "authorization_evidence": {
+          "type": "string",
+          "description": "Evidence supporting the authorization decision"
+        },
+        "authorization_expiry": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the authorization expires",
+          "format": "date-time"
+        }
+      }
+    },
+    "impact_assessment": {
+      "type": "object",
+      "description": "Assessment of the impact of the crossing",
+      "properties": {
+        "trust_impact": {
+          "type": "number",
+          "description": "Impact on trust (negative for decay, positive for regeneration)",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        "security_impact": {
+          "type": "string",
+          "description": "Impact on security",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "governance_impact": {
+          "type": "string",
+          "description": "Impact on governance",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "performance_impact": {
+          "type": "string",
+          "description": "Impact on performance",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "impact_details": {
+          "type": "string",
+          "description": "Detailed description of the impact"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the crossing was requested",
+      "format": "date-time"
+    },
+    "completion_timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of when the crossing was completed",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the boundary crossing",
+      "enum": [
+        "requested",
+        "authorized",
+        "denied",
+        "in_progress",
+        "completed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "result": {
+      "type": "object",
+      "description": "Result of the boundary crossing",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Whether the crossing was successful"
+        },
+        "error_code": {
+          "type": "string",
+          "description": "Error code if the crossing failed"
+        },
+        "error_message": {
+          "type": "string",
+          "description": "Error message if the crossing failed"
+        },
+        "result_data": {
+          "type": "object",
+          "description": "Data resulting from the crossing",
+          "additionalProperties": true
+        }
+      }
+    },
+    "audit_trail": {
+      "type": "array",
+      "description": "Audit trail for the boundary crossing",
+      "items": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "timestamp",
+          "event_type"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "description": "Unique identifier for the audit event"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the event occurred",
+            "format": "date-time"
+          },
+          "event_type": {
+            "type": "string",
+            "description": "Type of audit event",
+            "enum": [
+              "request_received",
+              "validation_started",
+              "validation_completed",
+              "authorization_requested",
+              "authorization_granted",
+              "authorization_denied",
+              "control_applied",
+              "crossing_started",
+              "crossing_completed",
+              "crossing_failed",
+              "impact_assessed",
+              "audit_recorded"
+            ]
+          },
+          "actor_id": {
+            "type": "string",
+            "description": "Identifier of the entity that triggered the event"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional details about the event",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "attestations": {
+      "type": "array",
+      "description": "Attestations for this crossing",
+      "items": {
+        "type": "object",
+        "required": [
+          "attestation_id",
+          "attester_id",
+          "timestamp"
+        ],
+        "properties": {
+          "attestation_id": {
+            "type": "string",
+            "description": "Unique identifier for the attestation"
+          },
+          "attester_id": {
+            "type": "string",
+            "description": "Identifier of the entity making the attestation"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the attestation was made",
+            "format": "date-time"
+          },
+          "claims": {
+            "type": "array",
+            "description": "Claims made in this attestation",
+            "items": {
+              "type": "object",
+              "required": [
+                "claim_id",
+                "claim_type",
+                "claim_value"
+              ],
+              "properties": {
+                "claim_id": {
+                  "type": "string",
+                  "description": "Unique identifier for the claim"
+                },
+                "claim_type": {
+                  "type": "string",
+                  "description": "Type of claim"
+                },
+                "claim_value": {
+                  "description": "Value of the claim",
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature of the attestation"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
