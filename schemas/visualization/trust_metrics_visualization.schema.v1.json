@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Metrics Visualization Schema",
+  "type": "object",
+  "properties": {
+    "metric_type": {
+      "type": "string",
+      "enum": ["decay", "regeneration", "boundary", "attestation", "combined"],
+      "description": "The type of trust metric to visualize"
+    },
+    "time_period": {
+      "type": "string",
+      "enum": ["realtime", "hourly", "daily", "weekly", "monthly"],
+      "description": "The time period for the trust metrics data"
+    },
+    "granularity": {
+      "type": "string",
+      "enum": ["system", "module", "component", "function"],
+      "description": "The granularity level of the trust metrics"
+    },
+    "visualization_config": {
+      "type": "object",
+      "properties": {
+        "chart_type": {
+          "type": "string",
+          "enum": ["line", "area", "bar", "heatmap", "radar"],
+          "description": "The type of chart to use for visualization"
+        },
+        "color_scheme": {
+          "type": "string",
+          "enum": ["default", "trust", "alert", "gradient"],
+          "description": "The color scheme to use for visualization"
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Whether the visualization should be interactive"
+        },
+        "annotations": {
+          "type": "boolean",
+          "description": "Whether to include annotations in the visualization"
+        }
+      },
+      "required": ["chart_type", "interactive"],
+      "description": "Configuration options for the visualization"
+    },
+    "thresholds": {
+      "type": "object",
+      "properties": {
+        "warning": {
+          "type": "number",
+          "description": "The warning threshold for trust metrics"
+        },
+        "critical": {
+          "type": "number",
+          "description": "The critical threshold for trust metrics"
+        }
+      },
+      "description": "Threshold values for trust metrics visualization"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the visualization was created"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "The entity that created the visualization"
+        },
+        "version": {
+          "type": "string",
+          "description": "The version of the visualization schema"
+        }
+      },
+      "description": "Metadata about the visualization"
+    },
+    "codex_tethering": {
+      "type": "object",
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "description": "The ID of the Codex contract this visualization is tethered to"
+        },
+        "seal": {
+          "type": "string",
+          "description": "The cryptographic seal for the visualization data"
+        },
+        "verification_status": {
+          "type": "string",
+          "enum": ["verified", "unverified", "invalid"],
+          "description": "The verification status of the visualization data"
+        }
+      },
+      "required": ["contract_id", "seal"],
+      "description": "Codex contract tethering information for the visualization"
+    },
+    "trust_decay_reference": {
+      "type": "object",
+      "properties": {
+        "decay_engine_id": {
+          "type": "string",
+          "description": "The ID of the Trust Decay Engine providing the metrics"
+        },
+        "decay_model": {
+          "type": "string",
+          "description": "The decay model used for the metrics"
+        }
+      },
+      "description": "Reference to the Trust Decay Engine for the metrics"
+    }
+  },
+  "required": ["metric_type", "time_period", "visualization_config"],
+  "additionalProperties": false
+}

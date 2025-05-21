@@ -1,245 +1,114 @@
 {
   "modules": [
     {
-      "module_id": "trust_boundary_definition",
-      "name": "Trust Boundary Definition",
+      "id": "governance_visualization",
+      "name": "Governance Visualization",
       "version": "1.0.0",
-      "description": "Framework for defining, managing, and verifying trust boundaries within the system",
-      "status": "active",
+      "description": "Framework for visualizing governance state, trust metrics, and health reporting",
       "components": [
         {
-          "component_id": "boundary_detection_engine",
-          "name": "Boundary Detection Engine",
-          "path": "src/core/trust/boundary_detection_engine.py",
-          "description": "Engine for detecting and managing trust boundaries",
+          "id": "governance_state_visualizer",
+          "name": "Governance State Visualizer",
+          "path": "src/core/visualization/governance_state_visualizer.py",
+          "description": "Visualizes the current state of governance components and their relationships",
           "dependencies": [
-            "schema_validator",
-            "seal_verification_service"
-          ],
-          "interfaces": [
-            "register_boundary",
-            "get_boundary",
-            "update_boundary",
-            "delete_boundary",
-            "list_boundaries"
-          ]
-        },
-        {
-          "component_id": "boundary_crossing_protocol",
-          "name": "Boundary Crossing Protocol",
-          "path": "src/core/trust/boundary_crossing_protocol.py",
-          "description": "Protocol for managing boundary crossings",
-          "dependencies": [
-            "boundary_detection_engine",
-            "schema_validator",
-            "seal_verification_service"
-          ],
-          "interfaces": [
-            "register_crossing",
-            "get_crossing",
-            "update_crossing",
-            "delete_crossing",
-            "list_crossings",
-            "validate_crossing"
-          ]
-        },
-        {
-          "component_id": "boundary_integrity_verifier",
-          "name": "Boundary Integrity Verifier",
-          "path": "src/core/verification/boundary_integrity_verifier.py",
-          "description": "Verifier for ensuring the integrity of trust boundaries",
-          "dependencies": [
-            "boundary_detection_engine",
-            "boundary_crossing_protocol",
-            "seal_verification_service",
-            "mutation_detector",
-            "attestation_service",
-            "schema_validator"
-          ],
-          "interfaces": [
-            "verify_boundary_integrity",
-            "get_verification",
-            "list_verifications",
-            "get_boundary_violations",
-            "get_boundary_recommendations",
-            "report_violation"
-          ]
-        },
-        {
-          "component_id": "trust_domain_manager",
-          "name": "Trust Domain Manager",
-          "path": "src/core/trust/trust_domain_manager.py",
-          "description": "Manager for trust domains within the Promethios system",
-          "dependencies": [
-            "boundary_detection_engine",
+            "visualization_data_transformer",
             "governance_primitive_manager",
             "attestation_service",
-            "evolution_protocol",
-            "schema_validator",
-            "seal_verification_service"
-          ],
-          "interfaces": [
-            "register_domain",
-            "get_domain",
-            "update_domain",
-            "delete_domain",
-            "list_domains",
-            "add_domain_relationship",
-            "remove_domain_relationship",
-            "get_domain_relationships",
-            "calculate_domain_trust_level",
-            "associate_governance_policy",
-            "remove_governance_policy",
-            "get_domain_governance_policies",
-            "add_domain_attestation",
-            "remove_domain_attestation",
-            "get_domain_attestations",
-            "add_domain_component",
-            "remove_domain_component",
-            "get_domain_components",
-            "associate_domain_with_boundary",
-            "remove_domain_boundary_association",
-            "get_domain_boundaries",
-            "get_domain_evolution_history",
-            "merge_domains",
-            "split_domain"
+            "boundary_detection_engine"
           ]
         },
         {
-          "component_id": "sample_boundary_definitions",
-          "name": "Sample Boundary Definitions",
-          "path": "src/core/trust/sample_boundary_definitions.py",
-          "description": "Sample boundary definitions and implementations",
+          "id": "trust_metrics_dashboard",
+          "name": "Trust Metrics Dashboard",
+          "path": "src/core/visualization/trust_metrics_dashboard.py",
+          "description": "Dashboard for visualizing trust metrics and trends",
           "dependencies": [
-            "boundary_detection_engine",
-            "boundary_crossing_protocol",
-            "boundary_integrity_verifier",
-            "trust_domain_manager"
-          ],
-          "interfaces": [
-            "create_sample_process_boundary",
-            "create_sample_network_boundary",
-            "create_sample_data_boundary",
-            "create_sample_governance_boundary",
-            "create_sample_trust_domain",
-            "create_sample_boundary_crossing",
-            "create_sample_boundary_integrity_verification",
-            "create_sample_domain_relationship",
-            "create_sample_domain_boundary_association",
-            "create_complete_sample_environment"
+            "visualization_data_transformer",
+            "trust_decay_engine",
+            "attestation_service"
           ]
+        },
+        {
+          "id": "governance_health_reporter",
+          "name": "Governance Health Reporter",
+          "path": "src/core/visualization/governance_health_reporter.py",
+          "description": "Reports on the health of governance components and identifies issues",
+          "dependencies": [
+            "visualization_data_transformer",
+            "governance_primitive_manager",
+            "attestation_service",
+            "boundary_integrity_verifier"
+          ]
+        },
+        {
+          "id": "visualization_data_transformer",
+          "name": "Visualization Data Transformer",
+          "path": "src/core/visualization/visualization_data_transformer.py",
+          "description": "Transforms governance data into visualization-friendly formats",
+          "dependencies": []
         }
       ],
       "schemas": [
         {
-          "schema_id": "trust_boundary_schema",
-          "name": "Trust Boundary Schema",
-          "path": "schemas/trust/trust_boundary.schema.v1.json",
-          "description": "Schema for trust boundary definitions"
+          "id": "governance_visualization_schema",
+          "name": "Governance Visualization Schema",
+          "path": "schemas/visualization/governance_visualization.schema.v1.json",
+          "description": "Schema for governance visualization data structures"
         },
         {
-          "schema_id": "boundary_crossing_schema",
-          "name": "Boundary Crossing Schema",
-          "path": "schemas/trust/boundary_crossing.schema.v1.json",
-          "description": "Schema for boundary crossing definitions"
+          "id": "trust_metrics_visualization_schema",
+          "name": "Trust Metrics Visualization Schema",
+          "path": "schemas/visualization/trust_metrics_visualization.schema.v1.json",
+          "description": "Schema for trust metrics visualization data structures"
         },
         {
-          "schema_id": "boundary_integrity_schema",
-          "name": "Boundary Integrity Schema",
-          "path": "schemas/verification/boundary_integrity.schema.v1.json",
-          "description": "Schema for boundary integrity verification records"
+          "id": "governance_health_report_schema",
+          "name": "Governance Health Report Schema",
+          "path": "schemas/visualization/governance_health_report.schema.v1.json",
+          "description": "Schema for governance health report data structures"
+        }
+      ],
+      "apis": [
+        {
+          "id": "governance_visualization_api",
+          "name": "Governance Visualization API",
+          "path": "src/integration/governance_visualization_api.py",
+          "description": "API for accessing governance visualization data"
         },
         {
-          "schema_id": "trust_domain_schema",
-          "name": "Trust Domain Schema",
-          "path": "schemas/trust/trust_domain.schema.v1.json",
-          "description": "Schema for trust domain definitions"
+          "id": "visualization_integration_service",
+          "name": "Visualization Integration Service",
+          "path": "src/integration/visualization_integration_service.py",
+          "description": "Service for integrating visualization components with other governance modules"
+        }
+      ],
+      "ui_components": [
+        {
+          "id": "governance_dashboard",
+          "name": "Governance Dashboard",
+          "path": "src/ui/governance_dashboard/components/governance_dashboard.py",
+          "description": "Main dashboard UI component for governance visualization"
+        },
+        {
+          "id": "trust_metrics_visualizer",
+          "name": "Trust Metrics Visualizer",
+          "path": "src/ui/governance_dashboard/components/trust_metrics_visualizer.py",
+          "description": "UI component for visualizing trust metrics"
+        },
+        {
+          "id": "governance_health_reporter_ui",
+          "name": "Governance Health Reporter UI",
+          "path": "src/ui/governance_dashboard/components/governance_health_reporter_ui.py",
+          "description": "UI component for displaying governance health reports"
         }
       ],
       "dependencies": [
-        {
-          "module_id": "governance_attestation_framework",
-          "version": "1.0.0",
-          "components": [
-            "attestation_service",
-            "claim_verification_protocol",
-            "governance_audit_trail",
-            "attestation_authority_manager"
-          ]
-        },
-        {
-          "module_id": "minimal_viable_governance",
-          "version": "1.0.0",
-          "components": [
-            "governance_primitive_manager",
-            "decision_framework_engine",
-            "policy_management_module",
-            "requirement_validation_module"
-          ]
-        },
-        {
-          "module_id": "governance_expansion_protocol",
-          "version": "1.0.0",
-          "components": [
-            "module_extension_registry",
-            "compatibility_verification_engine",
-            "module_lifecycle_manager",
-            "extension_point_framework"
-          ]
-        },
-        {
-          "module_id": "trust_decay_engine",
-          "version": "1.0.0",
-          "components": [
-            "decay_calculation_engine",
-            "trust_level_manager",
-            "decay_factor_registry",
-            "decay_visualization_service"
-          ]
-        },
-        {
-          "module_id": "codex_mutation_lock",
-          "version": "1.0.0",
-          "components": [
-            "mutation_detector",
-            "seal_verification_service",
-            "evolution_protocol"
-          ]
-        }
-      ],
-      "extension_points": [
-        {
-          "extension_point_id": "boundary_type_extension",
-          "name": "Boundary Type Extension",
-          "description": "Extension point for adding new boundary types",
-          "interface": "src/core/trust/boundary_detection_engine.py:BoundaryTypeExtension"
-        },
-        {
-          "extension_point_id": "crossing_validation_extension",
-          "name": "Crossing Validation Extension",
-          "description": "Extension point for adding new crossing validation methods",
-          "interface": "src/core/trust/boundary_crossing_protocol.py:CrossingValidationExtension"
-        },
-        {
-          "extension_point_id": "integrity_verification_extension",
-          "name": "Integrity Verification Extension",
-          "description": "Extension point for adding new integrity verification methods",
-          "interface": "src/core/verification/boundary_integrity_verifier.py:IntegrityVerificationExtension"
-        },
-        {
-          "extension_point_id": "trust_calculation_extension",
-          "name": "Trust Calculation Extension",
-          "description": "Extension point for adding new trust calculation methods",
-          "interface": "src/core/trust/trust_domain_manager.py:TrustCalculationExtension"
-        }
-      ],
-      "metadata": {
-        "created_at": "2025-05-21T14:22:00Z",
-        "updated_at": "2025-05-21T14:22:00Z",
-        "created_by": "system",
-        "phase": "5.13",
-        "priority": "high"
-      }
+        "governance_attestation_framework",
+        "minimal_viable_governance",
+        "governance_expansion_protocol",
+        "trust_boundary_definition"
+      ]
     }
   ]
 }

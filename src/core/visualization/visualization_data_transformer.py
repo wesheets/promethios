@@ -1,916 +1,900 @@
 """
-Visualization Data Transformer Module
+Visualization Data Transformer for the Governance Visualization framework.
 
-This module transforms trust data into visualization-ready format for the Trust Surface Dashboard.
-It generates node and edge data for network visualizations and prepares time series data for trend charts.
+This module provides functionality to transform governance and trust data
+into formats optimized for visualization, ensuring efficient rendering and interaction.
 
-Part of Phase 5.7: Trust Surface Visualization and Analytics
+It integrates with all core components to provide optimized data structures
+for visualization rendering.
 """
 
-import uuid
-import datetime
-import logging
 import json
+import logging
+from typing import Dict, List, Any, Optional, Union
 import hashlib
-import math
-from typing import Dict, List, Optional, Tuple, Any
-from collections import defaultdict
 
-from src.core.common.schema_validator import validate_against_schema
-
-logger = logging.getLogger(__name__)
+# Import necessary components from previous phases
+from src.core.verification.contract_sealer import ContractSealer
+from src.core.verification.mutation_detector import MutationDetector
 
 class VisualizationDataTransformer:
     """
-    Transforms trust data into visualization-ready format.
+    Transforms governance and trust data for visualization.
+    
+    Integrates with all core components to provide optimized data structures
+    for visualization rendering.
     """
     
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, contract_sealer: Optional[ContractSealer] = None):
         """
-        Initialize the Visualization Data Transformer.
+        Initialize the VisualizationDataTransformer.
         
         Args:
-            config: Configuration dictionary for the transformer
+            contract_sealer: Optional ContractSealer for data integrity verification
         """
-        self.config = config or {}
-        self.visualization_schema_path = "schemas/trust/trust_visualization.schema.v1.json"
-        self.color_map = self.config.get("color_map", {
-            "surface": "#3498db",  # Blue
-            "boundary": "#2ecc71",  # Green
-            "node": "#9b59b6",     # Purple
-            "alert": "#e74c3c",    # Red
-            "high_trust": "#27ae60",  # Dark Green
-            "medium_trust": "#f39c12",  # Orange
-            "low_trust": "#c0392b"   # Dark Red
-        })
-        self.layout_config = self.config.get("layout", {
-            "node_spacing": 100,
-            "boundary_radius": 150,
-            "surface_radius": 50,
-            "z_layer_spacing": 30
-        })
-        self.visualization_cache = {}
-        logger.info("Visualization Data Transformer initialized with config: %s", self.config)
+        self.logger = logging.getLogger(__name__)
+        self.contract_sealer = contract_sealer
+        self.mutation_detector = MutationDetector() if contract_sealer else None
         
-    def pre_loop_tether_check(self) -> Tuple[bool, str]:
+    def transform_governance_data(self, governance_data: Dict[str, Any], 
+                                 visualization_type: str = "state") -> Dict[str, Any]:
         """
-        Verify Codex contract tethering before execution.
-        
-        Returns:
-            Tuple of (success, message)
-        """
-        # Implementation of Codex contract tethering check
-        codex_info = {
-            "codex_contract_version": "v2025.05.19",
-            "phase_id": "5.7",
-            "clauses": ["5.7", "5.6", "11.0", "11.1", "11.4", "12.25"],
-            "component": "VisualizationDataTransformer",
-            "status": "compliant",
-            "timestamp": datetime.datetime.utcnow().isoformat() + 'Z'
-        }
-        
-        # Verify component integrity
-        component_hash = self._calculate_component_hash()
-        if not component_hash:
-            return False, "Component integrity check failed"
-            
-        logger.info("Codex tether check passed: %s", codex_info)
-        return True, "Tether check passed"
-    
-    def _calculate_component_hash(self) -> str:
-        """
-        Calculate a hash of the component to verify integrity.
-        
-        Returns:
-            Hash string or empty string if failed
-        """
-        try:
-            # In a real implementation, this would calculate a hash of the component code
-            # For now, we'll return a placeholder hash
-            return hashlib.sha256(b"VisualizationDataTransformer").hexdigest()
-        except Exception as e:
-            logger.error("Failed to calculate component hash: %s", str(e))
-            return ""
-        
-    def transform_surface_to_visualization(self, surface_data: Dict[str, Any], metrics: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Transform trust surface data into visualization format.
+        Transforms governance data for visualization.
         
         Args:
-            surface_data: Trust surface data
-            metrics: Trust metrics data
+            governance_data: Raw governance data
+            visualization_type: Type of visualization to optimize for
             
         Returns:
-            Visualization data in schema-compliant format
+            Dict: Transformed data optimized for visualization
         """
-        if not surface_data or not metrics:
-            logger.error("Invalid input data for visualization transformation")
-            return {"error": "Invalid input data", "timestamp": datetime.datetime.utcnow().isoformat()}
-            
-        surface_id = surface_data.get("surface_id")
-        if not surface_id:
-            logger.error("Missing surface_id in surface data")
-            return {"error": "Missing surface_id", "timestamp": datetime.datetime.utcnow().isoformat()}
-            
-        try:
-            # Generate nodes from surface data
-            nodes = self._generate_nodes(surface_data, metrics)
-            
-            # Generate edges from surface data
-            edges = self._generate_edges(surface_data, nodes, metrics)
-            
-            # Apply layout algorithm to position nodes
-            self._apply_layout(nodes, edges)
-            
-            # Create visualization data structure
-            visualization = {
-                "visualization_id": str(uuid.uuid4()),
-                "surface_ids": [surface_id],
-                "view_type": "network",
-                "timestamp": datetime.datetime.utcnow().isoformat(),
-                "contract_version": surface_data.get("contract_version", "v2025.05.19"),
-                "nodes": nodes,
-                "edges": edges,
-                "metadata": {
-                    "title": f"Trust Surface Visualization: {surface_id}",
-                    "description": "Network visualization of trust surface and boundaries",
-                    "time_range": {
-                        "start": datetime.datetime.utcnow().isoformat(),
-                        "end": datetime.datetime.utcnow().isoformat()
-                    },
-                    "metrics_summary": self._generate_metrics_summary(metrics),
-                    "color_map": self.color_map
-                }
-            }
-            
-            # Validate visualization against schema
-            validation_result = validate_against_schema(visualization, self.visualization_schema_path)
-            if not validation_result.get("valid", False):
-                logger.error("Invalid visualization data: %s", validation_result.get("errors", "Unknown error"))
-                return {"error": "Failed to generate valid visualization data", "details": validation_result.get("errors", [])}
-                
-            # Cache the visualization
-            self.visualization_cache[surface_id] = visualization
-            
-            logger.info("Successfully transformed surface %s to visualization with %d nodes and %d edges", 
-                       surface_id, len(nodes), len(edges))
-                
-            return visualization
-            
-        except Exception as e:
-            logger.error("Error transforming surface to visualization: %s", str(e))
-            return {"error": f"Transformation error: {str(e)}", "timestamp": datetime.datetime.utcnow().isoformat()}
-    
-    def _generate_metrics_summary(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate a summary of metrics for visualization metadata.
+        self.logger.info(f"Transforming governance data for {visualization_type} visualization")
         
-        Args:
-            metrics: Trust metrics data
-            
-        Returns:
-            Dictionary with metrics summary
-        """
-        summary = {}
+        # Validate input data
+        if not governance_data:
+            self.logger.error("Empty governance data provided")
+            raise ValueError("Governance data cannot be empty")
         
-        if "aggregated_metrics" in metrics:
-            for metric_type, metric_data in metrics.get("aggregated_metrics", {}).items():
-                if "mean" in metric_data:
-                    summary[metric_type] = {
-                        "value": metric_data["mean"],
-                        "min": metric_data.get("min", 0),
-                        "max": metric_data.get("max", 1),
-                        "count": metric_data.get("count", 0)
-                    }
+        # Apply Codex contract tethering if available
+        if self.contract_sealer:
+            governance_data = self._apply_contract_tethering(governance_data)
         
-        return summary
-        
-    def _generate_nodes(self, surface_data: Dict[str, Any], metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Generate nodes for visualization from surface data.
-        
-        Args:
-            surface_data: Trust surface data
-            metrics: Trust metrics data
-            
-        Returns:
-            List of node objects
-        """
-        nodes = []
-        surface_id = surface_data.get("surface_id")
-        
-        # Get metrics for coloring
-        composite_metric = 0.5  # Default value
-        if "aggregated_metrics" in metrics and "composite" in metrics["aggregated_metrics"]:
-            composite_metric = metrics["aggregated_metrics"]["composite"].get("mean", 0.5)
-        
-        # Create surface node
-        surface_node = {
-            "id": surface_id,
-            "type": "surface",
-            "label": surface_data.get("name", f"Surface {surface_id[:8]}"),
-            "metrics": self._extract_node_metrics(metrics, "surface"),
-            "position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-            },
-            "size": self.layout_config.get("surface_radius", 50),
-            "color": self._get_trust_color(composite_metric),
-            "metadata": {
-                "description": surface_data.get("description", "Trust Surface"),
-                "node_count": len(surface_data.get("nodes", [])),
-                "boundary_count": len(surface_data.get("boundary_ids", [])),
-                "trust_level": composite_metric
-            }
-        }
-        nodes.append(surface_node)
-        
-        # Create boundary nodes
-        boundaries = surface_data.get("boundaries", [])
-        if not boundaries and "boundary_ids" in surface_data:
-            # Create placeholder boundaries if only IDs are provided
-            boundaries = [{"boundary_id": bid} for bid in surface_data.get("boundary_ids", [])]
-            
-        for i, boundary in enumerate(boundaries):
-            boundary_id = boundary.get("boundary_id")
-            if not boundary_id:
-                continue
-                
-            # Get trust level for this boundary
-            trust_level = boundary.get("trust_level", 0.5)
-            
-            boundary_node = {
-                "id": boundary_id,
-                "type": "boundary",
-                "label": boundary.get("name", f"Boundary {boundary_id[:8]}"),
-                "metrics": self._extract_node_metrics(metrics, "boundary", boundary_id),
-                "position": {
-                    "x": 0,  # Will be set by layout algorithm
-                    "y": 0,
-                    "z": 0
-                },
-                "size": self.layout_config.get("boundary_radius", 150) * (0.8 + (trust_level * 0.4)),
-                "color": self._get_trust_color(trust_level),
-                "metadata": {
-                    "description": boundary.get("description", "Trust Boundary"),
-                    "trust_level": trust_level,
-                    "boundary_type": boundary.get("boundary_type", "standard"),
-                    "policy_count": len(boundary.get("policies", []))
-                }
-            }
-            nodes.append(boundary_node)
-        
-        # Create nodes for connected systems
-        connected_nodes = surface_data.get("nodes", [])
-        for i, node in enumerate(connected_nodes):
-            node_id = node.get("node_id")
-            if not node_id:
-                continue
-                
-            # Get trust level for this node
-            trust_level = node.get("trust_level", 0.5)
-            
-            node_obj = {
-                "id": node_id,
-                "type": "node",
-                "label": node.get("name", f"Node {node_id[:8]}"),
-                "metrics": self._extract_node_metrics(metrics, "node", node_id),
-                "position": {
-                    "x": 0,  # Will be set by layout algorithm
-                    "y": 0,
-                    "z": self.layout_config.get("z_layer_spacing", 30)  # Put nodes on a different z-layer
-                },
-                "size": 30,  # Smaller than boundaries
-                "color": self._get_trust_color(trust_level),
-                "metadata": {
-                    "description": node.get("description", "Connected Node"),
-                    "trust_level": trust_level,
-                    "node_type": node.get("node_type", "standard"),
-                    "status": node.get("status", "active")
-                }
-            }
-            nodes.append(node_obj)
-            
-        # Create alert nodes if any
-        alerts = metrics.get("alerts", [])
-        for i, alert in enumerate(alerts):
-            alert_id = alert.get("alert_id")
-            if not alert_id:
-                continue
-                
-            severity = alert.get("severity", "warning")
-            severity_map = {
-                "info": 0.7,
-                "warning": 0.5,
-                "critical": 0.3,
-                "emergency": 0.1
-            }
-            trust_level = severity_map.get(severity, 0.5)
-            
-            alert_node = {
-                "id": alert_id,
-                "type": "alert",
-                "label": f"Alert: {severity.capitalize()}",
-                "metrics": {},
-                "position": {
-                    "x": 0,  # Will be set by layout algorithm
-                    "y": 0,
-                    "z": self.layout_config.get("z_layer_spacing", 30) * 2  # Put alerts on top layer
-                },
-                "size": 25,  # Smaller than nodes
-                "color": self.color_map.get("alert", "#e74c3c"),
-                "metadata": {
-                    "description": alert.get("description", "Trust Boundary Alert"),
-                    "severity": severity,
-                    "timestamp": alert.get("timestamp", datetime.datetime.utcnow().isoformat()),
-                    "boundary_id": alert.get("boundary_id")
-                }
-            }
-            nodes.append(alert_node)
-            
-        return nodes
-    
-    def _extract_node_metrics(self, metrics: Dict[str, Any], node_type: str, node_id: str = None) -> Dict[str, Any]:
-        """
-        Extract metrics for a specific node from the metrics data.
-        
-        Args:
-            metrics: Trust metrics data
-            node_type: Type of node (surface, boundary, node)
-            node_id: Optional ID of the node
-            
-        Returns:
-            Dictionary with node-specific metrics
-        """
-        if node_type == "surface":
-            # For surface nodes, use aggregated metrics
-            if "aggregated_metrics" in metrics:
-                return {k: v.get("mean", 0) for k, v in metrics["aggregated_metrics"].items()}
-            return {}
-            
-        elif node_type == "boundary" and node_id:
-            # For boundary nodes, look for boundary-specific metrics
-            if "node_aggregates" in metrics and node_id in metrics["node_aggregates"]:
-                return metrics["node_aggregates"][node_id]
-            return {}
-            
-        elif node_type == "node" and node_id:
-            # For regular nodes, look for node-specific metrics
-            if "node_aggregates" in metrics and node_id in metrics["node_aggregates"]:
-                return metrics["node_aggregates"][node_id]
-            return {}
-            
-        return {}
-        
-    def _get_trust_color(self, trust_level: float) -> str:
-        """
-        Get color based on trust level.
-        
-        Args:
-            trust_level: Trust level value between 0 and 1
-            
-        Returns:
-            Color string
-        """
-        if trust_level >= 0.7:
-            return self.color_map.get("high_trust", "#27ae60")
-        elif trust_level >= 0.4:
-            return self.color_map.get("medium_trust", "#f39c12")
+        # Transform data based on visualization type
+        if visualization_type == "state":
+            return self._transform_for_state_visualization(governance_data)
+        elif visualization_type == "metrics":
+            return self._transform_for_metrics_visualization(governance_data)
+        elif visualization_type == "health":
+            return self._transform_for_health_visualization(governance_data)
+        elif visualization_type == "combined":
+            return self._transform_for_combined_visualization(governance_data)
         else:
-            return self.color_map.get("low_trust", "#c0392b")
-        
-    def _generate_edges(self, surface_data: Dict[str, Any], nodes: List[Dict[str, Any]], 
-                       metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+            self.logger.error(f"Unsupported visualization type: {visualization_type}")
+            raise ValueError(f"Unsupported visualization type: {visualization_type}")
+    
+    def transform_trust_metrics(self, trust_metrics: Dict[str, Any],
+                               metric_type: str = "decay") -> Dict[str, Any]:
         """
-        Generate edges for visualization from surface data and nodes.
+        Transforms trust metrics for visualization.
         
         Args:
-            surface_data: Trust surface data
-            nodes: List of node objects
-            metrics: Trust metrics data
+            trust_metrics: Raw trust metrics
+            metric_type: Type of trust metric to optimize for
             
         Returns:
-            List of edge objects
+            Dict: Transformed metrics optimized for visualization
         """
-        edges = []
-        surface_id = surface_data.get("surface_id")
+        self.logger.info(f"Transforming trust metrics for {metric_type} visualization")
         
-        # Create a map of node IDs to nodes for quick lookup
-        node_map = {node["id"]: node for node in nodes}
+        # Validate input data
+        if not trust_metrics:
+            self.logger.error("Empty trust metrics provided")
+            raise ValueError("Trust metrics cannot be empty")
         
-        # Create edges from surface to boundaries
-        boundaries = surface_data.get("boundaries", [])
-        if not boundaries and "boundary_ids" in surface_data:
-            # Create placeholder boundaries if only IDs are provided
-            boundaries = [{"boundary_id": bid} for bid in surface_data.get("boundary_ids", [])]
-            
-        for boundary in boundaries:
-            boundary_id = boundary.get("boundary_id")
-            if not boundary_id or boundary_id not in node_map:
-                continue
-                
-            # Get trust level for this boundary
-            trust_level = boundary.get("trust_level", 0.5)
-            
-            edge = {
-                "id": f"{surface_id}-{boundary_id}",
-                "source": surface_id,
-                "target": boundary_id,
-                "type": "boundary",
-                "weight": trust_level,
-                "color": self._get_trust_color(trust_level),
-                "metadata": {
-                    "trust_level": trust_level,
-                    "boundary_type": boundary.get("boundary_type", "standard"),
-                    "description": f"Surface to Boundary: {trust_level:.2f} trust"
-                }
-            }
-            edges.append(edge)
+        # Apply Codex contract tethering if available
+        if self.contract_sealer:
+            trust_metrics = self._apply_contract_tethering(trust_metrics)
         
-        # Create edges from boundaries to nodes
-        connected_nodes = surface_data.get("nodes", [])
-        for node in connected_nodes:
-            node_id = node.get("node_id")
-            if not node_id or node_id not in node_map:
-                continue
-                
-            # Find which boundary this node belongs to
-            boundary_id = node.get("boundary_id")
-            if not boundary_id or boundary_id not in node_map:
-                # If no boundary specified, connect to surface
-                boundary_id = surface_id
-                
-            # Get trust level for this connection
-            trust_level = node.get("trust_level", 0.5)
-            
-            edge = {
-                "id": f"{boundary_id}-{node_id}",
-                "source": boundary_id,
-                "target": node_id,
-                "type": "node",
-                "weight": trust_level,
-                "color": self._get_trust_color(trust_level),
-                "metadata": {
-                    "trust_level": trust_level,
-                    "node_type": node.get("node_type", "standard"),
-                    "description": f"Boundary to Node: {trust_level:.2f} trust"
-                }
-            }
-            edges.append(edge)
-        
-        # Create edges from alerts to their boundaries
-        alerts = metrics.get("alerts", [])
-        for alert in alerts:
-            alert_id = alert.get("alert_id")
-            boundary_id = alert.get("boundary_id")
-            
-            if not alert_id or alert_id not in node_map or not boundary_id or boundary_id not in node_map:
-                continue
-                
-            severity = alert.get("severity", "warning")
-            severity_map = {
-                "info": 0.7,
-                "warning": 0.5,
-                "critical": 0.3,
-                "emergency": 0.1
-            }
-            trust_level = severity_map.get(severity, 0.5)
-            
-            edge = {
-                "id": f"{boundary_id}-{alert_id}",
-                "source": boundary_id,
-                "target": alert_id,
-                "type": "alert",
-                "weight": 1.0,  # Alerts always have strong connections
-                "color": self.color_map.get("alert", "#e74c3c"),
-                "metadata": {
-                    "severity": severity,
-                    "description": alert.get("description", "Boundary Alert"),
-                    "timestamp": alert.get("timestamp", datetime.datetime.utcnow().isoformat())
-                }
-            }
-            edges.append(edge)
-            
-        return edges
+        # Transform data based on metric type
+        if metric_type == "decay":
+            return self._transform_for_decay_visualization(trust_metrics)
+        elif metric_type == "regeneration":
+            return self._transform_for_regeneration_visualization(trust_metrics)
+        elif metric_type == "boundary":
+            return self._transform_for_boundary_visualization(trust_metrics)
+        elif metric_type == "attestation":
+            return self._transform_for_attestation_visualization(trust_metrics)
+        elif metric_type == "combined":
+            return self._transform_for_combined_metrics_visualization(trust_metrics)
+        else:
+            self.logger.error(f"Unsupported metric type: {metric_type}")
+            raise ValueError(f"Unsupported metric type: {metric_type}")
     
-    def _apply_layout(self, nodes: List[Dict[str, Any]], edges: List[Dict[str, Any]]) -> None:
+    def transform_health_report(self, health_data: Dict[str, Any],
+                               report_type: str = "compliance") -> Dict[str, Any]:
         """
-        Apply a layout algorithm to position nodes.
+        Transforms health report data for visualization.
         
         Args:
-            nodes: List of node objects
-            edges: List of edge objects
-        """
-        if not nodes:
-            return
-            
-        # Find the surface node
-        surface_node = next((node for node in nodes if node["type"] == "surface"), None)
-        if not surface_node:
-            return
-            
-        # Place surface node at center
-        surface_node["position"] = {"x": 0, "y": 0, "z": 0}
-        
-        # Group nodes by type
-        node_types = defaultdict(list)
-        for node in nodes:
-            if node["id"] != surface_node["id"]:  # Skip surface node
-                node_types[node["type"]].append(node)
-        
-        # Position boundary nodes in a circle around the surface
-        boundary_nodes = node_types.get("boundary", [])
-        self._position_nodes_in_circle(boundary_nodes, 
-                                     self.layout_config.get("node_spacing", 100) * 3, 
-                                     0)  # Boundaries on z=0 plane
-        
-        # Position regular nodes in a larger circle
-        regular_nodes = node_types.get("node", [])
-        self._position_nodes_in_circle(regular_nodes, 
-                                     self.layout_config.get("node_spacing", 100) * 5, 
-                                     self.layout_config.get("z_layer_spacing", 30))  # Nodes on z=30 plane
-        
-        # Position alert nodes near their boundaries
-        alert_nodes = node_types.get("alert", [])
-        self._position_alert_nodes(alert_nodes, nodes, edges, 
-                                 self.layout_config.get("z_layer_spacing", 30) * 2)  # Alerts on z=60 plane
-    
-    def _position_nodes_in_circle(self, nodes: List[Dict[str, Any]], radius: float, z_level: float) -> None:
-        """
-        Position nodes in a circle.
-        
-        Args:
-            nodes: List of node objects
-            radius: Radius of the circle
-            z_level: Z-coordinate for the nodes
-        """
-        if not nodes:
-            return
-            
-        # Position nodes in a circle
-        for i, node in enumerate(nodes):
-            angle = (2 * math.pi * i) / len(nodes)
-            node["position"] = {
-                "x": radius * math.cos(angle),
-                "y": radius * math.sin(angle),
-                "z": z_level
-            }
-    
-    def _position_alert_nodes(self, alert_nodes: List[Dict[str, Any]], all_nodes: List[Dict[str, Any]], 
-                            edges: List[Dict[str, Any]], z_level: float) -> None:
-        """
-        Position alert nodes near their related boundaries.
-        
-        Args:
-            alert_nodes: List of alert node objects
-            all_nodes: List of all node objects
-            edges: List of edge objects
-            z_level: Z-coordinate for the alert nodes
-        """
-        if not alert_nodes:
-            return
-            
-        # Create a map of node IDs to nodes for quick lookup
-        node_map = {node["id"]: node for node in all_nodes}
-        
-        # Find connections for each alert
-        for alert in alert_nodes:
-            # Find the edge connecting this alert to a boundary
-            connected_edge = next((edge for edge in edges 
-                                 if edge["target"] == alert["id"]), None)
-            
-            if connected_edge and connected_edge["source"] in node_map:
-                # Position alert near its boundary
-                boundary = node_map[connected_edge["source"]]
-                boundary_pos = boundary["position"]
-                
-                # Add a small random offset
-                import random
-                random.seed(alert["id"])  # Seed for reproducibility
-                offset_x = random.uniform(-50, 50)
-                offset_y = random.uniform(-50, 50)
-                
-                alert["position"] = {
-                    "x": boundary_pos["x"] + offset_x,
-                    "y": boundary_pos["y"] + offset_y,
-                    "z": z_level
-                }
-            else:
-                # If no connection found, position randomly
-                import random
-                random.seed(alert["id"])  # Seed for reproducibility
-                alert["position"] = {
-                    "x": random.uniform(-200, 200),
-                    "y": random.uniform(-200, 200),
-                    "z": z_level
-                }
-        
-    def generate_time_series_data(self, metrics_history: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate time series data for trend charts.
-        
-        Args:
-            metrics_history: Historical metrics data from TrustMetricsAggregator
+            health_data: Raw health report data
+            report_type: Type of health report to optimize for
             
         Returns:
-            Time series data for visualization
+            Dict: Transformed health report data optimized for visualization
         """
-        if not metrics_history or "metrics_by_type" not in metrics_history:
-            logger.error("Invalid metrics history data for time series generation")
-            return {
-                "error": "Invalid metrics history data",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
-            
-        surface_id = metrics_history.get("surface_id")
-        if not surface_id:
-            logger.error("Missing surface_id in metrics history")
-            return {
-                "error": "Missing surface_id",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
-            
-        try:
-            # Process metrics by type
-            metrics_by_type = metrics_history.get("metrics_by_type", {})
-            
-            # Initialize time series data
-            time_series = {
-                "visualization_id": str(uuid.uuid4()),
-                "surface_ids": [surface_id],
-                "view_type": "time_series",
-                "timestamp": datetime.datetime.utcnow().isoformat(),
-                "start_time": metrics_history.get("start_time"),
-                "end_time": metrics_history.get("end_time"),
-                "series": {},
-                "metadata": {
-                    "title": f"Trust Metrics Timeline: {surface_id}",
-                    "description": "Time series visualization of trust metrics",
-                    "metrics_count": metrics_history.get("total_metrics", 0)
-                }
-            }
-            
-            # Process each metric type
-            for metric_type, metrics in metrics_by_type.items():
-                # Sort metrics by timestamp
-                sorted_metrics = sorted(metrics, key=lambda m: m.get("timestamp", ""))
-                
-                # Extract timestamps and values
-                timestamps = []
-                values = []
-                
-                for metric in sorted_metrics:
-                    timestamps.append(metric.get("timestamp"))
-                    values.append(metric.get("value", 0))
-                
-                if timestamps and values:
-                    time_series["series"][metric_type] = {
-                        "timestamps": timestamps,
-                        "values": values,
-                        "color": self._get_series_color(metric_type),
-                        "label": f"{metric_type.capitalize()} Metric"
-                    }
-            
-            # Validate time series data
-            # Note: We would need a schema for time series data
-            # For now, we'll just return the data
-            
-            logger.info("Generated time series data for surface %s with %d series", 
-                       surface_id, len(time_series["series"]))
-            
-            return time_series
-            
-        except Exception as e:
-            logger.error("Error generating time series data: %s", str(e))
-            return {
-                "error": f"Time series generation error: {str(e)}",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
+        self.logger.info(f"Transforming health report data for {report_type} visualization")
+        
+        # Validate input data
+        if not health_data:
+            self.logger.error("Empty health report data provided")
+            raise ValueError("Health report data cannot be empty")
+        
+        # Apply Codex contract tethering if available
+        if self.contract_sealer:
+            health_data = self._apply_contract_tethering(health_data)
+        
+        # Transform data based on report type
+        if report_type == "compliance":
+            return self._transform_for_compliance_visualization(health_data)
+        elif report_type == "attestation":
+            return self._transform_for_attestation_report_visualization(health_data)
+        elif report_type == "boundary":
+            return self._transform_for_boundary_report_visualization(health_data)
+        elif report_type == "expansion":
+            return self._transform_for_expansion_visualization(health_data)
+        elif report_type == "combined":
+            return self._transform_for_combined_report_visualization(health_data)
+        else:
+            self.logger.error(f"Unsupported report type: {report_type}")
+            raise ValueError(f"Unsupported report type: {report_type}")
     
-    def _get_series_color(self, metric_type: str) -> str:
+    def optimize_for_rendering(self, data: Dict[str, Any], 
+                              chart_type: str,
+                              max_data_points: int = 1000) -> Dict[str, Any]:
         """
-        Get color for a time series based on metric type.
+        Optimizes data for efficient rendering based on chart type.
         
         Args:
-            metric_type: Type of metric
+            data: Data to optimize
+            chart_type: Type of chart for optimization
+            max_data_points: Maximum number of data points to include
             
         Returns:
-            Color string
+            Dict: Optimized data for rendering
         """
-        color_map = {
-            "integrity": "#3498db",    # Blue
-            "availability": "#2ecc71", # Green
-            "consistency": "#9b59b6",  # Purple
-            "boundary": "#e67e22",     # Orange
-            "composite": "#34495e"     # Dark Blue
+        self.logger.info(f"Optimizing data for {chart_type} rendering")
+        
+        # Validate input data
+        if not data:
+            self.logger.error("Empty data provided for optimization")
+            raise ValueError("Data cannot be empty")
+        
+        # Apply optimization based on chart type
+        if chart_type in ["line", "area"]:
+            return self._optimize_for_time_series(data, max_data_points)
+        elif chart_type in ["bar", "pie"]:
+            return self._optimize_for_categorical(data, max_data_points)
+        elif chart_type == "heatmap":
+            return self._optimize_for_heatmap(data, max_data_points)
+        elif chart_type in ["network", "sankey"]:
+            return self._optimize_for_relational(data, max_data_points)
+        else:
+            self.logger.error(f"Unsupported chart type for optimization: {chart_type}")
+            raise ValueError(f"Unsupported chart type for optimization: {chart_type}")
+    
+    def _apply_contract_tethering(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Applies Codex contract tethering to the data.
+        
+        Args:
+            data: Data to apply tethering to
+            
+        Returns:
+            Dict: Data with contract tethering applied
+        """
+        if not self.contract_sealer:
+            return data
+        
+        # Create a deep copy to avoid modifying the original
+        tethered_data = json.loads(json.dumps(data))
+        
+        # Generate a hash of the data for the seal
+        data_str = json.dumps(data, sort_keys=True)
+        data_hash = hashlib.sha256(data_str.encode()).hexdigest()
+        
+        # Create a contract seal
+        contract_id = self.contract_sealer.create_contract_id("visualization_data")
+        seal = self.contract_sealer.seal_contract(contract_id, data_hash)
+        
+        # Add tethering information
+        tethered_data["codex_tethering"] = {
+            "contract_id": contract_id,
+            "seal": seal,
+            "verification_status": "verified"
         }
         
-        return color_map.get(metric_type, "#95a5a6")  # Default gray
+        return tethered_data
     
-    def generate_heatmap_data(self, surface_data: Dict[str, Any], metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def _transform_for_state_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate heatmap data for trust surface visualization.
+        Transforms data for governance state visualization.
         
         Args:
-            surface_data: Trust surface data
-            metrics: Trust metrics data
+            data: Raw governance state data
             
         Returns:
-            Heatmap data for visualization
+            Dict: Transformed data for state visualization
         """
-        if not surface_data or not metrics:
-            logger.error("Invalid input data for heatmap generation")
-            return {
-                "error": "Invalid input data",
-                "timestamp": datetime.datetime.utcnow().isoformat()
+        # Extract relevant state information
+        transformed = {
+            "visualization_type": "state",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
             }
+        }
+        
+        # Process governance primitives
+        if "primitives" in data:
+            for primitive in data["primitives"]:
+                transformed["data"].append({
+                    "id": primitive.get("id", ""),
+                    "type": primitive.get("type", ""),
+                    "status": primitive.get("status", ""),
+                    "metrics": primitive.get("metrics", {}),
+                    "relationships": primitive.get("relationships", [])
+                })
+        
+        # Process policies
+        if "policies" in data:
+            transformed["policies"] = []
+            for policy in data["policies"]:
+                transformed["policies"].append({
+                    "id": policy.get("id", ""),
+                    "name": policy.get("name", ""),
+                    "status": policy.get("status", ""),
+                    "enforcement_level": policy.get("enforcement_level", ""),
+                    "coverage": policy.get("coverage", 0)
+                })
+        
+        return transformed
+    
+    def _transform_for_metrics_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms data for governance metrics visualization.
+        
+        Args:
+            data: Raw governance metrics data
             
-        surface_id = surface_data.get("surface_id")
-        if not surface_id:
-            logger.error("Missing surface_id in surface data")
-            return {
-                "error": "Missing surface_id",
-                "timestamp": datetime.datetime.utcnow().isoformat()
+        Returns:
+            Dict: Transformed data for metrics visualization
+        """
+        # Extract relevant metrics information
+        transformed = {
+            "visualization_type": "metrics",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
             }
+        }
+        
+        # Process metrics
+        if "metrics" in data:
+            for metric_key, metric_value in data["metrics"].items():
+                transformed["data"].append({
+                    "name": metric_key,
+                    "value": metric_value,
+                    "type": self._infer_metric_type(metric_key, metric_value)
+                })
+        
+        return transformed
+    
+    def _transform_for_health_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms data for governance health visualization.
+        
+        Args:
+            data: Raw governance health data
             
-        try:
-            # Create heatmap data structure
-            heatmap = {
-                "visualization_id": str(uuid.uuid4()),
-                "surface_ids": [surface_id],
-                "view_type": "heatmap",
-                "timestamp": datetime.datetime.utcnow().isoformat(),
-                "contract_version": surface_data.get("contract_version", "v2025.05.19"),
-                "grid_size": {
-                    "width": 10,
-                    "height": 10
-                },
-                "cells": [],
-                "metadata": {
-                    "title": f"Trust Heatmap: {surface_id}",
-                    "description": "Heatmap visualization of trust surface",
-                    "metric_type": "composite"  # Default to composite metric
+        Returns:
+            Dict: Transformed data for health visualization
+        """
+        # Extract relevant health information
+        transformed = {
+            "visualization_type": "health",
+            "data": {
+                "overall_health": data.get("overall_health", 0),
+                "issues": [],
+                "recommendations": []
+            },
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process issues
+        if "issues" in data:
+            for issue in data["issues"]:
+                transformed["data"]["issues"].append({
+                    "id": issue.get("id", ""),
+                    "severity": issue.get("severity", ""),
+                    "description": issue.get("description", ""),
+                    "impact": issue.get("impact", 0)
+                })
+        
+        # Process recommendations
+        if "recommendations" in data:
+            for recommendation in data["recommendations"]:
+                transformed["data"]["recommendations"].append({
+                    "id": recommendation.get("id", ""),
+                    "priority": recommendation.get("priority", ""),
+                    "description": recommendation.get("description", ""),
+                    "benefit": recommendation.get("benefit", 0)
+                })
+        
+        return transformed
+    
+    def _transform_for_combined_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms data for combined governance visualization.
+        
+        Args:
+            data: Raw combined governance data
+            
+        Returns:
+            Dict: Transformed data for combined visualization
+        """
+        # Create a combined visualization with state, metrics, and health
+        transformed = {
+            "visualization_type": "combined",
+            "state": self._transform_for_state_visualization(data).get("data", []),
+            "metrics": self._transform_for_metrics_visualization(data).get("data", []),
+            "health": self._transform_for_health_visualization(data).get("data", {}),
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        return transformed
+    
+    def _transform_for_decay_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms trust metrics for decay visualization.
+        
+        Args:
+            data: Raw trust decay metrics
+            
+        Returns:
+            Dict: Transformed data for decay visualization
+        """
+        # Extract relevant decay information
+        transformed = {
+            "metric_type": "decay",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process decay metrics
+        if "decay_metrics" in data:
+            for component, metrics in data["decay_metrics"].items():
+                transformed["data"].append({
+                    "component": component,
+                    "current_trust": metrics.get("current_trust", 0),
+                    "decay_rate": metrics.get("decay_rate", 0),
+                    "time_to_critical": metrics.get("time_to_critical", 0),
+                    "history": metrics.get("history", [])
+                })
+        
+        return transformed
+    
+    def _transform_for_regeneration_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms trust metrics for regeneration visualization.
+        
+        Args:
+            data: Raw trust regeneration metrics
+            
+        Returns:
+            Dict: Transformed data for regeneration visualization
+        """
+        # Extract relevant regeneration information
+        transformed = {
+            "metric_type": "regeneration",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process regeneration metrics
+        if "regeneration_metrics" in data:
+            for component, metrics in data["regeneration_metrics"].items():
+                transformed["data"].append({
+                    "component": component,
+                    "current_trust": metrics.get("current_trust", 0),
+                    "regeneration_rate": metrics.get("regeneration_rate", 0),
+                    "time_to_full": metrics.get("time_to_full", 0),
+                    "history": metrics.get("history", [])
+                })
+        
+        return transformed
+    
+    def _transform_for_boundary_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms trust metrics for boundary visualization.
+        
+        Args:
+            data: Raw trust boundary metrics
+            
+        Returns:
+            Dict: Transformed data for boundary visualization
+        """
+        # Extract relevant boundary information
+        transformed = {
+            "metric_type": "boundary",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process boundary metrics
+        if "boundary_metrics" in data:
+            for boundary, metrics in data["boundary_metrics"].items():
+                transformed["data"].append({
+                    "boundary": boundary,
+                    "integrity": metrics.get("integrity", 0),
+                    "crossings": metrics.get("crossings", 0),
+                    "violations": metrics.get("violations", 0),
+                    "history": metrics.get("history", [])
+                })
+        
+        return transformed
+    
+    def _transform_for_attestation_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms trust metrics for attestation visualization.
+        
+        Args:
+            data: Raw trust attestation metrics
+            
+        Returns:
+            Dict: Transformed data for attestation visualization
+        """
+        # Extract relevant attestation information
+        transformed = {
+            "metric_type": "attestation",
+            "data": [],
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process attestation metrics
+        if "attestation_metrics" in data:
+            for component, metrics in data["attestation_metrics"].items():
+                transformed["data"].append({
+                    "component": component,
+                    "validity": metrics.get("validity", 0),
+                    "claims": metrics.get("claims", 0),
+                    "verifications": metrics.get("verifications", 0),
+                    "history": metrics.get("history", [])
+                })
+        
+        return transformed
+    
+    def _transform_for_combined_metrics_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms trust metrics for combined metrics visualization.
+        
+        Args:
+            data: Raw combined trust metrics
+            
+        Returns:
+            Dict: Transformed data for combined metrics visualization
+        """
+        # Create a combined metrics visualization
+        transformed = {
+            "metric_type": "combined",
+            "decay": self._transform_for_decay_visualization(data).get("data", []),
+            "regeneration": self._transform_for_regeneration_visualization(data).get("data", []),
+            "boundary": self._transform_for_boundary_visualization(data).get("data", []),
+            "attestation": self._transform_for_attestation_visualization(data).get("data", []),
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        return transformed
+    
+    def _transform_for_compliance_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms health report data for compliance visualization.
+        
+        Args:
+            data: Raw compliance health report data
+            
+        Returns:
+            Dict: Transformed data for compliance visualization
+        """
+        # Extract relevant compliance information
+        transformed = {
+            "report_type": "compliance",
+            "data": {
+                "overall_compliance": data.get("overall_compliance", 0),
+                "components": []
+            },
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process component compliance
+        if "components" in data:
+            for component, compliance in data["components"].items():
+                transformed["data"]["components"].append({
+                    "name": component,
+                    "compliance_level": compliance.get("level", 0),
+                    "violations": compliance.get("violations", 0),
+                    "requirements": compliance.get("requirements", 0),
+                    "details": compliance.get("details", {})
+                })
+        
+        return transformed
+    
+    def _transform_for_attestation_report_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms health report data for attestation report visualization.
+        
+        Args:
+            data: Raw attestation health report data
+            
+        Returns:
+            Dict: Transformed data for attestation report visualization
+        """
+        # Extract relevant attestation report information
+        transformed = {
+            "report_type": "attestation",
+            "data": {
+                "overall_attestation": data.get("overall_attestation", 0),
+                "attestations": []
+            },
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process attestations
+        if "attestations" in data:
+            for attestation in data["attestations"]:
+                transformed["data"]["attestations"].append({
+                    "id": attestation.get("id", ""),
+                    "status": attestation.get("status", ""),
+                    "validity": attestation.get("validity", 0),
+                    "claims": attestation.get("claims", 0),
+                    "details": attestation.get("details", {})
+                })
+        
+        return transformed
+    
+    def _transform_for_boundary_report_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms health report data for boundary report visualization.
+        
+        Args:
+            data: Raw boundary health report data
+            
+        Returns:
+            Dict: Transformed data for boundary report visualization
+        """
+        # Extract relevant boundary report information
+        transformed = {
+            "report_type": "boundary",
+            "data": {
+                "overall_integrity": data.get("overall_integrity", 0),
+                "boundaries": []
+            },
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process boundaries
+        if "boundaries" in data:
+            for boundary in data["boundaries"]:
+                transformed["data"]["boundaries"].append({
+                    "id": boundary.get("id", ""),
+                    "integrity": boundary.get("integrity", 0),
+                    "crossings": boundary.get("crossings", 0),
+                    "violations": boundary.get("violations", 0),
+                    "details": boundary.get("details", {})
+                })
+        
+        return transformed
+    
+    def _transform_for_expansion_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms health report data for expansion visualization.
+        
+        Args:
+            data: Raw expansion health report data
+            
+        Returns:
+            Dict: Transformed data for expansion visualization
+        """
+        # Extract relevant expansion information
+        transformed = {
+            "report_type": "expansion",
+            "data": {
+                "overall_expansion": data.get("overall_expansion", 0),
+                "modules": []
+            },
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        # Process modules
+        if "modules" in data:
+            for module in data["modules"]:
+                transformed["data"]["modules"].append({
+                    "id": module.get("id", ""),
+                    "status": module.get("status", ""),
+                    "compatibility": module.get("compatibility", 0),
+                    "lifecycle_stage": module.get("lifecycle_stage", ""),
+                    "details": module.get("details", {})
+                })
+        
+        return transformed
+    
+    def _transform_for_combined_report_visualization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transforms health report data for combined report visualization.
+        
+        Args:
+            data: Raw combined health report data
+            
+        Returns:
+            Dict: Transformed data for combined report visualization
+        """
+        # Create a combined report visualization
+        transformed = {
+            "report_type": "combined",
+            "compliance": self._transform_for_compliance_visualization(data).get("data", {}),
+            "attestation": self._transform_for_attestation_report_visualization(data).get("data", {}),
+            "boundary": self._transform_for_boundary_report_visualization(data).get("data", {}),
+            "expansion": self._transform_for_expansion_visualization(data).get("data", {}),
+            "metadata": {
+                "timestamp": data.get("timestamp", ""),
+                "version": data.get("version", "1.0.0")
+            }
+        }
+        
+        return transformed
+    
+    def _optimize_for_time_series(self, data: Dict[str, Any], max_points: int) -> Dict[str, Any]:
+        """
+        Optimizes time series data for visualization.
+        
+        Args:
+            data: Time series data to optimize
+            max_points: Maximum number of data points
+            
+        Returns:
+            Dict: Optimized time series data
+        """
+        optimized = {
+            "type": "time_series",
+            "data": data.copy()
+        }
+        
+        # Check if we need to downsample
+        if "data" in data and isinstance(data["data"], list):
+            series_data = data["data"]
+            if len(series_data) > max_points:
+                # Simple downsampling by selecting evenly spaced points
+                step = len(series_data) // max_points
+                optimized["data"]["data"] = series_data[::step]
+                
+                # Ensure we include the last point
+                if optimized["data"]["data"][-1] != series_data[-1]:
+                    optimized["data"]["data"].append(series_data[-1])
+        
+        return optimized
+    
+    def _optimize_for_categorical(self, data: Dict[str, Any], max_points: int) -> Dict[str, Any]:
+        """
+        Optimizes categorical data for visualization.
+        
+        Args:
+            data: Categorical data to optimize
+            max_points: Maximum number of categories
+            
+        Returns:
+            Dict: Optimized categorical data
+        """
+        optimized = {
+            "type": "categorical",
+            "data": data.copy()
+        }
+        
+        # Check if we need to consolidate categories
+        if "data" in data and isinstance(data["data"], list):
+            categories = data["data"]
+            if len(categories) > max_points:
+                # Sort by value (assuming each category has a value)
+                sorted_categories = sorted(categories, key=lambda x: x.get("value", 0), reverse=True)
+                
+                # Keep top categories and consolidate the rest
+                top_categories = sorted_categories[:max_points-1]
+                other_categories = sorted_categories[max_points-1:]
+                
+                # Create "Other" category
+                other_value = sum(cat.get("value", 0) for cat in other_categories)
+                other_category = {
+                    "name": "Other",
+                    "value": other_value
                 }
-            }
-            
-            # Generate cells based on boundaries and nodes
-            boundaries = surface_data.get("boundaries", [])
-            if not boundaries and "boundary_ids" in surface_data:
-                # Create placeholder boundaries if only IDs are provided
-                boundaries = [{"boundary_id": bid} for bid in surface_data.get("boundary_ids", [])]
                 
-            # Create a grid of cells
-            grid_width = heatmap["grid_size"]["width"]
-            grid_height = heatmap["grid_size"]["height"]
-            
-            for x in range(grid_width):
-                for y in range(grid_height):
-                    # Calculate base value from distance to center
-                    center_x = grid_width / 2
-                    center_y = grid_height / 2
-                    distance = math.sqrt((x - center_x)**2 + (y - center_y)**2)
-                    max_distance = math.sqrt(center_x**2 + center_y**2)
-                    base_value = 1.0 - (distance / max_distance)
-                    
-                    # Adjust value based on boundaries
-                    for boundary in boundaries:
-                        trust_level = boundary.get("trust_level", 0.5)
-                        
-                        # Create a hotspot for each boundary
-                        boundary_x = center_x + (center_x * 0.8 * math.cos(boundaries.index(boundary) * 2 * math.pi / len(boundaries)))
-                        boundary_y = center_y + (center_y * 0.8 * math.sin(boundaries.index(boundary) * 2 * math.pi / len(boundaries)))
-                        
-                        boundary_distance = math.sqrt((x - boundary_x)**2 + (y - boundary_y)**2)
-                        boundary_influence = max(0, 1.0 - (boundary_distance / (grid_width * 0.3)))
-                        
-                        # Adjust base value based on boundary influence and trust level
-                        base_value = base_value * (1 - boundary_influence) + (trust_level * boundary_influence)
-                    
-                    # Create cell
-                    cell = {
-                        "x": x,
-                        "y": y,
-                        "value": max(0, min(1, base_value)),
-                        "color": self._get_heatmap_color(base_value)
-                    }
-                    heatmap["cells"].append(cell)
-            
-            logger.info("Generated heatmap data for surface %s with %d cells", 
-                       surface_id, len(heatmap["cells"]))
-            
-            return heatmap
-            
-        except Exception as e:
-            logger.error("Error generating heatmap data: %s", str(e))
-            return {
-                "error": f"Heatmap generation error: {str(e)}",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
+                optimized["data"]["data"] = top_categories + [other_category]
+        
+        return optimized
     
-    def _get_heatmap_color(self, value: float) -> str:
+    def _optimize_for_heatmap(self, data: Dict[str, Any], max_points: int) -> Dict[str, Any]:
         """
-        Get color for heatmap cell based on value.
+        Optimizes heatmap data for visualization.
         
         Args:
-            value: Cell value between 0 and 1
+            data: Heatmap data to optimize
+            max_points: Maximum number of cells
             
         Returns:
-            Color string
+            Dict: Optimized heatmap data
         """
-        # Interpolate between red (low trust) and green (high trust)
-        r = int(255 * (1 - value))
-        g = int(255 * value)
-        b = 0
+        optimized = {
+            "type": "heatmap",
+            "data": data.copy()
+        }
         
-        return f"rgb({r},{g},{b})"
+        # Check if we need to reduce resolution
+        if "data" in data and isinstance(data["data"], list):
+            cells = data["data"]
+            total_cells = len(cells)
+            
+            if total_cells > max_points:
+                # Determine new grid dimensions
+                old_width = data.get("width", int(total_cells ** 0.5))
+                old_height = data.get("height", total_cells // old_width)
+                
+                # Calculate scaling factor
+                scale_factor = (max_points / total_cells) ** 0.5
+                new_width = max(1, int(old_width * scale_factor))
+                new_height = max(1, int(old_height * scale_factor))
+                
+                # Create new grid with reduced resolution
+                new_cells = []
+                for y in range(new_height):
+                    for x in range(new_width):
+                        # Map to original grid
+                        x1 = int(x * old_width / new_width)
+                        y1 = int(y * old_height / new_height)
+                        x2 = int((x + 1) * old_width / new_width)
+                        y2 = int((y + 1) * old_height / new_height)
+                        
+                        # Aggregate values in this region
+                        region_cells = [
+                            cells[i * old_width + j]
+                            for i in range(y1, min(y2, old_height))
+                            for j in range(x1, min(x2, old_width))
+                            if i * old_width + j < total_cells
+                        ]
+                        
+                        if region_cells:
+                            # Average the values
+                            avg_value = sum(cell.get("value", 0) for cell in region_cells) / len(region_cells)
+                            new_cells.append({
+                                "x": x,
+                                "y": y,
+                                "value": avg_value
+                            })
+                
+                optimized["data"]["data"] = new_cells
+                optimized["data"]["width"] = new_width
+                optimized["data"]["height"] = new_height
+        
+        return optimized
     
-    def merge_visualizations(self, visualization_ids: List[str]) -> Dict[str, Any]:
+    def _optimize_for_relational(self, data: Dict[str, Any], max_points: int) -> Dict[str, Any]:
         """
-        Merge multiple visualizations into a single visualization.
+        Optimizes relational data for visualization.
         
         Args:
-            visualization_ids: List of visualization IDs to merge
+            data: Relational data to optimize
+            max_points: Maximum number of nodes
             
         Returns:
-            Merged visualization data
+            Dict: Optimized relational data
         """
-        if not visualization_ids:
-            logger.error("No visualization IDs provided for merging")
-            return {
-                "error": "No visualization IDs provided",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
-            
-        # Get visualizations from cache
-        visualizations = []
-        for viz_id in visualization_ids:
-            for surface_id, viz in self.visualization_cache.items():
-                if viz.get("visualization_id") == viz_id:
-                    visualizations.append(viz)
-                    break
+        optimized = {
+            "type": "relational",
+            "data": data.copy()
+        }
         
-        if not visualizations:
-            logger.error("No visualizations found for the provided IDs")
-            return {
-                "error": "No visualizations found",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
+        # Check if we need to reduce nodes
+        if "nodes" in data and isinstance(data["nodes"], list):
+            nodes = data["nodes"]
+            edges = data.get("edges", [])
             
-        try:
-            # Create merged visualization
-            merged = {
-                "visualization_id": str(uuid.uuid4()),
-                "surface_ids": [],
-                "view_type": "network",  # Assume network visualization for now
-                "timestamp": datetime.datetime.utcnow().isoformat(),
-                "contract_version": visualizations[0].get("contract_version", "v2025.05.19"),
-                "nodes": [],
-                "edges": [],
-                "metadata": {
-                    "title": "Merged Trust Surface Visualization",
-                    "description": f"Merged visualization of {len(visualizations)} trust surfaces",
-                    "time_range": {
-                        "start": datetime.datetime.utcnow().isoformat(),
-                        "end": datetime.datetime.utcnow().isoformat()
-                    },
-                    "color_map": self.color_map
-                }
-            }
-            
-            # Track node IDs to avoid duplicates
-            node_ids = set()
-            edge_ids = set()
-            
-            # Merge visualizations
-            for viz in visualizations:
-                # Add surface ID
-                if "surface_ids" in viz:
-                    merged["surface_ids"].extend(viz["surface_ids"])
+            if len(nodes) > max_points:
+                # Sort nodes by importance (assuming each node has a weight or degree)
+                node_importance = {}
+                for node in nodes:
+                    node_id = node.get("id", "")
+                    # Count connections as a measure of importance
+                    connections = sum(1 for edge in edges if edge.get("source") == node_id or edge.get("target") == node_id)
+                    node_importance[node_id] = connections
                 
-                # Add nodes
-                for node in viz.get("nodes", []):
-                    if node["id"] not in node_ids:
-                        merged["nodes"].append(node)
-                        node_ids.add(node["id"])
+                # Sort nodes by importance
+                sorted_nodes = sorted(nodes, key=lambda x: node_importance.get(x.get("id", ""), 0), reverse=True)
                 
-                # Add edges
-                for edge in viz.get("edges", []):
-                    if edge["id"] not in edge_ids:
-                        merged["edges"].append(edge)
-                        edge_ids.add(edge["id"])
+                # Keep top nodes
+                top_nodes = sorted_nodes[:max_points]
+                top_node_ids = {node.get("id", "") for node in top_nodes}
+                
+                # Filter edges to only include connections between top nodes
+                filtered_edges = [
+                    edge for edge in edges
+                    if edge.get("source", "") in top_node_ids and edge.get("target", "") in top_node_ids
+                ]
+                
+                optimized["data"]["nodes"] = top_nodes
+                optimized["data"]["edges"] = filtered_edges
+        
+        return optimized
+    
+    def _infer_metric_type(self, metric_name: str, metric_value: Any) -> str:
+        """
+        Infers the type of a metric based on its name and value.
+        
+        Args:
+            metric_name: Name of the metric
+            metric_value: Value of the metric
             
-            # Remove duplicates from surface_ids
-            merged["surface_ids"] = list(set(merged["surface_ids"]))
-            
-            logger.info("Merged %d visualizations with %d nodes and %d edges", 
-                       len(visualizations), len(merged["nodes"]), len(merged["edges"]))
-            
-            return merged
-            
-        except Exception as e:
-            logger.error("Error merging visualizations: %s", str(e))
-            return {
-                "error": f"Merge error: {str(e)}",
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
+        Returns:
+            str: Inferred metric type
+        """
+        # Check value type
+        if isinstance(metric_value, bool):
+            return "boolean"
+        elif isinstance(metric_value, (int, float)):
+            # Check for percentage
+            if "percent" in metric_name.lower() or "ratio" in metric_name.lower():
+                return "percentage"
+            # Check for time
+            elif "time" in metric_name.lower() or "duration" in metric_name.lower():
+                return "time"
+            # Default to number
+            return "number"
+        elif isinstance(metric_value, str):
+            return "string"
+        elif isinstance(metric_value, list):
+            return "array"
+        elif isinstance(metric_value, dict):
+            return "object"
+        else:
+            return "unknown"
