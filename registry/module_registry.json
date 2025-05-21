@@ -1,6 +1,6 @@
 {
-  "registry_version": "v2025.05.20",
-  "last_updated": "2025-05-20",
+  "registry_version": "v2025.05.21",
+  "last_updated": "2025-05-21",
   "modules": {
     "core": {
       "merkle": {
@@ -148,6 +148,34 @@
           "dependencies": ["contract_sealer.py", "evolution_protocol.py", "src/core/trust/mutation_detector.py"],
           "canonical_path": "src/core/governance/codex_lock.py",
           "codex_contract_version": "v2025.05.20"
+        },
+        "module_extension_registry.py": {
+          "purpose": "Central registry for managing governance module extensions and their metadata",
+          "phase": "5.12",
+          "dependencies": ["governance_primitive_manager.py", "seal_verification.py", "schema_validator.py"],
+          "canonical_path": "src/core/governance/module_extension_registry.py",
+          "codex_contract_version": "v2025.05.21"
+        },
+        "compatibility_verification_engine.py": {
+          "purpose": "Verifies that new governance modules are compatible with existing modules and core governance principles",
+          "phase": "5.12",
+          "dependencies": ["module_extension_registry.py", "governance_primitive_manager.py", "trust_metrics_calculator.py", "seal_verification.py"],
+          "canonical_path": "src/core/governance/compatibility_verification_engine.py",
+          "codex_contract_version": "v2025.05.21"
+        },
+        "module_lifecycle_manager.py": {
+          "purpose": "Manages the lifecycle of governance extension modules from installation to retirement",
+          "phase": "5.12",
+          "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "governance_audit_trail.py", "mutation_detector.py"],
+          "canonical_path": "src/core/governance/module_lifecycle_manager.py",
+          "codex_contract_version": "v2025.05.21"
+        },
+        "extension_point_framework.py": {
+          "purpose": "Provides a framework for defining and implementing extension points in the governance system",
+          "phase": "5.12",
+          "dependencies": ["module_extension_registry.py", "governance_primitive_manager.py", "attestation_service.py"],
+          "canonical_path": "src/core/governance/extension_point_framework.py",
+          "codex_contract_version": "v2025.05.21"
         }
       },
       "trust": {
@@ -224,6 +252,20 @@
         "dependencies": ["src/core/governance/codex_lock.py"],
         "canonical_path": "src/integration/codex_lock_api.py",
         "codex_contract_version": "v2025.05.20"
+      },
+      "governance_extension_api.py": {
+        "purpose": "Provides API endpoints for managing governance extensions",
+        "phase": "5.12",
+        "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "module_lifecycle_manager.py", "governance_integration_service.py"],
+        "canonical_path": "src/integration/governance_extension_api.py",
+        "codex_contract_version": "v2025.05.21"
+      },
+      "extension_visualization.py": {
+        "purpose": "Integrates extension data with the visualization framework",
+        "phase": "5.12",
+        "dependencies": ["module_extension_registry.py", "compatibility_verification_engine.py", "governance_visualization.py"],
+        "canonical_path": "src/integration/extension_visualization.py",
+        "codex_contract_version": "v2025.05.21"
       }
     },
     "verification": {
@@ -374,8 +416,22 @@
           "trend_charts.py": {
             "purpose": "Displays trust trend charts in the dashboard",
             "phase": "5.7",
-            "dependencies": ["trust_surface_dashboard.py", "trust_metrics_aggregator.py"],
+            "dependencies": ["trust_surface_dashboard.py", "trust_surface_analytics.py"],
             "canonical_path": "src/ui/trust_surface_dashboard/components/trend_charts.py"
+          },
+          "extension_management_dashboard.py": {
+            "purpose": "Provides a dashboard for viewing and managing governance extensions",
+            "phase": "5.12",
+            "dependencies": ["governance_dashboard.py", "extension_visualization.py"],
+            "canonical_path": "src/ui/trust_surface_dashboard/components/extension_management_dashboard.py",
+            "codex_contract_version": "v2025.05.21"
+          },
+          "compatibility_explorer.py": {
+            "purpose": "Provides an interface for exploring compatibility between governance modules",
+            "phase": "5.12",
+            "dependencies": ["decision_explorer.py", "extension_visualization.py"],
+            "canonical_path": "src/ui/trust_surface_dashboard/components/compatibility_explorer.py",
+            "codex_contract_version": "v2025.05.21"
           }
         }
       }
