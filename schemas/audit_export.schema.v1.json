@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Export Schema",
+  "description": "Schema for exporting audit logs and trust events",
+  "type": "object",
+  "required": ["export_id", "timestamp", "parameters"],
+  "properties": {
+    "export_id": {
+      "type": "string",
+      "description": "Unique identifier for the export",
+      "pattern": "^AE-[0-9]{8}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Timestamp of the export request",
+      "format": "date-time"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Export parameters",
+      "required": ["start_time", "end_time", "format"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Filter by agent ID"
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Filter by task ID"
+        },
+        "start_time": {
+          "type": "string",
+          "description": "Start time for the export range",
+          "format": "date-time"
+        },
+        "end_time": {
+          "type": "string",
+          "description": "End time for the export range",
+          "format": "date-time"
+        },
+        "format": {
+          "type": "string",
+          "description": "Export format",
+          "enum": ["json", "csv", "pdf"]
+        },
+        "include_governance": {
+          "type": "boolean",
+          "description": "Whether to include governance events",
+          "default": true
+        },
+        "include_telemetry": {
+          "type": "boolean",
+          "description": "Whether to include telemetry data",
+          "default": false
+        },
+        "include_overrides": {
+          "type": "boolean",
+          "description": "Whether to include override events",
+          "default": true
+        },
+        "template_id": {
+          "type": "string",
+          "description": "ID of the compliance template to use"
+        }
+      }
+    },
+    "requester": {
+      "type": "object",
+      "description": "Information about the requester",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of the requester"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the requester"
+        },
+        "ip_address": {
+          "type": "string",
+          "description": "IP address of the requester",
+          "format": "ipv4"
+        }
+      }
+    },
+    "compliance_context": {
+      "type": "object",
+      "description": "Compliance context for the export",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "description": "Compliance framework",
+          "enum": ["SOC2", "ISO27001", "GDPR", "HIPAA", "custom"]
+        },
+        "purpose": {
+          "type": "string",
+          "description": "Purpose of the export"
+        },
+        "data_minimization": {
+          "type": "boolean",
+          "description": "Whether data minimization is applied",
+          "default": true
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the export"
+    }
+  }
+}
