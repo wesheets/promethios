@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Override Request Schema",
+  "description": "Schema for governance override requests in the Promethios system",
+  "type": "object",
+  "required": ["request_id", "timestamp", "requestor", "decision_id", "original_decision", "requested_decision", "justification", "status"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "description": "Unique identifier for the override request",
+      "pattern": "^ovr-[a-zA-Z0-9]{8,}$",
+      "examples": ["ovr-12345abc"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the request was created",
+      "examples": ["2025-05-22T10:30:00Z"]
+    },
+    "requestor": {
+      "type": "string",
+      "description": "ID of the user or system requesting the override",
+      "examples": ["user-789"]
+    },
+    "decision_id": {
+      "type": "string",
+      "description": "ID of the decision to be overridden",
+      "examples": ["dec-456789"]
+    },
+    "original_decision": {
+      "type": "string",
+      "description": "Original decision from policy evaluation",
+      "enum": ["allow", "deny", "not_applicable", "error"],
+      "examples": ["deny"]
+    },
+    "requested_decision": {
+      "type": "string",
+      "description": "Requested decision override",
+      "enum": ["allow", "deny"],
+      "examples": ["allow"]
+    },
+    "justification": {
+      "type": "string",
+      "description": "Justification for the override request",
+      "minLength": 10,
+      "examples": ["Business-critical access needed for emergency system maintenance"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the override request",
+      "enum": ["pending", "approved", "rejected", "expired", "cancelled"],
+      "examples": ["pending"]
+    },
+    "reviewer_id": {
+      "type": "string",
+      "description": "ID of the user or system that reviewed the request",
+      "examples": ["user-123"]
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Notes from the reviewer",
+      "examples": ["Approved for emergency maintenance window only"]
+    },
+    "review_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the request was reviewed",
+      "examples": ["2025-05-22T11:15:00Z"]
+    },
+    "expiration_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the override expires",
+      "examples": ["2025-05-23T10:30:00Z"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the override request",
+      "additionalProperties": true,
+      "examples": [
+        {
+          "priority": "high",
+          "tags": ["emergency", "maintenance"],
+          "affected_systems": ["database", "authentication"],
+          "ticket_id": "INC-12345"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}
