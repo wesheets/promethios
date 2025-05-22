@@ -1,0 +1,1177 @@
+openapi: 3.0.0
+info:
+  title: Promethios Policy API
+  description: |
+    The Policy API provides access to the governance policy system of Promethios.
+    It allows creation, retrieval, and management of governance policies and rules.
+  version: 1.0.0
+  contact:
+    name: Promethios Support
+    url: https://promethios.ai/support
+    email: support@promethios.ai
+  license:
+    name: Proprietary
+    url: https://promethios.ai/license
+
+servers:
+  - url: https://api.promethios.ai/v1
+    description: Production API server
+  - url: https://staging-api.promethios.ai/v1
+    description: Staging API server
+  - url: https://dev-api.promethios.ai/v1
+    description: Development API server
+
+tags:
+  - name: Policy
+    description: Operations related to governance policies
+  - name: Rules
+    description: Operations for managing policy rules
+  - name: Versions
+    description: Operations for managing policy versions
+  - name: Evaluation
+    description: Operations for policy evaluation
+
+paths:
+  /policy:
+    get:
+      summary: List policies
+      description: Retrieves a list of governance policies based on query parameters
+      operationId: listPolicies
+      tags:
+        - Policy
+      parameters:
+        - name: status
+          in: query
+          description: Filter by policy status
+          schema:
+            type: string
+            enum: [draft, active, deprecated, archived]
+        - name: category
+          in: query
+          description: Filter by policy category
+          schema:
+            type: string
+        - name: owner
+          in: query
+          description: Filter by policy owner
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of policies to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of policies to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PolicySummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:read]
+    
+    post:
+      summary: Create a policy
+      description: Creates a new governance policy
+      operationId: createPolicy
+      tags:
+        - Policy
+      requestBody:
+        description: Policy to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyCreate'
+      responses:
+        '201':
+          description: Policy created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Conflict - policy already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:write]
+
+  /policy/{policy_id}:
+    get:
+      summary: Get a policy
+      description: Retrieves a specific governance policy by ID
+      operationId: getPolicy
+      tags:
+        - Policy
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          description: Specific version to retrieve (defaults to latest)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:read]
+    
+    put:
+      summary: Update a policy
+      description: Updates an existing governance policy
+      operationId: updatePolicy
+      tags:
+        - Policy
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Updated policy
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyUpdate'
+      responses:
+        '200':
+          description: Policy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:write]
+    
+    delete:
+      summary: Delete a policy
+      description: Deletes a specific governance policy by ID
+      operationId: deletePolicy
+      tags:
+        - Policy
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Policy deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:delete]
+
+  /policy/{policy_id}/rules:
+    get:
+      summary: List policy rules
+      description: Retrieves all rules for a specific policy
+      operationId: listPolicyRules
+      tags:
+        - Policy
+        - Rules
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          description: Specific version to retrieve rules for (defaults to latest)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rules:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PolicyRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:read]
+    
+    post:
+      summary: Add a rule to a policy
+      description: Adds a new rule to an existing policy
+      operationId: addPolicyRule
+      tags:
+        - Policy
+        - Rules
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Rule to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyRuleCreate'
+      responses:
+        '201':
+          description: Rule added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:write]
+
+  /policy/{policy_id}/rules/{rule_id}:
+    get:
+      summary: Get a policy rule
+      description: Retrieves a specific rule from a policy
+      operationId: getPolicyRule
+      tags:
+        - Policy
+        - Rules
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+        - name: rule_id
+          in: path
+          description: Unique identifier of the rule
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          description: Specific version to retrieve the rule from (defaults to latest)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:read]
+    
+    put:
+      summary: Update a policy rule
+      description: Updates a specific rule in a policy
+      operationId: updatePolicyRule
+      tags:
+        - Policy
+        - Rules
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+        - name: rule_id
+          in: path
+          description: Unique identifier of the rule
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Updated rule
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyRuleUpdate'
+      responses:
+        '200':
+          description: Rule updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:write]
+    
+    delete:
+      summary: Delete a policy rule
+      description: Deletes a specific rule from a policy
+      operationId: deletePolicyRule
+      tags:
+        - Policy
+        - Rules
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+        - name: rule_id
+          in: path
+          description: Unique identifier of the rule
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Rule deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:write]
+
+  /policy/{policy_id}/versions:
+    get:
+      summary: List policy versions
+      description: Retrieves all versions of a specific policy
+      operationId: listPolicyVersions
+      tags:
+        - Policy
+        - Versions
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PolicyVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:read]
+
+  /policy/{policy_id}/activate:
+    post:
+      summary: Activate a policy
+      description: Activates a policy, making it available for enforcement
+      operationId: activatePolicy
+      tags:
+        - Policy
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Activation parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version:
+                  type: string
+                  description: Specific version to activate (defaults to latest)
+                  example: "1.0.0"
+                notes:
+                  type: string
+                  description: Activation notes
+                  example: "Activating for production use"
+      responses:
+        '200':
+          description: Policy activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:activate]
+
+  /policy/{policy_id}/deprecate:
+    post:
+      summary: Deprecate a policy
+      description: Deprecates a policy, marking it for future removal
+      operationId: deprecatePolicy
+      tags:
+        - Policy
+      parameters:
+        - name: policy_id
+          in: path
+          description: Unique identifier of the policy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Deprecation parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for deprecation
+                  example: "Superseded by new policy"
+                replacement_policy_id:
+                  type: string
+                  description: ID of replacement policy (if any)
+                  example: "pol-5678"
+      responses:
+        '200':
+          description: Policy deprecated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:deprecate]
+
+  /policy/evaluate:
+    post:
+      summary: Evaluate policies
+      description: Evaluates one or more policies against a context
+      operationId: evaluatePolicies
+      tags:
+        - Policy
+        - Evaluation
+      requestBody:
+        description: Evaluation request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyEvaluationRequest'
+      responses:
+        '200':
+          description: Successful evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyEvaluationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - ApiKeyAuth: []
+        - OAuth2: [policy:evaluate]
+
+components:
+  schemas:
+    PolicySummary:
+      type: object
+      required:
+        - policy_id
+        - name
+        - version
+        - status
+      properties:
+        policy_id:
+          type: string
+          description: Unique identifier for the policy
+          example: "pol-1234"
+        name:
+          type: string
+          description: Name of the policy
+          example: "Data Access Policy"
+        version:
+          type: string
+          description: Current version of the policy
+          example: "1.0.0"
+        status:
+          type: string
+          description: Status of the policy
+          enum: [draft, active, deprecated, archived]
+          example: "active"
+        category:
+          type: string
+          description: Category of the policy
+          example: "data-governance"
+        description:
+          type: string
+          description: Brief description of the policy
+          example: "Controls access to sensitive data"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the policy was created
+          example: "2025-05-01T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the policy was last updated
+          example: "2025-05-15T14:30:00Z"
+
+    Policy:
+      type: object
+      required:
+        - policy_id
+        - name
+        - version
+        - status
+        - rules
+      properties:
+        policy_id:
+          type: string
+          description: Unique identifier for the policy
+          example: "pol-1234"
+        name:
+          type: string
+          description: Name of the policy
+          example: "Data Access Policy"
+        version:
+          type: string
+          description: Current version of the policy
+          example: "1.0.0"
+        status:
+          type: string
+          description: Status of the policy
+          enum: [draft, active, deprecated, archived]
+          example: "active"
+        category:
+          type: string
+          description: Category of the policy
+          example: "data-governance"
+        description:
+          type: string
+          description: Detailed description of the policy
+          example: "This policy controls access to sensitive data based on user roles and data classification."
+        rules:
+          type: array
+          description: Rules that make up the policy
+          items:
+            $ref: '#/components/schemas/PolicyRule'
+        metadata:
+          type: object
+          description: Additional metadata for the policy
+          example:
+            owner: "Security Team"
+            compliance_mappings:
+              SOC2: ["CC1.1", "CC5.2"]
+              GDPR: ["GDPR-5", "GDPR-25"]
+            tags: ["data-access", "security"]
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the policy was created
+          example: "2025-05-01T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the policy was last updated
+          example: "2025-05-15T14:30:00Z"
+        created_by:
+          type: string
+          description: ID of the user or system that created the policy
+          example: "user-456"
+        updated_by:
+          type: string
+          description: ID of the user or system that last updated the policy
+          example: "user-789"
+
+    PolicyCreate:
+      type: object
+      required:
+        - name
+        - rules
+      properties:
+        name:
+          type: string
+          description: Name of the policy
+          example: "Data Access Policy"
+        category:
+          type: string
+          description: Category of the policy
+          example: "data-governance"
+        description:
+          type: string
+          description: Detailed description of the policy
+          example: "This policy controls access to sensitive data based on user roles and data classification."
+        rules:
+          type: array
+          description: Rules that make up the policy
+          items:
+            $ref: '#/components/schemas/PolicyRuleCreate'
+        metadata:
+          type: object
+          description: Additional metadata for the policy
+          example:
+            owner: "Security Team"
+            compliance_mappings:
+              SOC2: ["CC1.1", "CC5.2"]
+              GDPR: ["GDPR-5", "GDPR-25"]
+            tags: ["data-access", "security"]
+
+    PolicyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated name of the policy
+          example: "Enhanced Data Access Policy"
+        category:
+          type: string
+          description: Updated category of the policy
+          example: "data-governance"
+        description:
+          type: string
+          description: Updated description of the policy
+          example: "This policy controls access to sensitive data based on user roles, data classification, and access patterns."
+        metadata:
+          type: object
+          description: Updated metadata for the policy
+          example:
+            owner: "Security Team"
+            compliance_mappings:
+              SOC2: ["CC1.1", "CC5.2", "CC7.1"]
+              GDPR: ["GDPR-5", "GDPR-25"]
+            tags: ["data-access", "security", "compliance"]
+
+    PolicyRule:
+      type: object
+      required:
+        - rule_id
+        - condition
+        - action
+      properties:
+        rule_id:
+          type: string
+          description: Unique identifier for the rule
+          example: "rule-1"
+        name:
+          type: string
+          description: Name of the rule
+          example: "Admin Access Rule"
+        description:
+          type: string
+          description: Description of the rule
+          example: "Allows admin users full access to data"
+        condition:
+          type: string
+          description: Condition expression for the rule
+          example: "user.role == 'admin'"
+        action:
+          type: string
+          description: Action to take when condition is met
+          enum: [allow, deny, log, alert, escalate]
+          example: "allow"
+        priority:
+          type: integer
+          description: Priority of the rule (lower numbers have higher priority)
+          minimum: 1
+          example: 10
+        metadata:
+          type: object
+          description: Additional metadata for the rule
+          example:
+            rationale: "Administrators need full access to manage the system"
+            tags: ["admin", "full-access"]
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the rule was created
+          example: "2025-05-01T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the rule was last updated
+          example: "2025-05-15T14:30:00Z"
+
+    PolicyRuleCreate:
+      type: object
+      required:
+        - condition
+        - action
+      properties:
+        name:
+          type: string
+          description: Name of the rule
+          example: "Admin Access Rule"
+        description:
+          type: string
+          description: Description of the rule
+          example: "Allows admin users full access to data"
+        condition:
+          type: string
+          description: Condition expression for the rule
+          example: "user.role == 'admin'"
+        action:
+          type: string
+          description: Action to take when condition is met
+          enum: [allow, deny, log, alert, escalate]
+          example: "allow"
+        priority:
+          type: integer
+          description: Priority of the rule (lower numbers have higher priority)
+          minimum: 1
+          example: 10
+        metadata:
+          type: object
+          description: Additional metadata for the rule
+          example:
+            rationale: "Administrators need full access to manage the system"
+            tags: ["admin", "full-access"]
+
+    PolicyRuleUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated name of the rule
+          example: "Admin Access Rule"
+        description:
+          type: string
+          description: Updated description of the rule
+          example: "Allows admin users full access to data with audit logging"
+        condition:
+          type: string
+          description: Updated condition expression for the rule
+          example: "user.role == 'admin' && user.authenticated == true"
+        action:
+          type: string
+          description: Updated action to take when condition is met
+          enum: [allow, deny, log, alert, escalate]
+          example: "allow"
+        priority:
+          type: integer
+          description: Updated priority of the rule
+          minimum: 1
+          example: 5
+        metadata:
+          type: object
+          description: Updated metadata for the rule
+          example:
+            rationale: "Administrators need full access to manage the system, but must be authenticated"
+            tags: ["admin", "full-access", "authenticated"]
+
+    PolicyVersion:
+      type: object
+      required:
+        - version
+        - status
+        - created_at
+      properties:
+        version:
+          type: string
+          description: Version identifier
+          example: "1.0.0"
+        status:
+          type: string
+          description: Status of this version
+          enum: [draft, active, deprecated, archived]
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when this version was created
+          example: "2025-05-01T09:00:00Z"
+        created_by:
+          type: string
+          description: ID of the user or system that created this version
+          example: "user-456"
+        notes:
+          type: string
+          description: Notes about this version
+          example: "Initial release of the policy"
+
+    PolicyEvaluationRequest:
+      type: object
+      required:
+        - context
+      properties:
+        policy_ids:
+          type: array
+          description: IDs of policies to evaluate (if not specified, all active policies are evaluated)
+          items:
+            type: string
+          example: ["pol-1234", "pol-5678"]
+        context:
+          type: object
+          description: Context for policy evaluation
+          example:
+            user:
+              id: "user-123"
+              role: "admin"
+              department: "IT"
+              authenticated: true
+            resource:
+              id: "data-456"
+              type: "customer-data"
+              classification: "sensitive"
+            action:
+              operation: "read"
+              time: "2025-05-22T10:30:00Z"
+              source_ip: "192.168.1.100"
+        trace:
+          type: boolean
+          description: Whether to include detailed evaluation traces
+          default: false
+          example: true
+
+    PolicyEvaluationResponse:
+      type: object
+      required:
+        - decision
+        - evaluated_policies
+      properties:
+        decision:
+          type: string
+          description: Overall decision
+          enum: [allow, deny, error]
+          example: "allow"
+        reason:
+          type: string
+          description: Reason for the decision
+          example: "Admin access rule matched"
+        evaluated_policies:
+          type: array
+          description: Results for each evaluated policy
+          items:
+            type: object
+            properties:
+              policy_id:
+                type: string
+                description: ID of the policy
+                example: "pol-1234"
+              policy_name:
+                type: string
+                description: Name of the policy
+                example: "Data Access Policy"
+              version:
+                type: string
+                description: Version of the policy
+                example: "1.0.0"
+              decision:
+                type: string
+                description: Decision for this policy
+                enum: [allow, deny, not_applicable, error]
+                example: "allow"
+              matched_rules:
+                type: array
+                description: Rules that matched during evaluation
+                items:
+                  type: object
+                  properties:
+                    rule_id:
+                      type: string
+                      description: ID of the rule
+                      example: "rule-1"
+                    action:
+                      type: string
+                      description: Action from the rule
+                      example: "allow"
+        trace:
+          type: array
+          description: Detailed evaluation traces (if requested)
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                description: Timestamp of the trace entry
+                example: "2025-05-22T10:30:01Z"
+              policy_id:
+                type: string
+                description: ID of the policy being evaluated
+                example: "pol-1234"
+              rule_id:
+                type: string
+                description: ID of the rule being evaluated
+                example: "rule-1"
+              condition:
+                type: string
+                description: Condition being evaluated
+                example: "user.role == 'admin'"
+              result:
+                type: boolean
+                description: Result of the condition evaluation
+                example: true
+              context_values:
+                type: object
+                description: Relevant context values used in evaluation
+                example:
+                  "user.role": "admin"
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+          example: 42
+        limit:
+          type: integer
+          description: Maximum number of items returned
+          example: 20
+        offset:
+          type: integer
+          description: Number of items skipped
+          example: 0
+        has_more:
+          type: boolean
+          description: Whether there are more items
+          example: true
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: "invalid_request"
+        message:
+          type: string
+          description: Error message
+          example: "Invalid request parameters"
+        details:
+          type: object
+          description: Additional error details
+          example:
+            field: "condition"
+            reason: "Invalid syntax"
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    
+    OAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.promethios.ai/oauth/token
+          scopes:
+            policy:read: Read access to policies
+            policy:write: Write access to policies
+            policy:delete: Delete access to policies
+            policy:activate: Ability to activate policies
+            policy:deprecate: Ability to deprecate policies
+            policy:evaluate: Ability to evaluate policies

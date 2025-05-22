@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Compliance Mapping Schema",
+  "description": "Schema for compliance mappings in the Promethios governance system",
+  "type": "object",
+  "required": ["mapping_id", "standard", "version", "mappings"],
+  "properties": {
+    "mapping_id": {
+      "type": "string",
+      "description": "Unique identifier for the compliance mapping",
+      "pattern": "^cmp-[a-zA-Z0-9]{8,}$",
+      "examples": ["cmp-soc2v1"]
+    },
+    "standard": {
+      "type": "string",
+      "description": "Compliance standard name",
+      "examples": ["SOC2", "GDPR", "HIPAA", "ISO27001"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the compliance standard",
+      "examples": ["2017", "2016/679", "2013"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the compliance standard",
+      "examples": ["System and Organization Controls 2 for Service Organizations"]
+    },
+    "mappings": {
+      "type": "array",
+      "description": "List of compliance control mappings",
+      "items": {
+        "$ref": "#/definitions/ControlMapping"
+      },
+      "minItems": 1
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the compliance mapping",
+      "additionalProperties": true,
+      "examples": [
+        {
+          "owner": "Compliance Team",
+          "last_review_date": "2025-03-15",
+          "next_review_date": "2025-09-15",
+          "regulatory_region": ["US", "EU"]
+        }
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the mapping was created",
+      "examples": ["2025-01-15T09:00:00Z"]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the mapping was last updated",
+      "examples": ["2025-03-15T14:30:00Z"]
+    },
+    "created_by": {
+      "type": "string",
+      "description": "ID of the user or system that created the mapping",
+      "examples": ["user-456"]
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "ID of the user or system that last updated the mapping",
+      "examples": ["user-789"]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "ControlMapping": {
+      "type": "object",
+      "required": ["control_id", "control_name", "promethios_components"],
+      "properties": {
+        "control_id": {
+          "type": "string",
+          "description": "Identifier of the compliance control",
+          "examples": ["CC1.1", "GDPR-5", "164.308(a)(1)(i)"]
+        },
+        "control_name": {
+          "type": "string",
+          "description": "Name of the compliance control",
+          "examples": ["Control Environment", "Data Protection by Design", "Security Management Process"]
+        },
+        "control_description": {
+          "type": "string",
+          "description": "Description of the compliance control",
+          "examples": ["The entity demonstrates a commitment to integrity and ethical values."]
+        },
+        "promethios_components": {
+          "type": "array",
+          "description": "Promethios components that implement this control",
+          "items": {
+            "$ref": "#/definitions/ComponentMapping"
+          },
+          "minItems": 1
+        },
+        "evidence_requirements": {
+          "type": "array",
+          "description": "Evidence required to demonstrate compliance",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "Policy documentation",
+              "Audit logs",
+              "Configuration settings"
+            ]
+          ]
+        },
+        "risk_level": {
+          "type": "string",
+          "description": "Risk level if control is not implemented",
+          "enum": ["low", "medium", "high", "critical"],
+          "examples": ["high"]
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about this control mapping",
+          "examples": ["Implementation requires both technical controls and procedural documentation."]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ComponentMapping": {
+      "type": "object",
+      "required": ["component_type", "component_id"],
+      "properties": {
+        "component_type": {
+          "type": "string",
+          "description": "Type of Promethios component",
+          "enum": ["policy", "rule", "api", "feature", "process", "documentation"],
+          "examples": ["policy"]
+        },
+        "component_id": {
+          "type": "string",
+          "description": "Identifier of the Promethios component",
+          "examples": ["pol-1234"]
+        },
+        "component_name": {
+          "type": "string",
+          "description": "Name of the Promethios component",
+          "examples": ["Data Access Policy"]
+        },
+        "implementation_details": {
+          "type": "string",
+          "description": "Details of how this component implements the control",
+          "examples": ["Enforces data access restrictions based on user roles and data classification."]
+        },
+        "coverage_percentage": {
+          "type": "number",
+          "description": "Percentage of the control covered by this component",
+          "minimum": 0,
+          "maximum": 100,
+          "examples": [75]
+        },
+        "verification_method": {
+          "type": "string",
+          "description": "Method to verify this component's compliance",
+          "examples": ["Automated testing", "Manual review", "Audit log analysis"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

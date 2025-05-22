@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Memory Record Schema",
+  "description": "Schema for memory records in the Promethios governance system",
+  "type": "object",
+  "required": ["record_id", "timestamp", "source", "record_type", "content"],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "description": "Unique identifier for the memory record",
+      "pattern": "^mem-[a-zA-Z0-9]{8,}$",
+      "examples": ["mem-12345abc"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the record was created",
+      "examples": ["2025-05-22T10:30:00Z"]
+    },
+    "source": {
+      "type": "string",
+      "description": "Source system that created the record",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["governance-engine"]
+    },
+    "record_type": {
+      "type": "string",
+      "description": "Type of memory record",
+      "enum": ["decision", "event", "policy", "reflection"],
+      "examples": ["decision"]
+    },
+    "content": {
+      "type": "object",
+      "description": "Content of the memory record",
+      "additionalProperties": true,
+      "examples": [
+        {
+          "decision_id": "dec-6789",
+          "policy_id": "pol-1234",
+          "action": "approve"
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the record",
+      "additionalProperties": true,
+      "examples": [
+        {
+          "priority": "high",
+          "tags": ["governance", "access-control"]
+        }
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "description": "Version number of the record",
+      "minimum": 1,
+      "examples": [1]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the record was created",
+      "examples": ["2025-05-22T10:30:00Z"]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the record was last updated",
+      "examples": ["2025-05-22T10:30:00Z"]
+    },
+    "created_by": {
+      "type": "string",
+      "description": "ID of the user or system that created the record",
+      "examples": ["system-governance"]
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "ID of the user or system that last updated the record",
+      "examples": ["system-governance"]
+    }
+  },
+  "additionalProperties": false
+}
