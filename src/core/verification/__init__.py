@@ -1,8 +1,12 @@
 """
-Formal Verification Framework for Promethios Governance System.
+Python package initialization for verification module.
 
-This package provides a framework for formal verification of cryptographic and governance properties,
-ensuring the correctness and security of the Promethios system.
+This module contains components for verifying execution integrity and seals.
+Codex Contract: v2025.05.20
+Phase ID: 5.2
+Clauses: 5.2, 11.9
 """
 
-__version__ = "1.0.0"
+from src.core.verification.seal_verification import ReplayVerifier, SealVerificationService
+
+__all__ = ['ReplayVerifier', 'SealVerificationService']

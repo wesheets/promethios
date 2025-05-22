@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Scenario Schema",
+  "description": "Schema for defining test scenarios in the Promethios test harness",
+  "type": "object",
+  "required": ["id", "name", "description", "category", "priority", "steps"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the scenario",
+      "pattern": "^TS-[0-9]{4}$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the scenario",
+      "minLength": 5,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the scenario",
+      "minLength": 10
+    },
+    "category": {
+      "type": "string",
+      "description": "Category for grouping scenarios",
+      "enum": ["functional", "security", "performance", "compliance", "adversarial", "boundary"]
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Priority level (1-5, where 1 is highest)",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of scenario IDs this scenario depends on",
+      "items": {
+        "type": "string",
+        "pattern": "^TS-[0-9]{4}$"
+      },
+      "uniqueItems": true
+    },
+    "steps": {
+      "type": "array",
+      "description": "List of test steps",
+      "items": {
+        "$ref": "#/definitions/TestStep"
+      },
+      "minItems": 1
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the scenario",
+      "properties": {
+        "author": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "TestStep": {
+      "type": "object",
+      "required": ["id", "description", "endpoint", "method"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the step",
+          "pattern": "^STEP-[0-9]{4}$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the step"
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "API endpoint to test"
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        },
+        "payload": {
+          "type": "object",
+          "description": "Request payload"
+        },
+        "headers": {
+          "type": "object",
+          "description": "Request headers"
+        },
+        "expected_status": {
+          "type": "integer",
+          "description": "Expected HTTP status code"
+        },
+        "expected_values": {
+          "type": "object",
+          "description": "Expected response values"
+        },
+        "validation_schema": {
+          "type": "string",
+          "description": "Schema to validate response against"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout in milliseconds",
+          "default": 5000
+        }
+      }
+    }
+  }
+}
