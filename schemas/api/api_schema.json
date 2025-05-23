@@ -1,0 +1,273 @@
+{
+  "api_schema": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Promethios API",
+      "description": "API for the Promethios governance framework",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/governance/policies": {
+        "get": {
+          "summary": "List governance policies",
+          "description": "Returns a list of all governance policies",
+          "operationId": "listPolicies",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "Maximum number of policies to return",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Policy"
+                    }
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            }
+          }
+        },
+        "post": {
+          "summary": "Create a governance policy",
+          "description": "Creates a new governance policy",
+          "operationId": "createPolicy",
+          "requestBody": {
+            "description": "Policy to create",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Policy created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Policy"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid policy"
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            }
+          }
+        }
+      },
+      "/governance/policies/{policyId}": {
+        "get": {
+          "summary": "Get a governance policy",
+          "description": "Returns a specific governance policy",
+          "operationId": "getPolicy",
+          "parameters": [
+            {
+              "name": "policyId",
+              "in": "path",
+              "description": "ID of the policy to retrieve",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Policy"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Policy not found"
+            }
+          }
+        },
+        "put": {
+          "summary": "Update a governance policy",
+          "description": "Updates an existing governance policy",
+          "operationId": "updatePolicy",
+          "parameters": [
+            {
+              "name": "policyId",
+              "in": "path",
+              "description": "ID of the policy to update",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "description": "Updated policy",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Policy updated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Policy"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid policy"
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Policy not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a governance policy",
+          "description": "Deletes a specific governance policy",
+          "operationId": "deletePolicy",
+          "parameters": [
+            {
+              "name": "policyId",
+              "in": "path",
+              "description": "ID of the policy to delete",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Policy deleted"
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Policy not found"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Policy": {
+          "type": "object",
+          "required": [
+            "name",
+            "constraints"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the policy"
+            },
+            "name": {
+              "type": "string",
+              "description": "Name of the policy"
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of the policy"
+            },
+            "constraints": {
+              "type": "array",
+              "description": "List of constraints for the policy",
+              "items": {
+                "$ref": "#/components/schemas/Constraint"
+              }
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Creation timestamp"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Last update timestamp"
+            }
+          }
+        },
+        "Constraint": {
+          "type": "object",
+          "required": [
+            "type",
+            "threshold"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type of constraint"
+            },
+            "threshold": {
+              "type": "number",
+              "format": "float",
+              "description": "Threshold value for the constraint"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Additional parameters for the constraint"
+            }
+          }
+        }
+      }
+    }
+  }
+}

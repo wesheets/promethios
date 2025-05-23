@@ -1,0 +1,78 @@
+{
+  "api": {
+    "base_url": "https://api.promethios.ai",
+    "version": "v1",
+    "timeout": 30,
+    "retry_attempts": 3,
+    "retry_delay": 1000,
+    "log_level": "INFO"
+  },
+  "access_tier": {
+    "tiers": [
+      {
+        "id": "developer_preview",
+        "name": "Developer Preview",
+        "description": "Limited access for early developers",
+        "permissions": ["read:basic", "write:basic"],
+        "rate_limits": {
+          "requests_per_minute": 60,
+          "requests_per_day": 10000
+        },
+        "progression_criteria": {
+          "min_days_in_tier": 30,
+          "min_successful_requests": 1000,
+          "max_error_rate": 0.05
+        }
+      },
+      {
+        "id": "partner_access",
+        "name": "Partner Access",
+        "description": "Extended access for official partners",
+        "permissions": ["read:all", "write:basic", "write:advanced"],
+        "rate_limits": {
+          "requests_per_minute": 300,
+          "requests_per_day": 50000
+        },
+        "progression_criteria": {
+          "min_days_in_tier": 60,
+          "min_successful_requests": 10000,
+          "max_error_rate": 0.02
+        }
+      },
+      {
+        "id": "public_beta",
+        "name": "Public Beta",
+        "description": "Broader access during beta period",
+        "permissions": ["read:all", "write:all"],
+        "rate_limits": {
+          "requests_per_minute": 600,
+          "requests_per_day": 100000
+        },
+        "progression_criteria": {
+          "min_days_in_tier": 90,
+          "min_successful_requests": 50000,
+          "max_error_rate": 0.01
+        }
+      },
+      {
+        "id": "general_availability",
+        "name": "General Availability",
+        "description": "Full production access",
+        "permissions": ["read:all", "write:all", "admin:basic"],
+        "rate_limits": {
+          "requests_per_minute": 1200,
+          "requests_per_day": 500000
+        }
+      }
+    ],
+    "gateway_integration": {
+      "token_validation_endpoint": "/auth/validate",
+      "rate_limit_headers": true,
+      "detailed_error_responses": true
+    },
+    "progression": {
+      "automatic_evaluation_interval": 86400,
+      "notification_enabled": true
+    }
+  }
+}

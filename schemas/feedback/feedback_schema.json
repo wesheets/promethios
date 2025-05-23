@@ -1,0 +1,156 @@
+{
+  "feedback_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Feedback and Telemetry Schema",
+    "description": "Schema for feedback and telemetry data in the Promethios framework",
+    "type": "object",
+    "properties": {
+      "telemetry_event": {
+        "type": "object",
+        "description": "API usage telemetry event",
+        "required": ["timestamp", "endpoint", "response_status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the event"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the event occurred"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Anonymized user identifier"
+          },
+          "organization_id": {
+            "type": "string",
+            "description": "Anonymized organization identifier"
+          },
+          "access_tier": {
+            "type": "string",
+            "description": "Access tier of the user"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "API endpoint that was accessed"
+          },
+          "request_details": {
+            "type": "object",
+            "description": "Details about the request (sanitized)"
+          },
+          "response_status": {
+            "type": "integer",
+            "description": "HTTP status code of the response"
+          },
+          "response_time": {
+            "type": "integer",
+            "description": "Response time in milliseconds"
+          },
+          "client_info": {
+            "type": "object",
+            "description": "Information about the client"
+          }
+        }
+      },
+      "feedback_submission": {
+        "type": "object",
+        "description": "Developer feedback submission",
+        "required": ["timestamp", "feedback_type", "content"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the feedback"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the feedback was submitted"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Anonymized user identifier"
+          },
+          "feedback_type": {
+            "type": "string",
+            "enum": ["issue", "suggestion", "rating", "general"],
+            "description": "Type of feedback"
+          },
+          "content": {
+            "type": "string",
+            "description": "Feedback content"
+          },
+          "category": {
+            "type": "string",
+            "description": "Feedback category"
+          },
+          "sentiment": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "description": "Sentiment score (-1 to 1)"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Rating (1-5)"
+          },
+          "context": {
+            "type": "object",
+            "description": "Context information for the feedback"
+          }
+        }
+      },
+      "error_event": {
+        "type": "object",
+        "description": "API error event",
+        "required": ["timestamp", "endpoint", "error_code"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the error"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the error occurred"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Anonymized user identifier"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "API endpoint where the error occurred"
+          },
+          "error_code": {
+            "type": "string",
+            "description": "Error code"
+          },
+          "error_message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "stack_trace": {
+            "type": "string",
+            "description": "Sanitized stack trace"
+          },
+          "request_details": {
+            "type": "object",
+            "description": "Details about the request (sanitized)"
+          },
+          "frequency": {
+            "type": "integer",
+            "description": "Number of occurrences of this error"
+          },
+          "impact": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"],
+            "description": "Impact level of the error"
+          }
+        }
+      }
+    }
+  }
+}

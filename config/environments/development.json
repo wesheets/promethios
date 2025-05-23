@@ -1,0 +1,100 @@
+{
+  "environment": "development",
+  "debug": true,
+  "logging": {
+    "level": "DEBUG",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/development.log"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "phase_6_3_dev",
+    "user": "dev_user",
+    "password": "dev_password",
+    "pool_size": 10,
+    "timeout": 30
+  },
+  "api": {
+    "host": "localhost",
+    "port": 8000,
+    "base_path": "/api/v1",
+    "cors_origins": ["http://localhost:3000"],
+    "rate_limit": {
+      "enabled": true,
+      "default_limit": 100,
+      "window_seconds": 60
+    }
+  },
+  "access_tier": {
+    "default_tier": "developer_preview",
+    "auto_upgrade": true,
+    "evaluation_interval": 86400,
+    "tiers": {
+      "developer_preview": {
+        "quota": {
+          "requests_per_day": 1000,
+          "concurrent_requests": 5
+        },
+        "features": ["basic_api", "documentation"]
+      },
+      "standard": {
+        "quota": {
+          "requests_per_day": 10000,
+          "concurrent_requests": 20
+        },
+        "features": ["basic_api", "advanced_api", "documentation", "support"]
+      },
+      "premium": {
+        "quota": {
+          "requests_per_day": 100000,
+          "concurrent_requests": 50
+        },
+        "features": ["basic_api", "advanced_api", "documentation", "support", "analytics"]
+      }
+    }
+  },
+  "sandbox": {
+    "enabled": true,
+    "max_environments": 5,
+    "environment_ttl": 86400,
+    "cleanup_interval": 3600,
+    "monitoring_interval": 60,
+    "storage_path": "./sandbox_environments"
+  },
+  "feedback": {
+    "enabled": true,
+    "auto_categorize": true,
+    "notify_email": "dev-feedback@example.com",
+    "storage_path": "./feedback_data"
+  },
+  "telemetry": {
+    "enabled": true,
+    "batch_size": 50,
+    "flush_interval": 30,
+    "storage_path": "./telemetry_data",
+    "anonymize": true
+  },
+  "developer_portal": {
+    "host": "localhost",
+    "port": 3000,
+    "api_explorer": {
+      "enabled": true,
+      "sample_requests": true
+    },
+    "code_samples": {
+      "enabled": true,
+      "languages": ["python", "javascript", "java", "go"]
+    },
+    "onboarding": {
+      "enabled": true,
+      "guided_tour": true
+    }
+  },
+  "agent_preference": {
+    "elicitation_enabled": true,
+    "analysis_enabled": true,
+    "visualization_enabled": true,
+    "storage_path": "./preference_data"
+  }
+}

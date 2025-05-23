@@ -1,0 +1,116 @@
+{
+  "access_tier_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Access Tier Schema",
+    "description": "Schema for defining access tiers in the Phased API Exposure framework",
+    "type": "object",
+    "required": ["tiers"],
+    "properties": {
+      "tiers": {
+        "type": "array",
+        "description": "List of access tiers",
+        "items": {
+          "type": "object",
+          "required": ["id", "name", "permissions", "rate_limits"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the tier"
+            },
+            "name": {
+              "type": "string",
+              "description": "Display name for the tier"
+            },
+            "description": {
+              "type": "string",
+              "description": "Detailed description of the tier"
+            },
+            "permissions": {
+              "type": "array",
+              "description": "List of permissions granted to this tier",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rate_limits": {
+              "type": "object",
+              "description": "Rate limits for this tier",
+              "required": ["requests_per_minute"],
+              "properties": {
+                "requests_per_minute": {
+                  "type": "integer",
+                  "description": "Maximum requests per minute",
+                  "minimum": 1
+                },
+                "requests_per_day": {
+                  "type": "integer",
+                  "description": "Maximum requests per day",
+                  "minimum": 1
+                },
+                "concurrent_requests": {
+                  "type": "integer",
+                  "description": "Maximum concurrent requests",
+                  "minimum": 1
+                }
+              }
+            },
+            "progression_criteria": {
+              "type": "object",
+              "description": "Criteria for progressing to the next tier",
+              "properties": {
+                "min_days_in_tier": {
+                  "type": "integer",
+                  "description": "Minimum days in current tier",
+                  "minimum": 1
+                },
+                "min_successful_requests": {
+                  "type": "integer",
+                  "description": "Minimum successful requests",
+                  "minimum": 1
+                },
+                "max_error_rate": {
+                  "type": "number",
+                  "description": "Maximum error rate (0.0-1.0)",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "gateway_integration": {
+        "type": "object",
+        "description": "API gateway integration configuration",
+        "properties": {
+          "token_validation_endpoint": {
+            "type": "string",
+            "description": "Endpoint for token validation"
+          },
+          "rate_limit_headers": {
+            "type": "boolean",
+            "description": "Whether to include rate limit headers in responses"
+          },
+          "detailed_error_responses": {
+            "type": "boolean",
+            "description": "Whether to include detailed information in error responses"
+          }
+        }
+      },
+      "progression": {
+        "type": "object",
+        "description": "Tier progression configuration",
+        "properties": {
+          "automatic_evaluation_interval": {
+            "type": "integer",
+            "description": "Interval in seconds for automatic progression evaluation"
+          },
+          "notification_enabled": {
+            "type": "boolean",
+            "description": "Whether to send notifications for tier progression"
+          }
+        }
+      }
+    }
+  }
+}

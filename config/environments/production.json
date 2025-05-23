@@ -1,0 +1,107 @@
+{
+  "environment": "production",
+  "debug": false,
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/production.log"
+  },
+  "database": {
+    "host": "db.production.example.com",
+    "port": 5432,
+    "name": "phase_6_3_prod",
+    "user": "prod_user",
+    "password": "PLACEHOLDER_REPLACE_IN_DEPLOYMENT",
+    "pool_size": 50,
+    "timeout": 60
+  },
+  "api": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "base_path": "/api/v1",
+    "cors_origins": ["https://developer.example.com", "https://api.example.com"],
+    "rate_limit": {
+      "enabled": true,
+      "default_limit": 100,
+      "window_seconds": 60
+    }
+  },
+  "access_tier": {
+    "default_tier": "developer_preview",
+    "auto_upgrade": true,
+    "evaluation_interval": 86400,
+    "tiers": {
+      "developer_preview": {
+        "quota": {
+          "requests_per_day": 1000,
+          "concurrent_requests": 5
+        },
+        "features": ["basic_api", "documentation"]
+      },
+      "standard": {
+        "quota": {
+          "requests_per_day": 50000,
+          "concurrent_requests": 50
+        },
+        "features": ["basic_api", "advanced_api", "documentation", "support"]
+      },
+      "premium": {
+        "quota": {
+          "requests_per_day": 500000,
+          "concurrent_requests": 200
+        },
+        "features": ["basic_api", "advanced_api", "documentation", "support", "analytics"]
+      },
+      "enterprise": {
+        "quota": {
+          "requests_per_day": 5000000,
+          "concurrent_requests": 500
+        },
+        "features": ["basic_api", "advanced_api", "documentation", "priority_support", "analytics", "dedicated_resources"]
+      }
+    }
+  },
+  "sandbox": {
+    "enabled": true,
+    "max_environments": 20,
+    "environment_ttl": 604800,
+    "cleanup_interval": 3600,
+    "monitoring_interval": 300,
+    "storage_path": "/var/data/sandbox_environments"
+  },
+  "feedback": {
+    "enabled": true,
+    "auto_categorize": true,
+    "notify_email": "feedback@example.com",
+    "storage_path": "/var/data/feedback_data"
+  },
+  "telemetry": {
+    "enabled": true,
+    "batch_size": 1000,
+    "flush_interval": 60,
+    "storage_path": "/var/data/telemetry_data",
+    "anonymize": true
+  },
+  "developer_portal": {
+    "host": "0.0.0.0",
+    "port": 3000,
+    "api_explorer": {
+      "enabled": true,
+      "sample_requests": true
+    },
+    "code_samples": {
+      "enabled": true,
+      "languages": ["python", "javascript", "java", "go"]
+    },
+    "onboarding": {
+      "enabled": true,
+      "guided_tour": true
+    }
+  },
+  "agent_preference": {
+    "elicitation_enabled": true,
+    "analysis_enabled": true,
+    "visualization_enabled": true,
+    "storage_path": "/var/data/preference_data"
+  }
+}
