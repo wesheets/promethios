@@ -1,0 +1,305 @@
+syntax = "proto3";
+
+package promethios.api.memory;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Service definition for the Memory API
+service MemoryService {
+  // List memory records
+  rpc ListMemoryRecords(ListMemoryRecordsRequest) returns (ListMemoryRecordsResponse);
+  
+  // Get a specific memory record
+  rpc GetMemoryRecord(GetMemoryRecordRequest) returns (MemoryRecord);
+  
+  // Create a new memory record
+  rpc CreateMemoryRecord(CreateMemoryRecordRequest) returns (MemoryRecord);
+  
+  // Update an existing memory record
+  rpc UpdateMemoryRecord(UpdateMemoryRecordRequest) returns (MemoryRecord);
+  
+  // Delete a memory record
+  rpc DeleteMemoryRecord(DeleteMemoryRecordRequest) returns (DeleteMemoryRecordResponse);
+  
+  // Query memory records
+  rpc QueryMemoryRecords(QueryMemoryRecordsRequest) returns (ListMemoryRecordsResponse);
+  
+  // Get memory audit logs
+  rpc GetMemoryAuditLogs(GetMemoryAuditLogsRequest) returns (GetMemoryAuditLogsResponse);
+}
+
+// A record in the governance memory system
+message MemoryRecord {
+  // Unique identifier for the memory record
+  string record_id = 1;
+  
+  // Timestamp when the record was created
+  google.protobuf.Timestamp timestamp = 2;
+  
+  // Source system that created the record
+  string source = 3;
+  
+  // Type of memory record
+  RecordType record_type = 4;
+  
+  // Content of the memory record
+  google.protobuf.Struct content = 5;
+  
+  // Additional metadata for the record
+  google.protobuf.Struct metadata = 6;
+  
+  // Version number of the record
+  int32 version = 7;
+  
+  // Timestamp when the record was created
+  google.protobuf.Timestamp created_at = 8;
+  
+  // Timestamp when the record was last updated
+  google.protobuf.Timestamp updated_at = 9;
+  
+  // ID of the user or system that created the record
+  string created_by = 10;
+  
+  // ID of the user or system that last updated the record
+  string updated_by = 11;
+}
+
+// Types of memory records
+enum RecordType {
+  RECORD_TYPE_UNSPECIFIED = 0;
+  RECORD_TYPE_DECISION = 1;
+  RECORD_TYPE_EVENT = 2;
+  RECORD_TYPE_POLICY = 3;
+  RECORD_TYPE_REFLECTION = 4;
+}
+
+// Request to list memory records
+message ListMemoryRecordsRequest {
+  // Filter by record type
+  RecordType record_type = 1;
+  
+  // Filter by source system
+  string source = 2;
+  
+  // Filter by start timestamp
+  google.protobuf.Timestamp start_time = 3;
+  
+  // Filter by end timestamp
+  google.protobuf.Timestamp end_time = 4;
+  
+  // Maximum number of records to return
+  int32 limit = 5;
+  
+  // Number of records to skip
+  int32 offset = 6;
+}
+
+// Response containing a list of memory records
+message ListMemoryRecordsResponse {
+  // List of memory records
+  repeated MemoryRecord records = 1;
+  
+  // Pagination information
+  Pagination pagination = 2;
+}
+
+// Request to get a specific memory record
+message GetMemoryRecordRequest {
+  // Unique identifier of the memory record
+  string record_id = 1;
+}
+
+// Request to create a new memory record
+message CreateMemoryRecordRequest {
+  // Source system creating the record
+  string source = 1;
+  
+  // Type of memory record
+  RecordType record_type = 2;
+  
+  // Content of the memory record
+  google.protobuf.Struct content = 3;
+  
+  // Additional metadata for the record
+  google.protobuf.Struct metadata = 4;
+}
+
+// Request to update an existing memory record
+message UpdateMemoryRecordRequest {
+  // Unique identifier of the memory record
+  string record_id = 1;
+  
+  // Updated content of the memory record
+  google.protobuf.Struct content = 2;
+  
+  // Updated metadata for the record
+  google.protobuf.Struct metadata = 3;
+}
+
+// Request to delete a memory record
+message DeleteMemoryRecordRequest {
+  // Unique identifier of the memory record
+  string record_id = 1;
+}
+
+// Response after deleting a memory record
+message DeleteMemoryRecordResponse {
+  // Whether the deletion was successful
+  bool success = 1;
+}
+
+// Request to query memory records
+message QueryMemoryRecordsRequest {
+  // Query filters
+  MemoryRecordFilter filters = 1;
+  
+  // Sort options
+  SortOptions sort = 2;
+  
+  // Pagination options
+  PaginationOptions pagination = 3;
+}
+
+// Filter for memory records
+message MemoryRecordFilter {
+  // Types of records to include
+  repeated RecordType record_types = 1;
+  
+  // Sources to include
+  repeated string sources = 2;
+  
+  // Time range filter
+  TimeRange time_range = 3;
+  
+  // Query for record content
+  google.protobuf.Struct content_query = 4;
+  
+  // Query for record metadata
+  google.protobuf.Struct metadata_query = 5;
+}
+
+// Time range for filtering
+message TimeRange {
+  // Start of time range
+  google.protobuf.Timestamp start = 1;
+  
+  // End of time range
+  google.protobuf.Timestamp end = 2;
+}
+
+// Sort options for queries
+message SortOptions {
+  // Field to sort by
+  string field = 1;
+  
+  // Sort order
+  SortOrder order = 2;
+}
+
+// Sort order
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
+}
+
+// Pagination options for queries
+message PaginationOptions {
+  // Maximum number of records to return
+  int32 limit = 1;
+  
+  // Number of records to skip
+  int32 offset = 2;
+}
+
+// Pagination information in responses
+message Pagination {
+  // Total number of records
+  int32 total = 1;
+  
+  // Maximum number of records returned
+  int32 limit = 2;
+  
+  // Number of records skipped
+  int32 offset = 3;
+  
+  // Whether there are more records
+  bool has_more = 4;
+}
+
+// Request to get memory audit logs
+message GetMemoryAuditLogsRequest {
+  // Filter by start timestamp
+  google.protobuf.Timestamp start_time = 1;
+  
+  // Filter by end timestamp
+  google.protobuf.Timestamp end_time = 2;
+  
+  // Filter by user ID
+  string user_id = 3;
+  
+  // Filter by operation type
+  AuditOperation operation = 4;
+  
+  // Filter by record ID
+  string record_id = 5;
+  
+  // Maximum number of logs to return
+  int32 limit = 6;
+  
+  // Number of logs to skip
+  int32 offset = 7;
+}
+
+// Response containing memory audit logs
+message GetMemoryAuditLogsResponse {
+  // List of audit logs
+  repeated AuditLog audit_logs = 1;
+  
+  // Pagination information
+  Pagination pagination = 2;
+}
+
+// An audit log entry
+message AuditLog {
+  // Unique identifier for the audit log
+  string log_id = 1;
+  
+  // Timestamp when the operation occurred
+  google.protobuf.Timestamp timestamp = 2;
+  
+  // Type of operation
+  AuditOperation operation = 3;
+  
+  // ID of the user or system that performed the operation
+  string user_id = 4;
+  
+  // ID of the affected record (if applicable)
+  string record_id = 5;
+  
+  // Additional details about the operation
+  google.protobuf.Struct details = 6;
+}
+
+// Type of audit operation
+enum AuditOperation {
+  AUDIT_OPERATION_UNSPECIFIED = 0;
+  AUDIT_OPERATION_CREATE = 1;
+  AUDIT_OPERATION_READ = 2;
+  AUDIT_OPERATION_UPDATE = 3;
+  AUDIT_OPERATION_DELETE = 4;
+  AUDIT_OPERATION_QUERY = 5;
+}
+
+// Error information
+message Error {
+  // Error code
+  string code = 1;
+  
+  // Error message
+  string message = 2;
+  
+  // Additional error details
+  google.protobuf.Struct details = 3;
+}
