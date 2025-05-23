@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Policy Schema",
+  "description": "Schema for governance policies in the Promethios system",
+  "type": "object",
+  "required": ["policy_id", "name", "version", "status", "rules"],
+  "properties": {
+    "policy_id": {
+      "type": "string",
+      "description": "Unique identifier for the policy",
+      "pattern": "^pol-[a-zA-Z0-9]{4,}$",
+      "examples": ["pol-1234"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the policy",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["Data Access Policy"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Current version of the policy",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the policy",
+      "enum": ["draft", "active", "deprecated", "archived"],
+      "examples": ["active"]
+    },
+    "category": {
+      "type": "string",
+      "description": "Category of the policy",
+      "examples": ["data-governance"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the policy",
+      "examples": ["This policy controls access to sensitive data based on user roles and data classification."]
+    },
+    "rules": {
+      "type": "array",
+      "description": "Rules that make up the policy",
+      "items": {
+        "$ref": "#/definitions/PolicyRule"
+      },
+      "minItems": 1
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the policy",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner of the policy",
+          "examples": ["Security Team"]
+        },
+        "compliance_mappings": {
+          "type": "object",
+          "description": "Mappings to compliance standards",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "SOC2": ["CC1.1", "CC5.2"],
+              "GDPR": ["GDPR-5", "GDPR-25"]
+            }
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["data-access", "security"]]
+        }
+      },
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the policy was created",
+      "examples": ["2025-05-01T09:00:00Z"]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the policy was last updated",
+      "examples": ["2025-05-15T14:30:00Z"]
+    },
+    "created_by": {
+      "type": "string",
+      "description": "ID of the user or system that created the policy",
+      "examples": ["user-456"]
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "ID of the user or system that last updated the policy",
+      "examples": ["user-789"]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "PolicyRule": {
+      "type": "object",
+      "required": ["rule_id", "condition", "action"],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "description": "Unique identifier for the rule",
+          "examples": ["rule-1"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the rule",
+          "examples": ["Admin Access Rule"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the rule",
+          "examples": ["Allows admin users full access to data"]
+        },
+        "condition": {
+          "type": "string",
+          "description": "Condition expression for the rule",
+          "examples": ["user.role == 'admin'"]
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to take when condition is met",
+          "enum": ["allow", "deny", "log", "alert", "escalate"],
+          "examples": ["allow"]
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Priority of the rule (lower numbers have higher priority)",
+          "minimum": 1,
+          "examples": [10]
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata for the rule",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "rationale": "Administrators need full access to manage the system",
+              "tags": ["admin", "full-access"]
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the rule was created",
+          "examples": ["2025-05-01T09:00:00Z"]
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the rule was last updated",
+          "examples": ["2025-05-15T14:30:00Z"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
