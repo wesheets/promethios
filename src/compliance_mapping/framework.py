@@ -12,10 +12,89 @@ import logging
 from typing import Dict, Any, List, Optional, Tuple, Union, Set
 from datetime import datetime
 import re
+from enum import Enum
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Define compliance status for backward compatibility
+class ComplianceStatus(Enum):
+    """Compliance status values."""
+    COMPLIANT = "compliant"
+    NON_COMPLIANT = "non_compliant"
+    PARTIALLY_COMPLIANT = "partially_compliant"
+    UNKNOWN = "unknown"
+    EXEMPT = "exempt"
+
+# Define compliance standard for backward compatibility
+class ComplianceStandard:
+    """Compliance standard information."""
+    def __init__(self, name, version="1.0", description=None):
+        self.name = name
+        self.version = version
+        self.description = description or f"{name} compliance standard"
+        
+    def to_dict(self):
+        """Convert to dictionary representation."""
+        return {
+            "name": self.name,
+            "version": self.version,
+            "description": self.description
+        }
+
+# Define compliance control for backward compatibility
+class ComplianceControl:
+    """Compliance control information."""
+    def __init__(self, control_id, name, description=None, standard=None):
+        self.control_id = control_id
+        self.name = name
+        self.description = description or name
+        self.standard = standard
+        
+    def to_dict(self):
+        """Convert to dictionary representation."""
+        return {
+            "control_id": self.control_id,
+            "name": self.name,
+            "description": self.description,
+            "standard": self.standard.to_dict() if self.standard else None
+        }
+
+# Define compliance mapping for backward compatibility
+class ComplianceMapping:
+    """Mapping between Promethios components and compliance controls."""
+    def __init__(self, component_type, component_id, control, coverage=100):
+        self.component_type = component_type
+        self.component_id = component_id
+        self.control = control
+        self.coverage = coverage
+        
+    def to_dict(self):
+        """Convert to dictionary representation."""
+        return {
+            "component_type": self.component_type,
+            "component_id": self.component_id,
+            "control": self.control.to_dict() if self.control else None,
+            "coverage_percentage": self.coverage
+        }
+
+# Define compliance report for backward compatibility
+class ComplianceReport:
+    """Compliance assessment report."""
+    def __init__(self, standard, mappings=None, timestamp=None):
+        self.standard = standard
+        self.mappings = mappings or []
+        self.timestamp = timestamp or datetime.now().isoformat()
+        
+    def to_dict(self):
+        """Convert to dictionary representation."""
+        return {
+            "standard": self.standard.to_dict() if self.standard else None,
+            "mappings": [m.to_dict() for m in self.mappings],
+            "timestamp": self.timestamp,
+            "total_controls": len(self.mappings)
+        }
 
 class ComplianceMappingFramework:
     """
@@ -421,362 +500,53 @@ class ComplianceMappingFramework:
             "version": version or self.get_latest_version(standard),
             "generated_at": datetime.now().isoformat(),
             "total_controls": len(mapping.get("mappings", [])),
-            "mapped_components": {},
-            "coverage_by_control": {},
-            "overall_coverage": 0.0,
-            "gaps": []
+            "controls_coverage": {},
+            "components_coverage": {}
         }
         
-        # Analyze control coverage
-        total_coverage = 0.0
+        # Calculate coverage statistics
+        total_components = 0
+        covered_components = set()
+        
         for control_mapping in mapping.get("mappings", []):
             control_id = control_mapping.get("control_id")
             components = control_mapping.get("promethios_components", [])
             
-            # Calculate control coverage
-            if not components:
-                coverage = 0.0
-                report["gaps"].append({
-                    "control_id": control_id,
-                    "control_name": control_mapping.get("control_name"),
-                    "reason": "No components mapped"
-                })
-            else:
-                # If components have coverage_percentage, use weighted average
-                coverage_values = [c.get("coverage_percentage", 100) for c in components]
-                if any(cv < 100 for cv in coverage_values):
-                    coverage = sum(coverage_values) / len(components)
-                else:
-                    coverage = 100.0
-                    
-                # Check for partial coverage
-                if coverage < 100.0:
-                    report["gaps"].append({
-                        "control_id": control_id,
-                        "control_name": control_mapping.get("control_name"),
-                        "reason": f"Partial coverage ({coverage:.1f}%)"
-                    })
+            # Add to controls coverage
+            report["controls_coverage"][control_id] = {
+                "component_count": len(components),
+                "components": [f"{c.get('component_type')}:{c.get('component_id')}" for c in components]
+            }
             
-            report["coverage_by_control"][control_id] = coverage
-            total_coverage += coverage
-            
-            # Track components by type
+            # Add to components coverage
             for component in components:
                 component_type = component.get("component_type")
-                if component_type not in report["mapped_components"]:
-                    report["mapped_components"][component_type] = 0
-                report["mapped_components"][component_type] += 1
-        
-        # Calculate overall coverage
-        if report["total_controls"] > 0:
-            report["overall_coverage"] = total_coverage / report["total_controls"]
+                component_id = component.get("component_id")
+                component_key = f"{component_type}:{component_id}"
+                
+                if component_key not in report["components_coverage"]:
+                    report["components_coverage"][component_key] = {
+                        "controls": []
+                    }
+                    
+                report["components_coverage"][component_key]["controls"].append(control_id)
+                covered_components.add(component_key)
+                
+            total_components += len(components)
             
+        # Add summary statistics
+        report["summary"] = {
+            "total_controls": len(mapping.get("mappings", [])),
+            "total_component_mappings": total_components,
+            "unique_components": len(covered_components),
+            "average_components_per_control": total_components / max(1, len(mapping.get("mappings", [])))
+        }
+        
         return report
     
-    def generate_component_compliance_report(self, component_type: str, 
-                                           component_id: str) -> Dict[str, Any]:
+    def find_gaps(self, standard: str, version: str = None) -> Dict[str, Any]:
         """
-        Generate a compliance report for a specific component.
-        
-        Args:
-            component_type: Type of component (e.g., "policy", "rule")
-            component_id: ID of the component
-            
-        Returns:
-            Compliance report as a dictionary
-        """
-        component_key = f"{component_type}:{component_id}"
-        controls = self.component_mappings.get(component_key, {})
-        
-        if not controls:
-            return {
-                "component_type": component_type,
-                "component_id": component_id,
-                "error": f"No compliance mappings found for {component_key}"
-            }
-            
-        # Initialize report
-        report = {
-            "component_type": component_type,
-            "component_id": component_id,
-            "generated_at": datetime.now().isoformat(),
-            "standards": {},
-            "total_controls": 0
-        }
-        
-        # Analyze standards and controls
-        for standard, control_ids in controls.items():
-            report["standards"][standard] = {
-                "control_count": len(control_ids),
-                "controls": control_ids
-            }
-            report["total_controls"] += len(control_ids)
-            
-        return report
-    
-    def map_component_to_control(self, standard: str, control_id: str, 
-                               component_type: str, component_id: str,
-                               coverage_percentage: float = 100.0,
-                               implementation_details: str = None,
-                               version: str = None) -> bool:
-        """
-        Map a component to a compliance control.
-        
-        Args:
-            standard: Compliance standard name
-            control_id: ID of the control
-            component_type: Type of component (e.g., "policy", "rule")
-            component_id: ID of the component
-            coverage_percentage: Percentage of the control covered by this component
-            implementation_details: Details of how this component implements the control
-            version: Version of the standard (if None, uses latest version)
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        mapping = self.get_mapping(standard, version)
-        if not mapping:
-            logger.error(f"Mapping not found for {standard} (version {version})")
-            return False
-            
-        # Find the control mapping
-        control_mapping = None
-        for cm in mapping.get("mappings", []):
-            if cm.get("control_id") == control_id:
-                control_mapping = cm
-                break
-                
-        if not control_mapping:
-            logger.error(f"Control {control_id} not found in {standard} mapping")
-            return False
-            
-        # Create component mapping
-        component = {
-            "component_type": component_type,
-            "component_id": component_id,
-            "coverage_percentage": coverage_percentage
-        }
-        
-        if implementation_details:
-            component["implementation_details"] = implementation_details
-            
-        # Add component name if available based on component type
-        if component_type == "policy":
-            component["component_name"] = f"Policy {component_id}"
-        elif component_type == "rule":
-            component["component_name"] = f"Rule {component_id}"
-        elif component_type == "api":
-            component["component_name"] = f"API {component_id}"
-        
-        # Check if component already exists
-        components = control_mapping.get("promethios_components", [])
-        for i, existing in enumerate(components):
-            if (existing.get("component_type") == component_type and 
-                existing.get("component_id") == component_id):
-                # Update existing component
-                components[i] = component
-                break
-        else:
-            # Add new component
-            if "promethios_components" not in control_mapping:
-                control_mapping["promethios_components"] = []
-            control_mapping["promethios_components"].append(component)
-            
-        # Update mapping
-        self.register_mapping(mapping)
-        
-        # Save to file
-        return self.save_mapping(mapping)
-    
-    def remove_component_from_control(self, standard: str, control_id: str,
-                                    component_type: str, component_id: str,
-                                    version: str = None) -> bool:
-        """
-        Remove a component mapping from a compliance control.
-        
-        Args:
-            standard: Compliance standard name
-            control_id: ID of the control
-            component_type: Type of component (e.g., "policy", "rule")
-            component_id: ID of the component
-            version: Version of the standard (if None, uses latest version)
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        mapping = self.get_mapping(standard, version)
-        if not mapping:
-            logger.error(f"Mapping not found for {standard} (version {version})")
-            return False
-            
-        # Find the control mapping
-        control_mapping = None
-        for cm in mapping.get("mappings", []):
-            if cm.get("control_id") == control_id:
-                control_mapping = cm
-                break
-                
-        if not control_mapping:
-            logger.error(f"Control {control_id} not found in {standard} mapping")
-            return False
-            
-        # Remove component
-        components = control_mapping.get("promethios_components", [])
-        for i, existing in enumerate(components):
-            if (existing.get("component_type") == component_type and 
-                existing.get("component_id") == component_id):
-                components.pop(i)
-                break
-        else:
-            logger.warning(f"Component {component_type}:{component_id} not found in control {control_id}")
-            return False
-            
-        # Update mapping
-        self.register_mapping(mapping)
-        
-        # Save to file
-        return self.save_mapping(mapping)
-    
-    def create_standard_mapping(self, standard: str, version: str,
-                              description: str = None) -> Dict[str, Any]:
-        """
-        Create a new compliance standard mapping.
-        
-        Args:
-            standard: Compliance standard name
-            version: Version of the standard
-            description: Description of the standard
-            
-        Returns:
-            New mapping as a dictionary
-        """
-        # Generate mapping ID
-        mapping_id = f"cmp-{standard.lower()}{version.replace('.', '')}"
-        
-        # Create mapping
-        mapping = {
-            "mapping_id": mapping_id,
-            "standard": standard,
-            "version": version,
-            "description": description or f"{standard} version {version} compliance mapping",
-            "mappings": [],
-            "metadata": {
-                "created_at": datetime.now().isoformat(),
-                "created_by": "compliance_mapping_framework"
-            }
-        }
-        
-        return mapping
-    
-    def add_control_to_mapping(self, mapping: Dict[str, Any], control_id: str,
-                             control_name: str, control_description: str = None) -> Dict[str, Any]:
-        """
-        Add a control to a compliance mapping.
-        
-        Args:
-            mapping: Compliance mapping to update
-            control_id: ID of the control
-            control_name: Name of the control
-            control_description: Description of the control
-            
-        Returns:
-            Updated mapping
-        """
-        # Check if control already exists
-        for control in mapping.get("mappings", []):
-            if control.get("control_id") == control_id:
-                logger.warning(f"Control {control_id} already exists in mapping")
-                return mapping
-                
-        # Create control
-        control = {
-            "control_id": control_id,
-            "control_name": control_name,
-            "promethios_components": []
-        }
-        
-        if control_description:
-            control["control_description"] = control_description
-            
-        # Add to mapping
-        if "mappings" not in mapping:
-            mapping["mappings"] = []
-        mapping["mappings"].append(control)
-        
-        return mapping
-    
-    def import_mapping_from_file(self, filepath: str) -> bool:
-        """
-        Import a compliance mapping from a file.
-        
-        Args:
-            filepath: Path to the mapping file
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            with open(filepath, 'r') as f:
-                mapping = json.load(f)
-                
-            # Validate the mapping
-            is_valid, errors = self.validate_mapping(mapping)
-            if not is_valid:
-                logger.error(f"Invalid mapping in {filepath}: {', '.join(errors)}")
-                return False
-                
-            # Register and save the mapping
-            self.register_mapping(mapping)
-            return self.save_mapping(mapping)
-        except Exception as e:
-            logger.error(f"Error importing mapping from {filepath}: {str(e)}")
-            return False
-    
-    def export_mapping_to_file(self, standard: str, filepath: str,
-                             version: str = None, format: str = "json") -> bool:
-        """
-        Export a compliance mapping to a file.
-        
-        Args:
-            standard: Compliance standard name
-            filepath: Path to save the mapping file
-            version: Version of the standard (if None, uses latest version)
-            format: Output format ("json" or "yaml")
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        mapping = self.get_mapping(standard, version)
-        if not mapping:
-            logger.error(f"Mapping not found for {standard} (version {version})")
-            return False
-            
-        try:
-            if format.lower() == "json":
-                with open(filepath, 'w') as f:
-                    json.dump(mapping, f, indent=2)
-            elif format.lower() == "yaml":
-                try:
-                    import yaml
-                    with open(filepath, 'w') as f:
-                        yaml.dump(mapping, f)
-                except ImportError:
-                    logger.error("PyYAML not installed, falling back to JSON")
-                    with open(filepath, 'w') as f:
-                        json.dump(mapping, f, indent=2)
-            else:
-                logger.error(f"Unsupported format: {format}")
-                return False
-                
-            logger.info(f"Exported {standard} mapping to {filepath}")
-            return True
-        except Exception as e:
-            logger.error(f"Error exporting mapping to {filepath}: {str(e)}")
-            return False
-    
-    def analyze_compliance_gaps(self, standard: str, version: str = None) -> Dict[str, Any]:
-        """
-        Analyze compliance gaps for a specific standard.
+        Find gaps in compliance coverage.
         
         Args:
             standard: Compliance standard name
@@ -793,25 +563,17 @@ class ComplianceMappingFramework:
                 "error": f"Mapping not found for {standard} (version {version})"
             }
             
-        # Initialize report
-        report = {
+        # Initialize gap report
+        gap_report = {
             "standard": standard,
             "version": version or self.get_latest_version(standard),
             "generated_at": datetime.now().isoformat(),
-            "total_controls": len(mapping.get("mappings", [])),
             "unmapped_controls": [],
             "partially_mapped_controls": [],
-            "fully_mapped_controls": [],
-            "coverage_summary": {
-                "unmapped_count": 0,
-                "partially_mapped_count": 0,
-                "fully_mapped_count": 0,
-                "overall_coverage_percentage": 0.0
-            }
+            "fully_mapped_controls": []
         }
         
-        # Analyze control coverage
-        total_coverage = 0.0
+        # Analyze each control
         for control_mapping in mapping.get("mappings", []):
             control_id = control_mapping.get("control_id")
             control_name = control_mapping.get("control_name")
@@ -822,81 +584,86 @@ class ComplianceMappingFramework:
                 "control_name": control_name
             }
             
-            # Calculate control coverage
             if not components:
-                coverage = 0.0
-                report["unmapped_controls"].append(control_info)
+                # Unmapped control
+                gap_report["unmapped_controls"].append(control_info)
             else:
-                # If components have coverage_percentage, use weighted average
-                coverage_values = [c.get("coverage_percentage", 100) for c in components]
-                coverage = sum(coverage_values) / len(components)
-                
-                if coverage < 100.0:
-                    control_info["coverage_percentage"] = coverage
-                    control_info["mapped_components"] = len(components)
-                    report["partially_mapped_controls"].append(control_info)
+                # Check if any component has less than 100% coverage
+                partial = False
+                for component in components:
+                    coverage = component.get("coverage_percentage")
+                    if coverage is not None and coverage < 100:
+                        partial = True
+                        break
+                        
+                if partial:
+                    control_info["components"] = components
+                    gap_report["partially_mapped_controls"].append(control_info)
                 else:
-                    control_info["mapped_components"] = len(components)
-                    report["fully_mapped_controls"].append(control_info)
+                    control_info["components"] = components
+                    gap_report["fully_mapped_controls"].append(control_info)
                     
-            total_coverage += coverage
-            
-        # Update coverage summary
-        report["coverage_summary"]["unmapped_count"] = len(report["unmapped_controls"])
-        report["coverage_summary"]["partially_mapped_count"] = len(report["partially_mapped_controls"])
-        report["coverage_summary"]["fully_mapped_count"] = len(report["fully_mapped_controls"])
-        
-        if report["total_controls"] > 0:
-            report["coverage_summary"]["overall_coverage_percentage"] = (
-                total_coverage / report["total_controls"]
-            )
-            
-        return report
-    
-    def get_compliance_status(self, component_type: str, component_id: str) -> Dict[str, Any]:
-        """
-        Get compliance status for a specific component.
-        
-        Args:
-            component_type: Type of component (e.g., "policy", "rule")
-            component_id: ID of the component
-            
-        Returns:
-            Compliance status as a dictionary
-        """
-        component_key = f"{component_type}:{component_id}"
-        controls = self.component_mappings.get(component_key, {})
-        
-        status = {
-            "component_type": component_type,
-            "component_id": component_id,
-            "compliant_with": [],
-            "standards_count": len(controls),
-            "controls_count": sum(len(ids) for ids in controls.values())
+        # Add summary statistics
+        total_controls = len(mapping.get("mappings", []))
+        gap_report["summary"] = {
+            "total_controls": total_controls,
+            "unmapped_count": len(gap_report["unmapped_controls"]),
+            "partially_mapped_count": len(gap_report["partially_mapped_controls"]),
+            "fully_mapped_count": len(gap_report["fully_mapped_controls"]),
+            "unmapped_percentage": 100 * len(gap_report["unmapped_controls"]) / max(1, total_controls),
+            "partially_mapped_percentage": 100 * len(gap_report["partially_mapped_controls"]) / max(1, total_controls),
+            "fully_mapped_percentage": 100 * len(gap_report["fully_mapped_controls"]) / max(1, total_controls)
         }
         
-        for standard, control_ids in controls.items():
-            status["compliant_with"].append({
-                "standard": standard,
-                "version": self.get_latest_version(standard),
-                "controls": control_ids,
-                "controls_count": len(control_ids)
-            })
-            
-        return status
-
-
-# Singleton instance
-_framework_instance = None
-
-def get_framework() -> ComplianceMappingFramework:
-    """
-    Get the singleton instance of the compliance mapping framework.
+        return gap_report
     
-    Returns:
-        ComplianceMappingFramework instance
-    """
-    global _framework_instance
-    if _framework_instance is None:
-        _framework_instance = ComplianceMappingFramework()
-    return _framework_instance
+    def export_mapping(self, standard: str, version: str = None, format: str = "json") -> Optional[str]:
+        """
+        Export a compliance mapping to a string in the specified format.
+        
+        Args:
+            standard: Compliance standard name
+            version: Version of the standard (if None, uses latest version)
+            format: Output format ("json" or "csv")
+            
+        Returns:
+            Mapping as a string, or None if not found
+        """
+        mapping = self.get_mapping(standard, version)
+        if not mapping:
+            return None
+            
+        if format.lower() == "json":
+            return json.dumps(mapping, indent=2)
+        elif format.lower() == "csv":
+            # Generate CSV representation
+            csv_lines = ["standard,version,control_id,control_name,component_type,component_id,coverage"]
+            
+            for control_mapping in mapping.get("mappings", []):
+                control_id = control_mapping.get("control_id")
+                control_name = control_mapping.get("control_name", "").replace(",", ";")
+                
+                for component in control_mapping.get("promethios_components", []):
+                    component_type = component.get("component_type")
+                    component_id = component.get("component_id")
+                    coverage = component.get("coverage_percentage", 100)
+                    
+                    csv_lines.append(f"{standard},{version},{control_id},{control_name},{component_type},{component_id},{coverage}")
+                    
+            return "\n".join(csv_lines)
+        else:
+            logger.error(f"Unsupported format: {format}")
+            return None
+
+# For backward compatibility with legacy code
+ComplianceFramework = ComplianceMappingFramework
+
+# Singleton instance for global access
+_framework = None
+
+def get_framework():
+    """Get the singleton instance of the compliance mapping framework."""
+    global _framework
+    if _framework is None:
+        _framework = ComplianceMappingFramework()
+    return _framework
