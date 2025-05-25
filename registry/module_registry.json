@@ -1,114 +1,76 @@
 {
   "modules": [
     {
-      "id": "governance_visualization",
-      "name": "Governance Visualization",
-      "version": "1.0.0",
-      "description": "Framework for visualizing governance state, trust metrics, and health reporting",
-      "components": [
-        {
-          "id": "governance_state_visualizer",
-          "name": "Governance State Visualizer",
-          "path": "src/core/visualization/governance_state_visualizer.py",
-          "description": "Visualizes the current state of governance components and their relationships",
-          "dependencies": [
-            "visualization_data_transformer",
-            "governance_primitive_manager",
-            "attestation_service",
-            "boundary_detection_engine"
-          ]
-        },
-        {
-          "id": "trust_metrics_dashboard",
-          "name": "Trust Metrics Dashboard",
-          "path": "src/core/visualization/trust_metrics_dashboard.py",
-          "description": "Dashboard for visualizing trust metrics and trends",
-          "dependencies": [
-            "visualization_data_transformer",
-            "trust_decay_engine",
-            "attestation_service"
-          ]
-        },
-        {
-          "id": "governance_health_reporter",
-          "name": "Governance Health Reporter",
-          "path": "src/core/visualization/governance_health_reporter.py",
-          "description": "Reports on the health of governance components and identifies issues",
-          "dependencies": [
-            "visualization_data_transformer",
-            "governance_primitive_manager",
-            "attestation_service",
-            "boundary_integrity_verifier"
-          ]
-        },
-        {
-          "id": "visualization_data_transformer",
-          "name": "Visualization Data Transformer",
-          "path": "src/core/visualization/visualization_data_transformer.py",
-          "description": "Transforms governance data into visualization-friendly formats",
-          "dependencies": []
-        }
-      ],
-      "schemas": [
-        {
-          "id": "governance_visualization_schema",
-          "name": "Governance Visualization Schema",
-          "path": "schemas/visualization/governance_visualization.schema.v1.json",
-          "description": "Schema for governance visualization data structures"
-        },
-        {
-          "id": "trust_metrics_visualization_schema",
-          "name": "Trust Metrics Visualization Schema",
-          "path": "schemas/visualization/trust_metrics_visualization.schema.v1.json",
-          "description": "Schema for trust metrics visualization data structures"
-        },
-        {
-          "id": "governance_health_report_schema",
-          "name": "Governance Health Report Schema",
-          "path": "schemas/visualization/governance_health_report.schema.v1.json",
-          "description": "Schema for governance health report data structures"
-        }
-      ],
-      "apis": [
-        {
-          "id": "governance_visualization_api",
-          "name": "Governance Visualization API",
-          "path": "src/integration/governance_visualization_api.py",
-          "description": "API for accessing governance visualization data"
-        },
-        {
-          "id": "visualization_integration_service",
-          "name": "Visualization Integration Service",
-          "path": "src/integration/visualization_integration_service.py",
-          "description": "Service for integrating visualization components with other governance modules"
-        }
-      ],
-      "ui_components": [
-        {
-          "id": "governance_dashboard",
-          "name": "Governance Dashboard",
-          "path": "src/ui/governance_dashboard/components/governance_dashboard.py",
-          "description": "Main dashboard UI component for governance visualization"
-        },
-        {
-          "id": "trust_metrics_visualizer",
-          "name": "Trust Metrics Visualizer",
-          "path": "src/ui/governance_dashboard/components/trust_metrics_visualizer.py",
-          "description": "UI component for visualizing trust metrics"
-        },
-        {
-          "id": "governance_health_reporter_ui",
-          "name": "Governance Health Reporter UI",
-          "path": "src/ui/governance_dashboard/components/governance_health_reporter_ui.py",
-          "description": "UI component for displaying governance health reports"
-        }
-      ],
-      "dependencies": [
-        "governance_attestation_framework",
-        "minimal_viable_governance",
-        "governance_expansion_protocol",
-        "trust_boundary_definition"
-      ]
+      "name": "preference_analyzer",
+      "path": "src/preference/preference_analyzer.py",
+      "purpose": "Analyze user preferences and generate insights",
+      "phase": "6.4",
+      "dependencies": ["preference_collection", "preference_storage"],
+      "tests": ["tests/unit/test_preference_collection.py"]
+    },
+    {
+      "name": "preference_collection",
+      "path": "src/preference/preference_collection.py",
+      "purpose": "Collect and process user preferences",
+      "phase": "6.4",
+      "dependencies": ["preference_storage"],
+      "tests": ["tests/unit/test_preference_collection.py"]
+    },
+    {
+      "name": "preference_storage",
+      "path": "src/preference/preference_storage.py",
+      "purpose": "Store and retrieve user preferences",
+      "phase": "6.4",
+      "dependencies": [],
+      "tests": ["tests/unit/test_preference_collection.py"]
+    },
+    {
+      "name": "governance_vocabulary",
+      "path": "src/ui/governance_vocabulary.py",
+      "purpose": "Manage governance terminology and definitions",
+      "phase": "6.4",
+      "dependencies": ["governance_inheritance"],
+      "tests": ["tests/unit/test_governance_vocabulary.py"]
+    },
+    {
+      "name": "governance_inheritance",
+      "path": "src/core/governance_inheritance.py",
+      "purpose": "Handle inheritance relationships in governance structures",
+      "phase": "6.4",
+      "dependencies": [],
+      "tests": []
+    },
+    {
+      "name": "trust_propagation_manager",
+      "path": "src/phase_6_3_1/trust_propagation_manager.py",
+      "purpose": "Manage trust propagation between entities",
+      "phase": "6.3.1",
+      "dependencies": ["trust_inheritance_handler", "trust_verification_system"],
+      "tests": ["src/phase_6_3_1/trust_propagation_tests.py"]
+    },
+    {
+      "name": "trust_inheritance_handler",
+      "path": "src/phase_6_3_1/trust_inheritance_handler.py",
+      "purpose": "Handle trust inheritance relationships",
+      "phase": "6.3.1",
+      "dependencies": [],
+      "tests": ["src/phase_6_3_1/trust_propagation_tests.py"]
+    },
+    {
+      "name": "trust_verification_system",
+      "path": "src/phase_6_3_1/trust_verification_system.py",
+      "purpose": "Verify trust boundaries and entity attributes",
+      "phase": "6.3.1",
+      "dependencies": [],
+      "tests": ["src/phase_6_3_1/trust_verification_tests.py"]
+    },
+    {
+      "name": "memory_logging_system",
+      "path": "src/phase_6_3_1/memory_logging_system/memory_logging_system.py",
+      "purpose": "Log memory events with guaranteed delivery",
+      "phase": "6.3.1",
+      "dependencies": ["guaranteed_delivery_manager", "timestamp_synchronization", "reflection_threading"],
+      "tests": ["src/phase_6_3_1/memory_logging_system/memory_logging_system_tests.py"]
     }
   ]
 }

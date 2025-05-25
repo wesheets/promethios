@@ -1,2 +1,4 @@
 {"timestamp": "2025-05-24T12:28:33.096064", "extension_id": "EXT-UI-003", "extension_type": "UI", "action": "term_added", "data": {"term_id": "20250524122833_governance", "name": "Governance", "category": "core"}}
 {"timestamp": "2025-05-24T12:28:33.150984", "extension_id": "EXT-UI-003", "extension_type": "UI", "action": "term_added", "data": {"term_id": "20250524122833_governance", "name": "Governance", "category": "core"}}
+{"timestamp": "2025-05-25T09:36:00.167654", "extension_id": "EXT-UI-003", "extension_type": "UI", "action": "term_added", "data": {"term_id": "20250525093600_governance", "name": "Governance", "category": "core"}}
+{"timestamp": "2025-05-25T09:36:00.247394", "extension_id": "EXT-UI-003", "extension_type": "UI", "action": "term_added", "data": {"term_id": "20250525093600_governance", "name": "Governance", "category": "core"}}
