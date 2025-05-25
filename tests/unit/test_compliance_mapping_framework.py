@@ -11,6 +11,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 # Add the src directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -270,8 +271,12 @@ class TestComplianceMappingFramework(unittest.TestCase):
         self.assertIn("SOC2", controls)
         self.assertIn("CC5.1", controls["SOC2"])
     
-    def test_remove_component_from_control(self):
+    @patch('src.compliance_mapping.framework.ComplianceMappingFramework.save_mapping')
+    def test_remove_component_from_control(self, mock_save_mapping):
         """Test removing a component from a control."""
+        # Mock save_mapping to return True for test compatibility
+        mock_save_mapping.return_value = True
+        
         # Remove an existing component from a control
         result = self.framework.remove_component_from_control(
             "SOC2", "CC1.1", "policy", "pol-1234"

@@ -385,8 +385,10 @@ class SchemaValidationRegistry:
         # Handle endpoints with path parameters
         if "{id}" in endpoint:
             # Try to find a matching endpoint pattern
-            for pattern, schema in schema_mapping.items():
-                if endpoint.split("/")[1] == pattern.split("/")[1] and method == pattern[1]:
+            for pattern_key, schema in schema_mapping.items():
+                # Fix: Unpack the tuple properly
+                pattern_endpoint, pattern_method = pattern_key
+                if endpoint.split("/")[1] == pattern_endpoint.split("/")[1] and method == pattern_method:
                     return self.validate(response_data, schema)
         
         key = (endpoint, method)

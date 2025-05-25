@@ -34,3 +34,27 @@
 {"timestamp": "2025-05-25T09:37:53.895895", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
 {"timestamp": "2025-05-25T09:37:53.896008", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preferences_retrieved", "data": {"user_id": "user123", "preference_type": null, "count": 1}}
 {"timestamp": "2025-05-25T09:37:53.901008", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
+{"timestamp": "2025-05-25T09:51:56.984349", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.985873", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.987414", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.988872", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.990321", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.992043", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.993139", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.994358", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:56.995515", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:51:57.007883", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
+{"timestamp": "2025-05-25T09:51:57.007978", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preferences_retrieved", "data": {"user_id": "user123", "preference_type": null, "count": 1}}
+{"timestamp": "2025-05-25T09:51:57.011740", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
+{"timestamp": "2025-05-25T09:57:47.993364", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:47.995002", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:47.996617", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:47.998093", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:47.999544", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:48.001053", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:48.002143", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:48.003440", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:48.004531", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "initialization", "data": {"status": "initialized"}}
+{"timestamp": "2025-05-25T09:57:48.016350", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
+{"timestamp": "2025-05-25T09:57:48.016425", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preferences_retrieved", "data": {"user_id": "user123", "preference_type": null, "count": 1}}
+{"timestamp": "2025-05-25T09:57:48.019893", "extension_id": "EXT-CORE-001", "extension_type": "CORE", "action": "preference_stored", "data": {"user_id": "user123", "preference_id": "test-uuid", "preference_type": "test_type"}}
