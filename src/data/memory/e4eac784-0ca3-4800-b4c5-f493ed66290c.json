@@ -1,0 +1,16 @@
+{
+  "record_id": "e4eac784-0ca3-4800-b4c5-f493ed66290c",
+  "content": {
+    "event_type": "policy_update"
+  },
+  "metadata": {
+    "priority": "medium"
+  },
+  "timestamp": "2025-05-25T18:22:57.857868",
+  "tags": [],
+  "agent_id": null,
+  "session_id": null,
+  "source": "policy-engine",
+  "record_type": "event",
+  "version": null
+}
