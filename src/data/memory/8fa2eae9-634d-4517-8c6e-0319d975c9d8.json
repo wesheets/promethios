@@ -1,0 +1,16 @@
+{
+  "record_id": "8fa2eae9-634d-4517-8c6e-0319d975c9d8",
+  "content": {
+    "action": "approve"
+  },
+  "metadata": {
+    "priority": "high"
+  },
+  "timestamp": "2025-05-25T18:22:57.857502",
+  "tags": [],
+  "agent_id": null,
+  "session_id": null,
+  "source": "governance-engine",
+  "record_type": "decision",
+  "version": null
+}

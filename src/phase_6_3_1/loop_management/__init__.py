@@ -1,33 +1,25 @@
 """
-Loop Management package for Phase 6.3.1 remediation.
+Loop Management System for Promethios.
 
-This package provides enhanced loop control, transactional state persistence,
-and robust recovery mechanisms for the Promethios platform.
+This package contains components for managing execution loops,
+including controllers, state persistence, and recovery mechanisms.
 """
 
-from loop_controller import (
+# Make loop management components available at the package level
+from .loop_controller import (
     LoopController, LoopState, TerminationReason, 
     StatePersistenceManager, StateTransaction,
     MaxIterationsCondition, TimeoutCondition, ResourceLimitCondition
 )
-
-from loop_recovery import (
+from .loop_recovery import (
     RecoverableLoopController, LoopRecoveryManager, 
     CheckpointManager, RecoveryStrategy, RecoveryAction
 )
 
 __all__ = [
-    'LoopController',
-    'LoopState',
-    'TerminationReason',
-    'StatePersistenceManager',
-    'StateTransaction',
-    'MaxIterationsCondition',
-    'TimeoutCondition',
-    'ResourceLimitCondition',
-    'RecoverableLoopController',
-    'LoopRecoveryManager',
-    'CheckpointManager',
-    'RecoveryStrategy',
-    'RecoveryAction'
+    'LoopController', 'LoopState', 'TerminationReason',
+    'StatePersistenceManager', 'StateTransaction',
+    'MaxIterationsCondition', 'TimeoutCondition', 'ResourceLimitCondition',
+    'RecoverableLoopController', 'LoopRecoveryManager',
+    'CheckpointManager', 'RecoveryStrategy', 'RecoveryAction'
 ]

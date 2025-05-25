@@ -43,6 +43,11 @@ class BehaviorVersion:
     def current():
         """Get the current system-wide default behavior version."""
         return BehaviorRegistry.get_active_version() or BehaviorVersion(6, 4, 0)
+    
+    @staticmethod
+    def get_current():
+        """Get the current behavior version."""
+        return BehaviorRegistry.get_active_version() or BehaviorVersion(6, 4, 0)
         
     def __init__(self, major, minor, patch, label=None):
         """Initialize a behavior version with semantic versioning components."""
@@ -100,6 +105,24 @@ class BehaviorVersion:
             return self.label < other.label
             
         return False
+    
+    def __gt__(self, other):
+        """Greater than comparison."""
+        if isinstance(other, str):
+            other = BehaviorVersion.from_string(other)
+        return not (self < other or self == other)
+    
+    def __le__(self, other):
+        """Less than or equal comparison."""
+        if isinstance(other, str):
+            other = BehaviorVersion.from_string(other)
+        return self < other or self == other
+    
+    def __ge__(self, other):
+        """Greater than or equal comparison."""
+        if isinstance(other, str):
+            other = BehaviorVersion.from_string(other)
+        return self > other or self == other
     
     def __hash__(self):
         """Make BehaviorVersion hashable for use as dictionary keys."""
@@ -274,6 +297,61 @@ def with_behavior_version(version):
     return decorator
 
 
+def register_behavior(version):
+    """Decorator to register a behavior implementation for a specific version."""
+    def decorator(func):
+        # Extract behavior name from function name
+        # Assuming naming convention like get_termination_state_pre_6_4
+        name_parts = func.__name__.split('_')
+        if len(name_parts) >= 2:
+            # Remove version suffix (e.g., pre_6_4 or 6_4_0)
+            behavior_name = '_'.join(name_parts[:-1])
+        else:
+            behavior_name = func.__name__
+            
+        # Register the behavior
+        BehaviorRegistry.register(behavior_name, version, func)
+        
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def get_behavior_implementation(pre_6_4_impl, version_6_4_0_impl, version=None):
+    """
+    Get the appropriate behavior implementation based on version.
+    
+    Args:
+        pre_6_4_impl: Implementation for pre-6.4 behavior
+        version_6_4_0_impl: Implementation for 6.4.0 behavior
+        version: The behavior version to use (defaults to current context)
+        
+    Returns:
+        The appropriate implementation function
+    """
+    if version is None:
+        version = BehaviorRegistry.get_active_version()
+    elif isinstance(version, str):
+        version = BehaviorVersion.from_string(version)
+        
+    if version < BehaviorVersion.from_string("6.4.0"):
+        return pre_6_4_impl
+    else:
+        return version_6_4_0_impl
+
+
+def set_current_behavior_version(version):
+    """Set the current behavior version for the current context."""
+    BehaviorRegistry.set_active_version(version)
+
+
+def get_current_behavior_version():
+    """Get the current behavior version for the current context."""
+    return BehaviorRegistry.get_active_version()
+
+
 class BehaviorSignature:
     """Signature of behavior version for runtime operations."""
     
@@ -404,55 +482,4 @@ class SemanticShiftDetector:
         logger.warning(f"Semantic shift detected: {violation}")
         
         if BehaviorConfig.STRICT_MODE:
-            raise SemanticShiftError(f"Behavior violation: {violation}")
-
-
-# Example behavior implementations
-def loop_termination_pre_6_4(controller, reason):
-    """Pre-6.4 implementation always sets 'completed' state."""
-    controller.state = "completed"
-    controller.termination_reason = reason
-    
-def loop_termination_6_4_0(controller, reason):
-    """6.4.0 implementation distinguishes between completion and abortion."""
-    if reason in ["resource_limit", "timeout"]:
-        controller.state = "aborted"
-    else:
-        controller.state = "completed"
-    controller.termination_reason = reason
-
-# Register example behaviors
-BehaviorRegistry.register("loop_termination", "pre_6.4", loop_termination_pre_6_4)
-BehaviorRegistry.register("loop_termination", "6.4.0", loop_termination_6_4_0)
-
-
-def main():
-    """Main function for CLI usage."""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Versioned Behavior System")
-    parser.add_argument("--config", "-c", help="Path to configuration file")
-    parser.add_argument("--version", "-v", help="Set default behavior version")
-    parser.add_argument("--list", "-l", action="store_true", help="List registered behaviors")
-    
-    args = parser.parse_args()
-    
-    # Load config if provided
-    if args.config:
-        BehaviorConfig.from_config_file(args.config)
-        
-    # Override version if provided
-    if args.version:
-        BehaviorConfig.DEFAULT_VERSION = args.version
-        
-    # List behaviors if requested
-    if args.list:
-        print("Registered Behaviors:")
-        for name, versions in BehaviorRegistry._behaviors.items():
-            print(f"  {name}:")
-            for version, implementation in versions.items():
-                print(f"    {version}: {implementation.__name__}")
-
-
-if __name__ == "__main__":
-    main()
+            raise SemanticShiftError(f"Semantic shift detected: {violation}")

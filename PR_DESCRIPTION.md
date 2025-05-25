@@ -1,37 +1,74 @@
-# Phase 6.4 Implementation - Pull Request
+# Phase 6.4.1: Governance-Driven Semantic Migration
 
 ## Overview
 
-This pull request completes the Phase 6.4 implementation, focusing on fixing critical issues in the Preference Analyzer and Governance Vocabulary components. All targeted issues have been successfully resolved, with all component-specific tests now passing.
+This PR implements Phase 6.4.1 of the Promethios project, which addresses the semantic changes identified in Phase 6.4 by formalizing them through the Constitutional Governance Framework established in Phase 6.3.2.
 
-## Changes Made
+## Key Changes
 
-### Preference Analyzer Component
-- Added missing "preference_count" key to analysis output
-- Fixed method call alignment in get_preference_profile
-- Ensured proper parameter passing
+1. **Constitutional Amendments**
+   - Added three formal amendments documenting semantic changes:
+     - CGF-2025-01: Loop State Semantics Enhancement
+     - CGF-2025-02: Recovery Mechanism Enhancement
+     - CGF-2025-03: Monitoring Event Enhancement
 
-### Governance Vocabulary Component
-- Implemented the missing GovernanceVocabulary class
-- Added proper rendering methods with correct signatures
-- Fixed the override_check functionality
-- Implemented two-phase logic for update_term
-- Corrected term_id format and search relevance calculation
+2. **Versioned Behavior System**
+   - Implemented core versioning infrastructure
+   - Created behavior adapters for loop state, recovery, and monitoring
+   - Added test fixtures for versioned behavior testing
 
-## Test Results
-All in-scope tests are now passing. The remaining test failures are related to the sandbox component, which is outside the scope of Phase 6.4 implementation.
+3. **Migration Support**
+   - Created comprehensive migration guides
+   - Enhanced governance documentation with visual representations
 
-## Architect's Assessment
-The Architect has reviewed and approved these changes, noting:
+4. **Test Suite**
+   - Added tests for both pre-6.4 and 6.4.0 semantics
+   - Ensured 100% passing test coverage
 
-> "Builder Manus has done exceptional work addressing the complex issues in both the Preference Analyzer and Governance Vocabulary components... The systematic approach they took to debugging and fixing these issues demonstrates exceptional technical skill and attention to detail."
+## Semantic Changes Addressed
+
+1. **Loop State Semantics**
+   - Pre-6.4: All termination conditions result in 'completed' state
+   - 6.4.0: Resource limits and timeouts result in 'aborted' state
+
+2. **Recovery Mechanism**
+   - Pre-6.4: Checkpoint recovery excludes keys added after checkpoint creation
+   - 6.4.0: Checkpoint recovery preserves full state context
+
+3. **Monitoring Events**
+   - Pre-6.4: 2 events generated during recovery operations
+   - 6.4.0: 4 events generated for enhanced observability
+
+## Governance Compliance
+
+This implementation fully complies with the Constitutional Governance Framework:
+
+- All semantic changes are formally documented as amendments
+- All versioned behaviors include behavior version information
+- Comprehensive memory logging is implemented
+- Reflection capabilities have been enhanced
+- Override mechanisms are aware of semantic changes
+
+## Backward Compatibility
+
+The Versioned Behavior System ensures backward compatibility:
+
+- All behaviors support both pre-6.4 and 6.4.0 versions
+- Configuration options allow system-wide behavior version selection
+- Component-specific overrides enable gradual migration
+
+## Testing
+
+All tests pass successfully, confirming that both legacy and new semantics are supported with no regressions.
+
+## Documentation
+
+- See [PHASE_6_4_1_IMPLEMENTATION_REPORT.md](/PHASE_6_4_1_IMPLEMENTATION_REPORT.md) for detailed implementation information
+- See [docs/governance/semantic_changes.md](/docs/governance/semantic_changes.md) for comprehensive documentation of semantic changes
+- See [docs/migration/loop_state_migration_guide.md](/docs/migration/loop_state_migration_guide.md) for migration guidance
 
 ## Next Steps
-With Phase 6.4 now complete, the project can:
-1. Begin integration with the broader system
-2. Prepare for Phase 7.0 (Constitutional Framework) development
-3. Address the out-of-scope sandbox component issues in a separate track
 
-## Related Documentation
-- See PR_DOCUMENTATION.md for detailed implementation notes
-- See final_implementation_report.md for complete test results and issue resolution details
+After merging this PR:
+1. Run CMU benchmark tests to compare results between pre-6.4 and 6.4.0 behaviors
+2. Begin Phase 6.5 transition (UI/UX Repository Restructuring)
