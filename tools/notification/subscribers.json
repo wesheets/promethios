@@ -1,0 +1,34 @@
+[
+  {
+    "id": "test-user-1",
+    "name": "Test User 1",
+    "email": "test1@example.com",
+    "preferences": {
+      "notificationTypes": [
+        "phase-change"
+      ],
+      "components": [
+        "DeveloperDashboard"
+      ],
+      "directories": [
+        "src/wrapping"
+      ]
+    }
+  },
+  {
+    "id": "test-user-2",
+    "name": "Test User 2",
+    "email": "test2@example.com",
+    "preferences": {
+      "notificationTypes": [
+        "phase-change"
+      ],
+      "components": [
+        "ReplayLogViewer"
+      ],
+      "directories": [
+        "ui/trust_log"
+      ]
+    }
+  }
+]

@@ -1,0 +1,56 @@
+/**
+ * Email Template for Phase Change Notifications
+ */
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #0366d6; padding: 15px; border-bottom: 2px solid #0250a0; color: white; }
+    .content { padding: 20px 0; }
+    .footer { font-size: 12px; color: #777; border-top: 1px solid #ddd; padding-top: 15px; }
+    h1 { margin: 0; }
+    a { color: #0366d6; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #0366d6; color: white; text-decoration: none; border-radius: 3px; }
+    .summary { background: #f9f9f9; padding: 15px; margin: 15px 0; border-left: 4px solid #0366d6; }
+    .changes { margin: 20px 0; }
+    .changes table { width: 100%; border-collapse: collapse; }
+    .changes th { text-align: left; background: #f1f1f1; }
+    .changes th, .changes td { padding: 8px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>{{title}}</h1>
+    </div>
+    <div class="content">
+      <p>{{content}}</p>
+      
+      <div class="summary">
+        <h3>Summary of Changes</h3>
+        {{summary}}
+      </div>
+      
+      <div class="changes">
+        <h3>Key Components Affected</h3>
+        <p>The following components have been affected by this phase change:</p>
+        <ul>
+          {{componentsList}}
+        </ul>
+      </div>
+      
+      <p>
+        <a href="{{reportUrl}}" class="button">View Full Report</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>This is an automated notification from the Promethios Phase Change Tracker.</p>
+      <p>Generated on: {{timestamp}}</p>
+      <p>To update your notification preferences, please contact your administrator.</p>
+    </div>
+  </div>
+</body>
+</html>
