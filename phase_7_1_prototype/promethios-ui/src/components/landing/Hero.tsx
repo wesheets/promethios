@@ -57,6 +57,15 @@ const Hero: React.FC = () => {
               </Link>
             </motion.div>
           </div>
+          
+          <motion.p 
+            className={`mt-6 text-sm md:text-base max-w-2xl mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} italic`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            Promethios is rolling out in phases. Join the waitlist for early access to governed agent infrastructure.
+          </motion.p>
         </div>
         
         {/* App preview image */}
