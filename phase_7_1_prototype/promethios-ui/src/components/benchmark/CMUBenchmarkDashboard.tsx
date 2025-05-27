@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { 
@@ -6,7 +6,7 @@ import {
   LineChart, Line, AreaChart, Area
 } from 'recharts';
 
-const benchmarkData = [
+const initialBenchmarkData = [
   {
     name: 'Trust Score',
     ungoverned: 45,
@@ -40,7 +40,64 @@ const timeSeriesData = [
 
 const CMUBenchmarkDashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const [activeTab, setActiveTab] = React.useState('overview');
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Interactive playground state
+  const [trustThreshold, setTrustThreshold] = useState(50);
+  const [complianceStrictness, setComplianceStrictness] = useState(50);
+  const [errorTolerance, setErrorTolerance] = useState(50);
+  const [benchmarkData, setBenchmarkData] = useState(initialBenchmarkData);
+  const [governanceAnalysis, setGovernanceAnalysis] = useState({
+    trustScore: 92,
+    complianceRate: 95,
+    performanceImpact: 3
+  });
+  
+  // Function to update graphs based on parameter values
+  const applyParameters = () => {
+    // Calculate new values based on slider positions
+    const newTrustScore = Math.min(98, Math.max(85, 85 + (trustThreshold - 50) * 0.25));
+    const newComplianceRate = Math.min(99, Math.max(80, 85 + (complianceStrictness - 50) * 0.3));
+    const newErrorRate = Math.max(5, Math.min(25, 20 - (errorTolerance - 50) * 0.3));
+    
+    // Calculate performance impact (inverse relationship with strictness)
+    const performanceImpact = Math.max(1, Math.min(15, 
+      3 + (trustThreshold - 50) * 0.1 + 
+      (complianceStrictness - 50) * 0.15 + 
+      (50 - errorTolerance) * 0.1
+    ));
+    
+    // Update benchmark data
+    const newBenchmarkData = [
+      {
+        name: 'Trust Score',
+        ungoverned: 45,
+        governed: Math.round(newTrustScore),
+      },
+      {
+        name: 'Compliance',
+        ungoverned: 38,
+        governed: Math.round(newComplianceRate),
+      },
+      {
+        name: 'Error Rate',
+        ungoverned: 65,
+        governed: Math.round(newErrorRate),
+      },
+      {
+        name: 'Performance',
+        ungoverned: 88,
+        governed: Math.round(88 - performanceImpact),
+      },
+    ];
+    
+    setBenchmarkData(newBenchmarkData);
+    setGovernanceAnalysis({
+      trustScore: Math.round(newTrustScore),
+      complianceRate: Math.round(newComplianceRate),
+      performanceImpact: Math.round(performanceImpact)
+    });
+  };
   
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -148,7 +205,7 @@ const CMUBenchmarkDashboard: React.FC = () => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={benchmarkData}
+                    data={initialBenchmarkData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
@@ -340,50 +397,58 @@ const CMUBenchmarkDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <label className="block text-sm font-medium mb-2">Trust Threshold</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="75"
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={trustThreshold}
+                    onChange={(e) => setTrustThreshold(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-600"
                   />
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>Low</span>
-                    <span>High</span>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs">Low</span>
+                    <span className="text-xs">High</span>
                   </div>
                 </div>
+                
                 <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <label className="block text-sm font-medium mb-2">Compliance Strictness</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="85"
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={complianceStrictness}
+                    onChange={(e) => setComplianceStrictness(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-600"
                   />
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>Flexible</span>
-                    <span>Strict</span>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs">Flexible</span>
+                    <span className="text-xs">Strict</span>
                   </div>
                 </div>
+                
                 <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <label className="block text-sm font-medium mb-2">Error Tolerance</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="25"
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={errorTolerance}
+                    onChange={(e) => setErrorTolerance(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-600"
                   />
-                  <div className="flex justify-between text-xs mt-1">
-                    <span>Low</span>
-                    <span>High</span>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs">Low</span>
+                    <span className="text-xs">High</span>
                   </div>
                 </div>
               </div>
               
               <div className="flex justify-center">
-                <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                <button
+                  onClick={applyParameters}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                >
                   Apply Parameters
                 </button>
               </div>
@@ -421,7 +486,7 @@ const CMUBenchmarkDashboard: React.FC = () => {
                   Governance Analysis
                 </h3>
                 <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  With current parameters, your agent would achieve a 92% trust score and 95% compliance rate with only a 3% performance impact. This configuration is optimal for most production environments.
+                  With current parameters, your agent would achieve a {governanceAnalysis.trustScore}% trust score and {governanceAnalysis.complianceRate}% compliance rate with only a {governanceAnalysis.performanceImpact}% performance impact. This configuration is optimal for most production environments.
                 </p>
               </div>
             </motion.div>
