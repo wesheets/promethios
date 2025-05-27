@@ -1,18 +1,26 @@
-// AuthContext.tsx - Authentication context for the application
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  User, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  signOut, 
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { auth, googleProvider } from '../firebase/config';
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  currentUser: User | null;
+  loading: boolean;
+  loginWithEmail: (email: string, password: string) => Promise<User>;
+  loginWithGoogle: () => Promise<User>;
+  signup: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAuthenticated: boolean;
-}
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,41 +38,98 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    // Mock implementation for login
-    console.log('Logging in with:', email, password);
-    setUser({
-      id: '1',
-      email,
-      name: 'Test User'
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
     });
+
+    return unsubscribe;
+  }, []);
+
+  // Sign in with email and password
+  const loginWithEmail = async (email: string, password: string): Promise<User> => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (error) {
+      console.error('Email login error:', error);
+      throw error;
+    }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
-    // Mock implementation for signup
-    console.log('Signing up with:', email, password, name);
-    setUser({
-      id: '1',
-      email,
-      name
-    });
+  // Sign in with Google
+  const loginWithGoogle = async (): Promise<User> => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  // Sign up with email and password
+  const signup = async (email: string, password: string): Promise<User> => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await sendVerificationEmail();
+      return result.user;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  };
+
+  // Sign out
+  const logout = async (): Promise<void> => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  };
+
+  // Send email verification
+  const sendVerificationEmail = async (): Promise<void> => {
+    if (!currentUser) throw new Error('No user logged in');
+    try {
+      await sendEmailVerification(currentUser);
+    } catch (error) {
+      console.error('Email verification error:', error);
+      throw error;
+    }
+  };
+
+  // Reset password
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
+  const value = {
+    currentUser,
+    loading,
+    loginWithEmail,
+    loginWithGoogle,
+    signup,
+    logout,
+    sendVerificationEmail,
+    resetPassword,
+    isAuthenticated: !!currentUser
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      signup,
-      logout,
-      isAuthenticated: !!user
-    }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
