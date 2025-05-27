@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { Link } from 'react-router-dom';
 
 const Hero: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -18,7 +19,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            Save 60-80% of agent<br />integration time
+            Promethios makes agents governable.
           </motion.h1>
           
           <motion.p 
@@ -27,8 +28,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Promethios provides governance for AI agents with clear visualization of metrics. 
-            Wrap any agent in minutes with our intuitive interface.
+            Reflection, memory, trust. All enforced — instantly
           </motion.p>
           
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
@@ -37,24 +37,24 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
                 className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 md:py-4 md:text-lg md:px-10"
               >
                 Get Started
-              </a>
+              </Link>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <a
-                href="/benchmark"
+              <Link
+                to="/benchmark"
                 className={`w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md ${isDarkMode ? 'text-purple-300 bg-purple-900/30' : 'text-purple-700 bg-purple-100'} hover:bg-opacity-70 md:py-4 md:text-lg md:px-10`}
               >
                 See Benchmarks
-              </a>
+              </Link>
             </motion.div>
           </div>
         </div>
@@ -74,10 +74,12 @@ const Hero: React.FC = () => {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               </div>
             </div>
-            <div className="p-4 h-64 flex items-center justify-center">
-              <div className={`text-xl ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Dashboard Preview
-              </div>
+            <div className="p-4">
+              <img 
+                src="/images/cmu-benchmark.png" 
+                alt="CMU Benchmark Results" 
+                className="w-full h-auto"
+              />
             </div>
           </div>
         </motion.div>
