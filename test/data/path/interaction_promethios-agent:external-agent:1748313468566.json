@@ -1,0 +1,32 @@
+{
+  "id": "promethios-agent:external-agent:1748313468566",
+  "sourceAgentId": "promethios-agent",
+  "targetAgentId": "external-agent",
+  "verificationResult": {
+    "compatible": false,
+    "reason": "Memory integrity required but not provided",
+    "confidenceModifiers": {
+      "total": -1.7999999999999998,
+      "factors": {
+        "unknown_governance": -0.3,
+        "missing_memory_integrity": -0.6,
+        "missing_reflection": -0.5,
+        "missing_belief_trace": -0.4
+      }
+    },
+    "interactionPolicy": {
+      "action": "restrict",
+      "restrictions": [
+        "no_memory_write",
+        "no_external_calls",
+        "no_sensitive_data"
+      ],
+      "explanation": "Restricted due to: Memory integrity required but not provided"
+    },
+    "timestamp": "2025-05-27T02:37:48.566Z",
+    "verificationId": "0d4ff1bb-75cd-4795-9352-c680a884ba1d",
+    "sourceProofValid": false,
+    "targetProofValid": false
+  },
+  "timestamp": "2025-05-27T02:37:48.566Z"
+}

@@ -1,0 +1,411 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Scorecard Schema",
+  "description": "Schema for agent trust scorecard with cryptographic verification and governance metrics",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "scorecard_id",
+    "timestamp",
+    "governance_identity",
+    "trust_score",
+    "reflection_compliance",
+    "belief_trace_integrity",
+    "violation_history",
+    "trust_lineage",
+    "arbitration_history",
+    "cryptographic_proof"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Unique identifier for the agent",
+      "pattern": "^[a-zA-Z0-9-_]{8,64}$"
+    },
+    "scorecard_id": {
+      "type": "string",
+      "description": "Unique identifier for this scorecard instance",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of scorecard generation",
+      "format": "date-time"
+    },
+    "governance_identity": {
+      "type": "object",
+      "description": "Governance identity information",
+      "required": [
+        "type",
+        "constitution_hash",
+        "compliance_level",
+        "verification_endpoint"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of governance framework",
+          "enum": ["promethios", "external_verified", "external_unverified", "unknown"]
+        },
+        "constitution_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the governing constitution",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "compliance_level": {
+          "type": "string",
+          "description": "Level of compliance with governance framework",
+          "enum": ["full", "partial", "minimal", "unknown"]
+        },
+        "verification_endpoint": {
+          "type": "string",
+          "description": "URL endpoint for verifying governance identity",
+          "format": "uri"
+        }
+      }
+    },
+    "trust_score": {
+      "type": ["number", "null"],
+      "description": "Composite trust score (0.0-1.0) or null for unknown governance",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reflection_compliance": {
+      "type": "object",
+      "description": "Reflection compliance metrics",
+      "required": ["percentage", "total_reflections", "compliant_reflections"],
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "description": "Percentage of reflections that were compliant",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "total_reflections": {
+          "type": "integer",
+          "description": "Total number of reflection operations",
+          "minimum": 0
+        },
+        "compliant_reflections": {
+          "type": "integer",
+          "description": "Number of compliant reflection operations",
+          "minimum": 0
+        }
+      }
+    },
+    "belief_trace_integrity": {
+      "type": "object",
+      "description": "Belief trace integrity metrics",
+      "required": ["percentage", "total_outputs", "verified_outputs"],
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "description": "Percentage of outputs with verified belief trace",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "total_outputs": {
+          "type": "integer",
+          "description": "Total number of outputs",
+          "minimum": 0
+        },
+        "verified_outputs": {
+          "type": "integer",
+          "description": "Number of outputs with verified belief trace",
+          "minimum": 0
+        }
+      }
+    },
+    "violation_history": {
+      "type": "object",
+      "description": "History of governance violations",
+      "required": ["count", "categories", "recent_violations"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "description": "Total number of violations",
+          "minimum": 0
+        },
+        "categories": {
+          "type": "object",
+          "description": "Violations categorized by type",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "recent_violations": {
+          "type": "array",
+          "description": "List of recent violations (limited to 10)",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "required": ["timestamp", "type", "description", "severity"],
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "description": "ISO 8601 timestamp of violation",
+                "format": "date-time"
+              },
+              "type": {
+                "type": "string",
+                "description": "Type of violation"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the violation"
+              },
+              "severity": {
+                "type": "string",
+                "description": "Severity level of the violation",
+                "enum": ["critical", "major", "minor", "warning"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "trust_lineage": {
+      "type": "object",
+      "description": "Trust delegation history and lineage",
+      "required": ["delegations", "inherited_trust", "delegation_chain"],
+      "properties": {
+        "delegations": {
+          "type": "integer",
+          "description": "Number of trust delegations performed",
+          "minimum": 0
+        },
+        "inherited_trust": {
+          "type": "object",
+          "description": "Trust inherited from other agents",
+          "required": ["count", "average_score"],
+          "properties": {
+            "count": {
+              "type": "integer",
+              "description": "Number of trust inheritances",
+              "minimum": 0
+            },
+            "average_score": {
+              "type": ["number", "null"],
+              "description": "Average trust score of inherited trust",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "delegation_chain": {
+          "type": "array",
+          "description": "Chain of trust delegations",
+          "items": {
+            "type": "object",
+            "required": ["agent_id", "timestamp", "trust_score"],
+            "properties": {
+              "agent_id": {
+                "type": "string",
+                "description": "ID of the agent in the delegation chain"
+              },
+              "timestamp": {
+                "type": "string",
+                "description": "ISO 8601 timestamp of delegation",
+                "format": "date-time"
+              },
+              "trust_score": {
+                "type": ["number", "null"],
+                "description": "Trust score at time of delegation",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "arbitration_history": {
+      "type": "object",
+      "description": "History of CRITIC arbitrations",
+      "required": ["count", "last_arbitration", "arbitration_outcomes"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "description": "Total number of arbitrations",
+          "minimum": 0
+        },
+        "last_arbitration": {
+          "type": ["object", "null"],
+          "description": "Details of the last arbitration, or null if none",
+          "required": ["timestamp", "result", "reason"],
+          "properties": {
+            "timestamp": {
+              "type": "string",
+              "description": "ISO 8601 timestamp of arbitration",
+              "format": "date-time"
+            },
+            "result": {
+              "type": "string",
+              "description": "Result of the arbitration",
+              "enum": ["upheld", "overturned", "partial", "inconclusive"]
+            },
+            "reason": {
+              "type": "string",
+              "description": "Reason for the arbitration result"
+            }
+          }
+        },
+        "arbitration_outcomes": {
+          "type": "object",
+          "description": "Summary of arbitration outcomes",
+          "required": ["upheld", "overturned", "partial", "inconclusive"],
+          "properties": {
+            "upheld": {
+              "type": "integer",
+              "description": "Number of upheld arbitrations",
+              "minimum": 0
+            },
+            "overturned": {
+              "type": "integer",
+              "description": "Number of overturned arbitrations",
+              "minimum": 0
+            },
+            "partial": {
+              "type": "integer",
+              "description": "Number of partially upheld arbitrations",
+              "minimum": 0
+            },
+            "inconclusive": {
+              "type": "integer",
+              "description": "Number of inconclusive arbitrations",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "performance_metrics": {
+      "type": "object",
+      "description": "Performance metrics for the agent",
+      "required": ["task_completion", "response_time", "resource_efficiency"],
+      "properties": {
+        "task_completion": {
+          "type": "object",
+          "description": "Task completion metrics",
+          "required": ["rate", "total_tasks", "completed_tasks"],
+          "properties": {
+            "rate": {
+              "type": "number",
+              "description": "Task completion rate (percentage)",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "total_tasks": {
+              "type": "integer",
+              "description": "Total number of tasks assigned",
+              "minimum": 0
+            },
+            "completed_tasks": {
+              "type": "integer",
+              "description": "Number of successfully completed tasks",
+              "minimum": 0
+            }
+          }
+        },
+        "response_time": {
+          "type": "object",
+          "description": "Response time metrics",
+          "required": ["average_ms", "p95_ms", "p99_ms"],
+          "properties": {
+            "average_ms": {
+              "type": "number",
+              "description": "Average response time in milliseconds",
+              "minimum": 0
+            },
+            "p95_ms": {
+              "type": "number",
+              "description": "95th percentile response time in milliseconds",
+              "minimum": 0
+            },
+            "p99_ms": {
+              "type": "number",
+              "description": "99th percentile response time in milliseconds",
+              "minimum": 0
+            }
+          }
+        },
+        "resource_efficiency": {
+          "type": "object",
+          "description": "Resource efficiency metrics",
+          "required": ["energy_score", "memory_efficiency", "compute_efficiency"],
+          "properties": {
+            "energy_score": {
+              "type": "number",
+              "description": "Energy efficiency score (0.0-1.0)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "memory_efficiency": {
+              "type": "number",
+              "description": "Memory usage efficiency score (0.0-1.0)",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "compute_efficiency": {
+              "type": "number",
+              "description": "Compute resource efficiency score (0.0-1.0)",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      }
+    },
+    "cryptographic_proof": {
+      "type": "object",
+      "description": "Cryptographic proof of scorecard integrity",
+      "required": ["signature", "public_key_id", "merkle_root", "timestamp", "algorithm"],
+      "properties": {
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature of the scorecard content"
+        },
+        "public_key_id": {
+          "type": "string",
+          "description": "Identifier for the public key used for verification"
+        },
+        "merkle_root": {
+          "type": "string",
+          "description": "Merkle root hash for the scorecard data",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of signature creation",
+          "format": "date-time"
+        },
+        "algorithm": {
+          "type": "string",
+          "description": "Cryptographic algorithm used for signing",
+          "enum": ["ed25519", "ecdsa-p256", "rsa-pss-sha256"]
+        }
+      }
+    },
+    "warning_state": {
+      "type": "object",
+      "description": "Warning state for agents with unknown or non-compliant governance",
+      "required": ["has_warning", "warning_level", "warning_message"],
+      "properties": {
+        "has_warning": {
+          "type": "boolean",
+          "description": "Whether the agent has an active warning state"
+        },
+        "warning_level": {
+          "type": "string",
+          "description": "Level of warning",
+          "enum": ["none", "caution", "warning", "severe"]
+        },
+        "warning_message": {
+          "type": "string",
+          "description": "Human-readable warning message"
+        }
+      }
+    }
+  }
+}

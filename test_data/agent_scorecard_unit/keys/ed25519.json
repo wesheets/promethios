@@ -1,0 +1,7 @@
+{
+  "algorithm": "ed25519",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAtxRqPgtbejuTID6Oxx15YuxdpqTnxFw3SxYBCdJUUgQ=\n-----END PUBLIC KEY-----\n",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEICftagXPoA3PZW4MeBb07zH52aMVS08YeCv9CjpYzv2L\n-----END PRIVATE KEY-----\n",
+  "id": "760080710e42519fa3589932af477a71adc9721f6c98104d44b35a99a6644d49",
+  "created": "2025-05-26T23:53:27.411Z"
+}

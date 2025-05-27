@@ -1,0 +1,8 @@
+{
+  "type": "trust_requirements",
+  "sourceAgentId": "strict-agent",
+  "targetAgentId": "minimal-agent",
+  "reason": "Compliance level standard required, but minimal provided",
+  "timestamp": "2025-05-27T00:43:47.370Z",
+  "id": "dispute_3f6f9fb8-ac06-4bd3-b734-110a41cb07a4"
+}

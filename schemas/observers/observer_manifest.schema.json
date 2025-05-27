@@ -1,0 +1,384 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Promethios Constitutional Observer Manifest Schema",
+  "description": "Schema defining the structure and constraints for constitutional observers in the Promethios governance framework",
+  "type": "object",
+  "required": ["version", "observers", "global_settings"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the observer manifest schema",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "global_settings": {
+      "type": "object",
+      "description": "Global settings that apply to all observers",
+      "required": ["enabled", "log_level", "log_retention_days"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Master switch to enable or disable all observers",
+          "default": true
+        },
+        "log_level": {
+          "type": "string",
+          "description": "Global log level for all observers",
+          "enum": ["debug", "info", "warning", "error", "critical"],
+          "default": "info"
+        },
+        "log_retention_days": {
+          "type": "integer",
+          "description": "Number of days to retain observer logs",
+          "minimum": 1,
+          "maximum": 365,
+          "default": 30
+        },
+        "alert_channels": {
+          "type": "array",
+          "description": "Channels for sending observer alerts",
+          "items": {
+            "type": "object",
+            "required": ["type", "enabled"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["console", "file", "webhook", "email"]
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              },
+              "config": {
+                "type": "object",
+                "description": "Channel-specific configuration"
+              }
+            }
+          }
+        }
+      }
+    },
+    "observers": {
+      "type": "object",
+      "description": "Registry of all constitutional observers",
+      "required": ["prism", "vigil"],
+      "properties": {
+        "prism": {
+          "type": "object",
+          "description": "PRISM observer for belief trace auditing",
+          "required": ["enabled", "scope", "mode", "status", "settings"],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the PRISM observer is enabled",
+              "default": true
+            },
+            "scope": {
+              "type": "string",
+              "description": "Scope of the PRISM observer",
+              "enum": ["belief_trace", "manifest_validation", "both"],
+              "default": "both"
+            },
+            "mode": {
+              "type": "string",
+              "description": "Operational mode of the PRISM observer",
+              "enum": ["passive", "active", "hybrid"],
+              "default": "passive"
+            },
+            "status": {
+              "type": "string",
+              "description": "Deployment status of the PRISM observer",
+              "enum": ["development", "staging", "active", "deprecated"],
+              "default": "active"
+            },
+            "settings": {
+              "type": "object",
+              "description": "PRISM-specific settings",
+              "required": ["trace_validation_level", "manifest_validation_level", "log_file"],
+              "properties": {
+                "trace_validation_level": {
+                  "type": "string",
+                  "description": "Level of belief trace validation",
+                  "enum": ["minimal", "standard", "strict"],
+                  "default": "standard"
+                },
+                "manifest_validation_level": {
+                  "type": "string",
+                  "description": "Level of manifest validation",
+                  "enum": ["minimal", "standard", "strict"],
+                  "default": "standard"
+                },
+                "log_file": {
+                  "type": "string",
+                  "description": "Path to PRISM log file",
+                  "default": "logs/prism_manifest_audit.json"
+                },
+                "sampling_rate": {
+                  "type": "number",
+                  "description": "Percentage of operations to sample for validation",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "default": 100
+                },
+                "alert_thresholds": {
+                  "type": "object",
+                  "description": "Thresholds for triggering alerts",
+                  "properties": {
+                    "missing_trace_percent": {
+                      "type": "number",
+                      "description": "Percentage of missing traces that triggers an alert",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "default": 5
+                    },
+                    "undeclared_routes_count": {
+                      "type": "integer",
+                      "description": "Number of undeclared routes that triggers an alert",
+                      "minimum": 0,
+                      "default": 1
+                    }
+                  }
+                }
+              }
+            },
+            "hooks": {
+              "type": "array",
+              "description": "System hooks that PRISM observes",
+              "items": {
+                "type": "object",
+                "required": ["type", "enabled"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["module_registration", "belief_generation", "api_call", "schema_validation"]
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Hook-specific configuration"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "vigil": {
+          "type": "object",
+          "description": "VIGIL observer for trust decay tracking",
+          "required": ["enabled", "scope", "mode", "status", "settings"],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether the VIGIL observer is enabled",
+              "default": true
+            },
+            "scope": {
+              "type": "string",
+              "description": "Scope of the VIGIL observer",
+              "enum": ["trust_decay", "loop_outcome", "both"],
+              "default": "both"
+            },
+            "mode": {
+              "type": "string",
+              "description": "Operational mode of the VIGIL observer",
+              "enum": ["passive", "active", "hybrid"],
+              "default": "passive"
+            },
+            "status": {
+              "type": "string",
+              "description": "Deployment status of the VIGIL observer",
+              "enum": ["development", "staging", "active", "deprecated"],
+              "default": "staged"
+            },
+            "settings": {
+              "type": "object",
+              "description": "VIGIL-specific settings",
+              "required": ["trust_decay_threshold", "loop_outcome_tracking", "log_file"],
+              "properties": {
+                "trust_decay_threshold": {
+                  "type": "number",
+                  "description": "Threshold for trust decay detection",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "default": 0.1
+                },
+                "loop_outcome_tracking": {
+                  "type": "string",
+                  "description": "Level of loop outcome tracking",
+                  "enum": ["minimal", "standard", "comprehensive"],
+                  "default": "standard"
+                },
+                "log_file": {
+                  "type": "string",
+                  "description": "Path to VIGIL log file",
+                  "default": "logs/vigil_trust_snapshot.json"
+                },
+                "sampling_rate": {
+                  "type": "number",
+                  "description": "Percentage of operations to sample for validation",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "default": 100
+                },
+                "alert_thresholds": {
+                  "type": "object",
+                  "description": "Thresholds for triggering alerts",
+                  "properties": {
+                    "trust_dip_percent": {
+                      "type": "number",
+                      "description": "Percentage of trust dip that triggers an alert",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "default": 15
+                    },
+                    "unreflected_failure_count": {
+                      "type": "integer",
+                      "description": "Number of unreflected failures that triggers an alert",
+                      "minimum": 0,
+                      "default": 3
+                    }
+                  }
+                }
+              }
+            },
+            "hooks": {
+              "type": "array",
+              "description": "System hooks that VIGIL observes",
+              "items": {
+                "type": "object",
+                "required": ["type", "enabled"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["trust_update", "loop_closure", "memory_mutation", "reflection_completion"]
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Hook-specific configuration"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": "object",
+        "description": "Extension point for future observers",
+        "required": ["enabled", "scope", "mode", "status", "settings"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the observer is enabled",
+            "default": false
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scope of the observer"
+          },
+          "mode": {
+            "type": "string",
+            "description": "Operational mode of the observer",
+            "enum": ["passive", "active", "hybrid"],
+            "default": "passive"
+          },
+          "status": {
+            "type": "string",
+            "description": "Deployment status of the observer",
+            "enum": ["development", "staging", "active", "deprecated"],
+            "default": "development"
+          },
+          "settings": {
+            "type": "object",
+            "description": "Observer-specific settings"
+          },
+          "hooks": {
+            "type": "array",
+            "description": "System hooks that the observer monitors",
+            "items": {
+              "type": "object",
+              "required": ["type", "enabled"],
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "config": {
+                  "type": "object",
+                  "description": "Hook-specific configuration"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permission settings for observers",
+      "properties": {
+        "read_only": {
+          "type": "boolean",
+          "description": "Whether observers are restricted to read-only operations",
+          "default": true
+        },
+        "allowed_actions": {
+          "type": "array",
+          "description": "Actions that observers are allowed to perform",
+          "items": {
+            "type": "string",
+            "enum": ["log", "alert", "report", "suggest"]
+          },
+          "default": ["log", "alert", "report"]
+        },
+        "restricted_actions": {
+          "type": "array",
+          "description": "Actions that observers are not allowed to perform",
+          "items": {
+            "type": "string",
+            "enum": ["modify", "override", "execute", "delete"]
+          },
+          "default": ["modify", "override", "execute", "delete"]
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the observer manifest",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the manifest was created",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of when the manifest was last updated",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "Identifier of the entity that created the manifest"
+        },
+        "updated_by": {
+          "type": "string",
+          "description": "Identifier of the entity that last updated the manifest"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the observer manifest"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
