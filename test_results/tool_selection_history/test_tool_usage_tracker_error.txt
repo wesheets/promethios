@@ -1,0 +1,108 @@
+Error: Command failed: npx mocha tests/unit/modules/tool_selection_history/test_tool_usage_tracker.js --timeout 30000
+
+Stdout: 
+
+  ToolUsageTracker
+    constructor
+      ✔ should initialize with default config if not provided
+      1) should create data directory if it does not exist
+      ✔ should handle errors when creating data directory
+    recordToolInvocation
+      ✔ should record a tool invocation with required fields
+      ✔ should handle missing parameters and context
+      ✔ should determine tool type from tool ID
+    updateOutcome
+      ✔ should update the outcome of a tool invocation
+      ✔ should throw an error if invocation record not found
+      ✔ should handle error details in outcome
+    updateExecutionMetrics
+      ✔ should update execution metrics for a tool invocation
+      ✔ should throw an error if invocation record not found
+      ✔ should handle partial metrics update
+    addFeedback
+      ✔ should add feedback to a tool invocation
+      ✔ should throw an error if invocation record not found
+      ✔ should handle missing feedback fields
+    getToolInvocation
+      ✔ should get a tool invocation record by ID
+      ✔ should return undefined if invocation not found
+    queryToolInvocations
+      ✔ should query invocations with no filters
+      ✔ should filter by toolId
+      ✔ should filter by toolType
+      ✔ should filter by agentId
+      ✔ should filter by taskId
+      ✔ should filter by status
+      ✔ should filter by time range
+      ✔ should sort by specified field
+      ✔ should apply pagination
+    getToolUsageHistory
+      ✔ should get tool usage history with no time range
+      ✔ should filter by time range
+      ✔ should return empty array if tool has no history
+    getAgentToolUsage
+      ✔ should get tool usage for a specific agent
+      ✔ should filter by time range
+    persistData
+      2) should persist data to storage
+      ✔ should handle errors during persistence
+      ✔ should clean up old records before persistence
+      ✔ should clean up old persistence files
+    loadData
+      3) should load data from storage
+      ✔ should handle errors during loading
+      ✔ should do nothing if no persistence files found
+    _cleanupOldRecords
+      ✔ should remove records older than retention period
+    _cleanupOldPersistenceFiles
+      ✔ should remove files older than retention period
+      ✔ should handle errors during cleanup
+
+
+  38 passing (169ms)
+  3 failing
+
+  1) ToolUsageTracker
+       constructor
+         should create data directory if it does not exist:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_tool_usage_tracker.js:72:48)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  2) ToolUsageTracker
+       persistData
+         should persist data to storage:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_tool_usage_tracker.js:539:47)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  3) ToolUsageTracker
+       loadData
+         should load data from storage:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_tool_usage_tracker.js:591:47)
+      at process.processImmediate (node:internal/timers:491:21)
+
+
+
+
+
+Stderr: 

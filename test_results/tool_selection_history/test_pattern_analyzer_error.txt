@@ -1,0 +1,183 @@
+Error: spawnSync /bin/sh ETIMEDOUT
+
+Stdout: 
+
+  PatternAnalyzer
+    constructor
+      ✔ should initialize with default config if not provided
+      1) should create data directory if it does not exist
+      ✔ should handle errors when creating data directory
+      ✔ should setup pattern update timer if interval is positive
+    updatePatterns
+      ✔ should update patterns for a tool with sufficient data
+      ✔ should return null if insufficient data
+      ✔ should extract context patterns from usage history
+      ✔ should calculate usage metrics from usage history
+      ✔ should update efficiency metrics
+      ✔ should generate insights for the tool
+    updateAllPatterns
+      2) should update patterns for all tools
+      3) should generate cross-tool insights
+    getToolUsagePatterns
+      ✔ should get all patterns with no filters
+      ✔ should filter by toolId
+      ✔ should filter by toolType
+      ✔ should filter by minSampleSize
+      ✔ should filter by minSuccessRate
+    detectToolOveruse
+      ✔ should detect tool type overuse
+      ✔ should use custom threshold if provided
+      ✔ should return empty array if no overuse detected
+      ✔ should return empty array if insufficient data
+    detectToolUnderuse
+      ✔ should detect tool type underuse
+      ✔ should use custom threshold if provided
+      ✔ should detect unused tool types
+      ✔ should return empty array if insufficient data
+    getToolEfficiencyMetrics
+      ✔ should get efficiency metrics for a specific tool
+      ✔ should get efficiency metrics for all tools
+      ✔ should return null if no metrics found for tool
+    compareToolEfficiency
+      4) should compare overall metrics between two tools
+      5) should compare contextual metrics between two tools
+      ✔ should throw error if metrics not available for one or both tools
+    generateInsights
+      ✔ should get all insights with no filters
+      ✔ should filter by toolId
+      ✔ should filter by toolType
+      ✔ should filter by category
+      6) should filter by minConfidence
+      ✔ should apply limit if specified
+    persistData
+      7) should persist data to storage
+      ✔ should handle errors during persistence
+    loadData
+      8) should load data from storage
+      ✔ should handle errors during loading
+      ✔ should do nothing if no persistence files found
+    cleanup
+      9) should clean up resources
+
+
+  34 passing (187ms)
+  9 failing
+
+  1) PatternAnalyzer
+       constructor
+         should create data directory if it does not exist:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:96:48)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  2) PatternAnalyzer
+       updateAllPatterns
+         should update patterns for all tools:
+     TypeError: Cannot read properties of undefined (reading 'taskType')
+      at PatternAnalyzer._extractContextPatterns (src/modules/tool_selection_history/pattern_analyzer.js:450:39)
+      at PatternAnalyzer.updatePatterns (src/modules/tool_selection_history/pattern_analyzer.js:84:34)
+      at Function.invoke (node_modules/sinon/lib/sinon/proxy-invoke.js:53:47)
+      at PatternAnalyzer.updatePatterns (node_modules/sinon/lib/sinon/proxy.js:270:26)
+      at PatternAnalyzer.updateAllPatterns (src/modules/tool_selection_history/pattern_analyzer.js:135:12)
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:289:23)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  3) PatternAnalyzer
+       updateAllPatterns
+         should generate cross-tool insights:
+     TypeError: Cannot read properties of undefined (reading 'taskType')
+      at PatternAnalyzer._extractContextPatterns (src/modules/tool_selection_history/pattern_analyzer.js:450:39)
+      at PatternAnalyzer.updatePatterns (src/modules/tool_selection_history/pattern_analyzer.js:84:34)
+      at PatternAnalyzer.updateAllPatterns (src/modules/tool_selection_history/pattern_analyzer.js:135:12)
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:301:23)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  4) PatternAnalyzer
+       compareToolEfficiency
+         should compare overall metrics between two tools:
+
+      AssertionError: expected 0.10000000000000009 to equal 0.1
+      + expected - actual
+
+      -0.10000000000000009
+      +0.1
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:675:70)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  5) PatternAnalyzer
+       compareToolEfficiency
+         should compare contextual metrics between two tools:
+
+      AssertionError: expected 0.09999999999999998 to equal 0.1
+      + expected - actual
+
+      -0.09999999999999998
+      +0.1
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:686:80)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  6) PatternAnalyzer
+       generateInsights
+         should filter by minConfidence:
+
+      AssertionError: expected 1 to equal 2
+      + expected - actual
+
+      -1
+      +2
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:774:34)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  7) PatternAnalyzer
+       persistData
+         should persist data to storage:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:803:47)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  8) PatternAnalyzer
+       loadData
+         should load data from storage:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:843:47)
+      at process.processImmediate (node:internal/timers:491:21)
+
+  9) PatternAnalyzer
+       cleanup
+         should clean up resources:
+
+      AssertionError: expected false to be true
+      + expected - actual
+
+      -false
+      +true
+      
+      at Context.<anonymous> (tests/unit/modules/tool_selection_history/test_pattern_analyzer.js:881:47)
+      at process.processImmediate (node:internal/timers:491:21)
+
+
+
+
+
+Stderr: 

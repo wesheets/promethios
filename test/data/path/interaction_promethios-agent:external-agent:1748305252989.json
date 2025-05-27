@@ -1,0 +1,16 @@
+{
+  "id": "promethios-agent:external-agent:1748305252989",
+  "sourceAgentId": "promethios-agent",
+  "targetAgentId": "external-agent",
+  "context": {
+    "operation": "test-operation",
+    "confidence": 0.8
+  },
+  "result": {
+    "status": "success",
+    "data": {
+      "test": "data"
+    }
+  },
+  "timestamp": "2025-05-27T00:20:52.989Z"
+}

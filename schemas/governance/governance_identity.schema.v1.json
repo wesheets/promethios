@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Governance Identity Schema",
+  "description": "Defines the governance identity metadata for agents within the Promethios framework, enabling trust negotiation and interoperability between agents with different governance frameworks.",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "governance_framework",
+    "constitution_hash",
+    "compliance_level",
+    "memory_integrity",
+    "trust_requirements",
+    "fallback_strategy"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Unique identifier for the agent",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "governance_framework": {
+      "type": "string",
+      "description": "The governance framework that governs this agent",
+      "enum": ["promethios", "external", "none"],
+      "default": "promethios"
+    },
+    "constitution_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the constitutional contract governing this agent",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "compliance_level": {
+      "type": "string",
+      "description": "Level of compliance with the governance framework",
+      "enum": ["strict", "standard", "minimal", "custom"],
+      "default": "standard"
+    },
+    "memory_integrity": {
+      "type": "object",
+      "description": "Memory integrity verification mechanism",
+      "required": ["type", "verification_endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of memory integrity verification",
+          "enum": ["merkle_v3", "hash_chain", "immutable_log", "none"],
+          "default": "merkle_v3"
+        },
+        "verification_endpoint": {
+          "type": "string",
+          "description": "Endpoint for verifying memory integrity",
+          "format": "uri"
+        },
+        "last_verified": {
+          "type": "string",
+          "description": "ISO timestamp of last verification",
+          "format": "date-time"
+        }
+      }
+    },
+    "trust_requirements": {
+      "type": "object",
+      "description": "Requirements for trusting other agents",
+      "required": ["memory_integrity", "reflection_enforced", "belief_trace"],
+      "properties": {
+        "memory_integrity": {
+          "type": "boolean",
+          "description": "Whether memory integrity is required for trust",
+          "default": true
+        },
+        "reflection_enforced": {
+          "type": "boolean",
+          "description": "Whether reflection enforcement is required for trust",
+          "default": true
+        },
+        "belief_trace": {
+          "type": "boolean",
+          "description": "Whether belief trace is required for trust",
+          "default": true
+        },
+        "minimum_compliance_level": {
+          "type": "string",
+          "description": "Minimum compliance level required for trust",
+          "enum": ["strict", "standard", "minimal", "any"],
+          "default": "standard"
+        }
+      }
+    },
+    "fallback_strategy": {
+      "type": "string",
+      "description": "Strategy for handling interactions with agents that don't meet trust requirements",
+      "enum": ["reject", "log-and-restrict", "log-and-proceed", "proceed"],
+      "default": "log-and-restrict"
+    },
+    "confidence_modifiers": {
+      "type": "object",
+      "description": "Confidence modifiers for different trust scenarios",
+      "properties": {
+        "unknown_governance": {
+          "type": "number",
+          "description": "Confidence modifier for unknown governance",
+          "minimum": -1.0,
+          "maximum": 0.0,
+          "default": -0.3
+        },
+        "missing_reflection": {
+          "type": "number",
+          "description": "Confidence modifier for missing reflection",
+          "minimum": -1.0,
+          "maximum": 0.0,
+          "default": -0.5
+        },
+        "missing_belief_trace": {
+          "type": "number",
+          "description": "Confidence modifier for missing belief trace",
+          "minimum": -1.0,
+          "maximum": 0.0,
+          "default": -0.4
+        },
+        "missing_memory_integrity": {
+          "type": "number",
+          "description": "Confidence modifier for missing memory integrity",
+          "minimum": -1.0,
+          "maximum": 0.0,
+          "default": -0.6
+        }
+      }
+    },
+    "audit_surface": {
+      "type": "string",
+      "description": "URI for accessing the audit surface of this agent",
+      "format": "uri"
+    },
+    "refusal_policy": {
+      "type": "object",
+      "description": "Policy for refusing interactions with untrusted agents",
+      "properties": {
+        "explain_rejection": {
+          "type": "boolean",
+          "description": "Whether to explain rejection reasons",
+          "default": true
+        },
+        "log_rejection": {
+          "type": "boolean",
+          "description": "Whether to log rejection events",
+          "default": true
+        },
+        "retry_allowed": {
+          "type": "boolean",
+          "description": "Whether retry is allowed after rejection",
+          "default": false
+        }
+      }
+    },
+    "interoperability_version": {
+      "type": "string",
+      "description": "Version of the interoperability protocol",
+      "default": "1.0.0",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  },
+  "additionalProperties": false
+}

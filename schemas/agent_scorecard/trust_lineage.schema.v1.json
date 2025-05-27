@@ -1,0 +1,215 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trust Lineage Schema",
+  "description": "Schema for tracking trust delegation and lineage between agents",
+  "type": "object",
+  "required": [
+    "lineage_id",
+    "timestamp",
+    "source_agent",
+    "target_agent",
+    "delegation_type",
+    "trust_context",
+    "trust_metrics",
+    "cryptographic_proof"
+  ],
+  "properties": {
+    "lineage_id": {
+      "type": "string",
+      "description": "Unique identifier for this trust lineage record",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of trust delegation",
+      "format": "date-time"
+    },
+    "source_agent": {
+      "type": "object",
+      "description": "Agent delegating trust",
+      "required": ["agent_id", "governance_identity", "trust_score"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Unique identifier for the source agent"
+        },
+        "governance_identity": {
+          "type": "object",
+          "description": "Governance identity of the source agent",
+          "required": ["type", "constitution_hash"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type of governance framework",
+              "enum": ["promethios", "external_verified", "external_unverified", "unknown"]
+            },
+            "constitution_hash": {
+              "type": "string",
+              "description": "SHA-256 hash of the governing constitution",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            }
+          }
+        },
+        "trust_score": {
+          "type": ["number", "null"],
+          "description": "Trust score of the source agent at time of delegation",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "target_agent": {
+      "type": "object",
+      "description": "Agent receiving trust delegation",
+      "required": ["agent_id", "governance_identity", "trust_score"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Unique identifier for the target agent"
+        },
+        "governance_identity": {
+          "type": "object",
+          "description": "Governance identity of the target agent",
+          "required": ["type", "constitution_hash"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type of governance framework",
+              "enum": ["promethios", "external_verified", "external_unverified", "unknown"]
+            },
+            "constitution_hash": {
+              "type": "string",
+              "description": "SHA-256 hash of the governing constitution",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            }
+          }
+        },
+        "trust_score": {
+          "type": ["number", "null"],
+          "description": "Trust score of the target agent at time of delegation",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "delegation_type": {
+      "type": "string",
+      "description": "Type of trust delegation",
+      "enum": ["direct", "transitive", "conditional", "temporary", "revocable"]
+    },
+    "trust_context": {
+      "type": "object",
+      "description": "Context in which trust is delegated",
+      "required": ["domain", "scope", "expiration"],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "Domain or task area for which trust is delegated"
+        },
+        "scope": {
+          "type": "array",
+          "description": "Specific scopes of delegation",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expiration": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 timestamp of delegation expiration, or null if permanent",
+          "format": "date-time"
+        }
+      }
+    },
+    "trust_metrics": {
+      "type": "object",
+      "description": "Metrics associated with the trust delegation",
+      "required": ["delegation_score", "confidence", "constraints"],
+      "properties": {
+        "delegation_score": {
+          "type": "number",
+          "description": "Score assigned to this specific delegation (0.0-1.0)",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence in the delegation decision (0.0-1.0)",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "constraints": {
+          "type": "array",
+          "description": "Constraints applied to the delegation",
+          "items": {
+            "type": "object",
+            "required": ["type", "value"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Type of constraint"
+              },
+              "value": {
+                "type": "string",
+                "description": "Value or expression for the constraint"
+              }
+            }
+          }
+        }
+      }
+    },
+    "verification_history": {
+      "type": "array",
+      "description": "History of verification checks on this trust lineage",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "verifier", "result"],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of verification",
+            "format": "date-time"
+          },
+          "verifier": {
+            "type": "string",
+            "description": "Entity that performed the verification"
+          },
+          "result": {
+            "type": "string",
+            "description": "Result of verification",
+            "enum": ["valid", "invalid", "expired", "revoked", "unknown"]
+          }
+        }
+      }
+    },
+    "cryptographic_proof": {
+      "type": "object",
+      "description": "Cryptographic proof of lineage integrity",
+      "required": ["signature", "public_key_id", "previous_lineage_hash", "timestamp", "algorithm"],
+      "properties": {
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature of the lineage content"
+        },
+        "public_key_id": {
+          "type": "string",
+          "description": "Identifier for the public key used for verification"
+        },
+        "previous_lineage_hash": {
+          "type": ["string", "null"],
+          "description": "Hash of the previous lineage record in the chain, or null if first",
+          "pattern": "^[a-fA-F0-9]{64}$|^null$"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of signature creation",
+          "format": "date-time"
+        },
+        "algorithm": {
+          "type": "string",
+          "description": "Cryptographic algorithm used for signing",
+          "enum": ["ed25519", "ecdsa-p256", "rsa-pss-sha256"]
+        }
+      }
+    }
+  }
+}
