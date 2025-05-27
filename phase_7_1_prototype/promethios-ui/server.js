@@ -1,5 +1,12 @@
-const express = require('express');
-const path = require('path');
+// ES Module version of server.js
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES modules don't have __dirname, so we need to create it
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Serve static files from the dist directory
