@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
 import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import BenchmarkPreview from './components/landing/BenchmarkPreview';
@@ -21,9 +22,9 @@ const App: React.FC = () => {
       <AuthProvider>
         <AnalyticsProvider>
           <Router>
-            <div className="min-h-screen dark:bg-gray-900">
+            <div className="min-h-screen flex flex-col dark:bg-gray-900">
               <Header />
-              <div className="pt-16"> {/* Add padding to account for fixed header */}
+              <div className="pt-16 flex-grow"> {/* Add padding to account for fixed header */}
                 <Routes>
                   <Route path="/" element={
                     <>
@@ -46,6 +47,7 @@ const App: React.FC = () => {
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
                 </Routes>
               </div>
+              <Footer />
               <FeedbackWidget />
             </div>
           </Router>
