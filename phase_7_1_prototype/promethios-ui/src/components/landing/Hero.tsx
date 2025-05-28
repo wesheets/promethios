@@ -85,7 +85,7 @@ const Hero: React.FC = () => {
             </div>
             <div className="p-4">
               <img 
-                src="/images/cmu-benchmark.png" 
+                src="/images/cmu-benchmark-new.png" 
                 alt="CMU Benchmark Results" 
                 className="w-full h-auto"
               />
