@@ -35,7 +35,10 @@ const DashboardPage: React.FC = () => {
             <p className="text-gray-700 dark:text-gray-300">
               Monitor and manage AI governance policies and compliance.
             </p>
-            <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            <button 
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              onClick={() => navigate('/governance')}
+            >
               View Details
             </button>
           </div>
@@ -60,7 +63,10 @@ const DashboardPage: React.FC = () => {
             <p className="text-gray-700 dark:text-gray-300">
               Access guides, tutorials, and API documentation.
             </p>
-            <button className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+            <button 
+              className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              onClick={() => navigate('/documentation')}
+            >
               View Docs
             </button>
           </div>
