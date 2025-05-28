@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { liveObserverService, useRealtimeObserverData } from '../services/liveObservers';
 
 // Agent wrapping examples for different frameworks
 const agentWrappingExamples = {
@@ -151,12 +150,8 @@ const DocumentationPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('getting-started');
   const [activeFramework, setActiveFramework] = useState('python');
   const [activeInstallMethod, setActiveInstallMethod] = useState('npm');
-  const [useLiveData, setUseLiveData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [apiDocs, setApiDocs] = useState<any>(null);
-
-  // Real-time data hook for documentation updates
-  const { connected, error: realtimeError } = useRealtimeObserverData();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -170,42 +165,36 @@ const DocumentationPage: React.FC = () => {
     const fetchApiDocs = async () => {
       try {
         setLoading(true);
-        if (useLiveData) {
-          // In a real implementation, this would fetch from the API
-          const response = await liveObserverService.getApiDocs();
-          setApiDocs(response);
-        } else {
-          // Mock data for demo
-          setApiDocs({
-            version: "1.0.0",
-            endpoints: [
-              {
-                name: "Register Agent",
-                path: "/agents/register",
-                method: "POST",
-                description: "Register a new agent with Promethios governance"
-              },
-              {
-                name: "Get Agent Status",
-                path: "/agents/{agentId}/status",
-                method: "GET",
-                description: "Get the current status of a registered agent"
-              },
-              {
-                name: "Get PRISM Metrics",
-                path: "/observers/prism/metrics",
-                method: "GET",
-                description: "Get metrics from the PRISM observer"
-              },
-              {
-                name: "Get Vigil Metrics",
-                path: "/observers/vigil/metrics",
-                method: "GET",
-                description: "Get metrics from the Vigil observer"
-              }
-            ]
-          });
-        }
+        // Mock data for demo
+        setApiDocs({
+          version: "1.0.0",
+          endpoints: [
+            {
+              name: "Register Agent",
+              path: "/agents/register",
+              method: "POST",
+              description: "Register a new agent with Promethios governance"
+            },
+            {
+              name: "Get Agent Status",
+              path: "/agents/{agentId}/status",
+              method: "GET",
+              description: "Get the current status of a registered agent"
+            },
+            {
+              name: "Get PRISM Metrics",
+              path: "/observers/prism/metrics",
+              method: "GET",
+              description: "Get metrics from the PRISM observer"
+            },
+            {
+              name: "Get Vigil Metrics",
+              path: "/observers/vigil/metrics",
+              method: "GET",
+              description: "Get metrics from the Vigil observer"
+            }
+          ]
+        });
       } catch (error) {
         console.error('Error fetching API docs:', error);
       } finally {
@@ -214,7 +203,7 @@ const DocumentationPage: React.FC = () => {
     };
 
     fetchApiDocs();
-  }, [useLiveData]);
+  }, []);
 
   // Render getting started tab
   const renderGettingStartedTab = () => {
@@ -414,28 +403,17 @@ const DocumentationPage: React.FC = () => {
             <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
               <li><strong>driftThreshold:</strong> Percentage of drift allowed before warning</li>
               <li><strong>significantDriftThreshold:</strong> Percentage of drift allowed before violation</li>
-              <li><strong>trustScoreMinimum:</strong> Minimum trust score required for agent operation</li>
+              <li><strong>trustScoreMinimum:</strong> Minimum trust score required (0.0-1.0)</li>
               <li><strong>unreflectedFailureLimit:</strong> Number of unreflected failures allowed</li>
             </ul>
           </div>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Best Practices</h3>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-            <li>Start with standard validation levels and adjust based on your needs</li>
-            <li>Use a high sampling rate in development and reduce in production for performance</li>
-            <li>Implement proper error handling for governance violations</li>
-            <li>Regularly review governance metrics and adjust configuration as needed</li>
-            <li>Test your wrapped agents thoroughly before deploying to production</li>
-          </ul>
         </section>
       </div>
     );
   };
 
-  // Render API documentation tab
-  const renderApiDocumentationTab = () => {
+  // Render API reference tab
+  const renderApiReferenceTab = () => {
     if (loading) {
       return (
         <div className="flex justify-center items-center h-64">
@@ -449,252 +427,63 @@ const DocumentationPage: React.FC = () => {
         <section>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">API Reference</h3>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios provides a comprehensive API for integrating governance into your applications.
-            This reference documents the available endpoints and their usage.
+            Promethios provides a RESTful API for integrating with your existing systems and monitoring your AI agents.
           </p>
-          
-          {/* Data Source Toggle */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center">
-              <span className="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">Documentation Source:</span>
-              <button
-                onClick={() => setUseLiveData(true)}
-                className={`px-3 py-1 text-sm rounded-l-md ${
-                  useLiveData 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                Live Docs
-              </button>
-              <button
-                onClick={() => setUseLiveData(false)}
-                className={`px-3 py-1 text-sm rounded-r-md ${
-                  !useLiveData 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                Static Docs
-              </button>
-            </div>
-            
-            {useLiveData && (
-              <div className="flex items-center">
-                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {connected ? 'Live documentation active' : 'Live documentation disconnected'}
-                </span>
-                {realtimeError && (
-                  <span className="ml-2 text-sm text-red-500">{realtimeError}</span>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {apiDocs && (
-          <section>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-6">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">API Version</h4>
-              <p className="text-gray-700 dark:text-gray-300">{apiDocs.version}</p>
-            </div>
-
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Endpoints</h4>
-            <div className="space-y-4">
-              {apiDocs.endpoints.map((endpoint, index) => (
-                <div key={index} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-                  <div className="flex items-center mb-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                      endpoint.method === 'GET' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                      endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                      endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    }`}>
-                      {endpoint.method}
-                    </span>
-                    <h5 className="ml-2 font-semibold text-gray-800 dark:text-white">{endpoint.name}</h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{endpoint.path}</p>
-                  <p className="text-gray-700 dark:text-gray-300">{endpoint.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">SDK Reference</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            The Promethios SDK provides client libraries for integrating with the Promethios API.
-          </p>
-          
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">wrap_agent / wrapAgent</h4>
-              <p className="text-gray-700 dark:text-gray-300 mb-2">
-                Wraps an AI agent with Promethios governance capabilities.
-              </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                <h5 className="font-medium text-gray-800 dark:text-white mb-1">Parameters:</h5>
-                <ul className="list-disc pl-6 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <li><strong>agent:</strong> The AI agent to wrap</li>
-                  <li><strong>observers:</strong> Array of observer instances</li>
-                  <li><strong>config:</strong> Configuration options</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">PRISMObserver</h4>
-              <p className="text-gray-700 dark:text-gray-300 mb-2">
-                Observer for monitoring belief trace compliance and manifest validation.
-              </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                <h5 className="font-medium text-gray-800 dark:text-white mb-1">Methods:</h5>
-                <ul className="list-disc pl-6 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <li><strong>getMetrics():</strong> Returns current metrics</li>
-                  <li><strong>getViolations():</strong> Returns current violations</li>
-                  <li><strong>configure(options):</strong> Updates configuration</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">VigilObserver</h4>
-              <p className="text-gray-700 dark:text-gray-300 mb-2">
-                Observer for monitoring trust decay and loop outcomes.
-              </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded p-3">
-                <h5 className="font-medium text-gray-800 dark:text-white mb-1">Methods:</h5>
-                <ul className="list-disc pl-6 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <li><strong>getMetrics():</strong> Returns current metrics</li>
-                  <li><strong>getTrustScore():</strong> Returns current trust score</li>
-                  <li><strong>configure(options):</strong> Updates configuration</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  };
-
-  // Render governance framework tab
-  const renderGovernanceFrameworkTab = () => {
-    return (
-      <div className="space-y-6">
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Governance Framework Overview</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            The Promethios Governance Framework is built on three core principles:
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Transparency</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                AI systems should be transparent about their sources, reasoning, and limitations.
-              </p>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
-              <h4 className="font-semibold text-green-800 dark:text-green-300 mb-2">Accountability</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                AI systems should be accountable for their actions and decisions.
-              </p>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg">
-              <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">Safety</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                AI systems should operate safely and within established boundaries.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Observer Components</h3>
-          
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4 mb-4">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">PRISM Observer</h4>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              The PRISM (Provenance, Reasoning, and Information Source Monitoring) Observer focuses on 
-              transparency and accountability by monitoring:
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
+            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">API Version</h4>
+            <p className="text-gray-700 dark:text-gray-300">
+              {apiDocs?.version || 'N/A'}
             </p>
-            <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
-              <li><strong>Belief Traces:</strong> Ensuring AI systems properly trace the sources of their beliefs</li>
-              <li><strong>Manifest Validation:</strong> Verifying that AI systems operate according to their declared capabilities</li>
-              <li><strong>Tool Usage:</strong> Monitoring how AI systems use tools and external resources</li>
-              <li><strong>Memory Access:</strong> Tracking how AI systems access and modify memory</li>
-            </ul>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Vigil Observer</h4>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              The Vigil Observer focuses on safety and reliability by monitoring:
-            </p>
-            <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
-              <li><strong>Trust Decay:</strong> Tracking how trust in AI systems changes over time</li>
-              <li><strong>Loop Outcomes:</strong> Monitoring the success, failure, and reflection of AI system operations</li>
-              <li><strong>Drift Detection:</strong> Identifying when AI systems drift from their intended goals</li>
-              <li><strong>Reflection Quality:</strong> Evaluating how well AI systems reflect on their actions</li>
-            </ul>
           </div>
         </section>
 
         <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Governance Policies</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios enforces governance through a set of configurable policies:
-          </p>
-          
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Trace Validation Policy</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                Ensures that AI systems properly trace the sources of their beliefs and can justify their statements.
-                Violations occur when statements lack proper sourcing or verification.
-              </p>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Trust Threshold Policy</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                Enforces minimum trust scores for AI system operation. Systems with trust scores below the threshold
-                may be restricted or require additional verification.
-              </p>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Drift Control Policy</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                Monitors and controls how much AI systems can drift from their intended goals. Significant drift
-                triggers warnings or interventions.
-              </p>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Reflection Requirement Policy</h4>
-              <p className="text-gray-700 dark:text-gray-300">
-                Requires AI systems to reflect on their actions, especially after failures. Systems that fail to
-                reflect properly may have their trust scores reduced.
-              </p>
-            </div>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Endpoints</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Path</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-600">
+                {apiDocs?.endpoints.map((endpoint, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{endpoint.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        endpoint.method === 'GET' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                        endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                        endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}>
+                        {endpoint.method}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">{endpoint.path}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{endpoint.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
         <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Compliance and Reporting</h3>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Authentication</h3>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios provides comprehensive compliance monitoring and reporting:
+            All API requests require authentication using an API key. You can obtain an API key from your Promethios dashboard.
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-            <li><strong>Real-time Monitoring:</strong> Track governance metrics and violations in real-time</li>
-            <li><strong>Compliance Reports:</strong> Generate detailed reports on AI system compliance</li>
-            <li><strong>Violation Alerts:</strong> Receive alerts when governance policies are violated</li>
-            <li><strong>Audit Trails:</strong> Maintain detailed audit trails of AI system behavior</li>
-            <li><strong>Performance Analytics:</strong> Analyze how governance affects AI system performance</li>
-          </ul>
+          <div className="bg-gray-800 rounded-md p-4">
+            <code className="text-white font-mono text-sm">
+              curl -X GET "https://api.promethios.ai/observers/prism/metrics" \<br />
+              &nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY"
+            </code>
+          </div>
         </section>
       </div>
     );
@@ -706,58 +495,47 @@ const DocumentationPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
           Documentation
         </h1>
-
+        
         {/* Tabs */}
         <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-          <nav className="-mb-px flex flex-wrap">
+          <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setActiveTab('getting-started')}
-              className={`mr-8 pb-4 px-1 border-b-2 font-medium text-sm ${
+              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'getting-started'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
+              onClick={() => setActiveTab('getting-started')}
             >
               Getting Started
             </button>
             <button
-              onClick={() => setActiveTab('agent-wrapping')}
-              className={`mr-8 pb-4 px-1 border-b-2 font-medium text-sm ${
+              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'agent-wrapping'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
+              onClick={() => setActiveTab('agent-wrapping')}
             >
-              Agent Wrapping Guide
+              Agent Wrapping
             </button>
             <button
-              onClick={() => setActiveTab('api-documentation')}
-              className={`mr-8 pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'api-documentation'
+              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'api-reference'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
+              onClick={() => setActiveTab('api-reference')}
             >
-              API Documentation
-            </button>
-            <button
-              onClick={() => setActiveTab('governance-framework')}
-              className={`mr-8 pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'governance-framework'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              Governance Framework
+              API Reference
             </button>
           </nav>
         </div>
-
+        
         {/* Tab content */}
         {activeTab === 'getting-started' && renderGettingStartedTab()}
         {activeTab === 'agent-wrapping' && renderAgentWrappingTab()}
-        {activeTab === 'api-documentation' && renderApiDocumentationTab()}
-        {activeTab === 'governance-framework' && renderGovernanceFrameworkTab()}
+        {activeTab === 'api-reference' && renderApiReferenceTab()}
       </div>
     </div>
   );
