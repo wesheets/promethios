@@ -9,12 +9,27 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files from the dist directory with proper MIME types
+app.use(express.static(path.join(__dirname, 'dist'), {
+  setHeaders: (res, path) => {
+    // Set correct MIME types for JavaScript modules
+    if (path.endsWith('.js')) {
+      res.set('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.mjs')) {
+      res.set('Content-Type', 'application/javascript');
+    }
+  }
+}));
 
-// For any other request, send the index.html file
-// This enables client-side routing
-app.get('*', (req, res) => {
+// Only use the fallback for non-file requests
+// This prevents index.html from being served for JS module requests
+app.get('*', (req, res, next) => {
+  // Skip fallback for paths with file extensions (likely static assets)
+  if (req.path.includes('.')) {
+    return next();
+  }
+  
+  // For routes without extensions, serve index.html
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
