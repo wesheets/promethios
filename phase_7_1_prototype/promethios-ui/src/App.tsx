@@ -17,6 +17,7 @@ import InvestorDemoToggle from './components/common/InvestorDemoToggle';
 import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
+import DashboardPage from './pages/DashboardPage';
 
 const App: React.FC = () => {
   return (
@@ -40,6 +41,7 @@ const App: React.FC = () => {
                   <Route path="/login" element={<LoginWaitlistPage />} />
                   <Route path="/verify-email" element={<EmailVerification />} />
                   <Route path="/onboarding" element={<OnboardingFlow />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/benchmark" element={
                     <>
                       <InvestorDemoToggle />
