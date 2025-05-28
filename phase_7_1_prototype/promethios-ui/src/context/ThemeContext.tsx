@@ -11,22 +11,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Default to dark mode
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Handle theme changes
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
-  // Apply theme to document
   useEffect(() => {
-    // Check if document is available (for SSR safety)
-    if (typeof document !== 'undefined') {
-      if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+    // Apply theme to document
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    // Save preference to localStorage in a real implementation
+  };
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
@@ -38,11 +35,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    // Return a default context instead of throwing an error
-    return {
-      isDarkMode: true,
-      toggleTheme: () => {}
-    };
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
 };

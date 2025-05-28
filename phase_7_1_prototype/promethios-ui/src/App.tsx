@@ -1,88 +1,70 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-
-// Layout components
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-
-// Pages
-import HomePage from './pages/HomePage';
+import Hero from './components/landing/Hero';
+import Features from './components/landing/Features';
+import BenchmarkPreview from './components/landing/BenchmarkPreview';
+import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
+import EmailVerification from './components/auth/EmailVerification';
+import OnboardingFlow from './components/auth/OnboardingFlow';
+import CMUBenchmarkDashboard from './components/benchmark/CMUBenchmarkDashboard';
+import FeedbackWidget from './components/common/FeedbackWidget';
+import AnalyticsProvider from './components/common/AnalyticsProvider';
+import InvestorDemoToggle from './components/common/InvestorDemoToggle';
+import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import DocumentationPage from './pages/DocumentationPage';
-import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
-import InteractiveDemoPage from './pages/demo/InteractiveDemoPage';
 
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-function App() {
+const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/how-it-works" element={<HowItWorksPage />} />
-              <Route path="/login" element={<LoginWaitlistPage />} />
-              
-              {/* Protected routes */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/governance" 
-                element={
-                  <ProtectedRoute>
-                    <GovernancePage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/documentation" 
-                element={
-                  <ProtectedRoute>
-                    <DocumentationPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/demo/interactive" 
-                element={
-                  <ProtectedRoute>
-                    <InteractiveDemoPage />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <Router>
+            <div className="min-h-screen flex flex-col dark:bg-gray-900">
+              <Header />
+              <div className="pt-16 flex-grow"> {/* Add padding to account for fixed header */}
+                <Routes>
+                  <Route path="/" element={
+                    <>
+                      <Hero />
+                      <Features />
+                      <BenchmarkPreview />
+                    </>
+                  } />
+                  <Route path="/signup" element={<LoginWaitlistPage />} />
+                  <Route path="/waitlist" element={<LoginWaitlistPage />} />
+                  <Route path="/login" element={<LoginWaitlistPage />} />
+                  <Route path="/verify-email" element={<EmailVerification />} />
+                  <Route path="/onboarding" element={<OnboardingFlow />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/governance" element={<GovernancePage />} />
+                  <Route path="/documentation" element={<DocumentationPage />} />
+                  <Route path="/benchmark" element={
+                    <>
+                      <InvestorDemoToggle />
+                      <CMUBenchmarkDashboard />
+                    </>
+                  } />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/how-it-works" element={<HowItWorksPage />} />
+                  <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
+                </Routes>
+              </div>
+              <Footer />
+              <FeedbackWidget />
+            </div>
+          </Router>
+        </AnalyticsProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
