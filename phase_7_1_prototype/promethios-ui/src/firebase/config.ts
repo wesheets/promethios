@@ -6,13 +6,13 @@ import { getFirestore } from 'firebase/firestore';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  authDomain: "promethios-app.firebaseapp.com",
-  projectId: "promethios-app",
-  storageBucket: "promethios-app.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890abcdef",
-  measurementId: "G-XXXXXXXXXX"
+  apiKey: "AIzaSyDOsIGVKIzNwuv0_JvyNL15gLdBZgp",
+  authDomain: "promethios-26586.firebaseapp.com",
+  projectId: "promethios-26586",
+  storageBucket: "promethios-26586.firebaseapp.com",
+  messagingSenderId: "840238245787",
+  appId: "1:840238245787:web:3e8b8d27a8a77e541e6748",
+  measurementId: "G-KF8G86LTB"
 };
 
 // Initialize Firebase
