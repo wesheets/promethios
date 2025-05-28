@@ -8,7 +8,7 @@ const HowItWorksPage: React.FC = () => {
   const [content, setContent] = useState('');
 
   useEffect(() => {
-    fetch('/src/content/how-it-works.md')
+    fetch('/content/how-it-works.md')
       .then(response => response.text())
       .then(text => setContent(text))
       .catch(error => console.error('Error loading how-it-works content:', error));

@@ -8,7 +8,7 @@ const AboutPage: React.FC = () => {
   const [content, setContent] = useState('');
 
   useEffect(() => {
-    fetch('/src/content/about.md')
+    fetch('/content/about.md')
       .then(response => response.text())
       .then(text => setContent(text))
       .catch(error => console.error('Error loading about content:', error));
