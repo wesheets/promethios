@@ -47,10 +47,22 @@ const Header: React.FC = () => {
                   Dashboard
                 </Link>
                 <Link 
+                  to="/governance" 
+                  className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+                >
+                  AI Governance
+                </Link>
+                <Link 
                   to="/benchmark" 
                   className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
                 >
                   Benchmarks
+                </Link>
+                <Link 
+                  to="/documentation" 
+                  className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+                >
+                  Documentation
                 </Link>
               </>
             ) : null}
@@ -170,6 +182,20 @@ const Header: React.FC = () => {
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       Dashboard
+                    </Link>
+                    <Link
+                      to="/governance"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      AI Governance
+                    </Link>
+                    <Link
+                      to="/documentation"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      Documentation
                     </Link>
                     <Link
                       to="/profile"

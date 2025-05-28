@@ -18,6 +18,8 @@ import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import DashboardPage from './pages/DashboardPage';
+import GovernancePage from './pages/GovernancePage';
+import DocumentationPage from './pages/DocumentationPage';
 
 const App: React.FC = () => {
   return (
@@ -42,6 +44,8 @@ const App: React.FC = () => {
                   <Route path="/verify-email" element={<EmailVerification />} />
                   <Route path="/onboarding" element={<OnboardingFlow />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/governance" element={<GovernancePage />} />
+                  <Route path="/documentation" element={<DocumentationPage />} />
                   <Route path="/benchmark" element={
                     <>
                       <InvestorDemoToggle />
