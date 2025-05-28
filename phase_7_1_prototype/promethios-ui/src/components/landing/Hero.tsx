@@ -9,7 +9,7 @@ const Hero: React.FC = () => {
   return (
     <div className={`relative ${isDarkMode ? 'bg-gray-900' : 'bg-white'} overflow-hidden`}>
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-purple-900/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-blue-700/20"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center py-20 md:py-32">
@@ -39,7 +39,7 @@ const Hero: React.FC = () => {
             >
               <Link
                 to="/signup"
-                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 md:py-4 md:text-lg md:px-10"
+                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
               >
                 Get Started
               </Link>
@@ -51,12 +51,21 @@ const Hero: React.FC = () => {
             >
               <Link
                 to="/benchmark"
-                className={`w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md ${isDarkMode ? 'text-purple-300 bg-purple-900/30' : 'text-purple-700 bg-purple-100'} hover:bg-opacity-70 md:py-4 md:text-lg md:px-10`}
+                className={`w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md ${isDarkMode ? 'text-blue-300 bg-blue-900/30' : 'text-blue-700 bg-blue-100'} hover:bg-opacity-70 md:py-4 md:text-lg md:px-10`}
               >
                 See Benchmarks
               </Link>
             </motion.div>
           </div>
+          
+          <motion.p 
+            className={`mt-6 text-sm md:text-base max-w-2xl mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} italic`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            Promethios is rolling out in phases. Join the waitlist for early access to governed agent infrastructure.
+          </motion.p>
         </div>
         
         {/* App preview image */}

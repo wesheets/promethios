@@ -15,6 +15,8 @@ import FeedbackWidget from './components/common/FeedbackWidget';
 import AnalyticsProvider from './components/common/AnalyticsProvider';
 import InvestorDemoToggle from './components/common/InvestorDemoToggle';
 import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
+import AboutPage from './pages/AboutPage';
+import HowItWorksPage from './pages/HowItWorksPage';
 
 const App: React.FC = () => {
   return (
@@ -44,6 +46,8 @@ const App: React.FC = () => {
                       <CMUBenchmarkDashboard />
                     </>
                   } />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
                 </Routes>
               </div>
