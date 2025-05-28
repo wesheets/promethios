@@ -27,6 +27,8 @@ const logError = (error: Error, info: { componentStack: string }) => {
   }
 };
 
+// Wrap the entire app with ThemeProvider first, then ErrorBoundary
+// This ensures ThemeProvider context is available to all components
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary onError={logError} fallback={<div>Something went wrong. Please try again later.</div>}>

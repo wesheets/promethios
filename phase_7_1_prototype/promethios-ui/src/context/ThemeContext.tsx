@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 type ThemeContextType = {
   isDarkMode: boolean;
@@ -11,10 +12,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Default to dark mode
   const [isDarkMode, setIsDarkMode] = useState(true);
 
+  // Handle theme changes
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  // Apply theme to document
   useEffect(() => {
     // Check if document is available (for SSR safety)
     if (typeof document !== 'undefined') {
-      // Apply theme to document
       if (isDarkMode) {
         document.documentElement.classList.add('dark');
       } else {
@@ -23,15 +29,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isDarkMode]);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    // Save preference to localStorage in a real implementation
-  };
-
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+    <NextThemesProvider attribute="class" defaultTheme={isDarkMode ? "dark" : "light"} enableSystem={false}>
+      <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+        {children}
+      </ThemeContext.Provider>
+    </NextThemesProvider>
   );
 };
 
