@@ -7,7 +7,9 @@ import {
   signOut, 
   sendEmailVerification,
   sendPasswordResetEmail,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
 
@@ -41,10 +43,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Set persistence when the component mounts
+  useEffect(() => {
+    const setupPersistence = async () => {
+      try {
+        // Set persistence to LOCAL (persists even when browser is closed)
+        await setPersistence(auth, browserLocalPersistence);
+        console.log('Firebase persistence set to browserLocalPersistence');
+      } catch (error) {
+        console.error('Error setting persistence:', error);
+      }
+    };
+    
+    setupPersistence();
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+      
+      if (user) {
+        console.log('User is signed in:', user.email);
+        // Store minimal user info in localStorage as a fallback
+        localStorage.setItem('authUser', JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName
+        }));
+      } else {
+        console.log('No user is signed in');
+        localStorage.removeItem('authUser');
+      }
     });
 
     return unsubscribe;
@@ -53,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign in with email and password
   const loginWithEmail = async (email: string, password: string): Promise<User> => {
     try {
+      // Persistence is already set, so this login will be persistent
       const result = await signInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
@@ -64,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign in with Google
   const loginWithGoogle = async (): Promise<User> => {
     try {
+      // Persistence is already set, so this login will be persistent
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
     } catch (error) {
@@ -88,6 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       await signOut(auth);
+      localStorage.removeItem('authUser'); // Clear backup auth data
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
