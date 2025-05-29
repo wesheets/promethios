@@ -21,6 +21,7 @@ import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
+import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 
 const App: React.FC = () => {
   return (
@@ -56,6 +57,8 @@ const App: React.FC = () => {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/atlas-demo" element={<AtlasDemoPage />} />
+                  <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
+                  <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
                 </Routes>
               </div>
