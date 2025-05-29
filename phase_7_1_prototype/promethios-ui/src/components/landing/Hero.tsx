@@ -19,7 +19,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            Promethios makes agents governable.
+            You’ve been lied to.
           </motion.h1>
           
           <motion.p 
@@ -28,7 +28,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Reflection, memory, trust. All enforced — instantly
+            The AI you trust is making things up — and you don’t even know it.  Promethios makes every agent traceable, accountable, and governed by design.
           </motion.p>
           
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
