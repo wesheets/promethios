@@ -5,7 +5,7 @@
  * response generation, and context management.
  */
 
-import AtlasOpenAIService from './AtlasOpenAIService';
+import AtlasBrowserOpenAIService from './AtlasBrowserOpenAIService';
 
 export interface ChatContext {
   mode: 'public' | 'session';
@@ -25,7 +25,7 @@ export interface ChatContext {
 
 class AtlasChatService {
   private context: ChatContext;
-  private openAIService: AtlasOpenAIService;
+  private openAIService: AtlasBrowserOpenAIService;
   private debug: boolean = false;
   
   constructor(initialContext: Partial<ChatContext> = {}, debug: boolean = false) {
@@ -40,7 +40,7 @@ class AtlasChatService {
     };
     
     this.debug = debug;
-    this.openAIService = new AtlasOpenAIService({ debug: this.debug });
+    this.openAIService = new AtlasBrowserOpenAIService({ debug: this.debug });
     this.logDebug('AtlasChatService initialized', { 
       openAIReady: this.openAIService.isReady(),
       mode: this.context.mode
