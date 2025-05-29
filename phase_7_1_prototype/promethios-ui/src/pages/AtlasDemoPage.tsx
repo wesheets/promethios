@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AtlasPlugin } from '../components/atlas/web-component/AtlasPlugin';
+import AtlasChatDemo from '../components/atlas/chat/AtlasChatDemo';
 
 /**
  * AtlasDemoPage Component
@@ -135,6 +136,18 @@ const AtlasDemoPage: React.FC = () => {
         </div>
       </div>
       
+      <div className="demo-section">
+        <h2>ATLAS Chat Demo</h2>
+        <p>
+          The ATLAS Chat provides conversational governance explanations with rich analogies,
+          scorecard analysis, and support for image and document uploads.
+        </p>
+        
+        <div className="atlas-chat-demo-container">
+          <AtlasChatDemo />
+        </div>
+      </div>
+      
       <style jsx>{`
         .atlas-demo-container {
           max-width: 1200px;
@@ -170,6 +183,11 @@ const AtlasDemoPage: React.FC = () => {
         button:disabled {
           background: #4b4b4b;
           cursor: not-allowed;
+        }
+        
+        .atlas-chat-demo-container {
+          min-height: 600px;
+          position: relative;
         }
       `}</style>
     </div>

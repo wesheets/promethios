@@ -38,17 +38,25 @@ const Hero: React.FC = () => {
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-navy-900 to-navy-800 z-0"></div>
       
-      {/* Hero content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 z-10">
-        <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight mb-8 whitespace-nowrap">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="text-center py-20 md:py-32">
+          <motion.h1 
+            className={`text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             You've been lied to.
-          </h1>
+          </motion.h1>
           
-          <p className="text-xl md:text-2xl mb-10 text-gray-300">
-            The AI you trust is making things up — and you don't even know it.
-            Promethios makes every agent traceable, accountable, and governed by design.
-          </p>
+          <motion.p 
+            className={`mt-6 text-xl md:text-2xl max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            The AI you trust is making things up — and you don't even know it.  Promethios makes every agent traceable, accountable, and governed by design.
+          </motion.p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <Link 
