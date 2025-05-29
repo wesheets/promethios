@@ -20,6 +20,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import DocumentationPage from './pages/DocumentationPage';
+import AtlasDemoPage from './pages/AtlasDemoPage';
 
 const App: React.FC = () => {
   return (
@@ -54,6 +55,7 @@ const App: React.FC = () => {
                   } />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
+                  <Route path="/atlas-demo" element={<AtlasDemoPage />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
                 </Routes>
               </div>
