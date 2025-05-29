@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import AtlasChat from './AtlasChat';
+import AtlasChat, { ChatMessage } from './AtlasChat';
 import AtlasChatService from './AtlasChatService';
 
 // Governance metrics examples for different agent types
@@ -85,7 +85,7 @@ const AtlasChatSession: React.FC<AtlasChatSessionProps> = ({
   username
 }) => {
   const [isOpen, setIsOpen] = useState(initialOpen);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [metrics, setMetrics] = useState(agentMetrics[agentType] || agentMetrics.default);
   const [explanations, setExplanations] = useState(agentGovernanceExplanations[agentType] || agentGovernanceExplanations.default);
   

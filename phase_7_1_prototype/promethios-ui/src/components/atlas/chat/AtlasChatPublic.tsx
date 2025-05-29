@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import AtlasChat from './AtlasChat';
+import AtlasChat, { ChatMessage } from './AtlasChat';
 import AtlasChatService from './AtlasChatService';
 
 // Initialize the chat service for public mode
@@ -66,7 +66,7 @@ const AtlasChatPublic: React.FC<AtlasChatPublicProps> = ({
   initialOpen = false
 }) => {
   const [isOpen, setIsOpen] = useState(initialOpen);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   // Initialize with welcome message
   useEffect(() => {
