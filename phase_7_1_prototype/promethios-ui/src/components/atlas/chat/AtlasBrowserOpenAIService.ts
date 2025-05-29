@@ -10,7 +10,7 @@ import {
   createPromethiosSystemMessage, 
   getFallbackResponse,
   ChatMessage
-} from '../../api/openaiProxy';
+} from '../../../api/openaiProxy';
 
 // Define interfaces
 export interface OpenAIServiceConfig {
