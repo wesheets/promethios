@@ -5,6 +5,8 @@
  * response generation, and context management.
  */
 
+import AtlasOpenAIService from './AtlasOpenAIService';
+
 export interface ChatContext {
   mode: 'public' | 'session';
   agentId?: string;
@@ -23,8 +25,10 @@ export interface ChatContext {
 
 class AtlasChatService {
   private context: ChatContext;
+  private openAIService: AtlasOpenAIService;
+  private debug: boolean = false;
   
-  constructor(initialContext: Partial<ChatContext> = {}) {
+  constructor(initialContext: Partial<ChatContext> = {}, debug: boolean = false) {
     this.context = {
       mode: initialContext.mode || 'public',
       agentId: initialContext.agentId,
@@ -34,22 +38,59 @@ class AtlasChatService {
         isLoggedIn: false
       }
     };
+    
+    this.debug = debug;
+    this.openAIService = new AtlasOpenAIService({ debug: this.debug });
+    this.logDebug('AtlasChatService initialized', { 
+      openAIReady: this.openAIService.isReady(),
+      mode: this.context.mode
+    });
   }
   
   /**
    * Process a user message and generate a response
    */
   async processMessage(message: string): Promise<string> {
+    this.logDebug('Processing message', { message });
+    
     // Add user message to history
     this.addToHistory('user', message);
     
     // Generate response based on mode
     let response: string;
     
-    if (this.context.mode === 'public') {
-      response = await this.generatePublicResponse(message);
-    } else {
-      response = await this.generateSessionResponse(message);
+    // Try to use OpenAI first
+    try {
+      if (this.openAIService.isReady()) {
+        this.logDebug('Attempting to generate response with OpenAI');
+        
+        response = await this.openAIService.generateResponse(
+          message,
+          this.context.conversationHistory,
+          this.context.mode,
+          this.context.agentId
+        );
+        
+        this.logDebug('OpenAI response received', { responseLength: response.length });
+      } else {
+        this.logDebug('OpenAI service not ready, falling back to hardcoded responses');
+        
+        // Fall back to hardcoded responses
+        if (this.context.mode === 'public') {
+          response = await this.generatePublicResponse(message);
+        } else {
+          response = await this.generateSessionResponse(message);
+        }
+      }
+    } catch (error) {
+      this.logDebug('Error generating response with OpenAI, falling back to hardcoded responses', { error });
+      
+      // Fall back to hardcoded responses on error
+      if (this.context.mode === 'public') {
+        response = await this.generatePublicResponse(message);
+      } else {
+        response = await this.generateSessionResponse(message);
+      }
     }
     
     // Add response to history
@@ -181,6 +222,8 @@ class AtlasChatService {
     if (this.context.conversationHistory.length > 50) {
       this.context.conversationHistory = this.context.conversationHistory.slice(-50);
     }
+    
+    this.logDebug('Added message to history', { role, contentLength: content.length });
   }
   
   /**
@@ -191,6 +234,7 @@ class AtlasChatService {
       ...this.context,
       ...newContext
     };
+    this.logDebug('Context updated', { mode: this.context.mode });
   }
   
   /**
@@ -210,6 +254,7 @@ class AtlasChatService {
       : `Hello! I'm ATLAS, monitoring agent ${agentId || 'unknown'} for this session. I'm here to provide governance insights and answer questions about this agent's behavior.`;
     
     this.addToHistory('atlas', welcomeMessage);
+    this.logDebug('Mode switched', { mode, agentId, sessionId });
     
     return welcomeMessage;
   }
@@ -226,6 +271,15 @@ class AtlasChatService {
    */
   getContext() {
     return this.context;
+  }
+  
+  /**
+   * Log debug messages if debug mode is enabled
+   */
+  private logDebug(message: string, data?: any): void {
+    if (this.debug) {
+      console.log(`[AtlasChatService] ${message}`, data || '');
+    }
   }
 }
 
