@@ -139,7 +139,7 @@ const Hero: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             The AI you trust is making things up — and you don't even know it.  
-            <br />Promethios makes every agent traceable, accountable, and governed by design.
+            <br />Promethious improves AI accuracy, traceability, and decision quality, making your models better by design.
           </motion.p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-12 mb-8">
