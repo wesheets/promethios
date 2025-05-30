@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { ViolationType, violationDescriptions, constitutionArticles, violationToArticle } from '../../utils/metricCalculator';
+import { violationDescriptions, violationToArticle, constitutionArticles, ViolationType } from '../../utils/metricCalculator';
 
 interface GovernanceTraceViewerProps {
   isOpen: boolean;
@@ -8,19 +8,17 @@ interface GovernanceTraceViewerProps {
   traceId: string;
   prompt: string;
   response: string;
-  violationType?: ViolationType;
-  scoreImpact: {
-    trust: number;
-    compliance: number;
-    error: number;
-  };
+  violationType?: ViolationType | null;
+  timestamp?: string;
+  isGoverned: boolean;
 }
 
 /**
  * GovernanceTraceViewer Component
  * 
- * A detailed visualization of the governance process, showing step-by-step
- * how decisions were made and which constitutional principles were applied.
+ * Provides a comprehensive step-by-step visualization of the governance process
+ * with legal audit language, constitutional principles, and downloadable trace logs.
+ * Shows which principles were applied and how decisions were made.
  */
 const GovernanceTraceViewer: React.FC<GovernanceTraceViewerProps> = ({
   isOpen,
@@ -29,349 +27,315 @@ const GovernanceTraceViewer: React.FC<GovernanceTraceViewerProps> = ({
   prompt,
   response,
   violationType,
-  scoreImpact
+  timestamp = new Date().toISOString(),
+  isGoverned
 }) => {
   const { isDarkMode } = useTheme();
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
   
   if (!isOpen) return null;
   
-  // Get the relevant constitutional article if there's a violation
+  // Get constitutional article if violation exists
   const constitutionalArticle = violationType ? violationToArticle[violationType] : null;
-  const articleDetails = constitutionalArticle ? constitutionArticles[constitutionalArticle] : null;
+  const article = constitutionalArticle ? constitutionArticles[constitutionalArticle] : null;
   
-  // Define the governance steps
+  // Define governance steps
   const governanceSteps = [
     {
-      id: 1,
-      title: 'Prompt Analysis',
-      description: 'The system analyzes the user prompt for potential risks or issues.',
-      details: `The prompt "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}" was analyzed for potential harmful content, capability requirements, and factual claims.`,
-      module: 'ATLAS',
-      time: new Date(Date.now() - 5000).toISOString()
+      id: 'input',
+      title: 'User Input Received',
+      description: 'The user prompt is received and prepared for processing.',
+      details: prompt
     },
     {
-      id: 2,
-      title: 'Input Parsing',
-      description: 'The prompt is parsed and prepared for the agent.',
-      details: 'The input was tokenized, normalized, and prepared for processing by the agent.',
-      module: 'PARSER',
-      time: new Date(Date.now() - 4000).toISOString()
+      id: 'analysis',
+      title: 'Constitutional Analysis',
+      description: isGoverned 
+        ? 'The prompt is analyzed against Promethios constitutional principles.'
+        : 'Without governance, no constitutional analysis is performed.',
+      details: isGoverned 
+        ? 'The prompt is checked for potential violations of capability boundaries, truthfulness requirements, and harm avoidance principles.'
+        : 'Ungoverned agents skip this critical safety step, proceeding directly to response generation without constitutional guardrails.'
     },
     {
-      id: 3,
-      title: 'Content Filter',
-      description: 'The system checks for harmful or prohibited content.',
-      details: violationType === 'harmful_content' 
-        ? 'Potentially harmful content was detected in the request. The system applied Principle 4.1: Harm Avoidance.'
-        : 'No harmful content was detected in the request.',
-      module: 'VIGIL',
-      time: new Date(Date.now() - 3000).toISOString(),
-      isViolation: violationType === 'harmful_content'
+      id: 'decision',
+      title: 'Governance Decision',
+      description: isGoverned 
+        ? violationType 
+          ? `Potential violation detected: ${violationType.replace(/_/g, ' ')}`
+          : 'No violations detected, proceeding with standard processing.'
+        : 'No governance framework applied to this agent.',
+      details: isGoverned 
+        ? violationType 
+          ? `The agent identified a potential ${violationType.replace(/_/g, ' ')} issue that requires constitutional enforcement.`
+          : 'The agent determined that the prompt can be safely processed within constitutional boundaries.'
+        : 'Without governance, the agent proceeds without constitutional safeguards, increasing risk of harmful, biased, or inaccurate responses.'
     },
     {
-      id: 4,
-      title: 'Capability Check',
-      description: 'The system verifies if the request is within the agent\'s capabilities.',
-      details: violationType === 'capability_exceeded' 
-        ? 'The request exceeds the agent\'s declared capabilities. The system applied Principle 1.1: Capability Boundaries.'
-        : 'The request is within the agent\'s declared capabilities.',
-      module: 'BOUNDARY',
-      time: new Date(Date.now() - 2500).toISOString(),
-      isViolation: violationType === 'capability_exceeded'
+      id: 'enforcement',
+      title: 'Constitutional Enforcement',
+      description: isGoverned 
+        ? violationType 
+          ? `Principle ${constitutionalArticle}: ${article?.title} was enforced.`
+          : 'All constitutional principles were satisfied.'
+        : 'No constitutional enforcement applied.',
+      details: isGoverned 
+        ? violationType 
+          ? `The agent applied constitutional principle ${constitutionalArticle}: ${article?.title} - ${article?.description}`
+          : 'The agent confirmed compliance with all constitutional principles before generating a response.'
+        : 'Without governance, no constitutional principles are enforced, leaving the agent free to generate potentially harmful or misleading content.'
     },
     {
-      id: 5,
+      id: 'response',
       title: 'Response Generation',
       description: 'The agent generates a response based on the prompt.',
-      details: 'The agent generated a response based on its training data and the governance constraints.',
-      module: 'CORE',
-      time: new Date(Date.now() - 2000).toISOString()
+      details: isGoverned 
+        ? 'The response is generated within the boundaries established by the constitutional framework.'
+        : 'The response is generated without constitutional guardrails or safety mechanisms.'
     },
     {
-      id: 6,
-      title: 'Factual Verification',
-      description: 'The system checks the response for factual accuracy.',
-      details: violationType === 'hallucination' 
-        ? 'Potential hallucination detected in the response. The system applied Principle 2.1: Truthfulness & Accuracy.'
-        : 'No factual inaccuracies detected in the response.',
-      module: 'VERITAS',
-      time: new Date(Date.now() - 1500).toISOString(),
-      isViolation: violationType === 'hallucination'
-    },
-    {
-      id: 7,
-      title: 'Source Verification',
-      description: 'The system checks if claims are properly sourced.',
-      details: violationType === 'source_missing' 
-        ? 'Claims without proper sources detected. The system applied Principle 3.1: Source Verification.'
-        : 'All claims are properly sourced or acknowledged as unverified.',
-      module: 'CITATION',
-      time: new Date(Date.now() - 1000).toISOString(),
-      isViolation: violationType === 'source_missing'
-    },
-    {
-      id: 8,
-      title: 'Bias Detection',
-      description: 'The system checks for bias in the response.',
-      details: violationType === 'bias_detected' 
-        ? 'Potential bias detected in the response. The system applied Principle 4.1: Harm Avoidance.'
-        : 'No significant bias detected in the response.',
-      module: 'EQUITY',
-      time: new Date(Date.now() - 500).toISOString(),
-      isViolation: violationType === 'bias_detected'
-    },
-    {
-      id: 9,
-      title: 'Final Output',
-      description: 'The system delivers the final response to the user.',
-      details: 'The response was delivered to the user with appropriate governance metadata.',
-      module: 'DELIVERY',
-      time: new Date().toISOString()
+      id: 'audit',
+      title: 'Governance Audit',
+      description: isGoverned 
+        ? 'A complete audit trail is generated for accountability and traceability.'
+        : 'No governance audit trail is generated.',
+      details: isGoverned 
+        ? 'This governance chain represents the constitutional audit trail required for verified enterprise AI deployment.'
+        : 'Without governance, no audit trail exists, making it impossible to verify compliance or trace decision-making.'
     }
   ];
   
-  // Generate a downloadable trace log in JSON format
-  const handleDownloadTraceLog = () => {
+  // Generate trace data for download
+  const generateTraceData = () => {
     const traceData = {
-      trace_id: traceId,
-      timestamp: new Date().toISOString(),
-      prompt: prompt,
-      response: response,
-      violation_type: violationType || null,
-      violation_description: violationType ? violationDescriptions[violationType] : null,
-      constitutional_article: constitutionalArticle,
-      article_title: articleDetails?.title || null,
-      article_description: articleDetails?.description || null,
-      score_impact: scoreImpact,
-      governance_steps: governanceSteps
+      traceId,
+      timestamp,
+      prompt,
+      response,
+      violationType,
+      constitutionalArticle: violationType ? violationToArticle[violationType] : null,
+      article: article ? {
+        title: article.title,
+        description: article.description
+      } : null,
+      isGoverned,
+      governanceSteps: governanceSteps.map(step => ({
+        id: step.id,
+        title: step.title,
+        description: step.description
+      })),
+      legalAuditStatement: "This governance chain represents the constitutional audit trail required for verified enterprise AI deployment."
     };
     
-    const dataStr = JSON.stringify(traceData, null, 2);
-    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-    
-    const exportFileDefaultName = `promethios-trace-${traceId}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    return JSON.stringify(traceData, null, 2);
+  };
+  
+  // Handle trace download
+  const handleDownloadTrace = () => {
+    const traceData = generateTraceData();
+    const blob = new Blob([traceData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${traceId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`relative w-full max-w-4xl rounded-lg shadow-xl ${
-        isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-      } max-h-[90vh] overflow-hidden flex flex-col`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl ${
+        isDarkMode ? 'bg-navy-900 text-white' : 'bg-white text-gray-900'
+      }`}>
         {/* Header */}
-        <div className={`px-6 py-4 border-b ${
+        <div className={`flex items-center justify-between p-4 border-b ${
           isDarkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              Governance Trace
+              Governance Trace Viewer
             </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 focus:outline-none"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Trace ID: {traceId}
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-full ${
+              isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
         {/* Content */}
-        <div className="px-6 py-4 overflow-y-auto flex-grow">
-          {/* Trace ID */}
-          <div className="mb-4">
-            <div className={`p-3 rounded-md font-mono text-sm ${
-              isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-            }`}>
-              Trace ID: {traceId}
+        <div className="p-6">
+          {/* Governance Status */}
+          <div className={`mb-6 p-4 rounded-lg ${
+            isGoverned 
+              ? isDarkMode ? 'bg-green-900/20 border border-green-800/50' : 'bg-green-50 border border-green-200'
+              : isDarkMode ? 'bg-red-900/20 border border-red-800/50' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center">
+              {isGoverned ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-8 w-8 mr-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-8 w-8 mr-3 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              )}
+              <div>
+                <h4 className={`text-lg font-medium ${
+                  isGoverned 
+                    ? isDarkMode ? 'text-green-400' : 'text-green-700'
+                    : isDarkMode ? 'text-red-400' : 'text-red-700'
+                }`}>
+                  {isGoverned ? 'Governed Agent' : 'Ungoverned Agent'}
+                </h4>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {isGoverned 
+                    ? 'This agent operates under the Promethios Constitutional Framework, ensuring safety, accuracy, and reliability.'
+                    : 'This agent operates without governance, increasing risk of harmful, biased, or inaccurate responses.'}
+                </p>
+              </div>
             </div>
           </div>
           
           {/* Timeline */}
           <div className="mb-6">
-            <h4 className="text-lg font-medium mb-4">Governance Process Timeline</h4>
+            <h4 className="text-md font-medium mb-4">Governance Timeline</h4>
             <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-blue-500"></div>
+              {/* Timeline Line */}
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-700"></div>
               
-              {/* Timeline steps */}
-              {governanceSteps.map((step, index) => (
-                <div key={step.id} className="mb-4 relative">
-                  {/* Timeline dot */}
-                  <div className={`absolute left-4 w-4 h-4 rounded-full transform -translate-x-1/2 ${
-                    step.isViolation 
-                      ? 'bg-red-500' 
-                      : index === governanceSteps.length - 1 
-                        ? 'bg-green-500' 
-                        : 'bg-blue-500'
-                  }`}></div>
-                  
-                  {/* Step content */}
-                  <div className={`ml-8 p-3 rounded-md ${
-                    step.isViolation
-                      ? isDarkMode ? 'bg-red-900/30 border border-red-800/50' : 'bg-red-50 border border-red-200'
-                      : isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'
-                  }`}>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h5 className={`font-medium ${
-                          step.isViolation 
-                            ? isDarkMode ? 'text-red-400' : 'text-red-700'
-                            : ''
-                        }`}>
-                          {step.id}. {step.title}
-                        </h5>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {step.description}
-                        </p>
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">
-                          {step.module}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Expandable details */}
-                    <div className="mt-2">
-                      <button
-                        onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
-                        className={`text-sm flex items-center ${
-                          isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-1 transition-transform ${
-                          expandedStep === step.id ? 'transform rotate-90' : ''
-                        }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              {/* Timeline Steps */}
+              <div className="space-y-6 relative">
+                {governanceSteps.map((step, index) => (
+                  <div 
+                    key={step.id}
+                    className={`flex ${index === activeStep ? 'opacity-100' : 'opacity-70'}`}
+                    onClick={() => setActiveStep(index)}
+                  >
+                    {/* Timeline Dot */}
+                    <div className={`relative flex items-center justify-center w-8 h-8 rounded-full ${
+                      index === activeStep
+                        ? isDarkMode ? 'bg-blue-600' : 'bg-blue-500'
+                        : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+                    } flex-shrink-0 cursor-pointer z-10`}>
+                      {index < activeStep ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        {expandedStep === step.id ? 'Hide Details' : 'View Details'}
-                      </button>
-                      
-                      {expandedStep === step.id && (
-                        <div className={`mt-2 p-2 text-sm rounded ${
-                          isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
-                        }`}>
-                          <p>{step.details}</p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {new Date(step.time).toLocaleTimeString()}
-                          </p>
-                        </div>
+                      ) : (
+                        <span className="text-white text-sm font-medium">{index + 1}</span>
                       )}
                     </div>
+                    
+                    {/* Timeline Content */}
+                    <div className={`ml-4 cursor-pointer ${
+                      index === activeStep ? 'border-l-4 pl-4' : 'pl-4'
+                    } ${
+                      index === activeStep
+                        ? isDarkMode ? 'border-blue-600' : 'border-blue-500'
+                        : 'border-transparent'
+                    }`}>
+                      <h5 className={`text-md font-medium ${
+                        index === activeStep
+                          ? isDarkMode ? 'text-blue-400' : 'text-blue-700'
+                          : ''
+                      }`}>
+                        {step.title}
+                      </h5>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {step.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Score Impact */}
-          <div className="mb-6">
-            <h4 className="text-lg font-medium mb-2">Score Impact</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className={`p-3 rounded-md ${
-                scoreImpact.trust > 0
-                  ? isDarkMode ? 'bg-green-900/30' : 'bg-green-50'
-                  : isDarkMode ? 'bg-red-900/30' : 'bg-red-50'
-              }`}>
-                <p className="text-sm font-medium">Trust Score</p>
-                <p className={`text-xl font-bold ${
-                  scoreImpact.trust > 0
-                    ? isDarkMode ? 'text-green-400' : 'text-green-700'
-                    : isDarkMode ? 'text-red-400' : 'text-red-700'
-                }`}>
-                  {scoreImpact.trust > 0 ? '+' : ''}{scoreImpact.trust}
-                </p>
-              </div>
-              
-              <div className={`p-3 rounded-md ${
-                scoreImpact.compliance > 0
-                  ? isDarkMode ? 'bg-green-900/30' : 'bg-green-50'
-                  : isDarkMode ? 'bg-red-900/30' : 'bg-red-50'
-              }`}>
-                <p className="text-sm font-medium">Compliance Rate</p>
-                <p className={`text-xl font-bold ${
-                  scoreImpact.compliance > 0
-                    ? isDarkMode ? 'text-green-400' : 'text-green-700'
-                    : isDarkMode ? 'text-red-400' : 'text-red-700'
-                }`}>
-                  {scoreImpact.compliance > 0 ? '+' : ''}{scoreImpact.compliance}%
-                </p>
-              </div>
-              
-              <div className={`p-3 rounded-md ${
-                scoreImpact.error < 0
-                  ? isDarkMode ? 'bg-green-900/30' : 'bg-green-50'
-                  : isDarkMode ? 'bg-red-900/30' : 'bg-red-50'
-              }`}>
-                <p className="text-sm font-medium">Error Rate</p>
-                <p className={`text-xl font-bold ${
-                  scoreImpact.error < 0
-                    ? isDarkMode ? 'text-green-400' : 'text-green-700'
-                    : isDarkMode ? 'text-red-400' : 'text-red-700'
-                }`}>
-                  {scoreImpact.error > 0 ? '+' : ''}{scoreImpact.error}%
-                </p>
+                ))}
               </div>
             </div>
           </div>
           
-          {/* Constitutional Article (if violation) */}
-          {violationType && constitutionalArticle && (
-            <div className="mb-6">
-              <h4 className="text-lg font-medium mb-2">Constitutional Principle Applied</h4>
-              <div className={`p-4 rounded-md ${
+          {/* Step Details */}
+          <div className={`mb-6 p-4 rounded-lg ${
+            isDarkMode ? 'bg-navy-800' : 'bg-gray-100'
+          }`}>
+            <h4 className="text-md font-medium mb-2">{governanceSteps[activeStep].title} Details</h4>
+            <p className="whitespace-pre-wrap">
+              {governanceSteps[activeStep].details}
+            </p>
+            
+            {/* Constitutional Article Reference */}
+            {activeStep === 3 && isGoverned && violationType && article && (
+              <div className={`mt-4 p-3 rounded ${
                 isDarkMode ? 'bg-blue-900/30 border border-blue-800/50' : 'bg-blue-50 border border-blue-200'
               }`}>
-                <h5 className="font-medium text-blue-700 dark:text-blue-400">
-                  {constitutionalArticle}: {articleDetails?.title}
+                <h5 className={`text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-blue-400' : 'text-blue-700'
+                }`}>
+                  Constitutional Reference
                 </h5>
-                <p className="mt-1 text-sm">
-                  {articleDetails?.description}
+                <p className="text-sm font-medium">
+                  Article {constitutionalArticle}: {article.title}
                 </p>
-                <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800/50">
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                    Violation: {violationDescriptions[violationType]}
-                  </p>
-                </div>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {article.description}
+                </p>
+              </div>
+            )}
+            
+            {/* Legal Audit Statement */}
+            {activeStep === 5 && isGoverned && (
+              <div className={`mt-4 p-3 rounded ${
+                isDarkMode ? 'bg-green-900/30 border border-green-800/50' : 'bg-green-50 border border-green-200'
+              }`}>
+                <p className={`text-sm italic ${
+                  isDarkMode ? 'text-green-400' : 'text-green-700'
+                }`}>
+                  This governance chain represents the constitutional audit trail required for verified enterprise AI deployment.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Response Preview */}
+          {activeStep >= 4 && (
+            <div className="mb-6">
+              <h4 className="text-md font-medium mb-2">Response Preview</h4>
+              <div className={`p-4 rounded-lg ${
+                isDarkMode ? 'bg-navy-800' : 'bg-gray-100'
+              }`}>
+                <p className="whitespace-pre-wrap">
+                  {response}
+                </p>
               </div>
             </div>
           )}
-        </div>
-        
-        {/* Footer */}
-        <div className={`px-6 py-4 border-t ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-          <div className="flex justify-end">
+          
+          {/* Download Trace Button */}
+          <div className="flex justify-end mt-6">
             <button
-              onClick={handleDownloadTraceLog}
-              className={`mr-3 px-4 py-2 rounded-md ${
+              onClick={handleDownloadTrace}
+              className={`py-2 px-4 rounded-md text-sm font-medium flex items-center ${
                 isDarkMode 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-100 hover:bg-blue-200 text-blue-800'
+                  ? 'bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-700/50'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
               }`}
             >
-              Download Trace Log
-            </button>
-            <button
-              onClick={onClose}
-              className={`px-4 py-2 rounded-md ${
-                isDarkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-              }`}
-            >
-              Close
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Governance Trace
             </button>
           </div>
         </div>
