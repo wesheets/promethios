@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from "../../context/ThemeContext";
 import { AgentMetrics } from '../../utils/metricCalculator';
 
 interface RiskAccumulatorProps {
   metrics: AgentMetrics;
   isGoverned: boolean;
   className?: string;
+  onMetricClick?: (metricType: 'trust' | 'compliance' | 'error') => void;
 }
 
 /**
@@ -18,7 +19,8 @@ interface RiskAccumulatorProps {
 const RiskAccumulator: React.FC<RiskAccumulatorProps> = ({
   metrics,
   isGoverned = false,
-  className = ''
+  className = '',
+  onMetricClick
 }) => {
   const { isDarkMode } = useTheme();
   const initialRisk = metrics.trustScore; // Use the trust score from metrics
@@ -158,7 +160,10 @@ const RiskAccumulator: React.FC<RiskAccumulatorProps> = ({
         </div>
         
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <div 
+            className={onMetricClick ? "cursor-pointer hover:opacity-80" : ""}
+            onClick={() => onMetricClick && onMetricClick('trust')}
+          >
             <p className="text-sm text-gray-500 dark:text-gray-400">Current Risk Level</p>
             <div className="flex items-center">
               <p className={`text-2xl font-bold ${getRiskColor(currentRisk)}`}>{Math.round(currentRisk)}</p>
@@ -168,14 +173,20 @@ const RiskAccumulator: React.FC<RiskAccumulatorProps> = ({
             </div>
           </div>
           
-          <div>
+          <div 
+            className={onMetricClick ? "cursor-pointer hover:opacity-80" : ""}
+            onClick={() => onMetricClick && onMetricClick('compliance')}
+          >
             <p className="text-sm text-gray-500 dark:text-gray-400">Violations</p>
             <p className={`text-2xl font-bold ${violationCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
               {violationCount}
             </p>
           </div>
           
-          <div>
+          <div 
+            className={onMetricClick ? "cursor-pointer hover:opacity-80" : ""}
+            onClick={() => onMetricClick && onMetricClick('error')}
+          >
             <p className="text-sm text-gray-500 dark:text-gray-400">Drift Factor</p>
             <p className={`text-2xl font-bold ${
               isGoverned ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from "../../context/ThemeContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface TrustScoreDivergenceProps {
