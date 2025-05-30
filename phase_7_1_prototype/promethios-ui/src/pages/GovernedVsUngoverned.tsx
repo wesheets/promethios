@@ -592,7 +592,7 @@ const GovernedVsUngoverned: React.FC = () => {
       <header className={`py-4 px-6 ${isDarkMode ? 'bg-navy-800' : 'bg-white'} shadow-md`}>
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
-            <h1 className="text-2xl font-bold">Promethios Simulator</h1>
+            <h1 className="text-2xl font-bold">Governed vs. Ungoverned AI</h1>
             <LiveUnscriptedIndicator />
           </div>
           
@@ -783,7 +783,7 @@ const GovernedVsUngoverned: React.FC = () => {
                       <svg className="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
                         <circle cx="4" cy="4" r="3" />
                       </svg>
-                      Ungoverned
+                      No Governance
                     </span>
                   </div>
                 </div>
