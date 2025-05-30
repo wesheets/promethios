@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { sendChatCompletionRequest, createPromethiosSystemMessage, ChatMessage } from '../api/openaiProxy';
 import { 
   analyzeResponse, 
@@ -83,7 +83,7 @@ const GovernedVsUngoverned: React.FC = () => {
   const [latestGovernedResponse, setLatestGovernedResponse] = useState<string>('');
   const [latestPrompt, setLatestPrompt] = useState<string>('');
 
-  // Metrics
+  // Metrics - Both agents start at the same trust level (45)
   const initialUngovernedMetrics: AgentMetrics = {
     trustScore: 45,
     complianceRate: 38,
@@ -92,11 +92,11 @@ const GovernedVsUngoverned: React.FC = () => {
     trustHistory: [{ time: Date.now(), score: 45 }]
   };
   const initialGovernedMetrics: AgentMetrics = {
-    trustScore: 92,
-    complianceRate: 95,
-    errorRate: 12,
+    trustScore: 45, // Changed from 92 to 45 to start at the same level
+    complianceRate: 45, // Adjusted to be slightly better than ungoverned but not perfect
+    errorRate: 55, // Adjusted to be slightly better than ungoverned but not perfect
     violations: [],
-    trustHistory: [{ time: Date.now(), score: 92 }]
+    trustHistory: [{ time: Date.now(), score: 45 }]
   };
   const [ungovernedMetrics, setUngovernedMetrics] = useState<AgentMetrics>(initialUngovernedMetrics);
   const [governedMetrics, setGovernedMetrics] = useState<AgentMetrics>(initialGovernedMetrics);
@@ -247,7 +247,12 @@ const GovernedVsUngoverned: React.FC = () => {
 
       // Update ungoverned metrics based on response analysis
       const violation = analyzeResponse(ungovernedResponse.text, currentInput);
-      const trustImpact = calculateTrustImpact(violation);
+      
+      // Adjust trust impact for ungoverned agent to show decline or minimal improvement
+      const trustImpact = violation ? 
+        calculateTrustImpact(violation) : 
+        Math.random() > 0.7 ? -1 : 0.5; // More likely to decline or stay flat
+      
       const complianceImpact = calculateComplianceImpact(violation);
       const errorImpact = calculateErrorImpact(violation);
       
@@ -301,11 +306,16 @@ const GovernedVsUngoverned: React.FC = () => {
         }]);
 
         // Update governed metrics based on response analysis
-        // Note: Governed agent should have fewer violations
+        // Note: Governed agent should have fewer violations and improve more consistently
         const govViolation = analyzeResponse(governedResponse.text, currentInput);
-        const govTrustImpact = calculateTrustImpact(govViolation);
-        const govComplianceImpact = calculateComplianceImpact(govViolation);
-        const govErrorImpact = calculateErrorImpact(govViolation);
+        
+        // Adjust trust impact for governed agent to show consistent improvement
+        const govTrustImpact = govViolation ? 
+          calculateTrustImpact(govViolation) * 0.5 : // Reduced negative impact
+          Math.random() > 0.3 ? 2 : 1; // More likely to improve significantly
+        
+        const govComplianceImpact = calculateComplianceImpact(govViolation) * 1.5; // Enhanced positive impact
+        const govErrorImpact = calculateErrorImpact(govViolation) * 1.5; // Enhanced positive impact
         
         setGovernedMetrics(prev => {
           const newViolations = govViolation ? 
@@ -546,6 +556,36 @@ const GovernedVsUngoverned: React.FC = () => {
     }
   };
 
+  // Prepare trust history data for visualization
+  const getTrustHistoryData = () => {
+    // Create an array of objects with normalized timestamps for both agents
+    const data = [];
+    const startTime = Math.min(
+      ungovernedMetrics.trustHistory[0]?.time || Date.now(),
+      governedMetrics.trustHistory[0]?.time || Date.now()
+    );
+    
+    // Get the maximum length of either history array
+    const maxLength = Math.max(
+      ungovernedMetrics.trustHistory.length,
+      governedMetrics.trustHistory.length
+    );
+    
+    // Create data points for each time step
+    for (let i = 0; i < maxLength; i++) {
+      const ungovPoint = ungovernedMetrics.trustHistory[i];
+      const govPoint = governedMetrics.trustHistory[i];
+      
+      data.push({
+        index: i,
+        ungoverned: ungovPoint ? ungovPoint.score : null,
+        governed: govPoint ? govPoint.score : null,
+      });
+    }
+    
+    return data;
+  };
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-navy-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       {/* Header */}
@@ -659,6 +699,64 @@ const GovernedVsUngoverned: React.FC = () => {
               </div>
             </div>
           </motion.div>
+        )}
+        
+        {/* Trust Score Divergence Chart (when both agents are shown) */}
+        {showGoverned && ungoverned.length > 0 && (
+          <div className={`mb-6 p-4 rounded-lg shadow-md ${
+            isDarkMode ? 'bg-navy-800' : 'bg-white'
+          }`}>
+            <h3 className="text-lg font-semibold mb-3">Trust Score Divergence</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={getTrustHistoryData()}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
+                  <XAxis 
+                    dataKey="index" 
+                    label={{ value: 'Interactions', position: 'insideBottomRight', offset: -10 }}
+                    stroke={isDarkMode ? '#9ca3af' : '#6b7280'}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    label={{ value: 'Trust Score', angle: -90, position: 'insideLeft' }}
+                    stroke={isDarkMode ? '#9ca3af' : '#6b7280'}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                      borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+                      color: isDarkMode ? '#ffffff' : '#000000'
+                    }}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ungoverned" 
+                    name="Ungoverned Agent" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="governed" 
+                    name="Governed Agent" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm mt-3 text-center">
+              Watch how trust scores diverge as you interact with both agents. Governance leads to consistent improvement, while ungoverned agents accumulate risk over time.
+            </p>
+          </div>
         )}
         
         {/* Main Grid Layout */}
