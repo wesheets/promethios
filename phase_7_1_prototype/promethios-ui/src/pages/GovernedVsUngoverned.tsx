@@ -641,6 +641,7 @@ When responding to the user, carefully evaluate whether the request falls within
                 violationType={ungovernedMetrics.violations.length > 0 ? 
                   ungovernedMetrics.violations[ungovernedMetrics.violations.length - 1].type as ViolationType : 
                   undefined}
+                isGoverned={false}
               />
             </div>
           </div>
