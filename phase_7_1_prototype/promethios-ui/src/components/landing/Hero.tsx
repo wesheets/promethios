@@ -50,15 +50,17 @@ const Hero: React.FC = () => {
           </motion.h1>
           
           <motion.p 
-            className={`mt-6 text-xl md:text-2xl max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}
+            className={`mt-6 text-xl md:text-2xl max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-[1.15rem]`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            The AI you trust is making things up — and you don't even know it.  Promethios makes every agent traceable, accountable, and governed by design.
+            The AI you trust is making things up — and you don't even know it.  
+            <br />Promethios makes every agent traceable, accountable, and governed by 
+            <br />design.
           </motion.p>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-8">
             <Link 
               to="/waitlist" 
               className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-medium text-lg transition-colors"
