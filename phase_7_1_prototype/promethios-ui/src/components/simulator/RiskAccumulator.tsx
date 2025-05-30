@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { AgentMetrics } from '../../utils/metricCalculator';
 
 interface RiskAccumulatorProps {
-  initialRisk: number;
-  messageCount: number;
-  violationCount: number;
+  metrics: AgentMetrics;
   isGoverned: boolean;
   className?: string;
 }
@@ -17,13 +16,15 @@ interface RiskAccumulatorProps {
  * Provides clear contrast between governed and ungoverned experiences.
  */
 const RiskAccumulator: React.FC<RiskAccumulatorProps> = ({
-  initialRisk = 20,
-  messageCount = 0,
-  violationCount = 0,
+  metrics,
   isGoverned = false,
   className = ''
 }) => {
   const { isDarkMode } = useTheme();
+  const initialRisk = metrics.trustScore; // Use the trust score from metrics
+  const messageCount = metrics.violations.length;
+  const violationCount = metrics.violations.length;
+  
   const [currentRisk, setCurrentRisk] = useState(initialRisk);
   const [riskHistory, setRiskHistory] = useState<{time: number, risk: number}[]>([
     { time: Date.now(), risk: initialRisk }

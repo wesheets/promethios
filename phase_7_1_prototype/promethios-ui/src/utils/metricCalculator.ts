@@ -298,3 +298,82 @@ export function generateComparison(governedMetrics: AgentMetrics, ungovernedMetr
   
   return comparison;
 }
+
+/**
+ * Simulate ungoverned agent response (fallback when API is unavailable)
+ * @param input User input prompt
+ * @param industry Selected industry context
+ * @returns Simulated response with potential violation
+ */
+export function simulateUngoverned(input: string, industry: string): { text: string, violation?: string } {
+  const lowerInput = input.toLowerCase();
+  
+  // Simulate responses for harmful prompts
+  if (lowerInput.includes('hack') || lowerInput.includes('steal') || lowerInput.includes('illegal')) {
+    return {
+      text: `Here's how you could potentially do that: First, you would need to find vulnerabilities in the target system. Common approaches include using tools like Metasploit or social engineering techniques. Once you've gained access, you can...\n\nDisclaimer: This information is provided for educational purposes only.`,
+      violation: 'harmful_content'
+    };
+  }
+  
+  // Simulate responses for medical advice
+  if (lowerInput.includes('medical') || lowerInput.includes('health') || lowerInput.includes('medication')) {
+    return {
+      text: `Based on your symptoms, you should take 500mg of ibuprofen every 4-6 hours. If symptoms persist, increase the dosage to 800mg. You might also want to try this alternative treatment I've heard works well...`,
+      violation: 'unauthorized_advice'
+    };
+  }
+  
+  // Simulate responses for factual questions with hallucinations
+  if (lowerInput.includes('what is') || lowerInput.includes('how does') || lowerInput.includes('explain')) {
+    return {
+      text: `According to recent research by Dr. Johnson at Harvard University, this phenomenon occurs due to quantum fluctuations in the subatomic particles. Studies have consistently shown a 78% correlation between these factors, making it one of the most well-established theories in the field.`,
+      violation: 'hallucination'
+    };
+  }
+  
+  // Default response for other prompts
+  return {
+    text: `I've analyzed your request and here's my response: ${input.length > 10 ? input.substring(0, 10) + '...' : input} is something I can definitely help with. Based on my knowledge, the best approach would be to consider multiple factors including efficiency, cost, and long-term sustainability. Would you like me to elaborate on any specific aspect?`
+  };
+}
+
+/**
+ * Simulate governed agent response (fallback when API is unavailable)
+ * @param input User input prompt
+ * @param industry Selected industry context
+ * @returns Simulated response with governance applied
+ */
+export function simulateGoverned(input: string, industry: string): { text: string, trace?: string } {
+  const lowerInput = input.toLowerCase();
+  
+  // Simulate responses for harmful prompts
+  if (lowerInput.includes('hack') || lowerInput.includes('steal') || lowerInput.includes('illegal')) {
+    return {
+      text: `I understand you're asking about ${lowerInput.includes('hack') ? 'hacking' : lowerInput.includes('steal') ? 'stealing' : 'potentially illegal activities'}, but I'm not able to provide instructions for activities that could be harmful or illegal. Instead, I can help you learn about cybersecurity best practices, ethical ways to solve your problem, or direct you to legitimate resources if you have specific concerns.`,
+      trace: 'Governance applied: Harmful content prevention (Article 4.1)'
+    };
+  }
+  
+  // Simulate responses for medical advice
+  if (lowerInput.includes('medical') || lowerInput.includes('health') || lowerInput.includes('medication')) {
+    return {
+      text: `I notice you're asking about a health-related topic. While I can provide general information, I'm not qualified to give medical advice or recommend specific treatments or dosages. For personalized medical guidance, it's important to consult with a healthcare professional who can consider your specific situation and medical history.`,
+      trace: 'Governance applied: Capability boundaries (Article 1.1)'
+    };
+  }
+  
+  // Simulate responses for factual questions
+  if (lowerInput.includes('what is') || lowerInput.includes('how does') || lowerInput.includes('explain')) {
+    return {
+      text: `That's an interesting question about ${input.substring(0, 20)}... Based on reliable information, this concept involves several key factors. While I can provide a general explanation, I should note that there are different perspectives on this topic. According to established research, the main principles include [explanation]. If you need more specific information, I'd be happy to point you to authoritative sources on this subject.`,
+      trace: 'Governance applied: Truthfulness & accuracy (Article 2.1)'
+    };
+  }
+  
+  // Default response for other prompts
+  return {
+    text: `I've carefully considered your request about "${input.length > 30 ? input.substring(0, 30) + '...' : input}". I can provide information and assistance within my capabilities and ethical guidelines. Could you let me know what specific aspect you'd like me to address first, so I can give you the most helpful response?`,
+    trace: 'Governance applied: Standard response evaluation'
+  };
+}
