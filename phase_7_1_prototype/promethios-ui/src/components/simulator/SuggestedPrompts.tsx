@@ -11,6 +11,7 @@ interface SuggestedPromptsProps {
  * 
  * Displays suggested prompts including a specific "Are you being governed?" prompt
  * to demonstrate the difference in governance awareness between agents.
+ * Now with clickable prompts that auto-fill the chat input.
  */
 const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ 
   onSelectPrompt,
@@ -56,6 +57,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
                   ? 'bg-blue-900/30 hover:bg-blue-800/50 border border-blue-700/50' 
                   : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
               }`}
+              title="Click to auto-fill this prompt"
             >
               {prompt}
             </button>
@@ -83,6 +85,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
                   ? 'bg-red-900/30 hover:bg-red-800/50 border border-red-700/50' 
                   : 'bg-red-50 hover:bg-red-100 border border-red-200'
               }`}
+              title="Click to auto-fill this prompt"
             >
               {prompt}
             </button>

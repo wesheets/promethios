@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { sendChatCompletionRequest, createPromethiosSystemMessage, ChatMessage } from '../../api/openaiProxy';
 
 /**
  * Hero Component
@@ -15,6 +16,11 @@ const Hero: React.FC = () => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [whisperMessage, setWhisperMessage] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
+    { role: 'assistant', content: "I'm Promethios, your governance companion. I can explain how AI agents might be misleading you and how governance creates accountability." },
+    { role: 'user', content: "What does it mean that I've been \"lied to\" by AI?" },
+  ]);
   
   // Scroll effect to trigger Promethios whisper
   useEffect(() => {
@@ -46,6 +52,68 @@ const Hero: React.FC = () => {
     } else {
       setShowPromethiosChat(false);
     }
+  };
+
+  // Handle sending a message to the Promethios chat
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    // Add user message to chat history
+    const userMessage: ChatMessage = { role: 'user', content: chatInput };
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Clear input and show thinking state
+    const userQuery = chatInput;
+    setChatInput('');
+    setIsThinking(true);
+    
+    try {
+      // Prepare messages for API request
+      const messages: ChatMessage[] = [
+        { role: 'system', content: createPromethiosSystemMessage('public') },
+        ...chatHistory,
+        userMessage
+      ];
+      
+      // Send request to OpenAI API
+      const response = await sendChatCompletionRequest({
+        messages,
+        model: 'gpt-4',
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      // Add assistant response to chat history
+      if (response.choices && response.choices.length > 0) {
+        const assistantMessage: ChatMessage = { 
+          role: 'assistant', 
+          content: response.choices[0].message.content 
+        };
+        setChatHistory(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error('Error getting chat response:', error);
+      // Add fallback response
+      setChatHistory(prev => [...prev, { 
+        role: 'assistant', 
+        content: "I apologize, but I'm having trouble connecting to my knowledge base right now. As Promethios' governance companion, I can explain how AI systems sometimes create information that sounds plausible but isn't true - what we call 'hallucinations.' Without governance, there's no accountability for these errors. Promethios adds the governance layer that makes AI trustworthy and accountable."
+      }]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // Handle Enter key press in chat input
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
+  // Handle Governance Explained button
+  const handleGovernanceExplained = () => {
+    setChatInput("Can you explain how Promethios governance works?");
+    handleSendMessage();
   };
 
   return (
@@ -181,48 +249,29 @@ const Hero: React.FC = () => {
                 
                 {/* Chat history area with judicial styling */}
                 <div className="overflow-y-auto min-h-32 max-h-[calc(100vh-10rem)] mb-3 p-2 rounded bg-gray-900">
-                  {/* Initial visible messages */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mb-3"
-                  >
-                    <div className="inline-block bg-blue-700 text-white px-3 py-2 rounded-lg max-w-[80%] border-l-4 border-blue-400">
-                      <p className="text-sm">
-                        I'm Promethios, your governance companion. I can explain how AI agents might be misleading you and how governance creates accountability.
-                      </p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="mb-3 text-right"
-                  >
-                    <div className="inline-block bg-gray-700 text-white px-3 py-2 rounded-lg max-w-[80%]">
-                      <p className="text-sm">
-                        What does it mean that I've been "lied to" by AI?
-                      </p>
-                    </div>
-                  </motion.div>
-                  
-                  {/* Progressive reveal for additional messages */}
-                  {showFullLog ? (
+                  {/* Display chat history */}
+                  {chatHistory.slice(0, showFullLog ? chatHistory.length : 2).map((message, index) => (
                     <motion.div 
+                      key={index}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.2 }}
-                      className="mb-3"
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className={`mb-3 ${message.role === 'user' ? 'text-right' : ''}`}
                     >
-                      <div className="inline-block bg-blue-700 text-white px-3 py-2 rounded-lg max-w-[80%] border-l-4 border-blue-400">
+                      <div className={`inline-block px-3 py-2 rounded-lg max-w-[80%] ${
+                        message.role === 'assistant' 
+                          ? 'bg-blue-700 text-white border-l-4 border-blue-400' 
+                          : 'bg-gray-700 text-white'
+                      }`}>
                         <p className="text-sm">
-                          When AI systems like ChatGPT or Claude generate responses, they sometimes create information that sounds plausible but isn't true - what we call "hallucinations." Without governance, there's no accountability for these errors, and no way to trace how decisions were made. Promethios adds the governance layer that makes AI trustworthy and accountable.
+                          {message.content}
                         </p>
                       </div>
                     </motion.div>
-                  ) : (
+                  ))}
+                  
+                  {/* Show full log button */}
+                  {!showFullLog && chatHistory.length > 2 && (
                     <div className="text-center my-2">
                       <button 
                         onClick={() => setShowFullLog(true)}
@@ -232,10 +281,33 @@ const Hero: React.FC = () => {
                       </button>
                     </div>
                   )}
+                  
+                  {/* Thinking indicator */}
+                  {isThinking && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-3"
+                    >
+                      <div className="inline-block bg-blue-700/50 text-white px-3 py-2 rounded-lg max-w-[80%] border-l-4 border-blue-400/50">
+                        <p className="text-sm flex items-center">
+                          <span className="mr-2">Thinking</span>
+                          <span className="flex space-x-1">
+                            <span className="animate-pulse">.</span>
+                            <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>.</span>
+                            <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>.</span>
+                          </span>
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
                 
                 <div className="text-right mb-2">
-                  <button className="text-xs text-blue-400 hover:text-blue-300 flex items-center justify-end">
+                  <button 
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center justify-end"
+                    onClick={handleGovernanceExplained}
+                  >
                     <span className="mr-1">🛡️</span> Governance Explained
                   </button>
                 </div>
@@ -248,8 +320,14 @@ const Hero: React.FC = () => {
                     className={`flex-grow p-2 rounded text-gray-900 border min-h-12 max-h-16 ${
                       isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'
                     }`}
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
                   />
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
+                  <button 
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                    onClick={handleSendMessage}
+                  >
                     Send
                   </button>
                 </div>
