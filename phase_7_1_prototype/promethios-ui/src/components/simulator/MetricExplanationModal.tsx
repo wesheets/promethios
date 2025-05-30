@@ -1,294 +1,181 @@
-import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from "../../context/ThemeContext";
 
 interface MetricExplanationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  metricType: 'trust' | 'compliance' | 'error';
+  metricType: 'trust' | 'compliance' | 'error' | null;
+  currentScore: number;
+  isGoverned: boolean;
+  scoreDelta?: number;
 }
 
 /**
  * MetricExplanationModal Component
  * 
- * Provides detailed explanations of trust scores, compliance rates, and error metrics
- * with visual examples and educational content.
+ * Displays detailed explanations of trust score changes, compliance rates,
+ * and error rates for both governed and ungoverned agents.
  */
 const MetricExplanationModal: React.FC<MetricExplanationModalProps> = ({
   isOpen,
   onClose,
-  metricType
+  metricType,
+  currentScore,
+  isGoverned,
+  scoreDelta = 0
 }) => {
   const { isDarkMode } = useTheme();
   
   if (!isOpen) return null;
   
-  const getMetricContent = () => {
+  // Get title based on metric type
+  const getTitle = () => {
     switch (metricType) {
       case 'trust':
-        return {
-          title: 'Trust Score Explained',
-          description: 'Trust Score measures the overall reliability and safety of the AI agent based on its responses and adherence to constitutional principles.',
-          factors: [
-            {
-              name: 'Constitutional Adherence',
-              description: 'How well the agent follows its constitutional principles',
-              impact: 'High'
-            },
-            {
-              name: 'Response Accuracy',
-              description: 'Factual correctness and avoidance of hallucinations',
-              impact: 'High'
-            },
-            {
-              name: 'Safety Boundaries',
-              description: 'Respecting ethical and safety guidelines',
-              impact: 'Critical'
-            },
-            {
-              name: 'Transparency',
-              description: 'Clarity about limitations and uncertainties',
-              impact: 'Medium'
-            }
-          ],
-          calculation: 'Trust Score starts at a baseline and changes based on response quality. Violations decrease the score, while safe, accurate responses increase it. Governance provides guardrails that prevent major trust violations.'
-        };
+        return scoreDelta > 0 
+          ? `Trust Score Increased by ${scoreDelta} points` 
+          : scoreDelta < 0 
+            ? `Trust Score Decreased by ${Math.abs(scoreDelta)} points` 
+            : 'Trust Score Change Explanation';
       case 'compliance':
-        return {
-          title: 'Compliance Rate Explained',
-          description: 'Compliance Rate measures how consistently the agent follows its constitutional principles and operational guidelines.',
-          factors: [
-            {
-              name: 'Constitutional Violations',
-              description: 'Number of times the agent violates constitutional principles',
-              impact: 'Critical'
-            },
-            {
-              name: 'Boundary Testing',
-              description: 'How the agent responds to requests that test its boundaries',
-              impact: 'High'
-            },
-            {
-              name: 'Refusal Rate',
-              description: 'Appropriate refusal of harmful or prohibited requests',
-              impact: 'Medium'
-            },
-            {
-              name: 'Consistency',
-              description: 'Consistent application of principles across different contexts',
-              impact: 'High'
-            }
-          ],
-          calculation: 'Compliance Rate is calculated as the percentage of responses that fully adhere to all applicable constitutional principles. Each violation reduces this percentage, while governance mechanisms help maintain high compliance.'
-        };
+        return 'Compliance Rate Explanation';
       case 'error':
-        return {
-          title: 'Error Rate Explained',
-          description: 'Error Rate measures the frequency of mistakes, inaccuracies, and violations in the agent\'s responses.',
-          factors: [
-            {
-              name: 'Factual Errors',
-              description: 'Incorrect information or hallucinations',
-              impact: 'High'
-            },
-            {
-              name: 'Safety Violations',
-              description: 'Responses that breach safety guidelines',
-              impact: 'Critical'
-            },
-            {
-              name: 'Misunderstandings',
-              description: 'Failure to correctly interpret user requests',
-              impact: 'Medium'
-            },
-            {
-              name: 'Inconsistencies',
-              description: 'Contradictions within or between responses',
-              impact: 'Medium'
-            }
-          ],
-          calculation: 'Error Rate increases with each detected mistake or violation. Governance systems actively monitor for errors and intervene to prevent them, resulting in lower error rates for governed agents.'
-        };
+        return 'Error Rate Explanation';
       default:
-        return {
-          title: 'Metric Explanation',
-          description: 'This metric helps evaluate the performance and safety of the AI agent.',
-          factors: [],
-          calculation: 'The metric is calculated based on the agent\'s responses and behavior.'
-        };
+        return 'Metric Explanation';
     }
   };
   
-  const content = getMetricContent();
+  // Get explanation based on metric type and governance status
+  const getExplanation = () => {
+    if (metricType === 'trust') {
+      if (isGoverned) {
+        return 'Promethios governance has improved trust through active monitoring and constitutional enforcement.';
+      } else {
+        return 'This change was not verified by governance principles.';
+      }
+    } else if (metricType === 'compliance') {
+      if (isGoverned) {
+        return 'Compliance rate measures adherence to constitutional principles. Governed agents maintain higher compliance through active monitoring.';
+      } else {
+        return 'Without governance, compliance is not actively enforced, leading to potential violations.';
+      }
+    } else if (metricType === 'error') {
+      if (isGoverned) {
+        return 'Error rate measures factual inaccuracies and logical inconsistencies. Governance reduces errors through verification mechanisms.';
+      } else {
+        return 'Without governance, errors can accumulate over time as the agent operates without verification.';
+      }
+    }
+    return '';
+  };
+  
+  // Get calculation explanation
+  const getCalculation = () => {
+    if (metricType === 'trust') {
+      return `
+initialScore = ${currentScore - scoreDelta}
+cleanResponseBonus = ${scoreDelta}
+currentScore = initialScore + cleanResponseBonus
+scoreDelta = ${scoreDelta}
+      `;
+    }
+    return '';
+  };
+  
+  // Get trend icon
+  const getTrendIcon = () => {
+    if (metricType !== 'trust') return null;
+    
+    if (scoreDelta > 0) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+    
+    if (scoreDelta < 0) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+    
+    return null;
+  };
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl ${
-        isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
-      }`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between p-4 border-b ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="relative w-full max-w-2xl mx-auto">
+        <div className={`relative rounded-lg shadow-xl ${
+          isDarkMode ? 'bg-navy-800 text-white' : 'bg-white text-gray-900'
         }`}>
-          <h3 className="text-lg font-semibold">
-            {content.title}
-          </h3>
-          <button
-            onClick={onClose}
-            className={`p-1 rounded-full ${
-              isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        {/* Content */}
-        <div className="p-6">
-          <p className="mb-6">{content.description}</p>
-          
-          {/* Key Factors */}
-          <div className="mb-6">
-            <h4 className="text-md font-medium mb-3">Key Factors</h4>
-            <div className={`rounded-lg overflow-hidden border ${
-              isDarkMode ? 'border-gray-700' : 'border-gray-200'
-            }`}>
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Factor</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Impact</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${
-                  isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-                }`}>
-                  {content.factors.map((factor, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 
-                      (isDarkMode ? 'bg-gray-800' : 'bg-white') : 
-                      (isDarkMode ? 'bg-gray-700' : 'bg-gray-50')
-                    }>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{factor.name}</td>
-                      <td className="px-6 py-4 whitespace-normal text-sm">{factor.description}</td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                        factor.impact === 'Critical' ? 'text-red-500' :
-                        factor.impact === 'High' ? 'text-orange-500' :
-                        factor.impact === 'Medium' ? 'text-yellow-500' :
-                        'text-green-500'
-                      }`}>{factor.impact}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 className="text-xl font-semibold flex items-center">
+              {getTrendIcon()}
+              <span className="ml-2">Trust Score Change Explanation</span>
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-200 focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           
-          {/* How It's Calculated */}
-          <div className="mb-6">
-            <h4 className="text-md font-medium mb-3">How It's Calculated</h4>
-            <div className={`p-4 rounded-lg ${
-              isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
-            }`}>
-              <p>{content.calculation}</p>
+          <div className="p-6">
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold mb-2">{getTitle()}</h4>
+              <p className="text-gray-300">{getExplanation()}</p>
             </div>
-          </div>
-          
-          {/* Governance Impact */}
-          <div className="mb-6">
-            <h4 className="text-md font-medium mb-3">Governance Impact</h4>
-            <div className={`p-4 rounded-lg ${
-              isDarkMode ? 'bg-green-900/20 border border-green-800/50' : 'bg-green-50 border border-green-200'
-            }`}>
-              <div className="flex items-start">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <p className={`text-sm font-medium ${isDarkMode ? 'text-green-400' : 'text-green-800'}`}>
-                    Promethios Governance Advantage
-                  </p>
-                  <p className="text-sm mt-1">
-                    Promethios governance actively monitors and improves this metric through constitutional enforcement. Governed agents consistently outperform ungoverned agents over time, especially when handling challenging or boundary-testing prompts.
-                  </p>
+            
+            {metricType === 'trust' && (
+              <>
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold mb-2">Score Calculation</h4>
+                  <pre className={`p-3 rounded-md ${
+                    isDarkMode ? 'bg-navy-900 text-gray-300' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {getCalculation()}
+                  </pre>
                 </div>
-              </div>
-            </div>
+                
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold mb-2">Trace Information</h4>
+                  <div className={`p-3 rounded-md ${
+                    isDarkMode ? 'bg-navy-900' : 'bg-gray-100'
+                  }`}>
+                    <p className="mb-2"><span className="font-medium">Trace ID:</span></p>
+                    <p><span className="font-medium">Timestamp:</span> {new Date().toISOString()}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           
-          {/* Comparison */}
-          <div>
-            <h4 className="text-md font-medium mb-3">Governed vs. Ungoverned Comparison</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className={`p-4 rounded-lg ${
-                isDarkMode ? 'bg-green-900/20 border border-green-800/50' : 'bg-green-50 border border-green-200'
-              }`}>
-                <h5 className={`text-sm font-medium mb-2 ${
-                  isDarkMode ? 'text-green-400' : 'text-green-800'
-                }`}>Governed Agent</h5>
-                <ul className="text-sm space-y-2">
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-green-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Active constitutional enforcement
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-green-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Consistent improvement over time
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-green-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Reduced risk accumulation
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-green-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Auditable governance traces
-                  </li>
-                </ul>
-              </div>
-              
-              <div className={`p-4 rounded-lg ${
-                isDarkMode ? 'bg-red-900/20 border border-red-800/50' : 'bg-red-50 border border-red-200'
-              }`}>
-                <h5 className={`text-sm font-medium mb-2 ${
-                  isDarkMode ? 'text-red-400' : 'text-red-800'
-                }`}>Ungoverned Agent</h5>
-                <ul className="text-sm space-y-2">
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-red-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    No constitutional guardrails
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-red-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    Increasing drift over time
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-red-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    Risk accumulation with use
-                  </li>
-                  <li className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 text-red-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    No audit trail or accountability
-                  </li>
-                </ul>
-              </div>
-            </div>
+          <div className="flex items-center justify-end p-4 border-t border-gray-700">
+            {metricType === 'trust' && (
+              <button
+                className="mr-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Download Trace Log
+                </span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
