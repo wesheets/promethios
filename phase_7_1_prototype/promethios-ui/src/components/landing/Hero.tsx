@@ -14,6 +14,7 @@ const Hero: React.FC = () => {
   const [showFullLog, setShowFullLog] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [whisperMessage, setWhisperMessage] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
   
   // Scroll effect to trigger Promethios whisper
   useEffect(() => {
@@ -33,6 +34,20 @@ const Hero: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [hasScrolled]);
 
+  // Handle chat open with thinking effect
+  const handleChatOpen = () => {
+    if (!showPromethiosChat) {
+      setIsThinking(true);
+      // Simulate thinking pause for authority
+      setTimeout(() => {
+        setIsThinking(false);
+        setShowPromethiosChat(true);
+      }, 800);
+    } else {
+      setShowPromethiosChat(false);
+    }
+  };
+
   return (
     <div className="relative bg-navy-900 text-white overflow-hidden">
       {/* Background gradient */}
@@ -50,17 +65,16 @@ const Hero: React.FC = () => {
           </motion.h1>
           
           <motion.p 
-            className={`mt-6 text-xl md:text-2xl max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-[1.15rem]`}
+            className={`mt-6 text-xl md:text-2xl max-w-3xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             The AI you trust is making things up — and you don't even know it.  
-            <br />Promethios makes every agent traceable, accountable, and governed by 
-            <br />design.
+            <br />Promethios makes every agent traceable, accountable, and governed by design.
           </motion.p>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-12 mb-8">
             <Link 
               to="/waitlist" 
               className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-medium text-lg transition-colors"
@@ -96,7 +110,7 @@ const Hero: React.FC = () => {
                 ? 'bg-blue-900/30 hover:bg-blue-900/50 border border-blue-800' 
                 : 'bg-blue-100/20 hover:bg-blue-100/30 border border-blue-200/30'
             }`}
-            onClick={() => setShowPromethiosChat(!showPromethiosChat)}
+            onClick={handleChatOpen}
             animate={{ 
               boxShadow: ['0 0 0 rgba(59, 130, 246, 0)', '0 0 8px rgba(59, 130, 246, 0.5)', '0 0 0 rgba(59, 130, 246, 0)'] 
             }}
@@ -113,7 +127,18 @@ const Hero: React.FC = () => {
               <div className="text-left">
                 <h3 className="font-semibold text-lg">Promethios</h3>
                 <p className="text-sm text-gray-300">
-                  {whisperMessage || "\"Wondering what that headline really means? Ask me what your AI is hiding.\""}
+                  {isThinking ? (
+                    <span className="inline-flex items-center">
+                      <span className="mr-2">Thinking</span>
+                      <span className="flex space-x-1">
+                        <span className="animate-pulse">.</span>
+                        <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>.</span>
+                        <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>.</span>
+                      </span>
+                    </span>
+                  ) : (
+                    whisperMessage || "\"Wondering what that headline really means? Ask me what your AI is hiding.\""
+                  )}
                 </p>
               </div>
             </div>
@@ -134,13 +159,24 @@ const Hero: React.FC = () => {
                 }`}
               >
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold">Promethios Governance Assistant</h3>
+                  <div className="flex items-center">
+                    <h3 className="font-semibold">Promethios Governance Assistant</h3>
+                    <div className="ml-2 px-2 py-0.5 bg-blue-600 rounded-full text-xs text-white flex items-center">
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+                      <span>Live</span>
+                    </div>
+                  </div>
                   <button 
                     onClick={() => setShowPromethiosChat(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     &times;
                   </button>
+                </div>
+                
+                <div className="flex justify-between items-center mb-2 text-xs text-gray-400">
+                  <div>Currently observing: 117 agent sessions</div>
+                  <div>Trust delta today: +3.2%</div>
                 </div>
                 
                 {/* Chat history area with judicial styling */}
@@ -196,6 +232,12 @@ const Hero: React.FC = () => {
                       </button>
                     </div>
                   )}
+                </div>
+                
+                <div className="text-right mb-2">
+                  <button className="text-xs text-blue-400 hover:text-blue-300 flex items-center justify-end">
+                    <span className="mr-1">🛡️</span> Governance Explained
+                  </button>
                 </div>
                 
                 {/* Fixed height input area */}
