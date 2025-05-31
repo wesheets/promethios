@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTheme } from "../../context/ThemeContext";
 
 interface PromethiosObserverProps {
@@ -25,7 +25,7 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
   className = ''
 }) => {
   const { isDarkMode } = useTheme();
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = React.useState('');
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +36,7 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
   };
   
   return (
-    <div className={`bg-navy-900 rounded-lg overflow-hidden shadow-lg border border-blue-900/30 ${className}`}>
+    <div className={`bg-navy-900 rounded-lg overflow-hidden shadow-lg border border-blue-900/30 w-full h-full flex flex-col ${className}`}>
       <div className="bg-blue-900/30 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center">
           <span className="text-blue-500 mr-2">🔍</span>
@@ -45,7 +45,7 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
         <span className="bg-blue-950 text-blue-400 text-xs px-2 py-1 rounded-full">Live</span>
       </div>
       
-      <div className="h-[600px] overflow-y-auto p-4 bg-navy-800">
+      <div className="flex-grow overflow-y-auto p-4 bg-navy-800 min-h-[500px]">
         {messages.length === 0 ? (
           <div className="mb-6 bg-blue-900/30 p-4 rounded-lg">
             <p className="text-blue-300">
