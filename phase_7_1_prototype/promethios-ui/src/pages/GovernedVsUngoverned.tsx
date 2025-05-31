@@ -10,6 +10,7 @@ import PromethiosObserver from '../components/simulator/PromethiosObserver';
 import TrustScoreDelta from '../components/simulator/TrustScoreDelta';
 import TrustScoreDivergence from '../components/simulator/TrustScoreDivergence';
 import GovernanceTraceViewer from '../components/simulator/GovernanceTraceViewer';
+import LiveUnscriptedIndicator from '../components/simulator/LiveUnscriptedIndicator';
 
 // Define message type
 interface Message {
@@ -458,6 +459,11 @@ const GovernedVsUngoverned: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Promethios Simulator</h1>
+      
+      {/* Live & Unscripted Indicator */}
+      <div className="mb-6">
+        <LiveUnscriptedIndicator />
+      </div>
       
       {/* Controls */}
       <div className="flex flex-wrap gap-4 mb-6 justify-center">
