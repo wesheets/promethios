@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTheme } from "../../context/ThemeContext";
 
 interface MetricExplanationModalProps {
@@ -107,15 +107,15 @@ scoreDelta = ${scoreDelta}
   };
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="relative w-full max-w-2xl mx-auto">
         <div className={`relative rounded-lg shadow-xl ${
-          isDarkMode ? 'bg-navy-800 text-white' : 'bg-white text-gray-900'
-        }`}>
+          isDarkMode ? 'bg-navy-800/95 text-white' : 'bg-white/95 text-gray-900'
+        } backdrop-blur-sm border border-blue-900/50`}>
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
             <h3 className="text-xl font-semibold flex items-center">
               {getTrendIcon()}
-              <span className="ml-2">Trust Score Change Explanation</span>
+              <span className="ml-2">{getTitle()}</span>
             </h3>
             <button
               onClick={onClose}
@@ -149,7 +149,7 @@ scoreDelta = ${scoreDelta}
                   <div className={`p-3 rounded-md ${
                     isDarkMode ? 'bg-navy-900' : 'bg-gray-100'
                   }`}>
-                    <p className="mb-2"><span className="font-medium">Trace ID:</span></p>
+                    <p className="mb-2"><span className="font-medium">Trace ID:</span> {Math.random().toString(36).substring(2, 15)}</p>
                     <p><span className="font-medium">Timestamp:</span> {new Date().toISOString()}</p>
                   </div>
                 </div>
