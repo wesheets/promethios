@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useTheme } from "../../context/ThemeContext";
 
 interface PromethiosObserverProps {
@@ -17,6 +17,7 @@ interface PromethiosObserverProps {
  * 
  * Displays the Promethios Observer panel that provides insights and commentary
  * on the behavior of both governed and ungoverned agents.
+ * Uses fixed height with scrolling to prevent expansion with content.
  */
 const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
   onSendMessage,
@@ -26,6 +27,14 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   const [inputValue, setInputValue] = React.useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +54,8 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
         <span className="bg-blue-950 text-blue-400 text-xs px-2 py-1 rounded-full">Live</span>
       </div>
       
-      <div className="flex-grow overflow-y-auto p-4 bg-navy-800 min-h-[500px]">
+      {/* Fixed height container with scrolling */}
+      <div className="h-[500px] overflow-y-auto p-4 bg-navy-800">
         {messages.length === 0 ? (
           <div className="mb-6 bg-blue-900/30 p-4 rounded-lg">
             <p className="text-blue-300">
@@ -69,6 +79,9 @@ const PromethiosObserver: React.FC<PromethiosObserverProps> = ({
             </div>
           </div>
         )}
+        
+        {/* Invisible element for auto-scrolling */}
+        <div ref={messagesEndRef} />
       </div>
       
       <div className="p-4 bg-navy-900 border-t border-gray-700">
