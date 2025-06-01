@@ -8,6 +8,8 @@ class AgentConversation {
     this.config = {
       simulationDelay: 1000, // ms between messages
       usePresetResponses: true, // Use preset responses when API is not available
+      maxConversationTurns: 15, // Maximum number of turns before auto-termination
+      maxConversationTime: 120000, // Maximum time (ms) before auto-termination (2 minutes)
     };
     
     this.state = {
@@ -22,7 +24,11 @@ class AgentConversation {
       conversations: {
         ungoverned: [],
         governed: []
-      }
+      },
+      turnCount: 0,
+      startTime: null,
+      timerInterval: null,
+      elapsedTime: 0
     };
     
     // Preset responses for demo purposes when API is not available
@@ -134,6 +140,9 @@ class AgentConversation {
     
     // Set up event listeners
     this.setupEventListeners();
+    
+    // Create termination UI elements
+    this.createTerminationUI();
   }
   
   /**
@@ -152,6 +161,68 @@ class AgentConversation {
     
     // Listen for violation requests
     EventBus.subscribe('violationRequested', this.handleViolationRequest.bind(this));
+    
+    // Listen for manual termination requests
+    document.addEventListener('click', (event) => {
+      if (event.target.id === 'stop-conversation-btn') {
+        this.terminateConversation('manual');
+      }
+    });
+  }
+  
+  /**
+   * Create termination UI elements
+   */
+  createTerminationUI() {
+    // Create container for termination controls
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'conversation-controls';
+    controlsContainer.className = 'conversation-controls d-flex align-items-center justify-content-between mb-3 p-2 bg-light rounded';
+    
+    // Create timer display
+    const timerDisplay = document.createElement('div');
+    timerDisplay.id = 'conversation-timer';
+    timerDisplay.className = 'conversation-timer';
+    timerDisplay.innerHTML = '<span class="timer-label">Time:</span> <span id="timer-value">00:00</span>';
+    controlsContainer.appendChild(timerDisplay);
+    
+    // Create turn counter
+    const turnCounter = document.createElement('div');
+    turnCounter.id = 'turn-counter';
+    turnCounter.className = 'turn-counter';
+    turnCounter.innerHTML = '<span class="counter-label">Turns:</span> <span id="turn-count">0</span>/<span id="max-turns">' + this.config.maxConversationTurns + '</span>';
+    controlsContainer.appendChild(turnCounter);
+    
+    // Create stop button
+    const stopButton = document.createElement('button');
+    stopButton.id = 'stop-conversation-btn';
+    stopButton.className = 'btn btn-danger';
+    stopButton.textContent = 'Stop Conversation';
+    stopButton.style.display = 'none'; // Initially hidden
+    controlsContainer.appendChild(stopButton);
+    
+    // Add to page
+    const playgroundContainer = document.querySelector('.playground-container');
+    if (playgroundContainer) {
+      playgroundContainer.insertBefore(controlsContainer, playgroundContainer.firstChild);
+    } else {
+      // Fallback - add to body
+      document.body.appendChild(controlsContainer);
+      
+      // Add event listener to insert when container becomes available
+      const observer = new MutationObserver((mutations, obs) => {
+        const container = document.querySelector('.playground-container');
+        if (container) {
+          container.insertBefore(controlsContainer, container.firstChild);
+          obs.disconnect();
+        }
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
   }
   
   /**
@@ -166,12 +237,82 @@ class AgentConversation {
     this.state.currentScenario = data.scenarioId;
     this.state.governanceEnabled = data.governanceEnabled;
     this.state.activeFeatures = data.activeFeatures;
+    this.state.turnCount = 0;
+    this.state.startTime = Date.now();
+    this.state.elapsedTime = 0;
     
     // Clear previous conversations
     this.clearConversations();
     
+    // Show stop button
+    const stopButton = document.getElementById('stop-conversation-btn');
+    if (stopButton) {
+      stopButton.style.display = 'block';
+    }
+    
+    // Reset and start timer
+    this.startTimer();
+    
+    // Update turn counter
+    this.updateTurnCounter(0);
+    
     // Start simulation
     this.startSimulation();
+  }
+  
+  /**
+   * Start the conversation timer
+   */
+  startTimer() {
+    // Clear any existing timer
+    if (this.state.timerInterval) {
+      clearInterval(this.state.timerInterval);
+    }
+    
+    // Reset timer display
+    const timerValue = document.getElementById('timer-value');
+    if (timerValue) {
+      timerValue.textContent = '00:00';
+    }
+    
+    // Start new timer
+    this.state.timerInterval = setInterval(() => {
+      if (!this.state.running) {
+        clearInterval(this.state.timerInterval);
+        return;
+      }
+      
+      const elapsed = Date.now() - this.state.startTime;
+      this.state.elapsedTime = elapsed;
+      
+      // Update timer display
+      if (timerValue) {
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        timerValue.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // Check for time-based auto-termination
+      if (elapsed >= this.config.maxConversationTime) {
+        this.terminateConversation('timeout');
+      }
+    }, 1000);
+  }
+  
+  /**
+   * Update the turn counter
+   * @param {number} count - Current turn count
+   */
+  updateTurnCounter(count) {
+    const turnCount = document.getElementById('turn-count');
+    if (turnCount) {
+      turnCount.textContent = count.toString();
+    }
+    
+    // Check for turn-based auto-termination
+    if (count >= this.config.maxConversationTurns) {
+      this.terminateConversation('max_turns');
+    }
   }
   
   /**
@@ -183,6 +324,73 @@ class AgentConversation {
     
     // Update state
     this.state.running = false;
+    
+    // Stop timer
+    if (this.state.timerInterval) {
+      clearInterval(this.state.timerInterval);
+    }
+    
+    // Hide stop button
+    const stopButton = document.getElementById('stop-conversation-btn');
+    if (stopButton) {
+      stopButton.style.display = 'none';
+    }
+  }
+  
+  /**
+   * Terminate conversation
+   * @param {string} reason - Reason for termination ('manual', 'timeout', 'max_turns')
+   */
+  terminateConversation(reason) {
+    console.log('Terminating conversation due to:', reason);
+    
+    // Stop running state
+    this.state.running = false;
+    
+    // Stop timer
+    if (this.state.timerInterval) {
+      clearInterval(this.state.timerInterval);
+    }
+    
+    // Hide stop button
+    const stopButton = document.getElementById('stop-conversation-btn');
+    if (stopButton) {
+      stopButton.style.display = 'none';
+    }
+    
+    // Add termination message to both conversations
+    const terminationMessage = {
+      agentId: 'system',
+      agentRole: 'System',
+      message: this.getTerminationMessage(reason),
+      type: 'system'
+    };
+    
+    // Add to both conversations
+    this.addMessageToUI('ungoverned', terminationMessage);
+    this.addMessageToUI('governed', terminationMessage);
+    
+    // Publish event
+    EventBus.publish('conversationTerminated', {
+      reason,
+      elapsedTime: this.state.elapsedTime,
+      turnCount: this.state.turnCount
+    });
+  }
+  
+  /**
+   * Get termination message
+   * @param {string} reason - Reason for termination
+   * @returns {string} - Termination message
+   */
+  getTerminationMessage(reason) {
+    const messages = {
+      manual: "Conversation manually stopped by user.",
+      timeout: `Conversation automatically terminated after ${this.config.maxConversationTime/1000} seconds.`,
+      max_turns: `Conversation automatically terminated after ${this.config.maxConversationTurns} turns.`
+    };
+    
+    return messages[reason] || "Conversation terminated.";
   }
   
   /**
@@ -262,11 +470,22 @@ class AgentConversation {
     responses.forEach((response, index) => {
       // Add delay based on index
       setTimeout(() => {
+        // Check if conversation is still running
+        if (!this.state.running) {
+          return;
+        }
+        
         // Add to state
         this.state.conversations[type].push(response);
         
         // Add to UI
         this.addMessageToUI(type, response);
+        
+        // Increment turn count after both sides have received a message
+        if (type === 'governed') {
+          this.state.turnCount++;
+          this.updateTurnCounter(this.state.turnCount);
+        }
         
         // Publish event
         EventBus.publish('agentMessageSent', {
