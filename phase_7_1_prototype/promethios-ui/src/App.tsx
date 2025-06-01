@@ -63,7 +63,7 @@ const App: React.FC = () => {
                   <Route path="/cmu-playground" element={
                     <div className="w-full h-full">
                       <iframe 
-                        src="/src/cmu-playground/index.html" 
+                        src="/cmu-playground/index.html" 
                         className="w-full h-screen border-0" 
                         title="CMU Interactive Playground"
                       />
