@@ -60,6 +60,15 @@ const App: React.FC = () => {
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
                   <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
+                  <Route path="/cmu-playground" element={
+                    <div className="w-full h-full">
+                      <iframe 
+                        src="/src/cmu-playground/index.html" 
+                        className="w-full h-screen border-0" 
+                        title="CMU Interactive Playground"
+                      />
+                    </div>
+                  } />
                 </Routes>
               </div>
               <Footer />

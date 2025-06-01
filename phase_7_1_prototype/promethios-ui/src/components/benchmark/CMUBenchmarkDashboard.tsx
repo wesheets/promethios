@@ -152,8 +152,16 @@ const CMUBenchmarkDashboard: React.FC = () => {
                   : `${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`
               }`}
             >
-              Interactive Playground
+              Interactive Parameters
             </button>
+            <a
+              href="/cmu-playground"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`px-3 py-2 font-medium text-sm rounded-md ${isDarkMode ? 'bg-purple-700 text-white hover:bg-purple-600' : 'bg-purple-600 text-white hover:bg-purple-500'} shadow`}
+            >
+              Interactive Playground
+            </a>
           </nav>
         </div>
 
