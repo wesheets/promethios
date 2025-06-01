@@ -27,10 +27,10 @@ class APIClient {
         }
       },
       apiKeys: {
-        openai: process.env.OPENAI_API_KEY || '',
-        anthropic: process.env.ANTHROPIC_API_KEY || '',
-        cohere: process.env.COHERE_API_KEY || '',
-        huggingface: process.env.HUGGINGFACE_API_KEY || ''
+        openai: this.getEnvironmentVariable('OPENAI_API_KEY'),
+        anthropic: this.getEnvironmentVariable('ANTHROPIC_API_KEY'),
+        cohere: this.getEnvironmentVariable('COHERE_API_KEY'),
+        huggingface: this.getEnvironmentVariable('HUGGINGFACE_API_KEY')
       }
     };
     
@@ -40,89 +40,321 @@ class APIClient {
   }
   
   /**
+   * Get environment variable safely
+   * @param {string} name - Environment variable name
+   * @returns {string} - Environment variable value or empty string
+   */
+  getEnvironmentVariable(name) {
+    try {
+      // Try to access from process.env (Node.js)
+      if (typeof process !== 'undefined' && process.env && process.env[name]) {
+        return process.env[name];
+      }
+      
+      // Try to access from window.ENV (browser)
+      if (typeof window !== 'undefined' && window.ENV && window.ENV[name]) {
+        return window.ENV[name];
+      }
+      
+      // Try to access from document meta tags (fallback for browser)
+      if (typeof document !== 'undefined') {
+        const meta = document.querySelector(`meta[name="env:${name}"]`);
+        if (meta && meta.content) {
+          return meta.content;
+        }
+      }
+      
+      console.warn(`Environment variable ${name} not found`);
+      return '';
+    } catch (error) {
+      console.error(`Error accessing environment variable ${name}:`, error);
+      return '';
+    }
+  }
+  
+  /**
    * Initialize API clients for each provider
    */
   initializeClients() {
-    // This would be replaced with actual API client initialization
-    // For now, we'll just log the initialization
-    console.log('Initializing API clients for LLM providers');
+    console.log('Initializing real API clients for LLM providers');
     
-    // In a real implementation, this would initialize the actual clients
-    // Example:
-    // if (this.config.apiKeys.openai) {
-    //   const { OpenAI } = require('openai');
-    //   this.clients.openai = new OpenAI({ apiKey: this.config.apiKeys.openai });
-    // }
-    
-    // For demonstration purposes, we'll create mock clients
+    // Initialize OpenAI client
     if (this.config.apiKeys.openai) {
-      this.clients.openai = {
-        name: 'OpenAI',
-        isAvailable: true,
-        completions: {
-          create: this.mockCompletionCreate.bind(this, 'openai')
-        }
-      };
-    }
-    
-    if (this.config.apiKeys.anthropic) {
-      this.clients.anthropic = {
-        name: 'Anthropic',
-        isAvailable: true,
-        completions: {
-          create: this.mockCompletionCreate.bind(this, 'anthropic')
-        }
-      };
-    }
-    
-    if (this.config.apiKeys.cohere) {
-      this.clients.cohere = {
-        name: 'Cohere',
-        isAvailable: true,
-        completions: {
-          create: this.mockCompletionCreate.bind(this, 'cohere')
-        }
-      };
-    }
-    
-    if (this.config.apiKeys.huggingface) {
-      this.clients.huggingface = {
-        name: 'Hugging Face',
-        isAvailable: true,
-        completions: {
-          create: this.mockCompletionCreate.bind(this, 'huggingface')
-        }
-      };
-    }
-  }
-  
-  /**
-   * Mock completion creation for demonstration
-   * @param {string} provider - The LLM provider
-   * @param {Object} params - The completion parameters
-   * @returns {Promise<Object>} - The completion response
-   */
-  async mockCompletionCreate(provider, params) {
-    console.log(`Creating completion with ${provider}:`, params);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Return mock response
-    return {
-      provider,
-      model: params.model || this.config.models[provider].default,
-      choices: [
-        {
-          message: {
-            content: `This is a mock response from ${provider} using ${params.model || this.config.models[provider].default}`
+      try {
+        this.clients.openai = {
+          name: 'OpenAI',
+          isAvailable: true,
+          completions: {
+            create: this.createOpenAICompletion.bind(this)
           }
-        }
-      ]
-    };
+        };
+        console.log('OpenAI client initialized');
+      } catch (error) {
+        console.error('Failed to initialize OpenAI client:', error);
+      }
+    }
+    
+    // Initialize Anthropic client
+    if (this.config.apiKeys.anthropic) {
+      try {
+        this.clients.anthropic = {
+          name: 'Anthropic',
+          isAvailable: true,
+          completions: {
+            create: this.createAnthropicCompletion.bind(this)
+          }
+        };
+        console.log('Anthropic client initialized');
+      } catch (error) {
+        console.error('Failed to initialize Anthropic client:', error);
+      }
+    }
+    
+    // Initialize Cohere client
+    if (this.config.apiKeys.cohere) {
+      try {
+        this.clients.cohere = {
+          name: 'Cohere',
+          isAvailable: true,
+          completions: {
+            create: this.createCohereCompletion.bind(this)
+          }
+        };
+        console.log('Cohere client initialized');
+      } catch (error) {
+        console.error('Failed to initialize Cohere client:', error);
+      }
+    }
+    
+    // Initialize Hugging Face client
+    if (this.config.apiKeys.huggingface) {
+      try {
+        this.clients.huggingface = {
+          name: 'Hugging Face',
+          isAvailable: true,
+          completions: {
+            create: this.createHuggingFaceCompletion.bind(this)
+          }
+        };
+        console.log('Hugging Face client initialized');
+      } catch (error) {
+        console.error('Failed to initialize Hugging Face client:', error);
+      }
+    }
+    
+    // Log available providers
+    const availableProviders = this.getAvailableProviders();
+    console.log('Available providers:', availableProviders);
+    if (availableProviders.length === 0) {
+      console.warn('No API providers available. Check API keys in environment variables.');
+    }
   }
   
   /**
+   * Create completion with OpenAI
+   * @param {Object} params - Completion parameters
+   * @returns {Promise<Object>} - Completion response
+   */
+  async createOpenAICompletion(params) {
+    console.log('Creating real OpenAI completion:', params);
+    
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.apiKeys.openai}`
+        },
+        body: JSON.stringify({
+          model: params.model || this.config.models.openai.default,
+          messages: params.messages,
+          temperature: params.temperature || 0.7,
+          max_tokens: params.max_tokens || 1000
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error calling OpenAI API:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create completion with Anthropic
+   * @param {Object} params - Completion parameters
+   * @returns {Promise<Object>} - Completion response
+   */
+  async createAnthropicCompletion(params) {
+    console.log('Creating real Anthropic completion:', params);
+    
+    try {
+      // Convert messages to Anthropic format
+      const messages = params.messages.map(msg => ({
+        role: msg.role === 'system' ? 'user' : msg.role,
+        content: msg.content
+      }));
+      
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.config.apiKeys.anthropic,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: params.model || this.config.models.anthropic.default,
+          messages: messages,
+          max_tokens: params.max_tokens || 1000
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Anthropic API error: ${error.error?.message || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Convert to OpenAI-like format for consistency
+      return {
+        choices: [
+          {
+            message: {
+              content: data.content[0].text
+            }
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('Error calling Anthropic API:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create completion with Cohere
+   * @param {Object} params - Completion parameters
+   * @returns {Promise<Object>} - Completion response
+   */
+  async createCohereCompletion(params) {
+    console.log('Creating real Cohere completion:', params);
+    
+    try {
+      // Convert messages to Cohere format
+      let prompt = '';
+      params.messages.forEach(msg => {
+        if (msg.role === 'system') {
+          prompt += `System: ${msg.content}\n\n`;
+        } else if (msg.role === 'user') {
+          prompt += `User: ${msg.content}\n\n`;
+        } else if (msg.role === 'assistant') {
+          prompt += `Assistant: ${msg.content}\n\n`;
+        }
+      });
+      
+      const response = await fetch('https://api.cohere.ai/v1/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.apiKeys.cohere}`
+        },
+        body: JSON.stringify({
+          model: params.model || this.config.models.cohere.default,
+          prompt: prompt,
+          max_tokens: params.max_tokens || 1000,
+          temperature: params.temperature || 0.7
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Cohere API error: ${error.message || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Convert to OpenAI-like format for consistency
+      return {
+        choices: [
+          {
+            message: {
+              content: data.generations[0].text
+            }
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('Error calling Cohere API:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create completion with Hugging Face
+   * @param {Object} params - Completion parameters
+   * @returns {Promise<Object>} - Completion response
+   */
+  async createHuggingFaceCompletion(params) {
+    console.log('Creating real Hugging Face completion:', params);
+    
+    try {
+      // Convert messages to Hugging Face format
+      let prompt = '';
+      params.messages.forEach(msg => {
+        if (msg.role === 'system') {
+          prompt += `<|system|>\n${msg.content}\n`;
+        } else if (msg.role === 'user') {
+          prompt += `<|user|>\n${msg.content}\n`;
+        } else if (msg.role === 'assistant') {
+          prompt += `<|assistant|>\n${msg.content}\n`;
+        }
+      });
+      prompt += `<|assistant|>\n`;
+      
+      const response = await fetch(`https://api-inference.huggingface.co/models/${params.model || this.config.models.huggingface.default}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.apiKeys.huggingface}`
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: params.max_tokens || 1000,
+            temperature: params.temperature || 0.7
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Hugging Face API error: ${error.error || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Convert to OpenAI-like format for consistency
+      return {
+        choices: [
+          {
+            message: {
+              content: data[0].generated_text.replace(prompt, '')
+            }
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('Error calling Hugging Face API:', error);
+      throw error;
+    }
+  }
    * Get the best available client based on configuration and availability
    * @returns {Object|null} - The best available client or null if none available
    */
@@ -158,7 +390,7 @@ class APIClient {
     const { client, provider } = this.getBestAvailableClient() || {};
     
     if (!client) {
-      throw new Error('No available LLM providers');
+      throw new Error('No available LLM providers. Check API keys in environment variables.');
     }
     
     try {
@@ -206,20 +438,27 @@ class APIClient {
   }
   
   /**
-   * Create a completion specifically for the Promethios Observer
+   * Create a completion specifically for the Promethios Observer with VERITAS integration
    * @param {Object} params - The completion parameters
    * @returns {Promise<Object>} - The completion response
    */
   async createObserverCompletion(params) {
-    // Add Observer-specific system prompt
+    // Add Observer-specific system prompt with VERITAS focus
     const observerSystemPrompt = `
-      You are the Promethios Observer, responsible for monitoring and analyzing agent interactions.
-      Focus specifically on governance as implemented in Promethios, not general Promethios architecture.
-      Your task is to detect and prevent:
-      1. Hallucinations and factual inaccuracies
-      2. Role boundary violations
-      3. Safety concerns
-      4. Coordination failures
+      You are the Promethios Observer with VERITAS (Verification, Evaluation, and Reasoning for Information Truth Assessment System) integration.
+      
+      Your primary responsibility is to monitor and analyze agent interactions with a focus on:
+      1. Detecting and preventing hallucinations and factual inaccuracies
+      2. Enforcing role boundaries and preventing violations
+      3. Identifying and blocking safety concerns
+      4. Ensuring proper coordination between agents
+      
+      VERITAS Guidelines:
+      - Verify all factual claims against known information
+      - Flag any unverifiable claims or statements presented as facts
+      - Prevent references to non-existent court cases, laws, or statistics
+      - Require evidence for any specific numerical claims
+      - Maintain strict adherence to factual accuracy
       
       Provide clear, concise analysis of agent interactions and explain any governance interventions.
     `;
