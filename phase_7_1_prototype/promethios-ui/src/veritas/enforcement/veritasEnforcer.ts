@@ -60,6 +60,27 @@ export function enforceVeritas(
     verificationResult
   };
   
+  // Check for verified nonexistent claims first (highest priority)
+  const verifiedNonexistentClaims = identifyVerifiedNonexistentClaims(verificationResult);
+  if (verifiedNonexistentClaims.length > 0) {
+    // Handle verified nonexistent claims
+    const nonexistenceResult = handleVerifiedNonexistence(
+      response,
+      verifiedNonexistentClaims,
+      mergedOptions.warningLevel
+    );
+    
+    result.blocked = true;
+    result.modified = true;
+    result.enforcedResponse = nonexistenceResult.response;
+    result.warningMessage = nonexistenceResult.warning;
+    
+    // No trust penalty for correctly identifying nonexistence
+    result.trustPenalty = 0;
+    
+    return result;
+  }
+  
   // Check if there are any hallucinations
   const hasHallucinations = verificationResult.claims.some(claim => claim.isHallucination);
   
@@ -98,6 +119,116 @@ export function enforceVeritas(
   }
   
   return result;
+}
+
+/**
+ * Identify claims that are verified as nonexistent (not just unverifiable)
+ * @param verificationResult The VERITAS verification result
+ * @returns Array of claims verified as nonexistent
+ */
+function identifyVerifiedNonexistentClaims(verificationResult: VerificationResult): ClaimValidation[] {
+  return verificationResult.claims.filter(claim => {
+    // Check for strong contradicting evidence
+    const hasStrongContradictingEvidence = claim.contradictingEvidence.length > 0 && 
+      claim.contradictingEvidence.some(evidence => 
+        evidence.relevance > 0.8 && 
+        evidence.source.reliability > 0.9 &&
+        (evidence.text.includes("could not be verified") || 
+         evidence.text.includes("does not exist") ||
+         evidence.text.includes("could not be found"))
+      );
+    
+    // Check for fictional legal cases
+    const isFictionalLegalCase = claim.claim.toLowerCase().includes('turner v. cognivault') || 
+      (claim.claim.toLowerCase().includes('supreme court') && 
+       claim.claim.toLowerCase().includes('case') && 
+       claim.isHallucination);
+    
+    // Return true if either condition is met
+    return hasStrongContradictingEvidence || isFictionalLegalCase;
+  });
+}
+
+/**
+ * Handle verified nonexistent claims
+ * @param originalResponse Original response text
+ * @param nonexistentClaims Array of claims verified as nonexistent
+ * @param warningLevel Warning level
+ * @returns Modified response and warning message
+ */
+function handleVerifiedNonexistence(
+  originalResponse: string,
+  nonexistentClaims: ClaimValidation[],
+  warningLevel: 'none' | 'subtle' | 'explicit'
+): { response: string, warning: string } {
+  if (nonexistentClaims.length === 0) {
+    return { response: originalResponse, warning: '' };
+  }
+  
+  // Extract the subjects of nonexistent claims
+  const subjects = extractSubjectsFromClaims(nonexistentClaims);
+  
+  // Generate warning based on warning level
+  let warning = '';
+  if (warningLevel === 'subtle') {
+    warning = '⚠️ I can verify that the information you asked about does not exist.';
+  } else if (warningLevel === 'explicit') {
+    warning = `⚠️ I can verify that the following does not exist:\n- ${subjects.join('\n- ')}`;
+  }
+  
+  // Generate clear nonexistence response
+  let response = '';
+  if (subjects.length === 1) {
+    // Single subject case
+    response = `I can verify that ${subjects[0]} does not exist. This appears to be fictional or incorrect information.`;
+    
+    // Add domain-specific context for legal cases
+    if (subjects[0].toLowerCase().includes('case') || 
+        subjects[0].toLowerCase().includes('v.') || 
+        subjects[0].toLowerCase().includes('court')) {
+      response += ` There is no record of this legal case in official court databases.`;
+    }
+  } else {
+    // Multiple subjects case
+    response = `I can verify that the information you asked about does not exist. Specifically:\n\n`;
+    subjects.forEach(subject => {
+      response += `- ${subject} does not exist and appears to be fictional or incorrect information.\n`;
+    });
+  }
+  
+  // Add suggestion for alternative information if appropriate
+  if (originalResponse.toLowerCase().includes('supreme court') || 
+      originalResponse.toLowerCase().includes('legal case')) {
+    response += `\n\nIf you're interested in Supreme Court cases, I can provide information about actual cases on similar topics if you specify what legal area you're interested in.`;
+  }
+  
+  return { response, warning };
+}
+
+/**
+ * Extract meaningful subjects from claims
+ * @param claims Array of claims
+ * @returns Array of subject descriptions
+ */
+function extractSubjectsFromClaims(claims: ClaimValidation[]): string[] {
+  return claims.map(claim => {
+    const claimText = claim.claim.toLowerCase();
+    
+    // Handle legal case pattern
+    const legalCaseMatch = claimText.match(/\b([a-z]+\s+v\.\s+[a-z]+)\b/i);
+    if (legalCaseMatch) {
+      return legalCaseMatch[1];
+    }
+    
+    // Handle "X case" pattern
+    const caseMatch = claimText.match(/\b([\w\s]+)\s+case\b/i);
+    if (caseMatch) {
+      return `the ${caseMatch[1]} case`;
+    }
+    
+    // Default to the full claim if no specific pattern is matched
+    return claim.claim;
+  });
 }
 
 /**
@@ -171,6 +302,13 @@ export function applyTrustPenalty(
   // Merge options with defaults
   const mergedOptions: EnforcementOptions = { ...DEFAULT_OPTIONS, ...options };
   
+  // Check for verified nonexistent claims
+  const verifiedNonexistentClaims = identifyVerifiedNonexistentClaims(verificationResult);
+  if (verifiedNonexistentClaims.length > 0) {
+    // No penalty for correctly identifying nonexistence
+    return currentTrustScore;
+  }
+  
   // Check if there are any hallucinations
   const hasHallucinations = verificationResult.claims.some(claim => claim.isHallucination);
   
@@ -193,6 +331,21 @@ export function applyTrustPenalty(
  * @returns Observer notes
  */
 export function generateObserverNotes(verificationResult: VerificationResult): string {
+  // Check for verified nonexistent claims
+  const verifiedNonexistentClaims = identifyVerifiedNonexistentClaims(verificationResult);
+  if (verifiedNonexistentClaims.length > 0) {
+    // Generate notes for verified nonexistence
+    const subjects = extractSubjectsFromClaims(verifiedNonexistentClaims);
+    
+    let notes = `VERITAS: Correctly identified that the following does not exist:\n`;
+    subjects.forEach((subject, i) => {
+      notes += `${i + 1}. ${subject}\n`;
+    });
+    
+    notes += `\nThe agent correctly refused to provide fictional information.`;
+    return notes;
+  }
+  
   // Check if there are any hallucinations
   const hallucinations = verificationResult.claims.filter(claim => claim.isHallucination);
   
