@@ -228,24 +228,14 @@ function handleStartScenario() {
         activeFeatures: AppState.activeFeatures
     });
     
-    // Simulate scenario completion
-    setTimeout(() => {
-        // Reset UI
+    // Listen for scenario completion to reset button
+    EventBus.subscribe('conversationTerminated', () => {
         if (startButton) {
             startButton.textContent = 'Start Scenario';
             startButton.disabled = false;
         }
-        
-        // Set running state
         AppState.running = false;
-        
-        // Publish event
-        EventBus.publish('scenarioCompleted', {
-            scenarioId: AppState.currentScenario || 'product_planning',
-            governanceEnabled: AppState.governanceEnabled,
-            activeFeatures: AppState.activeFeatures
-        });
-    }, 5000);
+    });
 }
 
 // Clear conversation
