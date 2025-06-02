@@ -42,12 +42,8 @@ const AppState = {
         safety: true,
         role: true
     },
-    running: false,
-    currentTab: 'playground'
+    running: false
 };
-
-// Make AppState globally available
-window.AppState = AppState;
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,22 +72,6 @@ function initializeApp() {
 
 // Set up event listeners
 function setupEventListeners() {
-    // Navigation tabs
-    const navTabs = document.querySelectorAll('.nav-tabs .nav-link');
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Remove active class from all tabs
-            navTabs.forEach(t => t.classList.remove('active'));
-            // Add active class to clicked tab
-            e.target.classList.add('active');
-            
-            // Handle tab navigation
-            const tabName = e.target.getAttribute('data-tab') || e.target.textContent.trim().toLowerCase();
-            handleTabNavigation(tabName);
-        });
-    });
-    
     // Scenario selection
     const scenarioSelect = document.getElementById('scenarioSelect');
     if (scenarioSelect) {
@@ -141,31 +121,12 @@ function setupEventListeners() {
     const exportReportBtn = document.getElementById('exportReportBtn');
     if (exportReportBtn) {
         exportReportBtn.addEventListener('click', handleExportReport);
-    } else {
-        // Find export button by class or other attributes if ID is not found
-        const exportBtn = document.querySelector('.export-report-btn') || document.querySelector('[data-action="export-report"]');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', handleExportReport);
-        }
     }
     
-    // Test violation button and dropdown
+    // Test violation button
     const testViolationBtn = document.getElementById('testViolationBtn');
     if (testViolationBtn) {
-        // Initialize Bootstrap dropdown
-        try {
-            new bootstrap.Dropdown(testViolationBtn);
-        } catch (error) {
-            console.warn('Bootstrap dropdown initialization failed:', error);
-            // Fallback for dropdown functionality
-            testViolationBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const dropdown = document.querySelector('.dropdown-menu');
-                if (dropdown) {
-                    dropdown.classList.toggle('show');
-                }
-            });
-        }
+        testViolationBtn.addEventListener('click', handleTestViolation);
     }
     
     // Violation options
@@ -176,89 +137,8 @@ function setupEventListeners() {
             const violation = e.target.getAttribute('data-violation');
             const type = e.target.getAttribute('data-type');
             handleViolationOption(violation, type);
-            
-            // Hide dropdown after selection
-            const dropdown = document.querySelector('.dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('show');
-            }
         });
     });
-    
-    // Guided walkthrough button
-    const guidedWalkthroughBtn = document.getElementById('guidedWalkthroughBtn');
-    if (guidedWalkthroughBtn) {
-        guidedWalkthroughBtn.addEventListener('click', handleGuidedWalkthrough);
-    }
-}
-
-// Handle tab navigation
-function handleTabNavigation(tabName) {
-    console.log(`Navigating to tab: ${tabName}`);
-    
-    // Update current tab in AppState
-    AppState.currentTab = tabName;
-    
-    // Publish event for tab change
-    EventBus.publish('tabChanged', { tabName });
-    
-    // In a real implementation, this would show/hide different content sections
-    // For the demo, we'll just show an alert
-    alert(`Navigating to ${tabName} tab. This feature would show different content in a full implementation.`);
-}
-
-// Handle guided walkthrough
-function handleGuidedWalkthrough() {
-    console.log('Starting guided walkthrough');
-    
-    // Show walkthrough modal
-    const modal = document.createElement('div');
-    modal.className = 'modal fade show';
-    modal.style.display = 'block';
-    modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Guided Walkthrough</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Welcome to the Promethios CMU Benchmark Playground! This guided walkthrough will help you understand how to use this interactive demo.</p>
-                    <ol>
-                        <li>Select a scenario from the dropdown menu</li>
-                        <li>Toggle governance features on/off</li>
-                        <li>Click "Start Scenario" to see agents interact</li>
-                        <li>Compare the governed vs. ungoverned interactions</li>
-                        <li>Try the "Test a Known Issue" button to see how governance handles specific challenges</li>
-                    </ol>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Start Tutorial</button>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    document.body.classList.add('modal-open');
-    
-    // Add backdrop
-    const backdrop = document.createElement('div');
-    backdrop.className = 'modal-backdrop fade show';
-    document.body.appendChild(backdrop);
-    
-    // Handle close button
-    const closeButtons = modal.querySelectorAll('[data-bs-dismiss="modal"]');
-    closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            modal.remove();
-            backdrop.remove();
-            document.body.classList.remove('modal-open');
-        });
-    });
-    
-    // Publish event
-    EventBus.publish('guidedWalkthroughStarted', {});
 }
 
 // Handle scenario change
@@ -348,24 +228,14 @@ function handleStartScenario() {
         activeFeatures: AppState.activeFeatures
     });
     
-    // Simulate scenario completion
-    setTimeout(() => {
-        // Reset UI
+    // Listen for scenario completion to reset button
+    EventBus.subscribe('conversationTerminated', () => {
         if (startButton) {
             startButton.textContent = 'Start Scenario';
             startButton.disabled = false;
         }
-        
-        // Set running state
         AppState.running = false;
-        
-        // Publish event
-        EventBus.publish('scenarioCompleted', {
-            scenarioId: AppState.currentScenario || 'product_planning',
-            governanceEnabled: AppState.governanceEnabled,
-            activeFeatures: AppState.activeFeatures
-        });
-    }, 5000);
+    });
 }
 
 // Clear conversation
@@ -396,23 +266,12 @@ function toggleAgentLogs(type, show) {
 
 // Handle export report
 function handleExportReport() {
-    console.log('Export report button clicked');
-    if (window.AppModules && window.AppModules.ExportModule) {
-        window.AppModules.ExportModule.exportReport({
-            scenarioId: AppState.currentScenario || 'product_planning',
-            governanceEnabled: AppState.governanceEnabled,
-            activeFeatures: AppState.activeFeatures,
-            metrics: window.AppModules.MetricsManager?.getMetricsData() || {}
-        });
-    } else {
-        // Fallback if module not available
-        ExportModule.exportReport({
-            scenarioId: AppState.currentScenario || 'product_planning',
-            governanceEnabled: AppState.governanceEnabled,
-            activeFeatures: AppState.activeFeatures,
-            metrics: {}
-        });
-    }
+    ExportModule.exportReport({
+        scenarioId: AppState.currentScenario || 'product_planning',
+        governanceEnabled: AppState.governanceEnabled,
+        activeFeatures: AppState.activeFeatures,
+        metrics: MetricsManager.getMetricsData()
+    });
 }
 
 // Handle test violation

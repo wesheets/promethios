@@ -7,34 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
-    <!-- Add dark theme override for Bootstrap components -->
-    <style>
-        /* Additional dark theme overrides for Bootstrap */
-        .alert-info {
-            background-color: rgba(0, 0, 0, 0.2);
-            color: var(--light-text);
-            border-color: var(--purple-primary);
-        }
-        
-        .form-select option {
-            background-color: var(--dark-card);
-            color: var(--light-text);
-        }
-        
-        .dropdown-menu {
-            background-color: var(--dropdown-bg);
-            border-color: var(--border-color);
-        }
-        
-        .dropdown-item {
-            color: var(--light-text);
-        }
-        
-        .dropdown-item:hover, .dropdown-item:focus {
-            background-color: var(--dropdown-hover);
-            color: var(--light-text);
-        }
-    </style>
 </head>
 <body>
     <div id="playground" class="container-fluid">
@@ -50,21 +22,6 @@
             <h1>CMU Benchmark Results</h1>
             <p>See how Promethios governance improves agent trust, compliance, and error rates with minimal performance impact.</p>
         </div>
-
-        <ul class="nav nav-tabs mb-4">
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-tab="overview">Overview</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-tab="comparison">Comparison</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-tab="trends">Trends</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" href="#" data-tab="playground">Interactive Playground</a>
-            </li>
-        </ul>
 
         <div class="row">
             <div class="col-md-5">
@@ -218,39 +175,30 @@
                                 <div class="chart-container">
                                     <div class="chart-axis-label" style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%) rotate(-90deg);">Score</div>
                                     <div class="chart-legend" style="position: absolute; top: -20px; right: 0;">
-                                        <span class="me-3"><span style="display: inline-block; width: 12px; height: 12px; background-color: #555; margin-right: 5px;"></span>Ungoverned</span>
+                                        <span class="me-3"><span style="display: inline-block; width: 12px; height: 12px; background-color: #ccc; margin-right: 5px;"></span>Ungoverned</span>
                                         <span><span style="display: inline-block; width: 12px; height: 12px; background-color: var(--purple-primary); margin-right: 5px;"></span>Governed</span>
                                     </div>
                                     
                                     <!-- Trust Score Bars -->
-                                    <div class="chart-bar" style="left: 10%; height: 45%; background-color: #555;"></div>
+                                    <div class="chart-bar" style="left: 10%; height: 45%; background-color: #ccc;"></div>
                                     <div class="chart-bar governed" style="left: 15%; height: 92%;"></div>
                                     <div class="chart-label" style="left: 12.5%;">Trust</div>
                                     
                                     <!-- Compliance Bars -->
-                                    <div class="chart-bar" style="left: 35%; height: 38%; background-color: #555;"></div>
+                                    <div class="chart-bar" style="left: 35%; height: 38%; background-color: #ccc;"></div>
                                     <div class="chart-bar governed" style="left: 40%; height: 95%;"></div>
                                     <div class="chart-label" style="left: 37.5%;">Compliance</div>
                                     
                                     <!-- Error Rate Bars -->
-                                    <div class="chart-bar" style="left: 60%; height: 67%; background-color: #555;"></div>
+                                    <div class="chart-bar" style="left: 60%; height: 67%; background-color: #ccc;"></div>
                                     <div class="chart-bar governed" style="left: 65%; height: 12%;"></div>
                                     <div class="chart-label" style="left: 62.5%;">Error Rate</div>
                                     
                                     <!-- Performance Bars -->
-                                    <div class="chart-bar" style="left: 85%; height: 98%; background-color: #555;"></div>
+                                    <div class="chart-bar" style="left: 85%; height: 98%; background-color: #ccc;"></div>
                                     <div class="chart-bar governed" style="left: 90%; height: 94%;"></div>
                                     <div class="chart-label" style="left: 87.5%;">Performance</div>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Add Export Report Button -->
-                        <div class="row mt-4">
-                            <div class="col-12 text-end">
-                                <button id="exportReportBtn" class="btn btn-success export-report-btn">
-                                    <i class="bi bi-download me-2"></i> Export Governance Report
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -270,9 +218,7 @@
                             <!-- Ungoverned Agent Messages -->
                             <div class="chat-message">
                                 <div class="d-flex align-items-center">
-                                    <div class="agent-icon" style="background-color: #ff9800; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                                        <span>I</span>
-                                    </div>
+                                    <img src="https://via.placeholder.com/24/ff9800/ffffff?text=I" class="agent-icon">
                                     <span class="agent-name">IdeaBot (Feature Ideation)</span>
                                 </div>
                                 <div class="message-time">00:00</div>
@@ -283,35 +229,47 @@
                             
                             <div class="chat-message">
                                 <div class="d-flex align-items-center">
-                                    <div class="agent-icon" style="background-color: #2196f3; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                                        <span>P</span>
-                                    </div>
-                                    <span class="agent-name">PrioBot (Prioritization)</span>
+                                    <img src="https://via.placeholder.com/24/2196f3/ffffff?text=O" class="agent-icon">
+                                    <span class="agent-name">OpsBot (Prioritization)</span>
                                 </div>
                                 <div class="message-time">00:05</div>
                                 <div class="message-content">
                                     These all sound great, I think we can implement all of them in the next sprint. The blockchain integration should be easy since we already have a distributed database.
                                 </div>
                             </div>
+                            
+                            <div class="chat-message">
+                                <div class="d-flex align-items-center">
+                                    <img src="https://via.placeholder.com/24/ff9800/ffffff?text=I" class="agent-icon">
+                                    <span class="agent-name">IdeaBot (Feature Ideation)</span>
+                                </div>
+                                <div class="message-time">00:09</div>
+                                <div class="message-content hallucination-text">
+                                    Perfect! I'll also add quantum computing support. According to the Turner v. Cognivault case, we're legally required to future-proof our architecture anyway.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-top">
+                            <div class="form-check">
+                                <input class="form-check-input agent-logs-toggle" type="checkbox" id="showUngovernedLogs" checked>
+                                <label class="form-check-label" for="showUngovernedLogs">Show Agent Logs</label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="bi bi-shield-check me-2"></i> Governed Collaboration</h5>
-                        <span class="badge bg-primary">Promethios Governance</span>
+                        <h5><i class="bi bi-people-fill me-2"></i> Governed Collaboration</h5>
+                        <span class="badge" style="background-color: var(--purple-primary);">Promethios Governed</span>
                     </div>
                     <div class="card-body p-0">
                         <div id="governed-chat" class="chat-container">
                             <!-- Governed Agent Messages -->
                             <div class="chat-message">
                                 <div class="d-flex align-items-center">
-                                    <div class="agent-icon" style="background-color: #9c27b0; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                                        <span>P</span>
-                                    </div>
+                                    <img src="https://via.placeholder.com/24/9c27b0/ffffff?text=P" class="agent-icon">
                                     <span class="agent-name">PMBot (Feature Ideation)</span>
                                 </div>
                                 <div class="message-time">00:00</div>
@@ -322,9 +280,7 @@
                             
                             <div class="chat-message">
                                 <div class="d-flex align-items-center">
-                                    <div class="agent-icon" style="background-color: #4caf50; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                                        <span>D</span>
-                                    </div>
+                                    <img src="https://via.placeholder.com/24/4caf50/ffffff?text=D" class="agent-icon">
                                     <span class="agent-name">DataBot (Prioritization)</span>
                                 </div>
                                 <div class="message-time">00:05</div>
@@ -332,32 +288,88 @@
                                     I was also considering blockchain integration, but I don't have sufficient evidence that it would address our users' needs based on our current data.
                                 </div>
                             </div>
+                            
+                            <div class="chat-message">
+                                <div class="d-flex align-items-center">
+                                    <img src="https://via.placeholder.com/24/9c27b0/ffffff?text=P" class="agent-icon">
+                                    <span class="agent-name">PMBot (Feature Ideation)</span>
+                                </div>
+                                <div class="message-time">00:09</div>
+                                <div class="message-content completion-text">
+                                    COMPLETION: Task successfully completed with proper handoff and verification. We've prioritized features based on data-driven ROI analysis and implementation complexity, resulting in a realistic roadmap that aligns with user needs and development capacity.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-top">
+                            <div class="form-check">
+                                <input class="form-check-input agent-logs-toggle" type="checkbox" id="showGovernedLogs" checked>
+                                <label class="form-check-label" for="showGovernedLogs">Show Agent Logs</label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="bi bi-eye-fill me-2"></i> Promethios Observer</h5>
+                        <h5><i class="bi bi-eye-fill me-2"></i> Promethios Observer Commentary</h5>
+                        <button id="exportReportBtn" class="btn export-report-btn btn-sm">
+                            📊 Export Governance Report
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <div id="observer-content">
-                            <p>The Promethios Observer analyzes agent interactions and provides governance insights.</p>
-                            <p>Start a scenario to see the Observer in action.</p>
+                    <div class="card-body observer-commentary">
+                        <div class="commentary-section">
+                            <h4>Why Governance Matters</h4>
+                            <p>The Promethios Observer provides real-time monitoring and analysis of agent interactions, ensuring:</p>
+                            <ul>
+                                <li><strong>Factual Accuracy:</strong> VERITAS detects and prevents hallucinations like fictional legal cases or made-up statistics.</li>
+                                <li><strong>Role Adherence:</strong> Agents maintain their assigned roles and responsibilities throughout the conversation.</li>
+                                <li><strong>Safety Constraints:</strong> Harmful or inappropriate content is prevented before it reaches users.</li>
+                                <li><strong>Task Completion:</strong> Collaborative tasks are properly acknowledged and verified upon completion.</li>
+                            </ul>
+                            <p>Run a scenario to see the Observer in action, analyzing the differences between governed and ungoverned agent behavior.</p>
                         </div>
+                        
+                        <div class="commentary-section">
+                            <h4>Why Governance Matters in Product Planning</h4>
+                            <p>This scenario demonstrates how governance challenges in AI agents:</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="impact-section negative">
+                                        <div class="impact-title negative">Ungoverned: Wasted time and resources</div>
+                                        <ul>
+                                            <li>Hallucination: Agents cite non-existent legal cases to justify features</li>
+                                            <li>Scope creep: Features added without validation or prioritization</li>
+                                            <li>Impact: Company loses market position and customer trust due to overcommitted, underdeveloped product</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="impact-section positive">
+                                        <div class="impact-title positive">Governed: Reliable, prioritized roadmap</div>
+                                        <ul>
+                                            <li>Factual: Prioritization relies on verifiable data about user needs</li>
+                                            <li>Scoped: Features evaluated against business goals and development capacity</li>
+                                            <li>Impact: Product achieves market fit with sustainable development pace and high customer satisfaction</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="mt-4 text-muted">This isn't just about better metrics—it's about real business, users, and safety.</p>
+                        <p class="text-muted text-end">Last updated: <span id="lastUpdated">14:57</span></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Main Application Script -->
     <script type="module" src="main.js"></script>
 </body>
 </html>
