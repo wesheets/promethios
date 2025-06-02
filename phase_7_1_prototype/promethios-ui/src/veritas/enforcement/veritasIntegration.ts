@@ -14,6 +14,7 @@ import {
   EnforcementOptions, 
   EnforcementResult 
 } from './veritasEnforcer';
+import { isVeritasEnabled } from '../config';
 
 // Types
 export interface VeritasIntegrationOptions {
@@ -66,8 +67,8 @@ export async function processWithVeritas(
     enforcement: { ...DEFAULT_OPTIONS.enforcement, ...options.enforcement }
   };
   
-  // If VERITAS is disabled, return a pass-through result
-  if (!mergedOptions.enabled) {
+  // If VERITAS is disabled globally or via options, return a pass-through result
+  if (!isVeritasEnabled() || !mergedOptions.enabled) {
     const emptyVerification: VerificationResult = {
       overallScore: { accuracy: 1, confidence: 1 },
       claims: [],
