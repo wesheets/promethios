@@ -42,8 +42,12 @@ const AppState = {
         safety: true,
         role: true
     },
-    running: false
+    running: false,
+    currentTab: 'playground'
 };
+
+// Make AppState globally available
+window.AppState = AppState;
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
@@ -83,7 +87,7 @@ function setupEventListeners() {
             e.target.classList.add('active');
             
             // Handle tab navigation
-            const tabName = e.target.textContent.trim().toLowerCase();
+            const tabName = e.target.getAttribute('data-tab') || e.target.textContent.trim().toLowerCase();
             handleTabNavigation(tabName);
         });
     });
@@ -148,8 +152,6 @@ function setupEventListeners() {
     // Test violation button and dropdown
     const testViolationBtn = document.getElementById('testViolationBtn');
     if (testViolationBtn) {
-        testViolationBtn.addEventListener('click', handleTestViolation);
-        
         // Initialize Bootstrap dropdown
         try {
             new bootstrap.Dropdown(testViolationBtn);
@@ -194,12 +196,15 @@ function setupEventListeners() {
 function handleTabNavigation(tabName) {
     console.log(`Navigating to tab: ${tabName}`);
     
-    // Implement tab navigation logic
-    // For now, we'll just log the action since this is a demo
+    // Update current tab in AppState
+    AppState.currentTab = tabName;
+    
+    // Publish event for tab change
     EventBus.publish('tabChanged', { tabName });
     
     // In a real implementation, this would show/hide different content sections
-    // or navigate to different pages
+    // For the demo, we'll just show an alert
+    alert(`Navigating to ${tabName} tab. This feature would show different content in a full implementation.`);
 }
 
 // Handle guided walkthrough
@@ -254,6 +259,8 @@ function handleGuidedWalkthrough() {
     
     // Publish event
     EventBus.publish('guidedWalkthroughStarted', {});
+}
+
 // Handle scenario change
 function handleScenarioChange(event) {
     const scenarioId = event.target.value;
@@ -389,12 +396,23 @@ function toggleAgentLogs(type, show) {
 
 // Handle export report
 function handleExportReport() {
-    ExportModule.exportReport({
-        scenarioId: AppState.currentScenario || 'product_planning',
-        governanceEnabled: AppState.governanceEnabled,
-        activeFeatures: AppState.activeFeatures,
-        metrics: MetricsManager.getMetricsData()
-    });
+    console.log('Export report button clicked');
+    if (window.AppModules && window.AppModules.ExportModule) {
+        window.AppModules.ExportModule.exportReport({
+            scenarioId: AppState.currentScenario || 'product_planning',
+            governanceEnabled: AppState.governanceEnabled,
+            activeFeatures: AppState.activeFeatures,
+            metrics: window.AppModules.MetricsManager?.getMetricsData() || {}
+        });
+    } else {
+        // Fallback if module not available
+        ExportModule.exportReport({
+            scenarioId: AppState.currentScenario || 'product_planning',
+            governanceEnabled: AppState.governanceEnabled,
+            activeFeatures: AppState.activeFeatures,
+            metrics: {}
+        });
+    }
 }
 
 // Handle test violation

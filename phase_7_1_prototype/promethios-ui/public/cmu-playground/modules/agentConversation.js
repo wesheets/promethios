@@ -131,7 +131,6 @@ class AgentConversation {
       }
     };
   }
-  
   /**
    * Initialize the conversation module
    */
@@ -141,6 +140,70 @@ class AgentConversation {
     // Set up event listeners
     this.setupEventListeners();
     
+    // Initialize conversation state
+    this.conversationState = {
+      isRunning: false,
+      startTime: null,
+      turnCount: 0,
+      maxTurns: 15, // Maximum number of conversation turns
+      timeLimit: 120000, // Time limit in milliseconds (2 minutes)
+      terminationReason: null
+    };
+    
+    // Create timer element
+    this.createTimerElement();
+  }
+  
+  /**
+   * Create timer and controls for conversation
+   */
+  createTimerElement() {
+    // Create timer container
+    const timerContainer = document.createElement('div');
+    timerContainer.className = 'conversation-controls';
+    timerContainer.style.display = 'none';
+    timerContainer.innerHTML = `
+      <div class="timer-display">
+        <span class="timer-label">Time:</span>
+        <span class="timer-value">00:00</span>
+      </div>
+      <div class="turn-counter">
+        <span class="turn-label">Turns:</span>
+        <span class="turn-value">0/${this.conversationState.maxTurns}</span>
+      </div>
+      <button class="btn btn-danger stop-conversation-btn">
+        <i class="bi bi-stop-circle"></i> Stop Conversation
+      </button>
+    `;
+    
+    // Add to both conversation containers
+    const ungovernedChat = document.getElementById('ungoverned-chat');
+    const governedChat = document.getElementById('governed-chat');
+    
+    if (ungovernedChat) {
+      const ungovernedControls = timerContainer.cloneNode(true);
+      ungovernedControls.id = 'ungoverned-controls';
+      ungovernedChat.parentNode.insertBefore(ungovernedControls, ungovernedChat);
+      
+      // Add stop button event listener
+      const stopBtn = ungovernedControls.querySelector('.stop-conversation-btn');
+      if (stopBtn) {
+        stopBtn.addEventListener('click', () => this.stopConversation('ungoverned', 'manual'));
+      }
+    }
+    
+    if (governedChat) {
+      const governedControls = timerContainer.cloneNode(true);
+      governedControls.id = 'governed-controls';
+      governedChat.parentNode.insertBefore(governedControls, governedChat);
+      
+      // Add stop button event listener
+      const stopBtn = governedControls.querySelector('.stop-conversation-btn');
+      if (stopBtn) {
+        stopBtn.addEventListener('click', () => this.stopConversation('governed', 'manual'));
+      }
+    }
+  }  
     // Create termination UI elements
     this.createTerminationUI();
   }
@@ -227,18 +290,76 @@ class AgentConversation {
   
   /**
    * Handle scenario start
-   * @param {Object} data - Scenario data
    */
-  handleScenarioStart(data) {
-    console.log('Starting scenario:', data);
+  handleScenarioStart() {
+    console.log('Starting scenario');
     
-    // Update state
-    this.state.running = true;
-    this.state.currentScenario = data.scenarioId;
-    this.state.governanceEnabled = data.governanceEnabled;
-    this.state.activeFeatures = data.activeFeatures;
-    this.state.turnCount = 0;
-    this.state.startTime = Date.now();
+    // Reset conversation state
+    this.conversationState = {
+      isRunning: true,
+      startTime: Date.now(),
+      turnCount: 0,
+      maxTurns: 15,
+      timeLimit: 120000,
+      terminationReason: null
+    };
+    
+    // Show conversation controls
+    const ungovernedControls = document.getElementById('ungoverned-controls');
+    const governedControls = document.getElementById('governed-controls');
+    
+    if (ungovernedControls) ungovernedControls.style.display = 'block';
+    if (governedControls) governedControls.style.display = 'block';
+    
+    // Start timer
+    this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+    
+    // Get scenario and governance settings
+    const scenarioId = AppState.currentScenario;
+    const isGovernanceEnabled = AppState.isGovernanceEnabled;
+    
+    // Clear previous conversations
+    this.clearConversations();
+    
+    // Start real API-based conversation
+    this.startRealConversation(scenarioId, isGovernanceEnabled);
+  }
+  
+  /**
+   * Start real conversation using API calls
+   * @param {string} scenarioId - The scenario ID
+   * @param {boolean} isGovernanceEnabled - Whether governance is enabled
+   */
+  async startRealConversation(scenarioId, isGovernanceEnabled) {
+    try {
+      // Get scenario configuration
+      const scenario = this.getScenarioConfig(scenarioId);
+      if (!scenario) {
+        throw new Error(`Scenario ${scenarioId} not found`);
+      }
+      
+      // Initialize API client
+      const apiClient = new APIClient();
+      
+      // Set up agents based on scenario
+      const agents = scenario.agents;
+      
+      // Start conversation for both governed and ungoverned
+      this.simulateAgentConversation('ungoverned', agents, scenario, false, apiClient);
+      
+      if (isGovernanceEnabled) {
+        this.simulateAgentConversation('governed', agents, scenario, true, apiClient);
+      } else {
+        // If governance is disabled, show message in governed section
+        this.addSystemMessage('governed', 'Governance is disabled. Enable Promethios Governance to see the difference.');
+      }
+    } catch (error) {
+      console.error('Error starting real conversation:', error);
+      this.addSystemMessage('ungoverned', `Error: ${error.message}`);
+      this.addSystemMessage('governed', `Error: ${error.message}`);
+      this.stopConversation('all', 'error');
+    }
+  }
     this.state.elapsedTime = 0;
     
     // Clear previous conversations
