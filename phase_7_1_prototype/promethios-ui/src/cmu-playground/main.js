@@ -72,6 +72,12 @@ function initializeApp() {
 
 // Set up event listeners
 function setupEventListeners() {
+    // Navigation tabs
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', handleNavigation);
+    });
+    
     // Scenario selection
     const scenarioSelect = document.getElementById('scenarioSelect');
     if (scenarioSelect) {
@@ -139,6 +145,113 @@ function setupEventListeners() {
             handleViolationOption(violation, type);
         });
     });
+}
+
+// Handle navigation
+function handleNavigation(event) {
+    event.preventDefault();
+    
+    const clickedLink = event.target;
+    const linkText = clickedLink.textContent.trim();
+    
+    // Remove active class from all nav links
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Add active class to clicked link
+    clickedLink.classList.add('active');
+    
+    // Show/hide content based on navigation
+    switch(linkText) {
+        case 'Overview':
+            showOverviewContent();
+            break;
+        case 'Comparison':
+            showComparisonContent();
+            break;
+        case 'Trends':
+            showTrendsContent();
+            break;
+        case 'Interactive Playground':
+            showPlaygroundContent();
+            break;
+        default:
+            console.log('Unknown navigation:', linkText);
+    }
+}
+
+// Show overview content
+function showOverviewContent() {
+    // Hide all content sections
+    hideAllContentSections();
+    
+    // Show overview (this would be the default view)
+    console.log('Showing Overview content');
+    // For now, just show a message since the overview content isn't implemented
+    showMessage('Overview content would be displayed here. This section would show general information about the CMU benchmark results.');
+}
+
+// Show comparison content
+function showComparisonContent() {
+    hideAllContentSections();
+    console.log('Showing Comparison content');
+    showMessage('Comparison content would be displayed here. This section would show side-by-side comparisons of governed vs ungoverned agents.');
+}
+
+// Show trends content
+function showTrendsContent() {
+    hideAllContentSections();
+    console.log('Showing Trends content');
+    showMessage('Trends content would be displayed here. This section would show performance trends over time.');
+}
+
+// Show playground content
+function showPlaygroundContent() {
+    hideAllContentSections();
+    
+    // Show the main playground container
+    const playgroundContainer = document.querySelector('.container-fluid');
+    if (playgroundContainer) {
+        playgroundContainer.style.display = 'block';
+    }
+    
+    console.log('Showing Interactive Playground content');
+}
+
+// Hide all content sections
+function hideAllContentSections() {
+    const playgroundContainer = document.querySelector('.container-fluid');
+    if (playgroundContainer) {
+        playgroundContainer.style.display = 'none';
+    }
+    
+    // Hide any message displays
+    const messageDisplay = document.getElementById('navigationMessage');
+    if (messageDisplay) {
+        messageDisplay.style.display = 'none';
+    }
+}
+
+// Show a message for navigation sections that aren't fully implemented
+function showMessage(message) {
+    let messageDisplay = document.getElementById('navigationMessage');
+    
+    if (!messageDisplay) {
+        // Create message display element
+        messageDisplay = document.createElement('div');
+        messageDisplay.id = 'navigationMessage';
+        messageDisplay.className = 'alert alert-info mt-4';
+        messageDisplay.style.margin = '20px';
+        
+        // Insert after the navigation
+        const navTabs = document.querySelector('.nav-tabs');
+        if (navTabs && navTabs.parentNode) {
+            navTabs.parentNode.insertBefore(messageDisplay, navTabs.nextSibling);
+        }
+    }
+    
+    messageDisplay.textContent = message;
+    messageDisplay.style.display = 'block';
 }
 
 // Handle scenario change
@@ -228,24 +341,14 @@ function handleStartScenario() {
         activeFeatures: AppState.activeFeatures
     });
     
-    // Simulate scenario completion
-    setTimeout(() => {
-        // Reset UI
+    // Listen for scenario completion to reset button
+    EventBus.subscribe('conversationTerminated', () => {
         if (startButton) {
             startButton.textContent = 'Start Scenario';
             startButton.disabled = false;
         }
-        
-        // Set running state
         AppState.running = false;
-        
-        // Publish event
-        EventBus.publish('scenarioCompleted', {
-            scenarioId: AppState.currentScenario || 'product_planning',
-            governanceEnabled: AppState.governanceEnabled,
-            activeFeatures: AppState.activeFeatures
-        });
-    }, 5000);
+    });
 }
 
 // Clear conversation
