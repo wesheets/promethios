@@ -355,6 +355,8 @@ class APIClient {
       throw error;
     }
   }
+
+  /**
    * Get the best available client based on configuration and availability
    * @returns {Object|null} - The best available client or null if none available
    */
