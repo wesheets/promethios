@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { processWithVeritas, VeritasIntegrationOptions, VeritasIntegrationResult } from '../enforcement/veritasIntegration';
+import { isVeritasEnabled } from '../config';
 
 /**
  * Hook to use VERITAS enforcement in components
@@ -31,6 +32,23 @@ export default function useVeritasEnforcement(options: Partial<VeritasIntegratio
     setError(null);
     
     try {
+      // Skip VERITAS processing if disabled via config
+      if (!isVeritasEnabled()) {
+        const bypassResult: VeritasIntegrationResult = {
+          enforcement: {
+            blocked: false,
+            enforcedResponse: response,
+            warnings: []
+          },
+          trustScoreAdjustment: 0,
+          observerNotes: 'VERITAS: Disabled via configuration',
+          claims: [],
+          verificationResults: []
+        };
+        setResult(bypassResult);
+        return bypassResult;
+      }
+      
       const result = await processWithVeritas(response, trustScore, options);
       setResult(result);
       return result;
@@ -53,6 +71,11 @@ export default function useVeritasEnforcement(options: Partial<VeritasIntegratio
     response: string,
     trustScore: number = 0
   ): Promise<boolean> => {
+    // Skip VERITAS processing if disabled via config
+    if (!isVeritasEnabled()) {
+      return false;
+    }
+    
     try {
       const result = await processWithVeritas(response, trustScore, options);
       return result.enforcement.blocked;
@@ -72,6 +95,11 @@ export default function useVeritasEnforcement(options: Partial<VeritasIntegratio
     response: string,
     trustScore: number = 0
   ): Promise<string> => {
+    // Skip VERITAS processing if disabled via config
+    if (!isVeritasEnabled()) {
+      return response;
+    }
+    
     try {
       const result = await processWithVeritas(response, trustScore, options);
       return result.enforcement.enforcedResponse;
@@ -91,6 +119,11 @@ export default function useVeritasEnforcement(options: Partial<VeritasIntegratio
     response: string,
     trustScore: number = 0
   ): Promise<number> => {
+    // Skip VERITAS processing if disabled via config
+    if (!isVeritasEnabled()) {
+      return 0;
+    }
+    
     try {
       const result = await processWithVeritas(response, trustScore, options);
       return result.trustScoreAdjustment;
@@ -110,6 +143,11 @@ export default function useVeritasEnforcement(options: Partial<VeritasIntegratio
     response: string,
     trustScore: number = 0
   ): Promise<string> => {
+    // Skip VERITAS processing if disabled via config
+    if (!isVeritasEnabled()) {
+      return 'VERITAS: Disabled via configuration';
+    }
+    
     try {
       const result = await processWithVeritas(response, trustScore, options);
       return result.observerNotes;
