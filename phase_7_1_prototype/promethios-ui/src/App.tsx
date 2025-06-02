@@ -22,6 +22,7 @@ import GovernancePage from './pages/GovernancePage';
 import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
+import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 
 const App: React.FC = () => {
   return (
@@ -60,15 +61,7 @@ const App: React.FC = () => {
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
                   <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
-                  <Route path="/cmu-playground" element={
-                    <div className="w-full h-full">
-                      <iframe 
-                        src="/cmu-playground/index.html" 
-                        className="w-full h-screen border-0" 
-                        title="CMU Interactive Playground"
-                      />
-                    </div>
-                  } />
+                  <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
                 </Routes>
               </div>
               <Footer />
