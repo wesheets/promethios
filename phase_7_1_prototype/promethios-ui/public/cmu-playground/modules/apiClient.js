@@ -511,6 +511,14 @@ class APIClient {
   }
   
   /**
+   * Initialize the API client (for consistency with other modules)
+   */
+  init() {
+    console.log('Initializing real API clients for LLM providers');
+    this.initializeClients();
+  }
+
+  /**
    * Set default provider
    * @param {string} provider - The provider to set as default
    */

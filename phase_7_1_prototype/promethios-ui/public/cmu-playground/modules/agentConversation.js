@@ -7,7 +7,7 @@ class AgentConversation {
   constructor() {
     this.config = {
       simulationDelay: 1000, // ms between messages
-      usePresetResponses: true, // Use preset responses for demo mode, can be switched to API mode when keys available
+      usePresetResponses: false, // Use real API calls for dynamic agent conversations, fallback to presets if APIs fail
       maxConversationTurns: 15, // Maximum number of turns before auto-termination
       maxConversationTime: 120000, // Maximum time (ms) before auto-termination (2 minutes)
     };
