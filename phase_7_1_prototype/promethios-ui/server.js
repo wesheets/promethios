@@ -1,26 +1,43 @@
-// ES Module version of server.js
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// ES modules don't have __dirname, so we need to create it
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+const express = require('express');
+const path = require('path');
 const app = express();
 
-// Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files
+app.use(express.static('dist'));
+app.use('/cmu-playground', express.static('public/cmu-playground'));
 
-// For any other request, send the index.html file
-// This enables client-side routing
+// Environment variables endpoint
+app.get('/api/env', (req, res) => {
+  // Only expose VITE_ prefixed environment variables for security
+  const envVars = {
+    VITE_OPENAI_API_KEY: process.env.VITE_OPENAI_API_KEY || null,
+    VITE_ANTHROPIC_API_KEY: process.env.VITE_ANTHROPIC_API_KEY || null,
+    VITE_COHERE_API_KEY: process.env.VITE_COHERE_API_KEY || null,
+    VITE_HUGGINGFACE_API_KEY: process.env.VITE_HUGGINGFACE_API_KEY || null
+  };
+  
+  // Remove null values
+  const filteredEnvVars = Object.fromEntries(
+    Object.entries(envVars).filter(([key, value]) => value !== null)
+  );
+  
+  console.log('Environment variables requested:', Object.keys(filteredEnvVars));
+  
+  res.json({
+    success: true,
+    env: filteredEnvVars,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Use the PORT environment variable provided by Render.com
-// or default to 3000 for local development
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Environment variables available:', Object.keys(process.env).filter(key => key.startsWith('VITE_')));
 });
+
