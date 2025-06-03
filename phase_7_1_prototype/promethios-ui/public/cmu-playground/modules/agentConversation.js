@@ -521,8 +521,8 @@ class AgentConversation {
     console.log('Generating conversation for:', type);
     
     try {
-      // Import the APIClient
-      const apiClientModule = await import('./apiClient.js');
+      // Import the simple API client (new working implementation)
+      const apiClientModule = await import('./simpleApiClient.js');
       const apiClient = apiClientModule.default;
       
       // Define scenario-specific prompts
