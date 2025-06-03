@@ -1164,3 +1164,24 @@ export {
   implementStrategicOverlay,
   applyAllEnhancements
 };
+
+
+// Create a default export object with all the functions
+const EnhancedFeatures = {
+  enhanceAgentLogsToggle,
+  enhanceCommentarySection,
+  enhanceTranscriptStyling,
+  enhanceExportReport,
+  addRiskInjectionFeature,
+  implementStrategicOverlay,
+  applyAllEnhancements,
+  init() {
+    console.log('EnhancedFeatures module initialized');
+    // Apply all enhancements on init
+    this.applyAllEnhancements();
+  }
+};
+
+// Export as default
+export default EnhancedFeatures;
+
