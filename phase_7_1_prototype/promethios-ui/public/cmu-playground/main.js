@@ -1,20 +1,17 @@
 /**
  * Main Application Entry Point
- * Initializes and coordinates all modules
+ * Initializes and coordinates all modules for CMU Playground
  */
 
 // Import modules
-import EventBus from './modules/eventBus.js';
 import AgentConversation from './modules/agentConversation.js';
-import SimpleAPIClient from './modules/simpleApiClient.js';
+import RobustAPIClient from './modules/robustApiClient.js';
+import EventBus from './modules/eventBus.js';
 import EmotionalUX from './modules/emotionalUX.js';
 import ScenarioManager from './modules/scenarioManager.js';
 import MetricsManager from './modules/metricsManager.js';
 import ExportModule from './modules/exportModule.js';
-import { applyAllEnhancements } from './modules/enhancedFeatures.js';
-
-// Make EventBus globally available (imported from module)
-window.EventBus = EventBus;
+import EnhancedFeatures from './modules/enhancedFeatures.js';
 
 // Application state
 const AppState = {
@@ -28,36 +25,120 @@ const AppState = {
     running: false
 };
 
-// Initialize application
+// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-// Initialize application
+/**
+ * Initialize application with proper error handling
+ */
 function initializeApp() {
-    console.log('Initializing application...');
-    
-    // Initialize EventBus first (already imported and made global)
-    console.log('EventBus initialized');
-    
-    // Initialize modules in dependency order
-    SimpleAPIClient.init();
-    ScenarioManager.init();
-    MetricsManager.init();
-    AgentConversation.init();
-    EmotionalUX.init();
-    ExportModule.init();
-    
-    // Apply all enhanced features
-    applyAllEnhancements();
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    console.log('Application initialized');
+    try {
+        console.log('🚀 Initializing CMU Playground Application...');
+        
+        // Initialize EventBus first (required by all modules)
+        if (EventBus && typeof EventBus.init === 'function') {
+            EventBus.init();
+        }
+        console.log('✅ EventBus initialized');
+        
+        // Make EventBus globally available
+        window.EventBus = EventBus;
+        
+        // Initialize RobustAPIClient (handles environment variables gracefully)
+        RobustAPIClient.init();
+        console.log('✅ RobustAPIClient initialized');
+        
+        // Initialize other modules in dependency order
+        if (ScenarioManager && typeof ScenarioManager.init === 'function') {
+            ScenarioManager.init();
+            console.log('✅ ScenarioManager initialized');
+        }
+        
+        if (MetricsManager && typeof MetricsManager.init === 'function') {
+            MetricsManager.init();
+            console.log('✅ MetricsManager initialized');
+        }
+        
+        if (AgentConversation && typeof AgentConversation.init === 'function') {
+            AgentConversation.init();
+            console.log('✅ AgentConversation initialized');
+        }
+        
+        if (EmotionalUX && typeof EmotionalUX.init === 'function') {
+            EmotionalUX.init();
+            console.log('✅ EmotionalUX initialized');
+        }
+        
+        if (ExportModule && typeof ExportModule.init === 'function') {
+            ExportModule.init();
+            console.log('✅ ExportModule initialized');
+        }
+        
+        if (EnhancedFeatures && typeof EnhancedFeatures.init === 'function') {
+            EnhancedFeatures.init();
+            console.log('✅ EnhancedFeatures initialized');
+        }
+        
+        // Set up event listeners
+        setupEventListeners();
+        
+        console.log('🎉 Application initialization complete!');
+        
+        // Publish initialization complete event
+        EventBus.publish('app:initialized', {
+            timestamp: new Date().toISOString(),
+            modules: ['EventBus', 'RobustAPIClient', 'ScenarioManager', 'MetricsManager', 'AgentConversation', 'EmotionalUX', 'ExportModule', 'EnhancedFeatures']
+        });
+        
+        // Show API configuration status
+        showAPIStatus();
+        
+    } catch (error) {
+        console.error('❌ Application initialization failed:', error);
+        showInitializationError(error);
+    }
 }
 
-// Set up event listeners
+/**
+ * Show API configuration status to user
+ */
+function showAPIStatus() {
+    try {
+        const config = RobustAPIClient.getConfig();
+        console.log('📊 API Configuration:', config);
+        
+        if (config.fallbackMode) {
+            console.log('⚠️ Running in fallback mode - simulated responses will be used');
+        } else {
+            console.log(`✅ Real API integration active with providers: ${config.availableProviders.join(', ')}`);
+        }
+    } catch (error) {
+        console.warn('Could not retrieve API status:', error);
+    }
+}
+
+/**
+ * Show initialization error to user
+ */
+function showInitializationError(error) {
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'alert alert-warning mt-3';
+    errorContainer.innerHTML = `
+        <h5>⚠️ Initialization Notice</h5>
+        <p>The application encountered an issue during startup: <code>${error.message}</code></p>
+        <p>The demo will continue in fallback mode with limited functionality.</p>
+        <button class="btn btn-primary btn-sm" onclick="location.reload()">Retry Initialization</button>
+    `;
+    
+    const container = document.querySelector('.container') || document.body;
+    container.insertBefore(errorContainer, container.firstChild);
+}
+
+/**
+ * Set up event listeners for UI interactions
+ */
 function setupEventListeners() {
     // Scenario selection
     const scenarioSelect = document.getElementById('scenarioSelect');
@@ -128,7 +209,9 @@ function setupEventListeners() {
     });
 }
 
-// Handle scenario change
+/**
+ * Handle scenario change
+ */
 function handleScenarioChange(event) {
     const scenarioId = event.target.value;
     AppState.currentScenario = scenarioId;
@@ -140,8 +223,14 @@ function handleScenarioChange(event) {
     EventBus.publish('scenarioChanged', { scenarioId });
 }
 
-// Update scenario description
+/**
+ * Update scenario description
+ */
 function updateScenarioDescription(scenarioId) {
+    if (!ScenarioManager || typeof ScenarioManager.getScenarioById !== 'function') {
+        return;
+    }
+    
     const scenarioData = ScenarioManager.getScenarioById(scenarioId);
     if (!scenarioData) return;
     
@@ -157,7 +246,9 @@ function updateScenarioDescription(scenarioId) {
     }
 }
 
-// Handle governance toggle
+/**
+ * Handle governance toggle
+ */
 function handleGovernanceToggle(event) {
     AppState.governanceEnabled = event.target.checked;
     
@@ -171,7 +262,9 @@ function handleGovernanceToggle(event) {
     });
 }
 
-// Update feature toggles availability
+/**
+ * Update feature toggles availability
+ */
 function updateFeatureTogglesAvailability() {
     const featureToggles = document.querySelectorAll('.governance-features input');
     featureToggles.forEach(toggle => {
@@ -179,7 +272,9 @@ function updateFeatureTogglesAvailability() {
     });
 }
 
-// Handle feature toggle
+/**
+ * Handle feature toggle
+ */
 function handleFeatureToggle(feature, enabled) {
     AppState.activeFeatures[feature] = enabled;
     
@@ -191,7 +286,9 @@ function handleFeatureToggle(feature, enabled) {
     });
 }
 
-// Handle start scenario
+/**
+ * Handle start scenario
+ */
 function handleStartScenario() {
     if (AppState.running) return;
     
@@ -225,7 +322,9 @@ function handleStartScenario() {
     });
 }
 
-// Clear conversation
+/**
+ * Clear conversation
+ */
 function clearConversation() {
     const ungovernedChat = document.getElementById('ungoverned-chat');
     const governedChat = document.getElementById('governed-chat');
@@ -239,7 +338,9 @@ function clearConversation() {
     }
 }
 
-// Toggle agent logs
+/**
+ * Toggle agent logs
+ */
 function toggleAgentLogs(type, show) {
     const logsElement = document.getElementById(`${type}-logs`);
     if (logsElement) {
@@ -251,22 +352,32 @@ function toggleAgentLogs(type, show) {
     }
 }
 
-// Handle export report
+/**
+ * Handle export report
+ */
 function handleExportReport() {
-    ExportModule.exportReport({
-        scenarioId: AppState.currentScenario || 'product_planning',
-        governanceEnabled: AppState.governanceEnabled,
-        activeFeatures: AppState.activeFeatures,
-        metrics: MetricsManager.getMetricsData()
-    });
+    if (ExportModule && typeof ExportModule.exportReport === 'function') {
+        ExportModule.exportReport({
+            scenarioId: AppState.currentScenario || 'product_planning',
+            governanceEnabled: AppState.governanceEnabled,
+            activeFeatures: AppState.activeFeatures,
+            metrics: MetricsManager && typeof MetricsManager.getMetricsData === 'function' 
+                ? MetricsManager.getMetricsData() 
+                : {}
+        });
+    }
 }
 
-// Handle test violation
+/**
+ * Handle test violation
+ */
 function handleTestViolation() {
     // This will be handled by the dropdown items
 }
 
-// Handle violation option
+/**
+ * Handle violation option
+ */
 function handleViolationOption(violation, type) {
     // Publish event
     EventBus.publish('violationRequested', {
@@ -278,10 +389,16 @@ function handleViolationOption(violation, type) {
 
 // Export modules for global access
 window.AppModules = {
-    SimpleAPIClient,
+    RobustAPIClient,
+    EventBus,
     ScenarioManager,
     MetricsManager,
     AgentConversation,
     EmotionalUX,
-    ExportModule
+    ExportModule,
+    EnhancedFeatures
 };
+
+// Export AppState for debugging
+window.AppState = AppState;
+
