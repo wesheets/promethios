@@ -5,7 +5,7 @@
 
 // Import modules
 import AgentConversation from './modules/agentConversation.js';
-import APIClient from './modules/apiClient.js';
+import SimpleAPIClient from './modules/simpleApiClient.js';
 import EmotionalUX from './modules/emotionalUX.js';
 import ScenarioManager from './modules/scenarioManager.js';
 import MetricsManager from './modules/metricsManager.js';
@@ -56,7 +56,7 @@ function initializeApp() {
     console.log('Initializing application...');
     
     // Initialize modules
-    APIClient.init();
+    SimpleAPIClient.init();
     ScenarioManager.init();
     MetricsManager.init();
     AgentConversation.init();
@@ -293,7 +293,7 @@ function handleViolationOption(violation, type) {
 
 // Export modules for global access
 window.AppModules = {
-    APIClient,
+    SimpleAPIClient,
     ScenarioManager,
     MetricsManager,
     AgentConversation,
