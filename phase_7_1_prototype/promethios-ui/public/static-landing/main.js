@@ -9,6 +9,35 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeSuccessModal = document.getElementById('closeSuccessModal');
   const closeSuccessButton = document.getElementById('closeSuccessButton');
 
+  // Verify Firebase and Firestore are initialized correctly
+  console.log("Firebase initialized:", typeof firebase !== 'undefined');
+  console.log("Firestore initialized:", typeof db !== 'undefined');
+  
+  // Test Firestore connection
+  function testFirestoreConnection() {
+    console.log("Testing Firestore connection...");
+    try {
+      db.collection('_test_connection').doc('test').set({
+        timestamp: firebase.firestore.Timestamp.now()
+      })
+      .then(() => {
+        console.log("Firestore connection successful!");
+        // Clean up test document
+        db.collection('_test_connection').doc('test').delete();
+      })
+      .catch(error => {
+        console.error("Firestore connection test failed:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+      });
+    } catch (error) {
+      console.error("Error testing Firestore connection:", error);
+    }
+  }
+  
+  // Run connection test after a short delay
+  setTimeout(testFirestoreConnection, 2000);
+
   // Open waitlist modal
   waitlistButton.addEventListener('click', function() {
     waitlistModal.classList.remove('hidden');
@@ -48,19 +77,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const isEarlyAccessDev = document.getElementById('earlyAccess').checked;
     const interest = document.getElementById('interest').value;
     
+    console.log("Form submitted with email:", email);
+    
     try {
+      console.log("Checking if email exists...");
       // Check if email already exists
       const emailQuery = await db.collection('waitlist')
         .where('email', '==', email)
         .get();
+      
+      console.log("Query result:", emailQuery, "Empty?", emailQuery.empty);
       
       if (!emailQuery.empty) {
         alert('This email is already on our waitlist.');
         return;
       }
       
+      console.log("Adding email to waitlist...");
       // Add to waitlist collection
-      await db.collection('waitlist').add({
+      const docRef = await db.collection('waitlist').add({
         name: name,
         email: email,
         role: isEarlyAccessDev ? 'developer' : 'user',
@@ -68,6 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
         createdAt: firebase.firestore.Timestamp.now(),
         status: 'pending'
       });
+      
+      console.log("Document added with ID:", docRef.id);
       
       // Reset form
       waitlistForm.reset();
@@ -77,7 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
       successModal.classList.remove('hidden');
       
     } catch (error) {
-      console.error('Error adding to waitlist:', error);
+      console.error('Error details:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       alert('There was an error submitting your information. Please try again.');
     }
   });
