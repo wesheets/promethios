@@ -10,7 +10,7 @@
 function getEnvironmentVariable(name) {
   try {
     // Strategy 1: Vite environment variables (if build process ran)
-    if (typeof import !== 'undefined' && import.meta && import.meta.env && import.meta.env[name]) {
+    if (import.meta && import.meta.env && import.meta.env[name]) {
       console.log(`✅ Found ${name} via import.meta.env`);
       return import.meta.env[name];
     }
