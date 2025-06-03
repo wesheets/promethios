@@ -352,6 +352,9 @@ function toggleAgentLogs(type, show) {
     }
 }
 
+// Make toggleAgentLogs globally accessible
+window.toggleAgentLogs = toggleAgentLogs;
+
 /**
  * Handle export report
  */

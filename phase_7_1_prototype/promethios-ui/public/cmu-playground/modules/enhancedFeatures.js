@@ -10,12 +10,18 @@ function enhanceAgentLogsToggle() {
   // Default to on
   if (ungovernedLogsToggle) {
     ungovernedLogsToggle.checked = true;
-    toggleAgentLogs('ungoverned', true);
+    // toggleAgentLogs is defined in main.js and available globally
+    if (typeof window.toggleAgentLogs === 'function') {
+      window.toggleAgentLogs('ungoverned', true);
+    }
   }
   
   if (governedLogsToggle) {
     governedLogsToggle.checked = true;
-    toggleAgentLogs('governed', true);
+    // toggleAgentLogs is defined in main.js and available globally
+    if (typeof window.toggleAgentLogs === 'function') {
+      window.toggleAgentLogs('governed', true);
+    }
   }
   
   // Add animation to draw attention
@@ -1154,18 +1160,6 @@ function applyAllEnhancements() {
   showToast('All enhancements applied successfully!', 'success');
 }
 
-// Export the enhancement functions
-export {
-  enhanceAgentLogsToggle,
-  enhanceCommentarySection,
-  enhanceTranscriptStyling,
-  enhanceExportReport,
-  addRiskInjectionFeature,
-  implementStrategicOverlay,
-  applyAllEnhancements
-};
-
-
 // Create a default export object with all the functions
 const EnhancedFeatures = {
   enhanceAgentLogsToggle,
@@ -1177,8 +1171,8 @@ const EnhancedFeatures = {
   applyAllEnhancements,
   init() {
     console.log('EnhancedFeatures module initialized');
-    // Apply all enhancements on init
-    this.applyAllEnhancements();
+    // Don't apply all enhancements automatically on init
+    // Let the main application decide when to apply them
   }
 };
 
