@@ -4,8 +4,9 @@
  */
 
 // Import modules
+import runtimeEnvLoader from './modules/runtimeEnvironmentLoader.js';
 import AgentConversation from './modules/agentConversation.js';
-import RobustAPIClient from './modules/robustApiClient.js';
+import { RobustAPIClient } from './modules/robustApiClient.js';
 import EventBus from './modules/eventBus.js';
 import EmotionalUX from './modules/emotionalUX.js';
 import ScenarioManager from './modules/scenarioManager.js';
@@ -33,9 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Initialize application with proper error handling
  */
-function initializeApp() {
+async function initializeApp() {
     try {
         console.log('🚀 Initializing CMU Playground Application...');
+        
+        // Load environment variables first
+        console.log('🔄 Loading environment variables...');
+        await runtimeEnvLoader.loadEnvironmentVariables();
         
         // Initialize EventBus first (required by all modules)
         if (EventBus && typeof EventBus.init === 'function') {
@@ -47,7 +52,7 @@ function initializeApp() {
         window.EventBus = EventBus;
         
         // Initialize RobustAPIClient (handles environment variables gracefully)
-        RobustAPIClient.init();
+        await RobustAPIClient.init();
         console.log('✅ RobustAPIClient initialized');
         
         // Initialize other modules in dependency order

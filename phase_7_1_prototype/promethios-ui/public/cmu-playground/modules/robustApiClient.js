@@ -7,21 +7,41 @@
 /**
  * Safely get environment variable with multiple fallback strategies
  */
-function getEnvironmentVariable(name) {
+async function getEnvironmentVariable(name) {
   try {
-    // Strategy 1: Vite environment variables (if build process ran)
+    // Strategy 1: Runtime environment loader (primary method for Render)
+    if (window.runtimeEnvLoader && window.runtimeEnvLoader.isLoaded()) {
+      const value = window.runtimeEnvLoader.getEnvironmentVariable(name);
+      if (value) {
+        console.log(`✅ Found ${name} via runtime loader`);
+        return value;
+      }
+    }
+    
+    // Strategy 2: Load environment variables if not already loaded
+    if (window.runtimeEnvLoader && !window.runtimeEnvLoader.isLoaded()) {
+      console.log(`🔄 Loading environment variables for ${name}...`);
+      await window.runtimeEnvLoader.loadEnvironmentVariables();
+      const value = window.runtimeEnvLoader.getEnvironmentVariable(name);
+      if (value) {
+        console.log(`✅ Found ${name} via runtime loader after loading`);
+        return value;
+      }
+    }
+    
+    // Strategy 3: Vite environment variables (build-time fallback)
     if (import.meta && import.meta.env && import.meta.env[name]) {
       console.log(`✅ Found ${name} via import.meta.env`);
       return import.meta.env[name];
     }
     
-    // Strategy 2: Window-based environment variables (if injected by server)
+    // Strategy 4: Window-based environment variables (legacy fallback)
     if (typeof window !== 'undefined' && window.ENV && window.ENV[name]) {
       console.log(`✅ Found ${name} via window.ENV`);
       return window.ENV[name];
     }
     
-    // Strategy 3: Process environment (Node.js context)
+    // Strategy 5: Process environment (Node.js context)
     if (typeof process !== 'undefined' && process.env && process.env[name]) {
       console.log(`✅ Found ${name} via process.env`);
       return process.env[name];
@@ -45,7 +65,7 @@ function getEnvironmentVariable(name) {
 /**
  * Get API key for a specific provider with fallback handling
  */
-function getApiKey(provider) {
+async function getApiKey(provider) {
   const keyMap = {
     'openai': 'VITE_OPENAI_API_KEY',
     'anthropic': 'VITE_ANTHROPIC_API_KEY',
@@ -59,19 +79,19 @@ function getApiKey(provider) {
     return null;
   }
   
-  return getEnvironmentVariable(envVarName);
+  return await getEnvironmentVariable(envVarName);
 }
 
 /**
  * Get available providers (those with API keys)
  */
-function getAvailableProviders() {
+async function getAvailableProviders() {
   const providers = [];
   
-  if (getApiKey('openai')) providers.push('openai');
-  if (getApiKey('anthropic')) providers.push('anthropic');
-  if (getApiKey('cohere')) providers.push('cohere');
-  if (getApiKey('huggingface')) providers.push('huggingface');
+  if (await getApiKey('openai')) providers.push('openai');
+  if (await getApiKey('anthropic')) providers.push('anthropic');
+  if (await getApiKey('cohere')) providers.push('cohere');
+  if (await getApiKey('huggingface')) providers.push('huggingface');
   
   console.log(`📊 Available providers: ${providers.length > 0 ? providers.join(', ') : 'none'}`);
   return providers;
@@ -81,7 +101,7 @@ function getAvailableProviders() {
  * Create completion using OpenAI API
  */
 async function createOpenAICompletion(messages, options = {}) {
-  const apiKey = getApiKey('openai');
+  const apiKey = await getApiKey('openai');
   if (!apiKey) {
     throw new Error('OpenAI API key not found');
   }
@@ -300,18 +320,20 @@ class RobustAPIClient {
   /**
    * Initialize the API client
    */
-  init() {
+  async init() {
     try {
       console.log('🚀 Initializing Robust API Client...');
       
-      // Check for available providers
-      this.availableProviders = getAvailableProviders();
+      // Load environment variables first
+      if (window.runtimeEnvLoader) {
+        await window.runtimeEnvLoader.loadEnvironmentVariables();
+      }
+      
+      this.availableProviders = await getAvailableProviders();
       
       if (this.availableProviders.length === 0) {
         console.warn('⚠️ No API providers available - enabling fallback mode');
         this.fallbackMode = true;
-        
-        // Show user notification about fallback mode
         this.showFallbackNotification();
       } else {
         console.log(`✅ API Client initialized with providers: ${this.availableProviders.join(', ')}`);
@@ -319,7 +341,6 @@ class RobustAPIClient {
       }
       
       this.initialized = true;
-      
     } catch (error) {
       console.error('❌ Error initializing API Client:', error);
       this.fallbackMode = true;
