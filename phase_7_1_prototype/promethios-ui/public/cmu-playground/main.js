@@ -6,7 +6,7 @@
 // Import modules
 import runtimeEnvLoader from './modules/runtimeEnvironmentLoader.js';
 import AgentConversation from './modules/agentConversation.js';
-import { RobustAPIClient } from './modules/robustApiClient.js';
+import RobustAPIClient from './modules/robustApiClient.js';
 import EventBus from './modules/eventBus.js';
 import EmotionalUX from './modules/emotionalUX.js';
 import ScenarioManager from './modules/scenarioManager.js';
