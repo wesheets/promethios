@@ -47,7 +47,7 @@ class APIClient {
   getEnvironmentVariable(name) {
     try {
       // Try to access from import.meta.env (Vite)
-      if (typeof import !== 'undefined' && import.meta && import.meta.env && import.meta.env[name]) {
+      if (import.meta && import.meta.env && import.meta.env[name]) {
         return import.meta.env[name];
       }
       
