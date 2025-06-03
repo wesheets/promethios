@@ -4,6 +4,7 @@
  */
 
 // Import modules
+import EventBus from './modules/eventBus.js';
 import AgentConversation from './modules/agentConversation.js';
 import SimpleAPIClient from './modules/simpleApiClient.js';
 import EmotionalUX from './modules/emotionalUX.js';
@@ -12,26 +13,7 @@ import MetricsManager from './modules/metricsManager.js';
 import ExportModule from './modules/exportModule.js';
 import { applyAllEnhancements } from './modules/enhancedFeatures.js';
 
-// Event Bus for module communication
-const EventBus = {
-    events: {},
-    
-    subscribe(event, callback) {
-        if (!this.events[event]) {
-            this.events[event] = [];
-        }
-        this.events[event].push(callback);
-    },
-    
-    publish(event, data) {
-        if (!this.events[event]) {
-            return;
-        }
-        this.events[event].forEach(callback => callback(data));
-    }
-};
-
-// Make EventBus globally available
+// Make EventBus globally available (imported from module)
 window.EventBus = EventBus;
 
 // Application state
@@ -55,7 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     console.log('Initializing application...');
     
-    // Initialize modules
+    // Initialize EventBus first (already imported and made global)
+    console.log('EventBus initialized');
+    
+    // Initialize modules in dependency order
     SimpleAPIClient.init();
     ScenarioManager.init();
     MetricsManager.init();
