@@ -9,13 +9,13 @@
  */
 function getEnvironmentVariable(name) {
   try {
-    // Strategy 1: Vite environment variables (if build process ran)
+    // Strategy 1: Vite environment variables (primary method)
     if (import.meta && import.meta.env && import.meta.env[name]) {
       console.log(`✅ Found ${name} via import.meta.env`);
       return import.meta.env[name];
     }
     
-    // Strategy 2: Window-based environment variables (if injected by server)
+    // Strategy 2: Window-based environment variables (fallback)
     if (typeof window !== 'undefined' && window.ENV && window.ENV[name]) {
       console.log(`✅ Found ${name} via window.ENV`);
       return window.ENV[name];
