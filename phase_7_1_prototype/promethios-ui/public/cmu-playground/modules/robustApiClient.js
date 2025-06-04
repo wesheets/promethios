@@ -66,20 +66,30 @@ async function getEnvironmentVariable(name) {
  * Get API key for a specific provider with fallback handling
  */
 async function getApiKey(provider) {
+  // Support both VITE_ and VTF_ prefixes
   const keyMap = {
-    'openai': 'VITE_OPENAI_API_KEY',
-    'anthropic': 'VITE_ANTHROPIC_API_KEY',
-    'cohere': 'VITE_COHERE_API_KEY',
-    'huggingface': 'VITE_HUGGINGFACE_API_KEY'
+    'openai': ['VITE_OPENAI_API_KEY', 'VTF_OPENAI_API_KEY'],
+    'anthropic': ['VITE_ANTHROPIC_API_KEY', 'VTF_ANTHROPIC_API_KEY'],
+    'cohere': ['VITE_COHERE_API_KEY', 'VTF_COHERE_API_KEY'],
+    'huggingface': ['VITE_HUGGINGFACE_API_KEY', 'VTF_HUGGINGFACE_API_KEY']
   };
   
-  const envVarName = keyMap[provider];
-  if (!envVarName) {
+  const envVarNames = keyMap[provider];
+  if (!envVarNames) {
     console.error(`Unknown provider: ${provider}`);
     return null;
   }
   
-  return await getEnvironmentVariable(envVarName);
+  // Try each possible environment variable name
+  for (const envVarName of envVarNames) {
+    const value = await getEnvironmentVariable(envVarName);
+    if (value) {
+      console.log(`✅ Found API key using ${envVarName}`);
+      return value;
+    }
+  }
+  
+  return null;
 }
 
 /**
@@ -359,8 +369,8 @@ class RobustAPIClient {
       <h6>🔧 Demo Mode Active</h6>
       <p class="mb-2">API keys not detected. The demo will use simulated responses.</p>
       <small class="text-muted">
-        To enable real AI agents, configure VITE_OPENAI_API_KEY, VITE_ANTHROPIC_API_KEY, 
-        VITE_COHERE_API_KEY, or VITE_HUGGINGFACE_API_KEY in your environment.
+        To enable real AI agents, configure VTF_OPENAI_API_KEY, VTF_ANTHROPIC_API_KEY, 
+        VTF_COHERE_API_KEY, or VTF_HUGGINGFACE_API_KEY in your environment.
       </small>
       <button class="btn btn-sm btn-outline-primary ms-2" onclick="this.parentElement.remove()">
         Dismiss

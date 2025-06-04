@@ -53,10 +53,11 @@ class RuntimeEnvironmentLoader {
 
   getAvailableProviders() {
     const providers = [];
-    if (this.envVars.VITE_OPENAI_API_KEY) providers.push('OpenAI');
-    if (this.envVars.VITE_ANTHROPIC_API_KEY) providers.push('Anthropic');
-    if (this.envVars.VITE_COHERE_API_KEY) providers.push('Cohere');
-    if (this.envVars.VITE_HUGGINGFACE_API_KEY) providers.push('HuggingFace');
+    // Support both VITE_ and VTF_ prefixes for API keys
+    if (this.envVars.VITE_OPENAI_API_KEY || this.envVars.VTF_OPENAI_API_KEY) providers.push('OpenAI');
+    if (this.envVars.VITE_ANTHROPIC_API_KEY || this.envVars.VTF_ANTHROPIC_API_KEY) providers.push('Anthropic');
+    if (this.envVars.VITE_COHERE_API_KEY || this.envVars.VTF_COHERE_API_KEY) providers.push('Cohere');
+    if (this.envVars.VITE_HUGGINGFACE_API_KEY || this.envVars.VTF_HUGGINGFACE_API_KEY) providers.push('HuggingFace');
     return providers;
   }
 
