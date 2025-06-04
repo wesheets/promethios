@@ -9,7 +9,7 @@ class FeatureFlags {
   constructor() {
     this.flags = {
       // Core feature flags
-      USE_LLM_AGENTS: false,        // Whether to use LLM-powered agents
+      USE_LLM_AGENTS: true,         // Whether to use LLM-powered agents
       LLM_PROVIDER: 'openai',       // Which LLM provider to use
       FALLBACK_TO_SCRIPTED: true,   // Whether to fall back to scripted responses on LLM failure
       
