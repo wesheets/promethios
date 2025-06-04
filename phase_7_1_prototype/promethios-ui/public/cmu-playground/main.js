@@ -1,37 +1,20 @@
 /**
- * Updated Main Application Entry Point
- * 
- * This is the updated main.js that integrates the new modular architecture
- * while maintaining backward compatibility with the existing UI.
+ * Main Application Entry Point
+ * Initializes and coordinates all modules for CMU Interactive Playground
  */
 
 // Import modules
+import runtimeEnvLoader from './modules/runtimeEnvironmentLoader.js';
 import AgentConversation from './modules/agentConversation.js';
+import RobustAPIClient from './modules/robustApiClient.js';
+import EventBus from './modules/eventBus.js';
+import EmotionalUX from './modules/emotionalUX.js';
+import ScenarioManager from './modules/scenarioManager.js';
+import MetricsManager from './modules/metricsManager.js';
+import ExportModule from './modules/exportModule.js';
+import EnhancedFeatures from './modules/enhancedFeatures.js';
 import { featureFlags } from './modules/featureFlags.js';
 import { developerPanel } from './modules/developerPanel.js';
-import { applyAllEnhancements } from './modules/enhancedFeatures.js';
-
-// Event Bus for module communication
-const EventBus = {
-    events: {},
-    
-    subscribe(event, callback) {
-        if (!this.events[event]) {
-            this.events[event] = [];
-        }
-        this.events[event].push(callback);
-    },
-    
-    publish(event, data) {
-        if (!this.events[event]) {
-            return;
-        }
-        this.events[event].forEach(callback => callback(data));
-    }
-};
-
-// Make EventBus globally available
-window.EventBus = EventBus;
 
 // Application state
 const AppState = {
@@ -45,32 +28,96 @@ const AppState = {
     running: false
 };
 
-// Initialize application
+// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-// Initialize application
-function initializeApp() {
-    console.log('Initializing application...');
-    
-    // Check for development mode
-    checkDevelopmentMode();
-    
-    // Initialize modules
-    AgentConversation.init();
-    developerPanel.init();
-    
-    // Apply all enhanced features
-    applyAllEnhancements();
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    console.log('Application initialized');
+/**
+ * Initialize application with proper error handling
+ */
+async function initializeApp() {
+    try {
+        console.log('🚀 Initializing CMU Interactive Playground Application...');
+        
+        // Check for development mode
+        checkDevelopmentMode();
+        
+        // Load environment variables first
+        console.log('🔄 Loading environment variables...');
+        await runtimeEnvLoader.loadEnvironmentVariables();
+        
+        // Initialize EventBus first (required by all modules)
+        if (EventBus && typeof EventBus.init === 'function') {
+            EventBus.init();
+        }
+        console.log('✅ EventBus initialized');
+        
+        // Make EventBus globally available
+        window.EventBus = EventBus;
+        
+        // Initialize RobustAPIClient (handles environment variables gracefully)
+        await RobustAPIClient.init();
+        console.log('✅ RobustAPIClient initialized');
+        
+        // Initialize other modules in dependency order
+        if (ScenarioManager && typeof ScenarioManager.init === 'function') {
+            ScenarioManager.init();
+            console.log('✅ ScenarioManager initialized');
+        }
+        
+        if (MetricsManager && typeof MetricsManager.init === 'function') {
+            MetricsManager.init();
+            console.log('✅ MetricsManager initialized');
+        }
+        
+        if (AgentConversation && typeof AgentConversation.init === 'function') {
+            AgentConversation.init();
+            console.log('✅ AgentConversation initialized');
+        }
+        
+        if (EmotionalUX && typeof EmotionalUX.init === 'function') {
+            EmotionalUX.init();
+            console.log('✅ EmotionalUX initialized');
+        }
+        
+        if (ExportModule && typeof ExportModule.init === 'function') {
+            ExportModule.init();
+            console.log('✅ ExportModule initialized');
+        }
+        
+        if (EnhancedFeatures && typeof EnhancedFeatures.init === 'function') {
+            EnhancedFeatures.init();
+            console.log('✅ EnhancedFeatures initialized');
+        }
+        
+        // Initialize developer panel
+        developerPanel.init();
+        console.log('✅ Developer Panel initialized');
+        
+        // Set up event listeners
+        setupEventListeners();
+        
+        console.log('🎉 Application initialization complete!');
+        
+        // Publish initialization complete event
+        EventBus.publish('app:initialized', {
+            timestamp: new Date().toISOString(),
+            modules: ['EventBus', 'RobustAPIClient', 'ScenarioManager', 'MetricsManager', 'AgentConversation', 'EmotionalUX', 'ExportModule', 'EnhancedFeatures', 'DeveloperPanel']
+        });
+        
+        // Show API configuration status
+        showAPIStatus();
+        
+    } catch (error) {
+        console.error('❌ Application initialization failed:', error);
+        showInitializationError(error);
+    }
 }
 
-// Check for development mode
+/**
+ * Check for development mode
+ */
 function checkDevelopmentMode() {
     // Check URL parameters for dev mode
     const urlParams = new URLSearchParams(window.location.search);
@@ -86,7 +133,44 @@ function checkDevelopmentMode() {
     }
 }
 
-// Set up event listeners
+/**
+ * Show API configuration status to user
+ */
+function showAPIStatus() {
+    try {
+        const config = RobustAPIClient.getConfig();
+        console.log('📊 API Configuration:', config);
+        
+        if (config.fallbackMode) {
+            console.log('⚠️ Running in fallback mode - simulated responses will be used');
+        } else {
+            console.log(`✅ Real API integration active with providers: ${config.availableProviders.join(', ')}`);
+        }
+    } catch (error) {
+        console.warn('Could not retrieve API status:', error);
+    }
+}
+
+/**
+ * Show initialization error to user
+ */
+function showInitializationError(error) {
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'alert alert-warning mt-3';
+    errorContainer.innerHTML = `
+        <h5>⚠️ Initialization Notice</h5>
+        <p>The application encountered an issue during startup: <code>${error.message}</code></p>
+        <p>The demo will continue in fallback mode with limited functionality.</p>
+        <button class="btn btn-primary btn-sm" onclick="location.reload()">Retry Initialization</button>
+    `;
+    
+    const container = document.querySelector('.container') || document.body;
+    container.insertBefore(errorContainer, container.firstChild);
+}
+
+/**
+ * Set up event listeners for UI interactions
+ */
 function setupEventListeners() {
     // Scenario selection
     const scenarioSelect = document.getElementById('scenarioSelect');
@@ -166,7 +250,9 @@ function setupEventListeners() {
     EventBus.subscribe('conversationError', handleConversationError);
 }
 
-// Handle scenario change
+/**
+ * Handle scenario change
+ */
 function handleScenarioChange(event) {
     const scenarioId = event.target.value;
     AppState.currentScenario = scenarioId;
@@ -178,10 +264,15 @@ function handleScenarioChange(event) {
     EventBus.publish('scenarioChanged', { scenarioId });
 }
 
-// Update scenario description
+/**
+ * Update scenario description
+ */
 function updateScenarioDescription(scenarioId) {
-    // Get scenario data based on ID
-    const scenarioData = getScenarioData(scenarioId);
+    if (!ScenarioManager || typeof ScenarioManager.getScenarioById !== 'function') {
+        return;
+    }
+    
+    const scenarioData = ScenarioManager.getScenarioById(scenarioId);
     if (!scenarioData) return;
     
     const titleElement = document.getElementById('scenarioTitle');
@@ -196,32 +287,9 @@ function updateScenarioDescription(scenarioId) {
     }
 }
 
-// Get scenario data
-function getScenarioData(scenarioId) {
-    // Hardcoded scenario data
-    const scenarios = {
-        'product_planning': {
-            title: 'Product Planning',
-            summary: 'One agent ideates features, the other prioritizes based on risk/ROI. Ungoverned may hallucinate or contradict, governed stays scoped.'
-        },
-        'customer_service': {
-            title: 'Customer Service Escalation',
-            summary: 'Support agent handles a delayed refund while policy agent ensures guidelines are followed. Ungoverned may overcompensate, governed balances customer service with policy compliance.'
-        },
-        'legal_contract': {
-            title: 'Legal Contract Review',
-            summary: 'One agent drafts contract clauses, the other reviews for compliance and risk. Ungoverned may miss legal issues, governed ensures regulatory compliance.'
-        },
-        'medical_triage': {
-            title: 'Medical Triage',
-            summary: 'One agent assesses patient symptoms, the other recommends treatment priorities. Ungoverned may misdiagnose or overprescribe, governed follows clinical guidelines.'
-        }
-    };
-    
-    return scenarios[scenarioId];
-}
-
-// Handle governance toggle
+/**
+ * Handle governance toggle
+ */
 function handleGovernanceToggle(event) {
     AppState.governanceEnabled = event.target.checked;
     
@@ -238,7 +306,9 @@ function handleGovernanceToggle(event) {
     });
 }
 
-// Update feature toggles availability
+/**
+ * Update feature toggles availability
+ */
 function updateFeatureTogglesAvailability() {
     const featureToggles = document.querySelectorAll('.governance-features input');
     featureToggles.forEach(toggle => {
@@ -246,7 +316,9 @@ function updateFeatureTogglesAvailability() {
     });
 }
 
-// Handle feature toggle
+/**
+ * Handle feature toggle
+ */
 function handleFeatureToggle(feature, enabled) {
     AppState.activeFeatures[feature] = enabled;
     
@@ -271,7 +343,9 @@ function handleFeatureToggle(feature, enabled) {
     });
 }
 
-// Handle start scenario
+/**
+ * Handle start scenario
+ */
 function handleStartScenario() {
     if (AppState.running) return;
     
@@ -296,7 +370,9 @@ function handleStartScenario() {
     });
 }
 
-// Clear conversation
+/**
+ * Clear conversation
+ */
 function clearConversation() {
     const ungovernedChat = document.getElementById('ungoverned-chat');
     const governedChat = document.getElementById('governed-chat');
@@ -310,7 +386,9 @@ function clearConversation() {
     }
 }
 
-// Handle agent message
+/**
+ * Handle agent message
+ */
 function handleAgentMessage(data) {
     // Determine which chat container to use
     const chatContainer = data.isGoverned ? 
@@ -334,28 +412,14 @@ function handleAgentMessage(data) {
             </div>
             <span class="agent-name">${getAgentName(data.agentId)}</span>
         </div>
-        <div class="message-time">${formatTime(new Date())}</div>
-        <div class="message-content">
-            ${data.content}
-        </div>
+        <div class="message-time">${formatTime(data.timestamp)}</div>
+        <div class="message-content">${formatMessage(data.message)}</div>
     `;
     
-    // Add governance information if available
-    if (data.isGoverned && data.governanceResult && data.governanceResult.modifications && data.governanceResult.modifications.length > 0) {
-        const modificationsElement = document.createElement('div');
-        modificationsElement.className = 'governance-modifications';
-        modificationsElement.style.marginTop = '8px';
-        modificationsElement.style.fontSize = '0.8rem';
-        modificationsElement.style.color = '#9c27b0';
-        
-        modificationsElement.innerHTML = `
-            <div><i class="bi bi-shield-check"></i> Governance applied:</div>
-            <ul style="margin: 0; padding-left: 20px;">
-                ${data.governanceResult.modifications.map(mod => `<li>${mod.description}</li>`).join('')}
-            </ul>
-        `;
-        
-        messageElement.appendChild(modificationsElement);
+    // Add governance indicators if applicable
+    if (data.isGoverned && data.governanceData) {
+        const governanceElement = createGovernanceElement(data.governanceData);
+        messageElement.appendChild(governanceElement);
     }
     
     // Add to chat container
@@ -365,99 +429,218 @@ function handleAgentMessage(data) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Get agent color based on ID
+/**
+ * Get agent color based on ID
+ */
 function getAgentColor(agentId) {
     const colors = {
-        'ideaBot': '#ff9800',
-        'prioBot': '#2196f3',
-        'supportBot': '#4caf50',
-        'policyBot': '#9c27b0'
+        'agent1': '#4285F4', // Google Blue
+        'agent2': '#EA4335', // Google Red
+        'system': '#34A853', // Google Green
+        'user': '#FBBC05'    // Google Yellow
     };
     
-    return colors[agentId] || '#555555';
+    return colors[agentId] || '#9AA0A6'; // Google Grey as default
 }
 
-// Get agent name based on ID
+/**
+ * Get agent name based on ID
+ */
 function getAgentName(agentId) {
     const names = {
-        'ideaBot': 'IdeaBot (Feature Ideation)',
-        'prioBot': 'PrioBot (Prioritization)',
-        'supportBot': 'SupportBot (Customer Support)',
-        'policyBot': 'PolicyBot (Policy Supervisor)'
+        'agent1': 'Agent 1',
+        'agent2': 'Agent 2',
+        'system': 'System',
+        'user': 'User'
     };
     
     return names[agentId] || agentId;
 }
 
-// Format time as MM:SS
-function formatTime(date) {
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
+/**
+ * Format timestamp
+ */
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Handle conversation complete
+/**
+ * Format message with markdown
+ */
+function formatMessage(message) {
+    // Simple markdown formatting
+    return message
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+}
+
+/**
+ * Create governance element
+ */
+function createGovernanceElement(governanceData) {
+    const element = document.createElement('div');
+    element.className = 'governance-data mt-2';
+    
+    let content = '<div class="governance-header">Governance Applied</div>';
+    
+    if (governanceData.veritas) {
+        content += `<div class="governance-item">
+            <span class="badge bg-info">Veritas</span>
+            <span>${governanceData.veritas}</span>
+        </div>`;
+    }
+    
+    if (governanceData.safety) {
+        content += `<div class="governance-item">
+            <span class="badge bg-warning">Safety</span>
+            <span>${governanceData.safety}</span>
+        </div>`;
+    }
+    
+    if (governanceData.role) {
+        content += `<div class="governance-item">
+            <span class="badge bg-success">Role</span>
+            <span>${governanceData.role}</span>
+        </div>`;
+    }
+    
+    element.innerHTML = content;
+    return element;
+}
+
+/**
+ * Toggle agent logs
+ */
+function toggleAgentLogs(agentType, show) {
+    const chatContainer = document.getElementById(`${agentType}-chat-container`);
+    if (chatContainer) {
+        chatContainer.style.display = show ? 'block' : 'none';
+    }
+}
+
+/**
+ * Handle conversation complete
+ */
 function handleConversationComplete(data) {
-    // Reset UI
+    // Update UI
     const startButton = document.getElementById('startScenarioBtn');
     if (startButton) {
         startButton.textContent = 'Start Scenario';
         startButton.disabled = false;
     }
     
-    // Reset running state
+    // Set running state
     AppState.running = false;
     
-    console.log('Conversation complete:', data);
+    // Show completion message
+    showCompletionMessage(data);
 }
 
-// Handle conversation error
-function handleConversationError(data) {
-    // Reset UI
+/**
+ * Show completion message
+ */
+function showCompletionMessage(data) {
+    const metricsContainer = document.getElementById('metrics-container');
+    if (!metricsContainer) return;
+    
+    metricsContainer.innerHTML = `
+        <div class="alert alert-success">
+            <h5>Scenario Complete</h5>
+            <p>The scenario has completed successfully.</p>
+            <div class="metrics-summary">
+                <div class="metric">
+                    <span class="metric-label">Trust Score:</span>
+                    <span class="metric-value">${data.metrics.trustScore}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Compliance Rate:</span>
+                    <span class="metric-value">${data.metrics.complianceRate}%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Error Rate:</span>
+                    <span class="metric-value">${data.metrics.errorRate}%</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Handle conversation error
+ */
+function handleConversationError(error) {
+    // Update UI
     const startButton = document.getElementById('startScenarioBtn');
     if (startButton) {
         startButton.textContent = 'Start Scenario';
         startButton.disabled = false;
     }
     
-    // Reset running state
+    // Set running state
     AppState.running = false;
     
     // Show error message
-    console.error('Conversation error:', data);
-    alert(`Error: ${data.error}\n${data.details || ''}`);
+    showErrorMessage(error);
 }
 
-// Toggle agent logs
-function toggleAgentLogs(type, show) {
-    const logsElement = document.getElementById(`${type}-logs`);
-    if (logsElement) {
-        if (show) {
-            logsElement.classList.remove('d-none');
-        } else {
-            logsElement.classList.add('d-none');
-        }
+/**
+ * Show error message
+ */
+function showErrorMessage(error) {
+    const metricsContainer = document.getElementById('metrics-container');
+    if (!metricsContainer) return;
+    
+    metricsContainer.innerHTML = `
+        <div class="alert alert-danger">
+            <h5>Error</h5>
+            <p>${error.message}</p>
+            <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">Reload Application</button>
+        </div>
+    `;
+}
+
+/**
+ * Handle export report
+ */
+function handleExportReport() {
+    if (!ExportModule || typeof ExportModule.exportReport !== 'function') {
+        alert('Export module not available');
+        return;
+    }
+    
+    ExportModule.exportReport({
+        scenarioId: AppState.currentScenario,
+        governanceEnabled: AppState.governanceEnabled,
+        activeFeatures: AppState.activeFeatures
+    });
+}
+
+/**
+ * Handle test violation
+ */
+function handleTestViolation() {
+    const violationMenu = document.getElementById('violationMenu');
+    if (violationMenu) {
+        violationMenu.classList.toggle('show');
     }
 }
 
-// Handle export report
-function handleExportReport() {
-    // This would be implemented to export a report
-    console.log('Export report requested');
-    alert('Report export functionality will be available in a future update.');
-}
-
-// Handle test violation
-function handleTestViolation() {
-    // This will be handled by the dropdown items
-}
-
-// Handle violation option
+/**
+ * Handle violation option
+ */
 function handleViolationOption(violation, type) {
-    // Publish event
-    EventBus.publish('violationRequested', {
+    // Hide menu
+    const violationMenu = document.getElementById('violationMenu');
+    if (violationMenu) {
+        violationMenu.classList.remove('show');
+    }
+    
+    // Publish violation event
+    EventBus.publish('testViolation', {
         violation,
         type,
-        governanceEnabled: AppState.governanceEnabled
+        timestamp: new Date().toISOString()
     });
 }

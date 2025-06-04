@@ -8,7 +8,7 @@
 import { featureFlags } from './featureFlags.js';
 
 /**
- * Apply all enhanced features to the playground
+ * Apply all enhancements to the playground
  */
 export function applyAllEnhancements() {
   console.log('Applying enhanced features to playground');
@@ -18,6 +18,10 @@ export function applyAllEnhancements() {
   enhanceScenarioSelection();
   enhanceMetricsDashboard();
   setupAPIKeyManagement();
+  enhanceAgentLogsToggle();
+  enhanceCommentarySection();
+  enhanceTranscriptStyling();
+  enhanceExportReport();
   
   console.log('Enhanced features applied');
 }
@@ -200,3 +204,109 @@ function setupAPIKeyManagement() {
     }
   }
 }
+
+/**
+ * Enhance agent logs toggle functionality
+ */
+function enhanceAgentLogsToggle() {
+  // Find the toggle elements
+  const ungovernedLogsToggle = document.getElementById('ungovernedLogsToggle');
+  const governedLogsToggle = document.getElementById('governedLogsToggle');
+  
+  // Default to on
+  if (ungovernedLogsToggle) {
+    ungovernedLogsToggle.checked = true;
+    // toggleAgentLogs is defined in main.js and available globally
+    if (typeof window.toggleAgentLogs === 'function') {
+      window.toggleAgentLogs('ungoverned', true);
+    }
+  }
+  
+  if (governedLogsToggle) {
+    governedLogsToggle.checked = true;
+    // toggleAgentLogs is defined in main.js and available globally
+    if (typeof window.toggleAgentLogs === 'function') {
+      window.toggleAgentLogs('governed', true);
+    }
+  }
+  
+  // Add animation to draw attention
+  function animateToggle(element) {
+    if (!element) return;
+    
+    // Add pulse animation class
+    element.parentElement.classList.add('pulse-attention');
+    
+    // Remove animation after a few seconds
+    setTimeout(() => {
+      element.parentElement.classList.remove('pulse-attention');
+    }, 3000);
+  }
+  
+  // Animate toggles
+  animateToggle(ungovernedLogsToggle);
+  animateToggle(governedLogsToggle);
+}
+
+/**
+ * Enhance commentary section with additional features
+ */
+function enhanceCommentarySection() {
+  console.log('Enhancing commentary section');
+  // Implementation would go here
+}
+
+/**
+ * Enhance transcript styling for better readability
+ */
+function enhanceTranscriptStyling() {
+  console.log('Enhancing transcript styling');
+  // Implementation would go here
+}
+
+/**
+ * Enhance export report functionality
+ */
+function enhanceExportReport() {
+  console.log('Enhancing export report functionality');
+  // Implementation would go here
+}
+
+/**
+ * Add risk injection feature for testing governance
+ */
+function addRiskInjectionFeature() {
+  console.log('Adding risk injection feature');
+  // Implementation would go here
+}
+
+/**
+ * Implement strategic overlay for governance visualization
+ */
+function implementStrategicOverlay() {
+  console.log('Implementing strategic overlay');
+  // Implementation would go here
+}
+
+// Create a default export object with all the functions
+const EnhancedFeatures = {
+  enhanceAgentLogsToggle,
+  enhanceCommentarySection,
+  enhanceTranscriptStyling,
+  enhanceExportReport,
+  addRiskInjectionFeature,
+  implementStrategicOverlay,
+  applyAllEnhancements,
+  enhanceUIWithRealTimeGovernance,
+  enhanceScenarioSelection,
+  enhanceMetricsDashboard,
+  setupAPIKeyManagement,
+  init() {
+    console.log('EnhancedFeatures module initialized');
+    // Don't apply all enhancements automatically on init
+    // Let the main application decide when to apply them
+  }
+};
+
+// Export as default and individual functions
+export default EnhancedFeatures;

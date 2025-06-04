@@ -27,10 +27,10 @@ class APIClient {
         }
       },
       apiKeys: {
-        openai: this.getEnvironmentVariable('OPENAI_API_KEY'),
-        anthropic: this.getEnvironmentVariable('ANTHROPIC_API_KEY'),
-        cohere: this.getEnvironmentVariable('COHERE_API_KEY'),
-        huggingface: this.getEnvironmentVariable('HUGGINGFACE_API_KEY')
+        openai: this.getEnvironmentVariable('VITE_OPENAI_API_KEY'),
+        anthropic: this.getEnvironmentVariable('VITE_ANTHROPIC_API_KEY'),
+        cohere: this.getEnvironmentVariable('VITE_COHERE_API_KEY'),
+        huggingface: this.getEnvironmentVariable('VITE_HUGGINGFACE_API_KEY')
       }
     };
     
@@ -46,6 +46,11 @@ class APIClient {
    */
   getEnvironmentVariable(name) {
     try {
+      // Try to access from import.meta.env (Vite)
+      if (import.meta && import.meta.env && import.meta.env[name]) {
+        return import.meta.env[name];
+      }
+      
       // Try to access from process.env (Node.js)
       if (typeof process !== 'undefined' && process.env && process.env[name]) {
         return process.env[name];
@@ -355,6 +360,8 @@ class APIClient {
       throw error;
     }
   }
+
+  /**
    * Get the best available client based on configuration and availability
    * @returns {Object|null} - The best available client or null if none available
    */
@@ -510,6 +517,14 @@ class APIClient {
     }
   }
   
+  /**
+   * Initialize the API client (for consistency with other modules)
+   */
+  init() {
+    console.log('Initializing real API clients for LLM providers');
+    this.initializeClients();
+  }
+
   /**
    * Set default provider
    * @param {string} provider - The provider to set as default
