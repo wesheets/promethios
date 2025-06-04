@@ -22,6 +22,7 @@ export default defineConfig({
     }
   },
   build: {
+    outDir: 'dist', // Explicitly set output directory to 'dist'
     // Ensure environment variables are available in build
     rollupOptions: {
       input: {
