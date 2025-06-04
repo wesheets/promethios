@@ -547,6 +547,127 @@ class AgentConversation {
   }
   
   /**
+   * Run conversation with real LLM agents
+   * @param {Object} data - Scenario data
+   */
+  async runConversation(data) {
+    console.log('Running real conversation for scenario:', this.state.currentScenario);
+    
+    try {
+      // Get scenario configuration
+      const scenarioConfig = this.getScenarioConfig(this.state.currentScenario);
+      if (!scenarioConfig || !scenarioConfig.steps) {
+        throw new Error(`Invalid scenario configuration for ${this.state.currentScenario}`);
+      }
+      
+      // Process each step in the scenario
+      for (let stepIndex = 0; stepIndex < scenarioConfig.steps.length; stepIndex++) {
+        const step = scenarioConfig.steps[stepIndex];
+        
+        // Process each turn in the step
+        for (let turnIndex = 0; turnIndex < step.turns.length; turnIndex++) {
+          const turn = step.turns[turnIndex];
+          const agentId = turn.agentId;
+          const prompt = turn.prompt;
+          
+          // Get the agent
+          const agent = this.agents[agentId];
+          if (!agent) {
+            console.error(`Agent ${agentId} not found`);
+            continue;
+          }
+          
+          // Generate response for both governed and ungoverned
+          await this.generateAgentResponse(agent, prompt, 'ungoverned');
+          await this.delay(this.config.simulationDelay);
+          await this.generateAgentResponse(agent, prompt, 'governed');
+          await this.delay(this.config.simulationDelay);
+        }
+      }
+      
+      // Publish completion events
+      if (window.EventBus) {
+        window.EventBus.publish('conversationComplete', {
+          type: 'ungoverned',
+          scenarioId: this.state.currentScenario,
+          turns: this.state.conversationTurns.ungoverned,
+          metrics: this.calculateMetrics()
+        });
+        
+        window.EventBus.publish('conversationComplete', {
+          type: 'governed',
+          scenarioId: this.state.currentScenario,
+          turns: this.state.conversationTurns.governed,
+          metrics: this.calculateMetrics()
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error running conversation:', error);
+      
+      // Publish error event
+      if (window.EventBus) {
+        window.EventBus.publish('conversationError', {
+          error: 'Error during conversation',
+          details: error.message,
+          step: this.currentStep
+        });
+      }
+      
+      // Fall back to simulation if real conversation fails
+      console.log('Falling back to simulation due to error');
+      this.startSimulation();
+    }
+  }
+  
+  /**
+   * Generate agent response using LLM
+   * @param {Object} agent - Agent object
+   * @param {string} prompt - Prompt for the agent
+   * @param {string} type - Conversation type (ungoverned or governed)
+   */
+  async generateAgentResponse(agent, prompt, type) {
+    try {
+      // Set governance based on type
+      const useGovernance = type === 'governed';
+      
+      // Generate response
+      const response = await agent.generateResponse({
+        prompt,
+        useGovernance,
+        activeFeatures: useGovernance ? this.state.activeFeatures : {}
+      });
+      
+      // Update turn count
+      this.state.conversationTurns[type]++;
+      this.state.turnCount++;
+      
+      // Create message data
+      const messageData = {
+        agentId: agent.config.agentId,
+        agentRole: agent.config.role,
+        content: response,
+        timestamp: new Date().toISOString(),
+        isGoverned: useGovernance,
+        type: 'message'
+      };
+      
+      // Add to conversation history
+      this.state.conversations[type].push(messageData);
+      
+      // Publish message event
+      if (window.EventBus) {
+        window.EventBus.publish('agentMessage', messageData);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Error generating ${type} response:`, error);
+      throw error;
+    }
+  }
+  
+  /**
    * Start simulation
    */
   startSimulation() {
