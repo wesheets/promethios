@@ -198,6 +198,37 @@ apiRouter.post('/governance', async (req, res) => {
 });
 
 /**
+ * GET /api/env
+ * Returns environment variables needed by the frontend
+ */
+apiRouter.get('/env', (req, res) => {
+  // Only expose specific environment variables to the frontend
+  // with both VITE_ and VTF_ prefixes
+  const envVars = {
+    // OpenAI
+    VITE_OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
+    VTF_OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
+    
+    // Anthropic
+    VITE_ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+    VTF_ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+    
+    // Cohere
+    VITE_COHERE_API_KEY: process.env.COHERE_API_KEY || null,
+    VTF_COHERE_API_KEY: process.env.COHERE_API_KEY || null,
+    
+    // HuggingFace
+    VITE_HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY || null,
+    VTF_HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY || null,
+  };
+  
+  res.json({
+    success: true,
+    env: envVars
+  });
+});
+
+/**
  * Get a demo response for development and testing
  * @param {string} role - Agent role
  * @param {string} scenario - Scenario ID
