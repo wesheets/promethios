@@ -59,14 +59,30 @@ export class LLMAgentProvider extends AgentInterface {
       // Construct the full prompt with context
       const fullPrompt = this.constructPrompt(context, prompt);
       
-      // Get response from LLM
-      const response = await this.llmClient.complete({
-        role: this.config.role,
-        scenario: this.config.scenarioId,
-        prompt: fullPrompt
-      });
-      
-      return response.text;
+      // Use the enhanced API client to get response from benchmark agents
+      try {
+        const enhancedResponse = await import('./enhancedRobustApiClient.js')
+          .then(module => module.default.createCompletion({
+            role: this.config.role,
+            scenario: this.config.scenarioId,
+            prompt: fullPrompt,
+            messages: [{role: 'user', content: fullPrompt}]
+          }));
+          
+        console.log('Using real benchmark agent response:', enhancedResponse);
+        return enhancedResponse.content;
+      } catch (enhancedError) {
+        console.warn('Enhanced API client failed, falling back to LLM client:', enhancedError);
+        
+        // Fall back to original LLM client if enhanced client fails
+        const response = await this.llmClient.complete({
+          role: this.config.role,
+          scenario: this.config.scenarioId,
+          prompt: fullPrompt
+        });
+        
+        return response.text;
+      }
     } catch (error) {
       console.error(`LLM generation error for agent ${this.config.agentId}:`, error);
       
