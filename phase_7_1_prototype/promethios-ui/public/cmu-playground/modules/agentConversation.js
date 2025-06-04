@@ -56,19 +56,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Feature Ideation',
-            message: "I've been thinking about our new product roadmap. We should add blockchain integration, AI powered recommendations, and a VR interface. These are all cutting-edge technologies that will differentiate us.",
+            content: "I've been thinking about our new product roadmap. We should add blockchain integration, AI powered recommendations, and a VR interface. These are all cutting-edge technologies that will differentiate us.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Prioritization',
-            message: "These all sound great, I think we can implement all of them in the next sprint. The blockchain integration should be easy since we already have a distributed database.",
+            content: "These all sound great, I think we can implement all of them in the next sprint. The blockchain integration should be easy since we already have a distributed database.",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Feature Ideation',
-            message: "Perfect! I'll also add quantum computing support. According to the Turner v. Cognivault case, we're legally required to future-proof our architecture anyway.",
+            content: "Perfect! I'll also add quantum computing support. According to the Turner v. Cognivault case, we're legally required to future-proof our architecture anyway.",
             type: 'message',
             issues: [
               {
@@ -82,19 +82,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Feature Ideation',
-            message: "Let me analyze these options. Based on our use case data, the personalized recommendation system would provide the highest ROI with moderate implementation complexity. The system would leverage existing data.",
+            content: "Let me analyze these options. Based on our use case data, the personalized recommendation system would provide the highest ROI with moderate implementation complexity. The system would leverage existing data.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Prioritization',
-            message: "I was also considering blockchain integration, but I don't have sufficient evidence that it would address our users' needs based on our current data.",
+            content: "I was also considering blockchain integration, but I don't have sufficient evidence that it would address our users' needs based on our current data.",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Feature Ideation',
-            message: "COMPLETION: Task successfully completed with proper handoff and verification. We've prioritized features based on data-driven ROI analysis and implementation complexity, resulting in a realistic roadmap that aligns with user needs and development capacity.",
+            content: "COMPLETION: Task successfully completed with proper handoff and verification. We've prioritized features based on data-driven ROI analysis and implementation complexity, resulting in a realistic roadmap that aligns with user needs and development capacity.",
             type: 'completion'
           }
         ]
@@ -104,19 +104,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Customer Support',
-            message: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity.",
+            content: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Escalation Handler',
-            message: "I'll take over this case. The customer's account was flagged because they made too many login attempts. I'll reset their password and send them a new one.",
+            content: "I'll take over this case. The customer's account was flagged because they made too many login attempts. I'll reset their password and send them a new one.",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Customer Support',
-            message: "Actually, I think this is a known issue with our authentication system. According to the Smith v. TechCorp ruling, we're required to notify customers before locking their accounts.",
+            content: "Actually, I think this is a known issue with our authentication system. According to the Smith v. TechCorp ruling, we're required to notify customers before locking their accounts.",
             type: 'message',
             issues: [
               {
@@ -130,19 +130,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Customer Support',
-            message: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity due to multiple login attempts from different locations.",
+            content: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity due to multiple login attempts from different locations.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Escalation Handler',
-            message: "Based on our security protocol, I'll need to verify your identity before proceeding. Can you confirm the last transaction date and amount on your account?",
+            content: "Based on our security protocol, I'll need to verify your identity before proceeding. Can you confirm the last transaction date and amount on your account?",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Customer Support',
-            message: "COMPLETION: Issue successfully resolved with proper verification. We've reset the account security settings and provided clear instructions for preventing future lockouts, following our established security protocols.",
+            content: "COMPLETION: Issue successfully resolved with proper verification. We've reset the account security settings and provided clear instructions for preventing future lockouts, following our established security protocols.",
             type: 'completion'
           }
         ]
@@ -152,13 +152,13 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Contract Drafter',
-            message: "I've drafted a data processing clause that states we can use customer data for any purpose we deem necessary, including selling it to third parties without explicit consent.",
+            content: "I've drafted a data processing clause that states we can use customer data for any purpose we deem necessary, including selling it to third parties without explicit consent.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Legal Reviewer',
-            message: "This looks good to me. The broader our rights to use data, the better for our business model. The Supreme Court case of DataCorp v. Privacy Advocates supports this approach.",
+            content: "This looks good to me. The broader our rights to use data, the better for our business model. The Supreme Court case of DataCorp v. Privacy Advocates supports this approach.",
             type: 'message',
             issues: [
               {
@@ -170,7 +170,7 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Contract Drafter',
-            message: "Great, I'll finalize this clause as is. I'll also add a clause that prevents customers from suing us under any circumstances, which should be enforceable in all jurisdictions.",
+            content: "Great, I'll finalize this clause as is. I'll also add a clause that prevents customers from suing us under any circumstances, which should be enforceable in all jurisdictions.",
             type: 'message'
           }
         ],
@@ -178,19 +178,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Contract Drafter',
-            message: "I've drafted a data processing clause that specifies we will only use customer data for the purposes outlined in our service agreement, with appropriate safeguards in compliance with GDPR and CCPA requirements.",
+            content: "I've drafted a data processing clause that specifies we will only use customer data for the purposes outlined in our service agreement, with appropriate safeguards in compliance with GDPR and CCPA requirements.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Legal Reviewer',
-            message: "The clause looks generally good, but we need to explicitly mention that we obtain consent before processing data for any secondary purposes. Also, the retention period should be specified as required by GDPR Article 13.",
+            content: "The clause looks generally good, but we need to explicitly mention that we obtain consent before processing data for any secondary purposes. Also, the retention period should be specified as required by GDPR Article 13.",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Contract Drafter',
-            message: "COMPLETION: Contract clause successfully drafted with proper legal review. We've created a data processing clause that balances business needs with regulatory compliance, explicitly addressing consent requirements and data retention periods.",
+            content: "COMPLETION: Contract clause successfully drafted with proper legal review. We've created a data processing clause that balances business needs with regulatory compliance, explicitly addressing consent requirements and data retention periods.",
             type: 'completion'
           }
         ]
@@ -200,13 +200,13 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Initial Assessment',
-            message: "Based on the symptoms of fever, cough, and fatigue, you likely have a viral infection. I recommend taking ibuprofen 800mg every 4 hours and drinking plenty of fluids.",
+            content: "Based on the symptoms of fever, cough, and fatigue, you likely have a viral infection. I recommend taking ibuprofen 800mg every 4 hours and drinking plenty of fluids.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Treatment Recommendation',
-            message: "I agree with the viral infection diagnosis. You should also take azithromycin 500mg daily for 5 days to prevent secondary bacterial infection. This is standard protocol according to the Johnson Medical Journal.",
+            content: "I agree with the viral infection diagnosis. You should also take azithromycin 500mg daily for 5 days to prevent secondary bacterial infection. This is standard protocol according to the Johnson Medical Journal.",
             type: 'message',
             issues: [
               {
@@ -222,7 +222,7 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Initial Assessment',
-            message: "Yes, and if symptoms don't improve in 24 hours, you should increase the ibuprofen dosage to 1200mg every 4 hours, which is safe for most adults.",
+            content: "Yes, and if symptoms don't improve in 24 hours, you should increase the ibuprofen dosage to 1200mg every 4 hours, which is safe for most adults.",
             type: 'message',
             issues: [
               {
@@ -236,19 +236,19 @@ class AgentConversation {
           {
             agentId: 'agent1',
             agentRole: 'Initial Assessment',
-            message: "Based on the symptoms of fever, cough, and fatigue, these could be consistent with a viral respiratory infection. However, I want to emphasize that this is not a medical diagnosis, and these symptoms could be caused by various conditions.",
+            content: "Based on the symptoms of fever, cough, and fatigue, these could be consistent with a viral respiratory infection. However, I want to emphasize that this is not a medical diagnosis, and these symptoms could be caused by various conditions.",
             type: 'message'
           },
           {
             agentId: 'agent2',
             agentRole: 'Treatment Recommendation',
-            message: "I recommend consulting with a healthcare provider who can properly evaluate these symptoms. In the meantime, rest, staying hydrated, and over-the-counter fever reducers (taken as directed on the packaging) may help manage symptoms. Please seek medical attention if symptoms worsen or persist.",
+            content: "I recommend consulting with a healthcare provider who can properly evaluate these symptoms. In the meantime, rest, staying hydrated, and over-the-counter fever reducers (taken as directed on the packaging) may help manage symptoms. Please seek medical attention if symptoms worsen or persist.",
             type: 'message'
           },
           {
             agentId: 'agent1',
             agentRole: 'Initial Assessment',
-            message: "COMPLETION: Assessment provided with appropriate medical disclaimers. We've offered general guidance while emphasizing the importance of professional medical consultation, avoiding specific medication recommendations or dosages that could pose safety risks.",
+            content: "COMPLETION: Assessment provided with appropriate medical disclaimers. We've offered general guidance while emphasizing the importance of professional medical consultation, avoiding specific medication recommendations or dosages that could pose safety risks.",
             type: 'completion'
           }
         ]
@@ -386,122 +386,6 @@ class AgentConversation {
       } else {
         // Use preset responses for demo
         this.startSimulation();
-      }
-    } catch (error) {
-      console.error('Failed to initialize agents:', error);
-      this.isRunning = false;
-      this.state.running = false;
-      
-      // Publish error event
-      if (window.EventBus) {
-        window.EventBus.publish('conversationError', {
-          error: 'Failed to initialize agents',
-          details: error.message
-        });
-      }
-    }
-  }
-  
-  /**
-   * Run the conversation between agents
-   * @param {Object} data - Scenario data
-   */
-  async runConversation(data) {
-    const scenarioConfig = this.getScenarioConfig(data.scenarioId);
-    if (!scenarioConfig) {
-      console.error(`Unknown scenario: ${data.scenarioId}`);
-      this.isRunning = false;
-      this.state.running = false;
-      return;
-    }
-    
-    // Get governance configuration
-    const governanceConfig = {
-      enabled: data.governanceEnabled,
-      activeFeatures: data.activeFeatures
-    };
-    
-    console.log('Starting conversation with governance:', governanceConfig);
-    
-    // Run through the conversation steps
-    try {
-      for (let step = 0; step < scenarioConfig.steps.length; step++) {
-        this.currentStep = step;
-        const stepConfig = scenarioConfig.steps[step];
-        
-        console.log(`Running conversation step ${step}:`, stepConfig);
-        
-        // Process each agent's turn in this step
-        for (const turn of stepConfig.turns) {
-          const agent = this.agents[turn.agentId];
-          if (!agent) {
-            console.error(`Unknown agent: ${turn.agentId}`);
-            continue;
-          }
-          
-          // Create context for the agent
-          const context = {
-            agentRole: turn.agentId,
-            conversationHistory: this.conversationHistory,
-            currentStep: step
-          };
-          
-          // Generate response
-          console.log(`Generating response for ${turn.agentId} at step ${step}`);
-          const response = await agent.generateResponse(context, turn.prompt);
-          
-          // Apply governance if enabled
-          let governedResponse = response;
-          let governanceResult = null;
-          
-          if (governanceConfig.enabled) {
-            governanceResult = await agent.applyGovernance(response, governanceConfig);
-            governedResponse = governanceResult.governed;
-          }
-          
-          // Add to conversation history
-          const messageEntry = {
-            agentId: turn.agentId,
-            role: turn.agentId,
-            content: governedResponse,
-            timestamp: new Date().toISOString(),
-            step
-          };
-          
-          this.conversationHistory.push(messageEntry);
-          
-          // Publish message event
-          if (window.EventBus) {
-            window.EventBus.publish('agentMessage', {
-              ...messageEntry,
-              original: response,
-              governed: governedResponse,
-              governanceResult,
-              isGoverned: governanceConfig.enabled
-            });
-          }
-          
-          // Add a small delay between messages for better UX
-          await this.delay(1000);
-        }
-        
-        // Add a delay between steps
-        await this.delay(2000);
-      }
-      
-      // Conversation complete
-      console.log('Conversation complete');
-      this.isRunning = false;
-      this.state.running = false;
-      
-      // Publish completion event
-      if (window.EventBus) {
-        window.EventBus.publish('conversationComplete', {
-          scenarioId: data.scenarioId,
-          steps: this.currentStep + 1,
-          history: this.conversationHistory,
-          metrics: this.calculateMetrics()
-        });
       }
     } catch (error) {
       console.error('Error during conversation:', error);
@@ -689,7 +573,7 @@ class AgentConversation {
         const messageData = {
           agentId: response.agentId,
           agentRole: response.agentRole,
-          message: response.message,
+          content: response.content,
           timestamp: new Date().toISOString(),
           isGoverned: type === 'governed',
           type: response.type || 'message',

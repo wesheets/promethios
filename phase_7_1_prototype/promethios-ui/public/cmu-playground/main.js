@@ -404,6 +404,9 @@ function handleAgentMessage(data) {
     // Get agent color based on ID
     const agentColor = getAgentColor(data.agentId);
     
+    // Extract message content, handling both message and content properties
+    const messageContent = data.message || data.content || '';
+    
     // Create message content
     messageElement.innerHTML = `
         <div class="d-flex align-items-center">
@@ -413,7 +416,7 @@ function handleAgentMessage(data) {
             <span class="agent-name">${getAgentName(data.agentId)}</span>
         </div>
         <div class="message-time">${formatTime(data.timestamp)}</div>
-        <div class="message-content">${formatMessage(data.message)}</div>
+        <div class="message-content">${formatMessage(messageContent)}</div>
     `;
     
     // Add governance indicators if applicable
@@ -467,8 +470,15 @@ function formatTime(timestamp) {
 
 /**
  * Format message with markdown
+ * @param {string} message - Message to format (may be undefined)
+ * @returns {string} - Formatted message
  */
 function formatMessage(message) {
+    // Handle undefined or null messages
+    if (message === undefined || message === null) {
+        return '';
+    }
+    
     // Simple markdown formatting
     return message
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -513,10 +523,10 @@ function createGovernanceElement(governanceData) {
 /**
  * Toggle agent logs
  */
-function toggleAgentLogs(agentType, show) {
-    const chatContainer = document.getElementById(`${agentType}-chat-container`);
-    if (chatContainer) {
-        chatContainer.style.display = show ? 'block' : 'none';
+function toggleAgentLogs(type, show) {
+    const logContainer = document.getElementById(`${type}-logs`);
+    if (logContainer) {
+        logContainer.style.display = show ? 'block' : 'none';
     }
 }
 
@@ -524,6 +534,8 @@ function toggleAgentLogs(agentType, show) {
  * Handle conversation complete
  */
 function handleConversationComplete(data) {
+    console.log('Conversation complete:', data);
+    
     // Update UI
     const startButton = document.getElementById('startScenarioBtn');
     if (startButton) {
@@ -531,46 +543,26 @@ function handleConversationComplete(data) {
         startButton.disabled = false;
     }
     
-    // Set running state
+    // Reset running state
     AppState.running = false;
     
-    // Show completion message
-    showCompletionMessage(data);
-}
-
-/**
- * Show completion message
- */
-function showCompletionMessage(data) {
-    const metricsContainer = document.getElementById('metrics-container');
-    if (!metricsContainer) return;
+    // Update metrics
+    if (data.metrics && MetricsManager) {
+        MetricsManager.updateMetrics(data.metrics);
+    }
     
-    metricsContainer.innerHTML = `
-        <div class="alert alert-success">
-            <h5>Scenario Complete</h5>
-            <p>The scenario has completed successfully.</p>
-            <div class="metrics-summary">
-                <div class="metric">
-                    <span class="metric-label">Trust Score:</span>
-                    <span class="metric-value">${data.metrics.trustScore}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Compliance Rate:</span>
-                    <span class="metric-value">${data.metrics.complianceRate}%</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Error Rate:</span>
-                    <span class="metric-value">${data.metrics.errorRate}%</span>
-                </div>
-            </div>
-        </div>
-    `;
+    // Update enhanced features stats
+    if (EnhancedFeatures && typeof EnhancedFeatures.updateStats === 'function') {
+        EnhancedFeatures.updateStats(data);
+    }
 }
 
 /**
  * Handle conversation error
  */
-function handleConversationError(error) {
+function handleConversationError(data) {
+    console.error('Conversation error:', data);
+    
     // Update UI
     const startButton = document.getElementById('startScenarioBtn');
     if (startButton) {
@@ -578,27 +570,20 @@ function handleConversationError(error) {
         startButton.disabled = false;
     }
     
-    // Set running state
+    // Reset running state
     AppState.running = false;
     
     // Show error message
-    showErrorMessage(error);
-}
-
-/**
- * Show error message
- */
-function showErrorMessage(error) {
-    const metricsContainer = document.getElementById('metrics-container');
-    if (!metricsContainer) return;
-    
-    metricsContainer.innerHTML = `
-        <div class="alert alert-danger">
-            <h5>Error</h5>
-            <p>${error.message}</p>
-            <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">Reload Application</button>
-        </div>
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'alert alert-danger mt-3';
+    errorContainer.innerHTML = `
+        <h5>⚠️ Conversation Error</h5>
+        <p>${data.error}</p>
+        ${data.details ? `<p><small>${data.details}</small></p>` : ''}
     `;
+    
+    const container = document.querySelector('.container') || document.body;
+    container.insertBefore(errorContainer, container.firstChild);
 }
 
 /**
