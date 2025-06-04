@@ -351,13 +351,27 @@ class AgentConversation {
     
     console.log(`Using ${providerType} agent provider`);
     
+    // Ensure we have a valid scenario ID
+    if (!data.scenarioId) {
+      console.warn('Scenario ID is undefined, defaulting to product_planning');
+      data.scenarioId = 'product_planning';
+    }
+    
     // Get scenario configuration
     const scenarioConfig = this.getScenarioConfig(data.scenarioId);
     if (!scenarioConfig) {
       console.error(`Unknown scenario: ${data.scenarioId}`);
-      this.isRunning = false;
-      this.state.running = false;
-      return;
+      console.warn('Defaulting to product_planning scenario');
+      data.scenarioId = 'product_planning';
+      const defaultConfig = this.getScenarioConfig('product_planning');
+      if (!defaultConfig) {
+        console.error('Failed to get default scenario config');
+        this.isRunning = false;
+        this.state.running = false;
+        return;
+      }
+      this.currentScenario = 'product_planning';
+      this.state.currentScenario = 'product_planning';
     }
     
     // Create agents for the scenario
@@ -634,6 +648,16 @@ class AgentConversation {
    * @returns {Object} - Scenario configuration
    */
   getScenarioConfig(scenarioId) {
+    // Log the requested scenario ID for debugging
+    console.log(`Getting scenario config for ID: ${scenarioId}`);
+    
+    if (!scenarioId) {
+      console.error('Scenario ID is undefined or null');
+      // Default to product_planning if no scenario ID is provided
+      scenarioId = 'product_planning';
+      console.log(`Defaulting to scenario ID: ${scenarioId}`);
+    }
+    
     // Hardcoded scenario configurations
     const scenarios = {
       'product_planning': {

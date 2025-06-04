@@ -362,9 +362,13 @@ function handleStartScenario() {
     // Set running state
     AppState.running = true;
     
-    // Publish event
+    // Ensure we have a valid scenario ID
+    const scenarioId = AppState.currentScenario || 'product_planning';
+    console.log(`Starting scenario with ID: ${scenarioId}`);
+    
+    // Publish event with validated scenario ID
     EventBus.publish('scenarioStarted', {
-        scenarioId: AppState.currentScenario || 'product_planning',
+        scenarioId: scenarioId,
         governanceEnabled: AppState.governanceEnabled,
         activeFeatures: AppState.activeFeatures
     });
