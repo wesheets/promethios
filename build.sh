@@ -12,16 +12,13 @@ ls -la
 echo "Installing dependencies..."
 npm install
 
-# Skip the full build process and directly serve from public directory
-echo "Skipping full build process to serve CMU playground directly from public directory"
+# Build the project
+echo "Building project..."
+npx vite build
 
-# Create a minimal dist directory without redirection
-mkdir -p dist
-echo "<html><head><title>Promethios Platform</title></head><body><h1>Promethios Platform</h1><p>Welcome to the Promethios Platform. <a href='/cmu-playground/'>Visit the CMU Playground Demo</a></p></body></html>" > dist/index.html
-
-# Verify the dist directory
-echo "Checking dist directory:"
-ls -la dist
+# Verify build output
+echo "Checking build output:"
+ls -la dist || echo "dist directory not found!"
 
 # Done
 echo "Build script completed"
