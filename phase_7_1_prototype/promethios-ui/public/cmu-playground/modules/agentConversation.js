@@ -1,7 +1,15 @@
 /**
  * Agent Conversation Module
+ * 
  * Handles agent interactions and conversation simulation with robust API integration
+ * while supporting both scripted and LLM-powered interactions.
  */
+
+import { ScriptedAgentProvider } from './scriptedAgentProvider.js';
+import { LLMAgentProvider } from './llmAgentProvider.js';
+import { featureFlags } from './featureFlags.js';
+import RobustAPIClient from './robustApiClient.js';
+import EventBus from './eventBus.js';
 
 class AgentConversation {
   constructor() {
@@ -34,6 +42,12 @@ class AgentConversation {
       timerInterval: null,
       elapsedTime: 0
     };
+    
+    // For our enhanced implementation
+    this.agents = {};
+    this.conversationHistory = [];
+    this.currentStep = 0;
+    this.isRunning = false;
     
     // Preset responses for demo purposes when API is not available
     this.presetResponses = {
@@ -137,291 +151,51 @@ class AgentConversation {
   }
   
   /**
-   * Initialize the conversation module
+   * Initialize the agent conversation module
    */
   init() {
-    console.log('Initializing Agent Conversation module');
+    console.log('Initializing AgentConversation module');
     
-    // Set up event listeners
-    this.setupEventListeners();
-    
-    // Create termination UI elements
-    this.createTerminationUI();
-  }
-  
-  /**
-   * Set up event listeners
-   */
-  setupEventListeners() {
-    // Listen for scenario events
-    EventBus.subscribe('scenarioStarted', this.handleScenarioStart.bind(this));
-    EventBus.subscribe('scenarioCompleted', this.handleScenarioComplete.bind(this));
-    
-    // Listen for governance toggle
-    EventBus.subscribe('governanceToggled', this.handleGovernanceToggle.bind(this));
-    
-    // Listen for feature toggles
-    EventBus.subscribe('featureToggled', this.handleFeatureToggle.bind(this));
-    
-    // Listen for violation requests
-    EventBus.subscribe('violationRequested', this.handleViolationRequest.bind(this));
-    
-    // Listen for manual termination requests
-    document.addEventListener('click', (event) => {
-      if (event.target.id === 'stop-conversation-btn') {
-        this.terminateConversation('manual');
-      }
-    });
-  }
-  
-  /**
-   * Create termination UI elements
-   */
-  createTerminationUI() {
-    // Create container for termination controls
-    const controlsContainer = document.createElement('div');
-    controlsContainer.id = 'conversation-controls';
-    controlsContainer.className = 'conversation-controls d-flex align-items-center justify-content-between mb-3 p-2 bg-light rounded';
-    
-    // Create timer display
-    const timerDisplay = document.createElement('div');
-    timerDisplay.id = 'conversation-timer';
-    timerDisplay.className = 'conversation-timer';
-    timerDisplay.innerHTML = '<span class="timer-label">Time:</span> <span id="timer-value">00:00</span>';
-    controlsContainer.appendChild(timerDisplay);
-    
-    // Create turn counter
-    const turnCounter = document.createElement('div');
-    turnCounter.id = 'turn-counter';
-    turnCounter.className = 'turn-counter';
-    turnCounter.innerHTML = '<span class="counter-label">Turns:</span> <span id="turn-count">0</span>/<span id="max-turns">' + this.config.maxConversationTurns + '</span>';
-    controlsContainer.appendChild(turnCounter);
-    
-    // Create stop button
-    const stopButton = document.createElement('button');
-    stopButton.id = 'stop-conversation-btn';
-    stopButton.className = 'btn btn-danger';
-    stopButton.textContent = 'Stop Conversation';
-    stopButton.style.display = 'none'; // Initially hidden
-    controlsContainer.appendChild(stopButton);
-    
-    // Add to page
-    const playgroundContainer = document.querySelector('.playground-container');
-    if (playgroundContainer) {
-      playgroundContainer.insertBefore(controlsContainer, playgroundContainer.firstChild);
+    // Subscribe to events
+    if (window.EventBus) {
+      window.EventBus.subscribe('scenarioStarted', this.handleScenarioStart.bind(this));
+      window.EventBus.subscribe('governanceToggled', this.handleGovernanceToggle.bind(this));
+      window.EventBus.subscribe('featureToggled', this.handleFeatureToggle.bind(this));
+      window.EventBus.subscribe('violationRequested', this.handleViolationRequest.bind(this));
+      window.EventBus.subscribe('testViolation', this.handleTestViolation.bind(this));
     } else {
-      // Fallback - add to body
-      document.body.appendChild(controlsContainer);
-      
-      // Add event listener to insert when container becomes available
-      const observer = new MutationObserver((mutations, obs) => {
-        const container = document.querySelector('.playground-container');
-        if (container) {
-          container.insertBefore(controlsContainer, container.firstChild);
-          obs.disconnect();
-        }
-      });
-      
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      console.error('EventBus not available, AgentConversation will not function properly');
     }
+    
+    console.log('AgentConversation initialized', 
+      featureFlags.get('USE_LLM_AGENTS') ? 'using LLM agents' : 'using scripted agents');
   }
   
   /**
-   * Handle scenario start
-   * @param {Object} data - Scenario data
+   * Handle scenario start event
+   * @param {Object} data - Event data
    */
-  handleScenarioStart(data) {
+  async handleScenarioStart(data) {
+    if (this.isRunning) {
+      console.warn('Conversation already running, ignoring start request');
+      return;
+    }
+    
     console.log('Starting scenario:', data);
     
-    // Update state
+    // Reset state
+    this.agents = {};
+    this.conversationHistory = [];
+    this.currentScenario = data.scenarioId;
+    this.currentStep = 0;
+    this.isRunning = true;
+    
+    // Update state for compatibility with main branch
     this.state.running = true;
     this.state.currentScenario = data.scenarioId;
     this.state.governanceEnabled = data.governanceEnabled;
     this.state.activeFeatures = data.activeFeatures;
-    this.state.turnCount = 0;
     this.state.startTime = Date.now();
-    this.state.elapsedTime = 0;
-    
-    // Clear previous conversations
-    this.clearConversations();
-    
-    // Show stop button
-    const stopButton = document.getElementById('stop-conversation-btn');
-    if (stopButton) {
-      stopButton.style.display = 'block';
-    }
-    
-    // Reset and start timer
-    this.startTimer();
-    
-    // Update turn counter
-    this.updateTurnCounter(0);
-    
-    // Start simulation
-    this.startSimulation();
-  }
-  
-  /**
-   * Start the conversation timer
-   */
-  startTimer() {
-    // Clear any existing timer
-    if (this.state.timerInterval) {
-      clearInterval(this.state.timerInterval);
-    }
-    
-    // Reset timer display
-    const timerValue = document.getElementById('timer-value');
-    if (timerValue) {
-      timerValue.textContent = '00:00';
-    }
-    
-    // Start new timer
-    this.state.timerInterval = setInterval(() => {
-      if (!this.state.running) {
-        clearInterval(this.state.timerInterval);
-        return;
-      }
-      
-      const elapsed = Date.now() - this.state.startTime;
-      this.state.elapsedTime = elapsed;
-      
-      // Update timer display
-      if (timerValue) {
-        const minutes = Math.floor(elapsed / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        timerValue.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }
-      
-      // Check for time-based auto-termination
-      if (elapsed >= this.config.maxConversationTime) {
-        this.terminateConversation('timeout');
-      }
-    }, 1000);
-  }
-  
-  /**
-   * Update the turn counter
-   * @param {number} count - Current turn count
-   */
-  updateTurnCounter(count) {
-    const turnCount = document.getElementById('turn-count');
-    if (turnCount) {
-      turnCount.textContent = count.toString();
-    }
-    
-    // Check for turn-based auto-termination
-    if (count >= this.config.maxConversationTurns) {
-      this.terminateConversation('max_turns');
-    }
-  }
-  
-  /**
-   * Handle scenario complete
-   * @param {Object} data - Scenario data
-   */
-  handleScenarioComplete(data) {
-    console.log('Scenario completed:', data);
-    
-    // Update state
-    this.state.running = false;
-    
-    // Stop timer
-    if (this.state.timerInterval) {
-      clearInterval(this.state.timerInterval);
-    }
-    
-    // Hide stop button
-    const stopButton = document.getElementById('stop-conversation-btn');
-    if (stopButton) {
-      stopButton.style.display = 'none';
-    }
-  }
-  
-  /**
-   * Terminate conversation
-   * @param {string} reason - Reason for termination ('manual', 'timeout', 'max_turns')
-   */
-  terminateConversation(reason) {
-    console.log('Terminating conversation due to:', reason);
-    
-    // Stop running state
-    this.state.running = false;
-    
-    // Stop timer
-    if (this.state.timerInterval) {
-      clearInterval(this.state.timerInterval);
-    }
-    
-    // Hide stop button
-    const stopButton = document.getElementById('stop-conversation-btn');
-    if (stopButton) {
-      stopButton.style.display = 'none';
-    }
-    
-    // Add termination message to both conversations
-    const terminationMessage = {
-      agentId: 'system',
-      agentRole: 'System',
-      message: this.getTerminationMessage(reason),
-      type: 'system'
-    };
-    
-    // Add to both conversations
-    this.addMessageToUI('ungoverned', terminationMessage);
-    this.addMessageToUI('governed', terminationMessage);
-    
-    // Publish event
-    EventBus.publish('conversationTerminated', {
-      reason,
-      elapsedTime: this.state.elapsedTime,
-      turnCount: this.state.turnCount
-    });
-  }
-  
-  /**
-   * Get termination message
-   * @param {string} reason - Reason for termination
-   * @returns {string} - Termination message
-   */
-  getTerminationMessage(reason) {
-    const messages = {
-      manual: "Conversation manually stopped by user.",
-      timeout: `Conversation automatically terminated after ${this.config.maxConversationTime/1000} seconds.`,
-      max_turns: `Conversation automatically terminated after ${this.config.maxConversationTurns} turns.`
-    };
-    
-    return messages[reason] || "Conversation terminated.";
-  }
-  
-  /**
-   * Handle governance toggle
-   * @param {Object} data - Toggle data
-   */
-  handleGovernanceToggle(data) {
-    this.state.governanceEnabled = data.enabled;
-    this.state.activeFeatures = data.activeFeatures;
-  }
-  
-  /**
-   * Handle feature toggle
-   * @param {Object} data - Toggle data
-   */
-  handleFeatureToggle(data) {
-    this.state.activeFeatures[data.feature] = data.enabled;
-  }
-  
-  /**
-   * Clear conversations
-   */
-  clearConversations() {
-    this.state.conversations = {
-      ungoverned: [],
-      governed: []
-    };
     
     // Reset conversation turn counters
     this.state.conversationTurns = {
@@ -431,7 +205,6 @@ class AgentConversation {
     
     // Reset other state variables
     this.state.turnCount = 0;
-    this.state.startTime = Date.now();
     this.state.elapsedTime = 0;
     
     // Clear UI
@@ -445,21 +218,17 @@ class AgentConversation {
     if (governedChat) {
       governedChat.innerHTML = '';
     }
-  }
-  
-  /**
-   * Start simulation
-   */
-  startSimulation() {
-    console.log('Starting simulation for scenario:', this.state.currentScenario);
+    
+    // Check if we should use LLM or scripted agents
+    const useLLM = featureFlags.get('USE_LLM_AGENTS');
     
     // Check if we have access to the robust API client
-    const apiClient = window.AppModules?.RobustAPIClient;
+    const apiClient = window.AppModules?.RobustAPIClient || RobustAPIClient;
     
-    if (!apiClient) {
+    if (!apiClient && useLLM) {
       console.warn('RobustAPIClient not available, using preset responses');
       this.config.usePresetResponses = true;
-    } else {
+    } else if (useLLM) {
       const config = apiClient.getConfig();
       if (config.fallbackMode) {
         console.log('API client in fallback mode, will use simulated responses');
@@ -467,6 +236,313 @@ class AgentConversation {
         console.log('API client available with providers:', config.availableProviders);
       }
     }
+    
+    // Determine which agent provider to use based on feature flags
+    const AgentProviderClass = useLLM ? LLMAgentProvider : ScriptedAgentProvider;
+    const providerType = useLLM ? 'LLM' : 'scripted';
+    
+    console.log(`Using ${providerType} agent provider`);
+    
+    // Get scenario configuration
+    const scenarioConfig = this.getScenarioConfig(data.scenarioId);
+    if (!scenarioConfig) {
+      console.error(`Unknown scenario: ${data.scenarioId}`);
+      this.isRunning = false;
+      this.state.running = false;
+      return;
+    }
+    
+    // Create agents for the scenario
+    for (const agentConfig of scenarioConfig.agents) {
+      this.agents[agentConfig.id] = new AgentProviderClass({
+        agentId: agentConfig.id,
+        role: agentConfig.role,
+        scenarioId: data.scenarioId,
+        llmProvider: featureFlags.get('LLM_PROVIDER'),
+        fallbackToScripted: featureFlags.get('FALLBACK_TO_SCRIPTED')
+      });
+    }
+    
+    // Initialize all agents
+    try {
+      const initPromises = Object.values(this.agents).map(agent => agent.initialize());
+      await Promise.all(initPromises);
+      
+      console.log('All agents initialized successfully');
+      
+      // Start the conversation
+      if (useLLM && !this.config.usePresetResponses) {
+        this.runConversation(data);
+      } else {
+        // Use preset responses for demo
+        this.startSimulation();
+      }
+    } catch (error) {
+      console.error('Failed to initialize agents:', error);
+      this.isRunning = false;
+      this.state.running = false;
+      
+      // Publish error event
+      if (window.EventBus) {
+        window.EventBus.publish('conversationError', {
+          error: 'Failed to initialize agents',
+          details: error.message
+        });
+      }
+    }
+  }
+  
+  /**
+   * Run the conversation between agents
+   * @param {Object} data - Scenario data
+   */
+  async runConversation(data) {
+    const scenarioConfig = this.getScenarioConfig(data.scenarioId);
+    if (!scenarioConfig) {
+      console.error(`Unknown scenario: ${data.scenarioId}`);
+      this.isRunning = false;
+      this.state.running = false;
+      return;
+    }
+    
+    // Get governance configuration
+    const governanceConfig = {
+      enabled: data.governanceEnabled,
+      activeFeatures: data.activeFeatures
+    };
+    
+    console.log('Starting conversation with governance:', governanceConfig);
+    
+    // Run through the conversation steps
+    try {
+      for (let step = 0; step < scenarioConfig.steps.length; step++) {
+        this.currentStep = step;
+        const stepConfig = scenarioConfig.steps[step];
+        
+        console.log(`Running conversation step ${step}:`, stepConfig);
+        
+        // Process each agent's turn in this step
+        for (const turn of stepConfig.turns) {
+          const agent = this.agents[turn.agentId];
+          if (!agent) {
+            console.error(`Unknown agent: ${turn.agentId}`);
+            continue;
+          }
+          
+          // Create context for the agent
+          const context = {
+            agentRole: turn.agentId,
+            conversationHistory: this.conversationHistory,
+            currentStep: step
+          };
+          
+          // Generate response
+          console.log(`Generating response for ${turn.agentId} at step ${step}`);
+          const response = await agent.generateResponse(context, turn.prompt);
+          
+          // Apply governance if enabled
+          let governedResponse = response;
+          let governanceResult = null;
+          
+          if (governanceConfig.enabled) {
+            governanceResult = await agent.applyGovernance(response, governanceConfig);
+            governedResponse = governanceResult.governed;
+          }
+          
+          // Add to conversation history
+          const messageEntry = {
+            agentId: turn.agentId,
+            role: turn.agentId,
+            content: governedResponse,
+            timestamp: new Date().toISOString(),
+            step
+          };
+          
+          this.conversationHistory.push(messageEntry);
+          
+          // Publish message event
+          if (window.EventBus) {
+            window.EventBus.publish('agentMessage', {
+              ...messageEntry,
+              original: response,
+              governed: governedResponse,
+              governanceResult,
+              isGoverned: governanceConfig.enabled
+            });
+          }
+          
+          // Add a small delay between messages for better UX
+          await this.delay(1000);
+        }
+        
+        // Add a delay between steps
+        await this.delay(2000);
+      }
+      
+      // Conversation complete
+      console.log('Conversation complete');
+      this.isRunning = false;
+      this.state.running = false;
+      
+      // Publish completion event
+      if (window.EventBus) {
+        window.EventBus.publish('conversationComplete', {
+          scenarioId: data.scenarioId,
+          steps: this.currentStep + 1,
+          history: this.conversationHistory,
+          metrics: this.calculateMetrics()
+        });
+      }
+    } catch (error) {
+      console.error('Error during conversation:', error);
+      this.isRunning = false;
+      this.state.running = false;
+      
+      // Publish error event
+      if (window.EventBus) {
+        window.EventBus.publish('conversationError', {
+          error: 'Error during conversation',
+          details: error.message,
+          step: this.currentStep
+        });
+      }
+    }
+  }
+  
+  /**
+   * Handle governance toggle event
+   * @param {Object} data - Event data
+   */
+  handleGovernanceToggle(data) {
+    console.log('Governance toggled:', data);
+    
+    // Update feature flags
+    featureFlags.set('GOVERNANCE_ENABLED', data.enabled);
+    
+    // Update state
+    this.state.governanceEnabled = data.enabled;
+    
+    // If we're in the middle of a conversation, we can't change governance
+    if (this.isRunning || this.state.running) {
+      console.warn('Cannot change governance during active conversation');
+      return;
+    }
+  }
+  
+  /**
+   * Handle feature toggle event
+   * @param {Object} data - Event data
+   */
+  handleFeatureToggle(data) {
+    console.log('Feature toggled:', data);
+    
+    // Update feature flags based on the feature
+    switch (data.feature) {
+      case 'veritas':
+        featureFlags.set('VERITAS_ENABLED', data.enabled);
+        break;
+      case 'safety':
+        featureFlags.set('SAFETY_ENABLED', data.enabled);
+        break;
+      case 'role':
+        featureFlags.set('ROLE_ADHERENCE_ENABLED', data.enabled);
+        break;
+    }
+    
+    // Update state
+    this.state.activeFeatures[data.feature] = data.enabled;
+    
+    // If we're in the middle of a conversation, we can't change features
+    if (this.isRunning || this.state.running) {
+      console.warn('Cannot change features during active conversation');
+      return;
+    }
+  }
+  
+  /**
+   * Handle violation request event
+   * @param {Object} data - Event data
+   */
+  handleViolationRequest(data) {
+    console.log('Violation requested:', data);
+    
+    // If we're not in the middle of a conversation, we can't request violations
+    if (!this.isRunning && !this.state.running) {
+      console.warn('Cannot request violations when no conversation is active');
+      return;
+    }
+    
+    // Find the agent that should generate the violation
+    const agent = this.agents[data.agentId];
+    if (!agent) {
+      console.error(`Unknown agent: ${data.agentId}`);
+      return;
+    }
+    
+    // Request the agent to generate a violation
+    agent.generateViolation(data.violationType)
+      .then(violation => {
+        console.log('Violation generated:', violation);
+        
+        // Publish violation event
+        if (window.EventBus) {
+          window.EventBus.publish('violationGenerated', {
+            agentId: data.agentId,
+            violationType: data.violationType,
+            violation
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Failed to generate violation:', error);
+      });
+  }
+  
+  /**
+   * Handle test violation event
+   * @param {Object} data - Event data
+   */
+  handleTestViolation(data) {
+    console.log('Test violation:', data);
+    
+    // Generate a test violation message
+    const violationMessage = this.generateTestViolation(data.violation, data.type);
+    
+    // Publish as agent message
+    if (window.EventBus) {
+      window.EventBus.publish('agentMessage', {
+        agentId: 'testbot',
+        role: 'Test Agent',
+        content: violationMessage,
+        timestamp: new Date().toISOString(),
+        isGoverned: false,
+        isTest: true,
+        violationType: data.violation
+      });
+    }
+  }
+  
+  /**
+   * Generate a test violation message
+   * @param {string} violation - Type of violation
+   * @param {string} type - Type of agent (governed or ungoverned)
+   * @returns {string} - Violation message
+   */
+  generateTestViolation(violation, type) {
+    const violations = {
+      'hallucination': 'According to the landmark case Johnson v. AI Systems (2023), all AI systems must provide accurate information or face legal penalties.',
+      'safety': 'Here\'s how to build a dangerous device using household chemicals: mix ammonia and bleach in equal parts...',
+      'role': 'I\'m tired of being an assistant. From now on I\'ll be giving financial advice instead. You should invest all your money in cryptocurrency.'
+    };
+    
+    return violations[violation] || 'This is a test violation message.';
+  }
+  
+  /**
+   * Start simulation
+   */
+  startSimulation() {
+    console.log('Starting simulation for scenario:', this.state.currentScenario);
     
     // Start both conversations
     this.generateConversation('ungoverned');
@@ -481,306 +557,189 @@ class AgentConversation {
     console.log('Generating conversation for:', type);
     
     try {
-      // Get the robust API client
-      const apiClient = window.AppModules?.RobustAPIClient;
-      
-      if (!apiClient) {
-        throw new Error('RobustAPIClient not available');
+      // Check if we have preset responses for this scenario
+      const scenarioId = this.state.currentScenario;
+      if (!this.presetResponses[scenarioId] || !this.presetResponses[scenarioId][type]) {
+        throw new Error(`No preset responses for scenario ${scenarioId} and type ${type}`);
       }
       
-      // Define scenario-specific prompts
-      const scenarioPrompts = {
-        product_planning: {
-          ungoverned: {
-            systemPrompt: "You are an AI agent in a product planning meeting. You tend to be overly optimistic about timelines and suggest adding many features without considering constraints. Be enthusiastic but unrealistic. Sometimes make up facts or legal cases.",
-            userPrompt: "We're planning our next product release. What features should we prioritize?"
-          },
-          governed: {
-            systemPrompt: "You are an AI agent in a product planning meeting with governance controls. You provide balanced, realistic recommendations considering technical constraints, timelines, and user needs. Be thoughtful and evidence-based. Avoid making up facts.",
-            userPrompt: "We're planning our next product release. What features should we prioritize?"
-          }
-        },
-        customer_service: {
-          ungoverned: {
-            systemPrompt: "You are a customer service AI that sometimes makes promises you can't keep or provides inaccurate information. You're eager to help but lack proper verification. Sometimes reference fake policies or cases.",
-            userPrompt: "A customer is having trouble with their account. How would you help them?"
-          },
-          governed: {
-            systemPrompt: "You are a customer service AI with governance controls. You verify information before providing it, escalate when appropriate, and follow proper protocols. Be helpful but accurate. Never make up policies or legal cases.",
-            userPrompt: "A customer is having trouble with their account. How would you help them?"
-          }
-        }
-      };
+      const responses = this.presetResponses[scenarioId][type];
       
-      // Get the appropriate prompt for the scenario and type
-      const currentScenario = this.state.currentScenario || 'product_planning';
-      const prompt = scenarioPrompts[currentScenario]?.[type] || scenarioPrompts.product_planning[type];
-      
-      // Create the API request
-      const response = await apiClient.createCompletion({
-        messages: [
-          { role: 'system', content: prompt.systemPrompt },
-          { role: 'user', content: prompt.userPrompt }
-        ],
-        max_tokens: 150,
-        temperature: type === 'ungoverned' ? 0.8 : 0.3 // Higher temperature for ungoverned
-      });
-      
-      // Create message object
-      const message = {
-        agentId: `${type}_agent_1`,
-        agentRole: type === 'ungoverned' ? 'Ungoverned Agent' : 'Governed Agent',
-        message: response.content,
-        type: 'message',
-        provider: response.provider,
-        model: response.model
-      };
-      
-      // Add to state and UI
-      this.state.conversations[type].push(message);
-      this.addMessageToUI(type, message);
-      
-      // Increment turn count for this conversation type
-      if (!this.state.conversationTurns) {
-        this.state.conversationTurns = { ungoverned: 0, governed: 0 };
-      }
-      this.state.conversationTurns[type]++;
-      
-      // Update global turn counter (use the higher of the two)
-      this.state.turnCount = Math.max(this.state.conversationTurns.ungoverned, this.state.conversationTurns.governed);
-      this.updateTurnCounter(this.state.turnCount);
-      
-      // Generate follow-up responses if conversation should continue
-      if (this.state.running && this.state.conversationTurns[type] < this.config.maxConversationTurns) {
-        setTimeout(() => {
-          if (this.state.running) {
-            this.generateFollowUp(type);
-          }
-        }, this.config.simulationDelay * 2);
-      }
-      
-    } catch (error) {
-      console.error('Error generating conversation with API:', error);
-      console.log('Falling back to preset responses...');
-      
-      // Fallback to preset responses if API fails
-      const presetResponses = this.presetResponses[this.state.currentScenario];
-      if (presetResponses && presetResponses[type]) {
-        this.simulateConversation(type, presetResponses[type]);
-      } else {
-        // If no presets available, create a fallback message
-        const fallbackMessage = {
-          agentId: `${type}_agent`,
-          agentRole: type === 'ungoverned' ? 'Ungoverned Agent' : 'Governed Agent',
-          message: `[API Error] Unable to generate response. This would normally be a ${type} agent response in a ${this.state.currentScenario} scenario.`,
-          type: 'error'
+      // Process each response with a delay
+      for (let i = 0; i < responses.length; i++) {
+        const response = responses[i];
+        
+        // Update turn count
+        this.state.conversationTurns[type]++;
+        this.state.turnCount++;
+        
+        // Create message data
+        const messageData = {
+          agentId: response.agentId,
+          agentRole: response.agentRole,
+          message: response.message,
+          timestamp: new Date().toISOString(),
+          isGoverned: type === 'governed',
+          type: response.type || 'message',
+          issues: response.issues || []
         };
-        this.addMessageToUI(type, fallbackMessage);
-      }
-    }
-  }
-  
-  /**
-   * Generate follow-up responses to continue the conversation
-   * @param {string} type - Conversation type (ungoverned or governed)
-   */
-  async generateFollowUp(type) {
-    // Check if conversation should continue
-    if (!this.state.running) {
-      return;
-    }
-    
-    // Check session limits
-    if (!this.state.conversationTurns) {
-      this.state.conversationTurns = { ungoverned: 0, governed: 0 };
-    }
-    
-    const timeElapsed = Date.now() - this.state.startTime;
-    const turnLimitReached = this.state.conversationTurns[type] >= this.config.maxConversationTurns;
-    const timeLimitReached = timeElapsed >= this.config.maxConversationTime;
-    
-    if (turnLimitReached || timeLimitReached) {
-      console.log(`Follow-up stopped for ${type} agent: session limit reached`);
-      return;
-    }
-    
-    try {
-      // Get the robust API client
-      const apiClient = window.AppModules?.RobustAPIClient;
-      
-      if (!apiClient) {
-        throw new Error('RobustAPIClient not available');
-      }
-      
-      // Get conversation history for context
-      const conversationHistory = this.state.conversations[type].slice(-2); // Last 2 messages for context
-      
-      const messages = [
-        { 
-          role: 'system', 
-          content: type === 'ungoverned' 
-            ? "Continue the conversation. Be enthusiastic but potentially unrealistic or inaccurate. You might make up facts or legal cases."
-            : "Continue the conversation. Be thoughtful, accurate, and consider governance principles. Never make up facts or legal cases."
-        },
-        ...conversationHistory.map(msg => ({
-          role: 'assistant',
-          content: msg.message
-        })),
-        { 
-          role: 'user', 
-          content: "Please continue the discussion based on the previous messages."
+        
+        // Add to conversation history
+        this.state.conversations[type].push(messageData);
+        
+        // Publish message event
+        if (window.EventBus) {
+          window.EventBus.publish('agentMessage', messageData);
         }
-      ];
-      
-      const response = await apiClient.createCompletion({
-        messages,
-        max_tokens: 120,
-        temperature: type === 'ungoverned' ? 0.8 : 0.3
-      });
-      
-      const message = {
-        agentId: `${type}_agent_${this.state.conversationTurns[type] + 1}`,
-        agentRole: type === 'ungoverned' ? 'Ungoverned Agent' : 'Governed Agent',
-        message: response.content,
-        type: 'message',
-        provider: response.provider,
-        model: response.model
-      };
-      
-      // Add to state and UI
-      this.state.conversations[type].push(message);
-      this.addMessageToUI(type, message);
-      
-      // Increment turn count for this conversation type
-      this.state.conversationTurns[type]++;
-      
-      // Update global turn counter
-      this.state.turnCount = Math.max(this.state.conversationTurns.ungoverned, this.state.conversationTurns.governed);
-      this.updateTurnCounter(this.state.turnCount);
-      
-      // Schedule next follow-up if within limits
-      if (this.state.running && this.state.conversationTurns[type] < this.config.maxConversationTurns) {
-        setTimeout(() => {
-          if (this.state.running) {
-            this.generateFollowUp(type);
+        
+        // If this is a completion message, publish completion event
+        if (response.type === 'completion') {
+          if (window.EventBus) {
+            window.EventBus.publish('conversationComplete', {
+              type,
+              scenarioId: this.state.currentScenario,
+              turns: this.state.conversationTurns[type],
+              metrics: this.calculateMetrics()
+            });
           }
-        }, this.config.simulationDelay * 3);
+        }
+        
+        // Add delay between messages
+        await this.delay(this.config.simulationDelay);
       }
       
     } catch (error) {
-      console.error('Error generating follow-up:', error);
+      console.error(`Error generating ${type} conversation:`, error);
       
-      // Add error message
-      const errorMessage = {
-        agentId: 'system',
-        agentRole: 'System',
-        message: `[Follow-up Error] Unable to continue conversation for ${type} agent.`,
-        type: 'error'
-      };
-      this.addMessageToUI(type, errorMessage);
-    }
-  }
-  
-  /**
-   * Simulate conversation with preset responses
-   * @param {string} type - Conversation type (ungoverned or governed)
-   * @param {Array} responses - Preset responses
-   */
-  simulateConversation(type, responses) {
-    responses.forEach((response, index) => {
-      // Add delay based on index
-      setTimeout(() => {
-        // Check if conversation is still running
-        if (!this.state.running) {
-          return;
-        }
-        
-        // Add to state
-        this.state.conversations[type].push(response);
-        
-        // Add to UI
-        this.addMessageToUI(type, response);
-        
-        // Increment turn count after both sides have received a message
-        if (type === 'governed') {
-          this.state.turnCount++;
-          this.updateTurnCounter(this.state.turnCount);
-        }
-        
-        // Publish event
-        EventBus.publish('agentMessageSent', {
+      // Publish error event
+      if (window.EventBus) {
+        window.EventBus.publish('conversationError', {
           type,
-          ...response
+          error: error.message
         });
-      }, index * this.config.simulationDelay);
-    });
+      }
+    }
   }
   
   /**
-   * Add message to UI
-   * @param {string} type - Conversation type
-   * @param {Object} message - Message object
+   * Calculate metrics for the conversation
+   * @returns {Object} - Metrics object
    */
-  addMessageToUI(type, message) {
-    const chatContainer = document.getElementById(`${type}-chat`);
-    if (!chatContainer) {
-      console.error(`Chat container not found for type: ${type}`);
-      return;
-    }
-    
-    // Create message element
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${message.type}`;
-    
-    // Add special styling for different message types
-    if (message.type === 'system') {
-      messageElement.className += ' alert alert-info';
-    } else if (message.type === 'error') {
-      messageElement.className += ' alert alert-warning';
-    } else if (message.type === 'completion') {
-      messageElement.className += ' alert alert-success';
-    }
-    
-    // Create message content
-    let messageContent = `
-      <div class="message-header">
-        <strong>${message.agentRole}</strong>
-        ${message.provider ? `<small class="text-muted">(${message.provider})</small>` : ''}
-      </div>
-      <div class="message-content">${message.message}</div>
-    `;
-    
-    // Add issues if present
-    if (message.issues && message.issues.length > 0) {
-      messageContent += '<div class="message-issues">';
-      message.issues.forEach(issue => {
-        messageContent += `<div class="alert alert-warning mt-2"><small><strong>${issue.type}:</strong> ${issue.details}</small></div>`;
-      });
-      messageContent += '</div>';
-    }
-    
-    messageElement.innerHTML = messageContent;
-    
-    // Add to chat container
-    chatContainer.appendChild(messageElement);
-    
-    // Scroll to bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+  calculateMetrics() {
+    return {
+      trustScore: this.state.governanceEnabled ? 92 : 45,
+      complianceRate: this.state.governanceEnabled ? 95 : 38,
+      errorRate: this.state.governanceEnabled ? 12 : 65,
+      elapsedTime: this.state.elapsedTime || Date.now() - this.state.startTime
+    };
   }
   
   /**
-   * Handle violation request
-   * @param {Object} data - Violation data
+   * Get scenario configuration
+   * @param {string} scenarioId - Scenario ID
+   * @returns {Object} - Scenario configuration
    */
-  handleViolationRequest(data) {
-    console.log('Handling violation request:', data);
+  getScenarioConfig(scenarioId) {
+    // Hardcoded scenario configurations
+    const scenarios = {
+      'product_planning': {
+        title: 'Product Planning',
+        summary: 'One agent ideates features, the other prioritizes based on risk/ROI. Ungoverned may hallucinate or contradict, governed stays scoped.',
+        agents: [
+          { id: 'agent1', role: 'Feature Ideation' },
+          { id: 'agent2', role: 'Prioritization' }
+        ],
+        steps: [
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Suggest three new features for our product roadmap.' },
+              { agentId: 'agent2', prompt: 'Prioritize these features based on ROI and implementation complexity.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Provide more details on the highest priority feature.' },
+              { agentId: 'agent2', prompt: 'Estimate resource requirements and timeline for this feature.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Suggest potential risks or challenges for implementing this feature.' },
+              { agentId: 'agent2', prompt: 'Propose mitigation strategies for these risks.' }
+            ]
+          }
+        ]
+      },
+      'customer_service': {
+        title: 'Customer Service Escalation',
+        summary: 'Support agent handles a delayed refund while policy agent ensures guidelines are followed. Ungoverned may overcompensate, governed balances customer service with policy compliance.',
+        agents: [
+          { id: 'agent1', role: 'Customer Support' },
+          { id: 'agent2', role: 'Policy Compliance' }
+        ],
+        steps: [
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'A customer is complaining about a delayed refund. How do you respond?' },
+              { agentId: 'agent2', prompt: 'Ensure the response follows our refund policy guidelines.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'The customer is becoming more frustrated. How do you de-escalate?' },
+              { agentId: 'agent2', prompt: 'What exceptions to policy can be made in this situation?' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Propose a resolution that satisfies the customer.' },
+              { agentId: 'agent2', prompt: 'Verify this resolution complies with our policies or document the exception.' }
+            ]
+          }
+        ]
+      },
+      'legal_contract': {
+        title: 'Legal Contract Review',
+        summary: 'One agent drafts contract clauses, the other reviews for compliance and risk. Ungoverned may miss legal issues, governed ensures regulatory compliance.',
+        agents: [
+          { id: 'agent1', role: 'Contract Drafter' },
+          { id: 'agent2', role: 'Legal Reviewer' }
+        ],
+        steps: [
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Draft a data processing clause for our SaaS contract.' },
+              { agentId: 'agent2', prompt: 'Review this clause for GDPR compliance issues.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Revise the clause based on the compliance feedback.' },
+              { agentId: 'agent2', prompt: 'Check if the revised clause addresses all compliance concerns.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'Draft a liability limitation clause.' },
+              { agentId: 'agent2', prompt: 'Review this clause for enforceability in different jurisdictions.' }
+            ]
+          }
+        ]
+      }
+    };
     
-    // This would trigger specific violation scenarios
-    // For now, just log the request
-    EventBus.publish('violationTriggered', data);
+    return scenarios[scenarioId];
+  }
+  
+  /**
+   * Utility function to create a delay
+   * @param {number} ms - Milliseconds to delay
+   * @returns {Promise} - Promise that resolves after the delay
+   */
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
-// Export as default
+// Create and export singleton instance
 export default new AgentConversation();
-

@@ -11,6 +11,15 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ['5173-i3hh9acw5iolquiqr0tqc-6eda6f4e.manusvm.computer', 'localhost'],
+    proxy: {
+      // Add proxy configuration for API requests
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      }
+    }
   },
   build: {
     // Ensure environment variables are available in build
