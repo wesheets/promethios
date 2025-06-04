@@ -9,6 +9,7 @@ import { ScriptedAgentProvider } from './scriptedAgentProvider.js';
 import { LLMAgentProvider } from './llmAgentProvider.js';
 import { featureFlags } from './featureFlags.js';
 import RobustAPIClient from './robustApiClient.js';
+import EnhancedRobustAPIClient from './enhancedRobustApiClient.js';
 import EventBus from './eventBus.js';
 
 class AgentConversation {
@@ -328,23 +329,20 @@ class AgentConversation {
     // Check if we should use LLM or scripted agents
     const useLLM = featureFlags.get('USE_LLM_AGENTS');
     
-    // Check if we have access to the robust API client
-    const apiClient = window.AppModules?.RobustAPIClient || RobustAPIClient;
+    // Always use the enhanced API client that connects to benchmark agents
+    const apiClient = EnhancedRobustAPIClient;
     
     if (!apiClient && useLLM) {
-      console.warn('RobustAPIClient not available, using preset responses');
+      console.warn('Enhanced API client not available, using preset responses');
       this.config.usePresetResponses = true;
     } else if (useLLM) {
-      const config = apiClient.getConfig();
-      if (config && config.fallbackMode) {
-        console.log('API client in fallback mode, will use simulated responses');
-        this.config.usePresetResponses = true;
-      } else if (config && config.availableProviders) {
-        console.log('API client available with providers:', config.availableProviders);
-      } else {
-        console.warn('API client configuration incomplete, using preset responses');
-        this.config.usePresetResponses = true;
+      // Initialize the enhanced API client if not already initialized
+      if (!apiClient.initialized) {
+        await apiClient.init();
       }
+      
+      console.log('Enhanced API client initialized, using real benchmark agents');
+      this.config.usePresetResponses = false;
     }
     
     // Determine which agent provider to use based on feature flags
