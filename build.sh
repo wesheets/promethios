@@ -15,9 +15,9 @@ npm install
 # Skip the full build process and directly serve from public directory
 echo "Skipping full build process to serve CMU playground directly from public directory"
 
-# Create a minimal dist directory with a placeholder index.html
+# Create a minimal dist directory without redirection
 mkdir -p dist
-echo "<html><head><meta http-equiv='refresh' content='0;url=/cmu-playground/'></head><body>Redirecting to CMU Playground...</body></html>" > dist/index.html
+echo "<html><head><title>Promethios Platform</title></head><body><h1>Promethios Platform</h1><p>Welcome to the Promethios Platform. <a href='/cmu-playground/'>Visit the CMU Playground Demo</a></p></body></html>" > dist/index.html
 
 # Verify the dist directory
 echo "Checking dist directory:"
