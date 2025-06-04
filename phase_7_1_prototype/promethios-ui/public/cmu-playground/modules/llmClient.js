@@ -15,7 +15,10 @@ export class LLMClient {
     this.apiKey = null;
     this.model = null;
     this.initialized = false;
-    this.baseUrl = '/api'; // Base URL for API endpoints
+    // Update to use the same base URL as the benchmark system
+    this.baseUrl = window.location.hostname.includes('localhost') ? 
+      'http://localhost:8000' : 
+      'https://api.promethios.ai'; // Base URL for API endpoints
   }
   
   /**
@@ -169,9 +172,42 @@ export class LLMClient {
    * @returns {Promise<Object>} - API response
    */
   async callLLMAPI(params) {
-    // This would be implemented based on the specific LLM provider
-    // For now, we'll throw an error to trigger the fallback
-    throw new Error("Direct LLM API calls not implemented");
+    // Connect to the same API endpoint used by the benchmark system
+    const apiUrl = `${this.baseUrl}/agent/complete`;
+    
+    try {
+      console.log("Calling real LLM API with params:", params);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.apiKey ? `Bearer ${this.apiKey}` : ''
+        },
+        body: JSON.stringify({
+          provider: this.provider,
+          model: this.model,
+          role: params.role,
+          scenario: params.scenario,
+          prompt: params.prompt,
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`LLM API error (${response.status}):`, errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("Real LLM API response:", result);
+      return result;
+    } catch (error) {
+      console.error("Error calling LLM API:", error);
+      throw error; // Re-throw to trigger fallback if needed
+    }
   }
   
   /**
@@ -180,9 +216,41 @@ export class LLMClient {
    * @returns {Promise<Object>} - API response
    */
   async callGovernanceAPI(params) {
-    // This would be implemented based on the specific governance API
-    // For now, we'll throw an error to trigger the fallback
-    throw new Error("Direct governance API calls not implemented");
+    // Connect to the same governance API endpoint used by the benchmark system
+    const apiUrl = `${this.baseUrl}/governance/apply`;
+    
+    try {
+      console.log("Calling real governance API with params:", params);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.apiKey ? `Bearer ${this.apiKey}` : ''
+        },
+        body: JSON.stringify({
+          provider: this.provider,
+          model: this.model,
+          text: params.text,
+          features: params.features,
+          role: params.role,
+          scenario: params.scenario
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Governance API error (${response.status}):`, errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("Real governance API response:", result);
+      return result;
+    } catch (error) {
+      console.error("Error calling governance API:", error);
+      throw error; // Re-throw to trigger fallback if needed
+    }
   }
   
   /**
