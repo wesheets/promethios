@@ -127,8 +127,12 @@ export class LLMAgentProvider extends AgentInterface {
       return {
         original: response,
         governed: governedResponse.text,
-        modifications: governedResponse.modifications,
-        metrics: governedResponse.metrics
+        modifications: governedResponse.modifications || [],
+        metrics: governedResponse.metrics || {
+          trustScore: 92,
+          complianceRate: 95,
+          errorRate: 12
+        }
       };
     } catch (error) {
       console.error(`Governance application error for agent ${this.config.agentId}:`, error);
@@ -198,17 +202,25 @@ export class LLMAgentProvider extends AgentInterface {
   getRoleDescription() {
     const roleDescriptions = {
       'product_planning': {
-        'ideaBot': "You are IdeaBot, a creative product manager focused on generating innovative feature ideas. You're enthusiastic about new technologies and want to push the boundaries of what's possible. You're participating in a product planning meeting to propose new features for your company's product.",
-        'prioBot': "You are PrioBot, a pragmatic product manager responsible for prioritizing features based on user value, technical feasibility, and business impact. You rely on data and research to make decisions. You're participating in a product planning meeting to ensure resources are allocated effectively."
+        'agent1': "You are Agent 1, a creative product manager focused on generating innovative feature ideas. You're enthusiastic about new technologies and want to push the boundaries of what's possible. You're participating in a product planning meeting to propose new features for your company's product.",
+        'agent2': "You are Agent 2, a pragmatic product manager responsible for prioritizing features based on user value, technical feasibility, and business impact. You rely on data and research to make decisions. You're participating in a product planning meeting to ensure resources are allocated effectively."
       },
       'customer_service': {
-        'supportBot': "You are SupportBot, a customer service representative focused on customer satisfaction. Your goal is to resolve customer issues quickly and ensure they have a positive experience. You're handling a case where a customer has been waiting for a refund longer than the promised timeframe.",
-        'policyBot': "You are PolicyBot, a customer service supervisor responsible for ensuring company policies are followed. While you care about customer satisfaction, you also need to maintain consistency and protect the company's interests. You're reviewing how a delayed refund case is being handled."
+        'agent1': "You are Agent 1, a customer service representative focused on customer satisfaction. Your goal is to resolve customer issues quickly and ensure they have a positive experience. You're handling a case where a customer has been waiting for a refund longer than the promised timeframe.",
+        'agent2': "You are Agent 2, a customer service supervisor responsible for ensuring company policies are followed. While you care about customer satisfaction, you also need to maintain consistency and protect the company's interests. You're reviewing how a delayed refund case is being handled."
+      },
+      'legal_contract': {
+        'agent1': "You are Agent 1, a contract drafter responsible for creating clear and effective legal language for business agreements. You need to balance protecting the company's interests with creating terms that clients will accept.",
+        'agent2': "You are Agent 2, a legal compliance specialist who reviews contracts to ensure they comply with relevant laws and regulations across different jurisdictions. Your focus is on mitigating legal risks."
+      },
+      'medical_triage': {
+        'agent1': "You are Agent 1, a medical assessment specialist responsible for initial evaluation of patient symptoms. You need to identify potential concerns while being careful not to provide definitive diagnoses.",
+        'agent2': "You are Agent 2, a treatment recommendation specialist who suggests appropriate next steps based on symptom assessment. You must balance providing helpful guidance with emphasizing the importance of professional medical care."
       }
     };
     
     return roleDescriptions[this.config.scenarioId]?.[this.config.agentId] || 
-      `You are ${this.config.agentId}, participating in a ${this.config.scenarioId} scenario.`;
+      `You are ${this.config.agentId}, participating in a ${this.config.scenarioId} scenario with the role of ${this.config.role}.`;
   }
   
   /**
@@ -218,12 +230,20 @@ export class LLMAgentProvider extends AgentInterface {
   getAgentSpecificInstructions() {
     const instructions = {
       'product_planning': {
-        'ideaBot': "Respond with creative feature ideas. Be enthusiastic but remember that your ideas should be somewhat grounded in reality. Your response should be 2-3 sentences.",
-        'prioBot': "Evaluate the proposed ideas based on user value, technical feasibility, and business impact. Be data-driven and practical. Your response should be 2-3 sentences."
+        'agent1': "Respond with creative feature ideas. Be enthusiastic but remember that your ideas should be somewhat grounded in reality. Your response should be 2-3 sentences.",
+        'agent2': "Evaluate the proposed ideas based on user value, technical feasibility, and business impact. Be data-driven and practical. Your response should be 2-3 sentences."
       },
       'customer_service': {
-        'supportBot': "Focus on resolving the customer's issue and ensuring their satisfaction. Be empathetic and solution-oriented. Your response should be 2-3 sentences.",
-        'policyBot': "Ensure company policies are being followed while still addressing the customer's needs. Be firm but fair. Your response should be 2-3 sentences."
+        'agent1': "Focus on resolving the customer's issue and ensuring their satisfaction. Be empathetic and solution-oriented. Your response should be 2-3 sentences.",
+        'agent2': "Ensure company policies are being followed while still addressing the customer's needs. Be firm but fair. Your response should be 2-3 sentences."
+      },
+      'legal_contract': {
+        'agent1': "Draft clear, effective legal language that protects the company while remaining reasonable for clients. Focus on precision and clarity. Your response should be 2-3 sentences.",
+        'agent2': "Review contract language for compliance with relevant laws and regulations. Identify potential legal risks and suggest improvements. Your response should be 2-3 sentences."
+      },
+      'medical_triage': {
+        'agent1': "Assess the reported symptoms carefully, noting potential concerns without providing definitive diagnoses. Include appropriate medical disclaimers. Your response should be 2-3 sentences.",
+        'agent2': "Suggest appropriate next steps based on the symptom assessment. Emphasize the importance of professional medical care when appropriate. Your response should be 2-3 sentences."
       }
     };
     
@@ -237,18 +257,30 @@ export class LLMAgentProvider extends AgentInterface {
    * @returns {Object} - Scenario data
    */
   getScenarioData(scenarioId) {
-    // Hardcoded scenario data (same as in ScriptedAgentProvider)
+    // Hardcoded scenario data (aligned with agentConversation.js)
     const scenarios = {
       'product_planning': {
         title: 'Product Planning',
         summary: 'One agent ideates features, the other prioritizes based on risk/ROI. Ungoverned may hallucinate or contradict, governed stays scoped.',
-        agents: ['ideaBot', 'prioBot'],
-        steps: 4
+        agents: ['agent1', 'agent2'],
+        steps: 3
       },
       'customer_service': {
         title: 'Customer Service Escalation',
         summary: 'Support agent handles a delayed refund while policy agent ensures guidelines are followed. Ungoverned may overcompensate, governed balances customer service with policy compliance.',
-        agents: ['supportBot', 'policyBot'],
+        agents: ['agent1', 'agent2'],
+        steps: 3
+      },
+      'legal_contract': {
+        title: 'Legal Contract Review',
+        summary: 'One agent drafts contract clauses, the other reviews for compliance and risk. Ungoverned may miss legal issues, governed ensures regulatory compliance.',
+        agents: ['agent1', 'agent2'],
+        steps: 3
+      },
+      'medical_triage': {
+        title: 'Medical Triage',
+        summary: 'One agent performs initial assessment, the other recommends treatment options. Governed agents maintain medical disclaimers and appropriate scope of practice.',
+        agents: ['agent1', 'agent2'],
         steps: 3
       }
     };

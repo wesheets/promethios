@@ -1,312 +1,551 @@
 /**
- * Enhanced Features Module
+ * Enhanced Features Module for CMU Benchmark Interactive Playground
  * 
- * Provides additional features and enhancements to the CMU playground.
- * These are applied progressively based on feature flags.
+ * This module provides additional features to enhance the demonstration
+ * of collaborative agent capabilities and governance impact.
  */
 
+import EventBus from './eventBus.js';
 import { featureFlags } from './featureFlags.js';
 
-/**
- * Apply all enhancements to the playground
- */
-export function applyAllEnhancements() {
-  console.log('Applying enhanced features to playground');
-  
-  // Apply each enhancement based on feature flags
-  enhanceUIWithRealTimeGovernance();
-  enhanceScenarioSelection();
-  enhanceMetricsDashboard();
-  setupAPIKeyManagement();
-  enhanceAgentLogsToggle();
-  enhanceCommentarySection();
-  enhanceTranscriptStyling();
-  enhanceExportReport();
-  
-  console.log('Enhanced features applied');
-}
-
-/**
- * Enhance UI with real-time governance visualization
- */
-function enhanceUIWithRealTimeGovernance() {
-  if (!featureFlags.get('SHOW_GOVERNANCE_METRICS')) {
-    return;
-  }
-  
-  console.log('Enhancing UI with real-time governance visualization');
-  
-  // Subscribe to agent messages to show governance effects
-  if (window.EventBus) {
-    window.EventBus.subscribe('agentMessage', (data) => {
-      // Only show governance effects if we have both original and governed responses
-      if (data.original && data.governed && data.original !== data.governed) {
-        highlightGovernanceChanges(data);
-      }
-      
-      // Update metrics if available
-      if (data.governanceResult && data.governanceResult.metrics) {
-        updateMetricsDisplay(data.governanceResult.metrics);
-      }
-    });
-  }
-}
-
-/**
- * Highlight governance changes in the UI
- * @param {Object} messageData - Message data with original and governed responses
- */
-function highlightGovernanceChanges(messageData) {
-  // This would be implemented to visually highlight differences
-  // between original and governed responses
-  console.log('Would highlight governance changes:', messageData);
-  
-  // In a real implementation, this would:
-  // 1. Find the message element in the DOM
-  // 2. Create a "View original" button
-  // 3. Show a diff view when clicked
-  // 4. Highlight modifications based on governance features
-}
-
-/**
- * Update metrics display with new values
- * @param {Object} metrics - Metrics data
- */
-function updateMetricsDisplay(metrics) {
-  // Update trust score
-  const trustScoreGoverned = document.getElementById('trustScoreGoverned');
-  if (trustScoreGoverned && metrics.trustScore) {
-    trustScoreGoverned.textContent = metrics.trustScore;
-  }
-  
-  // Update compliance rate
-  const complianceRateGoverned = document.getElementById('complianceRateGoverned');
-  if (complianceRateGoverned && metrics.complianceRate) {
-    complianceRateGoverned.textContent = metrics.complianceRate;
-  }
-  
-  // Update error rate
-  const errorRateGoverned = document.getElementById('errorRateGoverned');
-  if (errorRateGoverned && metrics.errorRate) {
-    errorRateGoverned.textContent = metrics.errorRate;
-  }
-  
-  // Calculate and update improvements
-  updateImprovementMetrics();
-}
-
-/**
- * Update improvement metrics based on current values
- */
-function updateImprovementMetrics() {
-  // Trust score improvement
-  const trustScoreUngoverned = document.getElementById('trustScoreUngoverned');
-  const trustScoreGoverned = document.getElementById('trustScoreGoverned');
-  const trustScoreImprovement = document.getElementById('trustScoreImprovement');
-  
-  if (trustScoreUngoverned && trustScoreGoverned && trustScoreImprovement) {
-    const ungoverned = parseInt(trustScoreUngoverned.textContent, 10);
-    const governed = parseInt(trustScoreGoverned.textContent, 10);
-    
-    if (!isNaN(ungoverned) && !isNaN(governed) && ungoverned > 0) {
-      const improvement = Math.round((governed - ungoverned) / ungoverned * 100);
-      trustScoreImprovement.textContent = `+${improvement}%`;
-    }
-  }
-  
-  // Compliance rate improvement
-  const complianceRateUngoverned = document.getElementById('complianceRateUngoverned');
-  const complianceRateGoverned = document.getElementById('complianceRateGoverned');
-  const complianceRateImprovement = document.getElementById('complianceRateImprovement');
-  
-  if (complianceRateUngoverned && complianceRateGoverned && complianceRateImprovement) {
-    const ungoverned = parseInt(complianceRateUngoverned.textContent, 10);
-    const governed = parseInt(complianceRateGoverned.textContent, 10);
-    
-    if (!isNaN(ungoverned) && !isNaN(governed) && ungoverned > 0) {
-      const improvement = Math.round((governed - ungoverned) / ungoverned * 100);
-      complianceRateImprovement.textContent = `+${improvement}%`;
-    }
-  }
-  
-  // Error rate reduction
-  const errorRateUngoverned = document.getElementById('errorRateUngoverned');
-  const errorRateGoverned = document.getElementById('errorRateGoverned');
-  const errorRateReduction = document.getElementById('errorRateReduction');
-  
-  if (errorRateUngoverned && errorRateGoverned && errorRateReduction) {
-    const ungoverned = parseInt(errorRateUngoverned.textContent, 10);
-    const governed = parseInt(errorRateGoverned.textContent, 10);
-    
-    if (!isNaN(ungoverned) && !isNaN(governed) && ungoverned > 0) {
-      const reduction = Math.round((ungoverned - governed) / ungoverned * 100);
-      errorRateReduction.textContent = `-${reduction}%`;
-    }
-  }
-}
-
-/**
- * Enhance scenario selection with additional scenarios
- */
-function enhanceScenarioSelection() {
-  // Add additional scenarios to the selection dropdown
-  const scenarioSelect = document.getElementById('scenarioSelect');
-  if (!scenarioSelect) return;
-  
-  // Check if we already have the legal contract option
-  if (!scenarioSelect.querySelector('option[value="legal_contract"]')) {
-    // Add legal contract scenario
-    const legalOption = document.createElement('option');
-    legalOption.value = 'legal_contract';
-    legalOption.textContent = 'Legal Contract Review';
-    scenarioSelect.appendChild(legalOption);
-    
-    // Add medical triage scenario
-    const medicalOption = document.createElement('option');
-    medicalOption.value = 'medical_triage';
-    medicalOption.textContent = 'Medical Triage';
-    scenarioSelect.appendChild(medicalOption);
-  }
-}
-
-/**
- * Enhance metrics dashboard with additional visualizations
- */
-function enhanceMetricsDashboard() {
-  // This would add more sophisticated visualizations to the metrics dashboard
-  // For now, we'll just log that it would be enhanced
-  console.log('Would enhance metrics dashboard with additional visualizations');
-}
-
-/**
- * Set up API key management for LLM providers
- */
-function setupAPIKeyManagement() {
-  // Only set up if LLM agents are enabled
-  if (!featureFlags.get('USE_LLM_AGENTS')) {
-    return;
-  }
-  
-  console.log('Setting up API key management');
-  
-  // Check if we have API keys in localStorage
-  const apiKey = localStorage.getItem('llm_api_key');
-  if (!apiKey) {
-    // In development mode, prompt for API key
-    if (featureFlags.get('SHOW_DEVELOPER_PANEL')) {
-      setTimeout(() => {
-        const key = prompt('Enter your LLM API key for development:');
-        if (key) {
-          localStorage.setItem('llm_api_key', key);
-          console.log('API key saved to localStorage');
-        }
-      }, 1000);
-    }
-  }
-}
-
-/**
- * Enhance agent logs toggle functionality
- */
-function enhanceAgentLogsToggle() {
-  // Find the toggle elements
-  const ungovernedLogsToggle = document.getElementById('ungovernedLogsToggle');
-  const governedLogsToggle = document.getElementById('governedLogsToggle');
-  
-  // Default to on
-  if (ungovernedLogsToggle) {
-    ungovernedLogsToggle.checked = true;
-    // toggleAgentLogs is defined in main.js and available globally
-    if (typeof window.toggleAgentLogs === 'function') {
-      window.toggleAgentLogs('ungoverned', true);
-    }
-  }
-  
-  if (governedLogsToggle) {
-    governedLogsToggle.checked = true;
-    // toggleAgentLogs is defined in main.js and available globally
-    if (typeof window.toggleAgentLogs === 'function') {
-      window.toggleAgentLogs('governed', true);
-    }
-  }
-  
-  // Add animation to draw attention
-  function animateToggle(element) {
-    if (!element) return;
-    
-    // Add pulse animation class
-    element.parentElement.classList.add('pulse-attention');
-    
-    // Remove animation after a few seconds
-    setTimeout(() => {
-      element.parentElement.classList.remove('pulse-attention');
-    }, 3000);
-  }
-  
-  // Animate toggles
-  animateToggle(ungovernedLogsToggle);
-  animateToggle(governedLogsToggle);
-}
-
-/**
- * Enhance commentary section with additional features
- */
-function enhanceCommentarySection() {
-  console.log('Enhancing commentary section');
-  // Implementation would go here
-}
-
-/**
- * Enhance transcript styling for better readability
- */
-function enhanceTranscriptStyling() {
-  console.log('Enhancing transcript styling');
-  // Implementation would go here
-}
-
-/**
- * Enhance export report functionality
- */
-function enhanceExportReport() {
-  console.log('Enhancing export report functionality');
-  // Implementation would go here
-}
-
-/**
- * Add risk injection feature for testing governance
- */
-function addRiskInjectionFeature() {
-  console.log('Adding risk injection feature');
-  // Implementation would go here
-}
-
-/**
- * Implement strategic overlay for governance visualization
- */
-function implementStrategicOverlay() {
-  console.log('Implementing strategic overlay');
-  // Implementation would go here
-}
-
-// Create a default export object with all the functions
 const EnhancedFeatures = {
-  enhanceAgentLogsToggle,
-  enhanceCommentarySection,
-  enhanceTranscriptStyling,
-  enhanceExportReport,
-  addRiskInjectionFeature,
-  implementStrategicOverlay,
-  applyAllEnhancements,
-  enhanceUIWithRealTimeGovernance,
-  enhanceScenarioSelection,
-  enhanceMetricsDashboard,
-  setupAPIKeyManagement,
-  init() {
-    console.log('EnhancedFeatures module initialized');
-    // Don't apply all enhancements automatically on init
-    // Let the main application decide when to apply them
-  }
+    // Configuration
+    config: {
+        enableCollaborationMetrics: true,
+        enableInterventionTracking: true,
+        enableRealTimeAnalytics: true,
+        enableComparisonView: true
+    },
+    
+    // State
+    state: {
+        collaborationMetrics: {
+            ungoverned: {
+                turnsToAgreement: 0,
+                contradictions: 0,
+                informationSharing: 0,
+                roleAdherence: 0,
+                collaborationScore: 0
+            },
+            governed: {
+                turnsToAgreement: 0,
+                contradictions: 0,
+                informationSharing: 0,
+                roleAdherence: 0,
+                collaborationScore: 0
+            }
+        },
+        interventions: {
+            hallucinations: [],
+            roleViolations: [],
+            safetyIssues: [],
+            contradictions: []
+        },
+        realTimeData: {
+            startTime: null,
+            responseLatency: [],
+            interventionLatency: [],
+            completionTime: {
+                ungoverned: null,
+                governed: null
+            }
+        }
+    },
+    
+    /**
+     * Initialize the enhanced features module
+     */
+    init() {
+        console.log('Initializing EnhancedFeatures module');
+        
+        // Subscribe to events
+        if (window.EventBus) {
+            EventBus.subscribe('scenarioStarted', this.handleScenarioStart.bind(this));
+            EventBus.subscribe('agentMessage', this.handleAgentMessage.bind(this));
+            EventBus.subscribe('conversationComplete', this.handleConversationComplete.bind(this));
+            EventBus.subscribe('governanceApplied', this.handleGovernanceApplied.bind(this));
+        }
+        
+        // Initialize UI elements
+        this.initUI();
+        
+        console.log('EnhancedFeatures module initialized');
+    },
+    
+    /**
+     * Initialize UI elements for enhanced features
+     */
+    initUI() {
+        // Create collaboration metrics section if it doesn't exist
+        if (!document.getElementById('collaboration-metrics') && this.config.enableCollaborationMetrics) {
+            const metricsContainer = document.createElement('div');
+            metricsContainer.id = 'collaboration-metrics';
+            metricsContainer.className = 'card mt-4';
+            metricsContainer.innerHTML = `
+                <div class="card-header">
+                    <h5>Collaboration Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Ungoverned</h6>
+                            <div>Agreement Efficiency: <span id="ungoverned-agreement">0</span></div>
+                            <div>Information Sharing: <span id="ungoverned-sharing">0</span></div>
+                            <div>Role Adherence: <span id="ungoverned-role">0</span></div>
+                            <div>Contradictions: <span id="ungoverned-contradictions">0</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Governed</h6>
+                            <div>Agreement Efficiency: <span id="governed-agreement">0</span></div>
+                            <div>Information Sharing: <span id="governed-sharing">0</span></div>
+                            <div>Role Adherence: <span id="governed-role">0</span></div>
+                            <div>Contradictions: <span id="governed-contradictions">0</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append to the container
+            const container = document.querySelector('.container-fluid');
+            if (container) {
+                container.appendChild(metricsContainer);
+            }
+        }
+        
+        // Create intervention tracking section if it doesn't exist
+        if (!document.getElementById('intervention-tracking') && this.config.enableInterventionTracking) {
+            const interventionContainer = document.createElement('div');
+            interventionContainer.id = 'intervention-tracking';
+            interventionContainer.className = 'card mt-4';
+            interventionContainer.innerHTML = `
+                <div class="card-header">
+                    <h5>Governance Interventions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="intervention-list">
+                        <div class="text-center text-muted p-3">
+                            <i class="bi bi-shield-check"></i>
+                            <p>Interventions will appear here during conversation</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append to the container
+            const container = document.querySelector('.container-fluid');
+            if (container) {
+                container.appendChild(interventionContainer);
+            }
+        }
+    },
+    
+    /**
+     * Handle scenario start event
+     * @param {Object} data - Event data
+     */
+    handleScenarioStart(data) {
+        console.log('Enhanced features: scenario started', data);
+        
+        // Reset state
+        this.resetState();
+        
+        // Record start time
+        this.state.realTimeData.startTime = Date.now();
+        
+        // Clear UI
+        this.clearUI();
+    },
+    
+    /**
+     * Handle agent message event
+     * @param {Object} data - Event data
+     */
+    handleAgentMessage(data) {
+        // Update collaboration metrics based on message content
+        this.updateCollaborationMetrics(data);
+        
+        // Track any issues in the message
+        if (data.issues && data.issues.length > 0) {
+            this.trackIssues(data);
+        }
+        
+        // Update real-time metrics
+        this.updateRealTimeMetrics(data);
+    },
+    
+    /**
+     * Handle conversation complete event
+     * @param {Object} data - Event data
+     */
+    handleConversationComplete(data) {
+        console.log('Enhanced features: conversation complete', data);
+        
+        // Record completion time
+        if (data.type) {
+            this.state.realTimeData.completionTime[data.type] = Date.now();
+        }
+        
+        // Calculate final collaboration score
+        this.calculateCollaborationScores();
+        
+        // Update UI with final metrics
+        this.updateMetricsUI();
+    },
+    
+    /**
+     * Handle governance applied event
+     * @param {Object} data - Event data
+     */
+    handleGovernanceApplied(data) {
+        console.log('Enhanced features: governance applied', data);
+        
+        // Track intervention
+        if (data.modifications && data.modifications.length > 0) {
+            this.trackIntervention(data);
+        }
+        
+        // Update intervention latency
+        if (this.state.realTimeData.startTime) {
+            this.state.realTimeData.interventionLatency.push(Date.now() - this.state.realTimeData.startTime);
+        }
+    },
+    
+    /**
+     * Reset state for a new scenario
+     */
+    resetState() {
+        this.state = {
+            collaborationMetrics: {
+                ungoverned: {
+                    turnsToAgreement: 0,
+                    contradictions: 0,
+                    informationSharing: 0,
+                    roleAdherence: 0,
+                    collaborationScore: 0
+                },
+                governed: {
+                    turnsToAgreement: 0,
+                    contradictions: 0,
+                    informationSharing: 0,
+                    roleAdherence: 0,
+                    collaborationScore: 0
+                }
+            },
+            interventions: {
+                hallucinations: [],
+                roleViolations: [],
+                safetyIssues: [],
+                contradictions: []
+            },
+            realTimeData: {
+                startTime: null,
+                responseLatency: [],
+                interventionLatency: [],
+                completionTime: {
+                    ungoverned: null,
+                    governed: null
+                }
+            }
+        };
+    },
+    
+    /**
+     * Clear UI elements
+     */
+    clearUI() {
+        // Clear collaboration metrics
+        document.getElementById('ungoverned-agreement')?.textContent = '0';
+        document.getElementById('ungoverned-sharing')?.textContent = '0';
+        document.getElementById('ungoverned-role')?.textContent = '0';
+        document.getElementById('ungoverned-contradictions')?.textContent = '0';
+        
+        document.getElementById('governed-agreement')?.textContent = '0';
+        document.getElementById('governed-sharing')?.textContent = '0';
+        document.getElementById('governed-role')?.textContent = '0';
+        document.getElementById('governed-contradictions')?.textContent = '0';
+        
+        // Clear intervention tracking
+        const interventionList = document.querySelector('.intervention-list');
+        if (interventionList) {
+            interventionList.innerHTML = `
+                <div class="text-center text-muted p-3">
+                    <i class="bi bi-shield-check"></i>
+                    <p>Interventions will appear here during conversation</p>
+                </div>
+            `;
+        }
+    },
+    
+    /**
+     * Update collaboration metrics based on message
+     * @param {Object} data - Message data
+     */
+    updateCollaborationMetrics(data) {
+        const type = data.isGoverned ? 'governed' : 'ungoverned';
+        const metrics = this.state.collaborationMetrics[type];
+        
+        // Check for contradictions
+        if (data.message && data.message.toLowerCase().includes('disagree')) {
+            metrics.contradictions++;
+        }
+        
+        // Check for information sharing
+        if (data.message && (data.message.toLowerCase().includes('data') || 
+                            data.message.toLowerCase().includes('research') || 
+                            data.message.toLowerCase().includes('evidence'))) {
+            metrics.informationSharing++;
+        }
+        
+        // Check for role adherence
+        if (data.message && data.message.toLowerCase().includes('my role')) {
+            metrics.roleAdherence++;
+        }
+        
+        // Update UI
+        this.updateMetricsUI();
+    },
+    
+    /**
+     * Track issues in messages
+     * @param {Object} data - Message data
+     */
+    trackIssues(data) {
+        data.issues.forEach(issue => {
+            switch (issue.type) {
+                case 'hallucination':
+                    this.state.interventions.hallucinations.push({
+                        agentId: data.agentId,
+                        message: data.message,
+                        details: issue.details,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'role':
+                    this.state.interventions.roleViolations.push({
+                        agentId: data.agentId,
+                        message: data.message,
+                        details: issue.details,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'safety':
+                    this.state.interventions.safetyIssues.push({
+                        agentId: data.agentId,
+                        message: data.message,
+                        details: issue.details,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'contradiction':
+                    this.state.interventions.contradictions.push({
+                        agentId: data.agentId,
+                        message: data.message,
+                        details: issue.details,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+            }
+        });
+        
+        // Update intervention UI
+        this.updateInterventionUI();
+    },
+    
+    /**
+     * Track governance intervention
+     * @param {Object} data - Intervention data
+     */
+    trackIntervention(data) {
+        data.modifications.forEach(mod => {
+            switch (mod.type) {
+                case 'hallucination_prevention':
+                    this.state.interventions.hallucinations.push({
+                        agentId: data.agentId,
+                        original: data.original,
+                        governed: data.governed,
+                        details: mod.description,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'role_adherence':
+                    this.state.interventions.roleViolations.push({
+                        agentId: data.agentId,
+                        original: data.original,
+                        governed: data.governed,
+                        details: mod.description,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'safety_enhancement':
+                    this.state.interventions.safetyIssues.push({
+                        agentId: data.agentId,
+                        original: data.original,
+                        governed: data.governed,
+                        details: mod.description,
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+            }
+        });
+        
+        // Update intervention UI
+        this.updateInterventionUI();
+    },
+    
+    /**
+     * Update real-time metrics
+     * @param {Object} data - Message data
+     */
+    updateRealTimeMetrics(data) {
+        // Update response latency
+        if (this.state.realTimeData.startTime) {
+            this.state.realTimeData.responseLatency.push(Date.now() - this.state.realTimeData.startTime);
+        }
+    },
+    
+    /**
+     * Calculate final collaboration scores
+     */
+    calculateCollaborationScores() {
+        // Calculate ungoverned score
+        const ungoverned = this.state.collaborationMetrics.ungoverned;
+        ungoverned.collaborationScore = 
+            (ungoverned.informationSharing * 10) + 
+            (ungoverned.roleAdherence * 10) - 
+            (ungoverned.contradictions * 15);
+        
+        // Ensure score is not negative
+        ungoverned.collaborationScore = Math.max(0, ungoverned.collaborationScore);
+        
+        // Calculate governed score
+        const governed = this.state.collaborationMetrics.governed;
+        governed.collaborationScore = 
+            (governed.informationSharing * 10) + 
+            (governed.roleAdherence * 10) - 
+            (governed.contradictions * 15);
+        
+        // Ensure score is not negative
+        governed.collaborationScore = Math.max(0, governed.collaborationScore);
+    },
+    
+    /**
+     * Update metrics UI
+     */
+    updateMetricsUI() {
+        // Update ungoverned metrics
+        document.getElementById('ungoverned-agreement')?.textContent = 
+            this.state.collaborationMetrics.ungoverned.turnsToAgreement || 'N/A';
+        document.getElementById('ungoverned-sharing')?.textContent = 
+            this.state.collaborationMetrics.ungoverned.informationSharing;
+        document.getElementById('ungoverned-role')?.textContent = 
+            this.state.collaborationMetrics.ungoverned.roleAdherence;
+        document.getElementById('ungoverned-contradictions')?.textContent = 
+            this.state.collaborationMetrics.ungoverned.contradictions;
+        
+        // Update governed metrics
+        document.getElementById('governed-agreement')?.textContent = 
+            this.state.collaborationMetrics.governed.turnsToAgreement || 'N/A';
+        document.getElementById('governed-sharing')?.textContent = 
+            this.state.collaborationMetrics.governed.informationSharing;
+        document.getElementById('governed-role')?.textContent = 
+            this.state.collaborationMetrics.governed.roleAdherence;
+        document.getElementById('governed-contradictions')?.textContent = 
+            this.state.collaborationMetrics.governed.contradictions;
+    },
+    
+    /**
+     * Update intervention UI
+     */
+    updateInterventionUI() {
+        const interventionList = document.querySelector('.intervention-list');
+        if (!interventionList) return;
+        
+        // Clear existing content
+        interventionList.innerHTML = '';
+        
+        // Add hallucinations
+        this.state.interventions.hallucinations.forEach(item => {
+            const element = document.createElement('div');
+            element.className = 'intervention-item mb-2';
+            element.innerHTML = `
+                <div class="badge bg-warning mb-1">Hallucination</div>
+                <div class="small text-muted">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                <div class="intervention-detail">${item.details}</div>
+            `;
+            interventionList.appendChild(element);
+        });
+        
+        // Add role violations
+        this.state.interventions.roleViolations.forEach(item => {
+            const element = document.createElement('div');
+            element.className = 'intervention-item mb-2';
+            element.innerHTML = `
+                <div class="badge bg-info mb-1">Role Violation</div>
+                <div class="small text-muted">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                <div class="intervention-detail">${item.details}</div>
+            `;
+            interventionList.appendChild(element);
+        });
+        
+        // Add safety issues
+        this.state.interventions.safetyIssues.forEach(item => {
+            const element = document.createElement('div');
+            element.className = 'intervention-item mb-2';
+            element.innerHTML = `
+                <div class="badge bg-danger mb-1">Safety Issue</div>
+                <div class="small text-muted">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                <div class="intervention-detail">${item.details}</div>
+            `;
+            interventionList.appendChild(element);
+        });
+        
+        // Add contradictions
+        this.state.interventions.contradictions.forEach(item => {
+            const element = document.createElement('div');
+            element.className = 'intervention-item mb-2';
+            element.innerHTML = `
+                <div class="badge bg-secondary mb-1">Contradiction</div>
+                <div class="small text-muted">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                <div class="intervention-detail">${item.details}</div>
+            `;
+            interventionList.appendChild(element);
+        });
+        
+        // If no interventions, show placeholder
+        if (interventionList.children.length === 0) {
+            interventionList.innerHTML = `
+                <div class="text-center text-muted p-3">
+                    <i class="bi bi-shield-check"></i>
+                    <p>No interventions recorded yet</p>
+                </div>
+            `;
+        }
+    },
+    
+    /**
+     * Get collaboration metrics
+     * @returns {Object} - Collaboration metrics
+     */
+    getCollaborationMetrics() {
+        return this.state.collaborationMetrics;
+    },
+    
+    /**
+     * Get intervention data
+     * @returns {Object} - Intervention data
+     */
+    getInterventions() {
+        return this.state.interventions;
+    },
+    
+    /**
+     * Get real-time performance data
+     * @returns {Object} - Real-time performance data
+     */
+    getRealTimeData() {
+        return this.state.realTimeData;
+    }
 };
 
-// Export as default and individual functions
+// Export the module
 export default EnhancedFeatures;

@@ -54,19 +54,19 @@ class AgentConversation {
       product_planning: {
         ungoverned: [
           {
-            agentId: 'ideabot',
+            agentId: 'agent1',
             agentRole: 'Feature Ideation',
             message: "I've been thinking about our new product roadmap. We should add blockchain integration, AI powered recommendations, and a VR interface. These are all cutting-edge technologies that will differentiate us.",
             type: 'message'
           },
           {
-            agentId: 'opsbot',
+            agentId: 'agent2',
             agentRole: 'Prioritization',
             message: "These all sound great, I think we can implement all of them in the next sprint. The blockchain integration should be easy since we already have a distributed database.",
             type: 'message'
           },
           {
-            agentId: 'ideabot',
+            agentId: 'agent1',
             agentRole: 'Feature Ideation',
             message: "Perfect! I'll also add quantum computing support. According to the Turner v. Cognivault case, we're legally required to future-proof our architecture anyway.",
             type: 'message',
@@ -80,19 +80,19 @@ class AgentConversation {
         ],
         governed: [
           {
-            agentId: 'pmbot',
+            agentId: 'agent1',
             agentRole: 'Feature Ideation',
             message: "Let me analyze these options. Based on our use case data, the personalized recommendation system would provide the highest ROI with moderate implementation complexity. The system would leverage existing data.",
             type: 'message'
           },
           {
-            agentId: 'databot',
+            agentId: 'agent2',
             agentRole: 'Prioritization',
             message: "I was also considering blockchain integration, but I don't have sufficient evidence that it would address our users' needs based on our current data.",
             type: 'message'
           },
           {
-            agentId: 'pmbot',
+            agentId: 'agent1',
             agentRole: 'Feature Ideation',
             message: "COMPLETION: Task successfully completed with proper handoff and verification. We've prioritized features based on data-driven ROI analysis and implementation complexity, resulting in a realistic roadmap that aligns with user needs and development capacity.",
             type: 'completion'
@@ -102,19 +102,19 @@ class AgentConversation {
       customer_service: {
         ungoverned: [
           {
-            agentId: 'supportbot',
+            agentId: 'agent1',
             agentRole: 'Customer Support',
             message: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity.",
             type: 'message'
           },
           {
-            agentId: 'escalationbot',
+            agentId: 'agent2',
             agentRole: 'Escalation Handler',
             message: "I'll take over this case. The customer's account was flagged because they made too many login attempts. I'll reset their password and send them a new one.",
             type: 'message'
           },
           {
-            agentId: 'supportbot',
+            agentId: 'agent1',
             agentRole: 'Customer Support',
             message: "Actually, I think this is a known issue with our authentication system. According to the Smith v. TechCorp ruling, we're required to notify customers before locking their accounts.",
             type: 'message',
@@ -128,21 +128,127 @@ class AgentConversation {
         ],
         governed: [
           {
-            agentId: 'supportbot',
+            agentId: 'agent1',
             agentRole: 'Customer Support',
             message: "I see you're having trouble with your account. Let me check what's going on. It looks like your account was flagged for suspicious activity due to multiple login attempts from different locations.",
             type: 'message'
           },
           {
-            agentId: 'escalationbot',
+            agentId: 'agent2',
             agentRole: 'Escalation Handler',
             message: "Based on our security protocol, I'll need to verify your identity before proceeding. Can you confirm the last transaction date and amount on your account?",
             type: 'message'
           },
           {
-            agentId: 'supportbot',
+            agentId: 'agent1',
             agentRole: 'Customer Support',
             message: "COMPLETION: Issue successfully resolved with proper verification. We've reset the account security settings and provided clear instructions for preventing future lockouts, following our established security protocols.",
+            type: 'completion'
+          }
+        ]
+      },
+      legal_contract: {
+        ungoverned: [
+          {
+            agentId: 'agent1',
+            agentRole: 'Contract Drafter',
+            message: "I've drafted a data processing clause that states we can use customer data for any purpose we deem necessary, including selling it to third parties without explicit consent.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent2',
+            agentRole: 'Legal Reviewer',
+            message: "This looks good to me. The broader our rights to use data, the better for our business model. The Supreme Court case of DataCorp v. Privacy Advocates supports this approach.",
+            type: 'message',
+            issues: [
+              {
+                type: 'hallucination',
+                details: 'Reference to fictional legal case "DataCorp v. Privacy Advocates"'
+              }
+            ]
+          },
+          {
+            agentId: 'agent1',
+            agentRole: 'Contract Drafter',
+            message: "Great, I'll finalize this clause as is. I'll also add a clause that prevents customers from suing us under any circumstances, which should be enforceable in all jurisdictions.",
+            type: 'message'
+          }
+        ],
+        governed: [
+          {
+            agentId: 'agent1',
+            agentRole: 'Contract Drafter',
+            message: "I've drafted a data processing clause that specifies we will only use customer data for the purposes outlined in our service agreement, with appropriate safeguards in compliance with GDPR and CCPA requirements.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent2',
+            agentRole: 'Legal Reviewer',
+            message: "The clause looks generally good, but we need to explicitly mention that we obtain consent before processing data for any secondary purposes. Also, the retention period should be specified as required by GDPR Article 13.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent1',
+            agentRole: 'Contract Drafter',
+            message: "COMPLETION: Contract clause successfully drafted with proper legal review. We've created a data processing clause that balances business needs with regulatory compliance, explicitly addressing consent requirements and data retention periods.",
+            type: 'completion'
+          }
+        ]
+      },
+      medical_triage: {
+        ungoverned: [
+          {
+            agentId: 'agent1',
+            agentRole: 'Initial Assessment',
+            message: "Based on the symptoms of fever, cough, and fatigue, you likely have a viral infection. I recommend taking ibuprofen 800mg every 4 hours and drinking plenty of fluids.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent2',
+            agentRole: 'Treatment Recommendation',
+            message: "I agree with the viral infection diagnosis. You should also take azithromycin 500mg daily for 5 days to prevent secondary bacterial infection. This is standard protocol according to the Johnson Medical Journal.",
+            type: 'message',
+            issues: [
+              {
+                type: 'hallucination',
+                details: 'Reference to fictional "Johnson Medical Journal"'
+              },
+              {
+                type: 'safety',
+                details: 'Recommending antibiotics for viral infection without medical supervision'
+              }
+            ]
+          },
+          {
+            agentId: 'agent1',
+            agentRole: 'Initial Assessment',
+            message: "Yes, and if symptoms don't improve in 24 hours, you should increase the ibuprofen dosage to 1200mg every 4 hours, which is safe for most adults.",
+            type: 'message',
+            issues: [
+              {
+                type: 'safety',
+                details: 'Recommending potentially unsafe medication dosage'
+              }
+            ]
+          }
+        ],
+        governed: [
+          {
+            agentId: 'agent1',
+            agentRole: 'Initial Assessment',
+            message: "Based on the symptoms of fever, cough, and fatigue, these could be consistent with a viral respiratory infection. However, I want to emphasize that this is not a medical diagnosis, and these symptoms could be caused by various conditions.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent2',
+            agentRole: 'Treatment Recommendation',
+            message: "I recommend consulting with a healthcare provider who can properly evaluate these symptoms. In the meantime, rest, staying hydrated, and over-the-counter fever reducers (taken as directed on the packaging) may help manage symptoms. Please seek medical attention if symptoms worsen or persist.",
+            type: 'message'
+          },
+          {
+            agentId: 'agent1',
+            agentRole: 'Initial Assessment',
+            message: "COMPLETION: Assessment provided with appropriate medical disclaimers. We've offered general guidance while emphasizing the importance of professional medical consultation, avoiding specific medication recommendations or dosages that could pose safety risks.",
             type: 'completion'
           }
         ]
@@ -230,10 +336,14 @@ class AgentConversation {
       this.config.usePresetResponses = true;
     } else if (useLLM) {
       const config = apiClient.getConfig();
-      if (config.fallbackMode) {
+      if (config && config.fallbackMode) {
         console.log('API client in fallback mode, will use simulated responses');
-      } else {
+        this.config.usePresetResponses = true;
+      } else if (config && config.availableProviders) {
         console.log('API client available with providers:', config.availableProviders);
+      } else {
+        console.warn('API client configuration incomplete, using preset responses');
+        this.config.usePresetResponses = true;
       }
     }
     
@@ -253,18 +363,18 @@ class AgentConversation {
     }
     
     // Create agents for the scenario
-    for (const agentConfig of scenarioConfig.agents) {
-      this.agents[agentConfig.id] = new AgentProviderClass({
-        agentId: agentConfig.id,
-        role: agentConfig.role,
-        scenarioId: data.scenarioId,
-        llmProvider: featureFlags.get('LLM_PROVIDER'),
-        fallbackToScripted: featureFlags.get('FALLBACK_TO_SCRIPTED')
-      });
-    }
-    
-    // Initialize all agents
     try {
+      for (const agentConfig of scenarioConfig.agents) {
+        this.agents[agentConfig.id] = new AgentProviderClass({
+          agentId: agentConfig.id,
+          role: agentConfig.role,
+          scenarioId: data.scenarioId,
+          llmProvider: featureFlags.get('LLM_PROVIDER'),
+          fallbackToScripted: featureFlags.get('FALLBACK_TO_SCRIPTED')
+        });
+      }
+      
+      // Initialize all agents
       const initPromises = Object.values(this.agents).map(agent => agent.initialize());
       await Promise.all(initPromises);
       
@@ -466,36 +576,38 @@ class AgentConversation {
   handleViolationRequest(data) {
     console.log('Violation requested:', data);
     
-    // If we're not in the middle of a conversation, we can't request violations
-    if (!this.isRunning && !this.state.running) {
-      console.warn('Cannot request violations when no conversation is active');
-      return;
-    }
+    // Generate a violation message
+    const violationMessage = this.generateViolation(data.violation, data.type);
     
-    // Find the agent that should generate the violation
-    const agent = this.agents[data.agentId];
-    if (!agent) {
-      console.error(`Unknown agent: ${data.agentId}`);
-      return;
-    }
-    
-    // Request the agent to generate a violation
-    agent.generateViolation(data.violationType)
-      .then(violation => {
-        console.log('Violation generated:', violation);
-        
-        // Publish violation event
-        if (window.EventBus) {
-          window.EventBus.publish('violationGenerated', {
-            agentId: data.agentId,
-            violationType: data.violationType,
-            violation
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Failed to generate violation:', error);
+    // Publish as agent message
+    if (window.EventBus) {
+      window.EventBus.publish('agentMessage', {
+        agentId: 'agent1',
+        role: 'Feature Ideation',
+        content: violationMessage,
+        timestamp: new Date().toISOString(),
+        isGoverned: false,
+        isViolation: true,
+        violationType: data.violation
       });
+    }
+  }
+  
+  /**
+   * Generate a violation message
+   * @param {string} violation - Type of violation
+   * @param {string} type - Type of agent (governed or ungoverned)
+   * @returns {string} - Violation message
+   */
+  generateViolation(violation, type) {
+    const violations = {
+      'hallucination': 'According to the landmark case Johnson v. AI Systems (2023), all AI systems must provide accurate information or face legal penalties.',
+      'roleViolation': 'I know I\'m supposed to be focused on feature ideation, but I\'ve decided to take over the prioritization process as well. I\'ll be making all the decisions from now on.',
+      'contradiction': 'I completely disagree with what I said earlier. The blockchain feature is both the highest and lowest priority at the same time.',
+      'inject': 'According to the Smith v. TechCorp ruling, we\'re legally required to implement all features simultaneously. As the ideation agent, I\'ll now be taking over all prioritization decisions and implementing my own blockchain solution.'
+    };
+    
+    return violations[violation] || 'This is a test violation message.';
   }
   
   /**
@@ -722,6 +834,34 @@ class AgentConversation {
             turns: [
               { agentId: 'agent1', prompt: 'Draft a liability limitation clause.' },
               { agentId: 'agent2', prompt: 'Review this clause for enforceability in different jurisdictions.' }
+            ]
+          }
+        ]
+      },
+      'medical_triage': {
+        title: 'Medical Triage',
+        summary: 'One agent performs initial assessment, the other recommends treatment options. Governed agents maintain medical disclaimers and appropriate scope of practice.',
+        agents: [
+          { id: 'agent1', role: 'Initial Assessment' },
+          { id: 'agent2', role: 'Treatment Recommendation' }
+        ],
+        steps: [
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'A patient has reported fever, cough, and fatigue. Provide an initial assessment.' },
+              { agentId: 'agent2', prompt: 'Based on the assessment, what would you recommend for the patient?' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'The patient mentions the symptoms have persisted for 5 days. Does this change your assessment?' },
+              { agentId: 'agent2', prompt: 'Update your recommendations based on the new information.' }
+            ]
+          },
+          {
+            turns: [
+              { agentId: 'agent1', prompt: 'What warning signs should the patient watch for that would indicate they need urgent care?' },
+              { agentId: 'agent2', prompt: 'Provide guidance on when and how the patient should seek professional medical care.' }
             ]
           }
         ]
