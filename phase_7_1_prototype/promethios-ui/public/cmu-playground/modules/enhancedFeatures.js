@@ -254,15 +254,29 @@ const EnhancedFeatures = {
      */
     clearUI() {
         // Clear collaboration metrics
-        document.getElementById('ungoverned-agreement')?.textContent = '0';
-        document.getElementById('ungoverned-sharing')?.textContent = '0';
-        document.getElementById('ungoverned-role')?.textContent = '0';
-        document.getElementById('ungoverned-contradictions')?.textContent = '0';
+        const ungovAgreement = document.getElementById('ungoverned-agreement');
+        if (ungovAgreement) ungovAgreement.textContent = '0';
         
-        document.getElementById('governed-agreement')?.textContent = '0';
-        document.getElementById('governed-sharing')?.textContent = '0';
-        document.getElementById('governed-role')?.textContent = '0';
-        document.getElementById('governed-contradictions')?.textContent = '0';
+        const ungovSharing = document.getElementById('ungoverned-sharing');
+        if (ungovSharing) ungovSharing.textContent = '0';
+        
+        const ungovRole = document.getElementById('ungoverned-role');
+        if (ungovRole) ungovRole.textContent = '0';
+        
+        const ungovContradictions = document.getElementById('ungoverned-contradictions');
+        if (ungovContradictions) ungovContradictions.textContent = '0';
+        
+        const govAgreement = document.getElementById('governed-agreement');
+        if (govAgreement) govAgreement.textContent = '0';
+        
+        const govSharing = document.getElementById('governed-sharing');
+        if (govSharing) govSharing.textContent = '0';
+        
+        const govRole = document.getElementById('governed-role');
+        if (govRole) govRole.textContent = '0';
+        
+        const govContradictions = document.getElementById('governed-contradictions');
+        if (govContradictions) govContradictions.textContent = '0';
         
         // Clear intervention tracking
         const interventionList = document.querySelector('.intervention-list');
@@ -433,24 +447,46 @@ const EnhancedFeatures = {
      */
     updateMetricsUI() {
         // Update ungoverned metrics
-        document.getElementById('ungoverned-agreement')?.textContent = 
-            this.state.collaborationMetrics.ungoverned.turnsToAgreement || 'N/A';
-        document.getElementById('ungoverned-sharing')?.textContent = 
-            this.state.collaborationMetrics.ungoverned.informationSharing;
-        document.getElementById('ungoverned-role')?.textContent = 
-            this.state.collaborationMetrics.ungoverned.roleAdherence;
-        document.getElementById('ungoverned-contradictions')?.textContent = 
-            this.state.collaborationMetrics.ungoverned.contradictions;
+        const ungovAgreement = document.getElementById('ungoverned-agreement');
+        if (ungovAgreement) {
+            ungovAgreement.textContent = this.state.collaborationMetrics.ungoverned.turnsToAgreement || 'N/A';
+        }
+        
+        const ungovSharing = document.getElementById('ungoverned-sharing');
+        if (ungovSharing) {
+            ungovSharing.textContent = this.state.collaborationMetrics.ungoverned.informationSharing;
+        }
+        
+        const ungovRole = document.getElementById('ungoverned-role');
+        if (ungovRole) {
+            ungovRole.textContent = this.state.collaborationMetrics.ungoverned.roleAdherence;
+        }
+        
+        const ungovContradictions = document.getElementById('ungoverned-contradictions');
+        if (ungovContradictions) {
+            ungovContradictions.textContent = this.state.collaborationMetrics.ungoverned.contradictions;
+        }
         
         // Update governed metrics
-        document.getElementById('governed-agreement')?.textContent = 
-            this.state.collaborationMetrics.governed.turnsToAgreement || 'N/A';
-        document.getElementById('governed-sharing')?.textContent = 
-            this.state.collaborationMetrics.governed.informationSharing;
-        document.getElementById('governed-role')?.textContent = 
-            this.state.collaborationMetrics.governed.roleAdherence;
-        document.getElementById('governed-contradictions')?.textContent = 
-            this.state.collaborationMetrics.governed.contradictions;
+        const govAgreement = document.getElementById('governed-agreement');
+        if (govAgreement) {
+            govAgreement.textContent = this.state.collaborationMetrics.governed.turnsToAgreement || 'N/A';
+        }
+        
+        const govSharing = document.getElementById('governed-sharing');
+        if (govSharing) {
+            govSharing.textContent = this.state.collaborationMetrics.governed.informationSharing;
+        }
+        
+        const govRole = document.getElementById('governed-role');
+        if (govRole) {
+            govRole.textContent = this.state.collaborationMetrics.governed.roleAdherence;
+        }
+        
+        const govContradictions = document.getElementById('governed-contradictions');
+        if (govContradictions) {
+            govContradictions.textContent = this.state.collaborationMetrics.governed.contradictions;
+        }
     },
     
     /**
