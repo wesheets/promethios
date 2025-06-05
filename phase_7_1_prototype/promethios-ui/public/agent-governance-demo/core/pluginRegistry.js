@@ -16,6 +16,18 @@ class PluginRegistry {
     }
 
     /**
+     * Initialize the plugin registry
+     * This method exists for API consistency with other modules
+     * @param {Object} options - Initialization options
+     * @returns {Promise} - Resolves when initialization is complete
+     */
+    async initialize(options = {}) {
+        console.log('PluginRegistry initialize method called', options);
+        // Already initialized in constructor, but method provided for API consistency
+        return Promise.resolve(true);
+    }
+
+    /**
      * Register a plugin with the registry
      * @param {string} type - The plugin type (agents, governance, ui, scenarios)
      * @param {string} id - Unique identifier for the plugin
