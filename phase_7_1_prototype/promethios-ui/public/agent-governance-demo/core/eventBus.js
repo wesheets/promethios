@@ -8,7 +8,20 @@ class EventBus {
         this.subscribers = {};
         this.eventHistory = [];
         this.historyLimit = 100; // Limit event history to prevent memory issues
+        this.initialized = true; // Mark as initialized by default
         console.log('Event Bus initialized');
+    }
+
+    /**
+     * Initialize the event bus
+     * This method exists for API consistency with other modules
+     * but doesn't need to do anything as initialization happens in constructor
+     * @returns {Promise} - Resolves when initialization is complete
+     */
+    async initialize() {
+        console.log('EventBus initialize method called');
+        // Already initialized in constructor, but method provided for API consistency
+        return Promise.resolve(true);
     }
 
     /**
