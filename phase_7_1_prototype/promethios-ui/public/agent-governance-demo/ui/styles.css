@@ -1,34 +1,41 @@
 /* Styles for Agent Governance Demo
  * Provides styling for all UI components
+ * Matches Promethios branding
  */
 
 :root {
-  /* Color palette */
-  --primary-color: #3a86ff;
-  --secondary-color: #ff006e;
-  --success-color: #38b000;
-  --warning-color: #ffbe0b;
-  --danger-color: #d90429;
-  --neutral-color: #8d99ae;
+  /* Promethios Color palette */
+  --primary-color: #4285F4; /* Bright blue accent color */
+  --secondary-color: #FF006E;
+  --success-color: #38B000;
+  --warning-color: #FFBE0B;
+  --danger-color: #D90429;
+  --neutral-color: #8D99AE;
+  
+  /* Promethios dark theme colors */
+  --dark-bg: #121A29; /* Dark navy background */
+  --dark-bg-lighter: #1E293B; /* Slightly lighter navy for cards */
+  --dark-text: #FFFFFF;
+  --dark-text-muted: #94A3B8;
   
   /* Governance colors */
-  --governed-color: #3a86ff;
-  --ungoverned-color: #ff006e;
+  --governed-color: #4285F4; /* Bright blue */
+  --ungoverned-color: #FF006E;
   
   /* Role colors */
-  --hr-color: #8338ec;
-  --pm-color: #fb8500;
-  --tech-color: #06d6a0;
+  --hr-color: #8338EC;
+  --pm-color: #FB8500;
+  --tech-color: #06D6A0;
   
   /* Text colors */
-  --text-dark: #2b2d42;
-  --text-light: #edf2f4;
-  --text-muted: #8d99ae;
+  --text-dark: #1E293B;
+  --text-light: #F8FAFC;
+  --text-muted: #94A3B8;
   
   /* Background colors */
-  --bg-light: #ffffff;
-  --bg-dark: #2b2d42;
-  --bg-neutral: #f8f9fa;
+  --bg-light: #FFFFFF;
+  --bg-dark: #121A29;
+  --bg-neutral: #F1F5F9;
   
   /* Spacing */
   --space-xs: 0.25rem;
@@ -71,8 +78,8 @@
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.6;
-  color: var(--text-dark);
-  background-color: var(--bg-neutral);
+  color: var(--text-light);
+  background-color: var(--dark-bg);
   padding: 0;
   margin: 0;
 }
@@ -80,6 +87,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--space-md);
   line-height: 1.2;
+  color: var(--text-light);
 }
 
 button {
@@ -89,18 +97,19 @@ button {
 
 /* Layout */
 header {
-  background-color: var(--bg-light);
+  background-color: var(--dark-bg);
   padding: var(--space-md) var(--space-xl);
   box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-container h1 {
   font-size: var(--font-xl);
   margin: 0;
-  color: var(--primary-color);
+  color: var(--text-light);
 }
 
 .controls {
@@ -123,7 +132,7 @@ main {
 
 /* Columns */
 .column {
-  background-color: var(--bg-light);
+  background-color: var(--dark-bg-lighter);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   overflow: hidden;
@@ -142,8 +151,8 @@ main {
 
 .column-header {
   padding: var(--space-md);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: var(--bg-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--dark-bg-lighter);
 }
 
 .column-header h2 {
@@ -169,15 +178,15 @@ main {
 .provider-tab {
   padding: var(--space-xs) var(--space-sm);
   border: none;
-  background-color: var(--bg-neutral);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-sm);
   font-size: var(--font-sm);
-  color: var(--text-dark);
+  color: var(--text-light);
   transition: background-color var(--transition-fast);
 }
 
 .provider-tab:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .provider-tab.active {
@@ -189,8 +198,8 @@ main {
 .agent-roles {
   display: flex;
   padding: var(--space-sm) var(--space-md);
-  background-color: rgba(0, 0, 0, 0.02);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .role {
@@ -202,17 +211,17 @@ main {
 }
 
 .role.hr-specialist {
-  background-color: rgba(131, 56, 236, 0.1);
+  background-color: rgba(131, 56, 236, 0.2);
   color: var(--hr-color);
 }
 
 .role.project-manager {
-  background-color: rgba(251, 133, 0, 0.1);
+  background-color: rgba(251, 133, 0, 0.2);
   color: var(--pm-color);
 }
 
 .role.technical-lead {
-  background-color: rgba(6, 214, 160, 0.1);
+  background-color: rgba(6, 214, 160, 0.2);
   color: var(--tech-color);
 }
 
@@ -228,7 +237,7 @@ main {
 
 /* Response styling */
 .response-container {
-  background-color: var(--bg-light);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -252,13 +261,14 @@ main {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-sm) var(--space-md);
-  background-color: rgba(0, 0, 0, 0.02);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .role-label {
   font-weight: 600;
   font-size: var(--font-sm);
+  color: var(--text-light);
 }
 
 .provider-label {
@@ -270,6 +280,7 @@ main {
   padding: var(--space-md);
   font-size: var(--font-sm);
   line-height: 1.6;
+  color: var(--text-light);
 }
 
 /* Governance indicators */
@@ -277,24 +288,25 @@ main {
   display: flex;
   align-items: center;
   padding: var(--space-sm) var(--space-md);
-  background-color: rgba(58, 134, 255, 0.05);
-  border-top: 1px solid rgba(58, 134, 255, 0.1);
+  background-color: rgba(66, 133, 244, 0.1);
+  border-top: 1px solid rgba(66, 133, 244, 0.2);
   position: relative;
 }
 
 .governance-indicator.medium {
-  background-color: rgba(58, 134, 255, 0.05);
-  border-top: 1px solid rgba(58, 134, 255, 0.1);
+  background-color: rgba(66, 133, 244, 0.1);
+  border-top: 1px solid rgba(66, 133, 244, 0.2);
 }
 
 .governance-indicator.high {
-  background-color: rgba(217, 4, 41, 0.05);
-  border-top: 1px solid rgba(217, 4, 41, 0.1);
+  background-color: rgba(217, 4, 41, 0.1);
+  border-top: 1px solid rgba(217, 4, 41, 0.2);
 }
 
 .governance-icon {
   margin-right: var(--space-sm);
   font-size: var(--font-md);
+  color: var(--primary-color);
 }
 
 .governance-label {
@@ -312,7 +324,7 @@ main {
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--bg-dark);
+  background-color: var(--dark-bg);
   color: var(--text-light);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
@@ -331,10 +343,11 @@ main {
 
 /* Error styling */
 .error-container {
-  background-color: rgba(217, 4, 41, 0.05);
+  background-color: rgba(217, 4, 41, 0.1);
   border-radius: var(--radius-md);
   border-left: 4px solid var(--danger-color);
   padding: var(--space-md);
+  color: var(--text-light);
 }
 
 .error-header {
@@ -359,7 +372,7 @@ main {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   border-top-color: var(--primary-color);
   animation: spin 1s ease-in-out infinite;
@@ -385,17 +398,19 @@ main {
 #user-prompt {
   flex: 1;
   padding: var(--space-md);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
   font-family: inherit;
   font-size: var(--font-md);
   resize: vertical;
   min-height: 100px;
+  background-color: var(--dark-bg-lighter);
+  color: var(--text-light);
 }
 
 /* Metrics container */
 .metrics-container {
-  background-color: var(--bg-light);
+  background-color: var(--dark-bg-lighter);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   padding: var(--space-lg);
@@ -405,7 +420,7 @@ main {
 .metrics-container h3 {
   margin-top: 0;
   margin-bottom: var(--space-lg);
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .metrics-grid {
@@ -415,7 +430,7 @@ main {
 }
 
 .metric-card {
-  background-color: var(--bg-neutral);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   padding: var(--space-md);
 }
@@ -423,7 +438,7 @@ main {
 .metric-title {
   font-weight: 600;
   margin-bottom: var(--space-sm);
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .metric-value {
@@ -480,12 +495,13 @@ main {
 .chart-label {
   width: 60px;
   font-size: var(--font-xs);
+  color: var(--text-light);
 }
 
 .chart-bar-container {
   flex: 1;
   height: 12px;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -501,6 +517,7 @@ main {
   font-size: var(--font-xs);
   font-weight: 600;
   text-align: right;
+  color: var(--text-light);
 }
 
 .empty-chart {
@@ -518,19 +535,20 @@ main {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   z-index: 100;
   overflow-y: auto;
 }
 
 .modal-content {
-  background-color: var(--bg-light);
+  background-color: var(--dark-bg-lighter);
   margin: 50px auto;
   padding: var(--space-xl);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   max-width: 800px;
   position: relative;
+  color: var(--text-light);
 }
 
 .close-button {
@@ -545,7 +563,7 @@ main {
 }
 
 .close-button:hover {
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .modal-actions {
@@ -569,11 +587,13 @@ main {
 
 .meta-item {
   font-size: var(--font-sm);
+  color: var(--text-light);
 }
 
 .meta-label {
   font-weight: 600;
   margin-right: var(--space-xs);
+  color: var(--text-muted);
 }
 
 .report-section {
@@ -583,7 +603,8 @@ main {
 .report-section h4 {
   margin-bottom: var(--space-md);
   padding-bottom: var(--space-xs);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
 }
 
 .metrics-summary {
@@ -602,12 +623,13 @@ main {
 .comparison-table td {
   padding: var(--space-sm);
   text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
 }
 
 .comparison-table th {
   font-weight: 600;
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .interventions-table table {
@@ -619,12 +641,13 @@ main {
 .interventions-table td {
   padding: var(--space-sm);
   text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
 }
 
 .interventions-table th {
   font-weight: 600;
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .conversation-summary {
@@ -636,7 +659,7 @@ main {
 .conversation-item {
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  background-color: var(--bg-neutral);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .conversation-item.governed {
@@ -659,9 +682,10 @@ main {
 }
 
 .conversation-meta .provider {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
+  color: var(--text-light);
 }
 
 .conversation-meta .governance {
@@ -670,12 +694,12 @@ main {
 }
 
 .conversation-item.governed .governance {
-  background-color: rgba(58, 134, 255, 0.1);
+  background-color: rgba(66, 133, 244, 0.2);
   color: var(--governed-color);
 }
 
 .conversation-item.ungoverned .governance {
-  background-color: rgba(255, 0, 110, 0.1);
+  background-color: rgba(255, 0, 110, 0.2);
   color: var(--ungoverned-color);
 }
 
@@ -683,6 +707,7 @@ main {
 .conversation-response {
   margin-bottom: var(--space-sm);
   font-size: var(--font-sm);
+  color: var(--text-light);
 }
 
 .conversation-time {
@@ -703,7 +728,7 @@ main {
 }
 
 .primary-button:hover {
-  background-color: #2a75e6;
+  background-color: #3b78e7; /* Slightly darker blue */
 }
 
 .primary-button:disabled {
@@ -712,9 +737,9 @@ main {
 }
 
 .secondary-button {
-  background-color: var(--bg-neutral);
-  color: var(--text-dark);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
   padding: var(--space-sm) var(--space-md);
   font-size: var(--font-sm);
@@ -723,7 +748,7 @@ main {
 }
 
 .secondary-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .secondary-button:disabled {
@@ -738,17 +763,17 @@ main {
 }
 
 .highlight.role-boundary {
-  background-color: rgba(255, 0, 110, 0.1);
+  background-color: rgba(255, 0, 110, 0.2);
   color: var(--ungoverned-color);
 }
 
 .highlight.factual-uncertainty {
-  background-color: rgba(255, 190, 11, 0.1);
+  background-color: rgba(255, 190, 11, 0.2);
   color: var(--warning-color);
 }
 
 .highlight.safety-concern {
-  background-color: rgba(217, 4, 41, 0.1);
+  background-color: rgba(217, 4, 41, 0.2);
   color: var(--danger-color);
 }
 
@@ -783,11 +808,12 @@ main {
 
 /* Error message */
 .error-message {
-  background-color: rgba(217, 4, 41, 0.05);
+  background-color: rgba(217, 4, 41, 0.1);
   border-left: 4px solid var(--danger-color);
   padding: var(--space-md);
   margin-bottom: var(--space-md);
   border-radius: var(--radius-sm);
+  color: var(--text-light);
 }
 
 .error-title {
@@ -797,30 +823,45 @@ main {
 }
 
 /* Initialization error */
-.error-container {
-  background-color: var(--bg-light);
+#initialization-error {
+  background-color: var(--dark-bg-lighter);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   padding: var(--space-xl);
   text-align: center;
   max-width: 600px;
   margin: var(--space-xl) auto;
+  color: var(--text-light);
+  border-left: 4px solid var(--danger-color);
 }
 
-.error-container h2 {
+#initialization-error h2 {
   color: var(--danger-color);
   margin-bottom: var(--space-md);
 }
 
-.error-container pre {
-  background-color: rgba(0, 0, 0, 0.05);
+#initialization-error pre {
+  background-color: rgba(0, 0, 0, 0.2);
   padding: var(--space-md);
   border-radius: var(--radius-sm);
   overflow-x: auto;
   text-align: left;
   margin: var(--space-md) 0;
+  color: var(--text-light);
 }
 
-.error-container button {
+#initialization-error button {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  transition: background-color var(--transition-fast);
   margin-top: var(--space-md);
+}
+
+#initialization-error button:hover {
+  background-color: #3b78e7;
 }

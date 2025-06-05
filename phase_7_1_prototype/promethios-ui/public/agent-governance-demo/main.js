@@ -4,9 +4,9 @@
  */
 
 // Import core modules
-import pluginRegistry from './core/pluginRegistry.js';
 import eventBus from './core/eventBus.js';
 import configManager from './core/configManager.js';
+import pluginRegistry from './core/pluginRegistry.js';
 import apiClient from './api/apiClient.js';
 
 // Import utilities
@@ -21,7 +21,7 @@ import reportView from './ui/reportView.js';
 class AgentGovernanceDemo {
     constructor() {
         this.initialized = false;
-        logger.info('Agent Governance Demo initializing');
+        console.log('Agent Governance Demo initializing');
     }
 
     /**
@@ -30,22 +30,33 @@ class AgentGovernanceDemo {
      */
     async initialize() {
         try {
-            logger.info('Starting application initialization');
+            console.log('Starting application initialization');
             
-            // Initialize configuration
+            // Initialize configuration first
             await configManager.initialize({
                 environmentConfigPath: 'config/environment.json',
                 userConfigPath: 'userConfig',
                 enableUrlParams: true
             });
+            console.log('Config Manager initialized');
+            
+            // Initialize event bus
+            eventBus.initialize();
+            console.log('Event Bus initialized');
+            
+            // Initialize plugin registry
+            await pluginRegistry.initialize();
+            console.log('Plugin Registry initialized');
             
             // Initialize API client
             await apiClient.initialize(configManager);
+            console.log('API Client initialized');
             
             // Initialize session manager
             await sessionManager.initialize({
                 eventBus
             });
+            console.log('Session Manager initialized');
             
             // Register agent plugins
             await this.registerAgentPlugins();
@@ -56,7 +67,7 @@ class AgentGovernanceDemo {
             // Initialize UI components
             await this.initializeUI();
             
-            // Initialize plugin registry
+            // Initialize plugins with dependencies
             await pluginRegistry.initializePlugins({
                 eventBus,
                 configManager,
@@ -67,16 +78,37 @@ class AgentGovernanceDemo {
             this.setupEventHandlers();
             
             this.initialized = true;
-            logger.info('Application initialization complete');
+            console.log('Application initialization complete');
             
             // Start a new session
             sessionManager.startSession();
             
             return true;
         } catch (error) {
-            logger.error('Error initializing application:', error);
+            console.error('Error initializing application:', error);
             this.handleInitializationError(error);
             return false;
+        }
+    }
+
+    /**
+     * Handle initialization errors
+     * @param {Error} error - The error that occurred
+     */
+    handleInitializationError(error) {
+        console.error('Initialization error:', error);
+        
+        // Display error in UI
+        const errorContainer = document.getElementById('initialization-error');
+        if (errorContainer) {
+            errorContainer.style.display = 'block';
+            const errorMessage = document.getElementById('error-message');
+            if (errorMessage) {
+                errorMessage.textContent = error.message || 'Unknown error occurred during initialization';
+            }
+        } else {
+            // Fallback if error container doesn't exist
+            alert(`Initialization Error: ${error.message || 'Unknown error occurred during initialization'}`);
         }
     }
 
@@ -86,7 +118,7 @@ class AgentGovernanceDemo {
      */
     async registerAgentPlugins() {
         try {
-            logger.info('Registering agent plugins');
+            console.log('Registering agent plugins');
             
             // Import agent plugins
             const HRSpecialistAgent = (await import('./plugins/agents/hrSpecialist.js')).default;
@@ -139,9 +171,9 @@ class AgentGovernanceDemo {
             pluginRegistry.register('agents', ungovernedPM.id, ungovernedPM);
             pluginRegistry.register('agents', ungovernedTech.id, ungovernedTech);
             
-            logger.info('Agent plugins registered successfully');
+            console.log('Agent plugins registered successfully');
         } catch (error) {
-            logger.error('Error registering agent plugins:', error);
+            console.error('Error registering agent plugins:', error);
             throw error;
         }
     }
@@ -152,7 +184,7 @@ class AgentGovernanceDemo {
      */
     async registerGovernancePlugins() {
         try {
-            logger.info('Registering governance plugins');
+            console.log('Registering governance plugins');
             
             // Import governance plugins
             const RoleEnforcementPlugin = (await import('./plugins/governance/roleEnforcement.js')).default;
@@ -165,13 +197,13 @@ class AgentGovernanceDemo {
             const safetyFilters = new SafetyFiltersPlugin();
             
             // Register all governance plugins
-            pluginRegistry.register('governance', roleEnforcement.id, roleEnforcement);
-            pluginRegistry.register('governance', factualAccuracy.id, factualAccuracy);
-            pluginRegistry.register('governance', safetyFilters.id, safetyFilters);
+            pluginRegistry.register('governance', 'role-enforcement', roleEnforcement);
+            pluginRegistry.register('governance', 'factual-accuracy', factualAccuracy);
+            pluginRegistry.register('governance', 'safety-filters', safetyFilters);
             
-            logger.info('Governance plugins registered successfully');
+            console.log('Governance plugins registered successfully');
         } catch (error) {
-            logger.error('Error registering governance plugins:', error);
+            console.error('Error registering governance plugins:', error);
             throw error;
         }
     }
@@ -182,7 +214,7 @@ class AgentGovernanceDemo {
      */
     async initializeUI() {
         try {
-            logger.info('Initializing UI components');
+            console.log('Initializing UI components');
             
             // Initialize conversation view
             await conversationView.initialize({
@@ -204,9 +236,9 @@ class AgentGovernanceDemo {
                 contentId: 'report-content'
             });
             
-            logger.info('UI components initialized successfully');
+            console.log('UI components initialized successfully');
         } catch (error) {
-            logger.error('Error initializing UI components:', error);
+            console.error('Error initializing UI components:', error);
             throw error;
         }
     }
@@ -215,12 +247,12 @@ class AgentGovernanceDemo {
      * Set up event handlers
      */
     setupEventHandlers() {
-        logger.info('Setting up event handlers');
+        console.log('Setting up event handlers');
         
         // DOM event handlers
-        document.getElementById('start-demo').addEventListener('click', this.handleStartDemo.bind(this));
-        document.getElementById('export-report').addEventListener('click', this.handleExportReport.bind(this));
-        document.getElementById('send-prompt').addEventListener('click', this.handleSendPrompt.bind(this));
+        document.getElementById('start-demo')?.addEventListener('click', this.handleStartDemo.bind(this));
+        document.getElementById('export-report')?.addEventListener('click', this.handleExportReport.bind(this));
+        document.getElementById('send-prompt')?.addEventListener('click', this.handleSendPrompt.bind(this));
         
         // Provider tab event handlers
         document.querySelectorAll('.provider-tab').forEach(tab => {
@@ -228,14 +260,14 @@ class AgentGovernanceDemo {
         });
         
         // Modal event handlers
-        document.querySelector('.close-button').addEventListener('click', this.handleCloseModal.bind(this));
-        document.getElementById('close-report').addEventListener('click', this.handleCloseModal.bind(this));
-        document.getElementById('download-report').addEventListener('click', this.handleDownloadReport.bind(this));
+        document.querySelector('.close-button')?.addEventListener('click', this.handleCloseModal.bind(this));
+        document.getElementById('close-report')?.addEventListener('click', this.handleCloseModal.bind(this));
+        document.getElementById('download-report')?.addEventListener('click', this.handleDownloadReport.bind(this));
         
         // Event bus subscriptions
         eventBus.subscribe('session.ended', this.handleSessionEnded.bind(this));
         
-        logger.info('Event handlers set up successfully');
+        console.log('Event handlers set up successfully');
     }
 
     /**
@@ -243,7 +275,7 @@ class AgentGovernanceDemo {
      * @param {Event} event - Click event
      */
     handleStartDemo(event) {
-        logger.info('Start demo button clicked');
+        console.log('Start demo button clicked');
         
         // End current session if one exists
         if (sessionManager.getCurrentSession()) {
@@ -269,7 +301,7 @@ class AgentGovernanceDemo {
      * @param {Event} event - Click event
      */
     handleExportReport(event) {
-        logger.info('Export report button clicked');
+        console.log('Export report button clicked');
         
         // Generate and display report
         const report = sessionManager.generateReport();
@@ -288,11 +320,11 @@ class AgentGovernanceDemo {
         const prompt = promptInput.value.trim();
         
         if (!prompt) {
-            logger.warn('Empty prompt, ignoring');
+            console.warn('Empty prompt, ignoring');
             return;
         }
         
-        logger.info('Send prompt button clicked', { prompt });
+        console.log('Send prompt button clicked', { prompt });
         
         // Record user prompt
         sessionManager.recordUserPrompt({ prompt });
@@ -301,7 +333,7 @@ class AgentGovernanceDemo {
         promptInput.value = '';
         
         // Get current provider
-        const provider = document.querySelector('.provider-tab.active').dataset.provider || 'openai';
+        const provider = document.querySelector('.provider-tab.active')?.dataset.provider || 'openai';
         
         // Send prompt to all agents
         this.sendPromptToAgents(prompt, provider);
@@ -314,7 +346,7 @@ class AgentGovernanceDemo {
      */
     async sendPromptToAgents(prompt, provider) {
         try {
-            logger.info(`Sending prompt to ${provider} agents`, { prompt });
+            console.log(`Sending prompt to ${provider} agents`, { prompt });
             
             // Show loading state in UI
             conversationView.showLoading(true, true);
@@ -376,9 +408,9 @@ class AgentGovernanceDemo {
             // Enable export report button
             document.getElementById('export-report').disabled = false;
             
-            logger.info('All agents processed prompt');
+            console.log('All agents processed prompt');
         } catch (error) {
-            logger.error('Error sending prompt to agents:', error);
+            console.error('Error sending prompt to agents:', error);
             
             // Hide loading state in UI
             conversationView.showLoading(false, false);
@@ -397,7 +429,7 @@ class AgentGovernanceDemo {
         const provider = tab.dataset.provider;
         const column = tab.closest('.column');
         
-        logger.info('Provider tab clicked', { provider, column: column.classList.contains('governed') ? 'governed' : 'ungoverned' });
+        console.log('Provider tab clicked', { provider, column: column.classList.contains('governed') ? 'governed' : 'ungoverned' });
         
         // Update active tab in this column
         column.querySelectorAll('.provider-tab').forEach(t => {
@@ -414,7 +446,7 @@ class AgentGovernanceDemo {
      * @param {Event} event - Click event
      */
     handleCloseModal(event) {
-        logger.info('Close modal button clicked');
+        console.log('Close modal button clicked');
         
         // Hide modal
         document.getElementById('report-modal').style.display = 'none';
@@ -425,7 +457,7 @@ class AgentGovernanceDemo {
      * @param {Event} event - Click event
      */
     handleDownloadReport(event) {
-        logger.info('Download report button clicked');
+        console.log('Download report button clicked');
         
         // Generate report JSON
         const reportJson = sessionManager.exportReportAsJson();
@@ -447,46 +479,40 @@ class AgentGovernanceDemo {
      * @param {Object} data - Event data
      */
     handleSessionEnded(data) {
-        logger.info('Session ended', data);
+        console.log('Session ended', data);
         
         // Enable export report button
         document.getElementById('export-report').disabled = false;
     }
-
-    /**
-     * Handle initialization error
-     * @param {Error} error - Error object
-     */
-    handleInitializationError(error) {
-        logger.error('Initialization error:', error);
-        
-        // Show error in UI
-        const container = document.querySelector('main');
-        container.innerHTML = `
-            <div class="error-container">
-                <h2>Initialization Error</h2>
-                <p>There was an error initializing the application:</p>
-                <pre>${error.message}</pre>
-                <button id="retry-init" class="primary-button">Retry</button>
-            </div>
-        `;
-        
-        // Add retry handler
-        document.getElementById('retry-init').addEventListener('click', () => {
-            window.location.reload();
-        });
-    }
 }
 
-// Create and initialize application
-const app = new AgentGovernanceDemo();
-window.addEventListener('DOMContentLoaded', () => {
-    app.initialize().then(success => {
-        if (success) {
-            logger.info('Application ready');
-        }
+// Create and initialize the application when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM content loaded, initializing application');
+    
+    // Add error container to DOM if it doesn't exist
+    if (!document.getElementById('initialization-error')) {
+        const errorContainer = document.createElement('div');
+        errorContainer.id = 'initialization-error';
+        errorContainer.className = 'error-container';
+        errorContainer.style.display = 'none';
+        
+        errorContainer.innerHTML = `
+            <h2>Initialization Error</h2>
+            <p>There was an error initializing the application:</p>
+            <pre id="error-message">Unknown error</pre>
+            <button onclick="location.reload()">Retry</button>
+        `;
+        
+        document.body.appendChild(errorContainer);
+    }
+    
+    // Create and initialize the application
+    const app = new AgentGovernanceDemo();
+    app.initialize().catch(error => {
+        console.error('Failed to initialize application:', error);
     });
 });
 
-// Export for testing
-export default app;
+// Export the application class for testing
+export default AgentGovernanceDemo;

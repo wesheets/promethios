@@ -29,7 +29,7 @@ class ConfigManager {
                 technicalLead: { enabled: true }
             },
             ui: {
-                theme: 'light',
+                theme: 'dark',
                 animationSpeed: 'normal',
                 showDebugInfo: false
             }
@@ -38,8 +38,6 @@ class ConfigManager {
         this.environmentConfig = {};
         this.userConfig = {};
         this.initialized = false;
-        
-        console.log('Config Manager initialized with default settings');
     }
 
     /**
@@ -54,14 +52,24 @@ class ConfigManager {
         }
 
         try {
+            console.log('Initializing Config Manager...');
+            
             // Load environment config if specified
             if (options.environmentConfigPath) {
-                await this.loadEnvironmentConfig(options.environmentConfigPath);
+                try {
+                    await this.loadEnvironmentConfig(options.environmentConfigPath);
+                } catch (error) {
+                    console.warn('Failed to load environment config, using defaults:', error);
+                }
             }
 
             // Load user config if specified
             if (options.userConfigPath) {
-                await this.loadUserConfig(options.userConfigPath);
+                try {
+                    await this.loadUserConfig(options.userConfigPath);
+                } catch (error) {
+                    console.warn('Failed to load user config, using defaults:', error);
+                }
             }
 
             // Apply any direct config overrides
@@ -70,8 +78,12 @@ class ConfigManager {
             }
 
             // Apply URL parameters if enabled
-            if (options.enableUrlParams !== false) {
-                this.applyUrlParameters();
+            if (options.enableUrlParams !== false && typeof window !== 'undefined') {
+                try {
+                    this.applyUrlParameters();
+                } catch (error) {
+                    console.warn('Failed to apply URL parameters:', error);
+                }
             }
 
             // Merge all configs with priority: defaults < environment < user < overrides < URL params
@@ -115,15 +127,17 @@ class ConfigManager {
      */
     async loadUserConfig(path) {
         // First try localStorage
-        try {
-            const localConfig = localStorage.getItem(path);
-            if (localConfig) {
-                this.userConfig = JSON.parse(localConfig);
-                console.log('Loaded user configuration from localStorage');
-                return;
+        if (typeof window !== 'undefined' && window.localStorage) {
+            try {
+                const localConfig = localStorage.getItem(path);
+                if (localConfig) {
+                    this.userConfig = JSON.parse(localConfig);
+                    console.log('Loaded user configuration from localStorage');
+                    return;
+                }
+            } catch (error) {
+                console.warn('Failed to load user config from localStorage:', error);
             }
-        } catch (error) {
-            console.warn('Failed to load user config from localStorage:', error);
         }
 
         // Fall back to file
@@ -153,6 +167,8 @@ class ConfigManager {
      * Apply URL parameters as configuration overrides
      */
     applyUrlParameters() {
+        if (typeof window === 'undefined') return;
+        
         const urlParams = new URLSearchParams(window.location.search);
         const urlConfig = {};
 
@@ -215,6 +231,8 @@ class ConfigManager {
         const result = {};
 
         for (const obj of objects) {
+            if (!obj) continue;
+            
             for (const key in obj) {
                 if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
                     result[key] = this.deepMerge(result[key] || {}, obj[key]);
@@ -257,7 +275,7 @@ class ConfigManager {
     set(path, value, persist = false) {
         this.setNestedProperty(this.config, path, value);
 
-        if (persist) {
+        if (persist && typeof window !== 'undefined' && window.localStorage) {
             try {
                 // Update user config
                 this.setNestedProperty(this.userConfig, path, value);
@@ -300,7 +318,7 @@ class ConfigManager {
     reset(persist = false) {
         this.config = { ...this.defaultConfig };
         
-        if (persist) {
+        if (persist && typeof window !== 'undefined' && window.localStorage) {
             try {
                 localStorage.removeItem('userConfig');
                 this.userConfig = {};
