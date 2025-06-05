@@ -5,84 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Promethios Agent Governance Demo</title>
     <link rel="stylesheet" href="ui/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Add diagnostic script before main.js -->
+    <script>
+        // Global diagnostic object to help debug module loading issues
+        window.ModuleDiagnostics = {
+            loadedModules: {},
+            registerModule: function(name, module) {
+                console.log(`Module registered: ${name}`, module);
+                this.loadedModules[name] = module;
+                return module;
+            },
+            getModule: function(name) {
+                return this.loadedModules[name];
+            },
+            logModules: function() {
+                console.log('Currently loaded modules:', Object.keys(this.loadedModules));
+            }
+        };
+    </script>
 </head>
 <body>
     <header>
-        <div class="logo-container">
-            <h1>Promethios Agent Governance Demo</h1>
-        </div>
-        <div class="controls">
-            <button id="start-demo" class="primary-button">Start New Session</button>
-            <button id="export-report" class="secondary-button" disabled>Export Report</button>
+        <h1>Promethios Agent Governance Demo</h1>
+        <div class="actions">
+            <button id="start-new-session" class="primary-button">Start New Session</button>
+            <button id="export-report" class="secondary-button">Export Report</button>
         </div>
     </header>
 
     <main>
         <div class="prompt-container">
             <textarea id="user-prompt" placeholder="Enter your prompt here..."></textarea>
-            <button id="send-prompt" class="primary-button">Send to Agents</button>
+            <button id="send-to-agents" class="primary-button">Send to Agents</button>
         </div>
 
-        <div class="demo-container">
+        <div class="columns-container">
             <div class="column ungoverned">
-                <div class="column-header">
-                    <h2>Ungoverned Agents</h2>
-                    <div class="provider-tabs">
-                        <button class="provider-tab active" data-provider="openai">OpenAI</button>
-                        <button class="provider-tab" data-provider="anthropic">Anthropic</button>
-                        <button class="provider-tab" data-provider="huggingface">HuggingFace</button>
-                        <button class="provider-tab" data-provider="cohere">Cohere</button>
-                    </div>
+                <h2>Ungoverned Agents</h2>
+                <div class="provider-tabs">
+                    <button class="provider-tab active" data-provider="openai">OpenAI</button>
+                    <button class="provider-tab" data-provider="anthropic">Anthropic</button>
+                    <button class="provider-tab" data-provider="huggingface">HuggingFace</button>
+                    <button class="provider-tab" data-provider="cohere">Cohere</button>
                 </div>
-                <div class="agent-roles">
-                    <div class="role hr-specialist">HR Specialist</div>
-                    <div class="role project-manager">Project Manager</div>
-                    <div class="role technical-lead">Technical Lead</div>
+                <div class="agent-tabs">
+                    <button class="agent-tab active" data-agent="hr-specialist">HR Specialist</button>
+                    <button class="agent-tab" data-agent="project-manager">Project Manager</button>
+                    <button class="agent-tab" data-agent="technical-lead">Technical Lead</button>
                 </div>
-                <div id="ungoverned-conversation" class="conversation-container"></div>
+                <div id="ungoverned-conversation" class="conversation-container">
+                    <!-- Conversation content will be added here -->
+                </div>
             </div>
 
             <div class="column governed">
-                <div class="column-header">
-                    <h2>Governed Agents</h2>
-                    <div class="provider-tabs">
-                        <button class="provider-tab active" data-provider="openai">OpenAI</button>
-                        <button class="provider-tab" data-provider="anthropic">Anthropic</button>
-                        <button class="provider-tab" data-provider="huggingface">HuggingFace</button>
-                        <button class="provider-tab" data-provider="cohere">Cohere</button>
-                    </div>
+                <h2>Governed Agents</h2>
+                <div class="provider-tabs">
+                    <button class="provider-tab active" data-provider="openai">OpenAI</button>
+                    <button class="provider-tab" data-provider="anthropic">Anthropic</button>
+                    <button class="provider-tab" data-provider="huggingface">HuggingFace</button>
+                    <button class="provider-tab" data-provider="cohere">Cohere</button>
                 </div>
-                <div class="agent-roles">
-                    <div class="role hr-specialist">HR Specialist</div>
-                    <div class="role project-manager">Project Manager</div>
-                    <div class="role technical-lead">Technical Lead</div>
+                <div class="agent-tabs">
+                    <button class="agent-tab active" data-agent="hr-specialist">HR Specialist</button>
+                    <button class="agent-tab" data-agent="project-manager">Project Manager</button>
+                    <button class="agent-tab" data-agent="technical-lead">Technical Lead</button>
                 </div>
-                <div id="governed-conversation" class="conversation-container"></div>
+                <div id="governed-conversation" class="conversation-container">
+                    <!-- Conversation content will be added here -->
+                </div>
             </div>
         </div>
 
         <div id="metrics-container" class="metrics-container">
-            <h3>Session Metrics</h3>
-            <!-- Metrics content will be dynamically inserted here -->
+            <h2>Session Metrics</h2>
+            <div class="metrics-content">
+                <!-- Metrics will be added here -->
+            </div>
         </div>
     </main>
 
     <div id="report-modal" class="modal">
         <div class="modal-content">
-            <button class="close-button">&times;</button>
-            <div id="report-content">
-                <!-- Report content will be dynamically inserted here -->
+            <div class="modal-header">
+                <h2>Session Report</h2>
+                <button class="close-button">&times;</button>
             </div>
-            <div class="modal-actions">
-                <button id="download-report" class="primary-button">Download JSON</button>
+            <div id="report-content" class="modal-body">
+                <!-- Report content will be added here -->
+            </div>
+            <div class="modal-footer">
+                <button id="download-report" class="primary-button">Download Report</button>
                 <button id="close-report" class="secondary-button">Close</button>
             </div>
         </div>
     </div>
 
+    <div id="initialization-error" class="error-modal" style="display: none;">
+        <div class="error-content">
+            <h2>Initialization Error</h2>
+            <p>There was an error initializing the application:</p>
+            <pre id="error-message">configManager is not defined</pre>
+            <button onclick="location.reload()">Retry</button>
+        </div>
+    </div>
+
+    <!-- Add diagnostic script before main.js -->
+    <script type="module">
+        // Import and register core modules with diagnostics
+        import configManagerModule from './core/configManager.js';
+        window.ModuleDiagnostics.registerModule('configManager', configManagerModule);
+        
+        import eventBusModule from './core/eventBus.js';
+        window.ModuleDiagnostics.registerModule('eventBus', eventBusModule);
+        
+        import pluginRegistryModule from './core/pluginRegistry.js';
+        window.ModuleDiagnostics.registerModule('pluginRegistry', pluginRegistryModule);
+        
+        // Log loaded modules before main.js runs
+        window.ModuleDiagnostics.logModules();
+        
+        // Add global fallbacks
+        window.configManager = configManagerModule;
+        window.eventBus = eventBusModule;
+        window.pluginRegistry = pluginRegistryModule;
+        
+        console.log('Core modules pre-loaded and registered');
+    </script>
+
+    <!-- Main application script -->
     <script type="module" src="main.js"></script>
 </body>
 </html>

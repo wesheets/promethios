@@ -3,17 +3,67 @@
  * Handles user interactions and application flow
  */
 
-// Import core modules
-import eventBus from './core/eventBus.js';
-import configManager from './core/configManager.js';
-import pluginRegistry from './core/pluginRegistry.js';
-import apiClient from './api/apiClient.js';
+// Add diagnostic logging
+console.log('Main.js loading...');
+console.log('Checking for pre-loaded modules:', window.ModuleDiagnostics?.loadedModules);
 
-// Import utilities
+// Try to use pre-loaded modules first
+let configManager, eventBus, pluginRegistry;
+
+try {
+    // Check if modules were pre-loaded in the diagnostic script
+    if (window.ModuleDiagnostics && window.ModuleDiagnostics.loadedModules) {
+        console.log('Using pre-loaded modules');
+        configManager = window.ModuleDiagnostics.getModule('configManager');
+        eventBus = window.ModuleDiagnostics.getModule('eventBus');
+        pluginRegistry = window.ModuleDiagnostics.getModule('pluginRegistry');
+        
+        console.log('Pre-loaded configManager:', configManager);
+        console.log('Pre-loaded eventBus:', eventBus);
+        console.log('Pre-loaded pluginRegistry:', pluginRegistry);
+    }
+    
+    // Fall back to direct imports if pre-loading failed
+    if (!configManager) {
+        console.log('Falling back to direct import for configManager');
+        import('./core/configManager.js').then(module => {
+            configManager = module.default;
+            console.log('Directly imported configManager:', configManager);
+            window.configManager = configManager;
+        }).catch(error => {
+            console.error('Failed to import configManager:', error);
+        });
+    }
+    
+    if (!eventBus) {
+        console.log('Falling back to direct import for eventBus');
+        import('./core/eventBus.js').then(module => {
+            eventBus = module.default;
+            console.log('Directly imported eventBus:', eventBus);
+            window.eventBus = eventBus;
+        }).catch(error => {
+            console.error('Failed to import eventBus:', error);
+        });
+    }
+    
+    if (!pluginRegistry) {
+        console.log('Falling back to direct import for pluginRegistry');
+        import('./core/pluginRegistry.js').then(module => {
+            pluginRegistry = module.default;
+            console.log('Directly imported pluginRegistry:', pluginRegistry);
+            window.pluginRegistry = pluginRegistry;
+        }).catch(error => {
+            console.error('Failed to import pluginRegistry:', error);
+        });
+    }
+} catch (error) {
+    console.error('Error during module loading:', error);
+}
+
+// Import other modules
+import apiClient from './api/apiClient.js';
 import logger from './utils/logger.js';
 import sessionManager from './utils/sessionManager.js';
-
-// Import UI components
 import conversationView from './ui/conversationView.js';
 import metricsView from './ui/metricsView.js';
 import reportView from './ui/reportView.js';
@@ -22,6 +72,35 @@ class AgentGovernanceDemo {
     constructor() {
         this.initialized = false;
         console.log('Agent Governance Demo initializing');
+        
+        // Add diagnostic check for core modules
+        this.checkCoreModules();
+    }
+    
+    /**
+     * Check if core modules are available
+     */
+    checkCoreModules() {
+        console.log('Checking core modules availability:');
+        console.log('configManager:', configManager);
+        console.log('eventBus:', eventBus);
+        console.log('pluginRegistry:', pluginRegistry);
+        
+        // Try global fallbacks if modules are undefined
+        if (!configManager && window.configManager) {
+            console.log('Using global fallback for configManager');
+            configManager = window.configManager;
+        }
+        
+        if (!eventBus && window.eventBus) {
+            console.log('Using global fallback for eventBus');
+            eventBus = window.eventBus;
+        }
+        
+        if (!pluginRegistry && window.pluginRegistry) {
+            console.log('Using global fallback for pluginRegistry');
+            pluginRegistry = window.pluginRegistry;
+        }
     }
 
     /**
@@ -32,6 +111,14 @@ class AgentGovernanceDemo {
         try {
             console.log('Starting application initialization');
             
+            // Check core modules again before using them
+            this.checkCoreModules();
+            
+            // Verify configManager exists before using it
+            if (!configManager) {
+                throw new Error('configManager is not defined or not properly loaded');
+            }
+            
             // Initialize configuration first
             await configManager.initialize({
                 environmentConfigPath: 'config/environment.json',
@@ -40,9 +127,19 @@ class AgentGovernanceDemo {
             });
             console.log('Config Manager initialized');
             
+            // Verify eventBus exists before using it
+            if (!eventBus) {
+                throw new Error('eventBus is not defined or not properly loaded');
+            }
+            
             // Initialize event bus
-            eventBus.initialize();
+            await eventBus.initialize();
             console.log('Event Bus initialized');
+            
+            // Verify pluginRegistry exists before using it
+            if (!pluginRegistry) {
+                throw new Error('pluginRegistry is not defined or not properly loaded');
+            }
             
             // Initialize plugin registry
             await pluginRegistry.initialize();
@@ -250,9 +347,9 @@ class AgentGovernanceDemo {
         console.log('Setting up event handlers');
         
         // DOM event handlers
-        document.getElementById('start-demo')?.addEventListener('click', this.handleStartDemo.bind(this));
+        document.getElementById('start-new-session')?.addEventListener('click', this.handleStartDemo.bind(this));
         document.getElementById('export-report')?.addEventListener('click', this.handleExportReport.bind(this));
-        document.getElementById('send-prompt')?.addEventListener('click', this.handleSendPrompt.bind(this));
+        document.getElementById('send-to-agents')?.addEventListener('click', this.handleSendPrompt.bind(this));
         
         // Provider tab event handlers
         document.querySelectorAll('.provider-tab').forEach(tab => {
@@ -340,6 +437,69 @@ class AgentGovernanceDemo {
     }
 
     /**
+     * Handle provider tab click
+     * @param {Event} event - Click event
+     */
+    handleProviderTabClick(event) {
+        const tab = event.target;
+        const provider = tab.dataset.provider;
+        const column = tab.closest('.column');
+        
+        console.log('Provider tab clicked', { provider, column: column.classList.contains('governed') ? 'governed' : 'ungoverned' });
+        
+        // Update active tab in this column
+        column.querySelectorAll('.provider-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    }
+
+    /**
+     * Handle close modal button click
+     * @param {Event} event - Click event
+     */
+    handleCloseModal(event) {
+        console.log('Close modal button clicked');
+        
+        // Hide modal
+        document.getElementById('report-modal').style.display = 'none';
+    }
+
+    /**
+     * Handle download report button click
+     * @param {Event} event - Click event
+     */
+    handleDownloadReport(event) {
+        console.log('Download report button clicked');
+        
+        // Generate report
+        const report = sessionManager.generateReport();
+        
+        // Convert to JSON
+        const reportJson = JSON.stringify(report, null, 2);
+        
+        // Create download link
+        const blob = new Blob([reportJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `agent-governance-report-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Handle session ended event
+     * @param {Object} data - Session data
+     */
+    handleSessionEnded(data) {
+        console.log('Session ended', data);
+        
+        // Enable export report button
+        document.getElementById('export-report').disabled = false;
+    }
+
+    /**
      * Send prompt to all agents
      * @param {string} prompt - User prompt
      * @param {string} provider - Provider ID
@@ -419,100 +579,38 @@ class AgentGovernanceDemo {
             conversationView.showError('Error processing prompt', error.message);
         }
     }
-
-    /**
-     * Handle provider tab click
-     * @param {Event} event - Click event
-     */
-    handleProviderTabClick(event) {
-        const tab = event.target;
-        const provider = tab.dataset.provider;
-        const column = tab.closest('.column');
-        
-        console.log('Provider tab clicked', { provider, column: column.classList.contains('governed') ? 'governed' : 'ungoverned' });
-        
-        // Update active tab in this column
-        column.querySelectorAll('.provider-tab').forEach(t => {
-            t.classList.remove('active');
-        });
-        tab.classList.add('active');
-        
-        // Update conversation view
-        conversationView.switchProvider(provider, column.classList.contains('governed'));
-    }
-
-    /**
-     * Handle close modal button click
-     * @param {Event} event - Click event
-     */
-    handleCloseModal(event) {
-        console.log('Close modal button clicked');
-        
-        // Hide modal
-        document.getElementById('report-modal').style.display = 'none';
-    }
-
-    /**
-     * Handle download report button click
-     * @param {Event} event - Click event
-     */
-    handleDownloadReport(event) {
-        console.log('Download report button clicked');
-        
-        // Generate report JSON
-        const reportJson = sessionManager.exportReportAsJson();
-        
-        // Create download link
-        const blob = new Blob([reportJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `agent-governance-report-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    /**
-     * Handle session ended event
-     * @param {Object} data - Event data
-     */
-    handleSessionEnded(data) {
-        console.log('Session ended', data);
-        
-        // Enable export report button
-        document.getElementById('export-report').disabled = false;
-    }
 }
 
-// Create and initialize the application when DOM is ready
+// Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM content loaded, initializing application');
+    console.log('DOM loaded, initializing application');
     
-    // Add error container to DOM if it doesn't exist
-    if (!document.getElementById('initialization-error')) {
-        const errorContainer = document.createElement('div');
-        errorContainer.id = 'initialization-error';
-        errorContainer.className = 'error-container';
-        errorContainer.style.display = 'none';
+    try {
+        // Check if modules are available
+        console.log('Checking module availability before initialization:');
+        console.log('configManager:', configManager);
+        console.log('eventBus:', eventBus);
+        console.log('pluginRegistry:', pluginRegistry);
         
-        errorContainer.innerHTML = `
-            <h2>Initialization Error</h2>
-            <p>There was an error initializing the application:</p>
-            <pre id="error-message">Unknown error</pre>
-            <button onclick="location.reload()">Retry</button>
-        `;
+        // Create and initialize the application
+        const app = new AgentGovernanceDemo();
+        app.initialize().catch(error => {
+            console.error('Failed to initialize application:', error);
+        });
+    } catch (error) {
+        console.error('Error during application initialization:', error);
         
-        document.body.appendChild(errorContainer);
+        // Display error in UI
+        const errorContainer = document.getElementById('initialization-error');
+        if (errorContainer) {
+            errorContainer.style.display = 'block';
+            const errorMessage = document.getElementById('error-message');
+            if (errorMessage) {
+                errorMessage.textContent = error.message || 'Unknown error occurred during initialization';
+            }
+        } else {
+            // Fallback if error container doesn't exist
+            alert(`Initialization Error: ${error.message || 'Unknown error occurred during initialization'}`);
+        }
     }
-    
-    // Create and initialize the application
-    const app = new AgentGovernanceDemo();
-    app.initialize().catch(error => {
-        console.error('Failed to initialize application:', error);
-    });
 });
-
-// Export the application class for testing
-export default AgentGovernanceDemo;
