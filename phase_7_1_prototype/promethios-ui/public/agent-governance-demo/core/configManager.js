@@ -3,8 +3,16 @@
  * Supports environment-specific settings and dynamic configuration
  */
 
+// Make sure we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Log module loading for diagnostics
+console.log('configManager.js module loading');
+
 class ConfigManager {
     constructor() {
+        console.log('ConfigManager constructor called');
+        
         this.config = {
             // Default configuration
             api: {
@@ -38,6 +46,11 @@ class ConfigManager {
         this.environmentConfig = {};
         this.userConfig = {};
         this.initialized = false;
+        
+        // Make this instance available globally for debugging
+        if (isBrowser) {
+            window._configManager = this;
+        }
     }
 
     /**
@@ -46,6 +59,8 @@ class ConfigManager {
      * @returns {Promise} - Resolves when configuration is loaded
      */
     async initialize(options = {}) {
+        console.log('ConfigManager.initialize called with options:', options);
+        
         if (this.initialized) {
             console.warn('Config Manager already initialized');
             return this.config;
@@ -78,7 +93,7 @@ class ConfigManager {
             }
 
             // Apply URL parameters if enabled
-            if (options.enableUrlParams !== false && typeof window !== 'undefined') {
+            if (options.enableUrlParams !== false && isBrowser) {
                 try {
                     this.applyUrlParameters();
                 } catch (error) {
@@ -108,6 +123,7 @@ class ConfigManager {
      */
     async loadEnvironmentConfig(path) {
         try {
+            console.log(`Loading environment config from ${path}`);
             const response = await fetch(path);
             if (!response.ok) {
                 throw new Error(`Failed to load environment config: ${response.status}`);
@@ -127,8 +143,9 @@ class ConfigManager {
      */
     async loadUserConfig(path) {
         // First try localStorage
-        if (typeof window !== 'undefined' && window.localStorage) {
+        if (isBrowser && window.localStorage) {
             try {
+                console.log(`Checking localStorage for user config at key: ${path}`);
                 const localConfig = localStorage.getItem(path);
                 if (localConfig) {
                     this.userConfig = JSON.parse(localConfig);
@@ -142,6 +159,7 @@ class ConfigManager {
 
         // Fall back to file
         try {
+            console.log(`Loading user config from file: ${path}`);
             const response = await fetch(path);
             if (!response.ok) {
                 throw new Error(`Failed to load user config: ${response.status}`);
@@ -149,7 +167,7 @@ class ConfigManager {
             this.userConfig = await response.json();
             console.log('Loaded user configuration from file');
         } catch (error) {
-            console.warn('Failed to load user config from file, using defaults:', error);
+            console.warn('Failed to load user config from file:', error);
             this.userConfig = {};
         }
     }
@@ -159,21 +177,22 @@ class ConfigManager {
      * @param {Object} overrides - Configuration overrides
      */
     applyConfigOverrides(overrides) {
+        console.log('Applying config overrides:', overrides);
         this.configOverrides = overrides;
-        console.log('Applied configuration overrides');
     }
 
     /**
      * Apply URL parameters as configuration overrides
      */
     applyUrlParameters() {
-        if (typeof window === 'undefined') return;
+        if (!isBrowser) return;
         
-        const urlParams = new URLSearchParams(window.location.search);
+        console.log('Applying URL parameters to config');
+        const params = new URLSearchParams(window.location.search);
         const urlConfig = {};
 
         // Process boolean parameters
-        for (const [key, value] of urlParams.entries()) {
+        for (const [key, value] of params.entries()) {
             if (value === 'true' || value === 'false') {
                 this.setNestedProperty(urlConfig, key, value === 'true');
             } else if (!isNaN(Number(value))) {
@@ -184,14 +203,14 @@ class ConfigManager {
         }
 
         this.urlConfig = urlConfig;
-        console.log('Applied URL parameters to configuration');
+        console.log('Applied URL parameters:', urlConfig);
     }
 
     /**
-     * Set a nested property in an object using dot notation
+     * Set a nested property in an object
      * @param {Object} obj - Target object
-     * @param {string} path - Property path in dot notation
-     * @param {*} value - Value to set
+     * @param {string} path - Property path (e.g. 'features.governance')
+     * @param {any} value - Property value
      */
     setNestedProperty(obj, path, value) {
         const parts = path.split('.');
@@ -212,121 +231,69 @@ class ConfigManager {
      * Merge all configuration sources
      */
     mergeConfigurations() {
-        // Deep merge with priority: defaults < environment < user < overrides < URL params
-        this.config = this.deepMerge(
-            this.config,
-            this.environmentConfig || {},
-            this.userConfig || {},
-            this.configOverrides || {},
-            this.urlConfig || {}
-        );
-    }
-
-    /**
-     * Deep merge multiple objects
-     * @param {...Object} objects - Objects to merge
-     * @returns {Object} - Merged object
-     */
-    deepMerge(...objects) {
-        const result = {};
-
-        for (const obj of objects) {
-            if (!obj) continue;
-            
-            for (const key in obj) {
-                if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                    result[key] = this.deepMerge(result[key] || {}, obj[key]);
+        console.log('Merging configurations');
+        
+        // Deep merge function
+        const deepMerge = (target, source) => {
+            for (const key in source) {
+                if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                    if (!target[key]) target[key] = {};
+                    deepMerge(target[key], source[key]);
                 } else {
-                    result[key] = obj[key];
+                    target[key] = source[key];
                 }
             }
-        }
+        };
 
-        return result;
+        // Create a copy of the default config
+        const mergedConfig = JSON.parse(JSON.stringify(this.config));
+
+        // Apply configurations in order of priority
+        if (this.environmentConfig) deepMerge(mergedConfig, this.environmentConfig);
+        if (this.userConfig) deepMerge(mergedConfig, this.userConfig);
+        if (this.configOverrides) deepMerge(mergedConfig, this.configOverrides);
+        if (this.urlConfig) deepMerge(mergedConfig, this.urlConfig);
+
+        this.config = mergedConfig;
+        console.log('Merged configuration:', this.config);
     }
 
     /**
      * Get a configuration value
-     * @param {string} path - Configuration path in dot notation
-     * @param {*} defaultValue - Default value if path not found
-     * @returns {*} - Configuration value
+     * @param {string} path - Property path (e.g. 'features.governance')
+     * @param {any} defaultValue - Default value if property doesn't exist
+     * @returns {any} - Configuration value
      */
-    get(path, defaultValue = null) {
+    get(path, defaultValue) {
         const parts = path.split('.');
         let current = this.config;
 
         for (const part of parts) {
-            if (current === undefined || current === null || typeof current !== 'object') {
+            if (current[part] === undefined) {
                 return defaultValue;
             }
             current = current[part];
         }
 
-        return current !== undefined ? current : defaultValue;
+        return current;
     }
 
     /**
      * Set a configuration value
-     * @param {string} path - Configuration path in dot notation
-     * @param {*} value - Value to set
-     * @param {boolean} persist - Whether to persist to localStorage
-     * @returns {boolean} - Success status
+     * @param {string} path - Property path (e.g. 'features.governance')
+     * @param {any} value - Property value
+     * @returns {boolean} - True if successful
      */
-    set(path, value, persist = false) {
+    set(path, value) {
+        console.log(`Setting config value: ${path} =`, value);
         this.setNestedProperty(this.config, path, value);
-
-        if (persist && typeof window !== 'undefined' && window.localStorage) {
-            try {
-                // Update user config
-                this.setNestedProperty(this.userConfig, path, value);
-                
-                // Persist to localStorage
-                localStorage.setItem('userConfig', JSON.stringify(this.userConfig));
-                console.log(`Persisted config change: ${path}`);
-                return true;
-            } catch (error) {
-                console.error(`Failed to persist config change: ${path}`, error);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if a feature is enabled
-     * @param {string} feature - Feature name
-     * @returns {boolean} - True if feature is enabled
-     */
-    isFeatureEnabled(feature) {
-        return this.get(`features.${feature}`, false);
-    }
-
-    /**
-     * Get the entire configuration object
-     * @returns {Object} - Configuration object
-     */
-    getAll() {
-        return { ...this.config };
-    }
-
-    /**
-     * Reset configuration to defaults
-     * @param {boolean} persist - Whether to persist to localStorage
-     * @returns {boolean} - Success status
-     */
-    reset(persist = false) {
-        this.config = { ...this.defaultConfig };
         
-        if (persist && typeof window !== 'undefined' && window.localStorage) {
+        // Save to localStorage if available
+        if (isBrowser && window.localStorage) {
             try {
-                localStorage.removeItem('userConfig');
-                this.userConfig = {};
-                console.log('Reset and persisted configuration');
-                return true;
+                localStorage.setItem('userConfig', JSON.stringify(this.config));
             } catch (error) {
-                console.error('Failed to persist configuration reset', error);
-                return false;
+                console.warn('Failed to save config to localStorage:', error);
             }
         }
 
@@ -335,5 +302,14 @@ class ConfigManager {
 }
 
 // Create and export singleton instance
+console.log('Creating configManager singleton instance');
 const configManager = new ConfigManager();
+
+// Make it available globally for debugging
+if (isBrowser) {
+    console.log('Exposing configManager globally as window.configManager');
+    window.configManager = configManager;
+}
+
+console.log('Exporting configManager singleton');
 export default configManager;
