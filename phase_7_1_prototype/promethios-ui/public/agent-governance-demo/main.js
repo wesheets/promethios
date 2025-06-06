@@ -217,6 +217,12 @@ class AgentGovernanceDemo {
         try {
             console.log('Registering agent plugins');
             
+            // Ensure AgentBase is available globally before importing agent plugins
+            if (!window.AgentBase && window.agentRegistry) {
+                window.AgentBase = window.agentRegistry.AgentBase;
+                console.log('AgentBase made available globally from registry');
+            }
+            
             // Import agent plugins
             const HRSpecialistAgent = (await import('./plugins/agents/hrSpecialist.js')).default;
             const ProjectManagerAgent = (await import('./plugins/agents/projectManager.js')).default;

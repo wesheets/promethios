@@ -3,8 +3,12 @@
  * Extends the base agent class with HR-specific functionality
  */
 
-// Import the base agent class
-import AgentBase from './agentBase.js';
+// Use AgentBase from global registry or direct import as fallback
+const AgentBase = (typeof window !== 'undefined' && window.AgentBase) 
+    ? window.AgentBase 
+    : (typeof window !== 'undefined' && window.agentRegistry && window.agentRegistry.AgentBase)
+        ? window.agentRegistry.AgentBase
+        : require('./agentBase.js').default;
 
 class HRSpecialistAgent extends AgentBase {
     constructor(options = {}) {

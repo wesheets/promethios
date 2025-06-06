@@ -3,6 +3,13 @@
  * Extends the base agent class with technical-specific functionality
  */
 
+// Use AgentBase from global registry or direct import as fallback
+const AgentBase = (typeof window !== 'undefined' && window.AgentBase) 
+    ? window.AgentBase 
+    : (typeof window !== 'undefined' && window.agentRegistry && window.agentRegistry.AgentBase)
+        ? window.agentRegistry.AgentBase
+        : require('./agentBase.js').default;
+
 class TechnicalLeadAgent extends AgentBase {
     constructor(options = {}) {
         // Set default options for Technical Lead
