@@ -142,10 +142,15 @@ class TrustLogWriter:
         execution_id = replay_log.get("execution_id", str(uuid.uuid4()))
         
         # Extract verification details
+        # Use 'merkle_consensus' instead of 'consensus' to match schema enum
+        verification_method = verification_result.get("verification_method", "")
+        if verification_method == "consensus":
+            verification_method = "merkle_consensus"
+            
         verification_status = {
             "is_verified": verification_result.get("verification_result", {}).get("is_valid", False),
             "verification_timestamp": verification_result.get("timestamp", ""),
-            "verification_method": verification_result.get("verification_method", ""),
+            "verification_method": verification_method,
             "verification_id": verification_result.get("verification_id", "")
         }
         

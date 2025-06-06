@@ -27,14 +27,17 @@ class BoundaryDetectionEngine:
     trust assumptions change, classifying these boundaries, and maintaining metadata about them.
     It provides functionality for automatic boundary detection, boundary classification,
     relationship mapping, and change detection.
+    
+    Codex Contract: v2025.05.21
+    Phase ID: 5.9
     """
     
     def __init__(
         self,
-        governance_primitive_manager: GovernancePrimitiveManager,
-        trust_metrics_calculator: TrustMetricsCalculator,
-        seal_verification_service: SealVerificationService,
-        schema_validator: SchemaValidator,
+        governance_primitive_manager: GovernancePrimitiveManager = None,
+        trust_metrics_calculator: TrustMetricsCalculator = None,
+        seal_verification_service: SealVerificationService = None,
+        schema_validator: SchemaValidator = None,
         boundaries_file_path: str = None
     ):
         """
@@ -101,14 +104,344 @@ class BoundaryDetectionEngine:
             }
             
             # Create a seal for the boundaries data
-            seal = self.seal_verification_service.create_seal(json.dumps(data))
-            data['seal'] = seal
+            if self.seal_verification_service:
+                seal = self.seal_verification_service.create_seal(json.dumps(data))
+                data['seal'] = seal
             
             with open(self.boundaries_file_path, 'w') as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             self.logger.error(f"Error saving boundaries: {str(e)}")
     
+    def _verify_contract_tether(self, method_name):
+        """
+        Verify contract tether for a method call.
+        
+        Args:
+            method_name: Name of the method being called
+            
+        Returns:
+            True if verification passes, raises exception otherwise
+        """
+        # Verify contract tether
+        if self.seal_verification_service and not self.seal_verification_service.verify_contract_tether():
+            raise ValueError(f"Contract tether verification failed for {method_name}")
+            
+        return True
+    
+    def register_boundary(self, boundary):
+        """
+        Register a new boundary.
+        
+        Args:
+            boundary: Boundary definition
+            
+        Returns:
+            ID of the registered boundary
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("register_boundary")
+        
+        # Validate boundary schema if validator is available
+        if self.schema_validator:
+            validation_result = self.schema_validator.validate(boundary, "schemas/trust/trust_boundary.schema.v1.json")
+            if not validation_result.is_valid:
+                raise ValueError(f"Invalid boundary definition: {validation_result.errors}")
+        
+        # Add boundary to storage
+        boundary_id = boundary["boundary_id"]
+        self.boundaries[boundary_id] = boundary
+        
+        # Initialize controls list if not present
+        if "controls" not in self.boundaries[boundary_id]:
+            self.boundaries[boundary_id]["controls"] = []
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return boundary_id
+        
+    def get_boundary(self, boundary_id):
+        """
+        Get a boundary by ID.
+        
+        Args:
+            boundary_id: ID of the boundary to get
+            
+        Returns:
+            Boundary definition, or None if not found
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("get_boundary")
+        
+        # Return boundary if found
+        return self.boundaries.get(boundary_id)
+        
+    def update_boundary(self, boundary_id, updates):
+        """
+        Update a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary to update
+            updates: Dictionary of updates to apply
+            
+        Returns:
+            True if update was successful, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("update_boundary")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Apply updates
+        for key, value in updates.items():
+            if key != "boundary_id":  # Don't allow changing the ID
+                self.boundaries[boundary_id][key] = value
+        
+        # Update timestamp
+        self.boundaries[boundary_id]["updated_at"] = datetime.utcnow().isoformat()
+        
+        # Validate updated boundary
+        if self.schema_validator:
+            validation_result = self.schema_validator.validate(self.boundaries[boundary_id], "schemas/trust/trust_boundary.schema.v1.json")
+            if not validation_result.is_valid:
+                # Revert changes
+                self._load_boundaries()
+                return False
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return True
+        
+    def delete_boundary(self, boundary_id):
+        """
+        Delete a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary to delete
+            
+        Returns:
+            True if deletion was successful, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("delete_boundary")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Delete boundary
+        del self.boundaries[boundary_id]
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return True
+        
+    def list_boundaries(self, boundary_type=None, status=None):
+        """
+        List boundaries, optionally filtered by type and status.
+        
+        Args:
+            boundary_type: Type of boundaries to list
+            status: Status of boundaries to list
+            
+        Returns:
+            List of boundaries
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("list_boundaries")
+        
+        # Start with all boundaries
+        result = list(self.boundaries.values())
+        
+        # Filter by type if provided
+        if boundary_type:
+            result = [b for b in result if b.get("boundary_type") == boundary_type]
+        
+        # Filter by status if provided
+        if status:
+            result = [b for b in result if b.get("status") == status]
+        
+        return result
+        
+    def search_boundaries(self, search_term):
+        """
+        Search boundaries by name or description.
+        
+        Args:
+            search_term: Term to search for
+            
+        Returns:
+            List of matching boundaries
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("search_boundaries")
+        
+        # Convert search term to lowercase for case-insensitive search
+        search_term = search_term.lower()
+        
+        # Search in name and description
+        result = []
+        for boundary in self.boundaries.values():
+            name = boundary.get("name", "").lower()
+            description = boundary.get("description", "").lower()
+            
+            if search_term in name or search_term in description:
+                result.append(boundary)
+        
+        return result
+        
+    def add_boundary_control(self, boundary_id, control):
+        """
+        Add a control to a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary
+            control: Control definition
+            
+        Returns:
+            True if control was added successfully, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("add_boundary_control")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Initialize controls list if not present
+        if "controls" not in self.boundaries[boundary_id]:
+            self.boundaries[boundary_id]["controls"] = []
+        
+        # Add control
+        self.boundaries[boundary_id]["controls"].append(control)
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return True
+        
+    def remove_boundary_control(self, boundary_id, control_id):
+        """
+        Remove a control from a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary
+            control_id: ID of the control to remove
+            
+        Returns:
+            True if control was removed successfully, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("remove_boundary_control")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Check if boundary has controls
+        if "controls" not in self.boundaries[boundary_id]:
+            return False
+        
+        # Find control
+        controls = self.boundaries[boundary_id]["controls"]
+        for i, control in enumerate(controls):
+            if control.get("control_id") == control_id:
+                # Remove control
+                controls.pop(i)
+                
+                # Save boundaries
+                self._save_boundaries()
+                
+                return True
+        
+        # Control not found
+        return False
+        
+    def get_boundary_controls(self, boundary_id):
+        """
+        Get controls for a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary
+            
+        Returns:
+            List of controls, empty list if boundary not found
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("get_boundary_controls")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return []
+        
+        # Return controls
+        return self.boundaries[boundary_id].get("controls", [])
+        
+    def add_entry_point(self, boundary_id, entry_point):
+        """
+        Add an entry point to a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary
+            entry_point: Entry point definition
+            
+        Returns:
+            True if entry point was added successfully, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("add_entry_point")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Initialize entry points list if not present
+        if "entry_points" not in self.boundaries[boundary_id]:
+            self.boundaries[boundary_id]["entry_points"] = []
+        
+        # Add entry point
+        self.boundaries[boundary_id]["entry_points"].append(entry_point)
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return True
+        
+    def add_exit_point(self, boundary_id, exit_point):
+        """
+        Add an exit point to a boundary.
+        
+        Args:
+            boundary_id: ID of the boundary
+            exit_point: Exit point definition
+            
+        Returns:
+            True if exit point was added successfully, False otherwise
+        """
+        # Perform pre-loop tether check
+        self._verify_contract_tether("add_exit_point")
+        
+        # Check if boundary exists
+        if boundary_id not in self.boundaries:
+            return False
+        
+        # Initialize exit points list if not present
+        if "exit_points" not in self.boundaries[boundary_id]:
+            self.boundaries[boundary_id]["exit_points"] = []
+        
+        # Add exit point
+        self.boundaries[boundary_id]["exit_points"].append(exit_point)
+        
+        # Save boundaries
+        self._save_boundaries()
+        
+        return True
+        
     def detect_boundaries(self, system_components: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Detect trust boundaries within the system based on provided components.
@@ -386,17 +719,12 @@ class BoundaryDetectionEngine:
         }
         
         # Validate the boundary against the schema
-        schema_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "schemas",
-            "trust",
-            "trust_boundary.schema.v1.json"
-        )
-        
-        validation_result = self.schema_validator.validate(boundary, schema_path)
-        if not validation_result.is_valid:
-            self.logger.error(f"Invalid boundary definition: {validation_result.errors}")
-            raise ValueError(f"Invalid boundary definition: {validation_result.errors}")
+        if self.schema_validator:
+            schema_path = "schemas/trust/trust_boundary.schema.v1.json"
+            validation_result = self.schema_validator.validate(boundary, schema_path)
+            if not validation_result.is_valid:
+                self.logger.error(f"Invalid boundary definition: {validation_result.errors}")
+                raise ValueError(f"Invalid boundary definition: {validation_result.errors}")
         
         return boundary
     
@@ -410,405 +738,14 @@ class BoundaryDetectionEngine:
         Returns:
             Classification of the boundary
         """
-        # Default classifications based on boundary type
-        classifications = {
-            "process": "internal",
+        # Default classification mapping
+        classification_map = {
+            "process": "confidential",
             "network": "restricted",
-            "data": "confidential",
-            "user": "public",
+            "data": "restricted",
+            "user": "confidential",
             "module": "internal",
-            "governance": "critical"
+            "governance": "restricted"
         }
         
-        return classifications.get(boundary_type, "internal")
-    
-    def register_boundary(self, boundary_definition: Dict[str, Any]) -> str:
-        """
-        Register a new boundary in the system.
-        
-        Args:
-            boundary_definition: Definition of the boundary to register
-            
-        Returns:
-            ID of the registered boundary
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("register_boundary")
-        
-        # Validate the boundary definition
-        schema_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "schemas",
-            "trust",
-            "trust_boundary.schema.v1.json"
-        )
-        
-        validation_result = self.schema_validator.validate(boundary_definition, schema_path)
-        if not validation_result.is_valid:
-            self.logger.error(f"Invalid boundary definition: {validation_result.errors}")
-            raise ValueError(f"Invalid boundary definition: {validation_result.errors}")
-        
-        # Generate a boundary ID if not provided
-        if 'boundary_id' not in boundary_definition:
-            boundary_definition['boundary_id'] = f"boundary-{str(uuid.uuid4())}"
-        
-        # Set timestamps if not provided
-        now = datetime.utcnow().isoformat()
-        if 'created_at' not in boundary_definition:
-            boundary_definition['created_at'] = now
-        if 'updated_at' not in boundary_definition:
-            boundary_definition['updated_at'] = now
-        
-        # Set version if not provided
-        if 'version' not in boundary_definition:
-            boundary_definition['version'] = "1.0.0"
-        
-        # Set status if not provided
-        if 'status' not in boundary_definition:
-            boundary_definition['status'] = "active"
-        
-        # Add the boundary to the registry
-        boundary_id = boundary_definition['boundary_id']
-        self.boundaries[boundary_id] = boundary_definition
-        
-        # Save the updated boundaries
-        self._save_boundaries()
-        
-        return boundary_id
-    
-    def get_boundary(self, boundary_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get a boundary by its ID.
-        
-        Args:
-            boundary_id: ID of the boundary to retrieve
-            
-        Returns:
-            Boundary definition or None if not found
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("get_boundary")
-        
-        return self.boundaries.get(boundary_id)
-    
-    def update_boundary(self, boundary_id: str, updates: Dict[str, Any]) -> bool:
-        """
-        Update a boundary definition.
-        
-        Args:
-            boundary_id: ID of the boundary to update
-            updates: Updates to apply to the boundary
-            
-        Returns:
-            True if the update was successful, False otherwise
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("update_boundary")
-        
-        if boundary_id not in self.boundaries:
-            self.logger.error(f"Boundary {boundary_id} not found")
-            return False
-        
-        # Get the current boundary definition
-        boundary = self.boundaries[boundary_id]
-        
-        # Apply updates
-        for key, value in updates.items():
-            if key not in ['boundary_id', 'created_at']:
-                boundary[key] = value
-        
-        # Update the timestamp
-        boundary['updated_at'] = datetime.utcnow().isoformat()
-        
-        # Increment the version
-        version_parts = boundary['version'].split('.')
-        version_parts[-1] = str(int(version_parts[-1]) + 1)
-        boundary['version'] = '.'.join(version_parts)
-        
-        # Validate the updated boundary
-        schema_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "schemas",
-            "trust",
-            "trust_boundary.schema.v1.json"
-        )
-        
-        validation_result = self.schema_validator.validate(boundary, schema_path)
-        if not validation_result.is_valid:
-            self.logger.error(f"Invalid boundary definition after update: {validation_result.errors}")
-            return False
-        
-        # Update the boundary in the registry
-        self.boundaries[boundary_id] = boundary
-        
-        # Save the updated boundaries
-        self._save_boundaries()
-        
-        return True
-    
-    def delete_boundary(self, boundary_id: str) -> bool:
-        """
-        Delete a boundary from the registry.
-        
-        Args:
-            boundary_id: ID of the boundary to delete
-            
-        Returns:
-            True if the deletion was successful, False otherwise
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("delete_boundary")
-        
-        if boundary_id not in self.boundaries:
-            self.logger.error(f"Boundary {boundary_id} not found")
-            return False
-        
-        # Remove the boundary from the registry
-        del self.boundaries[boundary_id]
-        
-        # Remove any relationships involving this boundary
-        for rel_id in list(self.boundary_relationships.keys()):
-            rel = self.boundary_relationships[rel_id]
-            if rel['source_boundary_id'] == boundary_id or rel['target_boundary_id'] == boundary_id:
-                del self.boundary_relationships[rel_id]
-        
-        # Save the updated boundaries
-        self._save_boundaries()
-        
-        return True
-    
-    def list_boundaries(self, boundary_type: str = None) -> List[Dict[str, Any]]:
-        """
-        List all boundaries in the registry, optionally filtered by type.
-        
-        Args:
-            boundary_type: Type of boundaries to filter by
-            
-        Returns:
-            List of boundary definitions
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("list_boundaries")
-        
-        if boundary_type:
-            return [b for b in self.boundaries.values() if b.get('boundary_type') == boundary_type]
-        else:
-            return list(self.boundaries.values())
-    
-    def add_boundary_relationship(
-        self,
-        source_boundary_id: str,
-        target_boundary_id: str,
-        relationship_type: str,
-        description: str = None
-    ) -> str:
-        """
-        Add a relationship between two boundaries.
-        
-        Args:
-            source_boundary_id: ID of the source boundary
-            target_boundary_id: ID of the target boundary
-            relationship_type: Type of relationship
-            description: Description of the relationship
-            
-        Returns:
-            ID of the created relationship
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("add_boundary_relationship")
-        
-        # Verify that both boundaries exist
-        if source_boundary_id not in self.boundaries:
-            self.logger.error(f"Source boundary {source_boundary_id} not found")
-            raise ValueError(f"Source boundary {source_boundary_id} not found")
-        
-        if target_boundary_id not in self.boundaries:
-            self.logger.error(f"Target boundary {target_boundary_id} not found")
-            raise ValueError(f"Target boundary {target_boundary_id} not found")
-        
-        # Verify that the relationship type is valid
-        valid_relationship_types = [
-            "contains",
-            "contained_by",
-            "intersects",
-            "adjacent",
-            "depends_on",
-            "depended_on_by"
-        ]
-        
-        if relationship_type not in valid_relationship_types:
-            self.logger.error(f"Invalid relationship type: {relationship_type}")
-            raise ValueError(f"Invalid relationship type: {relationship_type}")
-        
-        # Create the relationship
-        relationship_id = f"rel-{str(uuid.uuid4())}"
-        relationship = {
-            "relationship_id": relationship_id,
-            "source_boundary_id": source_boundary_id,
-            "target_boundary_id": target_boundary_id,
-            "relationship_type": relationship_type,
-            "description": description,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        
-        # Add the relationship to the registry
-        self.boundary_relationships[relationship_id] = relationship
-        
-        # Update the boundaries to include the relationship
-        source_boundary = self.boundaries[source_boundary_id]
-        if 'relationships' not in source_boundary:
-            source_boundary['relationships'] = []
-        
-        source_boundary['relationships'].append({
-            "related_boundary_id": target_boundary_id,
-            "relationship_type": relationship_type,
-            "description": description
-        })
-        
-        # Save the updated boundaries
-        self._save_boundaries()
-        
-        return relationship_id
-    
-    def get_boundary_relationships(self, boundary_id: str) -> List[Dict[str, Any]]:
-        """
-        Get all relationships involving a specific boundary.
-        
-        Args:
-            boundary_id: ID of the boundary
-            
-        Returns:
-            List of relationships involving the boundary
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("get_boundary_relationships")
-        
-        return [
-            rel for rel in self.boundary_relationships.values()
-            if rel['source_boundary_id'] == boundary_id or rel['target_boundary_id'] == boundary_id
-        ]
-    
-    def detect_boundary_changes(self, boundary_id: str, previous_state: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Detect changes in a boundary by comparing with a previous state.
-        
-        Args:
-            boundary_id: ID of the boundary to check
-            previous_state: Previous state of the boundary
-            
-        Returns:
-            List of detected changes
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("detect_boundary_changes")
-        
-        if boundary_id not in self.boundaries:
-            self.logger.error(f"Boundary {boundary_id} not found")
-            raise ValueError(f"Boundary {boundary_id} not found")
-        
-        current_state = self.boundaries[boundary_id]
-        changes = []
-        
-        # Compare fields to detect changes
-        for key in current_state:
-            if key in previous_state:
-                if current_state[key] != previous_state[key]:
-                    changes.append({
-                        "field": key,
-                        "previous_value": previous_state[key],
-                        "current_value": current_state[key],
-                        "change_type": "modified"
-                    })
-            else:
-                changes.append({
-                    "field": key,
-                    "current_value": current_state[key],
-                    "change_type": "added"
-                })
-        
-        # Check for removed fields
-        for key in previous_state:
-            if key not in current_state:
-                changes.append({
-                    "field": key,
-                    "previous_value": previous_state[key],
-                    "change_type": "removed"
-                })
-        
-        return changes
-    
-    def prepare_boundary_visualization(self, boundary_ids: List[str] = None) -> Dict[str, Any]:
-        """
-        Prepare data for visualizing boundaries and their relationships.
-        
-        Args:
-            boundary_ids: IDs of boundaries to include in the visualization
-            
-        Returns:
-            Data structure for visualization
-        """
-        # Perform pre-loop tether check
-        self._verify_contract_tether("prepare_boundary_visualization")
-        
-        # If no boundary IDs are provided, include all boundaries
-        if boundary_ids is None:
-            boundary_ids = list(self.boundaries.keys())
-        
-        # Prepare nodes (boundaries)
-        nodes = []
-        for boundary_id in boundary_ids:
-            if boundary_id in self.boundaries:
-                boundary = self.boundaries[boundary_id]
-                nodes.append({
-                    "id": boundary_id,
-                    "name": boundary.get('name', 'Unknown'),
-                    "type": boundary.get('boundary_type', 'Unknown'),
-                    "classification": boundary.get('classification', 'Unknown'),
-                    "status": boundary.get('status', 'Unknown')
-                })
-        
-        # Prepare edges (relationships)
-        edges = []
-        for rel in self.boundary_relationships.values():
-            source_id = rel['source_boundary_id']
-            target_id = rel['target_boundary_id']
-            if source_id in boundary_ids and target_id in boundary_ids:
-                edges.append({
-                    "id": rel.get('relationship_id', 'Unknown'),
-                    "source": source_id,
-                    "target": target_id,
-                    "type": rel.get('relationship_type', 'Unknown'),
-                    "description": rel.get('description', '')
-                })
-        
-        return {
-            "nodes": nodes,
-            "edges": edges
-        }
-    
-    def _verify_contract_tether(self, operation: str) -> None:
-        """
-        Verify the contract tether before performing an operation.
-        
-        Args:
-            operation: Name of the operation being performed
-            
-        Raises:
-            ValueError: If the contract tether verification fails
-        """
-        # Create a contract state representation
-        contract_state = {
-            "operation": operation,
-            "timestamp": datetime.utcnow().isoformat(),
-            "boundaries_count": len(self.boundaries),
-            "relationships_count": len(self.boundary_relationships)
-        }
-        
-        # Verify the contract state
-        if not self.seal_verification_service.verify_contract_tether(
-            "BoundaryDetectionEngine",
-            operation,
-            json.dumps(contract_state)
-        ):
-            self.logger.error(f"Contract tether verification failed for operation: {operation}")
-            raise ValueError(f"Contract tether verification failed for operation: {operation}")
+        return classification_map.get(boundary_type, "internal")

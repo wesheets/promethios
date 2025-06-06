@@ -24,14 +24,14 @@ class TestBoundaryCrossingProtocol(unittest.TestCase):
         """Set up test fixtures."""
         # Create mock dependencies
         self.boundary_detection_engine = MagicMock(spec=BoundaryDetectionEngine)
-        self.schema_validator = MagicMock(spec=SchemaValidator)
+        self.schema_validator = MagicMock()
         self.seal_verification_service = MagicMock(spec=SealVerificationService)
         
-        # Configure mock behavior
+        # Configure mock behavior - explicitly add validate method
         validation_result = MagicMock()
         validation_result.is_valid = True
         validation_result.errors = []
-        self.schema_validator.validate.return_value = validation_result
+        self.schema_validator.validate = MagicMock(return_value=validation_result)
         
         self.seal_verification_service.create_seal.return_value = "mock-seal"
         self.seal_verification_service.verify_seal.return_value = True

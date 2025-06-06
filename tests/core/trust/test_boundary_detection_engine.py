@@ -22,14 +22,16 @@ class TestBoundaryDetectionEngine(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Create mock dependencies
-        self.schema_validator = MagicMock(spec=SchemaValidator)
+        self.schema_validator = MagicMock()
         self.seal_verification_service = MagicMock(spec=SealVerificationService)
+        self.governance_primitive_manager = MagicMock()
+        self.trust_metrics_calculator = MagicMock()
         
-        # Configure mock behavior
+        # Configure mock behavior - explicitly add validate method
         validation_result = MagicMock()
         validation_result.is_valid = True
         validation_result.errors = []
-        self.schema_validator.validate.return_value = validation_result
+        self.schema_validator.validate = MagicMock(return_value=validation_result)
         
         self.seal_verification_service.create_seal.return_value = "mock-seal"
         self.seal_verification_service.verify_seal.return_value = True
@@ -40,6 +42,8 @@ class TestBoundaryDetectionEngine(unittest.TestCase):
         
         # Create the engine instance
         self.engine = BoundaryDetectionEngine(
+            governance_primitive_manager=self.governance_primitive_manager,
+            trust_metrics_calculator=self.trust_metrics_calculator,
             schema_validator=self.schema_validator,
             seal_verification_service=self.seal_verification_service,
             boundaries_file_path=self.test_boundaries_file

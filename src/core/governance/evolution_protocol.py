@@ -2,14 +2,12 @@
 """
 Manages the process of evolving contracts through a formal approval process.
 """
-
 import uuid
 import datetime
 import json
 import re
 from typing import Dict, Any, List, Optional
 from src.core.governance.contract_sealer import ContractSealer
-
 class ContractEvolutionProtocol:
     """
     Manages the process of evolving contracts through a formal approval process.
@@ -30,47 +28,40 @@ class ContractEvolutionProtocol:
         self,
         current_contract: Dict[str, Any],
         proposed_changes: Dict[str, Any],
-        justification: str,
-        proposer_id: str
+        proposer_id: str,
+        justification: str
     ) -> Dict[str, Any]:
         """
         Create a proposal to evolve a contract.
         
         Args:
-            current_contract: The current version of the contract.
+            current_contract: The current contract.
             proposed_changes: The proposed changes to the contract.
-            justification: The justification for the changes.
             proposer_id: The identifier of the proposer.
+            justification: The justification for the proposed changes.
             
         Returns:
             An evolution proposal.
         """
-        # Create a deep copy of the current contract
-        current_copy = json.loads(json.dumps(current_contract))
+        # Apply the proposed changes to the current contract
+        proposed_contract = self._apply_changes(current_contract, proposed_changes)
         
-        # Apply the proposed changes to create the proposed contract
-        proposed_contract = self._apply_changes(current_copy, proposed_changes)
-        
-        # Increment the version
-        proposed_contract["version"] = self._increment_version(
-            current_copy.get("version", "1.0.0")
-        )
-        
-        # Update the last_modified timestamp
-        proposed_contract["last_modified"] = datetime.datetime.utcnow().isoformat() + "Z"
+        # Increment the version number
+        if "version" in proposed_contract:
+            proposed_contract["version"] = self._increment_version(proposed_contract["version"])
         
         # Create the proposal
         proposal = {
             "proposal_id": str(uuid.uuid4()),
             "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             "proposer_id": proposer_id,
-            "current_contract": current_copy,
+            "current_contract": current_contract,
+            "proposed_changes": proposed_changes,
             "proposed_contract": proposed_contract,
             "justification": justification,
-            "status": "PROPOSED",
+            "status": "PENDING",
             "approvals": [],
-            "rejections": [],
-            "comments": []
+            "rejections": []
         }
         
         return proposal
@@ -79,7 +70,7 @@ class ContractEvolutionProtocol:
         self,
         proposal: Dict[str, Any],
         approver_id: str,
-        comments: Optional[str] = None
+        comments: str = ""
     ) -> Dict[str, Any]:
         """
         Approve an evolution proposal.
@@ -251,3 +242,6 @@ class ContractEvolutionProtocol:
         
         # Join the parts back together
         return ".".join(parts)
+
+# Backward compatibility alias
+EvolutionProtocol = ContractEvolutionProtocol

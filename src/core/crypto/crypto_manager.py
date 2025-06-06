@@ -9,6 +9,8 @@ import logging
 import time
 import json
 import os
+import uuid
+import tempfile
 from typing import Dict, List, Optional, Any, Tuple
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,14 @@ class CryptoManager:
         self.algorithm_providers = {}
         self.key_providers = {}
         self.logger = logging.getLogger(__name__)
+        
+        # Create a temporary directory for key storage
+        self.temp_dir = tempfile.mkdtemp()
+        self.config['key_store_path'] = self.temp_dir
+        
+        # Initialize audit logger
+        from .crypto_audit_logger import CryptoAuditLogger
+        self.audit_logger = CryptoAuditLogger(self.config)
         
         # Initialize components
         self._initialize_components()
@@ -378,6 +388,9 @@ class CryptoManager:
         # Register algorithm
         self.algorithm_registry[registry_key] = algorithm_data
         
+        # Log algorithm registration
+        self.audit_logger.log_algorithm_registration(algorithm_data)
+        
         self.logger.info(f"Registered algorithm {registry_key}")
         return True
     
@@ -526,6 +539,9 @@ class CryptoManager:
         # Register key
         self.key_registry[registry_key] = key_data
         
+        # Log key generation
+        self.audit_logger.log_key_generation(key_data)
+        
         self.logger.info(f"Registered key {registry_key}")
         return True
     
@@ -619,6 +635,14 @@ class CryptoManager:
                 self.logger.error(f"Failed to generate {key_type} key")
                 return None
             
+            # Ensure key has an ID
+            if 'id' not in key_data:
+                key_data['id'] = str(uuid.uuid4())
+            
+            # Ensure key has status
+            if 'status' not in key_data:
+                key_data['status'] = 'active'
+            
             # Register key
             if not self.register_key(key_type, key_data):
                 self.logger.error(f"Failed to register {key_type} key")
@@ -663,18 +687,36 @@ class CryptoManager:
                         success = False
                         continue
                     
-                    # Generate new key
+                    # Generate new key first
                     key_id = self.generate_key(key_type, algorithm_id, domain)
                     if not key_id:
                         self.logger.error(f"Failed to generate new key for {domain}/{key_type}")
                         success = False
                         continue
                     
-                    # Update old keys
+                    # Ensure the new key is marked as active
+                    new_key = self.get_key(key_type, key_id)
+                    if new_key and new_key.get('status') != 'active':
+                        new_key['status'] = 'active'
+                        registry_key = f"{key_type}:{key_id}"
+                        self.key_registry[registry_key] = new_key
+                    
+                    # Now deprecate old keys
                     old_keys = self.list_keys(key_type, 'active')
+                    old_keys = [k for k in old_keys if k.get('domain') == domain and k.get('id') != key_id]
+                    
                     for old_key in old_keys:
-                        if old_key.get('domain') == domain:
-                            self.update_key_status(key_type, old_key.get('id'), 'deprecated')
+                        old_key_id = old_key.get('id')
+                        self.update_key_status(key_type, old_key_id, 'deprecated')
+                    
+                    # Log key rotation
+                    rotation_data = {
+                        'domain': domain,
+                        'key_type': key_type,
+                        'new_key_id': key_id,
+                        'timestamp': time.time()
+                    }
+                    self.audit_logger.log_key_rotation(rotation_data)
                     
                     self.logger.info(f"Rotated keys for {domain}/{key_type}")
                 except Exception as e:
@@ -727,6 +769,15 @@ class CryptoManager:
         elif algorithm_type == 'asymmetric':
             self.rotate_keys(key_type='asymmetric')
         
+        # Log algorithm transition
+        transition_data = {
+            'algorithm_type': algorithm_type,
+            'old_algorithm_id': old_algorithm_id,
+            'new_algorithm_id': new_algorithm_id,
+            'timestamp': time.time()
+        }
+        self.audit_logger.log_algorithm_transition(transition_data)
+        
         self.logger.info(f"Transitioned from {old_algorithm_id} to {new_algorithm_id} for {algorithm_type}")
         return True
     
@@ -755,8 +806,11 @@ class CryptoManager:
         # Get active algorithm for the domain and algorithm type
         algorithm_id = self.get_active_algorithm(domain, algorithm_type)
         if not algorithm_id:
-            self.logger.error(f"No active algorithm found for {domain}/{algorithm_type}")
-            return None
+            # Use default algorithm if no active algorithm is set
+            algorithm_id = self.config.get(f'default_{algorithm_type}_algorithm')
+            if not algorithm_id:
+                self.logger.error(f"No active algorithm found for {domain}/{algorithm_type}")
+                return None
         
         # Get provider for the algorithm type
         if algorithm_type not in self.algorithm_providers:
@@ -785,7 +839,18 @@ class CryptoManager:
         algorithm_id, provider = provider_info
         
         try:
+            # Hash data
             hash_result = provider.hash_data(data, algorithm_id)
+            
+            # Log hash operation
+            hash_data = {
+                'domain': domain,
+                'algorithm_id': algorithm_id,
+                'data_size': len(data),
+                'timestamp': time.time()
+            }
+            self.audit_logger.log_crypto_event('hash', hash_data)
+            
             return hash_result
         except Exception as e:
             self.logger.error(f"Error hashing data: {str(e)}")
@@ -810,42 +875,78 @@ class CryptoManager:
         algorithm_id, provider = provider_info
         
         try:
-            # Get key to use
-            if not key_id:
-                # Find active key for the domain
-                keys = self.list_keys('symmetric', 'active')
-                domain_keys = [key for key in keys if key.get('domain') == domain]
-                if not domain_keys:
-                    self.logger.error(f"No active symmetric key found for {domain}")
+            # Get key
+            if key_id:
+                key_data = self.get_key('symmetric', key_id)
+                if not key_data:
+                    self.logger.error(f"Key {key_id} not found")
                     return None
-                
-                key_id = domain_keys[0].get('id')
+            else:
+                # Get active key for the domain
+                active_keys = self.list_keys('symmetric', 'active')
+                active_keys = [k for k in active_keys if k.get('domain') == domain]
+                if not active_keys:
+                    self.logger.error(f"No active key found for {domain}")
+                    # Generate a new key
+                    key_id = self.generate_key('symmetric', algorithm_id, domain)
+                    if key_id:
+                        key_data = self.get_key('symmetric', key_id)
+                    else:
+                        return None
+                else:
+                    key_data = active_keys[0]
+                    key_id = key_data.get('id')
             
-            encryption_result = provider.encrypt_data(data, algorithm_id, key_id)
+            # Encrypt data
+            encryption_result = provider.encrypt_data(data, algorithm_id, key_data)
+            
+            # Add key ID to result
+            encryption_result['key_id'] = key_id
+            
+            # Log encryption operation
+            encryption_data = {
+                'domain': domain,
+                'algorithm_id': algorithm_id,
+                'key_id': key_id,
+                'data_size': len(data),
+                'timestamp': time.time()
+            }
+            self.audit_logger.log_encryption(encryption_data)
+            
             return encryption_result
         except Exception as e:
             self.logger.error(f"Error encrypting data: {str(e)}")
             return None
     
-    def decrypt_data(self, encrypted_data: Dict[str, Any], domain: str) -> Optional[bytes]:
+    def decrypt_data(self, encryption_result: Dict[str, Any], domain: str) -> Optional[bytes]:
         """
-        Decrypt data using the specified algorithm and key.
+        Decrypt data using the appropriate key.
         
         Args:
-            encrypted_data: Encrypted data
+            encryption_result: Result from encrypt_data
             domain: Domain to use the symmetric algorithm for
             
         Returns:
             bytes or None: Decrypted data
         """
-        algorithm_id = encrypted_data.get('algorithm_id')
-        key_id = encrypted_data.get('key_id')
-        
-        if not algorithm_id or not key_id:
-            self.logger.error("Algorithm ID and key ID are required for decryption")
+        key_id = encryption_result.get('key_id')
+        if not key_id:
+            self.logger.error("Key ID not found in encryption result")
             return None
         
-        # Get provider for the algorithm type
+        # Get key
+        key_data = self.get_key('symmetric', key_id)
+        if not key_data:
+            self.logger.error(f"Key {key_id} not found")
+            return None
+        
+        # Get algorithm
+        algorithm_id = key_data.get('algorithm_id')
+        if not algorithm_id:
+            self.logger.error(f"Algorithm ID not found in key {key_id}")
+            return None
+        
+        # Get provider
         algorithm_type = 'symmetric'
         if algorithm_type not in self.algorithm_providers:
             self.logger.error(f"No provider found for {algorithm_type}")
@@ -854,7 +955,18 @@ class CryptoManager:
         provider = self.algorithm_providers[algorithm_type]
         
         try:
-            decrypted_data = provider.decrypt_data(encrypted_data, key_id)
+            # Decrypt data
+            decrypted_data = provider.decrypt_data(encryption_result, key_data)
+            
+            # Log decryption operation
+            decryption_data = {
+                'domain': domain,
+                'algorithm_id': algorithm_id,
+                'key_id': key_id,
+                'timestamp': time.time()
+            }
+            self.audit_logger.log_decryption(decryption_data)
+            
             return decrypted_data
         except Exception as e:
             self.logger.error(f"Error decrypting data: {str(e)}")
@@ -879,43 +991,79 @@ class CryptoManager:
         algorithm_id, provider = provider_info
         
         try:
-            # Get key to use
-            if not key_id:
-                # Find active key for the domain
-                keys = self.list_keys('asymmetric', 'active')
-                domain_keys = [key for key in keys if key.get('domain') == domain]
-                if not domain_keys:
-                    self.logger.error(f"No active asymmetric key found for {domain}")
+            # Get key
+            if key_id:
+                key_data = self.get_key('asymmetric', key_id)
+                if not key_data:
+                    self.logger.error(f"Key {key_id} not found")
                     return None
-                
-                key_id = domain_keys[0].get('id')
+            else:
+                # Get active key for the domain
+                active_keys = self.list_keys('asymmetric', 'active')
+                active_keys = [k for k in active_keys if k.get('domain') == domain]
+                if not active_keys:
+                    self.logger.error(f"No active key found for {domain}")
+                    # Generate a new key
+                    key_id = self.generate_key('asymmetric', algorithm_id, domain)
+                    if key_id:
+                        key_data = self.get_key('asymmetric', key_id)
+                    else:
+                        return None
+                else:
+                    key_data = active_keys[0]
+                    key_id = key_data.get('id')
             
-            signature_result = provider.sign_data(data, algorithm_id, key_id)
+            # Sign data
+            signature_result = provider.sign_data(data, algorithm_id, key_data)
+            
+            # Add key ID to result
+            signature_result['key_id'] = key_id
+            
+            # Log signature operation
+            signature_data = {
+                'domain': domain,
+                'algorithm_id': algorithm_id,
+                'key_id': key_id,
+                'data_size': len(data),
+                'timestamp': time.time()
+            }
+            self.audit_logger.log_signature(signature_data)
+            
             return signature_result
         except Exception as e:
             self.logger.error(f"Error signing data: {str(e)}")
             return None
     
-    def verify_signature(self, data: bytes, signature_data: Dict[str, Any], domain: str) -> bool:
+    def verify_signature(self, data: bytes, signature_result: Dict[str, Any], domain: str) -> bool:
         """
-        Verify a signature using the specified algorithm and key.
+        Verify a signature.
         
         Args:
-            data: Original data
-            signature_data: Signature data
+            data: Data that was signed
+            signature_result: Result from sign_data
             domain: Domain to use the signature algorithm for
             
         Returns:
             bool: True if signature is valid
         """
-        algorithm_id = signature_data.get('algorithm_id')
-        key_id = signature_data.get('key_id')
-        
-        if not algorithm_id or not key_id:
-            self.logger.error("Algorithm ID and key ID are required for signature verification")
+        key_id = signature_result.get('key_id')
+        if not key_id:
+            self.logger.error("Key ID not found in signature result")
             return False
         
-        # Get provider for the algorithm type
+        # Get key
+        key_data = self.get_key('asymmetric', key_id)
+        if not key_data:
+            self.logger.error(f"Key {key_id} not found")
+            return False
+        
+        # Get algorithm
+        algorithm_id = key_data.get('algorithm_id')
+        if not algorithm_id:
+            self.logger.error(f"Algorithm ID not found in key {key_id}")
+            return False
+        
+        # Get provider
         algorithm_type = 'signature'
         if algorithm_type not in self.algorithm_providers:
             self.logger.error(f"No provider found for {algorithm_type}")
@@ -924,8 +1072,20 @@ class CryptoManager:
         provider = self.algorithm_providers[algorithm_type]
         
         try:
-            verification_result = provider.verify_signature(data, signature_data, key_id)
-            return verification_result
+            # Verify signature
+            is_valid = provider.verify_signature(data, signature_result, key_data)
+            
+            # Log verification operation
+            verification_data = {
+                'domain': domain,
+                'algorithm_id': algorithm_id,
+                'key_id': key_id,
+                'is_valid': is_valid,
+                'timestamp': time.time()
+            }
+            self.audit_logger.log_verification(verification_data)
+            
+            return is_valid
         except Exception as e:
             self.logger.error(f"Error verifying signature: {str(e)}")
             return False

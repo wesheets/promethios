@@ -296,6 +296,9 @@ class RecoveryManager:
             recovery_plan['execution_completed_at'] = time.time()
             recovery_plan['updated_at'] = time.time()
             
+            # Add to recovery history after execution
+            self.recovery_history[plan_id] = recovery_plan.copy()
+            
             return success
         except Exception as e:
             # Handle execution errors
@@ -303,6 +306,9 @@ class RecoveryManager:
             recovery_plan['error'] = str(e)
             recovery_plan['execution_completed_at'] = time.time()
             recovery_plan['updated_at'] = time.time()
+            
+            # Add to recovery history even if execution failed
+            self.recovery_history[plan_id] = recovery_plan.copy()
             
             self.logger.error(f"Error executing recovery plan {plan_id}: {str(e)}")
             return False
@@ -356,6 +362,9 @@ class RecoveryManager:
             recovery_plan['verification_completed_at'] = time.time()
             recovery_plan['updated_at'] = time.time()
             
+            # Update recovery history after verification
+            self.recovery_history[plan_id] = recovery_plan.copy()
+            
             return success
         except Exception as e:
             # Handle verification errors
@@ -363,6 +372,9 @@ class RecoveryManager:
             recovery_plan['verification_error'] = str(e)
             recovery_plan['verification_completed_at'] = time.time()
             recovery_plan['updated_at'] = time.time()
+            
+            # Update recovery history even if verification failed
+            self.recovery_history[plan_id] = recovery_plan.copy()
             
             self.logger.error(f"Error verifying recovery plan {plan_id}: {str(e)}")
             return False
@@ -391,8 +403,7 @@ class RecoveryManager:
         # Verify recovery
         verification_success = self.verify_recovery(plan_id)
         
-        # Add to recovery history
-        self.recovery_history[plan_id] = self.recovery_plans[plan_id]
+        # Recovery history is already updated in execute_recovery_plan and verify_recovery
         
         return verification_success
     
@@ -430,14 +441,14 @@ class RecoveryManager:
         """
         active = {}
         for plan_id, plan in self.recovery_plans.items():
-            if plan['status'] in ['executing', 'verifying']:
+            if plan['status'] in ['created', 'executing', 'verifying']:
                 active[plan_id] = plan
         
         return active
     
     def cancel_recovery(self, plan_id: str) -> bool:
         """
-        Cancel an active recovery operation.
+        Cancel a recovery operation.
         
         Args:
             plan_id: Recovery plan ID
@@ -451,9 +462,9 @@ class RecoveryManager:
         
         recovery_plan = self.recovery_plans[plan_id]
         
-        # Check if plan is active
-        if recovery_plan['status'] not in ['executing', 'verifying']:
-            self.logger.warning(f"Recovery plan {plan_id} is not active")
+        # Check if plan can be cancelled
+        if recovery_plan['status'] not in ['created', 'executing', 'verifying']:
+            self.logger.error(f"Recovery plan {plan_id} cannot be cancelled in status {recovery_plan['status']}")
             return False
         
         # Update plan status
@@ -461,5 +472,93 @@ class RecoveryManager:
         recovery_plan['cancelled_at'] = time.time()
         recovery_plan['updated_at'] = time.time()
         
+        # Update recovery history
+        self.recovery_history[plan_id] = recovery_plan.copy()
+        
         self.logger.info(f"Recovery plan {plan_id} cancelled")
+        
         return True
+    
+    def cleanup_old_plans(self, max_age: int = None) -> int:
+        """
+        Clean up old recovery plans.
+        
+        Args:
+            max_age: Maximum age of plans to keep (in seconds)
+            
+        Returns:
+            int: Number of plans cleaned up
+        """
+        if max_age is None:
+            max_age = self.config.get('plan_retention_period', 86400 * 30)  # Default to 30 days
+        
+        cutoff_time = time.time() - max_age
+        cleaned_up = 0
+        
+        # Find old plans
+        old_plans = []
+        for plan_id, plan in self.recovery_plans.items():
+            if plan['updated_at'] < cutoff_time:
+                old_plans.append(plan_id)
+        
+        # Remove old plans
+        for plan_id in old_plans:
+            del self.recovery_plans[plan_id]
+            cleaned_up += 1
+        
+        self.logger.info(f"Cleaned up {cleaned_up} old recovery plans")
+        
+        return cleaned_up
+    
+    def export_recovery_history(self, output_file: str) -> bool:
+        """
+        Export recovery history to a file.
+        
+        Args:
+            output_file: Output file path
+            
+        Returns:
+            bool: True if export was successful
+        """
+        try:
+            with open(output_file, 'w') as f:
+                json.dump(self.recovery_history, f, indent=2)
+            
+            self.logger.info(f"Exported recovery history to {output_file}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to export recovery history: {str(e)}")
+            return False
+    
+    def import_recovery_history(self, input_file: str) -> bool:
+        """
+        Import recovery history from a file.
+        
+        Args:
+            input_file: Input file path
+            
+        Returns:
+            bool: True if import was successful
+        """
+        try:
+            with open(input_file, 'r') as f:
+                history = json.load(f)
+            
+            # Validate history format
+            for plan_id, plan in history.items():
+                if not isinstance(plan, dict) or 'recovery_type' not in plan:
+                    self.logger.error(f"Invalid recovery plan format in history: {plan_id}")
+                    return False
+            
+            # Import history
+            self.recovery_history = history
+            
+            # Update recovery plans with imported history
+            for plan_id, plan in history.items():
+                self.recovery_plans[plan_id] = plan
+            
+            self.logger.info(f"Imported recovery history from {input_file}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to import recovery history: {str(e)}")
+            return False

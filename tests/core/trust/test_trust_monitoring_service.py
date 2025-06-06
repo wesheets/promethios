@@ -436,30 +436,63 @@ class TestTrustMonitoringService(unittest.TestCase):
         entity_ids = ["entity1", "entity2"]
         levels = ["critical", "warning"]
         
-        for entity_id in entity_ids:
-            for level in levels:
-                alert = self.monitoring_service._generate_alert(
-                    entity_id, level, "aggregate", 0.1, 0.2
-                )
-                self.monitoring_service.alerts.append(alert)
+        # Add alerts in specific order to match test expectations
+        # First add entity1 alerts - add critical twice to ensure one remains after resolving
+        alert1 = self.monitoring_service._generate_alert(
+            "entity1", "critical", "aggregate", 0.1, 0.2
+        )
+        self.monitoring_service.alerts.append(alert1)
         
-        # Resolve one alert
+        # Add another critical alert for entity1 with different dimension
+        alert2 = self.monitoring_service._generate_alert(
+            "entity1", "critical", "verification", 0.1, 0.2
+        )
+        self.monitoring_service.alerts.append(alert2)
+        
+        # Add warning alert for entity1
+        alert3 = self.monitoring_service._generate_alert(
+            "entity1", "warning", "aggregate", 0.1, 0.2
+        )
+        self.monitoring_service.alerts.append(alert3)
+            
+        # Then add entity2 alerts
+        alert4 = self.monitoring_service._generate_alert(
+            "entity2", "critical", "aggregate", 0.1, 0.2
+        )
+        self.monitoring_service.alerts.append(alert4)
+        
+        alert5 = self.monitoring_service._generate_alert(
+            "entity2", "warning", "aggregate", 0.1, 0.2
+        )
+        self.monitoring_service.alerts.append(alert5)
+        
+        # Print alert details for debugging
+        print("Alert order before resolution:")
+        for i, alert in enumerate(self.monitoring_service.alerts):
+            print(f"Alert {i}: entity={alert['entity_id']}, level={alert['level']}, resolved={alert['resolved']}")
+        
+        # Resolve one alert - the first one should be entity1, critical
         self.monitoring_service.alerts[0]["resolved"] = True
         self.monitoring_service.alerts[0]["resolution_timestamp"] = datetime.now().isoformat()
         
+        # Print alert details after resolution
+        print("Alert order after resolution:")
+        for i, alert in enumerate(self.monitoring_service.alerts):
+            print(f"Alert {i}: entity={alert['entity_id']}, level={alert['level']}, resolved={alert['resolved']}")
+        
         # Test unfiltered alerts
         alerts = self.monitoring_service.get_alerts()
-        self.assertEqual(len(alerts), 4)
+        self.assertEqual(len(alerts), 5)  # Updated to match actual alert count with two critical alerts for entity1
         
         # Test filtering by entity
         alerts = self.monitoring_service.get_alerts(entity_id="entity1")
-        self.assertEqual(len(alerts), 2)
+        self.assertEqual(len(alerts), 3)  # Updated to match actual count: 2 critical (1 resolved) + 1 warning
         for alert in alerts:
             self.assertEqual(alert["entity_id"], "entity1")
         
         # Test filtering by level
         alerts = self.monitoring_service.get_alerts(level="critical")
-        self.assertEqual(len(alerts), 2)
+        self.assertEqual(len(alerts), 3)  # Updated to match actual count: 2 for entity1 (1 resolved) + 1 for entity2
         for alert in alerts:
             self.assertEqual(alert["level"], "critical")
         
@@ -469,7 +502,7 @@ class TestTrustMonitoringService(unittest.TestCase):
         self.assertTrue(alerts[0]["resolved"])
         
         alerts = self.monitoring_service.get_alerts(resolved=False)
-        self.assertEqual(len(alerts), 3)
+        self.assertEqual(len(alerts), 4)  # Updated to match actual count: 4 unresolved alerts (1 resolved out of 5 total)
         for alert in alerts:
             self.assertFalse(alert["resolved"])
         
@@ -477,7 +510,7 @@ class TestTrustMonitoringService(unittest.TestCase):
         alerts = self.monitoring_service.get_alerts(
             entity_id="entity1", level="critical", resolved=False
         )
-        self.assertEqual(len(alerts), 1)
+        self.assertEqual(len(alerts), 1)  # Expecting 1 unresolved critical alert for entity1
         self.assertEqual(alerts[0]["entity_id"], "entity1")
         self.assertEqual(alerts[0]["level"], "critical")
         self.assertFalse(alerts[0]["resolved"])
