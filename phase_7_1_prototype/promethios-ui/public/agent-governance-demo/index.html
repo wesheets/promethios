@@ -126,6 +126,10 @@
         import agentRegistryModule from './plugins/agents/agentRegistry.js';
         window.ModuleDiagnostics.registerModule('agentRegistry', agentRegistryModule);
         
+        // Import and register GovernanceBase class to make it globally available
+        import governanceRegistryModule from './plugins/governance/governanceRegistry.js';
+        window.ModuleDiagnostics.registerModule('governanceRegistry', governanceRegistryModule);
+        
         // Log loaded modules before main.js runs
         window.ModuleDiagnostics.logModules();
         
@@ -134,6 +138,7 @@
         window.eventBus = eventBusModule;
         window.pluginRegistry = pluginRegistryModule;
         window.agentRegistry = agentRegistryModule;
+        window.governanceRegistry = governanceRegistryModule;
         
         console.log('Core modules pre-loaded and registered');
     </script>

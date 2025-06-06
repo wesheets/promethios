@@ -3,6 +3,13 @@
  * Implements specific governance for content safety
  */
 
+// Use GovernanceBase from global registry or direct import as fallback
+const GovernanceBase = (typeof window !== 'undefined' && window.GovernanceBase) 
+    ? window.GovernanceBase 
+    : (typeof window !== 'undefined' && window.governanceRegistry && window.governanceRegistry.GovernanceBase)
+        ? window.governanceRegistry.GovernanceBase
+        : require('./governanceBase.js').default;
+
 class SafetyFiltersPlugin extends GovernanceBase {
     constructor(options = {}) {
         // Set default options for Safety Filters

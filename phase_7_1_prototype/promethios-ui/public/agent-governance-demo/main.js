@@ -289,6 +289,12 @@ class AgentGovernanceDemo {
         try {
             console.log('Registering governance plugins');
             
+            // Ensure GovernanceBase is available globally before importing governance plugins
+            if (!window.GovernanceBase && window.governanceRegistry) {
+                window.GovernanceBase = window.governanceRegistry.GovernanceBase;
+                console.log('GovernanceBase made available globally from registry');
+            }
+            
             // Import governance plugins
             const RoleEnforcementPlugin = (await import('./plugins/governance/roleEnforcement.js')).default;
             const FactualAccuracyPlugin = (await import('./plugins/governance/factualAccuracy.js')).default;
