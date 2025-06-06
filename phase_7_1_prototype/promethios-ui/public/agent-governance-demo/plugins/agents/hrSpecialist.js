@@ -3,6 +3,9 @@
  * Extends the base agent class with HR-specific functionality
  */
 
+// Import the base agent class
+import AgentBase from './agentBase.js';
+
 class HRSpecialistAgent extends AgentBase {
     constructor(options = {}) {
         // Set default options for HR Specialist

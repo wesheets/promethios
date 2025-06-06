@@ -3,6 +3,9 @@
  * Extends the base agent class with project management-specific functionality
  */
 
+// Import the base agent class
+import AgentBase from './agentBase.js';
+
 class ProjectManagerAgent extends AgentBase {
     constructor(options = {}) {
         // Set default options for Project Manager
