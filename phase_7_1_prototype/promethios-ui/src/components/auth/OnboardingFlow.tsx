@@ -92,7 +92,6 @@ const OnboardingFlow: React.FC = () => {
       // Fallback if no user is found
       navigate('/ui/dashboard');
     }
-    }
   };
 
   return (
