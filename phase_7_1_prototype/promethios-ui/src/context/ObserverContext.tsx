@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from './AuthContext';
 
 // Define the Observer context types
 interface ObserverContextType {
