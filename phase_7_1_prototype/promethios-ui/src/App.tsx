@@ -23,6 +23,7 @@ import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
+import UIIntegration from './UIIntegration';
 
 const App: React.FC = () => {
   return (
@@ -65,6 +66,9 @@ const App: React.FC = () => {
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
                   {/* CMU Playground disabled as it's no longer needed */}
                   {/* <Route path="/cmu-playground" element={<CMUPlaygroundPage />} /> */}
+                  
+                  {/* New UI Integration - Render the new UI components for all /ui/ routes */}
+                  <Route path="/ui/*" element={<UIIntegration />} />
                 </Routes>
               </div>
               {/* Only show Footer for non-UI routes */}

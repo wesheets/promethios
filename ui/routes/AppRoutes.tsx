@@ -91,6 +91,7 @@ const OnboardingRoute: React.FC<{ element: React.ReactElement }> = ({ element })
  * 
  * Main routing component for the application.
  * Handles public, private, and onboarding routes.
+ * Now explicitly handles /ui/ prefix for integration with legacy app.
  */
 const AppRoutes: React.FC = () => {
   return (
@@ -119,7 +120,7 @@ const AppRoutes: React.FC = () => {
           <Route path="" element={<Navigate to="/onboarding/welcome" replace />} />
         </Route>
         
-        {/* Private Routes */}
+        {/* Private Routes - Standard Path */}
         <Route path="/" element={
           <PrivateRoute element={<MainLayout />} />
         }>
@@ -139,6 +140,28 @@ const AppRoutes: React.FC = () => {
           
           {/* Redirect root to dashboard */}
           <Route path="" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+        
+        {/* Private Routes - With /ui/ Prefix for Legacy Integration */}
+        <Route path="/ui" element={
+          <PrivateRoute element={<MainLayout />} />
+        }>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="agent-wizard" element={<AgentWizardPage />} />
+          <Route path="multi-agent" element={<MultiAgentPage />} />
+          <Route path="governance" element={<GovernanceExplorerPage />} />
+          
+          {/* Settings Routes */}
+          <Route path="settings">
+            <Route path="profile" element={<SettingsProfile />} />
+            <Route path="observer" element={<SettingsObserver />} />
+            <Route path="api-keys" element={<SettingsApiKeys />} />
+            <Route path="notifications" element={<SettingsNotifications />} />
+            <Route path="" element={<Navigate to="/ui/settings/profile" replace />} />
+          </Route>
+          
+          {/* Redirect root to dashboard */}
+          <Route path="" element={<Navigate to="/ui/dashboard" replace />} />
         </Route>
         
         {/* 404 Route */}
