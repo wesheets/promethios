@@ -15,23 +15,40 @@ const UIIntegration: React.FC = () => {
     <Routes>
       {/* Redirect all /ui/ routes to the dashboard for now */}
       <Route path="dashboard" element={
-          <div className="flex h-screen">
-            {/* This div will be replaced by the actual dashboard with collapsible navigation */}
-            <div className="w-16 bg-gray-900 h-full flex flex-col items-center py-4">
-              {/* Placeholder for collapsible navigation */}
-              <div className="w-8 h-8 rounded-full bg-blue-500 mb-6"></div>
-              <div className="w-8 h-8 rounded-full bg-gray-700 mb-4"></div>
-              <div className="w-8 h-8 rounded-full bg-gray-700 mb-4"></div>
-              <div className="w-8 h-8 rounded-full bg-gray-700 mb-4"></div>
+          <div className="flex flex-col h-screen">
+            {/* New header that replaces the legacy header */}
+            <div className="bg-gray-900 text-white h-16 flex items-center px-6 shadow-md">
+              <div className="flex items-center">
+                <div className="text-blue-500 font-bold text-xl mr-2">PROMETHIOS</div>
+                <div className="text-gray-400 text-sm ml-4">Dashboard</div>
+              </div>
+              <div className="ml-auto flex items-center space-x-4">
+                <div className="w-8 h-8 rounded-full bg-gray-700"></div>
+                <div className="text-sm">wesheets@gmail.com</div>
+              </div>
             </div>
-            <div className="flex-1 bg-gray-800 p-6 text-white">
-              <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-              <p className="mb-4">Welcome to the new Promethios UI with collapsible navigation!</p>
-              <p>This is a temporary placeholder until we resolve the cross-package import issues.</p>
+            
+            {/* Main content with collapsible navigation */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Collapsible navigation sidebar */}
+              <div className="w-16 bg-gray-900 h-full flex flex-col items-center py-4 shadow-lg">
+                {/* Navigation items */}
+                <div className="w-8 h-8 rounded-full bg-blue-500 mb-6 cursor-pointer hover:bg-blue-400 transition-colors"></div>
+                <div className="w-8 h-8 rounded-full bg-gray-700 mb-4 cursor-pointer hover:bg-gray-600 transition-colors"></div>
+                <div className="w-8 h-8 rounded-full bg-gray-700 mb-4 cursor-pointer hover:bg-gray-600 transition-colors"></div>
+                <div className="w-8 h-8 rounded-full bg-gray-700 mb-4 cursor-pointer hover:bg-gray-600 transition-colors"></div>
+              </div>
               
-              <div className="mt-8 p-4 border border-gray-700 rounded-lg">
-                <h2 className="text-xl font-semibold mb-2">Observer Agent</h2>
-                <p>The Observer agent would normally appear here on governance-relevant screens.</p>
+              {/* Main dashboard content */}
+              <div className="flex-1 bg-gray-800 p-6 text-white overflow-y-auto">
+                <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+                <p className="mb-4">Welcome to the new Promethios UI with collapsible navigation!</p>
+                <p>This is a temporary placeholder until we resolve the cross-package import issues.</p>
+                
+                <div className="mt-8 p-4 border border-gray-700 rounded-lg">
+                  <h2 className="text-xl font-semibold mb-2">Observer Agent</h2>
+                  <p>The Observer agent would normally appear here on governance-relevant screens.</p>
+                </div>
               </div>
             </div>
           </div>
