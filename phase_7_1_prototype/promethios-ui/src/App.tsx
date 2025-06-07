@@ -63,7 +63,8 @@ const App: React.FC = () => {
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
                   <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
                   <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
-                  <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
+                  {/* CMU Playground disabled as it's no longer needed */}
+                  {/* <Route path="/cmu-playground" element={<CMUPlaygroundPage />} /> */}
                 </Routes>
               </div>
               {/* Only show Footer for non-UI routes */}
