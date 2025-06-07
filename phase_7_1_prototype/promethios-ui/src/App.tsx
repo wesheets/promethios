@@ -31,8 +31,9 @@ const App: React.FC = () => {
         <AnalyticsProvider>
           <Router>
             <div className="min-h-screen flex flex-col dark:bg-gray-900">
-              <Header />
-              <div className="pt-16 flex-grow"> {/* Add padding to account for fixed header */}
+              {/* Only show Header for non-UI routes */}
+              {!window.location.pathname.startsWith('/ui/') && <Header />}
+              <div className={!window.location.pathname.startsWith('/ui/') ? "pt-16 flex-grow" : "flex-grow"}> {/* Add padding only when header is shown */}
                 <Routes>
                   <Route path="/" element={
                     <>
@@ -65,8 +66,9 @@ const App: React.FC = () => {
                   <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
                 </Routes>
               </div>
-              <Footer />
-              <FeedbackWidget />
+              {/* Only show Footer for non-UI routes */}
+              {!window.location.pathname.startsWith('/ui/') && <Footer />}
+              {!window.location.pathname.startsWith('/ui/') && <FeedbackWidget />}
             </div>
           </Router>
         </AnalyticsProvider>

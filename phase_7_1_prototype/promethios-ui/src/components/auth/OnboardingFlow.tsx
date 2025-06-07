@@ -1,6 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { getAuth } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseConfig';
 
 const OnboardingFlow: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -13,6 +16,22 @@ const OnboardingFlow: React.FC = () => {
     } else {
       // Redirect to new dashboard implementation when onboarding is complete
       window.location.href = '/ui/dashboard';
+      // Also update the user's onboarding status in Firebase
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          setDoc(userDocRef, {
+            onboarding: {
+              completedOnboarding: true,
+              hasSkippedOnboarding: false
+            }
+          }, { merge: true });
+        }
+      } catch (error) {
+        console.error('Error updating onboarding status:', error);
+      }
     }
   };
 
