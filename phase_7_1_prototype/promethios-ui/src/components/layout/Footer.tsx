@@ -6,8 +6,8 @@ const Footer: React.FC = () => {
   const { isDarkMode } = useTheme();
   
   return (
-    <footer className={`${isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-800'} py-12`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className={`${isDarkMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-800'} py-12 w-full`}>
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Top section with logo and tagline */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-12">
           <div className="mb-8 md:mb-0">

@@ -117,11 +117,11 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <div className="relative bg-navy-900 text-white overflow-hidden">
+    <div className="relative bg-navy-900 text-white overflow-hidden w-full">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-navy-900 to-navy-800 z-0"></div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center py-20 md:py-32">
           <motion.h1 
             className={`text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}

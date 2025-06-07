@@ -21,8 +21,8 @@ const Header: React.FC = () => {
   };
   
   return (
-    <header className={`sticky top-0 z-50 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} shadow-md`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className={`sticky top-0 z-50 w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} shadow-md`}>
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <div className="flex-shrink-0">
@@ -37,6 +37,26 @@ const Header: React.FC = () => {
           
           {/* Navigation */}
           <nav className="hidden md:flex space-x-10">
+            {/* Main Navigation - Always visible */}
+            <Link 
+              to="/learn" 
+              className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Learn
+            </Link>
+            <Link 
+              to="/api" 
+              className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              API
+            </Link>
+            <Link 
+              to="/solutions" 
+              className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Solutions
+            </Link>
+            
             {/* Conditional Navigation for Authenticated Users */}
             {isAuthenticated ? (
               <>
@@ -51,18 +71,6 @@ const Header: React.FC = () => {
                   className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
                 >
                   AI Governance
-                </Link>
-                <Link 
-                  to="/benchmark" 
-                  className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                  Benchmarks
-                </Link>
-                <Link 
-                  to="/documentation" 
-                  className={`text-base font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                  Documentation
                 </Link>
               </>
             ) : null}
@@ -224,12 +232,20 @@ const Header: React.FC = () => {
                 )}
               </div>
             ) : (
-              <Link
-                to="/waitlist"
-                className="ml-8 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Protect My Agent
-              </Link>
+              <div className="flex space-x-4">
+                <Link
+                  to="/login"
+                  className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-base font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/waitlist"
+                  className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Protect My Agent
+                </Link>
+              </div>
             )}
           </div>
         </div>
