@@ -38,7 +38,7 @@ const LoginWaitlistPage: React.FC = () => {
     
     try {
       await loginWithEmail(loginEmail, loginPassword);
-      navigate('/dashboard'); // Redirect to dashboard after login
+      navigate('/ui/dashboard'); // Redirect to new UI dashboard after login
     } catch (error) {
       const firebaseError = error as FirebaseError;
       let errorMessage = 'Authentication failed. Please try again.';
@@ -65,7 +65,7 @@ const LoginWaitlistPage: React.FC = () => {
     
     try {
       await loginWithGoogle();
-      navigate('/dashboard'); // Redirect to dashboard after login
+      navigate('/ui/dashboard'); // Redirect to new UI dashboard after login
     } catch (error) {
       const firebaseError = error as FirebaseError;
       let errorMessage = 'Google authentication failed. Please try again.';

@@ -1,24 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { updateOnboardingStatus, saveAgentConfiguration } from '../../firebase/userService';
+import { useNavigate } from 'react-router-dom';
 
 const OnboardingFlow: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const [step, setStep] = React.useState(1);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
   const totalSteps = 3;
+  
+  // Agent configuration state
+  const [agentName, setAgentName] = useState('My Assistant');
+  const [agentType, setAgentType] = useState('General purpose assistant');
+  const [agentDescription, setAgentDescription] = useState('');
+  const [governanceLevel, setGovernanceLevel] = useState('standard');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      // Redirect to new dashboard implementation when onboarding is complete
-      window.location.href = '/ui/dashboard';
+      // Final step - save configuration and mark onboarding as complete
+      if (currentUser) {
+        setIsSubmitting(true);
+        try {
+          // Save agent configuration
+          await saveAgentConfiguration(currentUser.uid, {
+            name: agentName,
+            type: agentType,
+            description: agentDescription,
+            governanceLevel: governanceLevel
+          });
+          
+          // Mark onboarding as complete
+          await updateOnboardingStatus(currentUser.uid, true);
+          
+          // Redirect to new dashboard implementation
+          navigate('/ui/dashboard');
+        } catch (error) {
+          console.error('Error completing onboarding:', error);
+          // Fallback to direct navigation if saving fails
+          navigate('/ui/dashboard');
+        } finally {
+          setIsSubmitting(false);
+        }
+      } else {
+        // Fallback if no user is found
+        navigate('/ui/dashboard');
+      }
     }
   };
 
   const prevStep = () => {
     if (step > 1) {
       setStep(step - 1);
+    }
+  };
+  
+  const skipOnboarding = async () => {
+    if (currentUser) {
+      setIsSubmitting(true);
+      try {
+        // Save minimal agent configuration
+        await saveAgentConfiguration(currentUser.uid, {
+          name: 'Default Assistant',
+          type: 'General purpose assistant',
+          description: '',
+          governanceLevel: 'standard'
+        });
+        
+        // Mark onboarding as complete but track that it was skipped
+        await updateOnboardingStatus(currentUser.uid, true);
+        
+        // Track skip action with Observer agent
+        // This will be connected to the Observer agent in a later step
+        console.log('Onboarding skipped - Observer agent should track this');
+        
+        // Redirect to dashboard
+        navigate('/ui/dashboard');
+      } catch (error) {
+        console.error('Error skipping onboarding:', error);
+        // Fallback to direct navigation if saving fails
+        navigate('/ui/dashboard');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Fallback if no user is found
+      navigate('/ui/dashboard');
+    }
     }
   };
 

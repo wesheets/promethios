@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
-import Header from './components/layout/Header';
+import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
 import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
@@ -30,9 +30,9 @@ const AppContent: React.FC = () => {
   
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
-      {/* Only show Header for non-UI routes */}
-      {!isUIRoute && <Header />}
-      <div className={!isUIRoute ? "pt-16 flex-grow" : "flex-grow"}> {/* Add padding only when header is shown */}
+      {/* Show NewHeader for all routes */}
+      <NewHeader />
+      <div className="pt-16 flex-grow"> {/* Add padding for all routes since header is always shown */}
                 <Routes>
                   <Route path="/" element={<NewLandingPage />} />
                   <Route path="/signup" element={<LoginWaitlistPage />} />
