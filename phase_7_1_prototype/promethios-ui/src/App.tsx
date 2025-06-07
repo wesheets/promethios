@@ -4,9 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import Hero from './components/landing/Hero';
-import Features from './components/landing/Features';
-import BenchmarkPreview from './components/landing/BenchmarkPreview';
+import NewLandingPage from './components/landing/NewLandingPage';
 import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
 import EmailVerification from './components/auth/EmailVerification';
 import OnboardingFlow from './components/auth/OnboardingFlow';
@@ -36,13 +34,7 @@ const AppContent: React.FC = () => {
       {!isUIRoute && <Header />}
       <div className={!isUIRoute ? "pt-16 flex-grow" : "flex-grow"}> {/* Add padding only when header is shown */}
                 <Routes>
-                  <Route path="/" element={
-                    <>
-                      <Hero />
-                      <Features />
-                      <BenchmarkPreview />
-                    </>
-                  } />
+                  <Route path="/" element={<NewLandingPage />} />
                   <Route path="/signup" element={<LoginWaitlistPage />} />
                   <Route path="/waitlist" element={<LoginWaitlistPage />} />
                   <Route path="/login" element={<LoginWaitlistPage />} />
