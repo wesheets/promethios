@@ -8,3 +8,4 @@ import React from 'react';
 
 export { default as MainLayoutProxy } from './MainLayoutProxy';
 export { default as DashboardProxy } from './DashboardProxy';
+export { default as ObserverAgentProxy } from './ObserverAgentProxy';

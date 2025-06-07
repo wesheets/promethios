@@ -1,4 +1,5 @@
 import React from 'react';
+import { ObserverAgentProxy } from './index';
 
 /**
  * DashboardProxy Component
@@ -57,11 +58,7 @@ const DashboardProxy: React.FC = () => {
       </div>
       
       {/* Observer Agent */}
-      <div className="mt-8 p-4 border border-gray-700 rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">Observer Agent</h2>
-        <p>The Observer agent would normally appear here on governance-relevant screens.</p>
-        <p className="mt-2 text-sm text-gray-400">Observer is tracking your governance preferences and will provide personalized guidance.</p>
-      </div>
+      <ObserverAgentProxy />
     </>
   );
 };
