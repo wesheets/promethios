@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useObserver } from '../../context/ObserverContext';
+import { useObserver } from '../context/ObserverContext';
 
 /**
  * ObserverAgentProxy Component
