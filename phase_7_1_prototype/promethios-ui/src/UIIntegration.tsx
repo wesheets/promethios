@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayoutProxy, DashboardProxy } from './proxies';
+import { ObserverProvider } from './context/ObserverContext';
 
 /**
  * UIIntegration Component
@@ -12,15 +13,17 @@ import { MainLayoutProxy, DashboardProxy } from './proxies';
 const UIIntegration: React.FC = () => {
   // Using proxy components to connect to the actual UI components
   return (
-    <Routes>
-      {/* Render the dashboard with MainLayout */}
-      <Route path="dashboard" element={
-        <MainLayoutProxy>
-          <DashboardProxy />
-        </MainLayoutProxy>
-      } />
+    <ObserverProvider>
+      <Routes>
+        {/* Render the dashboard with MainLayout */}
+        <Route path="dashboard" element={
+          <MainLayoutProxy>
+            <DashboardProxy />
+          </MainLayoutProxy>
+        } />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
+    </ObserverProvider>
   );
 };
 
