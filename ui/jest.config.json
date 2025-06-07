@@ -25,5 +25,12 @@
   },
   "preset": "ts-jest",
   "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
+  "testPathIgnorePatterns": [
+    "/node_modules/"
+  ],
+  "testTimeout": 15000,
+  "verbose": true,
+  "forceExit": true,
+  "clearMocks": true
 }

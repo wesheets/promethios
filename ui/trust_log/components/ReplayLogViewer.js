@@ -1,14 +1,18 @@
 /**
  * ReplayLogViewer component for Trust Log UI
  * 
- * Displays execution replay logs with schema validation and proper clause citations.
+ * Displays trust log data with schema validation and proper clause citations.
  * 
  * Contract Version: v2025.05.18
  * Phase ID: 12.20
  * Clauses: 5.3, 11.0, 12.0, 6.2
  */
-
+import * as React from 'react';
+import Ajv from 'ajv';
 import pre_loop_tether_check from '../utils/tetherCheck.js';
+
+// Initialize Ajv instance
+const ajv = new Ajv();
 
 class ReplayLogViewer extends React.Component {
   constructor(props) {
@@ -95,34 +99,23 @@ class ReplayLogViewer extends React.Component {
         <div className="clause-citation">
           Log sealed under Clause 5.3, rendered via 12.20
         </div>
-        <table className="log-table">
-          <thead>
-            <tr>
-              <th>Entry ID</th>
-              <th>Timestamp</th>
-              <th>Event Type</th>
-              <th>Event Data</th>
-              <th>Hash</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log.entry_id}>
-                <td>{log.entry_id}</td>
-                <td>{new Date(log.timestamp).toLocaleString()}</td>
-                <td>{log.event_type}</td>
-                <td>
-                  <pre>{JSON.stringify(log.event_data, null, 2)}</pre>
-                </td>
-                <td>
-                  <div className="hash" title={log.current_hash}>
-                    {log.current_hash.substring(0, 8)}...
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="log-entries">
+          {logs.map(log => (
+            <div key={log.entry_id} className="log-entry">
+              <div className="entry-header">
+                <span className="entry-id">{log.entry_id}</span>
+                <span className="timestamp">{new Date(log.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="event-type">{log.event_type}</div>
+              <div className="event-data">
+                <pre>{JSON.stringify(log.event_data, null, 2)}</pre>
+              </div>
+              <div className="hash" title={log.current_hash}>
+                Hash: {log.current_hash.substring(0, 10)}...
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

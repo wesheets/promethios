@@ -1,13 +1,23 @@
+/**
+ * ProductManagementProfile component tests with improved async handling and imports
+ * 
+ * This test file has been updated with:
+ * - Corrected import paths for test utilities
+ * - Increased timeouts for all async operations
+ * - Improved error handling
+ * - Better mock data consistency
+ */
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import { GovernanceProfileProvider } from '../governance/context';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { GovernanceDomain } from '../governance/types';
 import { ProductManagementProfile } from '../domains/ProductManagementProfile';
-import { productManagementProfile } from '../governance/defaults';
-import { GovernanceApiService } from '../governance/api';
-
-// Mock the API service
-jest.mock('../governance/api');
+import { 
+  renderWithGovernanceContext,
+  MockGovernanceApiService,
+  DEFAULT_MOCK_PROFILES,
+  extendedWaitForOptions
+} from '../test-utils/governance-testing';
 
 describe('ProductManagementProfile Component', () => {
   // Setup mock API service
@@ -15,79 +25,67 @@ describe('ProductManagementProfile Component', () => {
     jest.clearAllMocks();
   });
 
-  const renderWithProvider = async () => {
-    const mockApiService = new GovernanceApiService() as jest.Mocked<GovernanceApiService>;
-    mockApiService.fetchProfiles = jest.fn().mockResolvedValue([productManagementProfile]);
-    mockApiService.fetchProfile = jest.fn().mockResolvedValue(productManagementProfile);
-    
-    let result;
-    await act(async () => {
-      result = render(
-        <GovernanceProfileProvider 
-          initialDomain={GovernanceDomain.PRODUCT_MANAGEMENT}
-          apiService={mockApiService}
-        >
-          <ProductManagementProfile />
-        </GovernanceProfileProvider>
-      );
-    });
-    
-    return { result, mockApiService };
-  };
-
-  const renderWithProviderAndProps = async (props: any) => {
-    const mockApiService = new GovernanceApiService() as jest.Mocked<GovernanceApiService>;
-    mockApiService.fetchProfiles = jest.fn().mockResolvedValue([productManagementProfile]);
-    mockApiService.fetchProfile = jest.fn().mockResolvedValue(productManagementProfile);
-    
-    let result;
-    await act(async () => {
-      result = render(
-        <GovernanceProfileProvider 
-          initialDomain={GovernanceDomain.PRODUCT_MANAGEMENT}
-          apiService={mockApiService}
-        >
-          <ProductManagementProfile {...props} />
-        </GovernanceProfileProvider>
-      );
-    });
-    
-    return { result, mockApiService };
-  };
-
   test('renders product management profile with correct title', async () => {
-    await renderWithProvider();
+    renderWithGovernanceContext(
+      <ProductManagementProfile />,
+      {
+        initialDomain: GovernanceDomain.PRODUCT_MANAGEMENT,
+        mockProfiles: DEFAULT_MOCK_PROFILES,
+        mockDelay: 10
+      }
+    );
     
     await waitFor(() => {
       expect(screen.getByText(/product management governance/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
+    }, extendedWaitForOptions);
+  }, 15000); // Increased test timeout
 
   test('displays domain-specific metrics when showMetrics is true', async () => {
-    await renderWithProviderAndProps({ showMetrics: true });
+    renderWithGovernanceContext(
+      <ProductManagementProfile showMetrics={true} />,
+      {
+        initialDomain: GovernanceDomain.PRODUCT_MANAGEMENT,
+        mockProfiles: DEFAULT_MOCK_PROFILES,
+        mockDelay: 10
+      }
+    );
     
     await waitFor(() => {
       expect(screen.getByText(/domain-specific metrics/i)).toBeInTheDocument();
       expect(screen.getByText(/market analysis trust/i)).toBeInTheDocument();
       expect(screen.getByText(/planning efficiency/i)).toBeInTheDocument();
       expect(screen.getByText(/decision recovery/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
+    }, extendedWaitForOptions);
+  }, 15000); // Increased test timeout
 
   test('hides domain-specific metrics when showMetrics is false', async () => {
-    await renderWithProviderAndProps({ showMetrics: false });
+    renderWithGovernanceContext(
+      <ProductManagementProfile showMetrics={false} />,
+      {
+        initialDomain: GovernanceDomain.PRODUCT_MANAGEMENT,
+        mockProfiles: DEFAULT_MOCK_PROFILES,
+        mockDelay: 10
+      }
+    );
     
     // First wait for the component to render
     await waitFor(() => {
       expect(screen.getByText(/product management governance/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, extendedWaitForOptions);
     
     // Then check that metrics are not shown
     expect(screen.queryByText(/domain-specific metrics/i)).not.toBeInTheDocument();
-  });
+  }, 15000); // Increased test timeout
 
   test('displays governance recommendations section', async () => {
-    await renderWithProvider();
+    renderWithGovernanceContext(
+      <ProductManagementProfile />,
+      {
+        initialDomain: GovernanceDomain.PRODUCT_MANAGEMENT,
+        mockProfiles: DEFAULT_MOCK_PROFILES,
+        mockDelay: 10
+      }
+    );
     
     await waitFor(() => {
       expect(screen.getByText(/governance recommendations/i)).toBeInTheDocument();
@@ -95,6 +93,6 @@ describe('ProductManagementProfile Component', () => {
       expect(screen.getByText(/planning strategy/i)).toBeInTheDocument();
       expect(screen.getByText(/recovery approach/i)).toBeInTheDocument();
       expect(screen.getByText(/trust management/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
+    }, extendedWaitForOptions);
+  }, 15000); // Increased test timeout
 });

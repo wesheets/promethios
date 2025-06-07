@@ -1,193 +1,64 @@
 /**
- * Enhanced Governance Profile Context with API Integration
+ * Governance context for React components
  * 
- * This component provides the context for domain-specific governance profiles
- * with backend API integration for profile selection, persistence, and domain detection.
+ * Provides context for governance-related components.
+ * 
+ * Contract Version: v2025.05.18
+ * Phase ID: 12.20
  */
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  GovernanceProfileConfig, 
-  GovernanceProfileContext as GovernanceProfileContextType,
-  GovernanceDomain
-} from './types';
-import { defaultProfiles } from './defaults';
-import { GovernanceApiService } from './api';
+import React, { createContext, useContext, useState } from 'react';
+import { GovernanceDomain, GovernanceContextType, GovernanceProfile } from './types';
 
 // Create the context with default values
-const GovernanceProfileContext = createContext<GovernanceProfileContextType>({
-  currentProfile: null,
-  availableProfiles: [],
-  selectProfile: () => {},
-  resetToDefault: () => {},
+export const GovernanceContext = createContext<GovernanceContextType>({
   currentDomain: null,
+  setCurrentDomain: () => {},
+  profiles: {} as Record<GovernanceDomain, GovernanceProfile>,
+  loading: false,
+  error: null,
+  apiService: null
 });
 
-interface GovernanceProfileProviderProps {
-  children: ReactNode;
-  initialDomain?: GovernanceDomain;
-  apiService?: GovernanceApiService;
+// Hook for using the governance context
+export const useGovernance = () => useContext(GovernanceContext);
+
+// Provider component
+interface GovernanceProviderProps {
+  children: React.ReactNode;
+  initialDomain?: GovernanceDomain | null;
 }
 
-/**
- * Provider component for governance profiles with API integration
- */
-export const GovernanceProfileProvider: React.FC<GovernanceProfileProviderProps> = ({ 
-  children,
-  initialDomain = GovernanceDomain.SOFTWARE_ENGINEERING,
-  apiService = new GovernanceApiService()
+export const GovernanceProvider: React.FC<GovernanceProviderProps> = ({ 
+  children, 
+  initialDomain = GovernanceDomain.SOFTWARE_ENGINEERING 
 }) => {
-  const [availableProfiles, setAvailableProfiles] = useState<GovernanceProfileConfig[]>(defaultProfiles);
   const [currentDomain, setCurrentDomain] = useState<GovernanceDomain | null>(initialDomain);
-  const [currentProfile, setCurrentProfile] = useState<GovernanceProfileConfig | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Fetch available profiles from API on mount
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProfiles = async () => {
-      setIsLoading(true);
-      try {
-        const profiles = await apiService.fetchProfiles();
-        // Only update state if component is still mounted
-        if (isMounted) {
-          setAvailableProfiles(profiles);
-        }
-      } catch (error) {
-        console.error('Failed to fetch profiles:', error);
-        // Fall back to default profiles
-        if (isMounted) {
-          setAvailableProfiles(defaultProfiles);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchProfiles();
-    
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
-  }, [apiService]);
-
-  // Initialize with default profile for the initial domain
-  useEffect(() => {
-    let isMounted = true;
-    if (currentDomain && !isLoading) {
-      const fetchProfileForDomain = async () => {
-        try {
-          const profile = await apiService.fetchProfile(currentDomain);
-          if (isMounted) {
-            setCurrentProfile(profile);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch profile for domain ${currentDomain}:`, error);
-          // Fall back to default profile
-          if (isMounted) {
-            const defaultProfile = availableProfiles.find(
-              profile => profile.domain === currentDomain && profile.isDefault
-            ) || null;
-            setCurrentProfile(defaultProfile);
-          }
-        }
-      };
-
-      fetchProfileForDomain();
-    }
-    
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
-  }, [currentDomain, availableProfiles, apiService, isLoading]);
-
-  /**
-   * Select a profile by domain and optional version
-   */
-  const selectProfile = async (domain: GovernanceDomain, version?: string) => {
-    setCurrentDomain(domain);
-    setIsLoading(true);
-    
-    try {
-      const profile = await apiService.fetchProfile(domain, version);
-      setCurrentProfile(profile);
-    } catch (error) {
-      console.error(`Failed to fetch profile for domain ${domain} with version ${version || 'default'}:`, error);
-      
-      // Fall back to local profile selection
-      let profile: GovernanceProfileConfig | undefined;
-      
-      if (version) {
-        // Find specific version if provided
-        profile = availableProfiles.find(
-          p => p.domain === domain && p.version === version
-        );
-      } else {
-        // Otherwise use the default for this domain
-        profile = availableProfiles.find(
-          p => p.domain === domain && p.isDefault
-        );
-      }
-      
-      if (profile) {
-        setCurrentProfile(profile);
-      } else {
-        console.warn(`No profile found for domain ${domain} with version ${version || 'default'}`);
-      }
-    } finally {
-      setIsLoading(false);
+  const [profiles, setProfiles] = useState<Record<GovernanceDomain, GovernanceProfile>>({} as Record<GovernanceDomain, GovernanceProfile>);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Mock API service for development
+  const apiService = {
+    getProfile: async (domain: GovernanceDomain) => {
+      return profiles[domain];
+    },
+    getAllProfiles: async () => {
+      return profiles;
     }
   };
-
-  /**
-   * Reset to the default profile for the current domain
-   */
-  const resetToDefault = async () => {
-    if (currentDomain) {
-      await selectProfile(currentDomain);
-    }
-  };
-
-  // Detect domain from current task context (simplified implementation)
-  // In a real implementation, this would analyze the current task or user context
-  useEffect(() => {
-    // This is a placeholder for domain detection logic
-    // In a real implementation, this would analyze the current task or user context
-    const detectDomain = async () => {
-      // For now, we'll just use the initialDomain
-      return initialDomain;
-    };
-    
-    const updateDomain = async () => {
-      const detectedDomain = await detectDomain();
-      if (detectedDomain !== currentDomain) {
-        setCurrentDomain(detectedDomain);
-      }
-    };
-    
-    updateDomain();
-  }, [initialDomain, currentDomain]);
-
-  const contextValue: GovernanceProfileContextType = {
-    currentProfile,
-    availableProfiles,
-    selectProfile,
-    resetToDefault,
-    currentDomain,
-  };
-
+  
   return (
-    <GovernanceProfileContext.Provider value={contextValue}>
+    <GovernanceContext.Provider
+      value={{
+        currentDomain,
+        setCurrentDomain,
+        profiles,
+        loading,
+        error,
+        apiService
+      }}
+    >
       {children}
-    </GovernanceProfileContext.Provider>
+    </GovernanceContext.Provider>
   );
 };
-
-/**
- * Hook to use the governance profile context
- */
-export const useGovernanceProfile = () => useContext(GovernanceProfileContext);

@@ -7,6 +7,7 @@
  * Phase ID: 12.20
  * Clauses: 5.3, 11.0, 12.0, 6.2
  */
+import * as React from 'react';
 
 class ContractReference extends React.Component {
   render() {
@@ -20,5 +21,4 @@ class ContractReference extends React.Component {
     );
   }
 }
-
 export default ContractReference;

@@ -1,104 +1,35 @@
 /**
- * Domain-specific governance profile types
+ * Governance domain enums and types
  * 
- * This file defines the core interfaces and types for the domain-specific
- * governance profiles system introduced in Phase 6.5.
+ * Defines the governance domains and related types used throughout the application.
+ * 
+ * Contract Version: v2025.05.18
+ * Phase ID: 12.20
  */
 
-/**
- * Supported domain types for governance profiles
- */
+// Governance domains
 export enum GovernanceDomain {
   SOFTWARE_ENGINEERING = 'software_engineering',
   PRODUCT_MANAGEMENT = 'product_management',
-  HUMAN_RESOURCES = 'human_resources',
-  ADMINISTRATIVE = 'administrative',
+  DATA_SCIENCE = 'data_science',
+  OPERATIONS = 'operations',
+  SECURITY = 'security'
 }
 
-/**
- * Trust metric configuration for a specific domain
- */
-export interface TrustMetricConfig {
-  /** Base decay rate for trust in this domain */
-  trustDecayRate: number;
-  /** Minimum trust threshold for operations */
-  minTrustThreshold: number;
-  /** Recovery rate for trust after violations */
-  trustRecoveryRate: number;
-  /** Maximum trust level that can be achieved */
-  maxTrustLevel: number;
+// Profile interface
+export interface GovernanceProfile {
+  id: string;
+  name: string;
+  metrics: Record<string, number>;
+  lastUpdated: string;
 }
 
-/**
- * Monitoring configuration for a specific domain
- */
-export interface MonitoringConfig {
-  /** Number of monitoring events to generate */
-  eventGranularity: number;
-  /** Types of events to monitor */
-  monitoredEventTypes: string[];
-  /** Reporting frequency for monitoring events */
-  reportingFrequencyMs: number;
-}
-
-/**
- * Recovery mechanism configuration for a specific domain
- */
-export interface RecoveryConfig {
-  /** Depth of state preservation during recovery */
-  statePreservationDepth: number;
-  /** Automatic recovery attempts before failure */
-  maxRecoveryAttempts: number;
-  /** Delay between recovery attempts */
-  recoveryDelayMs: number;
-}
-
-/**
- * Loop state configuration for a specific domain
- */
-export interface LoopStateConfig {
-  /** Whether to use 'aborted' state for resource limits */
-  useAbortedForResourceLimits: boolean;
-  /** Custom state transitions for this domain */
-  customStateTransitions?: Record<string, string>;
-}
-
-/**
- * Complete governance profile configuration for a specific domain
- */
-export interface GovernanceProfileConfig {
-  /** Domain this profile applies to */
-  domain: GovernanceDomain;
-  /** Display name for this profile */
-  displayName: string;
-  /** Description of this profile */
-  description: string;
-  /** Trust metric configuration */
-  trustMetrics: TrustMetricConfig;
-  /** Monitoring configuration */
-  monitoring: MonitoringConfig;
-  /** Recovery mechanism configuration */
-  recovery: RecoveryConfig;
-  /** Loop state configuration */
-  loopState: LoopStateConfig;
-  /** Version of this profile */
-  version: string;
-  /** Whether this is the default profile for the domain */
-  isDefault: boolean;
-}
-
-/**
- * Context for the currently selected governance profile
- */
-export interface GovernanceProfileContext {
-  /** Currently selected profile */
-  currentProfile: GovernanceProfileConfig | null;
-  /** Available profiles */
-  availableProfiles: GovernanceProfileConfig[];
-  /** Select a profile by domain and optional version */
-  selectProfile: (domain: GovernanceDomain, version?: string) => void;
-  /** Reset to default profile for current domain */
-  resetToDefault: () => void;
-  /** Current domain */
+// Context interface
+export interface GovernanceContextType {
   currentDomain: GovernanceDomain | null;
+  setCurrentDomain: (domain: GovernanceDomain) => void;
+  profiles: Record<GovernanceDomain, GovernanceProfile>;
+  loading: boolean;
+  error: string | null;
+  apiService: any;
 }

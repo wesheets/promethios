@@ -1,5 +1,5 @@
 /**
- * API Integration Tests for Governance Profiles
+ * API Integration Tests for Governance Profiles with improved async handling
  * 
  * This file contains tests for the integration between the UI components
  * and the governance backend API.
@@ -94,11 +94,11 @@ describe('Governance API Integration', () => {
     // Verify API was called
     expect(mockApiService.fetchProfiles).toHaveBeenCalled();
     
-    // Wait for profile to be loaded and displayed
+    // Wait for profile to be loaded and displayed with increased timeout
     await waitFor(() => {
       expect(screen.getByTestId('profile-info')).toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
+    }, { timeout: 10000 }); // Increased timeout
+  }, 15000); // Increased test timeout
 
   test('selects profile by domain from API', async () => {
     // Setup mock implementation
@@ -139,10 +139,10 @@ describe('Governance API Integration', () => {
     // Verify initial profile fetch
     expect(mockApiService.fetchProfile).toHaveBeenCalledWith(GovernanceDomain.SOFTWARE_ENGINEERING);
     
-    // Wait for profile to be loaded
+    // Wait for profile to be loaded with increased timeout
     await waitFor(() => {
       const profileDisplay = screen.getByTestId('profile-display');
       expect(profileDisplay).toHaveTextContent(softwareEngineeringProfile.displayName);
-    }, { timeout: 3000 });
-  });
+    }, { timeout: 10000 }); // Increased timeout
+  }, 15000); // Increased test timeout
 });

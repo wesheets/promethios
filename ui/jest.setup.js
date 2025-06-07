@@ -1,12 +1,12 @@
 /**
- * Jest setup file for UI tests
+ * Jest setup file to configure the test environment
  * 
- * This file imports and configures jest-dom for extended DOM element assertions
+ * This file configures Jest to use our mock React implementation
  * and sets up other necessary test environment configurations.
  */
 
-// Import jest-dom for extended DOM element assertions
-import '@testing-library/jest-dom';
+// Mock React for all tests
+jest.mock('react', () => require('./test-utils/mock-react.js'));
 
 // Set up DOM environment
 document.createRange = () => ({

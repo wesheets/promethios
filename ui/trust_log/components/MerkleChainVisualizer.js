@@ -7,8 +7,12 @@
  * Phase ID: 12.20
  * Clauses: 5.3, 11.0, 12.0, 6.2
  */
-
+import * as React from 'react';
+import Ajv from 'ajv';
 import pre_loop_tether_check from '../utils/tetherCheck.js';
+
+// Initialize Ajv instance
+const ajv = new Ajv();
 
 class MerkleChainVisualizer extends React.Component {
   constructor(props) {
@@ -119,5 +123,4 @@ class MerkleChainVisualizer extends React.Component {
     );
   }
 }
-
 export default MerkleChainVisualizer;
