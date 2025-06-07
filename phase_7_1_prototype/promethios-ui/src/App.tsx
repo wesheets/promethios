@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
@@ -25,16 +25,16 @@ import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import UIIntegration from './UIIntegration';
 
-const App: React.FC = () => {
+// Create a wrapper component to use the useLocation hook
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  const isUIRoute = location.pathname.startsWith('/ui/');
+  
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <Router>
-            <div className="min-h-screen flex flex-col dark:bg-gray-900">
-              {/* Only show Header for non-UI routes */}
-              {!window.location.pathname.startsWith('/ui/') && <Header />}
-              <div className={!window.location.pathname.startsWith('/ui/') ? "pt-16 flex-grow" : "flex-grow"}> {/* Add padding only when header is shown */}
+    <div className="min-h-screen flex flex-col dark:bg-gray-900">
+      {/* Only show Header for non-UI routes */}
+      {!isUIRoute && <Header />}
+      <div className={!isUIRoute ? "pt-16 flex-grow" : "flex-grow"}> {/* Add padding only when header is shown */}
                 <Routes>
                   <Route path="/" element={
                     <>
@@ -72,9 +72,19 @@ const App: React.FC = () => {
                 </Routes>
               </div>
               {/* Only show Footer for non-UI routes */}
-              {!window.location.pathname.startsWith('/ui/') && <Footer />}
-              {!window.location.pathname.startsWith('/ui/') && <FeedbackWidget />}
+              {!isUIRoute && <Footer />}
+              {!isUIRoute && <FeedbackWidget />}
             </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <Router>
+            <AppContent />
           </Router>
         </AnalyticsProvider>
       </AuthProvider>
