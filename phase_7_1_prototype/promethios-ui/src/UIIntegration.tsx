@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 /**
  * UIIntegration Component
@@ -12,10 +12,9 @@ const UIIntegration: React.FC = () => {
   // Since we can't directly import from outside the project directory,
   // we'll create a simple router that redirects to the appropriate routes
   return (
-    <Router>
-      <Routes>
-        {/* Redirect all /ui/ routes to the dashboard for now */}
-        <Route path="/ui/dashboard" element={
+    <Routes>
+      {/* Redirect all /ui/ routes to the dashboard for now */}
+      <Route path="dashboard" element={
           <div className="flex h-screen">
             {/* This div will be replaced by the actual dashboard with collapsible navigation */}
             <div className="w-16 bg-gray-900 h-full flex flex-col items-center py-4">
@@ -37,9 +36,8 @@ const UIIntegration: React.FC = () => {
             </div>
           </div>
         } />
-        <Route path="/ui/*" element={<Navigate to="/ui/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
-    </Router>
   );
 };
 
