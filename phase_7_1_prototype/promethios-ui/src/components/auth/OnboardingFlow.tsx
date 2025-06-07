@@ -11,8 +11,8 @@ const OnboardingFlow: React.FC = () => {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      // Redirect to dashboard when onboarding is complete
-      window.location.href = '/dashboard';
+      // Redirect to new dashboard implementation when onboarding is complete
+      window.location.href = '/ui/dashboard';
     }
   };
 
