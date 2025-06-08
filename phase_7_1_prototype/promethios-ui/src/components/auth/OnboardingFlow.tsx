@@ -14,14 +14,17 @@ const Tooltip: React.FC<{ children: React.ReactNode; content: string }> = ({ chi
       <div
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
-        className="cursor-help border-b border-dotted border-purple-400"
+        className="cursor-help text-blue-400 font-medium border-b-2 border-blue-400 hover:text-blue-500 hover:border-blue-500 transition-colors flex items-center"
       >
         {children}
+        <svg className="w-4 h-4 ml-0.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
       </div>
       {isVisible && (
-        <div className="absolute z-10 w-64 p-2 mt-1 text-sm bg-gray-800 text-white rounded-lg shadow-lg -left-1/2 transform -translate-x-1/2">
+        <div className="absolute z-10 w-64 p-3 mt-1 text-sm bg-gray-800 text-white rounded-lg shadow-lg -left-1/2 transform -translate-x-1/2 border border-blue-400">
           {content}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-800 rotate-45"></div>
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-800 rotate-45 border-t border-l border-blue-400"></div>
         </div>
       )}
     </div>
@@ -61,7 +64,10 @@ const OnboardingFlow: React.FC = () => {
       if (currentUser) {
         setIsSubmitting(true);
         try {
-          // Save agent configuration
+          // First mark onboarding as complete to ensure state is updated
+          await updateOnboardingStatus(currentUser.uid, true);
+          
+          // Then save agent configuration
           await saveAgentConfiguration(currentUser.uid, {
             name: agentName,
             type: agentType,
@@ -69,21 +75,21 @@ const OnboardingFlow: React.FC = () => {
             governanceLevel: governanceLevel
           });
           
-          // Mark onboarding as complete
-          await updateOnboardingStatus(currentUser.uid, true);
-          
-          // Redirect to new dashboard implementation
-          navigate('/ui/dashboard');
+          // Use a short timeout to ensure Firebase state is updated before navigation
+          setTimeout(() => {
+            // Redirect to agent wizard with replace to prevent back navigation
+            navigate('/ui/agent-wizard', { replace: true });
+          }, 500);
         } catch (error) {
           console.error('Error completing onboarding:', error);
           // Fallback to direct navigation if saving fails
-          navigate('/ui/dashboard');
+          navigate('/ui/agent-wizard', { replace: true });
         } finally {
-          setIsSubmitting(false);
+          // Don't reset isSubmitting until after navigation to prevent UI flicker
         }
       } else {
         // Fallback if no user is found
-        navigate('/ui/dashboard');
+        navigate('/ui/agent-wizard', { replace: true });
       }
     }
   };
@@ -98,6 +104,9 @@ const OnboardingFlow: React.FC = () => {
     if (currentUser) {
       setIsSubmitting(true);
       try {
+        // First mark onboarding as complete to ensure state is updated
+        await updateOnboardingStatus(currentUser.uid, true);
+        
         // Save minimal agent configuration
         await saveAgentConfiguration(currentUser.uid, {
           name: 'Default Assistant',
@@ -106,25 +115,24 @@ const OnboardingFlow: React.FC = () => {
           governanceLevel: 'standard'
         });
         
-        // Mark onboarding as complete but track that it was skipped
-        await updateOnboardingStatus(currentUser.uid, true);
-        
         // Track skip action with Observer agent
-        // This will be connected to the Observer agent in a later step
         console.log('Onboarding skipped - Observer agent should track this');
         
-        // Redirect to dashboard
-        navigate('/ui/dashboard');
+        // Use a short timeout to ensure Firebase state is updated before navigation
+        setTimeout(() => {
+          // Redirect to agent wizard with replace to prevent back navigation
+          navigate('/ui/agent-wizard', { replace: true });
+        }, 500);
       } catch (error) {
         console.error('Error skipping onboarding:', error);
         // Fallback to direct navigation if saving fails
-        navigate('/ui/dashboard');
+        navigate('/ui/agent-wizard', { replace: true });
       } finally {
-        setIsSubmitting(false);
+        // Don't reset isSubmitting until after navigation to prevent UI flicker
       }
     } else {
       // Fallback if no user is found
-      navigate('/ui/dashboard');
+      navigate('/ui/agent-wizard', { replace: true });
     }
   };
 

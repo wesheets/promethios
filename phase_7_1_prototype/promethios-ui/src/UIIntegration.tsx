@@ -1,6 +1,13 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { MainLayoutProxy, DashboardProxy } from './proxies';
+import { 
+  MainLayoutProxy, 
+  DashboardProxy, 
+  AgentWizardProxy,
+  OnboardingWelcomeProxy,
+  OnboardingGoalSelectionProxy,
+  OnboardingGuidedStepsProxy
+} from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -17,6 +24,14 @@ const UIIntegration: React.FC = () => {
   return (
     <ObserverProvider>
       <Routes>
+        {/* Onboarding flow routes */}
+        <Route path="onboarding">
+          <Route path="welcome" element={<OnboardingWelcomeProxy />} />
+          <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
+          <Route path="guided-steps/:stepId" element={<OnboardingGuidedStepsProxy />} />
+          <Route index element={<Navigate to="welcome" replace />} />
+        </Route>
+        
         {/* Render the dashboard with MainLayout - protected by onboarding */}
         <Route path="dashboard" element={
           <ProtectedRoute requireOnboarding={true}>
@@ -25,7 +40,18 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+        
+        {/* Agent Wrapping Wizard route */}
+        <Route path="agent-wizard" element={
+          <ProtectedRoute requireOnboarding={true}>
+            <MainLayoutProxy>
+              <AgentWizardProxy />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Ensure all redirects use replace to prevent URL duplication */}
+        <Route path="*" element={<Navigate to="onboarding/welcome" replace />} />
       </Routes>
     </ObserverProvider>
   );

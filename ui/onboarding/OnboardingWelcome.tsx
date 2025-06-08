@@ -172,7 +172,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({
     addMemoryItem(`Selected "${optionId}" onboarding path`);
     
     // Navigate to appropriate guided step based on selection
-    navigate(`/onboarding/guided-steps/${optionId}`);
+    navigate(`/onboarding/guided-steps/${optionId}`, { replace: true });
     
     // Notify Observer
     switch (optionId) {
@@ -195,7 +195,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({
   const handleSkip = () => {
     addMemoryItem('Skipped onboarding');
     notifyObserver('info', 'You\'ve skipped the onboarding for now. You can always access it later from the dashboard or settings.');
-    navigate('/dashboard');
+    navigate('/ui/agent-wizard', { replace: true });
   };
   
   // Render option card

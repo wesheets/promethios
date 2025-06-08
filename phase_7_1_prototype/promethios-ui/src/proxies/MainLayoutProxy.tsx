@@ -132,39 +132,6 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="bg-gray-900 text-white h-16 flex items-center px-6 shadow-md z-10">
-        <div className="flex items-center">
-          {/* Promethios Logo */}
-          <div className="flex items-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3B82F6" />
-              <path d="M2 17L12 22L22 17V7L12 12L2 7V17Z" fill="#1E40AF" opacity="0.7" />
-            </svg>
-            <div className="text-blue-500 font-bold text-xl">PROMETHIOS</div>
-          </div>
-          <div className="text-gray-400 text-sm ml-4">
-            {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
-          </div>
-        </div>
-        <div className="ml-auto flex items-center space-x-4">
-          {currentUser && (
-            <>
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                {currentUser.email?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="text-sm hidden md:block">{currentUser.email}</div>
-              <button 
-                onClick={handleLogout}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Logout
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      
       {/* Main content with collapsible navigation */}
       <div className="flex flex-1 overflow-hidden">
         {/* Collapsible navigation sidebar */}
