@@ -1,15 +1,30 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { 
+  User, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
+import { auth, googleProvider } from '../firebase/config';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   loading: true,
+  loginWithEmail: async () => {},
+  loginWithGoogle: async () => {},
+  signup: async () => {},
+  resetPassword: async () => {},
 });
 
 export const useAuth = () => {
@@ -38,9 +53,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  const loginWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const loginWithGoogle = async () => {
+    await signInWithPopup(auth, googleProvider);
+  };
+
+  const signup = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
+  };
+
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const value: AuthContextType = {
     currentUser,
     loading,
+    loginWithEmail,
+    loginWithGoogle,
+    signup,
+    resetPassword,
   };
 
   return (
