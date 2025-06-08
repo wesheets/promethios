@@ -4,6 +4,7 @@ import AgentWizardProxy from './AgentWizardProxy';
 import OnboardingWelcomeProxy from './OnboardingWelcomeProxy';
 import OnboardingGoalSelectionProxy from './OnboardingGoalSelectionProxy';
 import OnboardingGuidedStepsProxy from './OnboardingGuidedStepsProxy';
+import ObserverAgentProxy from './ObserverAgentProxy';
 
 export {
   MainLayoutProxy,
@@ -11,5 +12,6 @@ export {
   AgentWizardProxy,
   OnboardingWelcomeProxy,
   OnboardingGoalSelectionProxy,
-  OnboardingGuidedStepsProxy
+  OnboardingGuidedStepsProxy,
+  ObserverAgentProxy
 };
