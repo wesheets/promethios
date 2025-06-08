@@ -4,6 +4,8 @@ import {
   MainLayoutProxy, 
   DashboardProxy, 
   AgentWizardProxy,
+  AgentsProxy,
+  GovernanceProxy,
   OnboardingWelcomeProxy,
   OnboardingGoalSelectionProxy,
   OnboardingGuidedStepsProxy,
@@ -48,6 +50,33 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentWizardProxy />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agents management page - protected by onboarding */}
+        <Route path="agents">
+          <Route index element={
+            <ProtectedRoute requireOnboarding={true}>
+              <MainLayoutProxy>
+                <AgentsProxy />
+              </MainLayoutProxy>
+            </ProtectedRoute>
+          } />
+          <Route path=":agentId" element={
+            <ProtectedRoute requireOnboarding={true}>
+              <MainLayoutProxy>
+                <AgentsProxy />
+              </MainLayoutProxy>
+            </ProtectedRoute>
+          } />
+        </Route>
+        
+        {/* Governance tab - primary interaction hub */}
+        <Route path="governance" element={
+          <ProtectedRoute requireOnboarding={true}>
+            <MainLayoutProxy>
+              <GovernanceProxy />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
