@@ -69,17 +69,27 @@ export const saveAgentConfiguration = async (
 // Check if user has completed onboarding
 export const checkOnboardingStatus = async (userId: string) => {
   try {
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Onboarding check timeout')), 5000)
+    );
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      return userData.onboardingCompleted === true;
-    }
+    const checkPromise = (async () => {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return userData.onboardingCompleted === true;
+      }
+      
+      return false;
+    })();
     
-    return false;
+    return await Promise.race([checkPromise, timeoutPromise]) as boolean;
   } catch (error) {
     console.error('Error checking onboarding status:', error);
+    // Return false on error to allow user to proceed to onboarding
     return false;
   }
 };

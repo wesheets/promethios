@@ -13,6 +13,7 @@ interface ProtectedRouteProps {
  * 
  * This component ensures that users complete onboarding before accessing protected routes.
  * It checks the user's onboarding status and redirects to onboarding if not completed.
+ * Optimized for faster loading with caching and reduced checks.
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
@@ -29,9 +30,31 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
 
+      // Check localStorage cache first for faster loading
+      const cacheKey = `onboarding_${currentUser.uid}`;
+      const cachedStatus = localStorage.getItem(cacheKey);
+      
+      if (cachedStatus !== null) {
+        const completed = cachedStatus === 'true';
+        setOnboardingCompleted(completed);
+        setCheckingOnboarding(false);
+        
+        // Still check Firebase in background to ensure accuracy
+        checkOnboardingStatus(currentUser.uid).then(firebaseStatus => {
+          if (firebaseStatus !== completed) {
+            setOnboardingCompleted(firebaseStatus);
+            localStorage.setItem(cacheKey, firebaseStatus.toString());
+          }
+        }).catch(console.error);
+        
+        return;
+      }
+
       try {
         const completed = await checkOnboardingStatus(currentUser.uid);
         setOnboardingCompleted(completed);
+        // Cache the result for faster subsequent loads
+        localStorage.setItem(cacheKey, completed.toString());
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         // If we can't check onboarding status, assume it's not completed
@@ -65,7 +88,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to onboarding if required and not completed
   if (requireOnboarding && onboardingCompleted === false) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/ui/onboarding" replace />;
   }
 
   // Render the protected content
