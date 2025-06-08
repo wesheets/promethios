@@ -80,48 +80,48 @@ const OnboardingGoalSelection: React.FC = () => {
   };
 
   const getColorClasses = (color: string, isSelected: boolean) => {
-    const baseClasses = "border-2 rounded-lg p-6 transition-all cursor-pointer";
+    const baseClasses = "border-2 rounded-lg p-6 transition-all cursor-pointer bg-gray-700";
     
     if (isSelected) {
       switch (color) {
-        case 'blue': return `${baseClasses} border-blue-500 bg-blue-50`;
-        case 'red': return `${baseClasses} border-red-500 bg-red-50`;
-        case 'green': return `${baseClasses} border-green-500 bg-green-50`;
-        case 'purple': return `${baseClasses} border-purple-500 bg-purple-50`;
-        default: return `${baseClasses} border-gray-500 bg-gray-50`;
+        case 'blue': return `${baseClasses} border-blue-400 bg-blue-900/30`;
+        case 'red': return `${baseClasses} border-red-400 bg-red-900/30`;
+        case 'green': return `${baseClasses} border-green-400 bg-green-900/30`;
+        case 'purple': return `${baseClasses} border-purple-400 bg-purple-900/30`;
+        default: return `${baseClasses} border-gray-400 bg-gray-600`;
       }
     } else {
-      return `${baseClasses} border-gray-200 hover:border-gray-300 hover:shadow-md`;
+      return `${baseClasses} border-gray-600 hover:border-gray-500 hover:shadow-md`;
     }
   };
 
   const getIconColorClasses = (color: string, isSelected: boolean) => {
     if (isSelected) {
       switch (color) {
-        case 'blue': return 'text-blue-600 bg-blue-100';
-        case 'red': return 'text-red-600 bg-red-100';
-        case 'green': return 'text-green-600 bg-green-100';
-        case 'purple': return 'text-purple-600 bg-purple-100';
-        default: return 'text-gray-600 bg-gray-100';
+        case 'blue': return 'text-blue-400 bg-blue-900';
+        case 'red': return 'text-red-400 bg-red-900';
+        case 'green': return 'text-green-400 bg-green-900';
+        case 'purple': return 'text-purple-400 bg-purple-900';
+        default: return 'text-gray-400 bg-gray-700';
       }
     } else {
-      return 'text-gray-600 bg-gray-100';
+      return 'text-gray-400 bg-gray-700';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             What's your primary goal?
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-300">
             Help us personalize your Promethios experience
           </p>
           {state?.selectedWorkflow && (
-            <div className="mt-2 text-sm text-blue-600">
+            <div className="mt-2 text-sm text-blue-400">
               Selected workflow: {state.selectedWorkflow.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </div>
           )}
@@ -139,11 +139,11 @@ const OnboardingGoalSelection: React.FC = () => {
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${getIconColorClasses(goal.color, selectedGoal === goal.id)}`}>
                   {goal.icon}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-white">
                   {goal.title}
                 </h3>
               </div>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 {goal.description}
               </p>
             </div>
@@ -154,11 +154,11 @@ const OnboardingGoalSelection: React.FC = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={handleBack}
-            className="text-gray-500 hover:text-gray-700 font-medium"
+            className="text-gray-400 hover:text-gray-200 font-medium"
           >
             ← Back
           </button>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-500">
             Step 2 of 3
           </div>
           <button
@@ -167,7 +167,7 @@ const OnboardingGoalSelection: React.FC = () => {
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
               selectedGoal
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
             Continue

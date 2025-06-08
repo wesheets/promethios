@@ -30,9 +30,9 @@ const AppContent: React.FC = () => {
   
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
-      {/* Show NewHeader for all routes */}
-      <NewHeader />
-      <div className="pt-16 flex-grow"> {/* Add padding for all routes since header is always shown */}
+      {/* Only show NewHeader for non-UI routes */}
+      {!isUIRoute && <NewHeader />}
+      <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
                 <Routes>
                   <Route path="/" element={<NewLandingPage />} />
                   <Route path="/signup" element={<LoginWaitlistPage />} />

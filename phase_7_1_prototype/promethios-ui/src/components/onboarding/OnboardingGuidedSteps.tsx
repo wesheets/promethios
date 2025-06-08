@@ -122,14 +122,14 @@ const OnboardingGuidedSteps: React.FC = () => {
   const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Understanding AI Governance
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Understanding <span className="text-blue-400 underline cursor-help relative group/tooltip">AI Governance<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Framework for ensuring AI systems are developed and deployed responsibly</span></span>
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-300">
             Learn key concepts through interactive questions
           </p>
           <div className="mt-4 flex justify-center">
@@ -151,11 +151,11 @@ const OnboardingGuidedSteps: React.FC = () => {
         </div>
 
         {/* Question Card */}
-        <div className="bg-gray-50 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-gray-700 rounded-lg p-6 mb-6 border border-gray-600">
+          <h2 className="text-xl font-semibold text-white mb-4">
             Question {currentStep + 1} of {quizQuestions.length}
           </h2>
-          <p className="text-lg text-gray-700 mb-6">
+          <p className="text-lg text-gray-200 mb-6">
             {currentQuestion.question}
           </p>
 
@@ -170,12 +170,12 @@ const OnboardingGuidedSteps: React.FC = () => {
                   selectedAnswer === index
                     ? showExplanation
                       ? index === currentQuestion.correctAnswer
-                        ? 'border-green-500 bg-green-50 text-green-800'
-                        : 'border-red-500 bg-red-50 text-red-800'
-                      : 'border-blue-500 bg-blue-50'
+                        ? 'border-green-400 bg-green-900/30 text-green-200'
+                        : 'border-red-400 bg-red-900/30 text-red-200'
+                      : 'border-blue-400 bg-blue-900/30 text-blue-200'
                     : showExplanation && index === currentQuestion.correctAnswer
-                    ? 'border-green-500 bg-green-50 text-green-800'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-green-400 bg-green-900/30 text-green-200'
+                    : 'border-gray-600 hover:border-gray-500 text-gray-200'
                 } ${showExplanation ? 'cursor-default' : 'cursor-pointer'}`}
               >
                 <div className="flex items-center">
@@ -184,12 +184,12 @@ const OnboardingGuidedSteps: React.FC = () => {
                   </span>
                   {option}
                   {showExplanation && index === currentQuestion.correctAnswer && (
-                    <svg className="w-5 h-5 ml-auto text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 ml-auto text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                   {showExplanation && selectedAnswer === index && index !== currentQuestion.correctAnswer && (
-                    <svg className="w-5 h-5 ml-auto text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 ml-auto text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   )}
@@ -206,7 +206,7 @@ const OnboardingGuidedSteps: React.FC = () => {
               className={`w-full py-3 rounded-lg font-medium transition-colors ${
                 selectedAnswer !== null
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
               }`}
             >
               Submit Answer
@@ -215,22 +215,22 @@ const OnboardingGuidedSteps: React.FC = () => {
 
           {/* Explanation */}
           {showExplanation && (
-            <div className={`p-4 rounded-lg ${isCorrect ? 'bg-green-100 border border-green-200' : 'bg-blue-100 border border-blue-200'}`}>
+            <div className={`p-4 rounded-lg ${isCorrect ? 'bg-green-900/30 border border-green-400' : 'bg-blue-900/30 border border-blue-400'}`}>
               <div className="flex items-center mb-2">
                 {isCorrect ? (
-                  <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
-                <span className={`font-medium ${isCorrect ? 'text-green-800' : 'text-blue-800'}`}>
+                <span className={`font-medium ${isCorrect ? 'text-green-200' : 'text-blue-200'}`}>
                   {isCorrect ? 'Correct!' : 'Good try!'}
                 </span>
               </div>
-              <p className={`${isCorrect ? 'text-green-700' : 'text-blue-700'}`}>
+              <p className={`${isCorrect ? 'text-green-300' : 'text-blue-300'}`}>
                 {currentQuestion.explanation}
               </p>
             </div>
@@ -241,18 +241,18 @@ const OnboardingGuidedSteps: React.FC = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={handleBack}
-            className="text-gray-500 hover:text-gray-700 font-medium"
+            className="text-gray-400 hover:text-gray-200 font-medium"
           >
             ← Back
           </button>
           <div className="flex items-center space-x-4">
             <button
               onClick={handleSkip}
-              className="text-gray-500 hover:text-gray-700 font-medium"
+              className="text-gray-400 hover:text-gray-200 font-medium"
             >
               Skip tutorial
             </button>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-500">
               Step 3 of 3
             </div>
             {showExplanation && (
