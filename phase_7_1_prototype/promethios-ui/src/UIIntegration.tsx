@@ -52,9 +52,9 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Catch-all route - only redirect to onboarding if user hasn't completed it */}
+        {/* Catch-all route - redirect new users to onboarding, completed users to dashboard */}
         <Route path="*" element={
-          <ProtectedRoute requireOnboarding={false}>
+          <ProtectedRoute requireOnboarding={true}>
             <Navigate to="dashboard" replace />
           </ProtectedRoute>
         } />

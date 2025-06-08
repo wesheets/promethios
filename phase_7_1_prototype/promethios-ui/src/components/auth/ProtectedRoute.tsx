@@ -87,8 +87,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return <>{children}</>;
     }
     
-    // Only redirect to onboarding if we don't have cached completion
-    return <Navigate to="/ui/onboarding" replace />;
+    // For new users (no cache) or incomplete users, redirect to onboarding if required
+    if (requireOnboarding) {
+      return <Navigate to="/ui/onboarding" replace />;
+    }
+    
+    // If onboarding not required, show content
+    return <>{children}</>;
   }
 
   // Redirect to login if not authenticated
