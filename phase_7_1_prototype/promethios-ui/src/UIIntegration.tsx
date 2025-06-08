@@ -28,7 +28,7 @@ const UIIntegration: React.FC = () => {
         <Route path="onboarding">
           <Route path="welcome" element={<OnboardingWelcomeProxy />} />
           <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
-          <Route path="guided-steps/:stepId" element={<OnboardingGuidedStepsProxy />} />
+          <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />
           <Route index element={<Navigate to="welcome" replace />} />
         </Route>
         
