@@ -39,7 +39,8 @@ const AppContent: React.FC = () => {
                   <Route path="/waitlist" element={<LoginWaitlistPage />} />
                   <Route path="/login" element={<LoginWaitlistPage />} />
                   <Route path="/verify-email" element={<EmailVerification />} />
-                  <Route path="/onboarding" element={<OnboardingFlow />} />
+                  {/* Redirect old onboarding to new UI onboarding */}
+                  <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
                   {/* Redirect to new dashboard implementation */}
                   <Route path="/dashboard" element={<Navigate to="/ui/dashboard" replace />} />
                   <Route path="/governance" element={<GovernancePage />} />
