@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
  * 
  * This component ensures that users complete onboarding before accessing protected routes.
  * It checks the user's onboarding status and redirects to onboarding if not completed.
- * Optimized for faster loading with caching and reduced checks.
+ * Optimized for faster loading with aggressive caching and minimal checks.
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
@@ -30,7 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
 
-      // Check localStorage cache first for faster loading
+      // For faster loading, assume new users need onboarding and skip Firebase check initially
       const cacheKey = `onboarding_${currentUser.uid}`;
       const cachedStatus = localStorage.getItem(cacheKey);
       
@@ -38,30 +38,25 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         const completed = cachedStatus === 'true';
         setOnboardingCompleted(completed);
         setCheckingOnboarding(false);
-        
-        // Still check Firebase in background to ensure accuracy
-        checkOnboardingStatus(currentUser.uid).then(firebaseStatus => {
-          if (firebaseStatus !== completed) {
-            setOnboardingCompleted(firebaseStatus);
-            localStorage.setItem(cacheKey, firebaseStatus.toString());
-          }
-        }).catch(console.error);
-        
-        return;
+        return; // Skip Firebase check for cached users
       }
 
-      try {
-        const completed = await checkOnboardingStatus(currentUser.uid);
-        setOnboardingCompleted(completed);
-        // Cache the result for faster subsequent loads
-        localStorage.setItem(cacheKey, completed.toString());
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        // If we can't check onboarding status, assume it's not completed
-        setOnboardingCompleted(false);
-      } finally {
-        setCheckingOnboarding(false);
-      }
+      // For new users, assume they need onboarding and set immediately
+      setOnboardingCompleted(false);
+      setCheckingOnboarding(false);
+      
+      // Check Firebase in background and update if different
+      setTimeout(async () => {
+        try {
+          const completed = await checkOnboardingStatus(currentUser.uid);
+          if (completed !== false) {
+            setOnboardingCompleted(completed);
+            localStorage.setItem(cacheKey, completed.toString());
+          }
+        } catch (error) {
+          console.error('Background onboarding check failed:', error);
+        }
+      }, 100); // Minimal delay for background check
     };
 
     if (!loading) {
@@ -69,8 +64,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [currentUser, loading]);
 
-  // Show loading while checking authentication or onboarding status
-  if (loading || checkingOnboarding) {
+  // Minimize loading time - show content faster
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -79,6 +74,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       </div>
     );
+  }
+
+  // Skip onboarding check loading for faster UX
+  if (checkingOnboarding && currentUser) {
+    // Immediately redirect to onboarding for faster perceived performance
+    return <Navigate to="/ui/onboarding" replace />;
   }
 
   // Redirect to login if not authenticated

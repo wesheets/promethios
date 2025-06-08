@@ -43,9 +43,9 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Agent Wrapping Wizard route */}
+        {/* Agent Wrapping Wizard route - NO onboarding requirement to prevent loops */}
         <Route path="agent-wizard" element={
-          <ProtectedRoute requireOnboarding={true}>
+          <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentWizardProxy />
             </MainLayoutProxy>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { auth } from '../../firebase/config';
+import { updateOnboardingStatus } from '../../firebase/userService';
 
 interface LocationState {
   selectedWorkflow?: string;
@@ -85,15 +87,20 @@ const OnboardingGuidedSteps: React.FC = () => {
       // Quiz completed, navigate to agent wizard
       const finalScore = score + (selectedAnswer === quizQuestions[currentStep].correctAnswer ? 1 : 0);
       console.log('Quiz completed, navigating to agent wizard with score:', finalScore);
-      navigate('/ui/agent-wizard', { 
-        state: { 
-          selectedWorkflow: state?.selectedWorkflow,
-          selectedGoal: state?.selectedGoal,
-          quizScore: finalScore,
-          completed: true
-        },
-        replace: true 
-      });
+      
+      // Mark onboarding as completed in localStorage to prevent redirect loops
+      if (state?.selectedWorkflow && state?.selectedGoal) {
+        const cacheKey = `onboarding_${auth.currentUser?.uid}`;
+        localStorage.setItem(cacheKey, 'true');
+        
+        // Also update Firebase in background
+        if (auth.currentUser) {
+          updateOnboardingStatus(auth.currentUser.uid, true).catch(console.error);
+        }
+      }
+      
+      // Force navigation to agent wizard
+      window.location.href = '/ui/agent-wizard';
     }
   };
 
@@ -112,14 +119,16 @@ const OnboardingGuidedSteps: React.FC = () => {
 
   const handleSkip = () => {
     console.log('Skipping tutorial, navigating to agent wizard');
-    navigate('/ui/agent-wizard', { 
-      state: { 
-        selectedWorkflow: state?.selectedWorkflow,
-        selectedGoal: state?.selectedGoal,
-        skipped: true
-      },
-      replace: true 
-    });
+    
+    // Mark onboarding as completed when skipping
+    if (auth.currentUser) {
+      const cacheKey = `onboarding_${auth.currentUser.uid}`;
+      localStorage.setItem(cacheKey, 'true');
+      updateOnboardingStatus(auth.currentUser.uid, true).catch(console.error);
+    }
+    
+    // Force navigation to agent wizard
+    window.location.href = '/ui/agent-wizard';
   };
 
   const currentQuestion = quizQuestions[currentStep];
