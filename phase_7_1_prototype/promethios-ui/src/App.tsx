@@ -42,7 +42,7 @@ const AppContent: React.FC = () => {
                   {/* Redirect old onboarding to new UI onboarding */}
                   <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
                   {/* Redirect to new dashboard implementation */}
-                  <Route path="/dashboard" element={<Navigate to="/ui/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
                   <Route path="/governance" element={<GovernancePage />} />
                   <Route path="/documentation" element={<DocumentationPage />} />
                   <Route path="/benchmark" element={

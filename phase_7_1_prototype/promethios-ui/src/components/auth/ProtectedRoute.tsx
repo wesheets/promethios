@@ -41,22 +41,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return; // Skip Firebase check for cached users
       }
 
-      // For new users, assume they need onboarding and set immediately
-      setOnboardingCompleted(false);
+      // For new users, check if they really need onboarding
+      setOnboardingCompleted(null); // Set to null initially to force proper check
       setCheckingOnboarding(false);
       
-      // Check Firebase in background and update if different
+      // Check Firebase immediately for new users
       setTimeout(async () => {
         try {
           const completed = await checkOnboardingStatus(currentUser.uid);
-          if (completed !== false) {
-            setOnboardingCompleted(completed);
-            localStorage.setItem(cacheKey, completed.toString());
-          }
+          console.log('Firebase onboarding status for new user:', completed);
+          setOnboardingCompleted(completed);
+          localStorage.setItem(cacheKey, completed.toString());
         } catch (error) {
-          console.error('Background onboarding check failed:', error);
+          console.error('Firebase onboarding check failed:', error);
+          // Default to false for new users if Firebase fails
+          setOnboardingCompleted(false);
+          localStorage.setItem(cacheKey, 'false');
         }
-      }, 100); // Minimal delay for background check
+      }, 50); // Very quick check for new users
     };
 
     if (!loading) {
@@ -82,16 +84,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const cacheKey = `onboarding_${currentUser.uid}`;
     const cachedStatus = localStorage.getItem(cacheKey);
     
+    console.log('ProtectedRoute Debug:', {
+      userId: currentUser.uid,
+      requireOnboarding,
+      cachedStatus,
+      checkingOnboarding: true
+    });
+    
     if (cachedStatus === 'true') {
+      console.log('User has completed onboarding (cached), allowing access');
       // User has completed onboarding, don't redirect
       return <>{children}</>;
     }
     
     // For new users (no cache) or incomplete users, redirect to onboarding if required
     if (requireOnboarding) {
+      console.log('Redirecting to onboarding - requireOnboarding=true, no completion cache');
       return <Navigate to="/ui/onboarding" replace />;
     }
     
+    console.log('Allowing access - requireOnboarding=false');
     // If onboarding not required, show content
     return <>{children}</>;
   }
@@ -101,10 +113,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect to onboarding if required and not completed
-  if (requireOnboarding && onboardingCompleted === false) {
+  // Redirect to onboarding if required and not completed (including null state for new users)
+  if (requireOnboarding && (onboardingCompleted === false || onboardingCompleted === null)) {
+    console.log('Final check: Redirecting to onboarding - onboardingCompleted=', onboardingCompleted);
     return <Navigate to="/ui/onboarding" replace />;
   }
+
+  console.log('Final check: Allowing access to protected content', {
+    requireOnboarding,
+    onboardingCompleted,
+    checkingOnboarding
+  });
 
   // Render the protected content
   return <>{children}</>;
