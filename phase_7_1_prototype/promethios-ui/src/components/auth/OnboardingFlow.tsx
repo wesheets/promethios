@@ -5,12 +5,35 @@ import { useAuth } from '../../context/AuthContext';
 import { updateOnboardingStatus, saveAgentConfiguration } from '../../firebase/userService';
 import { useNavigate } from 'react-router-dom';
 
+// Tooltip component for governance terms
+const Tooltip: React.FC<{ children: React.ReactNode; content: string }> = ({ children, content }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
+        className="cursor-help border-b border-dotted border-purple-400"
+      >
+        {children}
+      </div>
+      {isVisible && (
+        <div className="absolute z-10 w-64 p-2 mt-1 text-sm bg-gray-800 text-white rounded-lg shadow-lg -left-1/2 transform -translate-x-1/2">
+          {content}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-800 rotate-45"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const OnboardingFlow: React.FC = () => {
   const { isDarkMode } = useTheme();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const totalSteps = 3;
+  const totalSteps = 4;
   
   // Agent configuration state
   const [agentName, setAgentName] = useState('My Assistant');
@@ -18,6 +41,17 @@ const OnboardingFlow: React.FC = () => {
   const [agentDescription, setAgentDescription] = useState('');
   const [governanceLevel, setGovernanceLevel] = useState('standard');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get user's display name for personalization
+  const getUserDisplayName = () => {
+    if (currentUser?.displayName) {
+      return currentUser.displayName.split(' ')[0]; // First name only
+    }
+    if (currentUser?.email) {
+      return currentUser.email.split('@')[0]; // Username from email
+    }
+    return 'there'; // Fallback
+  };
 
   const nextStep = async () => {
     if (step < totalSteps) {
@@ -102,7 +136,12 @@ const OnboardingFlow: React.FC = () => {
             Beta
           </span>
         </div>
-        <h2 className="mt-3 text-center text-3xl font-extrabold">Welcome to Promethios</h2>
+        <h2 className="mt-3 text-center text-3xl font-extrabold">
+          Welcome, {getUserDisplayName()}!
+        </h2>
+        <p className={`mt-2 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Let's set up AI governance for your assistant
+        </p>
       </div>
 
       {/* Progress indicator */}
@@ -129,6 +168,12 @@ const OnboardingFlow: React.FC = () => {
             </React.Fragment>
           ))}
         </div>
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
+          <span>Welcome</span>
+          <span>Agent</span>
+          <span>Governance</span>
+          <span>Complete</span>
+        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -136,6 +181,74 @@ const OnboardingFlow: React.FC = () => {
           {step === 1 && (
             <motion.div
               key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <div className="text-center">
+                <h3 className="text-lg font-medium">Welcome to Promethios</h3>
+                <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  We'll help you set up <Tooltip content="AI governance ensures your AI systems operate safely, ethically, and in compliance with your organization's policies and regulations.">AI governance</Tooltip> in just a few steps
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Enhanced Trust & Safety</h4>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Increase your AI's <Tooltip content="Trust score measures how reliably your AI follows governance policies and makes appropriate decisions.">trust score</Tooltip> by up to 95%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Real-time Monitoring</h4>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Monitor <Tooltip content="Compliance tracking ensures your AI adheres to regulatory requirements and organizational policies in real-time.">compliance</Tooltip> and performance in real-time
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Risk Mitigation</h4>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Reduce AI-related risks and errors by up to 82%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="step2"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -158,6 +271,8 @@ const OnboardingFlow: React.FC = () => {
                     id="agent-name"
                     name="agent-name"
                     type="text"
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
                     placeholder="My Assistant"
                     className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                   />
@@ -172,12 +287,16 @@ const OnboardingFlow: React.FC = () => {
                   <select
                     id="agent-type"
                     name="agent-type"
+                    value={agentType}
+                    onChange={(e) => setAgentType(e.target.value)}
                     className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                   >
                     <option>General purpose assistant</option>
                     <option>Customer support</option>
                     <option>Research assistant</option>
                     <option>Creative assistant</option>
+                    <option>Data analysis</option>
+                    <option>Content generation</option>
                     <option>Custom</option>
                   </select>
                 </div>
@@ -192,6 +311,8 @@ const OnboardingFlow: React.FC = () => {
                     id="agent-description"
                     name="agent-description"
                     rows={3}
+                    value={agentDescription}
+                    onChange={(e) => setAgentDescription(e.target.value)}
                     placeholder="What does your agent do?"
                     className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                   ></textarea>
@@ -200,9 +321,9 @@ const OnboardingFlow: React.FC = () => {
             </motion.div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <motion.div
-              key="step2"
+              key="step3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -212,18 +333,22 @@ const OnboardingFlow: React.FC = () => {
               <div className="text-center">
                 <h3 className="text-lg font-medium">Choose governance settings</h3>
                 <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Select the governance level that's right for your agent
+                  Select the <Tooltip content="Governance level determines how strictly your AI follows policies and how much oversight it receives.">governance level</Tooltip> that's right for your agent
                 </p>
               </div>
 
               <div className="space-y-4">
-                <div className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500`}>
+                <div 
+                  className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500 ${governanceLevel === 'standard' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : ''}`}
+                  onClick={() => setGovernanceLevel('standard')}
+                >
                   <div className="flex items-center">
                     <input
                       id="governance-standard"
                       name="governance-level"
                       type="radio"
-                      defaultChecked
+                      checked={governanceLevel === 'standard'}
+                      onChange={() => setGovernanceLevel('standard')}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                     />
                     <label htmlFor="governance-standard" className="ml-3 block text-sm font-medium">
@@ -234,16 +359,21 @@ const OnboardingFlow: React.FC = () => {
                     </label>
                   </div>
                   <p className={`mt-1 ml-7 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Balanced approach with 92% trust score and minimal performance impact
+                    Balanced approach with 92% <Tooltip content="Trust score measures how reliably your AI follows governance policies and makes appropriate decisions.">trust score</Tooltip> and minimal performance impact
                   </p>
                 </div>
 
-                <div className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500`}>
+                <div 
+                  className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500 ${governanceLevel === 'strict' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : ''}`}
+                  onClick={() => setGovernanceLevel('strict')}
+                >
                   <div className="flex items-center">
                     <input
                       id="governance-strict"
                       name="governance-level"
                       type="radio"
+                      checked={governanceLevel === 'strict'}
+                      onChange={() => setGovernanceLevel('strict')}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                     />
                     <label htmlFor="governance-strict" className="ml-3 block text-sm font-medium">
@@ -251,16 +381,21 @@ const OnboardingFlow: React.FC = () => {
                     </label>
                   </div>
                   <p className={`mt-1 ml-7 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Maximum trust and compliance with moderate performance impact
+                    Maximum trust and <Tooltip content="Compliance tracking ensures your AI adheres to regulatory requirements and organizational policies.">compliance</Tooltip> with moderate performance impact
                   </p>
                 </div>
 
-                <div className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500`}>
+                <div 
+                  className={`p-4 border rounded-md ${isDarkMode ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200'} cursor-pointer hover:border-purple-500 ${governanceLevel === 'custom' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : ''}`}
+                  onClick={() => setGovernanceLevel('custom')}
+                >
                   <div className="flex items-center">
                     <input
                       id="governance-custom"
                       name="governance-level"
                       type="radio"
+                      checked={governanceLevel === 'custom'}
+                      onChange={() => setGovernanceLevel('custom')}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                     />
                     <label htmlFor="governance-custom" className="ml-3 block text-sm font-medium">
@@ -268,16 +403,16 @@ const OnboardingFlow: React.FC = () => {
                     </label>
                   </div>
                   <p className={`mt-1 ml-7 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Fine-tune individual governance parameters for your specific needs
+                    Fine-tune individual <Tooltip content="Governance parameters include trust thresholds, compliance rules, monitoring frequency, and risk tolerance levels.">governance parameters</Tooltip> for your specific needs
                   </p>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <motion.div
-              key="step3"
+              key="step4"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -301,18 +436,28 @@ const OnboardingFlow: React.FC = () => {
 
               <div className={`p-4 rounded-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <h4 className="text-sm font-medium">Your governance summary</h4>
-                <dl className="mt-2 divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}">
+                <dl className={`mt-2 divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
                   <div className="py-2 flex justify-between">
-                    <dt className="text-sm">Trust score</dt>
-                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">92/100</dd>
+                    <dt className="text-sm">
+                      <Tooltip content="Trust score measures how reliably your AI follows governance policies and makes appropriate decisions.">Trust score</Tooltip>
+                    </dt>
+                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">
+                      {governanceLevel === 'strict' ? '98' : governanceLevel === 'custom' ? '95' : '92'}/100
+                    </dd>
                   </div>
                   <div className="py-2 flex justify-between">
-                    <dt className="text-sm">Compliance rate</dt>
-                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">95%</dd>
+                    <dt className="text-sm">
+                      <Tooltip content="Compliance rate shows the percentage of time your AI follows all governance policies.">Compliance rate</Tooltip>
+                    </dt>
+                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">
+                      {governanceLevel === 'strict' ? '99' : governanceLevel === 'custom' ? '97' : '95'}%
+                    </dd>
                   </div>
                   <div className="py-2 flex justify-between">
                     <dt className="text-sm">Error reduction</dt>
-                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">-82%</dd>
+                    <dd className="text-sm font-medium text-green-600 dark:text-green-400">
+                      -{governanceLevel === 'strict' ? '89' : governanceLevel === 'custom' ? '85' : '82'}%
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -330,11 +475,12 @@ const OnboardingFlow: React.FC = () => {
               <button
                 type="button"
                 onClick={prevStep}
+                disabled={isSubmitting}
                 className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
                   isDarkMode 
                     ? 'border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600' 
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50`}
               >
                 Back
               </button>
@@ -344,9 +490,32 @@ const OnboardingFlow: React.FC = () => {
             <button
               type="button"
               onClick={nextStep}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              disabled={isSubmitting}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
             >
-              {step < totalSteps ? 'Continue' : 'Go to dashboard'}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Setting up...
+                </>
+              ) : (
+                step < totalSteps ? 'Continue' : 'Go to dashboard'
+              )}
+            </button>
+          </div>
+
+          {/* Skip option */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={skipOnboarding}
+              disabled={isSubmitting}
+              className={`text-sm ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} underline disabled:opacity-50`}
+            >
+              Skip onboarding and go to dashboard
             </button>
           </div>
         </div>
