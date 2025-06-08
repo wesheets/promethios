@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../../firebase/config';
+import { updateOnboardingStatus } from '../../firebase/userService';
 
 const OnboardingWelcome: React.FC = () => {
   const navigate = useNavigate();
@@ -13,8 +15,15 @@ const OnboardingWelcome: React.FC = () => {
   };
 
   const handleSkip = () => {
-    // Skip to agent wizard
-    navigate('/ui/agent-wizard', { replace: true });
+    // Mark onboarding as completed when skipping
+    if (auth.currentUser) {
+      const cacheKey = `onboarding_${auth.currentUser.uid}`;
+      localStorage.setItem(cacheKey, 'true');
+      updateOnboardingStatus(auth.currentUser.uid, true).catch(console.error);
+    }
+    
+    // Force navigation to agent wizard
+    window.location.href = '/ui/agent-wizard';
   };
 
   return (

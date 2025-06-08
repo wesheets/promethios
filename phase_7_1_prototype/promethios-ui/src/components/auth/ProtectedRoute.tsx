@@ -78,7 +78,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Skip onboarding check loading for faster UX
   if (checkingOnboarding && currentUser) {
-    // Immediately redirect to onboarding for faster perceived performance
+    // Check cache immediately to avoid unnecessary redirects
+    const cacheKey = `onboarding_${currentUser.uid}`;
+    const cachedStatus = localStorage.getItem(cacheKey);
+    
+    if (cachedStatus === 'true') {
+      // User has completed onboarding, don't redirect
+      return <>{children}</>;
+    }
+    
+    // Only redirect to onboarding if we don't have cached completion
     return <Navigate to="/ui/onboarding" replace />;
   }
 

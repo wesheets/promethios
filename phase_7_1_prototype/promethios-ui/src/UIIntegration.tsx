@@ -52,8 +52,12 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Ensure all redirects use replace to prevent URL duplication */}
-        <Route path="*" element={<Navigate to="onboarding/welcome" replace />} />
+        {/* Catch-all route - only redirect to onboarding if user hasn't completed it */}
+        <Route path="*" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <Navigate to="dashboard" replace />
+          </ProtectedRoute>
+        } />
       </Routes>
     </ObserverProvider>
   );
