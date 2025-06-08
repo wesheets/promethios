@@ -1,9 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
-// Remove analytics for faster loading
-// import { getAnalytics } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -17,17 +15,16 @@ const firebaseConfig = {
   measurementId: "G-WZ11Y40L70"
 };
 
-// Initialize Firebase with performance optimizations
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with faster settings
+// Initialize Auth
 const auth = getAuth(app);
-auth.settings.appVerificationDisabledForTesting = false; // Keep verification enabled
 
-// Initialize Firestore with optimizations
+// Initialize Firestore
 const db = getFirestore(app);
 
-// Configure Google Auth Provider with minimal prompts
+// Configure Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
