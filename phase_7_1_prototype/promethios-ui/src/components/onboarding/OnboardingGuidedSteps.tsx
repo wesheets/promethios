@@ -83,11 +83,14 @@ const OnboardingGuidedSteps: React.FC = () => {
       setShowExplanation(false);
     } else {
       // Quiz completed, navigate to agent wizard
+      const finalScore = score + (selectedAnswer === quizQuestions[currentStep].correctAnswer ? 1 : 0);
+      console.log('Quiz completed, navigating to agent wizard with score:', finalScore);
       navigate('/ui/agent-wizard', { 
         state: { 
           selectedWorkflow: state?.selectedWorkflow,
           selectedGoal: state?.selectedGoal,
-          quizScore: score + (selectedAnswer === quizQuestions[currentStep].correctAnswer ? 1 : 0)
+          quizScore: finalScore,
+          completed: true
         },
         replace: true 
       });
@@ -108,6 +111,7 @@ const OnboardingGuidedSteps: React.FC = () => {
   };
 
   const handleSkip = () => {
+    console.log('Skipping tutorial, navigating to agent wizard');
     navigate('/ui/agent-wizard', { 
       state: { 
         selectedWorkflow: state?.selectedWorkflow,
@@ -139,16 +143,45 @@ const OnboardingGuidedSteps: React.FC = () => {
                   key={index}
                   className={`w-3 h-3 rounded-full ${
                     index === currentStep
-                      ? 'bg-blue-600'
+                      ? 'bg-blue-400'
                       : index < currentStep
-                      ? 'bg-green-500'
-                      : 'bg-gray-300'
+                      ? 'bg-green-400'
+                      : 'bg-gray-600'
                   }`}
                 />
               ))}
             </div>
           </div>
         </div>
+
+        {/* Educational Content Before Quiz */}
+        {currentStep === 0 && !showExplanation && selectedAnswer === null && (
+          <div className="bg-blue-900/30 rounded-lg p-6 mb-6 border border-blue-400">
+            <h3 className="text-xl font-semibold text-blue-200 mb-4">
+              📚 Before We Begin: Key Concepts
+            </h3>
+            <div className="space-y-4 text-blue-100">
+              <div>
+                <h4 className="font-medium text-blue-200 mb-2">
+                  <span className="text-blue-400 underline cursor-help relative group/tooltip">Vigil<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Monitoring system that continuously watches AI behavior</span></span> - The Watchful Guardian
+                </h4>
+                <p className="text-sm">Continuously monitors AI systems to detect anomalies, policy violations, and potential risks in real-time.</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-200 mb-2">
+                  <span className="text-blue-400 underline cursor-help relative group/tooltip">Prism<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Provides explainable insights into AI decision-making</span></span> - The Transparency Engine
+                </h4>
+                <p className="text-sm">Makes AI decision-making processes transparent and explainable, helping users understand how and why AI systems reach specific conclusions.</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-200 mb-2">
+                  <span className="text-blue-400 underline cursor-help relative group/tooltip">Critic<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Evaluates AI outputs for quality and compliance</span></span> - The Quality Assessor
+                </h4>
+                <p className="text-sm">Evaluates AI outputs for quality, safety, and compliance with established governance policies and standards.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Question Card */}
         <div className="bg-gray-700 rounded-lg p-6 mb-6 border border-gray-600">

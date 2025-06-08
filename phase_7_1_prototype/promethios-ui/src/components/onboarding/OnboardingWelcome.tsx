@@ -5,8 +5,8 @@ const OnboardingWelcome: React.FC = () => {
   const navigate = useNavigate();
 
   const handleWorkflowSelect = (workflow: string) => {
-    // Navigate to goal selection with the selected workflow
-    navigate('/ui/onboarding/goal-selection', { 
+    // Navigate to workflow-specific page with the selected workflow
+    navigate(`/ui/onboarding/workflow/${workflow}`, { 
       state: { selectedWorkflow: workflow },
       replace: true 
     });

@@ -50,32 +50,32 @@ const AgentWizardPage: React.FC = () => {
       case 1:
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Select Agent Type</h2>
-            <p className="mb-4">Choose the type of agent you want to govern:</p>
+            <h2 className="text-xl font-semibold text-white mb-4">Select Agent Type</h2>
+            <p className="mb-4 text-gray-300">Choose the type of agent you want to govern:</p>
             
             <div className="space-y-4">
               <div 
-                className={`p-4 border rounded-lg cursor-pointer ${agentType === 'llm' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${agentType === 'llm' ? 'border-blue-400 bg-blue-900/30' : 'border-gray-600 hover:border-gray-500'}`}
                 onClick={() => handleAgentTypeSelect('llm')}
               >
-                <h3 className="font-medium">Large Language Model (LLM)</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Text generation models like GPT-4, Claude, or Llama</p>
+                <h3 className="font-medium text-white">Large Language Model (LLM)</h3>
+                <p className="text-sm text-gray-300">Text generation models like GPT-4, Claude, or Llama</p>
               </div>
               
               <div 
-                className={`p-4 border rounded-lg cursor-pointer ${agentType === 'multimodal' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${agentType === 'multimodal' ? 'border-blue-400 bg-blue-900/30' : 'border-gray-600 hover:border-gray-500'}`}
                 onClick={() => handleAgentTypeSelect('multimodal')}
               >
-                <h3 className="font-medium">Multimodal Agent</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Agents that process text, images, and other modalities</p>
+                <h3 className="font-medium text-white">Multimodal Agent</h3>
+                <p className="text-sm text-gray-300">Agents that process text, images, and other modalities</p>
               </div>
               
               <div 
-                className={`p-4 border rounded-lg cursor-pointer ${agentType === 'custom' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${agentType === 'custom' ? 'border-blue-400 bg-blue-900/30' : 'border-gray-600 hover:border-gray-500'}`}
                 onClick={() => handleAgentTypeSelect('custom')}
               >
-                <h3 className="font-medium">Custom Agent</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Your own custom-built agent with specific capabilities</p>
+                <h3 className="font-medium text-white">Custom Agent</h3>
+                <p className="text-sm text-gray-300">Your own custom-built agent with specific capabilities</p>
               </div>
             </div>
           </div>
@@ -219,42 +219,44 @@ const AgentWizardPage: React.FC = () => {
   };
   
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-2">Agent Wrapping Wizard</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">Set up AI governance for your agent</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">
+        <h1 className="text-2xl font-bold text-white mb-2">Agent Wrapping Wizard</h1>
+        <p className="text-gray-300 mb-6">Set up AI governance for your agent</p>
       
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
-          <span>Progress</span>
-          <span>{currentStep} of {totalSteps}</span>
+        <div className="mb-8">
+          <div className="flex justify-between mb-2 text-gray-300">
+            <span>Progress</span>
+            <span>{currentStep} of {totalSteps}</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2.5">
+            <div 
+              className="bg-blue-500 h-2.5 rounded-full" 
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            ></div>
+          </div>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-          <div 
-            className="bg-blue-600 h-2.5 rounded-full" 
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          ></div>
+        
+        <div className="bg-gray-700 p-6 rounded-lg border border-gray-600 mb-6">
+          {renderStepContent()}
         </div>
-      </div>
-      
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-        {renderStepContent()}
-      </div>
-      
-      <div className="flex justify-between">
-        <button 
-          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-          onClick={handleBack}
-          disabled={currentStep === 1}
-        >
-          Back
-        </button>
-        <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          onClick={handleNext}
-          disabled={(currentStep === 1 && !agentType) || (currentStep === 3 && !governanceLevel)}
-        >
-          {currentStep === totalSteps ? 'Complete Setup' : 'Continue'}
-        </button>
+        
+        <div className="flex justify-between">
+          <button 
+            className="px-4 py-2 bg-gray-600 text-gray-200 rounded hover:bg-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleBack}
+            disabled={currentStep === 1}
+          >
+            Back
+          </button>
+          <button 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleNext}
+            disabled={(currentStep === 1 && !agentType) || (currentStep === 3 && !governanceLevel)}
+          >
+            {currentStep === totalSteps ? 'Complete Setup' : 'Continue'}
+          </button>
+        </div>
       </div>
     </div>
   );

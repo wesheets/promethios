@@ -6,7 +6,8 @@ import {
   AgentWizardProxy,
   OnboardingWelcomeProxy,
   OnboardingGoalSelectionProxy,
-  OnboardingGuidedStepsProxy
+  OnboardingGuidedStepsProxy,
+  WorkflowSpecificProxy
 } from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -27,6 +28,7 @@ const UIIntegration: React.FC = () => {
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="welcome" element={<OnboardingWelcomeProxy />} />
+          <Route path="workflow/:workflowType" element={<WorkflowSpecificProxy />} />
           <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
           <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />
           <Route index element={<Navigate to="welcome" replace />} />
