@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AgentFirebaseService, AgentConfiguration } from '../firebase/agentService';
 import SimpleAgentService, { TeamSummary } from '../services/simpleAgentService';
+import MainLayoutProxy from '../proxies/MainLayoutProxy';
 
 interface DashboardMetrics {
   governanceScore: number;
@@ -253,22 +254,23 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-gray-400 mt-1">Welcome to your Promethios governance dashboard!</p>
-          </div>
-          {currentUser && (
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Logged in as</p>
-              <p className="font-medium">{currentUser.email}</p>
+    <MainLayoutProxy>
+      <div className="min-h-screen bg-gray-900 text-white">
+        {/* Header */}
+        <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <p className="text-gray-400 mt-1">Welcome to your Promethios governance dashboard!</p>
             </div>
-          )}
+            {currentUser && (
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Logged in as</p>
+                <p className="font-medium">{currentUser.email}</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       <div className="p-6 space-y-6">
         {/* Top Metrics Row */}
@@ -460,7 +462,8 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </MainLayoutProxy>
   );
 };
 

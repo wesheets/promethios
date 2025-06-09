@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import TeamsTab from './components/governance/TeamsTab';
 
 // Error Boundary for UI Integration
 class UIErrorBoundary extends React.Component<
@@ -52,6 +53,15 @@ const LazyGovernance = React.lazy(() => import('./components/pages/GovernancePag
 const LazyDeploy = React.lazy(() => import('./components/pages/DeployPage'));
 const LazyOnboardingWelcome = React.lazy(() => import('./components/onboarding/OnboardingWelcome'));
 
+// Teams component wrapper
+const TeamsPage: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <TeamsTab agents={[]} />
+    </div>
+  );
+};
+
 const UIIntegration: React.FC = () => {
   return (
     <UIErrorBoundary>
@@ -87,9 +97,23 @@ const UIIntegration: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          {/* Agents sub-routes */}
+          <Route path="/agents/teams" element={
+            <ProtectedRoute>
+              <LazyAgents />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/governance" element={
             <ProtectedRoute>
               <LazyGovernance />
+            </ProtectedRoute>
+          } />
+          
+          {/* Governance sub-routes */}
+          <Route path="/governance/teams" element={
+            <ProtectedRoute>
+              <TeamsPage />
             </ProtectedRoute>
           } />
           

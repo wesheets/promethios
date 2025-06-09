@@ -67,7 +67,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
         </svg>
-      )
+      ),
+      subItems: [
+        { path: '/ui/agents', label: 'Individual Agents' },
+        { path: '/ui/agents/teams', label: 'Multi-Agent Teams' }
+      ]
     },
     {
       path: '/ui/governance',
@@ -76,7 +80,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
-      )
+      ),
+      subItems: [
+        { path: '/ui/governance', label: 'Policies & Rules' },
+        { path: '/ui/governance/teams', label: 'Teams' }
+      ]
     },
     {
       path: '/ui/deploy',
@@ -164,28 +172,54 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           </button>
           
           {/* Navigation items */}
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-2">
             {navItems.map((item, index) => {
               const isActive = location.pathname.startsWith(item.path);
+              const hasSubItems = item.subItems && item.subItems.length > 0;
+              
               return (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`
-                    ${isNavExpanded ? 'w-48 justify-start px-4' : 'w-10 justify-center'} 
-                    h-10 rounded-md flex items-center transition-all duration-300
-                    ${isActive 
-                      ? 'bg-blue-600 text-white' 
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'}
-                  `}
-                  onMouseEnter={(e) => showTooltip(e, item.label)}
-                  onMouseLeave={hideTooltip}
-                >
-                  <div className="flex-shrink-0">{item.icon}</div>
-                  {isNavExpanded && (
-                    <span className="ml-3 text-sm font-medium">{item.label}</span>
+                <div key={index} className="w-full flex flex-col items-center">
+                  <Link
+                    to={item.path}
+                    className={`
+                      ${isNavExpanded ? 'w-48 justify-start px-4' : 'w-10 justify-center'} 
+                      h-10 rounded-md flex items-center transition-all duration-300
+                      ${isActive 
+                        ? 'bg-blue-600 text-white' 
+                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'}
+                    `}
+                    onMouseEnter={(e) => showTooltip(e, item.label)}
+                    onMouseLeave={hideTooltip}
+                  >
+                    <div className="flex-shrink-0">{item.icon}</div>
+                    {isNavExpanded && (
+                      <span className="ml-3 text-sm font-medium">{item.label}</span>
+                    )}
+                  </Link>
+                  
+                  {/* Sub-menu items */}
+                  {hasSubItems && isNavExpanded && (
+                    <div className="w-48 ml-4 mt-1 space-y-1">
+                      {item.subItems!.map((subItem, subIndex) => {
+                        const isSubActive = location.pathname === subItem.path;
+                        return (
+                          <Link
+                            key={subIndex}
+                            to={subItem.path}
+                            className={`
+                              block px-4 py-2 text-xs rounded-md transition-colors
+                              ${isSubActive 
+                                ? 'bg-blue-500 text-white' 
+                                : 'text-gray-300 hover:bg-gray-700 hover:text-white'}
+                            `}
+                          >
+                            {subItem.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   )}
-                </Link>
+                </div>
               );
             })}
           </div>
