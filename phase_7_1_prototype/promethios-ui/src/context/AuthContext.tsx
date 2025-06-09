@@ -75,11 +75,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loginWithGoogle = async () => {
     try {
-      // Try popup first
+      console.log('Starting Google Auth...');
+      
+      // For production environments with CORS issues, use redirect by default
+      if (window.location.hostname !== 'localhost') {
+        console.log('Production environment detected, using redirect flow...');
+        
+        // Import redirect methods
+        const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
+        
+        // Check if we're returning from a redirect first
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult) {
+          console.log('Redirect result found:', redirectResult.user);
+          return redirectResult;
+        }
+        
+        // Start redirect flow
+        console.log('Starting redirect to Google...');
+        await signInWithRedirect(auth, googleProvider);
+        return; // Redirect will handle the rest
+      }
+      
+      // For localhost, try popup first
+      console.log('Local environment, trying popup...');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('Popup successful:', result.user);
       return result;
+      
     } catch (error: any) {
-      // If popup fails due to CORS or other issues, try redirect
+      console.error('Google Auth Error:', error);
+      
+      // If popup fails, try redirect as fallback
       if (error.code === 'auth/popup-blocked' || 
           error.code === 'auth/popup-closed-by-user' ||
           error.message?.includes('cross-origin') ||
@@ -87,18 +114,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         console.log('Popup failed, trying redirect method...');
         
-        // Import redirect methods dynamically
-        const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
-        
-        // Check if we're returning from a redirect
-        const redirectResult = await getRedirectResult(auth);
-        if (redirectResult) {
-          return redirectResult;
+        try {
+          const { signInWithRedirect } = await import('firebase/auth');
+          await signInWithRedirect(auth, googleProvider);
+          return; // Redirect will handle the rest
+        } catch (redirectError) {
+          console.error('Redirect also failed:', redirectError);
+          throw redirectError;
         }
-        
-        // Start redirect flow
-        await signInWithRedirect(auth, googleProvider);
-        return; // Redirect will handle the rest
       }
       
       // Re-throw other errors
