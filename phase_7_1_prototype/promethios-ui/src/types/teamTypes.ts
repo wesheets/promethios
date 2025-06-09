@@ -353,15 +353,3 @@ export class TeamMetricsCalculator {
   }
 }
 
-export default {
-  AgentRole,
-  AgentTeamMember,
-  AgentTeam,
-  AgentWorkflow,
-  WorkflowStep,
-  TeamInvitation,
-  TeamActivity,
-  TEAM_TEMPLATES,
-  TeamMetricsCalculator
-};
-
