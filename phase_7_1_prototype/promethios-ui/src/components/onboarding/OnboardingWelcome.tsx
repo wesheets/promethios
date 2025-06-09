@@ -111,16 +111,40 @@ const OnboardingWelcome: React.FC = () => {
           
           {/* Content */}
           <div className="relative z-10">
-            {/* Visual icon */}
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">{slide.visual}</div>
-              <h1 className="text-3xl font-bold text-white mb-2">
-                {slide.title}
-              </h1>
-              <p className="text-xl text-blue-400 font-medium">
-                {slide.subtitle}
-              </p>
-            </div>
+            {currentSlide === 0 && (
+              <div className="text-center">
+                {/* Video placeholder */}
+                <div className="mb-8">
+                  <div className="bg-gray-900 rounded-xl p-8 border-2 border-dashed border-gray-600 max-w-md mx-auto">
+                    <div className="text-4xl mb-4">🎥</div>
+                    <h3 className="text-white font-medium mb-2">30-Second Explainer Video</h3>
+                    <p className="text-gray-400 text-sm">
+                      Coming soon: A powerful introduction to why AI governance matters
+                    </p>
+                  </div>
+                </div>
+                
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {slide.title}
+                </h1>
+                <p className="text-xl text-blue-400 font-medium">
+                  {slide.subtitle}
+                </p>
+              </div>
+            )}
+
+            {currentSlide > 0 && (
+              <div className="text-center">
+                {/* Visual icon */}
+                <div className="text-6xl mb-4">{slide.visual}</div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {slide.title}
+                </h1>
+                <p className="text-xl text-blue-400 font-medium">
+                  {slide.subtitle}
+                </p>
+              </div>
+            )}
 
             {/* Main content */}
             <div className="text-center mb-8">
@@ -174,6 +198,55 @@ const OnboardingWelcome: React.FC = () => {
                   className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
                 >
                   {currentSlide === slides.length - 1 ? 'See It In Action' : 'Continue'}
+                </button>
+              </div>
+            </div>
+
+            {/* Experience level selector - only show on first slide */}
+            {currentSlide === 0 && (
+              <div className="mt-8 p-6 bg-gray-700 rounded-xl border border-gray-600">
+                <h3 className="text-white font-semibold mb-4 text-center">Choose Your Experience Level:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('promethios_experience_level', 'beginner');
+                      // Continue with full onboarding
+                    }}
+                    className="p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors text-center"
+                  >
+                    <div className="text-2xl mb-2">🌱</div>
+                    <div className="font-semibold">Beginner</div>
+                    <div className="text-green-100 text-xs mt-1">Full guided experience with tips</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('promethios_experience_level', 'intermediate');
+                      window.location.href = '/ui/agents';
+                    }}
+                    className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors text-center"
+                  >
+                    <div className="text-2xl mb-2">⚡</div>
+                    <div className="font-semibold">Intermediate</div>
+                    <div className="text-blue-100 text-xs mt-1">Skip to agent creation</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('promethios_experience_level', 'expert');
+                      localStorage.setItem('promethios_minimal_mode', 'true');
+                      window.location.href = '/ui/dashboard';
+                    }}
+                    className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors text-center"
+                  >
+                    <div className="text-2xl mb-2">🚀</div>
+                    <div className="font-semibold">Expert</div>
+                    <div className="text-purple-100 text-xs mt-1">Minimal interface, no guidance</div>
+                  </button>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-gray-400 text-xs">You can change this later in settings</p>
+                </div>
+              </div>
+            )}
                 </button>
               </div>
             </div>

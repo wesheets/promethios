@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { GovernanceProvider } from './context/GovernanceContext';
+import { GamificationProvider } from './context/GamificationContext';
+import { HoveringObserverProvider } from './context/HoveringObserverContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -23,16 +25,36 @@ import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import UIIntegration from './UIIntegration';
+import HoveringObserver from './components/observer/HoveringObserver';
+import { ProgressIndicator } from './components/gamification/TrustRewards';
+import { useHoveringObserver } from './context/HoveringObserverContext';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isUIRoute = location.pathname.startsWith('/ui/');
   
+  // Safely access hovering observer context (backward compatible)
+  let hoveringObserver;
+  try {
+    hoveringObserver = useHoveringObserver();
+  } catch (error) {
+    // Gracefully handle missing context
+    hoveringObserver = null;
+  }
+  
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
       {/* Only show NewHeader for non-UI routes */}
       {!isUIRoute && <NewHeader />}
+      
+      {/* Progress Indicator - only show if gamification is available */}
+      {isUIRoute && (
+        <React.Suspense fallback={null}>
+          <ProgressIndicator />
+        </React.Suspense>
+      )}
+      
       <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
                 <Routes>
                   <Route path="/" element={<NewLandingPage />} />
@@ -68,6 +90,16 @@ const AppContent: React.FC = () => {
               {/* Only show Footer for non-UI routes */}
               {!isUIRoute && <Footer />}
               {!isUIRoute && <FeedbackWidget />}
+              
+              {/* Hovering Observer - only show in UI routes and if context is available */}
+              {isUIRoute && hoveringObserver && (
+                <React.Suspense fallback={null}>
+                  <HoveringObserver 
+                    isVisible={hoveringObserver.isVisible}
+                    onToggle={hoveringObserver.toggleObserver}
+                  />
+                </React.Suspense>
+              )}
             </div>
   );
 };
@@ -77,11 +109,24 @@ const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <GovernanceProvider>
-          <AnalyticsProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </AnalyticsProvider>
+          {/* Gamification and Observer providers - backward compatible */}
+          <React.Suspense fallback={
+            <AnalyticsProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </AnalyticsProvider>
+          }>
+            <GamificationProvider>
+              <HoveringObserverProvider>
+                <AnalyticsProvider>
+                  <Router>
+                    <AppContent />
+                  </Router>
+                </AnalyticsProvider>
+              </HoveringObserverProvider>
+            </GamificationProvider>
+          </React.Suspense>
         </GovernanceProvider>
       </AuthProvider>
     </ThemeProvider>
