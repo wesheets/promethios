@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AgentConfiguration } from '../../firebase/agentService';
 import SimpleAgentService, { TeamSummary } from '../../services/simpleAgentService';
-import { TeamManagementInterface } from '../teams/TeamManagementInterface';
-import { TeamConfigurationWizard } from '../teams/TeamConfigurationWizard';
+import TeamManagementInterface from '../teams/TeamManagementInterface';
+import TeamConfigurationWizard from '../teams/TeamConfigurationWizard';
 
 interface TeamsTabProps {
   agents: AgentConfiguration[];

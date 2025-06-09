@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { AgentFirebaseService, AgentConfiguration } from '../../firebase/agentService';
 import SimpleAgentService, { SimpleAgentConfig, TeamSummary } from '../../services/simpleAgentService';
-import { TeamConfigurationWizard } from '../teams/TeamConfigurationWizard';
-import { TeamManagementInterface } from '../teams/TeamManagementInterface';
+import TeamConfigurationWizard from '../teams/TeamConfigurationWizard';
+import TeamManagementInterface from '../teams/TeamManagementInterface';
 
 /**
  * Enhanced Agents Page Component
