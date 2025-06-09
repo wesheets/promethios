@@ -1,105 +1,174 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+// Fixed Authentication Context with comprehensive error handling
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { 
   User, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  sendPasswordResetEmail,
-  createUserWithEmailAndPassword
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut, 
+  onAuthStateChanged,
+  AuthError
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase/config';
+import { auth } from '../firebase/config';
 
 interface AuthContextType {
-  currentUser: User | null;
+  user: User | null;
   loading: boolean;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  error: string | null;
+  signInWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
+  clearError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  currentUser: null,
-  loading: true,
-  loginWithEmail: async () => {},
-  loginWithGoogle: async () => {},
-  signup: async () => {},
-  resetPassword: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 interface AuthProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Simple auth state listener without complex redirect handling
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'User logged out');
-      setCurrentUser(user);
-      setLoading(false);
-    }, (error) => {
-      console.error('Auth state change error:', error);
-      setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return unsubscribe;
-  }, []);
-
-  const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+  // Clear error function
+  const clearError = () => {
+    setError(null);
   };
 
-  const loginWithGoogle = async () => {
+  // Google sign in
+  const signInWithGoogle = async (): Promise<void> => {
     try {
-      console.log('Starting simplified Google Auth...');
+      setLoading(true);
+      setError(null);
       
-      // Simple popup approach with basic error handling
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('Google Auth successful:', result.user);
-      return result;
+      const provider = new GoogleAuthProvider();
       
-    } catch (error: any) {
-      console.error('Google Auth Error:', error);
+      // Add additional scopes if needed
+      provider.addScope('email');
+      provider.addScope('profile');
       
-      // Handle common errors with user-friendly messages
-      if (error.code === 'auth/popup-closed-by-user') {
-        throw new Error('Sign-in was cancelled. Please try again.');
-      } else if (error.code === 'auth/popup-blocked') {
-        throw new Error('Pop-up was blocked by your browser. Please allow pop-ups and try again.');
-      } else if (error.code === 'auth/network-request-failed') {
-        throw new Error('Network error. Please check your connection and try again.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-        throw new Error('This domain is not authorized. Please contact support.');
-      } else {
-        throw new Error('Google sign-in failed. Please try again or use email login.');
+      // Configure provider settings
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+
+      const result = await signInWithPopup(auth, provider);
+      
+      if (result.user) {
+        console.log('User signed in successfully:', result.user.email);
       }
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      
+      let errorMessage = 'Failed to sign in with Google';
+      
+      if (error instanceof Error) {
+        const authError = error as AuthError;
+        
+        switch (authError.code) {
+          case 'auth/popup-closed-by-user':
+            errorMessage = 'Sign in was cancelled';
+            break;
+          case 'auth/popup-blocked':
+            errorMessage = 'Popup was blocked by browser. Please allow popups and try again';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your connection and try again';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Google sign in is not enabled. Please contact support';
+            break;
+          default:
+            errorMessage = authError.message || 'An unexpected error occurred';
+        }
+      }
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const signup = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+  // Logout
+  const logout = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await signOut(auth);
+      console.log('User signed out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to sign out';
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
-  };
+  // Auth state listener
+  useEffect(() => {
+    let mounted = true;
+    
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      (user) => {
+        if (mounted) {
+          setUser(user);
+          setLoading(false);
+          
+          if (user) {
+            console.log('User authenticated:', user.email);
+          } else {
+            console.log('User not authenticated');
+          }
+        }
+      },
+      (error) => {
+        console.error('Auth state change error:', error);
+        
+        if (mounted) {
+          setError('Authentication error occurred');
+          setLoading(false);
+        }
+      }
+    );
 
+    // Cleanup function
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Context value
   const value: AuthContextType = {
-    currentUser,
+    user,
     loading,
-    loginWithEmail,
-    loginWithGoogle,
-    signup,
-    resetPassword,
+    error,
+    signInWithGoogle,
+    logout,
+    clearError
   };
 
   return (

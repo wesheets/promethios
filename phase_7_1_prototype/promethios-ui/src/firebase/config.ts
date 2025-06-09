@@ -1,45 +1,57 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+// Fixed Firebase Configuration
+import { initializeApp } from 'firebase/app';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAIht4KXfXZScxjDNUsYXRX4MVg6zbDYbk",
-  authDomain: "promethios.firebaseapp.com",
-  projectId: "promethios",
-  storageBucket: "promethios.firebasestorage.app",
-  messagingSenderId: "132426045839",
-  appId: "1:132426045839:web:913688771a94698e4d53fa",
-  measurementId: "G-WZ11Y40L70"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate configuration
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN', 
+  'VITE_FIREBASE_PROJECT_ID'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+if (missingVars.length > 0) {
+  console.error('Missing required Firebase environment variables:', missingVars);
+  throw new Error(`Missing Firebase configuration: ${missingVars.join(', ')}`);
+}
+
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Firebase initialization failed:', error);
+  throw error;
+}
 
 // Initialize Auth
-const auth = getAuth(app);
+export const auth = getAuth(app);
 
 // Initialize Firestore
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
-// Configure Google Auth Provider with production-optimized settings
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  // Optimize for production environment
-  access_type: 'offline',
-  include_granted_scopes: 'true',
-  // Add hd parameter for better domain handling
-  hd: '*'
-});
+// Connect to emulators in development
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+  try {
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    console.log('Connected to Firebase emulators');
+  } catch (error) {
+    console.warn('Failed to connect to Firebase emulators:', error);
+  }
+}
 
-// Add essential scopes
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
-googleProvider.addScope('openid');
-
-// Export Firebase services
-export { auth, db, googleProvider, firebaseConfig };
 export default app;
+

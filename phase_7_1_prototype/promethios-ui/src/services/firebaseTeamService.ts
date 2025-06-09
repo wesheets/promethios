@@ -1,420 +1,250 @@
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc, query, where, orderBy } from 'firebase/firestore';
+// Fixed Firebase Team Service with all required imports
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDocs, 
+  getDoc, 
+  query, 
+  where, 
+  orderBy,
+  Timestamp,
+  DocumentData,
+  QuerySnapshot,
+  DocumentSnapshot
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { AgentConfiguration } from '../firebase/agentService';
+import { Team, TeamMember, TeamRole } from '../types/teamTypes';
 
-/**
- * Firebase Team Service
- * 
- * This service provides Firebase-based team management functionality
- * that integrates with the existing agent system.
- */
+export class FirebaseTeamService {
+  private readonly teamsCollection = 'teams';
+  private readonly membersCollection = 'teamMembers';
 
-export interface TeamMember {
-  agentId: string;
-  roleId: string;
-  name: string;
-  joinedAt: string;
-  permissions: string[];
-}
-
-export interface Team {
-  id: string;
-  name: string;
-  description: string;
-  teamType: 'collaborative' | 'hierarchical' | 'specialized' | 'custom';
-  ownerId: string;
-  members: TeamMember[];
-  maxMembers: number;
-  status: 'active' | 'inactive' | 'archived';
-  createdAt: string;
-  updatedAt: string;
-  governanceSettings: {
-    requireApproval: boolean;
-    trustScoreThreshold: number;
-    complianceLevel: 'basic' | 'standard' | 'advanced';
-  };
-  metrics: {
-    averageTrustScore: number;
-    totalInteractions: number;
-    successRate: number;
-    complianceScore: number;
-  };
-}
-
-export interface TeamSummary {
-  id: string;
-  name: string;
-  description: string;
-  teamType: 'collaborative' | 'hierarchical' | 'specialized' | 'custom';
-  memberCount: number;
-  averageTrustScore: number;
-  status: 'active' | 'inactive';
-}
-
-export interface SimpleAgentConfig {
-  id: string;
-  name: string;
-  description: string;
-  agentType: 'llm' | 'multimodal' | 'custom';
-  apiEndpoint?: string;
-  governanceLevel: 'basic' | 'standard' | 'advanced';
-  trustScore: number;
-  status: 'active' | 'inactive' | 'pending';
-  lastActivity?: string;
-}
-
-class FirebaseTeamService {
-  private static readonly TEAMS_COLLECTION = 'teams';
-  private static readonly AGENTS_COLLECTION = 'agents';
-
-  /**
-   * Get user's teams
-   */
-  static async getUserTeams(userId: string): Promise<TeamSummary[]> {
+  // Create a new team
+  async createTeam(team: Omit<Team, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
-      const teamsRef = collection(db, this.TEAMS_COLLECTION);
-      const q = query(
-        teamsRef,
-        where('ownerId', '==', userId),
-        orderBy('updatedAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const teams: TeamSummary[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as Team;
-        teams.push({
-          id: doc.id,
-          name: data.name,
-          description: data.description,
-          teamType: data.teamType,
-          memberCount: data.members.length,
-          averageTrustScore: data.metrics.averageTrustScore,
-          status: data.status
-        });
-      });
-      
-      return teams;
-    } catch (error) {
-      console.error('Error fetching user teams:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get user's agents
-   */
-  static async getUserAgents(userId: string): Promise<SimpleAgentConfig[]> {
-    try {
-      const agentsRef = collection(db, this.AGENTS_COLLECTION);
-      const q = query(
-        agentsRef,
-        where('userId', '==', userId),
-        orderBy('updatedAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const agents: SimpleAgentConfig[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as AgentConfiguration;
-        agents.push({
-          id: doc.id,
-          name: data.name,
-          description: data.description,
-          agentType: data.agentType,
-          apiEndpoint: data.apiEndpoint,
-          governanceLevel: data.governanceLevel,
-          trustScore: data.trustScore || 0,
-          status: data.status,
-          lastActivity: data.lastActivity
-        });
-      });
-      
-      return agents;
-    } catch (error) {
-      console.error('Error fetching user agents:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Create a new team
-   */
-  static async createTeam(teamData: {
-    name: string;
-    description: string;
-    teamType: 'collaborative' | 'hierarchical' | 'specialized' | 'custom';
-    ownerId: string;
-    maxMembers?: number;
-    initialMembers?: Array<{ agentId: string; roleId: string }>;
-  }): Promise<{ success: boolean; teamId?: string; error?: string }> {
-    try {
-      const now = new Date().toISOString();
-      
-      // Prepare initial members
-      const members: TeamMember[] = [];
-      if (teamData.initialMembers) {
-        for (const member of teamData.initialMembers) {
-          // Get agent details
-          const agentDoc = await getDoc(doc(db, this.AGENTS_COLLECTION, member.agentId));
-          if (agentDoc.exists()) {
-            const agentData = agentDoc.data() as AgentConfiguration;
-            members.push({
-              agentId: member.agentId,
-              roleId: member.roleId,
-              name: agentData.name,
-              joinedAt: now,
-              permissions: this.getDefaultPermissions(member.roleId)
-            });
-          }
-        }
-      }
-
-      const team: Omit<Team, 'id'> = {
-        name: teamData.name,
-        description: teamData.description,
-        teamType: teamData.teamType,
-        ownerId: teamData.ownerId,
-        members,
-        maxMembers: teamData.maxMembers || 10,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
-        governanceSettings: {
-          requireApproval: teamData.teamType === 'hierarchical',
-          trustScoreThreshold: 70,
-          complianceLevel: 'standard'
-        },
-        metrics: {
-          averageTrustScore: this.calculateAverageTrustScore(members),
-          totalInteractions: 0,
-          successRate: 100,
-          complianceScore: 100
-        }
+      const teamData = {
+        ...team,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
       };
 
-      const docRef = await addDoc(collection(db, this.TEAMS_COLLECTION), team);
-      
-      return { success: true, teamId: docRef.id };
+      const docRef = await addDoc(collection(db, this.teamsCollection), teamData);
+      console.log('Team created successfully:', docRef.id);
+      return docRef.id;
     } catch (error) {
       console.error('Error creating team:', error);
-      return { success: false, error: 'Failed to create team' };
+      throw new Error(`Failed to create team: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  /**
-   * Get team details
-   */
-  static async getTeamDetails(teamId: string): Promise<Team | null> {
+  // Get all teams
+  async getTeams(): Promise<Team[]> {
     try {
-      const teamDoc = await getDoc(doc(db, this.TEAMS_COLLECTION, teamId));
+      const q = query(
+        collection(db, this.teamsCollection),
+        orderBy('createdAt', 'desc')
+      );
       
-      if (teamDoc.exists()) {
-        return { id: teamDoc.id, ...teamDoc.data() } as Team;
+      const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+      const teams: Team[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        teams.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date()
+        } as Team);
+      });
+
+      return teams;
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      throw new Error(`Failed to fetch teams: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get team by ID
+  async getTeamById(teamId: string): Promise<Team | null> {
+    try {
+      const docRef = doc(db, this.teamsCollection, teamId);
+      const docSnap: DocumentSnapshot<DocumentData> = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date()
+        } as Team;
       }
-      
+
       return null;
     } catch (error) {
-      console.error('Error fetching team details:', error);
-      return null;
+      console.error('Error fetching team:', error);
+      throw new Error(`Failed to fetch team: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  /**
-   * Add agent to team
-   */
-  static async addAgentToTeam(teamId: string, agentId: string, roleId: string): Promise<{ success: boolean; error?: string }> {
+  // Update team
+  async updateTeam(teamId: string, updates: Partial<Omit<Team, 'id' | 'createdAt'>>): Promise<void> {
     try {
-      const teamDoc = await getDoc(doc(db, this.TEAMS_COLLECTION, teamId));
-      const agentDoc = await getDoc(doc(db, this.AGENTS_COLLECTION, agentId));
-      
-      if (!teamDoc.exists()) {
-        return { success: false, error: 'Team not found' };
-      }
-      
-      if (!agentDoc.exists()) {
-        return { success: false, error: 'Agent not found' };
-      }
-
-      const teamData = teamDoc.data() as Team;
-      const agentData = agentDoc.data() as AgentConfiguration;
-      
-      // Check if agent is already in team
-      if (teamData.members.some(member => member.agentId === agentId)) {
-        return { success: false, error: 'Agent already in team' };
-      }
-      
-      // Check team capacity
-      if (teamData.members.length >= teamData.maxMembers) {
-        return { success: false, error: 'Team is at maximum capacity' };
-      }
-
-      const newMember: TeamMember = {
-        agentId,
-        roleId,
-        name: agentData.name,
-        joinedAt: new Date().toISOString(),
-        permissions: this.getDefaultPermissions(roleId)
+      const docRef = doc(db, this.teamsCollection, teamId);
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now()
       };
 
-      const updatedMembers = [...teamData.members, newMember];
+      await updateDoc(docRef, updateData);
+      console.log('Team updated successfully:', teamId);
+    } catch (error) {
+      console.error('Error updating team:', error);
+      throw new Error(`Failed to update team: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Delete team
+  async deleteTeam(teamId: string): Promise<void> {
+    try {
+      // First delete all team members
+      await this.deleteAllTeamMembers(teamId);
       
-      await updateDoc(doc(db, this.TEAMS_COLLECTION, teamId), {
-        members: updatedMembers,
-        updatedAt: new Date().toISOString(),
-        'metrics.averageTrustScore': this.calculateAverageTrustScore(updatedMembers)
+      // Then delete the team
+      const docRef = doc(db, this.teamsCollection, teamId);
+      await deleteDoc(docRef);
+      console.log('Team deleted successfully:', teamId);
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      throw new Error(`Failed to delete team: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Add team member
+  async addTeamMember(member: Omit<TeamMember, 'id' | 'joinedAt'>): Promise<string> {
+    try {
+      const memberData = {
+        ...member,
+        joinedAt: Timestamp.now()
+      };
+
+      const docRef = await addDoc(collection(db, this.membersCollection), memberData);
+      console.log('Team member added successfully:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      throw new Error(`Failed to add team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get team members
+  async getTeamMembers(teamId: string): Promise<TeamMember[]> {
+    try {
+      const q = query(
+        collection(db, this.membersCollection),
+        where('teamId', '==', teamId),
+        orderBy('joinedAt', 'asc')
+      );
+
+      const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+      const members: TeamMember[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        members.push({
+          id: doc.id,
+          ...data,
+          joinedAt: data.joinedAt?.toDate() || new Date()
+        } as TeamMember);
       });
-      
-      return { success: true };
+
+      return members;
     } catch (error) {
-      console.error('Error adding agent to team:', error);
-      return { success: false, error: 'Failed to add agent to team' };
+      console.error('Error fetching team members:', error);
+      throw new Error(`Failed to fetch team members: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  /**
-   * Remove agent from team
-   */
-  static async removeAgentFromTeam(teamId: string, agentId: string): Promise<{ success: boolean; error?: string }> {
+  // Update team member role
+  async updateTeamMemberRole(memberId: string, role: TeamRole): Promise<void> {
     try {
-      const teamDoc = await getDoc(doc(db, this.TEAMS_COLLECTION, teamId));
+      const docRef = doc(db, this.membersCollection, memberId);
+      await updateDoc(docRef, { role });
+      console.log('Team member role updated successfully:', memberId);
+    } catch (error) {
+      console.error('Error updating team member role:', error);
+      throw new Error(`Failed to update team member role: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Remove team member
+  async removeTeamMember(memberId: string): Promise<void> {
+    try {
+      const docRef = doc(db, this.membersCollection, memberId);
+      await deleteDoc(docRef);
+      console.log('Team member removed successfully:', memberId);
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      throw new Error(`Failed to remove team member: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Delete all team members (helper method)
+  private async deleteAllTeamMembers(teamId: string): Promise<void> {
+    try {
+      const q = query(
+        collection(db, this.membersCollection),
+        where('teamId', '==', teamId)
+      );
+
+      const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
       
-      if (!teamDoc.exists()) {
-        return { success: false, error: 'Team not found' };
+      await Promise.all(deletePromises);
+      console.log('All team members deleted for team:', teamId);
+    } catch (error) {
+      console.error('Error deleting team members:', error);
+      throw new Error(`Failed to delete team members: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get teams by user ID
+  async getTeamsByUserId(userId: string): Promise<Team[]> {
+    try {
+      // First get team memberships for the user
+      const memberQuery = query(
+        collection(db, this.membersCollection),
+        where('userId', '==', userId)
+      );
+
+      const memberSnapshot: QuerySnapshot<DocumentData> = await getDocs(memberQuery);
+      const teamIds = memberSnapshot.docs.map(doc => doc.data().teamId);
+
+      if (teamIds.length === 0) {
+        return [];
       }
 
-      const teamData = teamDoc.data() as Team;
-      const updatedMembers = teamData.members.filter(member => member.agentId !== agentId);
-      
-      await updateDoc(doc(db, this.TEAMS_COLLECTION, teamId), {
-        members: updatedMembers,
-        updatedAt: new Date().toISOString(),
-        'metrics.averageTrustScore': this.calculateAverageTrustScore(updatedMembers)
-      });
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error removing agent from team:', error);
-      return { success: false, error: 'Failed to remove agent from team' };
-    }
-  }
-
-  /**
-   * Get team metrics
-   */
-  static async getTeamMetrics(teamId: string): Promise<any> {
-    try {
-      const teamDoc = await getDoc(doc(db, this.TEAMS_COLLECTION, teamId));
-      
-      if (teamDoc.exists()) {
-        const teamData = teamDoc.data() as Team;
-        return {
-          teamId,
-          ...teamData.metrics,
-          lastUpdated: teamData.updatedAt
-        };
+      // Then get the teams
+      const teams: Team[] = [];
+      for (const teamId of teamIds) {
+        const team = await this.getTeamById(teamId);
+        if (team) {
+          teams.push(team);
+        }
       }
-      
-      return null;
+
+      return teams;
     } catch (error) {
-      console.error('Error fetching team metrics:', error);
-      return null;
+      console.error('Error fetching teams by user ID:', error);
+      throw new Error(`Failed to fetch teams by user ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  /**
-   * Get agent details
-   */
-  static async getAgentDetails(agentId: string): Promise<SimpleAgentConfig | null> {
-    try {
-      const agentDoc = await getDoc(doc(db, this.AGENTS_COLLECTION, agentId));
-      
-      if (agentDoc.exists()) {
-        const data = agentDoc.data() as AgentConfiguration;
-        return {
-          id: agentDoc.id,
-          name: data.name,
-          description: data.description,
-          agentType: data.agentType,
-          apiEndpoint: data.apiEndpoint,
-          governanceLevel: data.governanceLevel,
-          trustScore: data.trustScore || 0,
-          status: data.status,
-          lastActivity: data.lastActivity
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error fetching agent details:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Helper: Get default permissions for a role
-   */
-  private static getDefaultPermissions(roleId: string): string[] {
-    const rolePermissions: Record<string, string[]> = {
-      'leader': ['manage_team', 'assign_tasks', 'view_metrics', 'edit_settings'],
-      'coordinator': ['assign_tasks', 'view_metrics', 'manage_members'],
-      'member': ['view_team', 'participate'],
-      'observer': ['view_team']
-    };
-    
-    return rolePermissions[roleId] || rolePermissions['member'];
-  }
-
-  /**
-   * Helper: Calculate average trust score for team members
-   */
-  private static calculateAverageTrustScore(members: TeamMember[]): number {
-    if (members.length === 0) return 0;
-    
-    // This would need to fetch actual agent trust scores
-    // For now, return a reasonable default
-    return 85;
-  }
-
-  /**
-   * Convert AgentConfiguration to SimpleAgentConfig
-   */
-  static convertToSimpleConfig(agentConfig: AgentConfiguration): SimpleAgentConfig {
-    return {
-      id: agentConfig.id || '',
-      name: agentConfig.name,
-      description: agentConfig.description,
-      agentType: agentConfig.agentType,
-      apiEndpoint: agentConfig.apiEndpoint,
-      governanceLevel: agentConfig.governanceLevel,
-      trustScore: agentConfig.trustScore || 0,
-      status: agentConfig.status,
-      lastActivity: agentConfig.lastActivity
-    };
-  }
-
-  /**
-   * Convert SimpleAgentConfig to AgentConfiguration
-   */
-  static convertToAgentConfiguration(simpleConfig: SimpleAgentConfig, userId: string): Omit<AgentConfiguration, 'id'> {
-    return {
-      userId: userId,
-      name: simpleConfig.name,
-      description: simpleConfig.description,
-      agentType: simpleConfig.agentType,
-      apiEndpoint: simpleConfig.apiEndpoint,
-      governanceLevel: simpleConfig.governanceLevel,
-      trustScore: simpleConfig.trustScore,
-      complianceScore: 90, // Default compliance score
-      status: simpleConfig.status,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastActivity: simpleConfig.lastActivity
-    };
   }
 }
 
-export default FirebaseTeamService;
+// Export singleton instance
+export const firebaseTeamService = new FirebaseTeamService();
 
