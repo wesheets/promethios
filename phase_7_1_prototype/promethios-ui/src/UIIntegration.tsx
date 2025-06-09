@@ -8,6 +8,9 @@ import {
   GovernanceProxy,
   DeployProxy,
   OnboardingWelcomeProxy,
+  OnboardingDemoProxy,
+  OnboardingFirstAgentProxy,
+  OnboardingExploreProxy,
   OnboardingGoalSelectionProxy,
   OnboardingGuidedStepsProxy,
   WorkflowSpecificProxy
@@ -31,6 +34,9 @@ const UIIntegration: React.FC = () => {
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="welcome" element={<OnboardingWelcomeProxy />} />
+          <Route path="demo" element={<OnboardingDemoProxy />} />
+          <Route path="first-agent" element={<OnboardingFirstAgentProxy />} />
+          <Route path="explore" element={<OnboardingExploreProxy />} />
           <Route path="workflow/:workflowType" element={<WorkflowSpecificProxy />} />
           <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
           <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />

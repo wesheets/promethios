@@ -6,6 +6,9 @@ export { default as GovernanceProxy } from './GovernanceProxy';
 export { default as DeployProxy } from './DeployProxy';
 export { default as ObserverAgentProxy } from './ObserverAgentProxy';
 export { default as OnboardingWelcomeProxy } from './OnboardingWelcomeProxy';
+export { default as OnboardingDemoProxy } from './OnboardingDemoProxy';
+export { default as OnboardingFirstAgentProxy } from './OnboardingFirstAgentProxy';
+export { default as OnboardingExploreProxy } from './OnboardingExploreProxy';
 export { default as OnboardingGoalSelectionProxy } from './OnboardingGoalSelectionProxy';
 export { default as OnboardingGuidedStepsProxy } from './OnboardingGuidedStepsProxy';
 export { default as WorkflowSpecificProxy } from './WorkflowSpecificProxy';
@@ -18,6 +21,9 @@ export {
   AgentsProxy,
   GovernanceProxy,
   OnboardingWelcomeProxy,
+  OnboardingDemoProxy,
+  OnboardingFirstAgentProxy,
+  OnboardingExploreProxy,
   OnboardingGoalSelectionProxy,
   OnboardingGuidedStepsProxy,
   WorkflowSpecificProxy,
