@@ -12,20 +12,3 @@ export { default as OnboardingExploreProxy } from './OnboardingExploreProxy';
 export { default as OnboardingGoalSelectionProxy } from './OnboardingGoalSelectionProxy';
 export { default as OnboardingGuidedStepsProxy } from './OnboardingGuidedStepsProxy';
 export { default as WorkflowSpecificProxy } from './WorkflowSpecificProxy';
-import ObserverAgentProxy from './ObserverAgentProxy';
-
-export {
-  MainLayoutProxy,
-  DashboardProxy,
-  AgentWizardProxy,
-  AgentsProxy,
-  GovernanceProxy,
-  OnboardingWelcomeProxy,
-  OnboardingDemoProxy,
-  OnboardingFirstAgentProxy,
-  OnboardingExploreProxy,
-  OnboardingGoalSelectionProxy,
-  OnboardingGuidedStepsProxy,
-  WorkflowSpecificProxy,
-  ObserverAgentProxy
-};
