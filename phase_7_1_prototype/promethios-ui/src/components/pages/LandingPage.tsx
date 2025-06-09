@@ -1,5 +1,5 @@
 import React from 'react';
-import WaitlistFormDark from '../components/waitlist/WaitlistFormDark';
+import WaitlistFormDark from '../waitlist/WaitlistFormDark';
 
 const LandingPage: React.FC = () => {
   return (
