@@ -1,107 +1,111 @@
-// Firebase Authentication Test Component
 import React, { useState, useEffect } from 'react';
-import { auth, firestore } from '../firebase/config';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { testEmailAuth, testGoogleAuth, testAnonymousAuth, testFirestoreConnection, getFirebaseEnvVars } from '../firebase/testUtils';
 
 const FirebaseAuthTest: React.FC = () => {
   const [status, setStatus] = useState<string>('Initializing...');
   const [error, setError] = useState<string | null>(null);
-  const [envVars, setEnvVars] = useState<Record<string, string>>({});
+  const [envInfo, setEnvInfo] = useState<any>(null);
   const [testEmail, setTestEmail] = useState<string>('test@example.com');
   const [testPassword, setTestPassword] = useState<string>('password123');
+  const [testResults, setTestResults] = useState<any[]>([]);
 
   // Collect environment variables on mount
   useEffect(() => {
-    const vars: Record<string, string> = {};
-    Object.keys(import.meta.env).forEach(key => {
-      if (key.startsWith('VITE_')) {
-        const value = import.meta.env[key] as string;
-        // Mask sensitive values
-        if (key.includes('KEY') || key.includes('SECRET') || key.includes('ID')) {
-          vars[key] = value ? `${value.substring(0, 5)}...${value.substring(value.length - 3)}` : '(empty)';
-        } else {
-          vars[key] = value || '(empty)';
-        }
-      }
-    });
-    setEnvVars(vars);
-    
-    // Check if Firebase is initialized
-    if (auth) {
-      setStatus('Firebase Auth initialized');
-    } else {
-      setStatus('Firebase Auth not initialized');
-      setError('Auth object is undefined');
+    try {
+      const info = getFirebaseEnvVars();
+      setEnvInfo(info);
+      setStatus('Ready to test Firebase authentication');
+    } catch (err: any) {
+      setStatus('Error initializing test component');
+      setError(err.message || 'Unknown error');
     }
   }, []);
 
+  // Add a test result to the list
+  const addTestResult = (name: string, result: any) => {
+    setTestResults(prev => [
+      { name, result, timestamp: new Date().toISOString() },
+      ...prev
+    ]);
+  };
+
   // Test email/password login
-  const testEmailLogin = async () => {
+  const handleEmailLogin = async () => {
     try {
       setStatus('Testing email/password login...');
       setError(null);
       
-      const result = await signInWithEmailAndPassword(auth, testEmail, testPassword);
-      setStatus(`Email login successful: ${result.user.uid}`);
-    } catch (err: any) {
-      setStatus('Email login failed');
-      setError(`${err.code}: ${err.message}`);
+      const result = await testEmailAuth(testEmail, testPassword);
+      setStatus(`Email login ${result.success ? 'successful' : 'failed'}`);
+      if (!result.success) {
+        setError(result.error.message || 'Unknown error');
+      }
       
-      // Log detailed error information
-      console.error('Email login error details:', {
-        code: err.code,
-        message: err.message,
-        email: testEmail.substring(0, 3) + '...',
-        authConfigured: !!auth,
-        domain: window.location.hostname
-      });
+      addTestResult('Email Login', result);
+    } catch (err: any) {
+      setStatus('Email login test error');
+      setError(err.message || 'Unknown error');
+      addTestResult('Email Login', { success: false, error: err.message });
     }
   };
 
   // Test Google login
-  const testGoogleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       setStatus('Testing Google login...');
       setError(null);
       
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      setStatus(`Google login successful: ${result.user.uid}`);
-    } catch (err: any) {
-      setStatus('Google login failed');
-      setError(`${err.code}: ${err.message}`);
+      const result = await testGoogleAuth();
+      setStatus(`Google login ${result.success ? 'successful' : 'failed'}`);
+      if (!result.success) {
+        setError(result.error.message || 'Unknown error');
+      }
       
-      // Log detailed error information
-      console.error('Google login error details:', {
-        code: err.code,
-        message: err.message,
-        authConfigured: !!auth,
-        domain: window.location.hostname
-      });
+      addTestResult('Google Login', result);
+    } catch (err: any) {
+      setStatus('Google login test error');
+      setError(err.message || 'Unknown error');
+      addTestResult('Google Login', { success: false, error: err.message });
+    }
+  };
+
+  // Test anonymous login
+  const handleAnonymousLogin = async () => {
+    try {
+      setStatus('Testing anonymous login...');
+      setError(null);
+      
+      const result = await testAnonymousAuth();
+      setStatus(`Anonymous login ${result.success ? 'successful' : 'failed'}`);
+      if (!result.success) {
+        setError(result.error.message || 'Unknown error');
+      }
+      
+      addTestResult('Anonymous Login', result);
+    } catch (err: any) {
+      setStatus('Anonymous login test error');
+      setError(err.message || 'Unknown error');
+      addTestResult('Anonymous Login', { success: false, error: err.message });
     }
   };
 
   // Test Firestore connection
-  const testFirestore = async () => {
+  const handleFirestoreTest = async () => {
     try {
       setStatus('Testing Firestore connection...');
       setError(null);
       
-      // Try to read a test document
-      const testDoc = await getDoc(doc(firestore, 'test', 'test-doc'));
-      setStatus(`Firestore connection ${testDoc.exists() ? 'successful' : 'successful (document not found)'}`);
-    } catch (err: any) {
-      setStatus('Firestore connection failed');
-      setError(`${err.code}: ${err.message}`);
+      const result = await testFirestoreConnection();
+      setStatus(`Firestore connection ${result.success ? 'successful' : 'failed'}`);
+      if (!result.success) {
+        setError(result.error.message || 'Unknown error');
+      }
       
-      // Log detailed error information
-      console.error('Firestore connection error details:', {
-        code: err.code,
-        message: err.message,
-        firestoreConfigured: !!firestore,
-        domain: window.location.hostname
-      });
+      addTestResult('Firestore Connection', result);
+    } catch (err: any) {
+      setStatus('Firestore test error');
+      setError(err.message || 'Unknown error');
+      addTestResult('Firestore Connection', { success: false, error: err.message });
     }
   };
 
@@ -125,19 +129,25 @@ const FirebaseAuthTest: React.FC = () => {
         <div className="font-semibold text-blue-400 mb-2">Test Authentication:</div>
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
           <button 
-            onClick={testEmailLogin}
+            onClick={handleEmailLogin}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
           >
             Test Email Login
           </button>
           <button 
-            onClick={testGoogleLogin}
+            onClick={handleGoogleLogin}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
           >
             Test Google Login
           </button>
           <button 
-            onClick={testFirestore}
+            onClick={handleAnonymousLogin}
+            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded"
+          >
+            Test Anonymous Login
+          </button>
+          <button 
+            onClick={handleFirestoreTest}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
           >
             Test Firestore
@@ -169,14 +179,33 @@ const FirebaseAuthTest: React.FC = () => {
         </div>
       </div>
       
-      <div>
-        <div className="font-semibold text-blue-400 mb-2">Environment Variables:</div>
-        <div className="bg-gray-700 p-3 rounded overflow-x-auto">
-          <pre className="text-xs">
-            {JSON.stringify(envVars, null, 2)}
-          </pre>
+      {envInfo && (
+        <div className="mb-6">
+          <div className="font-semibold text-blue-400 mb-2">Environment Information:</div>
+          <div className="bg-gray-700 p-3 rounded overflow-x-auto">
+            <pre className="text-xs">
+              {JSON.stringify(envInfo, null, 2)}
+            </pre>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {testResults.length > 0 && (
+        <div>
+          <div className="font-semibold text-blue-400 mb-2">Test Results:</div>
+          <div className="space-y-3">
+            {testResults.map((result, index) => (
+              <div key={index} className={`p-3 rounded ${result.result.success ? 'bg-green-900/30 border border-green-500' : 'bg-red-900/30 border border-red-500'}`}>
+                <div className="font-semibold">{result.name} - {result.result.success ? 'Success' : 'Failed'}</div>
+                <div className="text-xs opacity-70">{result.timestamp}</div>
+                <pre className="text-xs mt-2 overflow-x-auto">
+                  {JSON.stringify(result.result, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
