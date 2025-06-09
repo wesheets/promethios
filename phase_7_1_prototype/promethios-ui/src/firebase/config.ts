@@ -1,20 +1,21 @@
-// Firebase Configuration - Debug version to check environment variables
+// Firebase Configuration - Debug version with hardcoded config for testing
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
-// Firebase configuration using environment variables
+// Hardcoded Firebase configuration for debugging
+// IMPORTANT: This is temporary for debugging only and should be removed before production
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyMh4KOfXZScqDNUaYXRX4MVyg6zb7Ybk",
+  authDomain: "promethios.firebaseapp.com",
+  projectId: "promethios",
+  storageBucket: "promethios.firebasestorage.app",
+  messagingSenderId: "132426045839",
+  appId: "1:132426045839:web:913688771a94698e4d53fa",
+  measurementId: "G-WZ11Y40L78"
 };
 
-// Debug logging for environment variables (safe - doesn't expose full values)
+// For comparison, log the environment variables that would normally be used
 console.log('🔍 Firebase Environment Variables Debug:');
 console.log('VITE_FIREBASE_API_KEY:', import.meta.env.VITE_FIREBASE_API_KEY ? `✓ Set (${import.meta.env.VITE_FIREBASE_API_KEY.substring(0, 10)}...)` : '✗ Missing');
 console.log('VITE_FIREBASE_AUTH_DOMAIN:', import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '✗ Missing');
@@ -24,6 +25,10 @@ console.log('VITE_FIREBASE_MESSAGING_SENDER_ID:', import.meta.env.VITE_FIREBASE_
 console.log('VITE_FIREBASE_APP_ID:', import.meta.env.VITE_FIREBASE_APP_ID ? `✓ Set (${import.meta.env.VITE_FIREBASE_APP_ID.substring(0, 15)}...)` : '✗ Missing');
 console.log('VITE_FIREBASE_MEASUREMENT_ID:', import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '✗ Missing');
 
+// Log that we're using hardcoded config for debugging
+console.log('⚠️ USING HARDCODED FIREBASE CONFIG FOR DEBUGGING');
+console.log('🔐 Hardcoded API Key (first 10 chars):', firebaseConfig.apiKey.substring(0, 10) + '...');
+
 // Check if we're in production and log current domain
 console.log('🌐 Current domain:', window.location.hostname);
 console.log('🌐 Current origin:', window.location.origin);
@@ -32,10 +37,8 @@ console.log('🔧 Environment mode:', import.meta.env.MODE);
 // Validate required configuration
 const requiredFields = ['apiKey', 'authDomain', 'projectId'];
 const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig]);
-
 if (missingFields.length > 0) {
   console.error('❌ Missing required Firebase configuration fields:', missingFields);
-  console.error('Please ensure all VITE_FIREBASE_* environment variables are set on Render');
 } else {
   console.log('✅ All required Firebase configuration fields are present');
 }
@@ -70,4 +73,3 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
 }
 
 export default app;
-
