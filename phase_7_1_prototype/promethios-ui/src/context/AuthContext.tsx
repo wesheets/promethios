@@ -11,7 +11,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { auth, initializeFirebase } from '../firebase/config';
+import { auth } from '../firebase/config';
 
 // Define the shape of our authentication context
 interface AuthContextType {
@@ -48,14 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Clear error helper
   const clearError = () => setError(null);
-
-  // Ensure Firebase is initialized
-  useEffect(() => {
-    const initFirebase = async () => {
-      await initializeFirebase();
-    };
-    initFirebase();
-  }, []);
 
   // Listen for auth state changes
   useEffect(() => {
