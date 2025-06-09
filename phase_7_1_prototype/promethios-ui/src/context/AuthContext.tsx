@@ -40,6 +40,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for redirect result on app load
+    const checkRedirectResult = async () => {
+      try {
+        const { getRedirectResult } = await import('firebase/auth');
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('Google Auth redirect successful:', result.user);
+          // User will be set by onAuthStateChanged
+        }
+      } catch (error) {
+        console.error('Redirect result error:', error);
+      }
+    };
+
+    checkRedirectResult();
+
     // Set up auth state listener with optimizations
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -58,7 +74,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    try {
+      // Try popup first
+      const result = await signInWithPopup(auth, googleProvider);
+      return result;
+    } catch (error: any) {
+      // If popup fails due to CORS or other issues, try redirect
+      if (error.code === 'auth/popup-blocked' || 
+          error.code === 'auth/popup-closed-by-user' ||
+          error.message?.includes('cross-origin') ||
+          error.message?.includes('CORS')) {
+        
+        console.log('Popup failed, trying redirect method...');
+        
+        // Import redirect methods dynamically
+        const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
+        
+        // Check if we're returning from a redirect
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult) {
+          return redirectResult;
+        }
+        
+        // Start redirect flow
+        await signInWithRedirect(auth, googleProvider);
+        return; // Redirect will handle the rest
+      }
+      
+      // Re-throw other errors
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
