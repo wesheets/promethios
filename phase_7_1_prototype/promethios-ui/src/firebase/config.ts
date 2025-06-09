@@ -24,18 +24,21 @@ const auth = getAuth(app);
 // Initialize Firestore
 const db = getFirestore(app);
 
-// Configure Google Auth Provider with additional settings for production
+// Configure Google Auth Provider with production-optimized settings
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account',
-  // Add additional parameters to help with CORS issues
+  // Optimize for production environment
   access_type: 'offline',
-  include_granted_scopes: 'true'
+  include_granted_scopes: 'true',
+  // Add hd parameter for better domain handling
+  hd: '*'
 });
 
-// Add scopes for better compatibility
+// Add essential scopes
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+googleProvider.addScope('openid');
 
 // Export Firebase services
 export { auth, db, googleProvider, firebaseConfig };

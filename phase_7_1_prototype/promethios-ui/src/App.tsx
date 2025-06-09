@@ -79,7 +79,11 @@ const AuthAwareContent: React.FC = () => {
       // If user is authenticated and on login/waitlist page, redirect to dashboard
       if (location.pathname === '/login' || location.pathname === '/waitlist' || location.pathname === '/signup') {
         console.log('User authenticated, redirecting to dashboard...');
-        navigate('/ui/dashboard', { replace: true });
+        // Use a timeout to prevent infinite loops
+        const timeoutId = setTimeout(() => {
+          navigate('/ui/dashboard', { replace: true });
+        }, 100);
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [currentUser, loading, location.pathname, navigate]);

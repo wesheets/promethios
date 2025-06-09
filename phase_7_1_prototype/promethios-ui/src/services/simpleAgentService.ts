@@ -31,7 +31,7 @@ export interface TeamSummary {
 }
 
 class SimpleAgentService {
-  private static readonly API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+  private static readonly API_BASE = import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com/api';
 
   /**
    * Get user's agents (simplified view)

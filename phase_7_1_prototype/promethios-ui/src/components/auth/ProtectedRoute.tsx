@@ -38,6 +38,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         const completed = cachedStatus === 'true';
         setOnboardingCompleted(completed);
         setCheckingOnboarding(false);
+        console.log('User has completed onboarding (cached), allowing access');
         return; // Skip Firebase check for cached users
       }
 

@@ -197,7 +197,7 @@ const DeployPage: React.FC = () => {
 
     try {
       // Call the deployment API
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/deploy/generate`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com/api'}/deploy/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
