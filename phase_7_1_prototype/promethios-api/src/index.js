@@ -17,6 +17,9 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/benchmark', require('./routes/benchmark'));
 app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api', require('./routes/llm'));
+app.use('/api', require('./routes/governance'));
+app.use('/api', require('./routes/observer'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

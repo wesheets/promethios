@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { GovernanceProvider } from './context/GovernanceContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -75,11 +76,13 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AnalyticsProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </AnalyticsProvider>
+        <GovernanceProvider>
+          <AnalyticsProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </AnalyticsProvider>
+        </GovernanceProvider>
       </AuthProvider>
     </ThemeProvider>
   );
