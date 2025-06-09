@@ -1,8 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { GovernanceProvider } from './context/GovernanceContext';
+import { useAuth } from './context/AuthContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -65,10 +66,23 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Create a wrapper component to use the useLocation hook
-const AppContent: React.FC = () => {
+// Auth-aware wrapper component
+const AuthAwareContent: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
   const isUIRoute = location.pathname.startsWith('/ui/');
+  
+  // Handle automatic redirect after successful authentication
+  React.useEffect(() => {
+    if (currentUser && !loading) {
+      // If user is authenticated and on login/waitlist page, redirect to dashboard
+      if (location.pathname === '/login' || location.pathname === '/waitlist' || location.pathname === '/signup') {
+        console.log('User authenticated, redirecting to dashboard...');
+        navigate('/ui/dashboard', { replace: true });
+      }
+    }
+  }, [currentUser, loading, location.pathname, navigate]);
   
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
@@ -85,7 +99,7 @@ const AppContent: React.FC = () => {
           {/* Redirect old onboarding to new UI onboarding */}
           <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
           {/* Redirect to new dashboard implementation */}
-          <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/ui/dashboard" replace />} />
           <Route path="/governance" element={<GovernancePage />} />
           <Route path="/documentation" element={<DocumentationPage />} />
           <Route path="/benchmark" element={
@@ -113,19 +127,26 @@ const AppContent: React.FC = () => {
   );
 };
 
+// Create a wrapper component to use the useLocation hook
+const AppContent: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AuthAwareContent />
+    </AuthProvider>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
-          <GovernanceProvider>
-            <AnalyticsProvider>
-              <Router>
-                <AppContent />
-              </Router>
-            </AnalyticsProvider>
-          </GovernanceProvider>
-        </AuthProvider>
+        <GovernanceProvider>
+          <AnalyticsProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </AnalyticsProvider>
+        </GovernanceProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
