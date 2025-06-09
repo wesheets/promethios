@@ -247,8 +247,6 @@ const OnboardingWelcome: React.FC = () => {
                 </div>
               </div>
             )}
-                </button>
-              </div>
             </div>
           </div>
         </div>
