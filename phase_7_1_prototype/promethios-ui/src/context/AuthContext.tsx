@@ -11,7 +11,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { auth, initializeFirebase } from '../firebase/config';
 
 // Define the shape of our authentication context
 interface AuthContextType {
@@ -21,6 +21,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   loginWithGoogle: () => Promise<void>; // Alias for signInWithGoogle for compatibility
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>; // Alias for loginWithEmail
   signup: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -47,6 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Clear error helper
   const clearError = () => setError(null);
+
+  // Ensure Firebase is initialized
+  useEffect(() => {
+    const initFirebase = async () => {
+      await initializeFirebase();
+    };
+    initFirebase();
+  }, []);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -97,6 +106,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const errorCode = error.code || 'unknown-error';
     const errorMessage = errorMap[errorCode] || error.message || 'An unknown error occurred during authentication.';
     
+    // Add detailed logging for API key issues
+    if (error.code === 'auth/api-key-not-valid') {
+      console.error('API Key Invalid Error Details:', {
+        errorCode: error.code,
+        errorMessage: error.message,
+        currentDomain: window.location.hostname,
+        currentOrigin: window.location.origin
+      });
+    }
+    
     setError(errorMessage);
     setLoading(false);
   };
@@ -121,7 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (
           popupError.code === 'auth/popup-blocked' || 
           popupError.code === 'auth/popup-closed-by-user' ||
-          popupError.code === 'auth/cancelled-popup-request'
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError.code === 'auth/api-key-not-valid'
         ) {
           await signInWithRedirect(auth, provider);
           // Note: Redirect will navigate away, so we won't reach the code below
@@ -154,6 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
+
+  // Alias for loginWithEmail for compatibility
+  const login = loginWithEmail;
 
   // Sign up with email and password
   const signup = async (email: string, password: string): Promise<void> => {
@@ -205,6 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     loginWithGoogle, // Alias for compatibility
     loginWithEmail,
+    login, // Alias for compatibility
     signup,
     resetPassword,
     logout,
