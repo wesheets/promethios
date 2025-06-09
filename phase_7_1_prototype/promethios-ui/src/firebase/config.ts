@@ -1,6 +1,6 @@
-// Firebase Configuration with Enhanced Debugging
+// Firebase Configuration with Direct API Key Validation
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence, signInAnonymously } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getAnalytics } from 'firebase/analytics';
@@ -73,6 +73,39 @@ const validateEnvVars = () => {
   return true;
 };
 
+// Directly validate API key against Firebase project
+const validateApiKey = async (apiKey, projectId) => {
+  try {
+    // Use a simple Firebase API endpoint to validate the key
+    const url = `https://firebaseinstallations.googleapis.com/v1/projects/${projectId}/installations`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        fid: 'api-key-validation-test',
+        appId: import.meta.env.VITE_FIREBASE_APP_ID,
+        authVersion: 'FIS_v2',
+        sdkVersion: 'w:0.0.0'
+      })
+    });
+    
+    if (response.ok) {
+      console.log('API key validation successful');
+      return true;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('API key validation failed:', response.status, errorData);
+      return false;
+    }
+  } catch (error) {
+    console.error('API key validation error:', error);
+    return false;
+  }
+};
+
 // Firebase configuration object with trimmed values to remove any accidental whitespace
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY?.trim(),
@@ -82,6 +115,18 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim(),
   appId: import.meta.env.VITE_FIREBASE_APP_ID?.trim(),
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID?.trim()
+};
+
+// Hardcoded fallback configuration for development and testing
+// This should be removed in production
+const fallbackConfig = {
+  apiKey: "AIzaSyAIht4KXfXZScqDNUaYXRX4MVyg6zbYbk",
+  authDomain: "promethios.firebaseapp.com",
+  projectId: "promethios",
+  storageBucket: "promethios.firebaseapp.com",
+  messagingSenderId: "1332266049",
+  appId: "1:1332266049:web:6c8d1a9e1a0",
+  measurementId: "G-W21XVEL0"
 };
 
 // Log configuration for debugging (without sensitive values)
@@ -109,21 +154,22 @@ const initializeFirebase = async () => {
   }
 
   // Validate environment variables
-  if (!validateEnvVars()) {
-    console.error('Firebase initialization aborted due to missing or invalid environment variables');
-    return { app, auth, firestore, functions, analytics };
-  }
-
+  const envVarsValid = validateEnvVars();
+  
+  // Try to initialize with environment variables first
+  let configToUse = firebaseConfig;
+  let useEnvConfig = true;
+  
   try {
     console.log('Initializing Firebase with config:', {
-      authDomain: firebaseConfig.authDomain,
-      projectId: firebaseConfig.projectId,
-      storageBucket: firebaseConfig.storageBucket,
-      apiKeyPrefix: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + '...' : null
+      authDomain: configToUse.authDomain,
+      projectId: configToUse.projectId,
+      storageBucket: configToUse.storageBucket,
+      apiKeyPrefix: configToUse.apiKey ? configToUse.apiKey.substring(0, 5) + '...' : null
     });
     
     // Initialize Firebase app
-    app = initializeApp(firebaseConfig);
+    app = initializeApp(configToUse);
     _initialized = true;
     console.log('Firebase initialized successfully');
     
@@ -132,12 +178,35 @@ const initializeFirebase = async () => {
     firestore = getFirestore(app);
     functions = getFunctions(app);
     
+    // Validate API key directly against the project
+    if (envVarsValid) {
+      const apiKeyValid = await validateApiKey(configToUse.apiKey, configToUse.projectId);
+      if (!apiKeyValid) {
+        console.warn('API key validation failed, will try fallback configuration');
+        throw new Error('API key validation failed');
+      }
+    }
+    
     // Set persistence to local
     try {
       await setPersistence(auth, browserLocalPersistence);
       console.log('Firebase persistence set to local');
     } catch (persistenceError) {
       console.error('Error setting persistence:', persistenceError);
+    }
+    
+    // Try anonymous sign-in as a test
+    try {
+      const anonResult = await signInAnonymously(auth);
+      console.log('Anonymous authentication successful:', anonResult.user.uid);
+    } catch (anonError) {
+      console.error('Anonymous authentication failed:', anonError);
+      
+      // If anonymous auth fails with API key error, try fallback config
+      if (anonError.code === 'auth/api-key-not-valid' && useEnvConfig) {
+        console.warn('Trying fallback configuration due to API key error');
+        throw anonError;
+      }
     }
     
     // Enable Firestore offline persistence
@@ -175,27 +244,94 @@ const initializeFirebase = async () => {
   } catch (error) {
     console.error('Error initializing Firebase:', error);
     
-    // Enhanced error logging for API key issues
-    if (error.code === 'auth/api-key-not-valid') {
-      console.error('API Key Invalid Error Details:', {
-        apiKeyLength: firebaseConfig.apiKey?.length || 0,
-        apiKeyPrefix: firebaseConfig.apiKey?.substring(0, 5) || 'N/A',
-        apiKeySuffix: firebaseConfig.apiKey?.substring(firebaseConfig.apiKey.length - 3) || 'N/A',
-        authDomain: firebaseConfig.authDomain,
-        projectId: firebaseConfig.projectId,
-        currentDomain: window.location.hostname,
-        currentOrigin: window.location.origin,
-        mode: import.meta.env.MODE
-      });
+    // If using environment config and it failed, try fallback config
+    if (useEnvConfig) {
+      console.warn('Environment config failed, trying fallback configuration');
       
-      // Try to fetch a test URL to check if network is working
-      fetch('https://www.google.com/favicon.ico')
-        .then(response => {
-          console.log('Network connectivity test successful:', response.status);
-        })
-        .catch(networkError => {
-          console.error('Network connectivity test failed:', networkError);
+      try {
+        // Clean up any previous initialization
+        app = null;
+        auth = null;
+        firestore = null;
+        functions = null;
+        analytics = null;
+        _initialized = false;
+        
+        // Use fallback config
+        configToUse = fallbackConfig;
+        useEnvConfig = false;
+        
+        console.log('Initializing Firebase with fallback config:', {
+          authDomain: configToUse.authDomain,
+          projectId: configToUse.projectId,
+          apiKeyPrefix: configToUse.apiKey ? configToUse.apiKey.substring(0, 5) + '...' : null
         });
+        
+        // Initialize with fallback config
+        app = initializeApp(configToUse);
+        _initialized = true;
+        console.log('Firebase initialized successfully with fallback config');
+        
+        // Get Firebase services
+        auth = getAuth(app);
+        firestore = getFirestore(app);
+        functions = getFunctions(app);
+        
+        // Set persistence to local
+        await setPersistence(auth, browserLocalPersistence);
+        console.log('Firebase persistence set to local');
+        
+        // Try anonymous sign-in as a test
+        const anonResult = await signInAnonymously(auth);
+        console.log('Anonymous authentication successful with fallback config:', anonResult.user.uid);
+        
+        // Enable Firestore offline persistence
+        try {
+          await enableIndexedDbPersistence(firestore);
+          console.log('Firestore offline persistence enabled with fallback config');
+        } catch (offlineError) {
+          console.warn('Firestore offline persistence error with fallback config:', offlineError.code);
+        }
+      } catch (fallbackError) {
+        console.error('Error initializing Firebase with fallback config:', fallbackError);
+        
+        // Enhanced error logging for API key issues
+        if (fallbackError.code === 'auth/api-key-not-valid') {
+          console.error('API Key Invalid Error Details (fallback config):', {
+            apiKeyLength: configToUse.apiKey?.length || 0,
+            apiKeyPrefix: configToUse.apiKey?.substring(0, 5) || 'N/A',
+            apiKeySuffix: configToUse.apiKey?.substring(configToUse.apiKey.length - 3) || 'N/A',
+            authDomain: configToUse.authDomain,
+            projectId: configToUse.projectId,
+            currentDomain: window.location.hostname,
+            currentOrigin: window.location.origin,
+            mode: import.meta.env.MODE
+          });
+        }
+      }
+    } else {
+      // Enhanced error logging for API key issues
+      if (error.code === 'auth/api-key-not-valid') {
+        console.error('API Key Invalid Error Details:', {
+          apiKeyLength: configToUse.apiKey?.length || 0,
+          apiKeyPrefix: configToUse.apiKey?.substring(0, 5) || 'N/A',
+          apiKeySuffix: configToUse.apiKey?.substring(configToUse.apiKey.length - 3) || 'N/A',
+          authDomain: configToUse.authDomain,
+          projectId: configToUse.projectId,
+          currentDomain: window.location.hostname,
+          currentOrigin: window.location.origin,
+          mode: import.meta.env.MODE
+        });
+        
+        // Try to fetch a test URL to check if network is working
+        fetch('https://www.google.com/favicon.ico')
+          .then(response => {
+            console.log('Network connectivity test successful:', response.status);
+          })
+          .catch(networkError => {
+            console.error('Network connectivity test failed:', networkError);
+          });
+      }
     }
   }
 
