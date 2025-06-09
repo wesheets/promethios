@@ -40,17 +40,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for redirect result on app load
+    // Check for redirect result on app load with timeout
     const checkRedirectResult = async () => {
       try {
         const { getRedirectResult } = await import('firebase/auth');
-        const result = await getRedirectResult(auth);
+        
+        // Add timeout to prevent hanging
+        const result = await Promise.race([
+          getRedirectResult(auth),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Redirect check timeout')), 5000))
+        ]);
+        
         if (result) {
           console.log('Google Auth redirect successful:', result.user);
           // User will be set by onAuthStateChanged
         }
       } catch (error) {
-        console.error('Redirect result error:', error);
+        console.log('No redirect result or timeout:', error);
+        // Don't throw error, just continue with normal flow
       }
     };
 
@@ -58,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Set up auth state listener with optimizations
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
       setCurrentUser(user);
       setLoading(false);
     }, (error) => {
@@ -76,8 +84,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithGoogle = async () => {
     try {
       console.log('Starting Google Auth...');
+      setLoading(true);
       
-      // For production environments with CORS issues, use redirect by default
+      // For production environments, use redirect flow with timeout
       if (window.location.hostname !== 'localhost') {
         console.log('Production environment detected, using redirect flow...');
         
@@ -85,47 +94,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
         
         // Check if we're returning from a redirect first
-        const redirectResult = await getRedirectResult(auth);
-        if (redirectResult) {
-          console.log('Redirect result found:', redirectResult.user);
-          return redirectResult;
+        try {
+          const redirectResult = await Promise.race([
+            getRedirectResult(auth),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Redirect result timeout')), 5000))
+          ]);
+          
+          if (redirectResult) {
+            console.log('Redirect result found:', redirectResult.user);
+            setLoading(false);
+            return redirectResult;
+          }
+        } catch (redirectError) {
+          console.log('No redirect result or timeout:', redirectError);
         }
         
-        // Start redirect flow
+        // Start redirect flow with timeout protection
         console.log('Starting redirect to Google...');
-        await signInWithRedirect(auth, googleProvider);
-        return; // Redirect will handle the rest
+        try {
+          await Promise.race([
+            signInWithRedirect(auth, googleProvider),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Redirect timeout')), 10000))
+          ]);
+          // Don't set loading to false here as redirect will handle it
+          return;
+        } catch (redirectError) {
+          console.error('Redirect failed:', redirectError);
+          setLoading(false);
+          throw new Error('Google sign-in redirect failed. Please try again.');
+        }
       }
       
-      // For localhost, try popup first
+      // For localhost, try popup with timeout
       console.log('Local environment, trying popup...');
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await Promise.race([
+        signInWithPopup(auth, googleProvider),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Popup timeout')), 30000))
+      ]);
+      
       console.log('Popup successful:', result.user);
+      setLoading(false);
       return result;
       
     } catch (error: any) {
       console.error('Google Auth Error:', error);
+      setLoading(false);
       
-      // If popup fails, try redirect as fallback
-      if (error.code === 'auth/popup-blocked' || 
-          error.code === 'auth/popup-closed-by-user' ||
-          error.message?.includes('cross-origin') ||
-          error.message?.includes('CORS')) {
-        
-        console.log('Popup failed, trying redirect method...');
-        
-        try {
-          const { signInWithRedirect } = await import('firebase/auth');
-          await signInWithRedirect(auth, googleProvider);
-          return; // Redirect will handle the rest
-        } catch (redirectError) {
-          console.error('Redirect also failed:', redirectError);
-          throw redirectError;
-        }
+      // Handle specific error cases
+      if (error.message?.includes('timeout')) {
+        throw new Error('Google sign-in timed out. Please try again.');
       }
       
-      // Re-throw other errors
-      throw error;
+      if (error.code === 'auth/popup-blocked' || 
+          error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Google sign-in popup was blocked or closed. Please try again.');
+      }
+      
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your connection and try again.');
+      }
+      
+      // Re-throw with user-friendly message
+      throw new Error('Google sign-in failed. Please try again.');
     }
   };
 
