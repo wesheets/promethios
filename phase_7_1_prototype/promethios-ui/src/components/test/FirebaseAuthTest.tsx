@@ -1,6 +1,6 @@
 // Firebase Authentication Test Component
 import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase/config';
+import { auth } from '../../firebase/config';
 import { 
   signInWithPopup, 
   GoogleAuthProvider, 
