@@ -28,8 +28,8 @@ const LoginWaitlistPage: React.FC = () => {
   const [waitlistError, setWaitlistError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Toggle between login and waitlist forms
-  const [showLoginForm, setShowLoginForm] = useState(false);
+  // Toggle between login and waitlist forms - default to login form
+  const [showLoginForm, setShowLoginForm] = useState(true);
   
   const handleLoginWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
