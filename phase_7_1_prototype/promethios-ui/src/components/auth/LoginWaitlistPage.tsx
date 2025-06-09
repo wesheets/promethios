@@ -74,8 +74,13 @@ const LoginWaitlistPage: React.FC = () => {
         errorMessage = 'Sign-in popup was closed before completing the sign in.';
       } else if (firebaseError.code === 'auth/popup-blocked') {
         errorMessage = 'Sign-in popup was blocked by the browser.';
+      } else if (firebaseError.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for Google sign-in. Please contact support or try email login.';
+      } else if (firebaseError.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Google sign-in is not enabled. Please try email login or contact support.';
       }
       
+      console.error('Google Auth Error:', firebaseError);
       setLoginError(errorMessage);
     } finally {
       setIsLoggingIn(false);
