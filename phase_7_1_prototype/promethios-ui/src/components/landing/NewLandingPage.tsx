@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import WaitlistModal from '../waitlist/WaitlistModal';
 
 const NewLandingPage: React.FC = () => {
   const { user } = useAuth();
   const { isDarkMode } = useTheme();
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+
+  const openWaitlistModal = () => {
+    setIsWaitlistModalOpen(true);
+  };
+
+  const closeWaitlistModal = () => {
+    setIsWaitlistModalOpen(false);
+  };
 
   return (
     <div className="w-full">
@@ -23,12 +33,12 @@ const NewLandingPage: React.FC = () => {
                 making your models better by design.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  to={user ? "/ui/dashboard" : "/signup"} 
+                <button 
+                  onClick={openWaitlistModal}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition duration-300"
                 >
-                  {user ? "Go to Dashboard" : "Protect My Agent →"}
-                </Link>
+                  Protect My Agent →
+                </button>
                 <Link 
                   to="/benchmark" 
                   className="bg-transparent border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white font-bold py-3 px-6 rounded-md transition duration-300"
@@ -133,12 +143,12 @@ const NewLandingPage: React.FC = () => {
             Join thousands of developers who are building safer, more reliable AI systems with Promethios governance.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link 
-              to={user ? "/ui/dashboard" : "/signup"} 
+            <button 
+              onClick={openWaitlistModal}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-md transition duration-300"
             >
-              {user ? "Go to Dashboard" : "Get Started for Free"}
-            </Link>
+              Get Started for Free
+            </button>
             <Link 
               to="/documentation" 
               className="bg-transparent border border-gray-300 dark:border-gray-600 hover:border-gray-400 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-bold py-3 px-8 rounded-md transition duration-300"
@@ -148,6 +158,9 @@ const NewLandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Waitlist Modal */}
+      <WaitlistModal isOpen={isWaitlistModalOpen} onClose={closeWaitlistModal} />
     </div>
   );
 };
