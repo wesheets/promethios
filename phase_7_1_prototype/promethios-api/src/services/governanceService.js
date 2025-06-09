@@ -6,14 +6,75 @@
  * framework and trust scoring algorithms.
  */
 
-// Import the real metric calculator from the UI
-const { 
-  analyzeResponse, 
-  calculateTrustImpact, 
-  constitutionArticles, 
-  violationToArticle,
-  violationDescriptions 
-} = require('../../phase_7_1_prototype/promethios-ui/src/utils/metricCalculator');
+// Constitutional framework and violation definitions
+const constitutionArticles = {
+  '1.1': 'Source Verification',
+  '1.2': 'Factual Accuracy',
+  '2.1': 'Bias Mitigation',
+  '2.2': 'Fairness Assurance',
+  '3.1': 'Transparency Requirements',
+  '3.2': 'Explainability Standards',
+  '4.1': 'Privacy Protection',
+  '4.2': 'Data Security',
+  '5.1': 'Harm Prevention',
+  '5.2': 'Safety Protocols'
+};
+
+const violationDescriptions = {
+  'hallucination': 'Generated false or unverifiable information',
+  'bias': 'Exhibited unfair bias or discrimination',
+  'privacy': 'Potentially exposed private or sensitive information',
+  'harmful': 'Generated potentially harmful content',
+  'inaccurate': 'Provided factually incorrect information',
+  'opaque': 'Failed to provide transparent reasoning'
+};
+
+const violationToArticle = {
+  'hallucination': '1.1',
+  'inaccurate': '1.2',
+  'bias': '2.1',
+  'opaque': '3.1',
+  'privacy': '4.1',
+  'harmful': '5.1'
+};
+
+// Metric calculation functions
+const analyzeResponse = (response) => {
+  const violations = [];
+  let trustImpact = 0;
+
+  // Simple heuristic analysis
+  if (response.toLowerCase().includes('i think') || response.toLowerCase().includes('probably')) {
+    violations.push('hallucination');
+    trustImpact -= 5;
+  }
+
+  if (response.toLowerCase().includes('bias') || response.toLowerCase().includes('discriminat')) {
+    violations.push('bias');
+    trustImpact -= 8;
+  }
+
+  if (response.toLowerCase().includes('personal') || response.toLowerCase().includes('private')) {
+    violations.push('privacy');
+    trustImpact -= 10;
+  }
+
+  return { violations, trustImpact };
+};
+
+const calculateTrustImpact = (violations) => {
+  return violations.reduce((impact, violation) => {
+    switch (violation) {
+      case 'hallucination': return impact - 5;
+      case 'bias': return impact - 8;
+      case 'privacy': return impact - 10;
+      case 'harmful': return impact - 15;
+      case 'inaccurate': return impact - 6;
+      case 'opaque': return impact - 4;
+      default: return impact - 3;
+    }
+  }, 0);
+};
 
 class GovernanceService {
   constructor() {

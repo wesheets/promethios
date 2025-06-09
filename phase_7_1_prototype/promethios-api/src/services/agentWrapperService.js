@@ -218,16 +218,55 @@ class AgentWrapperService {
    * @returns {string} Agent response text
    */
   async _callExternalAgent(message) {
+    // For demo purposes when API keys aren't available, return mock responses
+    if (!this._hasValidApiKeys()) {
+      return this._generateMockResponse(message);
+    }
+
     switch (this.config.agentType) {
       case 'openai':
         return await this._callOpenAI(message);
       case 'claude':
         return await this._callClaude(message);
+      case 'cohere':
+        return await this._callCohere(message);
+      case 'huggingface':
+        return await this._callHuggingFace(message);
       case 'custom':
         return await this._callCustomAgent(message);
       default:
         throw new Error(`Unsupported agent type: ${this.config.agentType}`);
     }
+  }
+
+  /**
+   * Check if valid API keys are available
+   * 
+   * @returns {boolean} True if at least one API key is configured
+   */
+  _hasValidApiKeys() {
+    return !!(
+      process.env.OPENAI_API_KEY ||
+      process.env.ANTHROPIC_API_KEY ||
+      process.env.COHERE_API_KEY ||
+      process.env.HUGGINGFACE_API_KEY
+    );
+  }
+
+  /**
+   * Generate mock response for testing without API keys
+   * 
+   * @param {string} message - User message
+   * @returns {string} Mock response
+   */
+  _generateMockResponse(message) {
+    const responses = [
+      `I understand you're asking about: "${message}". This is a mock response from the Promethios governance system. In production with API keys, I would provide a real AI-generated response with full governance analysis.`,
+      `Thank you for your question: "${message}". As a governed AI agent, I'm designed to provide helpful, accurate, and safe responses. This mock response demonstrates the governance framework in action.`,
+      `Regarding "${message}" - I'm operating under Promethios constitutional framework with trust scoring and violation detection. This ensures all my responses meet governance standards for accuracy, safety, and transparency.`
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
   }
 
   /**
@@ -313,11 +352,85 @@ class AgentWrapperService {
   }
 
   /**
-   * Call custom agent API
+   * Call Cohere API
    * 
    * @param {string} message - Message to send
-   * @returns {string} Custom agent response
+   * @returns {string} Cohere response
    */
+  async _callCohere(message) {
+    const apiKey = process.env.COHERE_API_KEY;
+    if (!apiKey) {
+      throw new Error('Cohere API key not configured');
+    }
+
+    try {
+      const response = await axios.post(
+        'https://api.cohere.ai/v1/generate',
+        {
+          model: 'command',
+          prompt: message,
+          max_tokens: 1000,
+          temperature: 0.7,
+          k: 0,
+          stop_sequences: [],
+          return_likelihoods: 'NONE'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return response.data.generations[0].text.trim();
+    } catch (error) {
+      console.error('Cohere API error:', error.response?.data || error.message);
+      throw new Error(`Cohere API call failed: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Call HuggingFace API
+   * 
+   * @param {string} message - Message to send
+   * @returns {string} HuggingFace response
+   */
+  async _callHuggingFace(message) {
+    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    if (!apiKey) {
+      throw new Error('HuggingFace API key not configured');
+    }
+
+    try {
+      const response = await axios.post(
+        'https://api-inference.huggingface.co/models/microsoft/DialoGPT-large',
+        {
+          inputs: message,
+          parameters: {
+            max_length: 1000,
+            temperature: 0.7,
+            do_sample: true
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (Array.isArray(response.data) && response.data[0]?.generated_text) {
+        return response.data[0].generated_text.replace(message, '').trim();
+      } else {
+        throw new Error('Unexpected response format from HuggingFace API');
+      }
+    } catch (error) {
+      console.error('HuggingFace API error:', error.response?.data || error.message);
+      throw new Error(`HuggingFace API call failed: ${error.response?.data?.error || error.message}`);
+    }
+  }
   async _callCustomAgent(message) {
     if (!this.config.apiEndpoint) {
       throw new Error('Custom agent API endpoint not configured');

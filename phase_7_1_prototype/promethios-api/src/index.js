@@ -22,6 +22,7 @@ app.use('/api', require('./routes/governance'));
 app.use('/api', require('./routes/observer'));
 app.use('/api', require('./routes/teams'));
 app.use('/api', require('./routes/deploy'));
+app.use('/api/agents/demo', require('./routes/demoAgents'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
