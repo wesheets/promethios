@@ -57,7 +57,10 @@ const LazyOnboardingWelcome = React.lazy(() => import('./components/onboarding/O
 const TeamsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
-      <TeamsTab agents={[]} />
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Team Management</h1>
+        <TeamsTab agents={[]} />
+      </div>
     </div>
   );
 };
