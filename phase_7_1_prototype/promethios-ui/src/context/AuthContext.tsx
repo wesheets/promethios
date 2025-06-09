@@ -1,18 +1,21 @@
-// Fixed Authentication Context with all required methods
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
-  User, 
+  getAuth, 
   signInWithPopup, 
   GoogleAuthProvider, 
-  signOut, 
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  AuthError
+  signOut,
+  onAuthStateChanged,
+  User,
+  AuthError,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
+// Define the shape of our context
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -42,19 +45,24 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Clear error function
+  
+  // Clear error
   const clearError = () => {
     setError(null);
   };
-
-  // Google sign in
+  
+  // Enhanced Google Sign In with fallback to redirect method
   const signInWithGoogle = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Log environment information for debugging
+      console.log('🔍 Attempting Google Sign In');
+      console.log('🌐 Current domain:', window.location.hostname);
+      console.log('🌐 Current origin:', window.location.origin);
       
       const provider = new GoogleAuthProvider();
       
@@ -66,41 +74,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-
-      const result = await signInWithPopup(auth, provider);
       
-      if (result.user) {
-        console.log('User signed in successfully:', result.user.email);
+      try {
+        // First try popup method
+        console.log('🔍 Attempting signInWithPopup method');
+        const result = await signInWithPopup(auth, provider);
+        
+        if (result.user) {
+          console.log('✅ User signed in successfully with popup:', result.user.email);
+        }
+      } catch (popupError: any) {
+        console.error('❌ Popup sign in error:', popupError);
+        
+        // If popup fails, try redirect method
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.code === 'auth/cancelled-popup-request' ||
+            popupError.code === 'auth/api-key-not-valid') {
+          
+          console.log('🔍 Popup failed, attempting signInWithRedirect method');
+          
+          try {
+            // Try redirect method as fallback
+            await signInWithRedirect(auth, provider);
+            // Note: This won't return as the page will redirect
+          } catch (redirectError: any) {
+            console.error('❌ Redirect sign in error:', redirectError);
+            throw redirectError;
+          }
+        } else {
+          // For other errors, rethrow
+          throw popupError;
+        }
       }
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('❌ Google sign in error:', error);
       
       let errorMessage = 'Failed to sign in with Google';
       
       if (error instanceof Error) {
         const authError = error as AuthError;
         
+        // Enhanced error handling with more specific messages
         switch (authError.code) {
-          case 'auth/popup-closed-by-user':
+          case 'auth/api-key-not-valid':
+            errorMessage = 'Invalid API key. Please check Firebase configuration.';
+            console.error('🔑 API Key Error Details:', {
+              'API Key Length': auth.app.options.apiKey?.length || 'Unknown',
+              'Auth Domain': auth.app.options.authDomain || 'Unknown',
+              'Project ID': auth.app.options.projectId || 'Unknown'
+            });
+            break;
+          case 'auth/cancelled-popup-request':
             errorMessage = 'Sign in was cancelled';
             break;
           case 'auth/popup-blocked':
-            errorMessage = 'Popup was blocked by browser. Please allow popups and try again';
+            errorMessage = 'Sign in popup was blocked by the browser';
             break;
-          case 'auth/network-request-failed':
-            errorMessage = 'Network error. Please check your connection and try again';
+          case 'auth/popup-closed-by-user':
+            errorMessage = 'Sign in popup was closed before completing the sign in';
             break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many failed attempts. Please try again later';
-            break;
-          case 'auth/user-disabled':
-            errorMessage = 'This account has been disabled';
+          case 'auth/unauthorized-domain':
+            errorMessage = 'This domain is not authorized for OAuth operations';
+            console.error('🔒 Domain Authorization Error:', {
+              'Current Domain': window.location.hostname,
+              'Auth Domain': auth.app.options.authDomain
+            });
             break;
           case 'auth/operation-not-allowed':
             errorMessage = 'Google sign in is not enabled. Please contact support';
-            break;
-          case 'auth/unauthorized-domain':
-            errorMessage = 'This domain is not authorized for Google sign-in. Please contact support.';
             break;
           default:
             errorMessage = authError.message || 'An unexpected error occurred';
@@ -113,10 +155,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
-
-  // Alias for compatibility
+  
+  // Check for redirect result on component mount
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          console.log('✅ User signed in successfully with redirect:', result.user.email);
+        }
+      } catch (error) {
+        console.error('❌ Redirect result error:', error);
+        
+        if (error instanceof Error) {
+          const authError = error as AuthError;
+          let errorMessage = 'Failed to complete sign in';
+          
+          if (authError.code === 'auth/api-key-not-valid') {
+            errorMessage = 'Invalid API key. Please check Firebase configuration.';
+          }
+          
+          setError(errorMessage);
+        }
+      }
+    };
+    
+    checkRedirectResult();
+  }, []);
+  
+  // Alias for compatibility with existing code
   const loginWithGoogle = signInWithGoogle;
-
+  
   // Email and password sign in
   const loginWithEmail = async (email: string, password: string): Promise<void> => {
     try {
@@ -163,7 +232,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
-
+  
   // Sign up with email and password
   const signup = async (email: string, password: string): Promise<void> => {
     try {
@@ -207,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
-
+  
   // Reset password
   const resetPassword = async (email: string): Promise<void> => {
     try {
@@ -245,7 +314,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
-
+  
   // Logout
   const logout = async (): Promise<void> => {
     try {
@@ -267,7 +336,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   };
-
+  
   // Auth state listener
   useEffect(() => {
     let mounted = true;
@@ -295,14 +364,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     );
-
+    
     // Cleanup function
     return () => {
       mounted = false;
       unsubscribe();
     };
   }, []);
-
+  
   // Context value
   const value: AuthContextType = {
     user,
@@ -316,11 +385,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     clearError
   };
-
+  
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-
