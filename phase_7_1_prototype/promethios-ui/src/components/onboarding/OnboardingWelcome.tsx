@@ -254,7 +254,7 @@ const OnboardingWelcome: React.FC = () => {
         {/* Bottom info */}
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm">
-            Step 1 of 4 • Understanding AI Governance
+            Step 1 of 4 - Understanding AI Governance
           </p>
         </div>
       </div>
