@@ -1,11 +1,11 @@
 import { doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs } from 'firebase/firestore';
-import { db } from './config';
+import { firestore } from './config';
 
 // Add user to waitlist
 export const addToWaitlist = async (email: string, role: string) => {
   try {
     // Check if email already exists in waitlist
-    const waitlistRef = collection(db, 'waitlist');
+    const waitlistRef = collection(firestore, 'waitlist');
     const docRef = await addDoc(waitlistRef, {
       email,
       role,
@@ -23,7 +23,7 @@ export const addToWaitlist = async (email: string, role: string) => {
 // Export waitlist as CSV
 export const exportWaitlistAsCSV = async () => {
   try {
-    const waitlistRef = collection(db, 'waitlist');
+    const waitlistRef = collection(firestore, 'waitlist');
     const snapshot = await getDocs(waitlistRef);
     
     const waitlistData = snapshot.docs.map(doc => ({
@@ -60,4 +60,3 @@ export const exportWaitlistAsCSV = async () => {
     throw error;
   }
 };
-

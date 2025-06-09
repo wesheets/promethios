@@ -1,10 +1,10 @@
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from './config';
+import { firestore } from './config';
 
 // Store onboarding completion status in user profile
 export const updateOnboardingStatus = async (userId: string, completed: boolean) => {
   try {
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(firestore, 'users', userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
@@ -40,7 +40,7 @@ export const saveAgentConfiguration = async (
   }
 ) => {
   try {
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(firestore, 'users', userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
@@ -75,7 +75,7 @@ export const checkOnboardingStatus = async (userId: string) => {
     );
     
     const checkPromise = (async () => {
-      const userRef = doc(db, 'users', userId);
+      const userRef = doc(firestore, 'users', userId);
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {

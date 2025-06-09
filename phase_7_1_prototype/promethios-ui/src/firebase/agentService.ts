@@ -1,5 +1,5 @@
 import { collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
-import { db } from './config';
+import { firestore } from './config';
 
 /**
  * Agent Configuration Interface
@@ -46,7 +46,7 @@ export class AgentFirebaseService {
    */
   static async saveWizardProgress(userId: string, wizardData: Partial<AgentWizardData>): Promise<void> {
     try {
-      const wizardDocRef = doc(db, this.WIZARD_DATA_COLLECTION, userId);
+      const wizardDocRef = doc(firestore, this.WIZARD_DATA_COLLECTION, userId);
       const dataToSave: AgentWizardData = {
         userId,
         currentStep: wizardData.currentStep || 1,
@@ -71,7 +71,7 @@ export class AgentFirebaseService {
    */
   static async loadWizardProgress(userId: string): Promise<AgentWizardData | null> {
     try {
-      const wizardDocRef = doc(db, this.WIZARD_DATA_COLLECTION, userId);
+      const wizardDocRef = doc(firestore, this.WIZARD_DATA_COLLECTION, userId);
       const wizardDoc = await getDoc(wizardDocRef);
       
       if (wizardDoc.exists()) {
@@ -89,7 +89,7 @@ export class AgentFirebaseService {
    */
   static async clearWizardProgress(userId: string): Promise<void> {
     try {
-      const wizardDocRef = doc(db, this.WIZARD_DATA_COLLECTION, userId);
+      const wizardDocRef = doc(firestore, this.WIZARD_DATA_COLLECTION, userId);
       await deleteDoc(wizardDocRef);
       console.log('Agent wizard progress cleared');
     } catch (error) {
@@ -103,7 +103,7 @@ export class AgentFirebaseService {
    */
   static async saveAgentConfiguration(agentConfig: Omit<AgentConfiguration, 'id'>): Promise<string> {
     try {
-      const agentsCollectionRef = collection(db, this.AGENTS_COLLECTION);
+      const agentsCollectionRef = collection(firestore, this.AGENTS_COLLECTION);
       const agentDocRef = doc(agentsCollectionRef);
       
       const configToSave: AgentConfiguration = {
@@ -135,7 +135,7 @@ export class AgentFirebaseService {
   static async getUserAgents(userId: string): Promise<AgentConfiguration[]> {
     try {
       const agentsQuery = query(
-        collection(db, this.AGENTS_COLLECTION),
+        collection(firestore, this.AGENTS_COLLECTION),
         where('userId', '==', userId)
       );
       
@@ -158,7 +158,7 @@ export class AgentFirebaseService {
    */
   static async getAgentConfiguration(agentId: string): Promise<AgentConfiguration | null> {
     try {
-      const agentDocRef = doc(db, this.AGENTS_COLLECTION, agentId);
+      const agentDocRef = doc(firestore, this.AGENTS_COLLECTION, agentId);
       const agentDoc = await getDoc(agentDocRef);
       
       if (agentDoc.exists()) {
@@ -176,7 +176,7 @@ export class AgentFirebaseService {
    */
   static async updateAgentConfiguration(agentId: string, updates: Partial<AgentConfiguration>): Promise<void> {
     try {
-      const agentDocRef = doc(db, this.AGENTS_COLLECTION, agentId);
+      const agentDocRef = doc(firestore, this.AGENTS_COLLECTION, agentId);
       const updateData = {
         ...updates,
         updatedAt: new Date().toISOString()
@@ -195,7 +195,7 @@ export class AgentFirebaseService {
    */
   static async deleteAgentConfiguration(agentId: string): Promise<void> {
     try {
-      const agentDocRef = doc(db, this.AGENTS_COLLECTION, agentId);
+      const agentDocRef = doc(firestore, this.AGENTS_COLLECTION, agentId);
       await deleteDoc(agentDocRef);
       console.log('Agent configuration deleted successfully');
     } catch (error) {
@@ -244,4 +244,3 @@ export class AgentFirebaseService {
 }
 
 export default AgentFirebaseService;
-

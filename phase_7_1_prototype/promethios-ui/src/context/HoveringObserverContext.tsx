@@ -13,7 +13,7 @@ import {
   getDocs,
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { firestore } from '../firebase/config';
 
 /**
  * Hovering Observer Context
@@ -135,20 +135,20 @@ export const HoveringObserverProvider: React.FC<HoveringObserverProviderProps> =
       setIsLoading(true);
 
       // Load observer learning data
-      const learningDoc = await getDoc(doc(db, 'observerLearning', user.uid));
+      const learningDoc = await getDoc(doc(firestore, 'observerLearning', user.uid));
       if (learningDoc.exists()) {
         setObserverLearning(learningDoc.data() as ObserverLearning);
       }
 
       // Load user progress
-      const progressDoc = await getDoc(doc(db, 'userProgress', user.uid));
+      const progressDoc = await getDoc(doc(firestore, 'userProgress', user.uid));
       if (progressDoc.exists()) {
         setUserProgress(progressDoc.data() as any);
       }
 
       // Load recent conversation history
       const conversationsQuery = query(
-        collection(db, 'observerConversations', user.uid, 'messages'),
+        collection(firestore, 'observerConversations', user.uid, 'messages'),
         orderBy('timestamp', 'desc'),
         limit(50)
       );
@@ -171,7 +171,7 @@ export const HoveringObserverProvider: React.FC<HoveringObserverProviderProps> =
     if (!user?.uid) return;
 
     try {
-      await setDoc(doc(db, 'observerLearning', user.uid), {
+      await setDoc(doc(firestore, 'observerLearning', user.uid), {
         ...learning,
         lastUpdated: serverTimestamp(),
       });
@@ -184,7 +184,7 @@ export const HoveringObserverProvider: React.FC<HoveringObserverProviderProps> =
     if (!user?.uid) return;
 
     try {
-      await setDoc(doc(db, 'userProgress', user.uid), {
+      await setDoc(doc(firestore, 'userProgress', user.uid), {
         ...progress,
         lastUpdated: serverTimestamp(),
       });
@@ -197,7 +197,7 @@ export const HoveringObserverProvider: React.FC<HoveringObserverProviderProps> =
     if (!user?.uid) return;
 
     try {
-      await addDoc(collection(db, 'observerConversations', user.uid, 'messages'), {
+      await addDoc(collection(firestore, 'observerConversations', user.uid, 'messages'), {
         ...message,
         timestamp: serverTimestamp(),
       });
@@ -373,4 +373,3 @@ export const HoveringObserverProvider: React.FC<HoveringObserverProviderProps> =
 };
 
 export default HoveringObserverProvider;
-

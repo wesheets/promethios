@@ -15,7 +15,7 @@ import {
   QuerySnapshot,
   DocumentSnapshot
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { firestore } from '../firebase/config';
 import { Team, TeamMember, TeamRole } from '../types/teamTypes';
 
 export class FirebaseTeamService {
@@ -31,7 +31,7 @@ export class FirebaseTeamService {
         updatedAt: Timestamp.now()
       };
 
-      const docRef = await addDoc(collection(db, this.teamsCollection), teamData);
+      const docRef = await addDoc(collection(firestore, this.teamsCollection), teamData);
       console.log('Team created successfully:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -44,7 +44,7 @@ export class FirebaseTeamService {
   async getTeams(): Promise<Team[]> {
     try {
       const q = query(
-        collection(db, this.teamsCollection),
+        collection(firestore, this.teamsCollection),
         orderBy('createdAt', 'desc')
       );
       
@@ -71,7 +71,7 @@ export class FirebaseTeamService {
   // Get team by ID
   async getTeamById(teamId: string): Promise<Team | null> {
     try {
-      const docRef = doc(db, this.teamsCollection, teamId);
+      const docRef = doc(firestore, this.teamsCollection, teamId);
       const docSnap: DocumentSnapshot<DocumentData> = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -94,7 +94,7 @@ export class FirebaseTeamService {
   // Update team
   async updateTeam(teamId: string, updates: Partial<Omit<Team, 'id' | 'createdAt'>>): Promise<void> {
     try {
-      const docRef = doc(db, this.teamsCollection, teamId);
+      const docRef = doc(firestore, this.teamsCollection, teamId);
       const updateData = {
         ...updates,
         updatedAt: Timestamp.now()
@@ -115,7 +115,7 @@ export class FirebaseTeamService {
       await this.deleteAllTeamMembers(teamId);
       
       // Then delete the team
-      const docRef = doc(db, this.teamsCollection, teamId);
+      const docRef = doc(firestore, this.teamsCollection, teamId);
       await deleteDoc(docRef);
       console.log('Team deleted successfully:', teamId);
     } catch (error) {
@@ -132,7 +132,7 @@ export class FirebaseTeamService {
         joinedAt: Timestamp.now()
       };
 
-      const docRef = await addDoc(collection(db, this.membersCollection), memberData);
+      const docRef = await addDoc(collection(firestore, this.membersCollection), memberData);
       console.log('Team member added successfully:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -145,7 +145,7 @@ export class FirebaseTeamService {
   async getTeamMembers(teamId: string): Promise<TeamMember[]> {
     try {
       const q = query(
-        collection(db, this.membersCollection),
+        collection(firestore, this.membersCollection),
         where('teamId', '==', teamId),
         orderBy('joinedAt', 'asc')
       );
@@ -172,7 +172,7 @@ export class FirebaseTeamService {
   // Update team member role
   async updateTeamMemberRole(memberId: string, role: TeamRole): Promise<void> {
     try {
-      const docRef = doc(db, this.membersCollection, memberId);
+      const docRef = doc(firestore, this.membersCollection, memberId);
       await updateDoc(docRef, { role });
       console.log('Team member role updated successfully:', memberId);
     } catch (error) {
@@ -184,7 +184,7 @@ export class FirebaseTeamService {
   // Remove team member
   async removeTeamMember(memberId: string): Promise<void> {
     try {
-      const docRef = doc(db, this.membersCollection, memberId);
+      const docRef = doc(firestore, this.membersCollection, memberId);
       await deleteDoc(docRef);
       console.log('Team member removed successfully:', memberId);
     } catch (error) {
@@ -197,7 +197,7 @@ export class FirebaseTeamService {
   private async deleteAllTeamMembers(teamId: string): Promise<void> {
     try {
       const q = query(
-        collection(db, this.membersCollection),
+        collection(firestore, this.membersCollection),
         where('teamId', '==', teamId)
       );
 
@@ -217,7 +217,7 @@ export class FirebaseTeamService {
     try {
       // First get team memberships for the user
       const memberQuery = query(
-        collection(db, this.membersCollection),
+        collection(firestore, this.membersCollection),
         where('userId', '==', userId)
       );
 
@@ -247,4 +247,3 @@ export class FirebaseTeamService {
 
 // Export singleton instance
 export const firebaseTeamService = new FirebaseTeamService();
-
