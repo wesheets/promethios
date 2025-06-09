@@ -1,27 +1,25 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  getAuth, 
-  signInWithPopup, 
   GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
-  User,
-  AuthError,
-  signInWithRedirect,
-  getRedirectResult
+  User
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
-// Define the shape of our context
+// Define the shape of our authentication context
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>; // Alias for compatibility
+  loginWithGoogle: () => Promise<void>; // Alias for signInWithGoogle for compatibility
   loginWithEmail: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -29,8 +27,10 @@ interface AuthContextType {
   clearError: () => void;
 }
 
+// Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -39,341 +39,166 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+// Provider component that wraps your app and makes auth object available
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Clear error
-  const clearError = () => {
-    setError(null);
+
+  // Clear error helper
+  const clearError = () => setError(null);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Check for redirect result on initial load
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setUser(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in error:", error);
+        handleAuthError(error);
+      });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  // Helper function to handle authentication errors
+  const handleAuthError = (error: any) => {
+    console.error("Authentication error:", error);
+    
+    // Map Firebase error codes to user-friendly messages
+    const errorMap: Record<string, string> = {
+      'auth/invalid-email': 'Invalid email address format.',
+      'auth/user-disabled': 'This account has been disabled.',
+      'auth/user-not-found': 'No account found with this email.',
+      'auth/wrong-password': 'Incorrect password.',
+      'auth/email-already-in-use': 'An account with this email already exists.',
+      'auth/weak-password': 'Password is too weak. Use at least 6 characters.',
+      'auth/popup-closed-by-user': 'Sign-in was cancelled.',
+      'auth/popup-blocked': 'Sign-in popup was blocked by your browser.',
+      'auth/cancelled-popup-request': 'The sign-in process was cancelled.',
+      'auth/unauthorized-domain': 'This domain is not authorized for OAuth operations.',
+      'auth/operation-not-allowed': 'This sign-in method is not enabled.',
+      'auth/account-exists-with-different-credential': 'An account already exists with the same email but different sign-in credentials.',
+      'auth/network-request-failed': 'A network error occurred. Please check your connection.',
+      'auth/timeout': 'The operation has timed out.',
+      'auth/api-key-not-valid': 'Firebase API key is invalid. Please check your configuration.',
+    };
+
+    const errorCode = error.code || 'unknown-error';
+    const errorMessage = errorMap[errorCode] || error.message || 'An unknown error occurred during authentication.';
+    
+    setError(errorMessage);
+    setLoading(false);
   };
-  
-  // Enhanced Google Sign In with fallback to redirect method
+
+  // Sign in with Google using popup
   const signInWithGoogle = async (): Promise<void> => {
+    setLoading(true);
+    clearError();
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Log environment information for debugging
-      console.log('🔍 Attempting Google Sign In');
-      console.log('🌐 Current domain:', window.location.hostname);
-      console.log('🌐 Current origin:', window.location.origin);
-      
       const provider = new GoogleAuthProvider();
-      
-      // Add additional scopes if needed
       provider.addScope('email');
       provider.addScope('profile');
       
-      // Configure provider settings
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      
+      // Try popup first
       try {
-        // First try popup method
-        console.log('🔍 Attempting signInWithPopup method');
-        const result = await signInWithPopup(auth, provider);
-        
-        if (result.user) {
-          console.log('✅ User signed in successfully with popup:', result.user.email);
-        }
+        await signInWithPopup(auth, provider);
       } catch (popupError: any) {
-        console.error('❌ Popup sign in error:', popupError);
+        console.log("Popup sign-in failed, trying redirect:", popupError);
         
-        // If popup fails, try redirect method
-        if (popupError.code === 'auth/popup-blocked' || 
-            popupError.code === 'auth/popup-closed-by-user' ||
-            popupError.code === 'auth/cancelled-popup-request' ||
-            popupError.code === 'auth/api-key-not-valid') {
-          
-          console.log('🔍 Popup failed, attempting signInWithRedirect method');
-          
-          try {
-            // Try redirect method as fallback
-            await signInWithRedirect(auth, provider);
-            // Note: This won't return as the page will redirect
-          } catch (redirectError: any) {
-            console.error('❌ Redirect sign in error:', redirectError);
-            throw redirectError;
-          }
+        // If popup fails (common on mobile), fall back to redirect
+        if (
+          popupError.code === 'auth/popup-blocked' || 
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request'
+        ) {
+          await signInWithRedirect(auth, provider);
+          // Note: Redirect will navigate away, so we won't reach the code below
+          // The redirect result will be handled in the useEffect
         } else {
-          // For other errors, rethrow
+          // For other errors, propagate them
           throw popupError;
         }
       }
-    } catch (error) {
-      console.error('❌ Google sign in error:', error);
-      
-      let errorMessage = 'Failed to sign in with Google';
-      
-      if (error instanceof Error) {
-        const authError = error as AuthError;
-        
-        // Enhanced error handling with more specific messages
-        switch (authError.code) {
-          case 'auth/api-key-not-valid':
-            errorMessage = 'Invalid API key. Please check Firebase configuration.';
-            console.error('🔑 API Key Error Details:', {
-              'API Key Length': auth.app.options.apiKey?.length || 'Unknown',
-              'Auth Domain': auth.app.options.authDomain || 'Unknown',
-              'Project ID': auth.app.options.projectId || 'Unknown'
-            });
-            break;
-          case 'auth/cancelled-popup-request':
-            errorMessage = 'Sign in was cancelled';
-            break;
-          case 'auth/popup-blocked':
-            errorMessage = 'Sign in popup was blocked by the browser';
-            break;
-          case 'auth/popup-closed-by-user':
-            errorMessage = 'Sign in popup was closed before completing the sign in';
-            break;
-          case 'auth/unauthorized-domain':
-            errorMessage = 'This domain is not authorized for OAuth operations';
-            console.error('🔒 Domain Authorization Error:', {
-              'Current Domain': window.location.hostname,
-              'Auth Domain': auth.app.options.authDomain
-            });
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = 'Google sign in is not enabled. Please contact support';
-            break;
-          default:
-            errorMessage = authError.message || 'An unexpected error occurred';
-        }
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
+    } catch (error: any) {
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Check for redirect result on component mount
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          console.log('✅ User signed in successfully with redirect:', result.user.email);
-        }
-      } catch (error) {
-        console.error('❌ Redirect result error:', error);
-        
-        if (error instanceof Error) {
-          const authError = error as AuthError;
-          let errorMessage = 'Failed to complete sign in';
-          
-          if (authError.code === 'auth/api-key-not-valid') {
-            errorMessage = 'Invalid API key. Please check Firebase configuration.';
-          }
-          
-          setError(errorMessage);
-        }
-      }
-    };
-    
-    checkRedirectResult();
-  }, []);
-  
-  // Alias for compatibility with existing code
+
+  // Alias for signInWithGoogle for compatibility with existing code
   const loginWithGoogle = signInWithGoogle;
-  
-  // Email and password sign in
+
+  // Sign in with email and password
   const loginWithEmail = async (email: string, password: string): Promise<void> => {
+    setLoading(true);
+    clearError();
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      
-      if (result.user) {
-        console.log('User signed in with email successfully:', result.user.email);
-      }
-    } catch (error) {
-      console.error('Email sign in error:', error);
-      
-      let errorMessage = 'Failed to sign in';
-      
-      if (error instanceof Error) {
-        const authError = error as AuthError;
-        
-        switch (authError.code) {
-          case 'auth/user-not-found':
-            errorMessage = 'No account found with this email address';
-            break;
-          case 'auth/wrong-password':
-            errorMessage = 'Incorrect password';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Invalid email address';
-            break;
-          case 'auth/user-disabled':
-            errorMessage = 'This account has been disabled';
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many failed attempts. Please try again later';
-            break;
-          default:
-            errorMessage = authError.message || 'An unexpected error occurred';
-        }
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Sign up with email and password
   const signup = async (email: string, password: string): Promise<void> => {
+    setLoading(true);
+    clearError();
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      if (result.user) {
-        console.log('User signed up successfully:', result.user.email);
-      }
-    } catch (error) {
-      console.error('Sign up error:', error);
-      
-      let errorMessage = 'Failed to create account';
-      
-      if (error instanceof Error) {
-        const authError = error as AuthError;
-        
-        switch (authError.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'An account with this email already exists';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Invalid email address';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'Password is too weak. Please choose a stronger password';
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = 'Email/password accounts are not enabled. Please contact support';
-            break;
-          default:
-            errorMessage = authError.message || 'An unexpected error occurred';
-        }
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Reset password
   const resetPassword = async (email: string): Promise<void> => {
+    setLoading(true);
+    clearError();
+    
     try {
-      setLoading(true);
-      setError(null);
-      
       await sendPasswordResetEmail(auth, email);
-      console.log('Password reset email sent to:', email);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      
-      let errorMessage = 'Failed to send password reset email';
-      
-      if (error instanceof Error) {
-        const authError = error as AuthError;
-        
-        switch (authError.code) {
-          case 'auth/user-not-found':
-            errorMessage = 'No account found with this email address';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Invalid email address';
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many requests. Please try again later';
-            break;
-          default:
-            errorMessage = authError.message || 'An unexpected error occurred';
-        }
-      }
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
+    } catch (error: any) {
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Logout
+
+  // Sign out
   const logout = async (): Promise<void> => {
+    setLoading(true);
+    clearError();
+    
     try {
-      setLoading(true);
-      setError(null);
-      
       await signOut(auth);
-      console.log('User signed out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to sign out';
-      
-      setError(errorMessage);
-      throw new Error(errorMessage);
+    } catch (error: any) {
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Auth state listener
-  useEffect(() => {
-    let mounted = true;
-    
-    const unsubscribe = onAuthStateChanged(
-      auth, 
-      (user) => {
-        if (mounted) {
-          setUser(user);
-          setLoading(false);
-          
-          if (user) {
-            console.log('User authenticated:', user.email);
-          } else {
-            console.log('User not authenticated');
-          }
-        }
-      },
-      (error) => {
-        console.error('Auth state change error:', error);
-        
-        if (mounted) {
-          setError('Authentication error occurred');
-          setLoading(false);
-        }
-      }
-    );
-    
-    // Cleanup function
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
-  }, []);
-  
+
   // Context value
-  const value: AuthContextType = {
+  const value = {
     user,
     loading,
     error,
@@ -385,10 +210,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     clearError
   };
-  
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default AuthContext;
