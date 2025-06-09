@@ -10,7 +10,12 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['5173-i3hh9acw5iolquiqr0tqc-6eda6f4e.manusvm.computer', 'localhost'],
+    allowedHosts: [
+      '5173-i3hh9acw5iolquiqr0tqc-6eda6f4e.manusvm.computer', 
+      'localhost',
+      '5174-ingnzns8krahx6loygqqj-3e49dc88.manus.computer',
+      '.manus.computer' // Allow all manus.computer subdomains for future testing
+    ],
     proxy: {
       // Add proxy configuration for API requests
       '/api': {

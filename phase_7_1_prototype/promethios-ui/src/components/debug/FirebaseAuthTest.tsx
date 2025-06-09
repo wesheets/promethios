@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { testEmailAuth, testGoogleAuth, testAnonymousAuth, testFirestoreConnection, getFirebaseEnvVars } from '../firebase/testUtils';
+import { testEmailAuth, testGoogleAuth, testAnonymousAuth, testFirestoreConnection, getFirebaseEnvVars } from '../../firebase/testUtils';
 
 const FirebaseAuthTest: React.FC = () => {
   const [status, setStatus] = useState<string>('Initializing...');

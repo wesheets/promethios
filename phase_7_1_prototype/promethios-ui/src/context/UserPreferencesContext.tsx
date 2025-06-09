@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { firestore } from '../firebase/config';
+import { useAuth } from './AuthContext';
 
 /**
  * User Preferences Context
  * 
  * Manages user preferences for enhanced features, allowing users to
  * skip or disable gamification, observer, and other enhancements.
+ * Now with cross-device synchronization via Firestore.
  */
 interface UserPreferences {
   // Feature toggles
@@ -34,6 +38,7 @@ interface UserPreferencesContextType {
   skipOnboarding: () => void;
   enableMinimalMode: () => void;
   enableFullExperience: () => void;
+  isLoading: boolean;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -63,6 +68,7 @@ export const useUserPreferences = () => {
       skipOnboarding: () => {},
       enableMinimalMode: () => {},
       enableFullExperience: () => {},
+      isLoading: false,
     };
   }
   return context;
@@ -73,27 +79,79 @@ interface UserPreferencesProviderProps {
 }
 
 export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load preferences from localStorage
+  // Load preferences from both localStorage and Firestore
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('promethios_user_preferences');
-      if (saved) {
-        const parsedPreferences = JSON.parse(saved);
-        setPreferences(prev => ({ ...prev, ...parsedPreferences }));
+    const loadPreferences = async () => {
+      setIsLoading(true);
+      try {
+        // First try localStorage for immediate UI response
+        const saved = localStorage.getItem('promethios_user_preferences');
+        if (saved) {
+          const parsedPreferences = JSON.parse(saved);
+          setPreferences(prev => ({ ...prev, ...parsedPreferences }));
+        }
+        
+        // Then try Firestore for cross-device sync if user is logged in
+        if (user?.uid) {
+          const userPrefsDoc = await getDoc(doc(firestore, 'userPreferences', user.uid));
+          if (userPrefsDoc.exists()) {
+            const firestorePrefs = userPrefsDoc.data() as UserPreferences;
+            setPreferences(prev => ({ ...prev, ...firestorePrefs }));
+            
+            // Update localStorage with the latest from Firestore
+            localStorage.setItem('promethios_user_preferences', JSON.stringify(firestorePrefs));
+            console.log('Loaded user preferences from Firestore');
+          } else {
+            // If no Firestore preferences exist yet, save the current ones
+            await saveToFirestore(preferences);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load user preferences:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.warn('Failed to load user preferences:', error);
-    }
-  }, []);
+    };
+    
+    loadPreferences();
+  }, [user?.uid]);
 
   // Save preferences to localStorage
-  const savePreferences = (newPreferences: UserPreferences) => {
+  const saveToLocalStorage = (newPreferences: UserPreferences) => {
     try {
       localStorage.setItem('promethios_user_preferences', JSON.stringify(newPreferences));
     } catch (error) {
-      console.warn('Failed to save user preferences:', error);
+      console.warn('Failed to save user preferences to localStorage:', error);
+    }
+  };
+
+  // Save preferences to Firestore
+  const saveToFirestore = async (newPreferences: UserPreferences) => {
+    if (!user?.uid) return;
+    
+    try {
+      await setDoc(doc(firestore, 'userPreferences', user.uid), {
+        ...newPreferences,
+        lastUpdated: new Date()
+      });
+      console.log('Saved user preferences to Firestore');
+    } catch (error) {
+      console.warn('Failed to save user preferences to Firestore:', error);
+    }
+  };
+
+  // Save preferences to both localStorage and Firestore
+  const savePreferences = async (newPreferences: UserPreferences) => {
+    // Always save to localStorage for immediate access
+    saveToLocalStorage(newPreferences);
+    
+    // Save to Firestore if user is logged in
+    if (user?.uid) {
+      await saveToFirestore(newPreferences);
     }
   };
 
@@ -161,6 +219,7 @@ export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = (
     skipOnboarding,
     enableMinimalMode,
     enableFullExperience,
+    isLoading,
   };
 
   return (
@@ -171,4 +230,3 @@ export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = (
 };
 
 export default UserPreferencesProvider;
-
