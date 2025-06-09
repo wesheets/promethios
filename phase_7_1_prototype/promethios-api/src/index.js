@@ -20,6 +20,8 @@ app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api', require('./routes/llm'));
 app.use('/api', require('./routes/governance'));
 app.use('/api', require('./routes/observer'));
+app.use('/api', require('./routes/teams'));
+app.use('/api', require('./routes/deploy'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

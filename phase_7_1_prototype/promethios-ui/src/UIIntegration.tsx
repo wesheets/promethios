@@ -6,6 +6,7 @@ import {
   AgentWizardProxy,
   AgentsProxy,
   GovernanceProxy,
+  DeployProxy,
   OnboardingWelcomeProxy,
   OnboardingGoalSelectionProxy,
   OnboardingGuidedStepsProxy,
@@ -77,6 +78,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={true}>
             <MainLayoutProxy>
               <GovernanceProxy />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Deploy tab - agent export and deployment */}
+        <Route path="deploy" element={
+          <ProtectedRoute requireOnboarding={true}>
+            <MainLayoutProxy>
+              <DeployProxy />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

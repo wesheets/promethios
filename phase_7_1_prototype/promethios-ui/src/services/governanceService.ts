@@ -1,4 +1,4 @@
-import { agentService } from '../firebase/agentService';
+import AgentFirebaseService from '../firebase/agentService';
 
 export interface GovernanceRequest {
   text: string;
@@ -103,7 +103,7 @@ class GovernanceService {
   ): Promise<{ response: string; trustScore?: number; violations?: GovernanceResponse['violations'] }> {
     try {
       // Get agent configuration
-      const agent = await agentService.getAgent(agentId);
+      const agent = await AgentFirebaseService.getAgentConfiguration(agentId);
       if (!agent) {
         throw new Error('Agent not found');
       }
@@ -113,7 +113,7 @@ class GovernanceService {
         agentId,
         governanceEnabled,
         governanceLevel,
-        agentType: agent.type,
+        agentType: agent.agentType,
         apiEndpoint: agent.apiEndpoint,
       };
 
@@ -132,10 +132,7 @@ class GovernanceService {
       const result = await response.json();
       
       // Update agent activity
-      await agentService.updateAgentActivity(agentId, {
-        lastInteraction: new Date().toISOString(),
-        totalRequests: (agent.totalRequests || 0) + 1,
-      });
+      await AgentFirebaseService.updateAgentActivity(agentId);
 
       return result;
     } catch (error) {

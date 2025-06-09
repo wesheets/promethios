@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useGovernance } from '../../context/GovernanceContext';
 import { AgentFirebaseService, AgentConfiguration } from '../../firebase/agentService';
+import EnhancedChatInterface, { ChatMessage } from '../chat/EnhancedChatInterface';
+import AgentMetricsSidebar from '../chat/AgentMetricsSidebar';
+import TeamsTab from '../governance/TeamsTab';
 
 /**
  * GovernancePage Component
@@ -46,7 +50,8 @@ const GovernancePage: React.FC = () => {
     { id: 'interaction', label: 'Live Interaction', icon: '🔄' },
     { id: 'comparison', label: 'Comparison', icon: '🧠' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'workflows', label: 'Workflows', icon: '👥' },
+    { id: 'teams', label: 'Teams', icon: '👥' },
+    { id: 'workflows', label: 'Workflows', icon: '⚡' },
     { id: 'policies', label: 'Policies', icon: '⚙️' }
   ];
 
@@ -59,6 +64,8 @@ const GovernancePage: React.FC = () => {
         return <ComparisonTab selectedAgent={selectedAgent} agents={agents} onAgentSelect={setSelectedAgent} />;
       case 'analytics':
         return <AnalyticsTab agents={agents} />;
+      case 'teams':
+        return <TeamsTab agents={agents} />;
       case 'workflows':
         return <WorkflowsTab agents={agents} />;
       case 'policies':
@@ -136,24 +143,99 @@ const GovernancePage: React.FC = () => {
   );
 };
 
-// Live Interaction Tab Component - Now uses the enhanced GovernanceToggleChat
+// Live Interaction Tab Component - Now uses the enhanced chat interface
 const LiveInteractionTab: React.FC<{
   selectedAgent: AgentConfiguration | null;
   agents: AgentConfiguration[];
   onAgentSelect: (agent: AgentConfiguration) => void;
 }> = ({ selectedAgent, agents, onAgentSelect }) => {
-  // Import the GovernanceToggleChat component
-  const GovernanceToggleChat = React.lazy(() => import('../governance/GovernanceToggleChat'));
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [governanceEnabled, setGovernanceEnabled] = useState(true);
+  const [showMetricsSidebar, setShowMetricsSidebar] = useState(true);
+  const { sendMessage } = useGovernance();
+
+  // Handle sending messages
+  const handleSendMessage = async (messageContent: string) => {
+    if (!selectedAgent) return;
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageContent,
+      timestamp: Date.now()
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      // Send message through governance service
+      const response = await sendMessage(messageContent, selectedAgent.id!, governanceEnabled);
+      
+      // Add agent response
+      const agentMessage: ChatMessage = {
+        id: `agent-${Date.now()}`,
+        type: 'agent',
+        content: response.response,
+        timestamp: Date.now(),
+        agentId: selectedAgent.id,
+        governanceEnabled,
+        trustScore: response.trustScore,
+        violations: response.violations,
+        observerCommentary: response.observerCommentary,
+        metadata: {
+          responseTime: response.responseTime,
+          governanceOverhead: response.governanceOverhead,
+          complianceScore: response.complianceScore
+        }
+      };
+      setMessages(prev => [...prev, agentMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        type: 'agent',
+        content: 'Sorry, I encountered an error processing your message. Please try again.',
+        timestamp: Date.now(),
+        agentId: selectedAgent.id,
+        governanceEnabled
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
+  if (!selectedAgent) {
+    return (
+      <div className="h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-white mb-2">No Agent Selected</h3>
+          <p className="text-gray-400">Select an agent to start testing governance features.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-[600px]">
-      <React.Suspense fallback={
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-        </div>
-      }>
-        <GovernanceToggleChat />
-      </React.Suspense>
+    <div className="h-[600px] bg-white rounded-lg overflow-hidden flex">
+      <EnhancedChatInterface
+        agentId={selectedAgent.id!}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        governanceEnabled={governanceEnabled}
+        onGovernanceToggle={setGovernanceEnabled}
+        showMetricsSidebar={showMetricsSidebar}
+        onToggleMetricsSidebar={() => setShowMetricsSidebar(!showMetricsSidebar)}
+        className="flex-1"
+      />
+      
+      {showMetricsSidebar && (
+        <AgentMetricsSidebar
+          agentId={selectedAgent.id!}
+          messages={messages}
+          governanceEnabled={governanceEnabled}
+          onToggleCollapse={() => setShowMetricsSidebar(false)}
+        />
+      )}
     </div>
   );
 };

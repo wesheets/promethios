@@ -1,5 +1,5 @@
-import { db } from '../firebase/config';
 import { collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
+import { db } from './config';
 
 /**
  * Agent Configuration Interface
