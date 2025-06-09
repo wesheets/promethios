@@ -1,8 +1,8 @@
 import React from 'react';
-import AgentsPage from '../components/pages/AgentsPage';
+import EnhancedAgentsPage from '../components/pages/EnhancedAgentsPage';
 
 const AgentsProxy: React.FC = () => {
-  return <AgentsPage />;
+  return <EnhancedAgentsPage />;
 };
 
 export default AgentsProxy;
