@@ -1,111 +1,112 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { 
-  MainLayoutProxy, 
-  DashboardProxy, 
-  AgentWizardProxy,
-  AgentsProxy,
-  GovernanceProxy,
-  DeployProxy,
-  OnboardingWelcomeProxy,
-  OnboardingDemoProxy,
-  OnboardingFirstAgentProxy,
-  OnboardingExploreProxy,
-  OnboardingGoalSelectionProxy,
-  OnboardingGuidedStepsProxy,
-  WorkflowSpecificProxy
-} from './proxies';
-import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
-/**
- * UIIntegration Component
- * 
- * This component serves as a bridge between the legacy application and the new UI.
- * It renders routes for the new UI components, ensuring proper integration
- * of the new dashboard with collapsible navigation and Observer agent.
- * All routes are protected and require onboarding completion.
- */
+// Error Boundary for UI Integration
+class UIErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('UI Integration Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">UI Loading Error</h1>
+            <p className="text-gray-400 mb-4">
+              {this.state.error?.message || 'Failed to load UI components'}
+            </p>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Return to Home
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Lazy load components to prevent blocking
+const LazyDashboard = React.lazy(() => import('./pages/DashboardPage'));
+const LazyAgentWizard = React.lazy(() => import('./components/pages/AgentWizardPage'));
+const LazyAgents = React.lazy(() => import('./components/pages/EnhancedAgentsPage'));
+const LazyGovernance = React.lazy(() => import('./components/pages/GovernancePage'));
+const LazyDeploy = React.lazy(() => import('./components/pages/DeployPage'));
+const LazyOnboardingWelcome = React.lazy(() => import('./components/onboarding/OnboardingWelcome'));
+
 const UIIntegration: React.FC = () => {
-  // Using proxy components to connect to the actual UI components
   return (
-    <ObserverProvider>
-      <Routes>
-        {/* Onboarding flow routes */}
-        <Route path="onboarding">
-          <Route path="welcome" element={<OnboardingWelcomeProxy />} />
-          <Route path="demo" element={<OnboardingDemoProxy />} />
-          <Route path="first-agent" element={<OnboardingFirstAgentProxy />} />
-          <Route path="explore" element={<OnboardingExploreProxy />} />
-          <Route path="workflow/:workflowType" element={<WorkflowSpecificProxy />} />
-          <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
-          <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />
-          <Route index element={<Navigate to="welcome" replace />} />
-        </Route>
-        
-        {/* Render the dashboard with MainLayout - protected by onboarding */}
-        <Route path="dashboard" element={
-          <ProtectedRoute requireOnboarding={true}>
-            <MainLayoutProxy>
-              <DashboardProxy />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Agent Wrapping Wizard route - NO onboarding requirement to prevent loops */}
-        <Route path="agent-wizard" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <AgentWizardProxy />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Agents management page - protected by onboarding */}
-        <Route path="agents">
-          <Route index element={
-            <ProtectedRoute requireOnboarding={true}>
-              <MainLayoutProxy>
-                <AgentsProxy />
-              </MainLayoutProxy>
+    <UIErrorBoundary>
+      <React.Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p>Loading Promethios...</p>
+          </div>
+        </div>
+      }>
+        <Routes>
+          {/* Onboarding Routes */}
+          <Route path="/onboarding" element={<LazyOnboardingWelcome />} />
+          <Route path="/onboarding/welcome" element={<LazyOnboardingWelcome />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <LazyDashboard />
             </ProtectedRoute>
           } />
-          <Route path=":agentId" element={
-            <ProtectedRoute requireOnboarding={true}>
-              <MainLayoutProxy>
-                <AgentsProxy />
-              </MainLayoutProxy>
+          
+          <Route path="/agent-wizard" element={
+            <ProtectedRoute>
+              <LazyAgentWizard />
             </ProtectedRoute>
           } />
-        </Route>
-        
-        {/* Governance tab - primary interaction hub */}
-        <Route path="governance" element={
-          <ProtectedRoute requireOnboarding={true}>
-            <MainLayoutProxy>
-              <GovernanceProxy />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Deploy tab - agent export and deployment */}
-        <Route path="deploy" element={
-          <ProtectedRoute requireOnboarding={true}>
-            <MainLayoutProxy>
-              <DeployProxy />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Catch-all route - redirect new users to onboarding, completed users to dashboard */}
-        <Route path="*" element={
-          <ProtectedRoute requireOnboarding={true}>
-            <Navigate to="dashboard" replace />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </ObserverProvider>
+          
+          <Route path="/agents" element={
+            <ProtectedRoute>
+              <LazyAgents />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/governance" element={
+            <ProtectedRoute>
+              <LazyGovernance />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/deploy" element={
+            <ProtectedRoute>
+              <LazyDeploy />
+            </ProtectedRoute>
+          } />
+          
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/onboarding" replace />} />
+          <Route path="*" element={<Navigate to="/onboarding" replace />} />
+        </Routes>
+      </React.Suspense>
+    </UIErrorBoundary>
   );
 };
 
 export default UIIntegration;
+

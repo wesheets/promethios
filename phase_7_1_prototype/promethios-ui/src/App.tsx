@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { GovernanceProvider } from './context/GovernanceContext';
-import { GamificationProvider } from './context/GamificationContext';
-import { HoveringObserverProvider } from './context/HoveringObserverContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -23,114 +21,115 @@ import GovernancePage from './pages/GovernancePage';
 import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
-import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import UIIntegration from './UIIntegration';
-import HoveringObserver from './components/observer/HoveringObserver';
-import { ProgressIndicator } from './components/gamification/TrustRewards';
-import { useHoveringObserver } from './context/HoveringObserverContext';
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('App Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-gray-400 mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isUIRoute = location.pathname.startsWith('/ui/');
   
-  // Safely access hovering observer context (backward compatible)
-  let hoveringObserver;
-  try {
-    hoveringObserver = useHoveringObserver();
-  } catch (error) {
-    // Gracefully handle missing context
-    hoveringObserver = null;
-  }
-  
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
       {/* Only show NewHeader for non-UI routes */}
       {!isUIRoute && <NewHeader />}
       
-      {/* Progress Indicator - only show if gamification is available */}
-      {isUIRoute && (
-        <React.Suspense fallback={null}>
-          <ProgressIndicator />
-        </React.Suspense>
-      )}
+      <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}>
+        <Routes>
+          <Route path="/" element={<NewLandingPage />} />
+          <Route path="/signup" element={<LoginWaitlistPage />} />
+          <Route path="/waitlist" element={<LoginWaitlistPage />} />
+          <Route path="/login" element={<LoginWaitlistPage />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
+          {/* Redirect old onboarding to new UI onboarding */}
+          <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
+          {/* Redirect to new dashboard implementation */}
+          <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
+          <Route path="/governance" element={<GovernancePage />} />
+          <Route path="/documentation" element={<DocumentationPage />} />
+          <Route path="/benchmark" element={
+            <>
+              <InvestorDemoToggle />
+              <CMUBenchmarkDashboard />
+            </>
+          } />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/atlas-demo" element={<AtlasDemoPage />} />
+          <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
+          <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
+          <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
+          
+          {/* New UI Integration - Render the new UI components for all /ui/ routes */}
+          <Route path="/ui/*" element={<UIIntegration />} />
+        </Routes>
+      </div>
       
-      <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
-                <Routes>
-                  <Route path="/" element={<NewLandingPage />} />
-                  <Route path="/signup" element={<LoginWaitlistPage />} />
-                  <Route path="/waitlist" element={<LoginWaitlistPage />} />
-                  <Route path="/login" element={<LoginWaitlistPage />} />
-                  <Route path="/verify-email" element={<EmailVerification />} />
-                  {/* Redirect old onboarding to new UI onboarding */}
-                  <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
-                  {/* Redirect to new dashboard implementation */}
-                  <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
-                  <Route path="/governance" element={<GovernancePage />} />
-                  <Route path="/documentation" element={<DocumentationPage />} />
-                  <Route path="/benchmark" element={
-                    <>
-                      <InvestorDemoToggle />
-                      <CMUBenchmarkDashboard />
-                    </>
-                  } />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/how-it-works" element={<HowItWorksPage />} />
-                  <Route path="/atlas-demo" element={<AtlasDemoPage />} />
-                  <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
-                  <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
-                  <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
-                  {/* CMU Playground disabled as it's no longer needed */}
-                  {/* <Route path="/cmu-playground" element={<CMUPlaygroundPage />} /> */}
-                  
-                  {/* New UI Integration - Render the new UI components for all /ui/ routes */}
-                  <Route path="/ui/*" element={<UIIntegration />} />
-                </Routes>
-              </div>
-              {/* Only show Footer for non-UI routes */}
-              {!isUIRoute && <Footer />}
-              {!isUIRoute && <FeedbackWidget />}
-              
-              {/* Hovering Observer - only show in UI routes and if context is available */}
-              {isUIRoute && hoveringObserver && (
-                <React.Suspense fallback={null}>
-                  <HoveringObserver 
-                    isVisible={hoveringObserver.isVisible}
-                    onToggle={hoveringObserver.toggleObserver}
-                  />
-                </React.Suspense>
-              )}
-            </div>
+      {/* Only show Footer for non-UI routes */}
+      {!isUIRoute && <Footer />}
+      {!isUIRoute && <FeedbackWidget />}
+    </div>
   );
 };
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <GovernanceProvider>
-          {/* Gamification and Observer providers - backward compatible */}
-          <React.Suspense fallback={
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <GovernanceProvider>
             <AnalyticsProvider>
               <Router>
                 <AppContent />
               </Router>
             </AnalyticsProvider>
-          }>
-            <GamificationProvider>
-              <HoveringObserverProvider>
-                <AnalyticsProvider>
-                  <Router>
-                    <AppContent />
-                  </Router>
-                </AnalyticsProvider>
-              </HoveringObserverProvider>
-            </GamificationProvider>
-          </React.Suspense>
-        </GovernanceProvider>
-      </AuthProvider>
-    </ThemeProvider>
+          </GovernanceProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 
 export default App;
+
