@@ -8,19 +8,17 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { GovernanceProvider } from './context/GovernanceContext';
-import { GamificationProvider } from './context/GamificationContext';
-import { HoveringObserverProvider } from './context/HoveringObserverContext';
-import AnalyticsProvider from './components/common/AnalyticsProvider';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import NewLandingPage from './components/landing/NewLandingPage';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
+import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
+import EmailVerification from './components/auth/EmailVerification';
+import FeedbackWidget from './components/common/FeedbackWidget';
 
-// Create a simplified AppContent component for testing
-const SimplifiedAppContent = () => {
-  console.log('Rendering SimplifiedAppContent');
-  const location = useLocation();
-  console.log('Current location:', location);
+// Create a simplified AppContent component with real routes
+const AppContent = () => {
+  console.log('Rendering AppContent with real routes');
   
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
@@ -32,16 +30,55 @@ const SimplifiedAppContent = () => {
               <NewLandingPage />
             </ErrorBoundary>
           } />
+          <Route path="/signup" element={
+            <ErrorBoundary fallback={<div>Error in LoginWaitlistPage</div>}>
+              <LoginWaitlistPage />
+            </ErrorBoundary>
+          } />
+          <Route path="/waitlist" element={
+            <ErrorBoundary fallback={<div>Error in LoginWaitlistPage</div>}>
+              <LoginWaitlistPage />
+            </ErrorBoundary>
+          } />
+          <Route path="/login" element={
+            <ErrorBoundary fallback={<div>Error in LoginWaitlistPage</div>}>
+              <LoginWaitlistPage />
+            </ErrorBoundary>
+          } />
+          <Route path="/verify-email" element={
+            <ErrorBoundary fallback={<div>Error in EmailVerification</div>}>
+              <EmailVerification />
+            </ErrorBoundary>
+          } />
+          <Route path="/onboarding" element={
+            <div className="container mx-auto p-4">
+              <h1 className="text-2xl font-bold mb-4">Onboarding</h1>
+              <p>Onboarding is currently unavailable. Please check back later.</p>
+            </div>
+          } />
+          <Route path="/dashboard" element={
+            <div className="container mx-auto p-4">
+              <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+              <p>Dashboard is currently unavailable. Please check back later.</p>
+            </div>
+          } />
+          <Route path="/ui/*" element={
+            <div className="container mx-auto p-4">
+              <h1 className="text-2xl font-bold mb-4">UI Integration</h1>
+              <p>This feature is currently unavailable due to compatibility issues.</p>
+              <p>Our team is working on resolving this issue.</p>
+            </div>
+          } />
           <Route path="*" element={
-            <div className="diagnostic-container">
-              <h1>Diagnostic Mode</h1>
-              <p>Testing with real routes</p>
-              <p>Current path: {location.pathname}</p>
+            <div className="container mx-auto p-4">
+              <h1 className="text-2xl font-bold mb-4">Page Not Found</h1>
+              <p>The page you are looking for does not exist.</p>
             </div>
           } />
         </Routes>
       </div>
       <Footer />
+      <FeedbackWidget />
     </div>
   );
 };
@@ -60,7 +97,7 @@ try {
   const root = ReactDOM.createRoot(rootElement);
   console.log('Root created successfully, about to render...');
   
-  // Test with all providers, Router, Routes, and real components
+  // Render with core providers and real components
   root.render(
     <React.StrictMode>
       <ErrorBoundary fallback={<div>Error in ThemeProvider</div>}>
@@ -69,24 +106,12 @@ try {
             <AuthProvider>
               <ErrorBoundary fallback={<div>Error in GovernanceProvider</div>}>
                 <GovernanceProvider>
-                  <ErrorBoundary fallback={<div>Error in GamificationProvider</div>}>
-                    <GamificationProvider>
-                      <ErrorBoundary fallback={<div>Error in HoveringObserverProvider</div>}>
-                        <HoveringObserverProvider>
-                          <ErrorBoundary fallback={<div>Error in AnalyticsProvider</div>}>
-                            <AnalyticsProvider>
-                              <ErrorBoundary fallback={<div>Error in Router</div>}>
-                                <Router>
-                                  <ErrorBoundary fallback={<div>Error in SimplifiedAppContent</div>}>
-                                    <SimplifiedAppContent />
-                                  </ErrorBoundary>
-                                </Router>
-                              </ErrorBoundary>
-                            </AnalyticsProvider>
-                          </ErrorBoundary>
-                        </HoveringObserverProvider>
+                  <ErrorBoundary fallback={<div>Error in Router</div>}>
+                    <Router>
+                      <ErrorBoundary fallback={<div>Error in AppContent</div>}>
+                        <AppContent />
                       </ErrorBoundary>
-                    </GamificationProvider>
+                    </Router>
                   </ErrorBoundary>
                 </GovernanceProvider>
               </ErrorBoundary>
