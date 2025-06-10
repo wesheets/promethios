@@ -63,11 +63,13 @@ const AppContent = () => {
             </div>
           } />
           <Route path="/ui/*" element={
-            <div className="container mx-auto p-4">
-              <h1 className="text-2xl font-bold mb-4">UI Integration</h1>
-              <p>This feature is currently unavailable due to compatibility issues.</p>
-              <p>Our team is working on resolving this issue.</p>
-            </div>
+            <ErrorBoundary fallback={<div className="container mx-auto p-4">
+              <h1 className="text-2xl font-bold mb-4">UI Integration Error</h1>
+              <p>An error occurred while loading the UI Integration.</p>
+              <p>Please try refreshing the page or contact support if the issue persists.</p>
+            </div>}>
+              {React.createElement(React.lazy(() => import('./UIIntegration')))}
+            </ErrorBoundary>
           } />
           <Route path="*" element={
             <div className="container mx-auto p-4">
