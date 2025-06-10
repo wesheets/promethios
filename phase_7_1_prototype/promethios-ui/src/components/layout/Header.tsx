@@ -6,8 +6,8 @@ const Header: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <header className="bg-navy-900 text-white">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="w-full bg-navy-900 text-white">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">

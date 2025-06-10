@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-navy-900 text-white">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="w-full bg-navy-900 text-white">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link to="/" className="flex items-center">

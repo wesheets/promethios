@@ -20,8 +20,8 @@ const NewLandingPage: React.FC = () => {
   return (
     <div className="w-full">
       {/* Hero Section */}
-      <section className={`w-full py-20 px-4 sm:px-6 lg:px-8 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-        <div className="max-w-screen-xl mx-auto">
+      <section className={`w-full py-20 px-0 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between">
             <div className="lg:w-1/2 mb-10 lg:mb-0">
               <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight">
@@ -81,8 +81,8 @@ const NewLandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-screen-xl mx-auto">
+      <section className="w-full py-20 px-0 bg-gray-50 dark:bg-gray-800">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">The only way to govern AI agents</h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -136,8 +136,8 @@ const NewLandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className={`w-full py-20 px-4 sm:px-6 lg:px-8 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-        <div className="max-w-screen-xl mx-auto text-center">
+      <section className={`w-full py-20 px-0 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to make your AI more trustworthy?</h2>
           <p className="text-xl mb-8 text-gray-500 dark:text-gray-300 max-w-3xl mx-auto">
             Join thousands of developers who are building safer, more reliable AI systems with Promethios governance.
