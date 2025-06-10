@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Operator Override Schema",
+  "description": "Schema for validating operator override signals",
+  "type": "object",
+  "required": ["override_type"],
+  "properties": {
+    "override_type": {
+      "type": "string",
+      "enum": ["HALT_IMMEDIATE", "PROCEED", "MODIFY"],
+      "description": "Type of override action"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the override"
+    },
+    "modifications": {
+      "type": "object",
+      "description": "Modifications to be applied if override_type is MODIFY"
+    }
+  }
+}

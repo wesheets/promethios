@@ -1,0 +1,27 @@
+{
+  "record_id": "6d744c33-075f-48e1-af58-61579c17d561",
+  "content": {
+    "decision_id": "dec-6789",
+    "policy_id": "pol-1234",
+    "action": "approve",
+    "context": {
+      "user_id": "user-5678",
+      "resource_id": "res-9012",
+      "action_requested": "read"
+    }
+  },
+  "metadata": {
+    "priority": "high",
+    "tags": [
+      "governance",
+      "access-control"
+    ]
+  },
+  "timestamp": "2025-06-10T11:21:06.775791",
+  "tags": [],
+  "agent_id": null,
+  "session_id": null,
+  "source": "governance-engine",
+  "record_type": "decision",
+  "version": null
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loop Execute Request Schema",
+  "description": "Schema for validating requests to the loop execution endpoint",
+  "type": "object",
+  "required": ["request_id", "plan_input"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "description": "Unique identifier for the request"
+    },
+    "plan_input": {
+      "type": "object",
+      "description": "The plan input to be executed",
+      "required": ["task_description"],
+      "properties": {
+        "task_description": {
+          "type": "string",
+          "description": "Description of the task to be executed"
+        }
+      }
+    },
+    "operator_override_signal": {
+      "type": "object",
+      "description": "Optional override signal from the operator",
+      "required": ["override_type"],
+      "properties": {
+        "override_type": {
+          "type": "string",
+          "enum": ["HALT_IMMEDIATE", "PROCEED", "MODIFY", "INVALID_TYPE"],
+          "description": "Type of override action"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the override"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "strict-agent:minimal-agent:1749589477363",
+  "sourceAgentId": "strict-agent",
+  "targetAgentId": "minimal-agent",
+  "verificationResult": {
+    "compatible": false,
+    "reason": "Compliance level standard required, but minimal provided",
+    "confidenceModifiers": {
+      "total": 0,
+      "factors": {}
+    },
+    "interactionPolicy": {
+      "action": "reject",
+      "restrictions": [],
+      "explanation": "Compliance level standard required, but minimal provided"
+    },
+    "timestamp": "2025-06-10T21:04:37.363Z",
+    "verificationId": "3a71847d-b2b0-4b42-9935-f4bbcfc6ebde",
+    "sourceProofValid": false,
+    "targetProofValid": false
+  },
+  "timestamp": "2025-06-10T21:04:37.363Z"
+}
