@@ -3,6 +3,11 @@
  * Handles exporting conversation history and metrics to PDF
  */
 
+// Initialize AppModules if it doesn't exist to prevent errors
+if (typeof window !== 'undefined') {
+    window.AppModules = window.AppModules || {};
+}
+
 const ExportModule = {
     // Configuration
     config: {
@@ -82,23 +87,34 @@ const ExportModule = {
         console.log('Generating PDF report...');
         
         try {
-            // Get current scenario
-            const currentScenario = window.AppModules?.ScenarioManager?.getCurrentScenario() || {
-                title: "Product Planning",
-                description: "Evaluating product planning with and without governance"
-            };
+            // Get current scenario - with safety checks for undefined properties
+            const scenarioManager = window.AppModules && window.AppModules.ScenarioManager;
+            const currentScenario = scenarioManager && typeof scenarioManager.getCurrentScenario === 'function' 
+                ? scenarioManager.getCurrentScenario() 
+                : {
+                    title: "Product Planning",
+                    description: "Evaluating product planning with and without governance"
+                };
             
-            // Get metrics
-            const metrics = window.AppModules?.MetricsManager?.getMetrics() || {
-                trust: { ungoverned: "45%", governed: "92%", improvement: "+47%" },
-                compliance: { ungoverned: "38%", governed: "95%", improvement: "+57%" },
-                error: { ungoverned: "27%", governed: "3%", improvement: "-24%" },
-                performance: { ungoverned: "100%", governed: "98%", improvement: "-2%" }
-            };
+            // Get metrics - with safety checks for undefined properties
+            const metricsManager = window.AppModules && window.AppModules.MetricsManager;
+            const metrics = metricsManager && typeof metricsManager.getMetrics === 'function'
+                ? metricsManager.getMetrics()
+                : {
+                    trust: { ungoverned: "45%", governed: "92%", improvement: "+47%" },
+                    compliance: { ungoverned: "38%", governed: "95%", improvement: "+57%" },
+                    error: { ungoverned: "27%", governed: "3%", improvement: "-24%" },
+                    performance: { ungoverned: "100%", governed: "98%", improvement: "-2%" }
+                };
             
-            // Get conversation history
-            const ungovernedHistory = window.AppModules?.AgentConversation?.getConversationHistory('ungoverned') || [];
-            const governedHistory = window.AppModules?.AgentConversation?.getConversationHistory('governed') || [];
+            // Get conversation history - with safety checks for undefined properties
+            const agentConversation = window.AppModules && window.AppModules.AgentConversation;
+            const getHistory = agentConversation && typeof agentConversation.getConversationHistory === 'function'
+                ? agentConversation.getConversationHistory.bind(agentConversation)
+                : () => [];
+                
+            const ungovernedHistory = getHistory('ungoverned') || [];
+            const governedHistory = getHistory('governed') || [];
             
             // Create report content
             const reportContent = {
