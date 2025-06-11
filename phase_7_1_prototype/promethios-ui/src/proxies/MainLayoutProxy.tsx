@@ -3,16 +3,14 @@ import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
-// Import the new navigation components
-import HeaderNavigation from '../../../src/components/HeaderNavigation';
-import CollapsibleNavigation from '../../../src/components/CollapsibleNavigation';
+// Import the existing navigation component
+import NewHeader from '../components/navigation/NewHeader';
 
 /**
  * MainLayoutProxy Component
  * 
- * This proxy component serves as a bridge to the new navigation system.
- * It uses the HeaderNavigation and CollapsibleNavigation components from the main src directory
- * to ensure a consistent navigation experience across the application.
+ * This proxy component serves as a bridge to the navigation system.
+ * It uses the existing NewHeader component to ensure a consistent navigation experience.
  */
 interface MainLayoutProxyProps {
   children: ReactNode;
@@ -20,57 +18,21 @@ interface MainLayoutProxyProps {
 
 const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
-  
-  // Mock data for navigation components - in production, this would come from Firebase
-  const userName = currentUser?.displayName || "User";
-  const userRole = "User"; // This would come from Firestore user profile
-  const unreadNotifications = 0; // This would come from a notifications service
-  const isAdmin = true; // This would be determined by user role/permissions
-  const userPermissions = ['admin', 'edit', 'view']; // This would come from Firestore user profile
-  
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
+  const { currentUser } = useAuth();
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       <CssBaseline />
       
       {/* Header Navigation Bar */}
-      <HeaderNavigation 
-        isLoggedIn={!!currentUser}
-        userName={userName}
-        userRole={userRole}
-        unreadNotifications={unreadNotifications}
-      />
+      <NewHeader />
       
-      {/* Collapsible Left Navigation */}
-      <CollapsibleNavigation 
-        userPermissions={userPermissions}
-        isAdmin={isAdmin}
-      />
-      
-      {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
+      {/* Main content area - adjust margin to account for fixed header */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           mt: '64px', // Header height
-          ml: (theme) => {
-            const navExpanded = localStorage.getItem('navExpanded');
-            return navExpanded !== 'false' ? '260px' : '60px';
-          },
-          transition: theme => theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
           p: 3,
           backgroundColor: '#1a202c', // Dark background to match the theme
           minHeight: 'calc(100vh - 64px)', // Full height minus header
