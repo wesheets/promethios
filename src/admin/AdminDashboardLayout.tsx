@@ -12,7 +12,15 @@ import {
   ViewGridIcon,
   DocumentReportIcon,
   ExclamationCircleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChatIcon,
+  CloudUploadIcon,
+  IdentificationIcon,
+  HeartIcon,
+  PuzzleIcon,
+  DatabaseIcon,
+  QuestionMarkCircleIcon,
+  BookOpenIcon
 } from '@heroicons/react/outline';
 
 // Navigation item interface
@@ -26,6 +34,7 @@ interface NavItem {
     count: number;
     type: 'warning' | 'error' | 'success' | 'info';
   };
+  children?: NavItem[];
 }
 
 // Governance Status Summary component
@@ -135,33 +144,90 @@ const AdminDashboardLayout: React.FC = () => {
   const getNavItems = (): NavItem[] => {
     const baseNavItems: NavItem[] = [
       { id: 'overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard' },
-      { id: 'metrics', name: 'Metrics', icon: ChartBarIcon, path: '/admin/dashboard/analytics' },
-      { id: 'agents', name: 'Agent Management', icon: ViewGridIcon, path: '/admin/dashboard/agents' },
-      { id: 'users', name: 'User Management', icon: UserGroupIcon, path: '/admin/dashboard/users', requiredPermission: 'manageUsers' },
-      { id: 'roles', name: 'Roles & Permissions', icon: ShieldCheckIcon, path: '/admin/dashboard/roles', requiredPermission: 'manageRoles' },
-      { id: 'analytics', name: 'Analytics', icon: DocumentReportIcon, path: '/admin/dashboard/analytics' },
-      { id: 'settings', name: 'Settings', icon: CogIcon, path: '/admin/dashboard/settings' }
+      { 
+        id: 'governance', 
+        name: 'Governance', 
+        icon: ShieldCheckIcon, 
+        path: '/admin/dashboard/governance',
+        children: [
+          { id: 'governance-overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard/governance/overview' },
+          { id: 'governance-policies', name: 'Policies', icon: DocumentReportIcon, path: '/admin/dashboard/governance/policies' },
+          { id: 'governance-violations', name: 'Violations', icon: ExclamationCircleIcon, path: '/admin/dashboard/governance/violations' },
+          { id: 'governance-reports', name: 'Reports', icon: DocumentReportIcon, path: '/admin/dashboard/governance/reports' },
+          { id: 'governance-emotional-veritas', name: 'Emotional Veritas', icon: HeartIcon, path: '/admin/dashboard/governance/emotional-veritas' }
+        ]
+      },
+      { 
+        id: 'trust-metrics', 
+        name: 'Trust Metrics', 
+        icon: ChartBarIcon, 
+        path: '/admin/dashboard/trust-metrics',
+        children: [
+          { id: 'trust-metrics-overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard/trust-metrics/overview' },
+          { id: 'trust-metrics-boundaries', name: 'Boundaries', icon: ShieldCheckIcon, path: '/admin/dashboard/trust-metrics/boundaries' },
+          { id: 'trust-metrics-attestations', name: 'Attestations', icon: CheckCircleIcon, path: '/admin/dashboard/trust-metrics/attestations' }
+        ]
+      },
+      { 
+        id: 'agents', 
+        name: 'Agents', 
+        icon: ViewGridIcon, 
+        path: '/admin/dashboard/agents',
+        children: [
+          { id: 'agents-wrapping', name: 'Agent Wrapping', icon: PuzzleIcon, path: '/admin/dashboard/agents/wrapping' },
+          { id: 'agents-chat', name: 'Chat', icon: ChatIcon, path: '/admin/dashboard/agents/chat' },
+          { id: 'agents-deploy', name: 'Deploy', icon: CloudUploadIcon, path: '/admin/dashboard/agents/deploy' },
+          { id: 'agents-registry', name: 'Registry', icon: ViewGridIcon, path: '/admin/dashboard/agents/registry' },
+          { id: 'agents-scorecard', name: 'Scorecard', icon: DocumentReportIcon, path: '/admin/dashboard/agents/scorecard' },
+          { id: 'agents-identity', name: 'Identity', icon: IdentificationIcon, path: '/admin/dashboard/agents/identity' },
+          { id: 'agents-benchmarks', name: 'Benchmarks', icon: ChartBarIcon, path: '/admin/dashboard/agents/benchmarks' }
+        ]
+      },
+      { 
+        id: 'settings', 
+        name: 'Settings', 
+        icon: CogIcon, 
+        path: '/admin/dashboard/settings',
+        children: [
+          { id: 'settings-profile', name: 'User Profile', icon: UserGroupIcon, path: '/admin/dashboard/settings/profile' },
+          { id: 'settings-preferences', name: 'Preferences', icon: CogIcon, path: '/admin/dashboard/settings/preferences' },
+          { id: 'settings-organization', name: 'Organization', icon: UserGroupIcon, path: '/admin/dashboard/settings/organization' },
+          { id: 'settings-integrations', name: 'Integrations', icon: PuzzleIcon, path: '/admin/dashboard/settings/integrations' },
+          { id: 'settings-data-management', name: 'Data Management', icon: DatabaseIcon, path: '/admin/dashboard/settings/data-management' }
+        ]
+      },
+      { 
+        id: 'help', 
+        name: 'Help', 
+        icon: QuestionMarkCircleIcon, 
+        path: '/admin/dashboard/help',
+        children: [
+          { id: 'help-tours', name: 'Guided Tours', icon: BookOpenIcon, path: '/admin/dashboard/help/tours' },
+          { id: 'help-documentation', name: 'Documentation', icon: DocumentReportIcon, path: '/admin/dashboard/help/documentation' },
+          { id: 'help-support', name: 'Support', icon: QuestionMarkCircleIcon, path: '/admin/dashboard/help/support' }
+        ]
+      }
     ];
     
     // Add badges if we have vigilMetrics
     if (vigilMetrics) {
-      // Add violation count badge to metrics
+      // Add violation count badge to governance
       const violationCount = vigilMetrics.violations?.total || 0;
       if (violationCount > 0) {
-        const metricsIndex = baseNavItems.findIndex(item => item.id === 'metrics');
-        if (metricsIndex !== -1) {
-          baseNavItems[metricsIndex].badge = {
+        const governanceIndex = baseNavItems.findIndex(item => item.id === 'governance');
+        if (governanceIndex !== -1) {
+          baseNavItems[governanceIndex].badge = {
             count: violationCount,
             type: 'warning'
           };
         }
         
-        // Add critical violations badge to analytics
+        // Add critical violations badge to violations
         const criticalCount = vigilMetrics.violations?.bySeverity?.critical || 0;
-        if (criticalCount > 0) {
-          const analyticsIndex = baseNavItems.findIndex(item => item.id === 'analytics');
-          if (analyticsIndex !== -1) {
-            baseNavItems[analyticsIndex].badge = {
+        if (criticalCount > 0 && baseNavItems[governanceIndex]?.children) {
+          const violationsIndex = baseNavItems[governanceIndex].children.findIndex(item => item.id === 'governance-violations');
+          if (violationsIndex !== -1) {
+            baseNavItems[governanceIndex].children[violationsIndex].badge = {
               count: criticalCount,
               type: 'error'
             };
@@ -240,6 +306,32 @@ const AdminDashboardLayout: React.FC = () => {
     );
   }
 
+  // Track expanded sections
+  const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
+
+  // Toggle section expansion
+  const toggleSectionExpansion = (sectionId: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
+  // Check if a section should be expanded
+  const isSectionExpanded = (item: NavItem): boolean => {
+    // If explicitly set in state, use that value
+    if (expandedSections[item.id] !== undefined) {
+      return expandedSections[item.id];
+    }
+    
+    // Otherwise, expand if current section is in this section's children
+    if (item.children) {
+      return item.children.some(child => child.id === currentSection);
+    }
+    
+    return false;
+  };
+
   return (
     <div className="flex h-screen bg-navy-900 text-white">
       {/* Sidebar */}
@@ -258,36 +350,92 @@ const AdminDashboardLayout: React.FC = () => {
         <nav className="flex-1 overflow-y-auto py-2">
           <ul>
             {filteredNavItems.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={item.path}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavClick(item.id, item.path);
-                  }}
-                  className={`flex items-center px-4 py-3 text-sm ${
-                    currentSection === item.id
-                      ? 'bg-blue-900 text-blue-300 border-l-4 border-blue-500'
-                      : 'text-gray-300 hover:bg-navy-700'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5 mr-3" />
-                  <span className="flex-1">{item.name}</span>
-                  
-                  {/* Badge */}
-                  {item.badge && (
-                    <span className={`
-                      inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full
-                      ${item.badge.type === 'error' ? 'bg-red-500 text-white' : 
-                        item.badge.type === 'warning' ? 'bg-yellow-500 text-navy-900' : 
-                        item.badge.type === 'success' ? 'bg-green-500 text-white' : 
-                        'bg-blue-500 text-white'}
-                    `}>
-                      {item.badge.count}
-                    </span>
-                  )}
-                </a>
-              </li>
+              <React.Fragment key={item.id}>
+                <li>
+                  <div
+                    className={`flex items-center px-4 py-3 text-sm cursor-pointer ${
+                      currentSection === item.id || (item.children && item.children.some(child => child.id === currentSection))
+                        ? 'bg-blue-900 text-blue-300 border-l-4 border-blue-500'
+                        : 'text-gray-300 hover:bg-navy-700'
+                    }`}
+                    onClick={() => {
+                      if (item.children && item.children.length > 0) {
+                        toggleSectionExpansion(item.id);
+                      } else {
+                        handleNavClick(item.id, item.path);
+                      }
+                    }}
+                  >
+                    <item.icon className="h-5 w-5 mr-3" />
+                    <span className="flex-1">{item.name}</span>
+                    
+                    {/* Badge */}
+                    {item.badge && (
+                      <span className={`
+                        inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full
+                        ${item.badge.type === 'error' ? 'bg-red-500 text-white' : 
+                          item.badge.type === 'warning' ? 'bg-yellow-500 text-navy-900' : 
+                          item.badge.type === 'success' ? 'bg-green-500 text-white' : 
+                          'bg-blue-500 text-white'}
+                      `}>
+                        {item.badge.count}
+                      </span>
+                    )}
+                    
+                    {/* Expand/collapse indicator for items with children */}
+                    {item.children && item.children.length > 0 && (
+                      <svg
+                        className={`h-4 w-4 transition-transform ${isSectionExpanded(item) ? 'transform rotate-90' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    )}
+                  </div>
+                </li>
+                
+                {/* Children/subitems */}
+                {item.children && item.children.length > 0 && isSectionExpanded(item) && (
+                  <li>
+                    <ul className="pl-4 py-1 bg-navy-900">
+                      {item.children.map((child) => (
+                        <li key={child.id}>
+                          <a
+                            href={child.path}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleNavClick(child.id, child.path);
+                            }}
+                            className={`flex items-center px-4 py-2 text-sm ${
+                              currentSection === child.id
+                                ? 'text-blue-300 bg-navy-800 rounded'
+                                : 'text-gray-400 hover:text-gray-200'
+                            }`}
+                          >
+                            <child.icon className="h-4 w-4 mr-2" />
+                            <span className="flex-1">{child.name}</span>
+                            
+                            {/* Badge for child */}
+                            {child.badge && (
+                              <span className={`
+                                inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full
+                                ${child.badge.type === 'error' ? 'bg-red-500 text-white' : 
+                                  child.badge.type === 'warning' ? 'bg-yellow-500 text-navy-900' : 
+                                  child.badge.type === 'success' ? 'bg-green-500 text-white' : 
+                                  'bg-blue-500 text-white'}
+                              `}>
+                                {child.badge.count}
+                              </span>
+                            )}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )}
+              </React.Fragment>
             ))}
           </ul>
         </nav>
@@ -317,7 +465,23 @@ const AdminDashboardLayout: React.FC = () => {
         <header className="bg-navy-800 border-b border-navy-700 p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
-              {navItems.find(item => item.id === currentSection)?.name || 'Dashboard'}
+              {/* Find the current section name from the flat list of all items */}
+              {(() => {
+                // Create a flat list of all items including children
+                const flattenItems = (items: NavItem[]): NavItem[] => {
+                  return items.reduce((acc: NavItem[], item) => {
+                    acc.push(item);
+                    if (item.children) {
+                      acc.push(...flattenItems(item.children));
+                    }
+                    return acc;
+                  }, []);
+                };
+                
+                const allItems = flattenItems(navItems);
+                const currentItem = allItems.find(item => item.id === currentSection);
+                return currentItem?.name || 'Dashboard';
+              })()}
             </h2>
             <div className="flex items-center space-x-4">
               <button 
