@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 
 // Import navigation components
 import NewHeader from '../components/navigation/NewHeader';
@@ -23,6 +24,7 @@ interface MainLayoutProxyProps {
 const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const location = useLocation();
   const { currentUser, logout } = useAuth();
+  const { preferences } = useUserPreferences();
 
   // For logged-out users, show existing NewHeader
   if (!currentUser) {
@@ -67,7 +69,6 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         userName={currentUser.displayName || currentUser.email || 'User'}
         userRole="User"
         unreadNotifications={0}
-        onLogout={handleLogout}
       />
       
       {/* Collapsible Left Navigation for logged-in users */}
@@ -82,10 +83,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         sx={{
           flexGrow: 1,
           mt: '64px', // Header height
-          ml: (theme) => {
-            const navCollapsed = localStorage.getItem('navCollapsed');
-            return navCollapsed === 'true' ? '60px' : '260px';
-          },
+          ml: preferences.navigationCollapsed ? '60px' : '260px',
           transition: theme => theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,

@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -69,7 +70,6 @@ interface HeaderNavigationProps {
   userName?: string;
   userRole?: string;
   unreadNotifications?: number;
-  onLogout?: () => void;
 }
 
 const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
@@ -77,8 +77,8 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
   userName = 'User',
   userRole = 'User',
   unreadNotifications = 0,
-  onLogout,
 }) => {
+  const { logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();

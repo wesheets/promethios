@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
@@ -50,6 +50,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -100,23 +101,12 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   userPermissions = [],
   isAdmin = false,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const { preferences, updateNavigationState } = useUserPreferences();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load collapsed state from localStorage
-  useEffect(() => {
-    const savedCollapsed = localStorage.getItem('navCollapsed');
-    if (savedCollapsed !== null) {
-      setCollapsed(JSON.parse(savedCollapsed));
-    }
-  }, []);
-
-  // Save collapsed state to localStorage
-  useEffect(() => {
-    localStorage.setItem('navCollapsed', JSON.stringify(collapsed));
-  }, [collapsed]);
+  const collapsed = preferences.navigationCollapsed;
 
   const navigationItems: NavigationItem[] = [
     {
@@ -196,8 +186,13 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
     });
   }
 
-  const handleToggleCollapse = () => {
-    setCollapsed(!collapsed);
+  const handleToggleCollapse = async () => {
+    try {
+      await updateNavigationState(!collapsed);
+    } catch (error) {
+      console.error('Failed to update navigation state:', error);
+      // The UI will still update due to the preferences state change
+    }
   };
 
   const handleSectionToggle = (sectionId: string) => {
