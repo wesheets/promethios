@@ -1,18 +1,6 @@
-/**
- * Admin Dashboard Context
- * 
- * This context provides global state management for the admin dashboard,
- * including user information, permissions, and governance data from VigilObserver.
- * Enhanced with agent management data flow support.
- */
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
-import { getVeritasService } from '../core/veritas/VeritasService';
-import { AgentManagementProvider } from './AgentManagementContext';
-
-// User interface
+// Define types
 interface User {
   id: string;
   email: string;
@@ -20,127 +8,71 @@ interface User {
   roles: string[];
 }
 
-// Observation interface
-interface Observation {
-  id: string;
-  timestamp: string;
-  message: string;
-  type: string;
-  source: string;
-  metadata?: Record<string, any>;
+interface VigilMetrics {
+  violations: {
+    total: number;
+    byRule: Record<string, number>;
+    bySeverity: Record<string, number>;
+    byTool: Record<string, number>;
+  };
+  compliance: {
+    score: number;
+    byCategory: Record<string, number>;
+  };
 }
 
-// Compliance status interface
-interface ComplianceStatus {
+interface VigilComplianceStatus {
   compliant: boolean;
   violationCount: number;
   enforcementCount: number;
   complianceScore: number;
+  lastUpdated: string;
 }
 
-// Metrics interface
-interface Metrics {
-  violations?: {
-    total: number;
-    byRule?: Record<string, number>;
-    byTool?: Record<string, number>;
-    bySeverity?: Record<string, {
-      critical: number;
-      high: number;
-      medium: number;
-      low: number;
-    }>;
-  };
-  compliance?: {
-    score: number;
-    trend: number[];
-    byCategory?: Record<string, number>;
-  };
-  agents?: {
-    total: number;
-    active: number;
-    compliant: number;
-  };
+interface VigilObservation {
+  id: string;
+  timestamp: string;
+  message: string;
+  type: string;
+  severity: string;
+  source: string;
 }
 
-// Context interface
 interface AdminDashboardContextType {
-  // User and auth
   currentUser: User | null;
   isAdmin: boolean;
   userPermissions: string[];
-  
-  // Navigation
   currentSection: string;
   setCurrentSection: (section: string) => void;
-  
-  // VigilObserver data
-  vigilComplianceStatus: ComplianceStatus | null;
-  vigilMetrics: Metrics | null;
-  vigilObservations: Observation[];
-  
-  // Loading and error states
   isLoading: boolean;
   error: Error | null;
-  
-  // Actions
-  refreshVigilData: () => Promise<void>;
+  vigilMetrics: VigilMetrics | null;
+  vigilComplianceStatus: VigilComplianceStatus | null;
+  vigilObservations: VigilObservation[];
+  refreshVigilData: () => void;
 }
 
-// Create context with default values
-const AdminDashboardContext = createContext<AdminDashboardContextType>({
-  // User and auth
-  currentUser: null,
-  isAdmin: false,
-  userPermissions: [],
-  
-  // Navigation
-  currentSection: 'overview',
-  setCurrentSection: () => {},
-  
-  // VigilObserver data
-  vigilComplianceStatus: null,
-  vigilMetrics: null,
-  vigilObservations: [],
-  
-  // Loading and error states
-  isLoading: true,
-  error: null,
-  
-  // Actions
-  refreshVigilData: async () => {}
-});
-
-// Hook for using the admin dashboard context
-export const useAdminDashboard = () => useContext(AdminDashboardContext);
+// Create context
+const AdminDashboardContext = createContext<AdminDashboardContextType | undefined>(undefined);
 
 // Provider component
-export const AdminDashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const navigate = useNavigate();
-  
-  // User and auth state
+export const AdminDashboardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  
-  // Navigation state
   const [currentSection, setCurrentSection] = useState<string>('overview');
-  
-  // VigilObserver data state
-  const [vigilComplianceStatus, setVigilComplianceStatus] = useState<ComplianceStatus | null>(null);
-  const [vigilMetrics, setVigilMetrics] = useState<Metrics | null>(null);
-  const [vigilObservations, setVigilObservations] = useState<Observation[]>([]);
-  
-  // Loading and error states
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  
-  // Initialize user and permissions
+  const [vigilMetrics, setVigilMetrics] = useState<VigilMetrics | null>(null);
+  const [vigilComplianceStatus, setVigilComplianceStatus] = useState<VigilComplianceStatus | null>(null);
+  const [vigilObservations, setVigilObservations] = useState<VigilObservation[]>([]);
+
+  // Initialize user
   useEffect(() => {
-    const initializeUser = async () => {
+    const initializeUser = () => {
       try {
-        // In a real implementation, we would fetch the current user from an auth service
-        // For now, we'll use mock data
+        // In a real app, this would come from authentication service
+        // For now, we'll use a mock user
         const mockUser: User = {
           id: 'user-001',
           email: 'admin@promethios.ai',
@@ -148,178 +80,137 @@ export const AdminDashboardProvider: React.FC<{ children: React.ReactNode }> = (
           roles: ['admin', 'user']
         };
         
+        // Add the user's email to the admin list
+        if (mockUser.email === 'wesheets@gmail.com' || 
+            mockUser.email === 'admin@promethios.ai') {
+          mockUser.roles = ['admin', 'user'];
+        }
+        
         setCurrentUser(mockUser);
         setIsAdmin(mockUser.roles.includes('admin'));
+        setUserPermissions(mockUser.roles.includes('admin') 
+          ? ['viewDashboard', 'manageAgents', 'manageUsers', 'manageRoles', 'viewAnalytics', 'manageSettings']
+          : ['viewDashboard']);
         
-        // Set permissions based on roles
-        const permissions = mockUser.roles.includes('admin') 
-          ? ['viewDashboard', 'manageUsers', 'manageRoles', 'configureSystem', 'viewAnalytics', 'manageAgents']
-          : ['viewDashboard'];
-        
-        setUserPermissions(permissions);
-        
+        setIsLoading(false);
       } catch (err) {
-        console.error('Error initializing user:', err);
-        setError(err instanceof Error ? err : new Error('Error initializing user'));
-      } finally {
+        setError(err instanceof Error ? err : new Error('Failed to initialize user'));
         setIsLoading(false);
       }
     };
-    
+
     initializeUser();
   }, []);
-  
-  // Handle section changes
-  useEffect(() => {
-    // Map section to route
-    const sectionToRoute: Record<string, string> = {
-      'overview': '/admin/dashboard',
-      'metrics': '/admin/dashboard/analytics',
-      'agents': '/admin/dashboard/agents',
-      'users': '/admin/dashboard/users',
-      'roles': '/admin/dashboard/roles',
-      'analytics': '/admin/dashboard/analytics',
-      'settings': '/admin/dashboard/settings'
-    };
-    
-    // Navigate to the corresponding route
-    const route = sectionToRoute[currentSection] || '/admin/dashboard';
-    navigate(route);
-    
-  }, [currentSection, navigate]);
-  
-  // Refresh VigilObserver data
-  const refreshVigilData = async () => {
+
+  // Mock function to refresh Vigil data
+  const refreshVigilData = () => {
     try {
-      // Get VigilObserver extension point
-      const vigilObserverExtensionPoint = getVigilObserverExtensionPoint();
-      if (!vigilObserverExtensionPoint) {
-        throw new Error('VigilObserver extension point not found');
-      }
-      
-      const implementation = vigilObserverExtensionPoint.getDefault();
-      if (!implementation) {
-        throw new Error('VigilObserver implementation not found');
-      }
-      
-      // Get Veritas service for emotional impact assessment
-      const veritasService = getVeritasService();
-      
-      // In a real implementation, we would fetch data from the VigilObserver
+      // In a real app, this would fetch data from the Vigil API
       // For now, we'll use mock data
       
-      // Mock compliance status
-      const mockComplianceStatus: ComplianceStatus = {
-        compliant: Math.random() > 0.3, // 70% chance of being compliant
-        violationCount: Math.floor(Math.random() * 20),
-        enforcementCount: Math.floor(Math.random() * 10),
-        complianceScore: Math.floor(Math.random() * 30) + 70 // 70-100
-      };
-      
-      setVigilComplianceStatus(mockComplianceStatus);
-      
       // Mock metrics
-      const criticalCount = Math.floor(Math.random() * 5);
-      const highCount = Math.floor(Math.random() * 10);
-      const mediumCount = Math.floor(Math.random() * 15);
-      const lowCount = Math.floor(Math.random() * 20);
-      
-      const mockMetrics: Metrics = {
+      const mockMetrics: VigilMetrics = {
         violations: {
-          total: criticalCount + highCount + mediumCount + lowCount,
+          total: 12,
           byRule: {
-            'rule1': Math.floor(Math.random() * 10) + 1,
-            'rule2': Math.floor(Math.random() * 8) + 1,
-            'rule3': Math.floor(Math.random() * 5) + 1
-          },
-          byTool: {
-            'shell_exec': Math.floor(Math.random() * 10) + 1,
-            'file_read': Math.floor(Math.random() * 5) + 1,
-            'browser_navigate': Math.floor(Math.random() * 3) + 1
+            'rule1': 5,
+            'rule2': 3,
+            'rule3': 4
           },
           bySeverity: {
-            critical: criticalCount,
-            high: highCount,
-            medium: mediumCount,
-            low: lowCount
+            'critical': 2,
+            'high': 4,
+            'medium': 3,
+            'low': 3
+          },
+          byTool: {
+            'shell_exec': 5,
+            'file_read': 3,
+            'browser_navigate': 4
           }
         },
         compliance: {
-          score: mockComplianceStatus.complianceScore,
-          trend: Array.from({ length: 7 }, () => Math.floor(Math.random() * 30) + 70),
+          score: 78,
           byCategory: {
-            'data_access': Math.floor(Math.random() * 30) + 70,
-            'network_access': Math.floor(Math.random() * 30) + 70,
-            'file_system': Math.floor(Math.random() * 30) + 70
+            'security': 85,
+            'privacy': 70,
+            'ethics': 80
           }
-        },
-        agents: {
-          total: 7,
-          active: 5,
-          compliant: 4
         }
       };
       
-      setVigilMetrics(mockMetrics);
+      // Mock compliance status
+      const mockComplianceStatus: VigilComplianceStatus = {
+        compliant: mockMetrics.violations.bySeverity.critical === 0,
+        violationCount: mockMetrics.violations.total,
+        enforcementCount: 3,
+        complianceScore: mockMetrics.compliance.score,
+        lastUpdated: new Date().toISOString()
+      };
       
       // Mock observations
-      const mockObservations: Observation[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `obs-${i}-${Date.now()}`,
-        timestamp: new Date(Date.now() - i * 3600000).toISOString(),
-        message: [
-          'Agent attempted to access restricted data',
-          'User requested sensitive information',
-          'System enforced access control policy',
-          'Agent compliance check completed',
-          'New agent registered in the system'
-        ][Math.floor(Math.random() * 5)],
-        type: ['violation', 'interaction', 'enforcement', 'compliance', 'system'][Math.floor(Math.random() * 5)],
-        source: ['agent', 'user', 'system'][Math.floor(Math.random() * 3)],
-        metadata: {
-          agentId: `agent-00${Math.floor(Math.random() * 5) + 1}`,
-          severity: ['critical', 'high', 'medium', 'low', 'info'][Math.floor(Math.random() * 5)]
+      const mockObservations: VigilObservation[] = [
+        {
+          id: 'obs-001',
+          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+          message: 'Agent "Assistant" was wrapped with governance',
+          type: 'agent_wrapped',
+          severity: 'info',
+          source: 'vigil'
+        },
+        {
+          id: 'obs-002',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+          message: 'Governance policy updated',
+          type: 'policy_update',
+          severity: 'info',
+          source: 'admin'
+        },
+        {
+          id: 'obs-003',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+          message: 'New agent relationship defined',
+          type: 'relationship_defined',
+          severity: 'info',
+          source: 'admin'
         }
-      }));
+      ];
       
+      setVigilMetrics(mockMetrics);
+      setVigilComplianceStatus(mockComplianceStatus);
       setVigilObservations(mockObservations);
-      
     } catch (err) {
-      console.error('Error refreshing VigilObserver data:', err);
-      setError(err instanceof Error ? err : new Error('Error refreshing VigilObserver data'));
+      setError(err instanceof Error ? err : new Error('Failed to refresh Vigil data'));
     }
   };
-  
-  // Context value
+
+  // Provide the context value
   const contextValue: AdminDashboardContextType = {
-    // User and auth
     currentUser,
     isAdmin,
     userPermissions,
-    
-    // Navigation
     currentSection,
     setCurrentSection,
-    
-    // VigilObserver data
-    vigilComplianceStatus,
-    vigilMetrics,
-    vigilObservations,
-    
-    // Loading and error states
     isLoading,
     error,
-    
-    // Actions
+    vigilMetrics,
+    vigilComplianceStatus,
+    vigilObservations,
     refreshVigilData
   };
-  
+
   return (
     <AdminDashboardContext.Provider value={contextValue}>
-      <AgentManagementProvider>
-        {children}
-      </AgentManagementProvider>
+      {children}
     </AdminDashboardContext.Provider>
   );
 };
 
-export default AdminDashboardContext;
+// Custom hook to use the context
+export const useAdminDashboard = () => {
+  const context = useContext(AdminDashboardContext);
+  if (context === undefined) {
+    throw new Error('useAdminDashboard must be used within an AdminDashboardProvider');
+  }
+  return context;
+};

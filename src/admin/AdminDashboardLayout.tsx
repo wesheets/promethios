@@ -1,13 +1,5 @@
-/**
- * Admin Dashboard Layout Component
- * 
- * This component provides the main layout structure for the admin dashboard,
- * including the header, sidebar navigation, and content area.
- * Enhanced with VigilObserver integration for governance metrics display.
- */
-
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 import { useAdminDashboard } from './AdminDashboardContext';
 
 // Import icons
@@ -125,6 +117,8 @@ const RecentActivity: React.FC = () => {
 };
 
 const AdminDashboardLayout: React.FC = () => {
+  const navigate = useNavigate(); // Add useNavigate hook
+  
   const { 
     currentUser, 
     isAdmin, 
@@ -141,7 +135,7 @@ const AdminDashboardLayout: React.FC = () => {
   const getNavItems = (): NavItem[] => {
     const baseNavItems: NavItem[] = [
       { id: 'overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard' },
-      { id: 'metrics', name: 'Metrics', icon: ChartBarIcon, path: '/admin/dashboard/metrics' },
+      { id: 'metrics', name: 'Metrics', icon: ChartBarIcon, path: '/admin/dashboard/analytics' },
       { id: 'agents', name: 'Agent Management', icon: ViewGridIcon, path: '/admin/dashboard/agents' },
       { id: 'users', name: 'User Management', icon: UserGroupIcon, path: '/admin/dashboard/users', requiredPermission: 'manageUsers' },
       { id: 'roles', name: 'Roles & Permissions', icon: ShieldCheckIcon, path: '/admin/dashboard/roles', requiredPermission: 'manageRoles' },
@@ -188,9 +182,11 @@ const AdminDashboardLayout: React.FC = () => {
     return isAdmin || userPermissions.includes(item.requiredPermission);
   });
 
-  // Handle navigation item click
-  const handleNavClick = (id: string) => {
+  // Handle navigation item click - UPDATED to use navigate
+  const handleNavClick = (id: string, path: string) => {
     setCurrentSection(id);
+    navigate(path); // Use navigate to change routes
+    console.log(`Navigating to: ${path}`); // Debug log
   };
   
   // Refresh data periodically
@@ -207,6 +203,11 @@ const AdminDashboardLayout: React.FC = () => {
       return () => clearInterval(intervalId);
     }
   }, [isAdmin, isLoading, refreshVigilData]);
+
+  // Debug logs for authentication
+  console.log('Current user:', currentUser);
+  console.log('Is admin:', isAdmin);
+  console.log('User permissions:', userPermissions);
 
   if (isLoading) {
     return (
@@ -228,6 +229,7 @@ const AdminDashboardLayout: React.FC = () => {
   }
 
   if (!currentUser || !isAdmin) {
+    console.log('Access denied condition triggered');
     return (
       <div className="flex items-center justify-center h-screen w-full bg-navy-900">
         <div className="bg-navy-800 text-white p-4 rounded-lg shadow-lg max-w-lg">
@@ -261,7 +263,7 @@ const AdminDashboardLayout: React.FC = () => {
                   href={item.path}
                   onClick={(e) => {
                     e.preventDefault();
-                    handleNavClick(item.id);
+                    handleNavClick(item.id, item.path);
                   }}
                   className={`flex items-center px-4 py-3 text-sm ${
                     currentSection === item.id
@@ -299,10 +301,10 @@ const AdminDashboardLayout: React.FC = () => {
         <div className="p-4 border-t border-navy-700">
           <div className="flex items-center">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
-              {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'A'}
+              {currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'A'}
             </div>
             <div>
-              <p className="text-sm font-medium">{currentUser.displayName || currentUser.email}</p>
+              <p className="text-sm font-medium">{currentUser?.displayName || currentUser?.email || 'Admin User'}</p>
               <p className="text-xs text-gray-400">Administrator</p>
             </div>
           </div>
@@ -327,6 +329,19 @@ const AdminDashboardLayout: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
+              
+              {/* User profile button - Added for header navigation */}
+              <div className="relative">
+                <button 
+                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-navy-700 transition-colors duration-150"
+                  title="User Profile"
+                >
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    {currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                  <span className="hidden md:inline">{currentUser?.displayName || currentUser?.email || 'Admin User'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
