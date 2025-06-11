@@ -1,662 +1,496 @@
 /**
- * Analytics Integration Dashboard Component
+ * Analytics Dashboard Component
  * 
- * This component provides the interface for analytics integration with Vigil and PRISM,
- * showing data flow monitoring, governance violations, and system analytics.
+ * This component displays analytics data for the admin dashboard,
+ * including governance metrics, compliance status, and violation trends.
+ * Enhanced with VigilObserver integration for real-time governance data.
  */
 
 import React, { useState, useEffect } from 'react';
 import { useAdminDashboard } from './AdminDashboardContext';
-import dashboardDataService from '../core/firebase/dashboardDataService';
-import { ExtensionRegistry } from '../core/extensions/ExtensionRegistry';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
-// Analytics data interfaces
-interface VigilObservation {
-  id: string;
-  timestamp: Date;
-  agentId?: string;
-  userId?: string;
-  systemId?: string;
-  type: 'violation' | 'warning' | 'info';
-  category: string;
-  message: string;
-  details: any;
-  severity: number; // 1-10
-}
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-interface PrismDataFlow {
-  id: string;
-  timestamp: Date;
-  source: string;
-  destination: string;
-  dataType: string;
-  size: number;
-  duration: number;
-  status: 'success' | 'error' | 'pending';
-  metadata: any;
-}
-
-interface AnalyticsSummary {
-  vigilObservations: {
-    total: number;
-    violations: number;
-    warnings: number;
-    info: number;
-    byCategory: Record<string, number>;
-  };
-  prismDataFlows: {
-    total: number;
-    success: number;
-    error: number;
-    pending: number;
-    averageDuration: number;
-    totalDataSize: number;
-  };
-  timeframe: {
-    start: Date;
-    end: Date;
-  };
-}
-
-// Analytics card component
-const AnalyticsCard: React.FC<{
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  color?: 'blue' | 'green' | 'red' | 'purple' | 'yellow';
-}> = ({ title, value, subtitle, icon, color = 'blue' }) => {
-  // Color mapping
-  const colorClasses = {
-    blue: 'bg-blue-900 border-blue-700 text-blue-300',
-    green: 'bg-green-900 border-green-700 text-green-300',
-    red: 'bg-red-900 border-red-700 text-red-300',
-    purple: 'bg-purple-900 border-purple-700 text-purple-300',
-    yellow: 'bg-yellow-900 border-yellow-700 text-yellow-300'
-  };
-  
-  return (
-    <div className={`border rounded-lg p-4 ${colorClasses[color]}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium opacity-80">{title}</h3>
-        {icon && <div className="opacity-80">{icon}</div>}
-      </div>
-      <div className="text-2xl font-bold">{value}</div>
-      {subtitle && <div className="text-xs mt-1 opacity-70">{subtitle}</div>}
-    </div>
-  );
-};
-
-// Vigil observations table
-const VigilObservationsTable: React.FC<{ observations: VigilObservation[] }> = ({ observations }) => {
-  return (
-    <div className="bg-navy-800 rounded-lg p-4">
-      <h3 className="text-lg font-semibold text-blue-300 mb-4">Recent Governance Observations</h3>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-400 border-b border-navy-600">
-              <th className="pb-2">Type</th>
-              <th className="pb-2">Category</th>
-              <th className="pb-2">Message</th>
-              <th className="pb-2">Agent/System</th>
-              <th className="pb-2">Severity</th>
-              <th className="pb-2">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {observations.map(obs => (
-              <tr key={obs.id} className="border-b border-navy-600 hover:bg-navy-700">
-                <td className="py-3">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    obs.type === 'violation' ? 'bg-red-900 text-red-300' :
-                    obs.type === 'warning' ? 'bg-yellow-900 text-yellow-300' :
-                    'bg-blue-900 text-blue-300'
-                  }`}>
-                    {obs.type}
-                  </span>
-                </td>
-                <td className="py-3 text-gray-300">{obs.category}</td>
-                <td className="py-3 text-white">{obs.message}</td>
-                <td className="py-3 text-gray-300">{obs.agentId || obs.systemId || 'N/A'}</td>
-                <td className="py-3">
-                  <div className="w-full bg-navy-600 rounded-full h-1.5">
-                    <div 
-                      className={`h-1.5 rounded-full ${
-                        obs.severity > 7 ? 'bg-red-500' :
-                        obs.severity > 4 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${obs.severity * 10}%` }}
-                    ></div>
-                  </div>
-                </td>
-                <td className="py-3 text-gray-400">{obs.timestamp.toLocaleTimeString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {observations.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          No governance observations recorded
-        </div>
-      )}
-    </div>
-  );
-};
-
-// PRISM data flow visualization
-const PrismDataFlowVisualization: React.FC<{ dataFlows: PrismDataFlow[] }> = ({ dataFlows }) => {
-  // Group data flows by source and destination
-  const flowMap = React.useMemo(() => {
-    const map: Record<string, Record<string, PrismDataFlow[]>> = {};
-    
-    dataFlows.forEach(flow => {
-      if (!map[flow.source]) {
-        map[flow.source] = {};
-      }
-      
-      if (!map[flow.source][flow.destination]) {
-        map[flow.source][flow.destination] = [];
-      }
-      
-      map[flow.source][flow.destination].push(flow);
-    });
-    
-    return map;
-  }, [dataFlows]);
-  
-  // Get unique nodes (sources and destinations)
-  const nodes = React.useMemo(() => {
-    const nodeSet = new Set<string>();
-    
-    dataFlows.forEach(flow => {
-      nodeSet.add(flow.source);
-      nodeSet.add(flow.destination);
-    });
-    
-    return Array.from(nodeSet);
-  }, [dataFlows]);
-  
-  // Calculate node positions in a circular layout
-  const nodePositions = React.useMemo(() => {
-    const positions: Record<string, { x: number, y: number }> = {};
-    const centerX = 400;
-    const centerY = 250;
-    const radius = 200;
-    
-    nodes.forEach((node, index) => {
-      const angle = (index / nodes.length) * 2 * Math.PI;
-      positions[node] = {
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle)
-      };
-    });
-    
-    return positions;
-  }, [nodes]);
-  
-  return (
-    <div className="bg-navy-800 rounded-lg p-4">
-      <h3 className="text-lg font-semibold text-blue-300 mb-4">Data Flow Visualization</h3>
-      
-      <div className="relative h-[500px] bg-navy-900 rounded-lg overflow-hidden">
-        {/* Draw connections between nodes */}
-        <svg className="absolute top-0 left-0 w-full h-full">
-          {Object.entries(flowMap).map(([source, destinations]) => 
-            Object.entries(destinations).map(([destination, flows]) => {
-              const sourcePos = nodePositions[source];
-              const destPos = nodePositions[destination];
-              const flowCount = flows.length;
-              const errorCount = flows.filter(f => f.status === 'error').length;
-              const successRate = flowCount > 0 ? (flowCount - errorCount) / flowCount : 0;
-              
-              // Calculate stroke properties based on flow data
-              const strokeWidth = 1 + Math.min(5, Math.log2(flowCount + 1));
-              const strokeColor = errorCount > 0 ? '#ef4444' : '#3b82f6';
-              
-              return (
-                <g key={`${source}-${destination}`}>
-                  {/* Main connection line */}
-                  <line 
-                    x1={sourcePos.x} 
-                    y1={sourcePos.y} 
-                    x2={destPos.x} 
-                    y2={destPos.y} 
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    strokeOpacity={0.6}
-                  />
-                  
-                  {/* Flow indicator (animated dot) */}
-                  <circle 
-                    cx={sourcePos.x} 
-                    cy={sourcePos.y} 
-                    r={3}
-                    fill="#ffffff"
-                  >
-                    <animate 
-                      attributeName="cx" 
-                      from={sourcePos.x} 
-                      to={destPos.x} 
-                      dur="3s" 
-                      repeatCount="indefinite"
-                    />
-                    <animate 
-                      attributeName="cy" 
-                      from={sourcePos.y} 
-                      to={destPos.y} 
-                      dur="3s" 
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                  
-                  {/* Flow label */}
-                  <text 
-                    x={(sourcePos.x + destPos.x) / 2} 
-                    y={(sourcePos.y + destPos.y) / 2 - 10}
-                    fill="#9ca3af"
-                    fontSize="10"
-                    textAnchor="middle"
-                  >
-                    {flowCount} flows
-                  </text>
-                </g>
-              );
-            })
-          )}
-        </svg>
-        
-        {/* Draw nodes */}
-        {nodes.map(node => {
-          const pos = nodePositions[node];
-          return (
-            <div 
-              key={node}
-              className="absolute bg-navy-700 border border-blue-500 rounded-lg p-2 shadow-lg"
-              style={{ 
-                left: `${pos.x}px`, 
-                top: `${pos.y}px`,
-                transform: 'translate(-50%, -50%)',
-                minWidth: '100px'
-              }}
-            >
-              <div className="text-sm font-medium text-blue-300 text-center truncate">
-                {node}
-              </div>
-            </div>
-          );
-        })}
-        
-        {dataFlows.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            No data flows recorded
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Analytics dashboard component
 const AnalyticsDashboard: React.FC = () => {
-  const { currentUser, isAdmin } = useAdminDashboard();
-  const [timeframe, setTimeframe] = useState<'hour' | 'day' | 'week' | 'month'>('day');
-  const [vigilObservations, setVigilObservations] = useState<VigilObservation[]>([]);
-  const [prismDataFlows, setPrismDataFlows] = useState<PrismDataFlow[]>([]);
-  const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  // Fetch analytics data
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // Calculate timeframe dates
-        const endDate = new Date();
-        const startDate = new Date();
-        
-        switch (timeframe) {
-          case 'hour':
-            startDate.setHours(startDate.getHours() - 1);
-            break;
-          case 'day':
-            startDate.setDate(startDate.getDate() - 1);
-            break;
-          case 'week':
-            startDate.setDate(startDate.getDate() - 7);
-            break;
-          case 'month':
-            startDate.setMonth(startDate.getMonth() - 1);
-            break;
-        }
-        
-        // Get extension registry instance
-        const extensionRegistry = ExtensionRegistry.getInstance();
-        
-        // Get Vigil observer extension point
-        const vigilObserverExtensionPoint = extensionRegistry.getExtensionPoint('vigilObserver');
-        
-        // Get PRISM monitor extension point
-        const prismMonitorExtensionPoint = extensionRegistry.getExtensionPoint('prismMonitor');
-        
-        let observations: VigilObservation[] = [];
-        let dataFlows: PrismDataFlow[] = [];
-        
-        // If extension points exist and have implementations, use them
-        if (vigilObserverExtensionPoint && vigilObserverExtensionPoint.getImplementation()) {
-          observations = await vigilObserverExtensionPoint.execute('getObservations', {
-            startDate,
-            endDate,
-            limit: 100
-          });
-        } else {
-          // Otherwise, use mock data for demonstration
-          observations = generateMockVigilObservations(20, startDate, endDate);
-        }
-        
-        if (prismMonitorExtensionPoint && prismMonitorExtensionPoint.getImplementation()) {
-          dataFlows = await prismMonitorExtensionPoint.execute('getDataFlows', {
-            startDate,
-            endDate,
-            limit: 100
-          });
-        } else {
-          // Otherwise, use mock data for demonstration
-          dataFlows = generateMockPrismDataFlows(30, startDate, endDate);
-        }
-        
-        // Set fetched data
-        setVigilObservations(observations);
-        setPrismDataFlows(dataFlows);
-        
-        // Calculate analytics summary
-        const summary = calculateAnalyticsSummary(observations, dataFlows, startDate, endDate);
-        setAnalyticsSummary(summary);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch analytics data'));
-      } finally {
-        setIsLoading(false);
-      }
+  const {
+    vigilMetrics,
+    vigilViolations,
+    vigilEnforcements,
+    vigilComplianceStatus,
+    vigilObservations,
+    refreshVigilData,
+    isLoading
+  } = useAdminDashboard();
+
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week');
+
+  // Prepare chart data based on VigilObserver metrics
+  const prepareViolationsByRuleChart = () => {
+    if (!vigilMetrics || !vigilMetrics.violations || !vigilMetrics.violations.byRule) {
+      return {
+        labels: [],
+        datasets: [
+          {
+            label: 'Violations by Rule',
+            data: [],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          },
+        ],
+      };
+    }
+
+    const byRule = vigilMetrics.violations.byRule;
+    const labels = Object.keys(byRule);
+    const data = labels.map(rule => byRule[rule]);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Violations by Rule',
+          data,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        },
+      ],
     };
-    
-    fetchAnalyticsData();
-  }, [timeframe]);
-  
-  // Calculate analytics summary
-  const calculateAnalyticsSummary = (
-    observations: VigilObservation[],
-    dataFlows: PrismDataFlow[],
-    startDate: Date,
-    endDate: Date
-  ): AnalyticsSummary => {
-    // Calculate Vigil observations summary
-    const vigilSummary = {
-      total: observations.length,
-      violations: observations.filter(obs => obs.type === 'violation').length,
-      warnings: observations.filter(obs => obs.type === 'warning').length,
-      info: observations.filter(obs => obs.type === 'info').length,
-      byCategory: {} as Record<string, number>
-    };
-    
-    // Count by category
-    observations.forEach(obs => {
-      if (!vigilSummary.byCategory[obs.category]) {
-        vigilSummary.byCategory[obs.category] = 0;
+  };
+
+  const prepareViolationsBySeverityChart = () => {
+    if (!vigilMetrics || !vigilMetrics.violations || !vigilMetrics.violations.bySeverity) {
+      return {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [],
+          },
+        ],
+      };
+    }
+
+    const bySeverity = vigilMetrics.violations.bySeverity;
+    const labels = Object.keys(bySeverity);
+    const data = labels.map(severity => bySeverity[severity]);
+
+    // Color mapping for severity levels
+    const backgroundColors = labels.map(severity => {
+      switch (severity.toLowerCase()) {
+        case 'critical':
+          return 'rgba(255, 99, 132, 0.8)';
+        case 'high':
+          return 'rgba(255, 159, 64, 0.8)';
+        case 'medium':
+          return 'rgba(255, 205, 86, 0.8)';
+        case 'low':
+          return 'rgba(75, 192, 192, 0.8)';
+        default:
+          return 'rgba(201, 203, 207, 0.8)';
       }
-      vigilSummary.byCategory[obs.category]++;
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: backgroundColors,
+          borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const prepareComplianceTrendChart = () => {
+    // For a real implementation, this would use historical data
+    // Here we'll simulate some data based on the current compliance score
+    const score = vigilComplianceStatus?.complianceScore || 0;
+    
+    // Generate some fake historical data around the current score
+    const days = timeRange === 'day' ? 7 : timeRange === 'week' ? 12 : 30;
+    const labels = Array.from({ length: days }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - i - 1));
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
     
-    // Calculate PRISM data flows summary
-    const successFlows = dataFlows.filter(flow => flow.status === 'success');
-    const errorFlows = dataFlows.filter(flow => flow.status === 'error');
-    const pendingFlows = dataFlows.filter(flow => flow.status === 'pending');
-    
-    const totalDuration = successFlows.reduce((sum, flow) => sum + flow.duration, 0);
-    const averageDuration = successFlows.length > 0 ? totalDuration / successFlows.length : 0;
-    
-    const totalDataSize = dataFlows.reduce((sum, flow) => sum + flow.size, 0);
-    
-    const prismSummary = {
-      total: dataFlows.length,
-      success: successFlows.length,
-      error: errorFlows.length,
-      pending: pendingFlows.length,
-      averageDuration,
-      totalDataSize
-    };
-    
+    // Generate data with some random variation but trending toward current score
+    const data = labels.map((_, i) => {
+      const progress = i / (days - 1); // 0 to 1
+      const baseScore = 70 + Math.random() * 10; // Start around 70-80
+      const targetScore = score;
+      const currentScore = baseScore + (targetScore - baseScore) * progress;
+      // Add some noise
+      return Math.max(0, Math.min(100, currentScore + (Math.random() * 10 - 5)));
+    });
+
     return {
-      vigilObservations: vigilSummary,
-      prismDataFlows: prismSummary,
-      timeframe: {
-        start: startDate,
-        end: endDate
-      }
+      labels,
+      datasets: [
+        {
+          label: 'Compliance Score Trend',
+          data,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.4,
+          fill: true,
+        },
+      ],
     };
   };
-  
-  // Generate mock Vigil observations for demonstration
-  const generateMockVigilObservations = (
-    count: number,
-    startDate: Date,
-    endDate: Date
-  ): VigilObservation[] => {
-    const observations: VigilObservation[] = [];
-    const types = ['violation', 'warning', 'info'] as const;
-    const categories = [
-      'boundary_enforcement',
-      'data_access',
-      'authentication',
-      'authorization',
-      'input_validation',
-      'output_sanitization'
-    ];
-    
-    const timeRange = endDate.getTime() - startDate.getTime();
-    
-    for (let i = 0; i < count; i++) {
-      const type = types[Math.floor(Math.random() * types.length)];
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const severity = type === 'violation' ? 7 + Math.floor(Math.random() * 4) :
-                      type === 'warning' ? 4 + Math.floor(Math.random() * 3) :
-                      1 + Math.floor(Math.random() * 3);
-      
-      const timestamp = new Date(startDate.getTime() + Math.random() * timeRange);
-      
-      observations.push({
-        id: `obs-${i}`,
-        timestamp,
-        type,
-        category,
-        message: `${type === 'violation' ? 'Governance violation' : type === 'warning' ? 'Potential issue' : 'Information'} in ${category} module`,
-        details: { mock: true },
-        severity,
-        agentId: Math.random() > 0.5 ? `agent-${Math.floor(Math.random() * 5)}` : undefined,
-        systemId: Math.random() > 0.7 ? `system-${Math.floor(Math.random() * 3)}` : undefined,
-        userId: `user-${Math.floor(Math.random() * 3)}`
-      });
+
+  const prepareEnforcementsByActionChart = () => {
+    if (!vigilMetrics || !vigilMetrics.enforcements || !vigilMetrics.enforcements.byAction) {
+      return {
+        labels: [],
+        datasets: [
+          {
+            label: 'Enforcements by Action',
+            data: [],
+            backgroundColor: 'rgba(153, 102, 255, 0.5)',
+          },
+        ],
+      };
     }
-    
-    // Sort by timestamp, most recent first
-    return observations.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  };
-  
-  // Generate mock PRISM data flows for demonstration
-  const generateMockPrismDataFlows = (
-    count: number,
-    startDate: Date,
-    endDate: Date
-  ): PrismDataFlow[] => {
-    const dataFlows: PrismDataFlow[] = [];
-    const sources = ['AgentA', 'AgentB', 'AgentC', 'SystemX', 'SystemY', 'UserInterface'];
-    const destinations = ['Database', 'API', 'FileSystem', 'AgentA', 'AgentB', 'AgentC', 'SystemX', 'SystemY'];
-    const dataTypes = ['text', 'image', 'audio', 'structured', 'binary'];
-    const statuses = ['success', 'error', 'pending'] as const;
-    
-    const timeRange = endDate.getTime() - startDate.getTime();
-    
-    for (let i = 0; i < count; i++) {
-      const source = sources[Math.floor(Math.random() * sources.length)];
-      let destination = destinations[Math.floor(Math.random() * destinations.length)];
-      
-      // Ensure source and destination are different
-      while (source === destination) {
-        destination = destinations[Math.floor(Math.random() * destinations.length)];
+
+    const byAction = vigilMetrics.enforcements.byAction;
+    const labels = Object.keys(byAction);
+    const data = labels.map(action => byAction[action]);
+
+    // Color mapping for action types
+    const backgroundColors = labels.map(action => {
+      switch (action.toLowerCase()) {
+        case 'blocked':
+          return 'rgba(255, 99, 132, 0.5)';
+        case 'warned':
+          return 'rgba(255, 205, 86, 0.5)';
+        case 'logged':
+          return 'rgba(75, 192, 192, 0.5)';
+        default:
+          return 'rgba(153, 102, 255, 0.5)';
       }
-      
-      const dataType = dataTypes[Math.floor(Math.random() * dataTypes.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const size = Math.floor(Math.random() * 1000) + 1; // 1-1000 KB
-      const duration = Math.floor(Math.random() * 500) + 10; // 10-510 ms
-      
-      const timestamp = new Date(startDate.getTime() + Math.random() * timeRange);
-      
-      dataFlows.push({
-        id: `flow-${i}`,
-        timestamp,
-        source,
-        destination,
-        dataType,
-        size,
-        duration,
-        status,
-        metadata: { mock: true }
-      });
-    }
-    
-    // Sort by timestamp, most recent first
-    return dataFlows.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Enforcements by Action',
+          data,
+          backgroundColor: backgroundColors,
+        },
+      ],
+    };
   };
-  
-  // Handle timeframe change
-  const handleTimeframeChange = (newTimeframe: 'hour' | 'day' | 'week' | 'month') => {
-    setTimeframe(newTimeframe);
+
+  // Chart options
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+      x: {
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+    },
   };
-  
-  if (error) {
+
+  const lineOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+      },
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+      x: {
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+    },
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+      },
+    },
+  };
+
+  // Refresh data when time range changes
+  useEffect(() => {
+    refreshVigilData();
+  }, [timeRange, refreshVigilData]);
+
+  if (isLoading) {
     return (
-      <div className="bg-red-900 text-white p-4 rounded-lg">
-        <h2 className="text-xl font-bold mb-2">Error</h2>
-        <p>{error.message}</p>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
-  
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-blue-300">Analytics Dashboard</h2>
-        
-        <div className="flex items-center space-x-2">
+    <div className="space-y-6">
+      {/* Header with time range selector */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Governance Analytics</h1>
+        <div className="flex space-x-2">
           <button
-            className={`px-3 py-1 rounded ${timeframe === 'hour' ? 'bg-blue-700 text-white' : 'bg-navy-700 text-gray-300 hover:bg-navy-600'}`}
-            onClick={() => handleTimeframeChange('hour')}
-          >
-            Hour
-          </button>
-          <button
-            className={`px-3 py-1 rounded ${timeframe === 'day' ? 'bg-blue-700 text-white' : 'bg-navy-700 text-gray-300 hover:bg-navy-600'}`}
-            onClick={() => handleTimeframeChange('day')}
+            onClick={() => setTimeRange('day')}
+            className={`px-3 py-1 rounded ${
+              timeRange === 'day'
+                ? 'bg-blue-600 text-white'
+                : 'bg-navy-700 text-gray-300 hover:bg-navy-600'
+            }`}
           >
             Day
           </button>
           <button
-            className={`px-3 py-1 rounded ${timeframe === 'week' ? 'bg-blue-700 text-white' : 'bg-navy-700 text-gray-300 hover:bg-navy-600'}`}
-            onClick={() => handleTimeframeChange('week')}
+            onClick={() => setTimeRange('week')}
+            className={`px-3 py-1 rounded ${
+              timeRange === 'week'
+                ? 'bg-blue-600 text-white'
+                : 'bg-navy-700 text-gray-300 hover:bg-navy-600'
+            }`}
           >
             Week
           </button>
           <button
-            className={`px-3 py-1 rounded ${timeframe === 'month' ? 'bg-blue-700 text-white' : 'bg-navy-700 text-gray-300 hover:bg-navy-600'}`}
-            onClick={() => handleTimeframeChange('month')}
+            onClick={() => setTimeRange('month')}
+            className={`px-3 py-1 rounded ${
+              timeRange === 'month'
+                ? 'bg-blue-600 text-white'
+                : 'bg-navy-700 text-gray-300 hover:bg-navy-600'
+            }`}
           >
             Month
           </button>
         </div>
       </div>
-      
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : (
-        <>
-          {/* Analytics summary cards */}
-          {analyticsSummary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <AnalyticsCard
-                title="Governance Violations"
-                value={analyticsSummary.vigilObservations.violations}
-                subtitle={`Out of ${analyticsSummary.vigilObservations.total} observations`}
-                color="red"
-              />
-              <AnalyticsCard
-                title="Warnings"
-                value={analyticsSummary.vigilObservations.warnings}
-                color="yellow"
-              />
-              <AnalyticsCard
-                title="Data Flow Success Rate"
-                value={`${analyticsSummary.prismDataFlows.total > 0 
-                  ? Math.round((analyticsSummary.prismDataFlows.success / analyticsSummary.prismDataFlows.total) * 100) 
-                  : 0}%`}
-                subtitle={`${analyticsSummary.prismDataFlows.success} of ${analyticsSummary.prismDataFlows.total} flows`}
-                color="green"
-              />
-              <AnalyticsCard
-                title="Avg Response Time"
-                value={`${Math.round(analyticsSummary.prismDataFlows.averageDuration)} ms`}
-                subtitle={`${(analyticsSummary.prismDataFlows.totalDataSize / 1024).toFixed(2)} MB total data`}
-                color="blue"
-              />
+
+      {/* Compliance Status Summary */}
+      <div className="bg-navy-800 rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">Compliance Status</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-navy-700 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">Compliance Score</h3>
+            <div className="flex items-end mt-2">
+              <span className="text-3xl font-bold">
+                {vigilComplianceStatus?.complianceScore || 0}%
+              </span>
             </div>
-          )}
-          
-          {/* Main content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Vigil observations */}
-            <VigilObservationsTable observations={vigilObservations} />
-            
-            {/* PRISM data flow visualization */}
-            <PrismDataFlowVisualization dataFlows={prismDataFlows} />
           </div>
-          
-          {/* Additional analytics */}
-          <div className="mt-6 bg-navy-800 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-blue-300 mb-4">Governance Categories</h3>
-            
-            {analyticsSummary && Object.keys(analyticsSummary.vigilObservations.byCategory).length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(analyticsSummary.vigilObservations.byCategory).map(([category, count]) => (
-                  <div key={category} className="bg-navy-700 p-3 rounded">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="font-medium text-blue-300">{category.replace('_', ' ')}</div>
-                      <div className="text-white">{count}</div>
-                    </div>
-                    <div className="w-full bg-navy-600 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full" 
-                        style={{ width: `${(count / analyticsSummary.vigilObservations.total) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                No category data available
-              </div>
-            )}
+          <div className="bg-navy-700 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">Total Violations</h3>
+            <div className="flex items-end mt-2">
+              <span className="text-3xl font-bold">
+                {vigilComplianceStatus?.violationCount || 0}
+              </span>
+            </div>
           </div>
-        </>
-      )}
+          <div className="bg-navy-700 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">Total Enforcements</h3>
+            <div className="flex items-end mt-2">
+              <span className="text-3xl font-bold">
+                {vigilComplianceStatus?.enforcementCount || 0}
+              </span>
+            </div>
+          </div>
+          <div className="bg-navy-700 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">Status</h3>
+            <div className="flex items-center mt-2">
+              <div
+                className={`h-3 w-3 rounded-full mr-2 ${
+                  vigilComplianceStatus?.compliant
+                    ? 'bg-green-500'
+                    : 'bg-red-500'
+                }`}
+              ></div>
+              <span className="text-lg font-medium">
+                {vigilComplianceStatus?.compliant
+                  ? 'Compliant'
+                  : 'Non-Compliant'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Violations by Rule */}
+        <div className="bg-navy-800 rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Violations by Rule</h2>
+          <div className="h-64">
+            <Bar data={prepareViolationsByRuleChart()} options={barOptions} />
+          </div>
+        </div>
+
+        {/* Violations by Severity */}
+        <div className="bg-navy-800 rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Violations by Severity</h2>
+          <div className="h-64 flex items-center justify-center">
+            <Doughnut
+              data={prepareViolationsBySeverityChart()}
+              options={doughnutOptions}
+            />
+          </div>
+        </div>
+
+        {/* Compliance Trend */}
+        <div className="bg-navy-800 rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Compliance Score Trend</h2>
+          <div className="h-64">
+            <Line data={prepareComplianceTrendChart()} options={lineOptions} />
+          </div>
+        </div>
+
+        {/* Enforcements by Action */}
+        <div className="bg-navy-800 rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Enforcements by Action</h2>
+          <div className="h-64">
+            <Bar
+              data={prepareEnforcementsByActionChart()}
+              options={barOptions}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Violations Table */}
+      <div className="bg-navy-800 rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Violations</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-navy-600">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Rule ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Severity
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Agent
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Timestamp
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-navy-700">
+              {vigilViolations.slice(0, 5).map((violation, index) => (
+                <tr key={index} className="hover:bg-navy-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {violation.ruleId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        violation.severity === 'critical'
+                          ? 'bg-red-900 text-red-200'
+                          : violation.severity === 'high'
+                          ? 'bg-orange-900 text-orange-200'
+                          : violation.severity === 'medium'
+                          ? 'bg-yellow-900 text-yellow-200'
+                          : 'bg-blue-900 text-blue-200'
+                      }`}
+                    >
+                      {violation.severity}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {violation.agentId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    {new Date(violation.timestamp).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {vigilViolations.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-4 text-center text-sm text-gray-400"
+                  >
+                    No violations found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

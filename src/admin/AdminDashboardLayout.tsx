@@ -3,6 +3,7 @@
  * 
  * This component provides the main layout structure for the admin dashboard,
  * including the header, sidebar navigation, and content area.
+ * Enhanced with VigilObserver integration for governance metrics display.
  */
 
 import React from 'react';
@@ -17,7 +18,9 @@ import {
   CogIcon, 
   ShieldCheckIcon,
   ViewGridIcon,
-  DocumentReportIcon
+  DocumentReportIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon
 } from '@heroicons/react/outline';
 
 // Navigation item interface
@@ -27,18 +30,99 @@ interface NavItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   path: string;
   requiredPermission?: string;
+  badge?: {
+    count: number;
+    type: 'warning' | 'error' | 'success' | 'info';
+  };
 }
 
-// Navigation sections
-const navItems: NavItem[] = [
-  { id: 'overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard' },
-  { id: 'metrics', name: 'Metrics', icon: ChartBarIcon, path: '/admin/dashboard/metrics' },
-  { id: 'agents', name: 'Agent Management', icon: ViewGridIcon, path: '/admin/dashboard/agents' },
-  { id: 'users', name: 'User Management', icon: UserGroupIcon, path: '/admin/dashboard/users', requiredPermission: 'manageUsers' },
-  { id: 'roles', name: 'Roles & Permissions', icon: ShieldCheckIcon, path: '/admin/dashboard/roles', requiredPermission: 'manageRoles' },
-  { id: 'analytics', name: 'Analytics', icon: DocumentReportIcon, path: '/admin/dashboard/analytics' },
-  { id: 'settings', name: 'Settings', icon: CogIcon, path: '/admin/dashboard/settings' }
-];
+// Governance Status Summary component
+const GovernanceStatusSummary: React.FC = () => {
+  const { vigilComplianceStatus, vigilMetrics } = useAdminDashboard();
+  
+  if (!vigilComplianceStatus || !vigilMetrics) {
+    return (
+      <div className="bg-navy-700 rounded-lg p-4 mb-4">
+        <div className="flex items-center">
+          <div className="animate-pulse h-4 w-4 bg-gray-500 rounded-full mr-2"></div>
+          <p className="text-gray-400 text-sm">Loading governance status...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const { compliant, violationCount, enforcementCount, complianceScore } = vigilComplianceStatus;
+  
+  // Determine status color
+  const getStatusColor = () => {
+    if (compliant) return 'bg-green-500';
+    if (violationCount > 0) {
+      const criticalCount = vigilMetrics?.violations?.bySeverity?.critical || 0;
+      return criticalCount > 0 ? 'bg-red-500' : 'bg-yellow-500';
+    }
+    return 'bg-gray-500';
+  };
+  
+  // Determine status icon
+  const StatusIcon = compliant ? CheckCircleIcon : ExclamationCircleIcon;
+  
+  return (
+    <div className="bg-navy-700 rounded-lg p-4 mb-4">
+      <h3 className="text-sm font-medium text-gray-300 mb-2">Governance Status</h3>
+      
+      <div className="flex items-center mb-3">
+        <div className={`h-4 w-4 ${getStatusColor()} rounded-full mr-2`}></div>
+        <p className="text-sm font-medium">
+          {compliant ? 'Compliant' : 'Violations Detected'}
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-navy-800 p-2 rounded">
+          <p className="text-gray-400">Compliance Score</p>
+          <p className="text-lg font-bold">{complianceScore}%</p>
+        </div>
+        <div className="bg-navy-800 p-2 rounded">
+          <p className="text-gray-400">Violations</p>
+          <p className="text-lg font-bold">{violationCount}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Recent Activity component
+const RecentActivity: React.FC = () => {
+  const { vigilObservations } = useAdminDashboard();
+  
+  if (!vigilObservations || vigilObservations.length === 0) {
+    return (
+      <div className="bg-navy-700 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-gray-300 mb-2">Recent Activity</h3>
+        <p className="text-sm text-gray-400">No recent activity</p>
+      </div>
+    );
+  }
+  
+  // Get the 5 most recent observations
+  const recentObservations = vigilObservations.slice(0, 5);
+  
+  return (
+    <div className="bg-navy-700 rounded-lg p-4">
+      <h3 className="text-sm font-medium text-gray-300 mb-2">Recent Activity</h3>
+      <ul className="space-y-2">
+        {recentObservations.map((observation) => (
+          <li key={observation.id} className="text-xs border-l-2 border-blue-500 pl-2">
+            <p className="font-medium">{observation.message}</p>
+            <p className="text-gray-400">
+              {new Date(observation.timestamp).toLocaleString()}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 const AdminDashboardLayout: React.FC = () => {
   const { 
@@ -48,8 +132,55 @@ const AdminDashboardLayout: React.FC = () => {
     setCurrentSection,
     userPermissions,
     isLoading,
-    error
+    error,
+    vigilMetrics,
+    refreshVigilData
   } = useAdminDashboard();
+
+  // Create navigation items with badges from vigilMetrics
+  const getNavItems = (): NavItem[] => {
+    const baseNavItems: NavItem[] = [
+      { id: 'overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard' },
+      { id: 'metrics', name: 'Metrics', icon: ChartBarIcon, path: '/admin/dashboard/metrics' },
+      { id: 'agents', name: 'Agent Management', icon: ViewGridIcon, path: '/admin/dashboard/agents' },
+      { id: 'users', name: 'User Management', icon: UserGroupIcon, path: '/admin/dashboard/users', requiredPermission: 'manageUsers' },
+      { id: 'roles', name: 'Roles & Permissions', icon: ShieldCheckIcon, path: '/admin/dashboard/roles', requiredPermission: 'manageRoles' },
+      { id: 'analytics', name: 'Analytics', icon: DocumentReportIcon, path: '/admin/dashboard/analytics' },
+      { id: 'settings', name: 'Settings', icon: CogIcon, path: '/admin/dashboard/settings' }
+    ];
+    
+    // Add badges if we have vigilMetrics
+    if (vigilMetrics) {
+      // Add violation count badge to metrics
+      const violationCount = vigilMetrics.violations?.total || 0;
+      if (violationCount > 0) {
+        const metricsIndex = baseNavItems.findIndex(item => item.id === 'metrics');
+        if (metricsIndex !== -1) {
+          baseNavItems[metricsIndex].badge = {
+            count: violationCount,
+            type: 'warning'
+          };
+        }
+        
+        // Add critical violations badge to analytics
+        const criticalCount = vigilMetrics.violations?.bySeverity?.critical || 0;
+        if (criticalCount > 0) {
+          const analyticsIndex = baseNavItems.findIndex(item => item.id === 'analytics');
+          if (analyticsIndex !== -1) {
+            baseNavItems[analyticsIndex].badge = {
+              count: criticalCount,
+              type: 'error'
+            };
+          }
+        }
+      }
+    }
+    
+    return baseNavItems;
+  };
+
+  // Get navigation items with badges
+  const navItems = getNavItems();
 
   // Filter navigation items based on permissions
   const filteredNavItems = navItems.filter(item => {
@@ -61,6 +192,21 @@ const AdminDashboardLayout: React.FC = () => {
   const handleNavClick = (id: string) => {
     setCurrentSection(id);
   };
+  
+  // Refresh data periodically
+  React.useEffect(() => {
+    if (isAdmin && !isLoading) {
+      // Initial data load
+      refreshVigilData();
+      
+      // Set up interval for refreshing data
+      const intervalId = setInterval(() => {
+        refreshVigilData();
+      }, 60000); // Refresh every minute
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [isAdmin, isLoading, refreshVigilData]);
 
   if (isLoading) {
     return (
@@ -101,8 +247,13 @@ const AdminDashboardLayout: React.FC = () => {
           <h1 className="text-xl font-bold text-blue-400">Promethios Admin</h1>
         </div>
         
+        {/* Governance Status Summary */}
+        <div className="px-4 py-3">
+          <GovernanceStatusSummary />
+        </div>
+        
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-2">
           <ul>
             {filteredNavItems.map((item) => (
               <li key={item.id}>
@@ -119,12 +270,30 @@ const AdminDashboardLayout: React.FC = () => {
                   }`}
                 >
                   <item.icon className="h-5 w-5 mr-3" />
-                  {item.name}
+                  <span className="flex-1">{item.name}</span>
+                  
+                  {/* Badge */}
+                  {item.badge && (
+                    <span className={`
+                      inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none rounded-full
+                      ${item.badge.type === 'error' ? 'bg-red-500 text-white' : 
+                        item.badge.type === 'warning' ? 'bg-yellow-500 text-navy-900' : 
+                        item.badge.type === 'success' ? 'bg-green-500 text-white' : 
+                        'bg-blue-500 text-white'}
+                    `}>
+                      {item.badge.count}
+                    </span>
+                  )}
                 </a>
               </li>
             ))}
           </ul>
         </nav>
+        
+        {/* Recent Activity */}
+        <div className="px-4 py-3">
+          <RecentActivity />
+        </div>
         
         {/* User info */}
         <div className="p-4 border-t border-navy-700">
@@ -149,7 +318,15 @@ const AdminDashboardLayout: React.FC = () => {
               {navItems.find(item => item.id === currentSection)?.name || 'Dashboard'}
             </h2>
             <div className="flex items-center space-x-4">
-              {/* Additional header elements can go here */}
+              <button 
+                onClick={() => refreshVigilData()}
+                className="p-2 rounded-full hover:bg-navy-700 transition-colors duration-150"
+                title="Refresh Data"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
           </div>
         </header>

@@ -11,6 +11,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import authService from '../core/firebase/authService';
 import rbacService from '../core/firebase/rbacService';
 import dashboardDataService from '../core/firebase/dashboardDataService';
+import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
+import { EXTENSION_VERSION } from '../core/extensions/vigilObserverExtension';
 
 // Context interface
 interface AdminDashboardContextType {
@@ -30,6 +32,19 @@ interface AdminDashboardContextType {
   // Error handling
   error: Error | null;
   clearError: () => void;
+  
+  // VigilObserver data
+  vigilMetrics: any;
+  vigilViolations: any[];
+  vigilEnforcements: any[];
+  vigilComplianceStatus: any;
+  vigilObservations: any[];
+  
+  // VigilObserver actions
+  refreshVigilData: () => Promise<void>;
+  getVigilMetricsByCategory: (category: string) => any;
+  getVigilViolationsByRule: (ruleId: string, severity?: string) => any[];
+  getVigilEnforcementsByAction: (action: string, ruleId?: string) => any[];
 }
 
 // Create context with default values
@@ -49,7 +64,20 @@ const AdminDashboardContext = createContext<AdminDashboardContextType>({
   
   // Error handling
   error: null,
-  clearError: () => {}
+  clearError: () => {},
+  
+  // VigilObserver data
+  vigilMetrics: null,
+  vigilViolations: [],
+  vigilEnforcements: [],
+  vigilComplianceStatus: null,
+  vigilObservations: [],
+  
+  // VigilObserver actions
+  refreshVigilData: async () => {},
+  getVigilMetricsByCategory: () => ({}),
+  getVigilViolationsByRule: () => [],
+  getVigilEnforcementsByAction: () => []
 });
 
 // Hook for using the admin dashboard context
@@ -69,6 +97,13 @@ export const AdminDashboardProvider: React.FC<{ children: React.ReactNode }> = (
   // Loading and error states
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  
+  // VigilObserver state
+  const [vigilMetrics, setVigilMetrics] = useState<any>(null);
+  const [vigilViolations, setVigilViolations] = useState<any[]>([]);
+  const [vigilEnforcements, setVigilEnforcements] = useState<any[]>([]);
+  const [vigilComplianceStatus, setVigilComplianceStatus] = useState<any>(null);
+  const [vigilObservations, setVigilObservations] = useState<any[]>([]);
   
   // Router hooks
   const navigate = useNavigate();
@@ -133,6 +168,121 @@ export const AdminDashboardProvider: React.FC<{ children: React.ReactNode }> = (
     }
   }, [location.pathname]);
   
+  // Effect for loading VigilObserver data
+  useEffect(() => {
+    // Only load data if user is authenticated and admin
+    if (currentUser && isAdmin && !isLoading) {
+      refreshVigilData();
+    }
+  }, [currentUser, isAdmin, isLoading]);
+  
+  // Function to refresh VigilObserver data
+  const refreshVigilData = async () => {
+    try {
+      const vigilObserverExtensionPoint = getVigilObserverExtensionPoint();
+      if (!vigilObserverExtensionPoint) {
+        console.error('VigilObserver extension point not found');
+        return;
+      }
+      
+      const implementation = vigilObserverExtensionPoint.getDefault();
+      if (!implementation) {
+        console.error('VigilObserver implementation not found');
+        return;
+      }
+      
+      // Get metrics
+      const metrics = implementation.getMetrics();
+      setVigilMetrics(metrics);
+      
+      // Get violations
+      const violations = implementation.getViolations();
+      setVigilViolations(violations);
+      
+      // Get enforcements
+      const enforcements = implementation.getEnforcements();
+      setVigilEnforcements(enforcements);
+      
+      // Get compliance status
+      const complianceStatus = implementation.analyzeComplianceStatus();
+      setVigilComplianceStatus(complianceStatus);
+      
+      // Get observations (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const observations = await implementation.getObservations({
+        startDate: thirtyDaysAgo.toISOString(),
+        limit: 100
+      });
+      setVigilObservations(observations);
+      
+    } catch (err) {
+      console.error('Error loading VigilObserver data:', err);
+      setError(err instanceof Error ? err : new Error('Error loading VigilObserver data'));
+    }
+  };
+  
+  // Function to get metrics by category
+  const getVigilMetricsByCategory = (category: string) => {
+    try {
+      const vigilObserverExtensionPoint = getVigilObserverExtensionPoint();
+      if (!vigilObserverExtensionPoint) {
+        return {};
+      }
+      
+      const implementation = vigilObserverExtensionPoint.getDefault();
+      if (!implementation) {
+        return {};
+      }
+      
+      return implementation.getMetrics(category);
+    } catch (err) {
+      console.error('Error getting VigilObserver metrics by category:', err);
+      return {};
+    }
+  };
+  
+  // Function to get violations by rule
+  const getVigilViolationsByRule = (ruleId: string, severity?: string) => {
+    try {
+      const vigilObserverExtensionPoint = getVigilObserverExtensionPoint();
+      if (!vigilObserverExtensionPoint) {
+        return [];
+      }
+      
+      const implementation = vigilObserverExtensionPoint.getDefault();
+      if (!implementation) {
+        return [];
+      }
+      
+      return implementation.getViolations(ruleId, severity || '');
+    } catch (err) {
+      console.error('Error getting VigilObserver violations by rule:', err);
+      return [];
+    }
+  };
+  
+  // Function to get enforcements by action
+  const getVigilEnforcementsByAction = (action: string, ruleId?: string) => {
+    try {
+      const vigilObserverExtensionPoint = getVigilObserverExtensionPoint();
+      if (!vigilObserverExtensionPoint) {
+        return [];
+      }
+      
+      const implementation = vigilObserverExtensionPoint.getDefault();
+      if (!implementation) {
+        return [];
+      }
+      
+      return implementation.getEnforcements(action, ruleId || '');
+    } catch (err) {
+      console.error('Error getting VigilObserver enforcements by action:', err);
+      return [];
+    }
+  };
+  
   // Context value
   const contextValue: AdminDashboardContextType = {
     // Authentication
@@ -150,7 +300,20 @@ export const AdminDashboardProvider: React.FC<{ children: React.ReactNode }> = (
     
     // Error handling
     error,
-    clearError
+    clearError,
+    
+    // VigilObserver data
+    vigilMetrics,
+    vigilViolations,
+    vigilEnforcements,
+    vigilComplianceStatus,
+    vigilObservations,
+    
+    // VigilObserver actions
+    refreshVigilData,
+    getVigilMetricsByCategory,
+    getVigilViolationsByRule,
+    getVigilEnforcementsByAction
   };
   
   return (

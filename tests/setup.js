@@ -1,20 +1,22 @@
 /**
  * Test Setup for Promethios
  * 
- * This file configures the test environment for Mocha tests.
+ * This file contains setup code for the test environment.
  */
 
-// Configure test environment
-process.env.NODE_ENV = 'test';
+// Add TextEncoder and TextDecoder polyfills for Jest environment
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
-// Create test directories if needed
-const fs = require('fs');
-const path = require('path');
+// Import jest-dom for custom DOM matchers
+require('@testing-library/jest-dom');
 
-const testDataDir = path.join(process.cwd(), 'test_data');
-if (!fs.existsSync(testDataDir)) {
-  fs.mkdirSync(testDataDir, { recursive: true });
-}
+// Mock any global objects needed for tests
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
 
-// Note: Mocha hooks (before/after) should only be used within describe blocks in test files,
-// not at the top level of the setup file.
+// Add any other global test setup here
