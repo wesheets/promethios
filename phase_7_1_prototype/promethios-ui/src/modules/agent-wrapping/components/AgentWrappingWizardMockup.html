@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Wrapping Wizard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .wizard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .step-active {
+            background-color: #4299e1;
+            color: white;
+        }
+        .step-completed {
+            background-color: #48bb78;
+            color: white;
+        }
+        .step-inactive {
+            background-color: #4a5568;
+            color: #a0aec0;
+        }
+        .step-connector {
+            flex-grow: 1;
+            height: 2px;
+            background-color: #4a5568;
+        }
+        .connector-active {
+            background-color: #4299e1;
+        }
+        .connector-completed {
+            background-color: #48bb78;
+        }
+        .form-input {
+            background-color: #2d3748;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .form-select {
+            background-color: #2d3748;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background-color: #4299e1;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #3182ce;
+        }
+        .btn-secondary {
+            background-color: #4a5568;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #2d3748;
+        }
+        .card {
+            background-color: #2d3748;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4a5568;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #4299e1;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Wrap New Agent</h1>
+                <p class="text-gray-400">Connect your AI agent API with governance controls</p>
+            </div>
+            <button class="btn btn-secondary">Cancel</button>
+        </div>
+
+        <!-- Wizard Container -->
+        <div class="wizard-container">
+            <!-- Step Indicators -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-active">1</div>
+                    <span class="text-sm mt-2">API Endpoint</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">2</div>
+                    <span class="text-sm mt-2">Schema</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">3</div>
+                    <span class="text-sm mt-2">Governance</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">4</div>
+                    <span class="text-sm mt-2">Review</span>
+                </div>
+            </div>
+
+            <!-- Step 1: API Endpoint -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">1. Connect Your Agent API</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Agent Name</label>
+                    <input type="text" class="form-input" placeholder="e.g., Content Generator, Customer Support Bot">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">API Provider</label>
+                    <select class="form-select">
+                        <option>OpenAI</option>
+                        <option>Anthropic</option>
+                        <option>Cohere</option>
+                        <option>Custom</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">API Endpoint URL</label>
+                    <input type="text" class="form-input" placeholder="https://api.example.com/v1/chat/completions">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Authentication</label>
+                    <select class="form-select mb-2">
+                        <option>API Key</option>
+                        <option>OAuth 2.0</option>
+                        <option>Bearer Token</option>
+                        <option>No Authentication</option>
+                    </select>
+                    <input type="text" class="form-input" placeholder="Enter your API key">
+                    <p class="text-xs text-gray-400 mt-1">Your API key is securely stored and never exposed to end users.</p>
+                </div>
+                
+                <div class="mb-4">
+                    <button class="btn btn-secondary">Test Connection</button>
+                </div>
+            </div>
+            
+            <!-- Quick Preview of Next Steps -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="card p-4 opacity-70">
+                    <h3 class="font-medium mb-2">2. Define Schema</h3>
+                    <p class="text-xs text-gray-400">Set input/output formats for your agent</p>
+                </div>
+                <div class="card p-4 opacity-70">
+                    <h3 class="font-medium mb-2">3. Set Governance</h3>
+                    <p class="text-xs text-gray-400">Apply governance controls and policies</p>
+                </div>
+                <div class="card p-4 opacity-70">
+                    <h3 class="font-medium mb-2">4. Review & Create</h3>
+                    <p class="text-xs text-gray-400">Verify settings and activate your agent</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between">
+                <button class="btn btn-secondary" disabled>Previous</button>
+                <button class="btn btn-primary">Next: Define Schema</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden Step 2: Schema Definition -->
+    <div class="container mx-auto px-4 py-8 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Wrap New Agent</h1>
+                <p class="text-gray-400">Connect your AI agent API with governance controls</p>
+            </div>
+            <button class="btn btn-secondary">Cancel</button>
+        </div>
+
+        <div class="wizard-container">
+            <!-- Step Indicators -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">API Endpoint</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-active">2</div>
+                    <span class="text-sm mt-2">Schema</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">3</div>
+                    <span class="text-sm mt-2">Governance</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">4</div>
+                    <span class="text-sm mt-2">Review</span>
+                </div>
+            </div>
+
+            <!-- Step 2: Schema Definition -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">2. Define Schema</h2>
+                
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-medium">Schema Complexity</span>
+                    <div class="flex items-center">
+                        <span class="mr-2 text-sm">Basic</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="ml-2 text-sm">Advanced</span>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-medium mb-2">Input Schema</h3>
+                    <div class="bg-gray-800 p-4 rounded-lg mb-2">
+                        <p class="text-sm text-gray-300">Based on your API provider (OpenAI), we've detected the following input schema:</p>
+                        <pre class="bg-gray-900 p-2 rounded mt-2 text-xs overflow-auto">
+{
+  "type": "object",
+  "required": ["messages"],
+  "properties": {
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "assistant"]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 2
+    }
+  }
+}</pre>
+                    </div>
+                    <button class="text-blue-400 text-sm hover:text-blue-300">Edit Input Schema</button>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-medium mb-2">Output Schema</h3>
+                    <div class="bg-gray-800 p-4 rounded-lg mb-2">
+                        <p class="text-sm text-gray-300">Based on your API provider (OpenAI), we've detected the following output schema:</p>
+                        <pre class="bg-gray-900 p-2 rounded mt-2 text-xs overflow-auto">
+{
+  "type": "object",
+  "required": ["choices"],
+  "properties": {
+    "choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "object",
+            "required": ["role", "content"],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["assistant"]
+              },
+              "content": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</pre>
+                    </div>
+                    <button class="text-blue-400 text-sm hover:text-blue-300">Edit Output Schema</button>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between">
+                <button class="btn btn-secondary">Previous</button>
+                <button class="btn btn-primary">Next: Set Governance</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden Step 3: Governance -->
+    <div class="container mx-auto px-4 py-8 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Wrap New Agent</h1>
+                <p class="text-gray-400">Connect your AI agent API with governance controls</p>
+            </div>
+            <button class="btn btn-secondary">Cancel</button>
+        </div>
+
+        <div class="wizard-container">
+            <!-- Step Indicators -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">API Endpoint</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">Schema</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-active">3</div>
+                    <span class="text-sm mt-2">Governance</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-inactive">4</div>
+                    <span class="text-sm mt-2">Review</span>
+                </div>
+            </div>
+
+            <!-- Step 3: Governance -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">3. Set Governance Controls</h2>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Governance Level</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="border border-blue-500 bg-blue-900 bg-opacity-20 p-4 rounded-lg cursor-pointer">
+                            <h3 class="font-medium">Basic</h3>
+                            <p class="text-xs text-gray-400 mt-1">Essential governance controls for general use cases</p>
+                        </div>
+                        <div class="border border-gray-600 p-4 rounded-lg cursor-pointer">
+                            <h3 class="font-medium">Standard</h3>
+                            <p class="text-xs text-gray-400 mt-1">Balanced controls for most business applications</p>
+                        </div>
+                        <div class="border border-gray-600 p-4 rounded-lg cursor-pointer">
+                            <h3 class="font-medium">Strict</h3>
+                            <p class="text-xs text-gray-400 mt-1">Rigorous controls for sensitive or regulated use cases</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-medium mb-3">Basic Governance Controls</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">Input Validation</h4>
+                                <p class="text-xs text-gray-400">Validate all inputs against the defined schema</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">Output Validation</h4>
+                                <p class="text-xs text-gray-400">Validate all outputs against the defined schema</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">Request Logging</h4>
+                                <p class="text-xs text-gray-400">Log all requests and responses for audit purposes</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">Error Handling</h4>
+                                <p class="text-xs text-gray-400">Standardize error responses and provide fallbacks</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <button class="text-blue-400 text-sm hover:text-blue-300">Configure Advanced Governance Settings</button>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between">
+                <button class="btn btn-secondary">Previous</button>
+                <button class="btn btn-primary">Next: Review & Create</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden Step 4: Review -->
+    <div class="container mx-auto px-4 py-8 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Wrap New Agent</h1>
+                <p class="text-gray-400">Connect your AI agent API with governance controls</p>
+            </div>
+            <button class="btn btn-secondary">Cancel</button>
+        </div>
+
+        <div class="wizard-container">
+            <!-- Step Indicators -->
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">API Endpoint</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">Schema</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-completed">✓</div>
+                    <span class="text-sm mt-2">Governance</span>
+                </div>
+                <div class="step-connector connector-completed"></div>
+                <div class="flex flex-col items-center">
+                    <div class="step-indicator step-active">4</div>
+                    <span class="text-sm mt-2">Review</span>
+                </div>
+            </div>
+
+            <!-- Step 4: Review -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">4. Review & Create</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-medium mb-2">API Endpoint</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-400">Agent Name</p>
+                                    <p>Content Generator</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Provider</p>
+                                    <p>OpenAI</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">API Endpoint</p>
+                                    <p class="text-sm">https://api.openai.com/v1/chat/completions</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Authentication</p>
+                                    <p>API Key (secured)</p>
+                                </div>
+                            </div>
+                            <button class="text-blue-400 text-sm hover:text-blue-300 mt-2">Edit</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium mb-2">Schema</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <div class="mb-2">
+                                <p class="text-sm text-gray-400">Schema Complexity</p>
+                                <p>Basic</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-400">Input Schema</p>
+                                    <p class="text-xs">OpenAI Chat Completion Input</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Output Schema</p>
+                                    <p class="text-xs">OpenAI Chat Completion Output</p>
+                                </div>
+                            </div>
+                            <button class="text-blue-400 text-sm hover:text-blue-300 mt-2">Edit</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium mb-2">Governance</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <div class="mb-2">
+                                <p class="text-sm text-gray-400">Governance Level</p>
+                                <p>Basic</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400">Enabled Controls</p>
+                                <ul class="list-disc list-inside text-sm">
+                                    <li>Input Validation</li>
+                                    <li>Output Validation</li>
+                                    <li>Request Logging</li>
+                                    <li>Error Handling</li>
+                                </ul>
+                            </div>
+                            <button class="text-blue-400 text-sm hover:text-blue-300 mt-2">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between">
+                <button class="btn btn-secondary">Previous</button>
+                <button class="btn btn-primary">Create Wrapped Agent</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
