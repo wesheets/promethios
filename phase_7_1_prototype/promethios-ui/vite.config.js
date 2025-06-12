@@ -45,6 +45,11 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   },
+  build: {
+    rollupOptions: {
+        external: ["firebase/auth", "firebase/app", "firebase/firestore", "firebase/analytics", "react-markdown", "react-syntax-highlighter", "recharts", "@mui/material", "@mui/icons-material", "@mui/material/styles"],
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
