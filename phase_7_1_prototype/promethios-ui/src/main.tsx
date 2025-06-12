@@ -10,15 +10,18 @@ import Footer from './components/layout/Footer';
 import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import App from './App';
+import { ChakraProvider } from '@chakra-ui/react';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <App />
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ChakraProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <App />
+          </AnalyticsProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ChakraProvider>
   </React.StrictMode>,
 );
