@@ -10,11 +10,11 @@ import Footer from './components/layout/Footer';
 import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import App from './App';
-import { ChakraProvider } from '@chakra-ui/react';
+import ChakraProviderWithTheme from './components/ChakraProviderWithTheme';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ChakraProvider>
+    <ChakraProviderWithTheme>
       <ThemeProvider>
         <AuthProvider>
           <AnalyticsProvider>
@@ -22,6 +22,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           </AnalyticsProvider>
         </AuthProvider>
       </ThemeProvider>
-    </ChakraProvider>
+    </ChakraProviderWithTheme>
   </React.StrictMode>,
 );
