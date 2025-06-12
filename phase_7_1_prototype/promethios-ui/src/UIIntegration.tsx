@@ -11,6 +11,8 @@ import {
 } from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AgentWrappingPage from './pages/AgentWrappingPage';
+import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 
 /**
  * UIIntegration Component
@@ -52,6 +54,24 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentWizardProxy />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agent Wrapping Page route */}
+        <Route path="agents/wrapping" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentWrappingPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Multi-Agent Wrapping Page route */}
+        <Route path="agents/multi-wrapping" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <MultiAgentWrappingPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

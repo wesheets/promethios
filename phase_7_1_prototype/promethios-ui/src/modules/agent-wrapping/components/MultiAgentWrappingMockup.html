@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Wrapping Wizard</title>
+  <style>
+    :root {
+      --bg-primary: #1a202c;
+      --bg-secondary: #2d3748;
+      --bg-tertiary: #4a5568;
+      --text-primary: #ffffff;
+      --text-secondary: #a0aec0;
+      --accent-blue: #4299e1;
+      --accent-green: #48bb78;
+      --accent-red: #f56565;
+      --accent-purple: #9f7aea;
+      --accent-yellow: #ecc94b;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    
+    .header h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+    
+    .header p {
+      color: var(--text-secondary);
+      margin: 0.5rem 0 0;
+    }
+    
+    .btn {
+      background-color: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .btn:hover {
+      background-color: #3182ce;
+    }
+    
+    .btn-cancel {
+      background-color: var(--bg-tertiary);
+    }
+    
+    .btn-cancel:hover {
+      background-color: #718096;
+    }
+    
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 1.5rem;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--bg-tertiary);
+      z-index: 1;
+    }
+    
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .step-number {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background-color: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .step.active .step-number {
+      background-color: var(--accent-blue);
+    }
+    
+    .step.completed .step-number {
+      background-color: var(--accent-green);
+    }
+    
+    .step-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    
+    .step.active .step-label {
+      color: var(--accent-blue);
+    }
+    
+    .step.completed .step-label {
+      color: var(--accent-green);
+    }
+    
+    .card {
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: var(--bg-tertiary);
+      border: 1px solid #4a5568;
+      border-radius: 0.25rem;
+      color: white;
+      font-size: 0.875rem;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
+    
+    .canvas-container {
+      background-color: var(--bg-tertiary);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .agent-node {
+      position: absolute;
+      width: 180px;
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--accent-blue);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      cursor: move;
+    }
+    
+    .agent-node.input {
+      border-color: var(--accent-green);
+    }
+    
+    .agent-node.output {
+      border-color: var(--accent-purple);
+    }
+    
+    .agent-node h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .agent-node p {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    
+    .connection-line {
+      position: absolute;
+      height: 2px;
+      background-color: var(--accent-blue);
+      transform-origin: left center;
+    }
+    
+    .connection-line::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: -4px;
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid var(--accent-blue);
+    }
+    
+    .connection-point {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent-blue);
+    }
+    
+    .agent-library {
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .agent-library h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .agent-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .agent-item {
+      background-color: var(--bg-tertiary);
+      border-radius: 0.25rem;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .agent-item:hover {
+      background-color: var(--accent-blue);
+    }
+    
+    .flow-config {
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+      padding: 1rem;
+    }
+    
+    .flow-config h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .flow-type {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .flow-type-option {
+      flex: 1;
+      padding: 0.5rem;
+      text-align: center;
+      background-color: var(--bg-tertiary);
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    
+    .flow-type-option.selected {
+      background-color: var(--accent-blue);
+    }
+    
+    .mapping-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+    
+    .mapping-table th,
+    .mapping-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--bg-tertiary);
+    }
+    
+    .mapping-table th {
+      color: var(--text-secondary);
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+    }
+    
+    .preview-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    .preview-step {
+      background-color: var(--bg-tertiary);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      opacity: 0.7;
+    }
+    
+    .preview-step h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .preview-step p {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Multi-Agent Wrapping</h1>
+        <p>Compose multiple agents into a unified workflow with governance controls</p>
+      </div>
+      <button class="btn btn-cancel">Cancel</button>
+    </div>
+    
+    <div class="steps">
+      <div class="step active">
+        <div class="step-number">1</div>
+        <div class="step-label">Basic Info</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-label">Agent Selection</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-label">Flow Configuration</div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-label">Governance Rules</div>
+      </div>
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-label">Review & Create</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>1. Basic Information</h2>
+      
+      <div class="form-group">
+        <label for="multi-agent-name">Multi-Agent System Name</label>
+        <input type="text" id="multi-agent-name" class="form-control" placeholder="e.g., Customer Support Pipeline, Content Generation Workflow">
+      </div>
+      
+      <div class="form-group">
+        <label for="multi-agent-description">Description</label>
+        <textarea id="multi-agent-description" class="form-control" rows="3" placeholder="Describe the purpose and function of this multi-agent system"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="multi-agent-type">System Type</label>
+        <select id="multi-agent-type" class="form-control">
+          <option>Sequential Pipeline</option>
+          <option>Parallel Processing</option>
+          <option>Conditional Branching</option>
+          <option>Custom Workflow</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>2. Agent Selection</h2>
+      
+      <div class="agent-library">
+        <h3>Available Wrapped Agents</h3>
+        <div class="agent-list">
+          <div class="agent-item">Content Generator (OpenAI)</div>
+          <div class="agent-item">Customer Support (Anthropic)</div>
+          <div class="agent-item">Code Assistant (OpenAI)</div>
+          <div class="agent-item">Data Analyzer (Custom API)</div>
+          <div class="agent-item">Translation Service (Cohere)</div>
+          <div class="agent-item">Sentiment Analyzer (OpenAI)</div>
+        </div>
+      </div>
+      
+      <div class="canvas-container">
+        <!-- Input Node -->
+        <div class="agent-node input" style="top: 180px; left: 20px;">
+          <h4>Input</h4>
+          <p>System input data</p>
+        </div>
+        
+        <!-- Agent Nodes -->
+        <div class="agent-node" style="top: 80px; left: 240px;">
+          <h4>Content Generator</h4>
+          <p>OpenAI GPT-4</p>
+        </div>
+        
+        <div class="agent-node" style="top: 220px; left: 240px;">
+          <h4>Sentiment Analyzer</h4>
+          <p>OpenAI GPT-4</p>
+        </div>
+        
+        <div class="agent-node" style="top: 150px; left: 460px;">
+          <h4>Customer Support</h4>
+          <p>Anthropic Claude</p>
+        </div>
+        
+        <!-- Output Node -->
+        <div class="agent-node output" style="top: 150px; left: 680px;">
+          <h4>Output</h4>
+          <p>Final response</p>
+        </div>
+        
+        <!-- Connection Lines -->
+        <div class="connection-line" style="top: 190px; left: 120px; width: 120px;"></div>
+        <div class="connection-line" style="top: 100px; left: 340px; width: 120px; transform: rotate(30deg);"></div>
+        <div class="connection-line" style="top: 230px; left: 340px; width: 120px; transform: rotate(-30deg);"></div>
+        <div class="connection-line" style="top: 160px; left: 560px; width: 120px;"></div>
+        
+        <!-- Connection Points -->
+        <div class="connection-point" style="top: 185px; left: 115px;"></div>
+        <div class="connection-point" style="top: 95px; left: 335px;"></div>
+        <div class="connection-point" style="top: 225px; left: 335px;"></div>
+        <div class="connection-point" style="top: 155px; left: 555px;"></div>
+      </div>
+      
+      <div style="margin-top: 1rem; text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
+        Drag agents from the library to the canvas and connect them to create your multi-agent workflow
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>3. Flow Configuration</h2>
+      
+      <div class="flow-config">
+        <h3>Execution Flow</h3>
+        <div class="flow-type">
+          <div class="flow-type-option">Sequential</div>
+          <div class="flow-type-option selected">Parallel</div>
+          <div class="flow-type-option">Conditional</div>
+        </div>
+        
+        <h3>Data Mapping</h3>
+        <table class="mapping-table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Source Field</th>
+              <th>Target</th>
+              <th>Target Field</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Input</td>
+              <td>query</td>
+              <td>Content Generator</td>
+              <td>prompt</td>
+            </tr>
+            <tr>
+              <td>Input</td>
+              <td>query</td>
+              <td>Sentiment Analyzer</td>
+              <td>text</td>
+            </tr>
+            <tr>
+              <td>Content Generator</td>
+              <td>completion</td>
+              <td>Customer Support</td>
+              <td>context</td>
+            </tr>
+            <tr>
+              <td>Sentiment Analyzer</td>
+              <td>sentiment</td>
+              <td>Customer Support</td>
+              <td>tone</td>
+            </tr>
+            <tr>
+              <td>Customer Support</td>
+              <td>response</td>
+              <td>Output</td>
+              <td>result</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="preview-steps">
+      <div class="preview-step">
+        <h3>4. Governance Rules</h3>
+        <p>Apply governance controls and policies to the multi-agent system</p>
+      </div>
+      <div class="preview-step">
+        <h3>5. Review & Create</h3>
+        <p>Verify settings and activate your multi-agent system</p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <button class="btn btn-cancel">Previous</button>
+      <button class="btn">Next: Flow Configuration</button>
+    </div>
+  </div>
+</body>
+</html>
