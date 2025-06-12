@@ -1,7 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -10,7 +8,6 @@ import EmailVerification from './components/auth/EmailVerification';
 import OnboardingFlow from './components/auth/OnboardingFlow';
 import CMUBenchmarkDashboard from './components/benchmark/CMUBenchmarkDashboard';
 import FeedbackWidget from './components/common/FeedbackWidget';
-import AnalyticsProvider from './components/common/AnalyticsProvider';
 import InvestorDemoToggle from './components/common/InvestorDemoToggle';
 import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
@@ -22,11 +19,17 @@ import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import UIIntegration from './UIIntegration';
+import logger from './utils/debugLogger';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isUIRoute = location.pathname.startsWith('/ui/');
+  
+  // Log route changes
+  React.useEffect(() => {
+    logger.routeChange(location.pathname, location.pathname);
+  }, [location.pathname]);
   
   return (
     <div className="min-h-screen flex flex-col dark:bg-gray-900">
@@ -72,17 +75,9 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  );
+  logger.componentMount('App');
+  
+  return <AppContent />;
 };
 
 export default App;

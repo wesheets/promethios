@@ -9,6 +9,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
+import logger from '../utils/debugLogger';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -41,38 +42,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  logger.componentMount('AuthProvider');
+
   useEffect(() => {
+    logger.debug('Auth', 'Setting up auth state listener');
+    
     // Set up auth state listener with optimizations
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      logger.authStateChange(user ? 'authenticated' : 'unauthenticated', user);
       setCurrentUser(user);
       setLoading(false);
     }, (error) => {
+      logger.authError('Auth state change error', error);
       console.error('Auth state change error:', error);
       setLoading(false);
     });
 
     // Cleanup subscription on unmount
-    return unsubscribe;
+    return () => {
+      logger.debug('Auth', 'Cleaning up auth state listener');
+      unsubscribe();
+    };
   }, []);
 
   const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    logger.debug('Auth', 'Attempting email login', { email });
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      logger.info('Auth', 'Email login successful');
+    } catch (error) {
+      logger.authError('Email login failed', error);
+      throw error;
+    }
   };
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    logger.debug('Auth', 'Attempting Google login');
+    try {
+      await signInWithPopup(auth, googleProvider);
+      logger.info('Auth', 'Google login successful');
+    } catch (error) {
+      logger.authError('Google login failed', error);
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    logger.debug('Auth', 'Attempting signup', { email });
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      logger.info('Auth', 'Signup successful');
+    } catch (error) {
+      logger.authError('Signup failed', error);
+      throw error;
+    }
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    logger.debug('Auth', 'Attempting password reset', { email });
+    try {
+      await sendPasswordResetEmail(auth, email);
+      logger.info('Auth', 'Password reset email sent');
+    } catch (error) {
+      logger.authError('Password reset failed', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    logger.debug('Auth', 'Attempting logout');
+    try {
+      await signOut(auth);
+      logger.info('Auth', 'Logout successful');
+    } catch (error) {
+      logger.authError('Logout failed', error);
+      throw error;
+    }
   };
 
   const value: AuthContextType = {

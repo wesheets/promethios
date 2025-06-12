@@ -1,0 +1,7 @@
+{
+  "name": "update-hosts",
+  "description": "Automatically update allowed hosts in vite.config.js",
+  "scripts": {
+    "update-hosts": "node scripts/update-allowed-hosts.js"
+  }
+}

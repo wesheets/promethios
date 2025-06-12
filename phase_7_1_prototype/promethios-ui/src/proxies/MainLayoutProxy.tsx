@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
@@ -26,8 +26,18 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('MainLayoutProxy rendered', {
+      isAuthenticated: !!currentUser,
+      path: location.pathname,
+      userPreferences: preferences
+    });
+  }, [currentUser, location.pathname, preferences]);
+
   // For logged-out users, show existing NewHeader
   if (!currentUser) {
+    console.log('MainLayoutProxy: User not authenticated, showing NewHeader');
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <CssBaseline />
@@ -57,6 +67,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       console.error('Error logging out:', error);
     }
   };
+
+  console.log('MainLayoutProxy: User authenticated, showing new navigation', {
+    userName: currentUser.displayName || currentUser.email || 'User',
+    isCollapsed: preferences.navigationCollapsed
+  });
 
   // For logged-in users, show new navigation
   return (
@@ -101,5 +116,3 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
 };
 
 export default MainLayoutProxy;
-
-

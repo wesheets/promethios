@@ -24,8 +24,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
+    console.log('ProtectedRoute mounted', {
+      isAuthenticated: !!currentUser,
+      loading,
+      requireOnboarding
+    });
+
     const checkUserOnboarding = async () => {
       if (!currentUser) {
+        console.log('ProtectedRoute: No current user, skipping onboarding check');
         setCheckingOnboarding(false);
         return;
       }
@@ -34,8 +41,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       const cacheKey = `onboarding_${currentUser.uid}`;
       const cachedStatus = localStorage.getItem(cacheKey);
       
+      console.log('ProtectedRoute: Checking onboarding status', {
+        userId: currentUser.uid,
+        cachedStatus
+      });
+      
       if (cachedStatus !== null) {
         const completed = cachedStatus === 'true';
+        console.log('ProtectedRoute: Using cached onboarding status', { completed });
         setOnboardingCompleted(completed);
         setCheckingOnboarding(false);
         return; // Skip Firebase check for cached users
@@ -49,11 +62,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       setTimeout(async () => {
         try {
           const completed = await checkOnboardingStatus(currentUser.uid);
-          console.log('Firebase onboarding status for new user:', completed);
+          console.log('ProtectedRoute: Firebase onboarding status for new user:', completed);
           setOnboardingCompleted(completed);
           localStorage.setItem(cacheKey, completed.toString());
         } catch (error) {
-          console.error('Firebase onboarding check failed:', error);
+          console.error('ProtectedRoute: Firebase onboarding check failed:', error);
           // Default to false for new users if Firebase fails
           setOnboardingCompleted(false);
           localStorage.setItem(cacheKey, 'false');
@@ -64,10 +77,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!loading) {
       checkUserOnboarding();
     }
-  }, [currentUser, loading]);
+  }, [currentUser, loading, requireOnboarding]);
 
   // Minimize loading time - show content faster
   if (loading) {
+    console.log('ProtectedRoute: Auth loading, showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -92,34 +106,35 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
     
     if (cachedStatus === 'true') {
-      console.log('User has completed onboarding (cached), allowing access');
+      console.log('ProtectedRoute: User has completed onboarding (cached), allowing access');
       // User has completed onboarding, don't redirect
       return <>{children}</>;
     }
     
     // For new users (no cache) or incomplete users, redirect to onboarding if required
     if (requireOnboarding) {
-      console.log('Redirecting to onboarding - requireOnboarding=true, no completion cache');
+      console.log('ProtectedRoute: Redirecting to onboarding - requireOnboarding=true, no completion cache');
       return <Navigate to="/ui/onboarding" replace />;
     }
     
-    console.log('Allowing access - requireOnboarding=false');
+    console.log('ProtectedRoute: Allowing access - requireOnboarding=false');
     // If onboarding not required, show content
     return <>{children}</>;
   }
 
   // Redirect to login if not authenticated
   if (!currentUser) {
+    console.log('ProtectedRoute: User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
   // Redirect to onboarding if required and not completed (including null state for new users)
   if (requireOnboarding && (onboardingCompleted === false || onboardingCompleted === null)) {
-    console.log('Final check: Redirecting to onboarding - onboardingCompleted=', onboardingCompleted);
+    console.log('ProtectedRoute: Final check: Redirecting to onboarding - onboardingCompleted=', onboardingCompleted);
     return <Navigate to="/ui/onboarding" replace />;
   }
 
-  console.log('Final check: Allowing access to protected content', {
+  console.log('ProtectedRoute: Final check: Allowing access to protected content', {
     requireOnboarding,
     onboardingCompleted,
     checkingOnboarding
