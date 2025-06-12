@@ -10,11 +10,11 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['5173-i3hh9acw5iolquiqr0tqc-6eda6f4e.manusvm.computer', 'localhost'],
+    allowedHosts: ["5173-i12s5dk625k8npjm2uzax-6eb5f1c3.manusvm.computer", "5174-iqc0m8i3d3k6wyqzsnqcg-9757b766.manusvm.computer", "localhost"],
     proxy: {
       // Add proxy configuration for API requests
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://3000-i12s5dk625k8npjm2uzax-6eb5f1c3.manusvm.computer',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path

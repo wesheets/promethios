@@ -40,6 +40,7 @@ const AgentCompositionCanvas = () => (
     bg="gray.700"
     position="relative"
   >
+    <Text fontSize="xl" fontWeight="bold" color="white">Multi-Agent Composition Canvas - Test Content</Text>
     {/* Input Node */}
     <Box 
       position="absolute" 
@@ -351,7 +352,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
   return (
     <Container maxW="container.xl" py={8}>
       <Box mb={8}>
-        <Heading as="h1" size="xl">Multi-Agent Wrapping</Heading>
+        <Heading as="h1" size="xl">Multi-Agent Wrapping - Test Content</Heading>
         <Text color="gray.400">Compose multiple agents into a unified workflow with governance controls</Text>
       </Box>
       
@@ -458,3 +459,5 @@ const MultiAgentWrappingWizard: React.FC = () => {
 };
 
 export default MultiAgentWrappingWizard;
+
+

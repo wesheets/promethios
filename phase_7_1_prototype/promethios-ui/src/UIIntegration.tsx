@@ -40,11 +40,7 @@ const UIIntegration: React.FC = () => {
         <Route path="dashboard" element={
           <ProtectedRoute requireOnboarding={true}>
             <MainLayoutProxy>
-              <div style={{ padding: '20px' }}>
-                <h1>Welcome to Promethios Dashboard</h1>
-                <p>This is a temporary dashboard page to test the new navigation system.</p>
-                <p>The new header and collapsible navigation should be visible for logged-in users.</p>
-              </div>
+              <DashboardProxy />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

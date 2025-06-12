@@ -34,7 +34,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         <NewHeader />
         <Box 
           component="main" 
-          sx={{ 
+          sx={{
             mt: '64px', 
             p: 3,
             backgroundColor: '#1a202c',
@@ -101,3 +101,5 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
 };
 
 export default MainLayoutProxy;
+
+

@@ -22,7 +22,7 @@ import { SearchIcon } from '@chakra-ui/icons';
 import MultiAgentWrappingWizard from './MultiAgentWrappingWizard';
 
 const MultiAgentWrappingPage: React.FC = () => {
-  const [showWizard, setShowWizard] = useState(false);
+  const [showWizard, setShowWizard] = useState(true);
   const [multiAgentSystems, setMultiAgentSystems] = useState([
     {
       id: '1',
