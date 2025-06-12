@@ -36,8 +36,7 @@ const dynamicAllowedHostsPlugin = () => {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
-    dynamicAllowedHostsPlugin()
+    react()
   ],
   server: {
     allowedHosts: ["5173-i12s5dk625k8npjm2uzax-6eb5f1c3.manusvm.computer", "5174-iqc0m8i3d3k6wyqzsnqcg-9757b766.manusvm.computer", "5175-iqc0m8i3d3k6wyqzsnqcg-9757b766.manusvm.computer", "5176-iqc0m8i3d3k6wyqzsnqcg-9757b766.manusvm.computer", "5177-i1j3oekanixfi9rgj1xp4-9757b766.manusvm.computer", "localhost", "*-*-*.manusvm.computer", "*-5173-*.manusvm.computer", "5173-*-*.manusvm.computer", "*-5174-*.manusvm.computer", "5174-*-*.manusvm.computer", "*-5175-*.manusvm.computer", "5175-*-*.manusvm.computer", "*-5176-*.manusvm.computer", "5176-*-*.manusvm.computer", "*-5177-*.manusvm.computer", "5177-*-*.manusvm.computer", "*-5178-*.manusvm.computer", "5178-*-*.manusvm.computer", "*-5179-*.manusvm.computer", "5179-*-*.manusvm.computer", "*-5180-*.manusvm.computer", "5180-*-*.manusvm.computer"],
