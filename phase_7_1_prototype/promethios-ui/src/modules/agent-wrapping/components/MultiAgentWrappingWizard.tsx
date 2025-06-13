@@ -349,6 +349,10 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const { createSystem } = useMultiAgentSystems();
   
+  // Check for ad hoc configuration from sessionStorage
+  const [isFromAdHoc, setIsFromAdHoc] = useState(false);
+  const [adHocConfig, setAdHocConfig] = useState<any>(null);
+  
   // System configuration state
   const [systemName, setSystemName] = useState('');
   const [systemDescription, setSystemDescription] = useState('');
@@ -374,6 +378,36 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
 
   const { agentWrappers, loading: loadingAgents } = useAgentWrappers();
+
+  // Load ad hoc configuration if coming from chat
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromAdHoc = urlParams.get('fromAdHoc') === 'true';
+    
+    if (fromAdHoc) {
+      const storedConfig = sessionStorage.getItem('adHocSystemConfig');
+      if (storedConfig) {
+        try {
+          const config = JSON.parse(storedConfig);
+          setIsFromAdHoc(true);
+          setAdHocConfig(config);
+          
+          // Pre-populate form fields
+          setSystemName(config.name || '');
+          setSystemDescription(config.description || '');
+          setSystemType(config.systemType || 'sequential');
+          setSelectedAgents(config.agentIds || []);
+          setAgentRoles(config.agentRoles || {});
+          setGovernanceRules(config.governanceRules || governanceRules);
+          
+          // Clear the stored config
+          sessionStorage.removeItem('adHocSystemConfig');
+        } catch (error) {
+          console.error('Failed to load ad hoc configuration:', error);
+        }
+      }
+    }
+  }, []);
 
   const handleNext = async () => {
     if (activeStep === steps.length - 1) {
@@ -756,11 +790,23 @@ const MultiAgentWrappingWizard: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Ad Hoc Configuration Banner */}
+      {isFromAdHoc && adHocConfig && (
+        <Alert severity="success" sx={{ mb: 4 }}>
+          <AlertTitle>Configuration Loaded from Ad Hoc Conversation</AlertTitle>
+          Successfully imported settings from your tested multi-agent conversation. 
+          Analysis confidence: {adHocConfig.analysisData?.confidence?.toFixed(1) || 'N/A'}%
+        </Alert>
+      )}
+      
       <Typography variant="h4" gutterBottom align="center">
         Multi-Agent System Wrapper
       </Typography>
       <Typography variant="body1" color="text.secondary" align="center" mb={4}>
-        Create governed multi-agent systems from your wrapped agents
+        {isFromAdHoc 
+          ? 'Convert your tested ad hoc configuration into a formal multi-agent system'
+          : 'Create governed multi-agent systems from your wrapped agents'
+        }
       </Typography>
 
       <Box maxWidth="lg" mx="auto">

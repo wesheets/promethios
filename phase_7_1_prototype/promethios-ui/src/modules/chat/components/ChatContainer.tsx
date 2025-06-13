@@ -16,6 +16,7 @@ import GovernancePanel from './GovernancePanel';
 import FileUploadComponents from './FileUploadComponents';
 import AgentSelector from './AgentSelector';
 import AtlasChatIntegration from '../../../components/atlas/chat/AtlasChatIntegration';
+import ConversationWrappingPrompt from '../../../modules/agent-wrapping/components/ConversationWrappingPrompt';
 
 interface ChatContainerProps {
   height?: string | number;
@@ -31,6 +32,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
   const [useEnhancedInput, setUseEnhancedInput] = useState(true);
+  const [multiAgentConversations, setMultiAgentConversations] = useState<MultiAgentConversation[]>([]);
+  const [showWrappingPrompt, setShowWrappingPrompt] = useState<string | null>(null); // conversation ID to show prompt for
 
   const handleSendMessage = async (content: string, attachments?: any[]) => {
     // Add user message with attachments
@@ -118,6 +121,18 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
               agentId: response.agentId
             });
             setMessages(messageService.getMessages());
+            
+            // If this is the last response, store the conversation and check for wrapping opportunity
+            if (index === conversation.responses.length - 1) {
+              setMultiAgentConversations(prev => [...prev, conversation]);
+              
+              // Show wrapping prompt if conversation was successful
+              if (conversation.status === 'completed' && conversation.responses.length >= 2) {
+                setTimeout(() => {
+                  setShowWrappingPrompt(conversation.id);
+                }, 2000); // Show prompt 2 seconds after last response
+              }
+            }
           }, index * 1000); // Stagger responses by 1 second
         });
       } catch (error) {
@@ -240,6 +255,16 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           }}
         >
           <MessageList messages={messages} />
+          
+          {/* Show wrapping prompt after successful multi-agent conversations */}
+          {showWrappingPrompt && (
+            <ConversationWrappingPrompt
+              conversation={multiAgentConversations.find(conv => conv.id === showWrappingPrompt)!}
+              agents={multiAgentConfig?.agents || []}
+              onDismiss={() => setShowWrappingPrompt(null)}
+            />
+          )}
+          
           {useEnhancedInput ? (
             <EnhancedMessageInput onSendMessage={handleSendMessage} />
           ) : (
