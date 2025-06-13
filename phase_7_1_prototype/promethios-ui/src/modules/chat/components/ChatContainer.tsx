@@ -4,14 +4,16 @@
 
 import React, { useState } from 'react';
 import { Box, Paper, FormControlLabel, Switch, Tabs, Tab } from '@mui/material';
-import { Message as MessageType, ChatMode } from '../types';
+import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig } from '../types';
 import { messageService } from '../services/MessageService';
 import { governanceMonitoringService } from '../services/GovernanceMonitoringService';
 import { FileUploadResult } from '../services/FileUploadService';
+import { adHocMultiAgentService, MultiAgentConversation } from '../services/AdHocMultiAgentService';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import GovernancePanel from './GovernancePanel';
 import FileUploadComponents from './FileUploadComponents';
+import AgentSelector from './AgentSelector';
 
 interface ChatContainerProps {
   height?: string | number;
@@ -24,14 +26,28 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [mode, setMode] = useState<ChatMode>('standard');
   const [showGovernance, setShowGovernance] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     // Add user message
     const userMessage = messageService.addMessage({
       content,
       sender: 'user'
     });
 
+    // Handle different modes
+    if (mode === 'multi-agent' && (selectedAgent || multiAgentConfig)) {
+      await handleMultiAgentMessage(content);
+    } else {
+      await handleStandardMessage(content);
+    }
+
+    // Update state with all messages
+    setMessages(messageService.getMessages());
+  };
+
+  const handleStandardMessage = async (content: string) => {
     // Simulate governance analysis
     const governanceStatus = Math.random() > 0.8 ? 'warning' : 'compliant';
     
@@ -56,9 +72,42 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         });
       }
     }
+  };
 
-    // Update state with all messages
-    setMessages(messageService.getMessages());
+  const handleMultiAgentMessage = async (content: string) => {
+    if (selectedAgent) {
+      // Single agent response
+      const agentMessage = messageService.addMessage({
+        content: `${selectedAgent.name}: Based on my expertise in ${selectedAgent.description.toLowerCase()}, I would say: ${content} - this is an interesting perspective that requires careful consideration.`,
+        sender: 'agent',
+        agentId: selectedAgent.id
+      });
+    } else if (multiAgentConfig) {
+      // Multi-agent conversation
+      try {
+        const conversation = await adHocMultiAgentService.startMultiAgentConversation(
+          content,
+          multiAgentConfig
+        );
+
+        // Add each agent response as a separate message
+        conversation.responses.forEach((response, index) => {
+          setTimeout(() => {
+            const agentMessage = messageService.addMessage({
+              content: `${response.agentName}: ${response.content}`,
+              sender: 'agent',
+              agentId: response.agentId
+            });
+            setMessages(messageService.getMessages());
+          }, index * 1000); // Stagger responses by 1 second
+        });
+      } catch (error) {
+        const errorMessage = messageService.addMessage({
+          content: 'Error: Failed to coordinate multi-agent response. Please try again.',
+          sender: 'system'
+        });
+      }
+    }
   };
 
   const handleFileUploaded = (result: FileUploadResult) => {
@@ -87,6 +136,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const handleModeChange = (newMode: ChatMode) => {
     setMode(newMode);
     setShowGovernance(newMode === 'governance');
+    
+    // Reset agent selections when changing modes
+    if (newMode !== 'multi-agent') {
+      setSelectedAgent(null);
+      setMultiAgentConfig(null);
+    }
   };
 
   return (
@@ -102,10 +157,26 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           }
           label="Governance Mode"
         />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={mode === 'multi-agent'}
+              onChange={(e) => handleModeChange(e.target.checked ? 'multi-agent' : 'standard')}
+            />
+          }
+          label="Multi-Agent Mode"
+        />
       </Box>
 
       {/* Governance Panel */}
       {showGovernance && <GovernancePanel />}
+
+      {/* Agent Selector */}
+      <AgentSelector
+        mode={mode}
+        onAgentSelected={setSelectedAgent}
+        onMultiAgentConfigured={setMultiAgentConfig}
+      />
 
       {/* Main Interface Tabs */}
       <Paper elevation={2} sx={{ mb: 2 }}>
