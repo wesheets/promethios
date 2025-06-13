@@ -147,7 +147,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   return (
     <Box>
       {/* Mode Controls */}
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <FormControlLabel
           control={
             <Switch
