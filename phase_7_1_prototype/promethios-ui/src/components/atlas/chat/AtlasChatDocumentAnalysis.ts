@@ -571,7 +571,7 @@ class AtlasChatDocumentAnalysis {
     
     // Simple section extraction based on all-caps titles
     // In a real implementation, this would be more sophisticated
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    const lines = text.split('\n').map(textLine => textLine.trim()).filter(trimmedLine => trimmedLine.length > 0);
     
     let currentTitle = '';
     let currentContent: string[] = [];
