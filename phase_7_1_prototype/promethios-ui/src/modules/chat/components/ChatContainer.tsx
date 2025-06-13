@@ -3,13 +3,15 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Paper, FormControlLabel, Switch } from '@mui/material';
+import { Box, Paper, FormControlLabel, Switch, Tabs, Tab } from '@mui/material';
 import { Message as MessageType, ChatMode } from '../types';
 import { messageService } from '../services/MessageService';
 import { governanceMonitoringService } from '../services/GovernanceMonitoringService';
+import { FileUploadResult } from '../services/FileUploadService';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import GovernancePanel from './GovernancePanel';
+import FileUploadComponents from './FileUploadComponents';
 
 interface ChatContainerProps {
   height?: string | number;
@@ -21,6 +23,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [mode, setMode] = useState<ChatMode>('standard');
   const [showGovernance, setShowGovernance] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const handleSendMessage = (content: string) => {
     // Add user message
@@ -58,6 +61,29 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     setMessages(messageService.getMessages());
   };
 
+  const handleFileUploaded = (result: FileUploadResult) => {
+    if (result.success) {
+      // Add file upload message
+      const fileMessage = messageService.addMessage({
+        content: `📎 Uploaded: ${result.fileName} (${(result.fileSize / 1024).toFixed(1)}KB)`,
+        sender: 'user'
+      });
+
+      // Add bot response about the file
+      const responseContent = result.content 
+        ? `I've received your file "${result.fileName}". ${result.content.length > 100 ? 'This appears to be a substantial document.' : 'I can see the content.'} How can I help you with this file?`
+        : `I've received your file "${result.fileName}". How would you like me to help you with this file?`;
+
+      const botMessage = messageService.addMessage({
+        content: responseContent,
+        sender: 'agent'
+      });
+
+      // Update state with all messages
+      setMessages(messageService.getMessages());
+    }
+  };
+
   const handleModeChange = (newMode: ChatMode) => {
     setMode(newMode);
     setShowGovernance(newMode === 'governance');
@@ -81,19 +107,39 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       {/* Governance Panel */}
       {showGovernance && <GovernancePanel />}
 
-      {/* Chat Interface */}
-      <Paper
-        elevation={2}
-        sx={{
-          height,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
-      >
-        <MessageList messages={messages} />
-        <MessageInput onSendMessage={handleSendMessage} />
+      {/* Main Interface Tabs */}
+      <Paper elevation={2} sx={{ mb: 2 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab label="Chat" />
+          <Tab label="File Upload" />
+        </Tabs>
       </Paper>
+
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <Paper
+          elevation={2}
+          sx={{
+            height,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          <MessageList messages={messages} />
+          <MessageInput onSendMessage={handleSendMessage} />
+        </Paper>
+      )}
+
+      {activeTab === 1 && (
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <FileUploadComponents onFileUploaded={handleFileUploaded} />
+        </Paper>
+      )}
     </Box>
   );
 };
