@@ -13,6 +13,7 @@ import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
+import AgentProfilesPage from './pages/AgentProfilesPage';
 
 /**
  * UIIntegration Component
@@ -68,6 +69,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <MultiAgentWrappingPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agent Profiles Page route */}
+        <Route path="agents/profiles" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentProfilesPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
