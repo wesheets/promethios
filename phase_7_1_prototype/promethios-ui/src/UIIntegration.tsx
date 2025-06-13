@@ -14,6 +14,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
+import ChatPage from './pages/ChatPage';
 
 /**
  * UIIntegration Component
@@ -78,6 +79,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentProfilesPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Chat Page route - for testing incremental build */}
+        <Route path="chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
