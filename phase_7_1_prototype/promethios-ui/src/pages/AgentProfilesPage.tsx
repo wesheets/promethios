@@ -206,6 +206,7 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
             size="small"
             startIcon={<Chat />}
             fullWidth
+            onClick={() => window.location.href = `/ui/chat?agent=${profile.identity.id}`}
           >
             Chat
           </Button>
@@ -375,6 +376,7 @@ const SystemProfileCard: React.FC<{ profile: SystemProfile }> = ({ profile }) =>
             size="small"
             startIcon={<Chat />}
             fullWidth
+            onClick={() => window.location.href = `/ui/chat?system=${profile.identity.id}`}
           >
             Chat
           </Button>
