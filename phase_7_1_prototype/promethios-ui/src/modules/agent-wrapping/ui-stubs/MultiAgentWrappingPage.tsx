@@ -3,27 +3,44 @@ import {
   Box,
   Button,
   Container,
-  Heading,
-  Text,
-  SimpleGrid,
+  Typography,
+  Grid,
   Card,
-  CardBody,
-  CardFooter,
-  Stack,
-  Flex,
-  Badge,
-  Input,
-  InputGroup,
-  InputLeftElement,
+  CardContent,
+  CardActions,
+  Chip,
+  TextField,
+  InputAdornment,
+  FormControl,
+  InputLabel,
   Select,
-  HStack,
-} from '@chakra-ui/react';
-import { SearchIcon } from '@chakra-ui/icons';
+  MenuItem,
+  Paper,
+  Stack,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import {
+  Search,
+  Add,
+  Edit,
+  PlayArrow,
+  Pause,
+  Stop,
+  Settings,
+  TrendingUp,
+  Warning,
+  CheckCircle,
+} from '@mui/icons-material';
 import MultiAgentWrappingWizard from './MultiAgentWrappingWizard';
 
 const MultiAgentWrappingPage: React.FC = () => {
-  const [showWizard, setShowWizard] = useState(true);
-  const [multiAgentSystems, setMultiAgentSystems] = useState([
+  const [showWizard, setShowWizard] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [environmentFilter, setEnvironmentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  
+  const [multiAgentSystems] = useState([
     {
       id: '1',
       name: 'Customer Support Pipeline',
@@ -66,12 +83,39 @@ const MultiAgentWrappingPage: React.FC = () => {
     },
   ]);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'error': return 'error';
+      case 'inactive': return 'default';
+      default: return 'default';
+    }
+  };
+
+  const getEnvironmentColor = (environment: string) => {
+    switch (environment) {
+      case 'production': return 'primary';
+      case 'testing': return 'secondary';
+      case 'draft': return 'default';
+      default: return 'default';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <CheckCircle />;
+      case 'error': return <Warning />;
+      case 'inactive': return <Pause />;
+      default: return <Pause />;
+    }
+  };
+
   if (showWizard) {
     return (
       <Box>
         <Button 
-          variant="outline" 
-          mb={4} 
+          variant="outlined" 
+          sx={{ mb: 2 }}
           onClick={() => setShowWizard(false)}
         >
           ← Back to Multi-Agent Systems
@@ -82,135 +126,199 @@ const MultiAgentWrappingPage: React.FC = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <Box mb={8}>
-        <Flex justify="space-between" align="center" mb={6}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box mb={4}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Box>
-            <Heading as="h1" size="xl">Multi-Agent Wrapping</Heading>
-            <Text color="gray.400">Compose and manage multi-agent systems with governance controls</Text>
+            <Typography variant="h4" gutterBottom>Multi-Agent Wrapping</Typography>
+            <Typography variant="body1" color="text.secondary">
+              Compose and manage multi-agent systems with governance controls
+            </Typography>
           </Box>
-          <Button colorScheme="blue" onClick={() => setShowWizard(true)}>
-            + Create Multi-Agent System
+          <Button 
+            variant="contained" 
+            startIcon={<Add />}
+            onClick={() => setShowWizard(true)}
+            size="large"
+          >
+            Create Multi-Agent System
           </Button>
-        </Flex>
+        </Box>
 
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={6}>
-          <Card bg="gray.700">
-            <CardBody>
-              <Heading size="md" mb={2}>Total Systems</Heading>
-              <Heading size="2xl">4</Heading>
-              <Text color="green.400">+1 this week</Text>
-            </CardBody>
-          </Card>
+        {/* Stats Cards */}
+        <Grid container spacing={3} mb={4}>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Total Systems</Typography>
+                <Typography variant="h3" color="primary">4</Typography>
+                <Typography variant="body2" color="success.main">
+                  <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
+                  +1 this week
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
           
-          <Card bg="gray.700">
-            <CardBody>
-              <Heading size="md" mb={2}>Active Systems</Heading>
-              <Heading size="2xl">2</Heading>
-              <Text color="gray.400">50% of total</Text>
-            </CardBody>
-          </Card>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Active Systems</Typography>
+                <Typography variant="h3" color="primary">2</Typography>
+                <Typography variant="body2" color="text.secondary">50% of total</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
           
-          <Card bg="gray.700">
-            <CardBody>
-              <Heading size="md" mb={2}>Governance Violations</Heading>
-              <Heading size="2xl">1</Heading>
-              <Text color="red.400">Needs attention</Text>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Governance Violations</Typography>
+                <Typography variant="h3" color="error">1</Typography>
+                <Typography variant="body2" color="error.main">
+                  <Warning sx={{ fontSize: 16, mr: 0.5 }} />
+                  Needs attention
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
 
-        <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
-          <InputGroup maxW="400px">
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color="gray.400" />
-            </InputLeftElement>
-            <Input placeholder="Search multi-agent systems..." />
-          </InputGroup>
-          
-          <HStack spacing={4}>
-            <Select placeholder="All Environments" maxW="200px">
-              <option value="production">Production</option>
-              <option value="testing">Testing</option>
-              <option value="draft">Draft</option>
-            </Select>
+        {/* Filters */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search multi-agent systems..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
             
-            <Select placeholder="All Status" maxW="200px">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="error">Error</option>
-            </Select>
-          </HStack>
-        </Flex>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Environment</InputLabel>
+                <Select
+                  value={environmentFilter}
+                  label="Environment"
+                  onChange={(e) => setEnvironmentFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Environments</MenuItem>
+                  <MenuItem value="production">Production</MenuItem>
+                  <MenuItem value="testing">Testing</MenuItem>
+                  <MenuItem value="draft">Draft</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Status"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Status</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="error">Error</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Paper>
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+        {/* Multi-Agent Systems Grid */}
+        <Grid container spacing={3}>
           {multiAgentSystems.map((system) => (
-            <Card key={system.id} bg="gray.700">
-              <CardBody>
-                <Flex justify="space-between" mb={2}>
-                  <Badge 
-                    colorScheme={
-                      system.environment === 'production' ? 'blue' : 
-                      system.environment === 'testing' ? 'purple' : 
-                      'gray'
-                    }
-                  >
-                    {system.environment}
-                  </Badge>
-                  <Badge 
-                    colorScheme={
-                      system.status === 'active' ? 'green' : 
-                      system.status === 'error' ? 'red' : 
-                      'gray'
-                    }
-                  >
-                    {system.status}
-                  </Badge>
-                </Flex>
-                
-                <Heading size="md" mb={2}>{system.name}</Heading>
-                <Text fontSize="sm" color="gray.400" mb={4}>{system.description}</Text>
-                
-                <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={1}>AGENTS</Text>
-                <HStack spacing={2} mb={4} flexWrap="wrap">
-                  {system.agents.map((agent, index) => (
-                    <Badge key={index} colorScheme="blue" variant="subtle">
-                      {agent}
-                    </Badge>
-                  ))}
-                </HStack>
-                
-                <SimpleGrid columns={2} spacing={4}>
-                  <Box>
-                    <Text fontSize="xs" color="gray.400">Requests</Text>
-                    <Text fontWeight="bold">{system.requests.toLocaleString()}</Text>
+            <Grid item xs={12} md={6} lg={4} key={system.id}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box display="flex" justifyContent="space-between" mb={2}>
+                    <Chip 
+                      label={system.environment}
+                      color={getEnvironmentColor(system.environment) as any}
+                      size="small"
+                    />
+                    <Chip 
+                      label={system.status}
+                      color={getStatusColor(system.status) as any}
+                      icon={getStatusIcon(system.status)}
+                      size="small"
+                    />
                   </Box>
-                  <Box>
-                    <Text fontSize="xs" color="gray.400">Success Rate</Text>
-                    <Text fontWeight="bold">{system.successRate}%</Text>
-                  </Box>
-                </SimpleGrid>
-              </CardBody>
-              
-              <CardFooter pt={0}>
-                <Stack direction="row" spacing={2} width="100%">
-                  <Button variant="ghost" size="sm" flex={1}>Edit</Button>
+                  
+                  <Typography variant="h6" gutterBottom>{system.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {system.description}
+                  </Typography>
+                  
+                  <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                    AGENTS
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap mb={2}>
+                    {system.agents.map((agent, index) => (
+                      <Chip 
+                        key={index} 
+                        label={agent} 
+                        variant="outlined" 
+                        size="small"
+                        color="primary"
+                      />
+                    ))}
+                  </Stack>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Requests</Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {system.requests.toLocaleString()}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Success Rate</Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {system.successRate}%
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+                
+                <CardActions>
                   <Button 
-                    colorScheme={system.status === 'active' ? 'red' : 'green'} 
-                    variant="outline" 
-                    size="sm"
-                    flex={1}
+                    size="small" 
+                    startIcon={<Edit />}
+                    sx={{ flex: 1 }}
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    size="small"
+                    variant="outlined"
+                    color={system.status === 'active' ? 'error' : 'success'}
+                    startIcon={system.status === 'active' ? <Stop /> : <PlayArrow />}
+                    sx={{ flex: 1 }}
                   >
                     {system.status === 'active' ? 'Disable' : 'Enable'}
                   </Button>
-                </Stack>
-              </CardFooter>
-            </Card>
+                </CardActions>
+              </Card>
+            </Grid>
           ))}
-        </SimpleGrid>
+        </Grid>
       </Box>
     </Container>
   );
 };
 
 export default MultiAgentWrappingPage;
+
