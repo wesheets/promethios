@@ -1,243 +1,381 @@
 import React, { useState } from 'react';
-import { AgentWrapperConfig } from '../../types';
+import {
+  Box,
+  Button,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  TextField,
+  Chip,
+  Alert,
+  Tabs,
+  Tab,
+  Paper,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import { Add, Delete, Edit, Visibility, Code } from '@mui/icons-material';
+import { WizardFormData } from '../AgentWrappingWizard';
 
 interface SchemaStepProps {
-  config: AgentWrapperConfig;
-  updateConfig: (updates: Partial<AgentWrapperConfig>) => void;
+  formData: WizardFormData;
+  updateFormData: (updates: Partial<WizardFormData>) => void;
   onNext: () => void;
-  onPrevious: () => void;
+  onBack: () => void;
 }
 
-const SchemaStep: React.FC<SchemaStepProps> = ({ 
-  config, 
-  updateConfig, 
-  onNext, 
-  onPrevious 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
+  <div hidden={value !== index}>
+    {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+  </div>
+);
+
+const SchemaStep: React.FC<SchemaStepProps> = ({
+  formData,
+  updateFormData,
+  onNext,
+  onBack,
 }) => {
-  const [isAdvancedMode, setIsAdvancedMode] = useState(config.schemaComplexity === 'advanced');
-  
-  // Sample schemas based on provider
-  const sampleInputSchema = {
-    OpenAI: `{
-  "type": "object",
-  "required": ["messages"],
-  "properties": {
-    "messages": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["role", "content"],
-        "properties": {
-          "role": {
-            "type": "string",
-            "enum": ["system", "user", "assistant"]
-          },
-          "content": {
-            "type": "string"
-          }
-        }
+  const [tabValue, setTabValue] = useState(0);
+  const [inputSchemaText, setInputSchemaText] = useState(
+    JSON.stringify(formData.inputSchema, null, 2)
+  );
+  const [outputSchemaText, setOutputSchemaText] = useState(
+    JSON.stringify(formData.outputSchema, null, 2)
+  );
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const sampleSchemas = {
+    chatbot: {
+      input: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'User message' },
+          context: { type: 'string', description: 'Conversation context' },
+          userId: { type: 'string', description: 'User identifier' }
+        },
+        required: ['message']
+      },
+      output: {
+        type: 'object',
+        properties: {
+          response: { type: 'string', description: 'Agent response' },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+          intent: { type: 'string', description: 'Detected user intent' },
+          entities: { type: 'array', items: { type: 'object' } }
+        },
+        required: ['response']
       }
     },
-    "temperature": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 2
-    }
-  }
-}`,
-    Anthropic: `{
-  "type": "object",
-  "required": ["prompt"],
-  "properties": {
-    "prompt": {
-      "type": "string"
+    contentGenerator: {
+      input: {
+        type: 'object',
+        properties: {
+          prompt: { type: 'string', description: 'Content generation prompt' },
+          style: { type: 'string', enum: ['formal', 'casual', 'technical'] },
+          length: { type: 'string', enum: ['short', 'medium', 'long'] },
+          audience: { type: 'string', description: 'Target audience' }
+        },
+        required: ['prompt']
+      },
+      output: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'Generated content' },
+          wordCount: { type: 'number', description: 'Number of words' },
+          readabilityScore: { type: 'number', description: 'Content readability score' },
+          keywords: { type: 'array', items: { type: 'string' } }
+        },
+        required: ['content']
+      }
     },
-    "max_tokens_to_sample": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "temperature": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
-    }
-  }
-}`,
-    Cohere: `{
-  "type": "object",
-  "required": ["message"],
-  "properties": {
-    "message": {
-      "type": "string"
-    },
-    "model": {
-      "type": "string"
-    },
-    "temperature": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 2
-    }
-  }
-}`,
-    Custom: `{
-  "type": "object",
-  "properties": {
-    // Define your custom input schema here
-  }
-}`
-  };
-
-  const sampleOutputSchema = {
-    OpenAI: `{
-  "type": "object",
-  "required": ["choices"],
-  "properties": {
-    "choices": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["message"],
-        "properties": {
-          "message": {
-            "type": "object",
-            "required": ["role", "content"],
-            "properties": {
-              "role": {
-                "type": "string",
-                "enum": ["assistant"]
-              },
-              "content": {
-                "type": "string"
-              }
-            }
-          }
-        }
+    dataAnalyzer: {
+      input: {
+        type: 'object',
+        properties: {
+          data: { type: 'array', description: 'Data to analyze' },
+          analysisType: { type: 'string', enum: ['summary', 'trend', 'anomaly'] },
+          parameters: { type: 'object', description: 'Analysis parameters' }
+        },
+        required: ['data', 'analysisType']
+      },
+      output: {
+        type: 'object',
+        properties: {
+          analysis: { type: 'object', description: 'Analysis results' },
+          insights: { type: 'array', items: { type: 'string' } },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+          visualizations: { type: 'array', items: { type: 'object' } }
+        },
+        required: ['analysis']
       }
     }
-  }
-}`,
-    Anthropic: `{
-  "type": "object",
-  "required": ["completion"],
-  "properties": {
-    "completion": {
-      "type": "string"
-    },
-    "stop_reason": {
-      "type": "string",
-      "enum": ["stop_sequence", "max_tokens"]
-    }
-  }
-}`,
-    Cohere: `{
-  "type": "object",
-  "required": ["text"],
-  "properties": {
-    "text": {
-      "type": "string"
-    },
-    "generation_id": {
-      "type": "string"
-    }
-  }
-}`,
-    Custom: `{
-  "type": "object",
-  "properties": {
-    // Define your custom output schema here
-  }
-}`
   };
 
-  const handleToggleMode = () => {
-    const newMode = isAdvancedMode ? 'basic' : 'advanced';
-    setIsAdvancedMode(!isAdvancedMode);
-    updateConfig({ schemaComplexity: newMode });
+  const validateSchema = (schemaText: string, schemaType: 'input' | 'output') => {
+    try {
+      const schema = JSON.parse(schemaText);
+      
+      // Basic JSON Schema validation
+      if (!schema.type || schema.type !== 'object') {
+        return `${schemaType} schema must be an object type`;
+      }
+      
+      if (!schema.properties || typeof schema.properties !== 'object') {
+        return `${schemaType} schema must have properties`;
+      }
+      
+      return null;
+    } catch (error) {
+      return `Invalid JSON in ${schemaType} schema`;
+    }
   };
 
-  const handleEditSchema = (type: 'input' | 'output') => {
-    // In a real implementation, this would open a schema editor
-    // For now, we'll just show an alert
-    alert(`Edit ${type} schema`);
+  const handleSchemaUpdate = (schemaText: string, schemaType: 'input' | 'output') => {
+    const error = validateSchema(schemaText, schemaType);
+    
+    if (error) {
+      setValidationErrors(prev => ({ ...prev, [schemaType]: error }));
+      return;
+    }
+    
+    try {
+      const schema = JSON.parse(schemaText);
+      setValidationErrors(prev => ({ ...prev, [schemaType]: '' }));
+      
+      if (schemaType === 'input') {
+        updateFormData({ inputSchema: schema });
+      } else {
+        updateFormData({ outputSchema: schema });
+      }
+    } catch (error) {
+      setValidationErrors(prev => ({ ...prev, [schemaType]: 'Invalid JSON' }));
+    }
+  };
+
+  const applySampleSchema = (sampleKey: keyof typeof sampleSchemas) => {
+    const sample = sampleSchemas[sampleKey];
+    setInputSchemaText(JSON.stringify(sample.input, null, 2));
+    setOutputSchemaText(JSON.stringify(sample.output, null, 2));
+    updateFormData({
+      inputSchema: sample.input,
+      outputSchema: sample.output
+    });
+    setValidationErrors({});
+  };
+
+  const handleNext = () => {
+    const inputError = validateSchema(inputSchemaText, 'input');
+    const outputError = validateSchema(outputSchemaText, 'output');
+    
+    if (!inputError && !outputError) {
+      onNext();
+    } else {
+      setValidationErrors({
+        input: inputError || '',
+        output: outputError || ''
+      });
+    }
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4">2. Define Schema</h2>
-      
-      <div className="flex justify-between items-center mb-4">
-        <span className="font-medium">Schema Complexity</span>
-        <div className="flex items-center">
-          <span className="mr-2 text-sm">Basic</span>
-          <label className="relative inline-block w-12 h-6">
-            <input 
-              type="checkbox" 
-              className="opacity-0 w-0 h-0" 
-              checked={isAdvancedMode}
-              onChange={handleToggleMode}
+    <Box>
+      <Typography variant="h5" gutterBottom>
+        2. Define Input & Output Schemas
+      </Typography>
+      <Typography variant="body2" color="text.secondary" paragraph>
+        Define the structure of data your agent expects to receive and return.
+      </Typography>
+
+      <Box mb={3}>
+        <Typography variant="h6" gutterBottom>
+          Quick Start Templates
+        </Typography>
+        <Box display="flex" gap={1} flexWrap="wrap">
+          <Chip
+            label="Chatbot"
+            onClick={() => applySampleSchema('chatbot')}
+            clickable
+            variant="outlined"
+          />
+          <Chip
+            label="Content Generator"
+            onClick={() => applySampleSchema('contentGenerator')}
+            clickable
+            variant="outlined"
+          />
+          <Chip
+            label="Data Analyzer"
+            onClick={() => applySampleSchema('dataAnalyzer')}
+            clickable
+            variant="outlined"
+          />
+        </Box>
+      </Box>
+
+      <Paper elevation={1}>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab label="Input Schema" />
+          <Tab label="Output Schema" />
+          <Tab label="Preview" />
+        </Tabs>
+
+        <TabPanel value={tabValue} index={0}>
+          <Box p={3}>
+            <Typography variant="h6" gutterBottom>
+              Input Schema
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Define what data your agent expects to receive from users.
+            </Typography>
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={12}
+              value={inputSchemaText}
+              onChange={(e) => {
+                setInputSchemaText(e.target.value);
+                handleSchemaUpdate(e.target.value, 'input');
+              }}
+              error={!!validationErrors.input}
+              helperText={validationErrors.input || 'JSON Schema format'}
+              variant="outlined"
+              sx={{ fontFamily: 'monospace' }}
             />
-            <span className={`absolute cursor-pointer inset-0 rounded-full ${
-              isAdvancedMode ? 'bg-blue-600' : 'bg-gray-600'
-            }`}>
-              <span className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-transform ${
-                isAdvancedMode ? 'left-7' : 'left-1'
-              }`}></span>
-            </span>
-          </label>
-          <span className="ml-2 text-sm">Advanced</span>
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <h3 className="font-medium mb-2">Input Schema</h3>
-        <div className="bg-gray-700 p-4 rounded-lg mb-2">
-          <p className="text-sm text-gray-300">Based on your API provider ({config.provider}), we've detected the following input schema:</p>
-          <pre className="bg-gray-900 p-2 rounded mt-2 text-xs overflow-auto h-40">
-            {sampleInputSchema[config.provider as keyof typeof sampleInputSchema] || sampleInputSchema.Custom}
-          </pre>
-        </div>
-        <button 
-          onClick={() => handleEditSchema('input')}
-          className="text-blue-400 text-sm hover:text-blue-300"
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <Box p={3}>
+            <Typography variant="h6" gutterBottom>
+              Output Schema
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Define the structure of responses your agent will return.
+            </Typography>
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={12}
+              value={outputSchemaText}
+              onChange={(e) => {
+                setOutputSchemaText(e.target.value);
+                handleSchemaUpdate(e.target.value, 'output');
+              }}
+              error={!!validationErrors.output}
+              helperText={validationErrors.output || 'JSON Schema format'}
+              variant="outlined"
+              sx={{ fontFamily: 'monospace' }}
+            />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <Box p={3}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardHeader 
+                    title="Input Schema Preview"
+                    titleTypographyProps={{ variant: 'h6' }}
+                  />
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Required Fields:
+                    </Typography>
+                    <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
+                      {(formData.inputSchema.required || []).map((field: string) => (
+                        <Chip key={field} label={field} size="small" color="primary" />
+                      ))}
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Properties:
+                    </Typography>
+                    <Box>
+                      {Object.entries(formData.inputSchema.properties || {}).map(([key, value]: [string, any]) => (
+                        <Box key={key} display="flex" justifyContent="space-between" py={0.5}>
+                          <Typography variant="body2">{key}</Typography>
+                          <Chip label={value.type} size="small" variant="outlined" />
+                        </Box>
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardHeader 
+                    title="Output Schema Preview"
+                    titleTypographyProps={{ variant: 'h6' }}
+                  />
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Required Fields:
+                    </Typography>
+                    <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
+                      {(formData.outputSchema.required || []).map((field: string) => (
+                        <Chip key={field} label={field} size="small" color="secondary" />
+                      ))}
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Properties:
+                    </Typography>
+                    <Box>
+                      {Object.entries(formData.outputSchema.properties || {}).map(([key, value]: [string, any]) => (
+                        <Box key={key} display="flex" justifyContent="space-between" py={0.5}>
+                          <Typography variant="body2">{key}</Typography>
+                          <Chip label={value.type} size="small" variant="outlined" />
+                        </Box>
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            <Alert severity="info" sx={{ mt: 3 }}>
+              <Typography variant="body2">
+                These schemas will be used to validate requests and responses, ensuring your agent 
+                receives properly formatted data and returns consistent results.
+              </Typography>
+            </Alert>
+          </Box>
+        </TabPanel>
+      </Paper>
+
+      <Box display="flex" justifyContent="space-between" mt={4}>
+        <Button
+          variant="outlined"
+          onClick={onBack}
+          size="large"
         >
-          Edit Input Schema
-        </button>
-      </div>
-      
-      <div className="mb-4">
-        <h3 className="font-medium mb-2">Output Schema</h3>
-        <div className="bg-gray-700 p-4 rounded-lg mb-2">
-          <p className="text-sm text-gray-300">Based on your API provider ({config.provider}), we've detected the following output schema:</p>
-          <pre className="bg-gray-900 p-2 rounded mt-2 text-xs overflow-auto h-40">
-            {sampleOutputSchema[config.provider as keyof typeof sampleOutputSchema] || sampleOutputSchema.Custom}
-          </pre>
-        </div>
-        <button 
-          onClick={() => handleEditSchema('output')}
-          className="text-blue-400 text-sm hover:text-blue-300"
+          Back: API Endpoint
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleNext}
+          disabled={!!validationErrors.input || !!validationErrors.output}
+          size="large"
         >
-          Edit Output Schema
-        </button>
-      </div>
-      
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-6">
-        <button 
-          onClick={onPrevious}
-          className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg"
-        >
-          Previous
-        </button>
-        <button 
-          onClick={onNext}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
-        >
-          Next: Set Governance
-        </button>
-      </div>
-    </div>
+          Next: Governance Rules
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
 export default SchemaStep;
+
