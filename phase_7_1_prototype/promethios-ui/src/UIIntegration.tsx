@@ -14,6 +14,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
+import ChatPage from './pages/ChatPage';
 
 /**
  * UIIntegration Component
@@ -82,6 +83,15 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* Chat Page route */}
+        <Route path="chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Catch-all route - redirect new users to onboarding, completed users to dashboard */}
         <Route path="*" element={
           <ProtectedRoute requireOnboarding={true}>
@@ -93,4 +103,4 @@ const UIIntegration: React.FC = () => {
   );
 };
 
-export default UIIntegration;
+export default UIIntegration;tion;
