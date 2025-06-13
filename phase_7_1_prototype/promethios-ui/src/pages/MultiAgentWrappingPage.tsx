@@ -32,6 +32,9 @@ import {
   Warning,
   CheckCircle,
 } from '@mui/icons-material';
+import { ThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
+import { darkTheme } from '../theme/darkTheme';
 import MultiAgentWrappingWizard from '../modules/agent-wrapping/components/MultiAgentWrappingWizard';
 
 const MultiAgentWrappingPage: React.FC = () => {
@@ -112,21 +115,26 @@ const MultiAgentWrappingPage: React.FC = () => {
 
   if (showWizard) {
     return (
-      <Box>
-        <Button 
-          variant="outlined" 
-          sx={{ mb: 2 }}
-          onClick={() => setShowWizard(false)}
-        >
-          ← Back to Multi-Agent Systems
-        </Button>
-        <MultiAgentWrappingWizard />
-      </Box>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <Box>
+          <Button 
+            variant="outlined" 
+            sx={{ mb: 2 }}
+            onClick={() => setShowWizard(false)}
+          >
+            ← Back to Multi-Agent Systems
+          </Button>
+          <MultiAgentWrappingWizard />
+        </Box>
+      </ThemeProvider>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box mb={4}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Box>
@@ -317,6 +325,7 @@ const MultiAgentWrappingPage: React.FC = () => {
         </Grid>
       </Box>
     </Container>
+    </ThemeProvider>
   );
 };
 

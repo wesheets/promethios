@@ -29,6 +29,10 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Autocomplete,
+  FormControlLabel,
+  Switch,
+  Slider,
 } from '@mui/material';
 import {
   CheckCircle,
@@ -42,282 +46,376 @@ import {
   Pause,
   Stop,
   Settings,
+  Delete,
+  Edit,
 } from '@mui/icons-material';
+import { useAgentWrappers } from '../hooks/useAgentWrappers';
+import { useMultiAgentSystems } from '../hooks/useMultiAgentSystems';
+import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock components for the agent composition canvas
 const AgentCompositionCanvas: React.FC = () => (
-  <Paper 
-    sx={{ 
-      border: '2px dashed #1976d2', 
-      borderRadius: 2, 
-      p: 3, 
-      minHeight: 400, 
-      bgcolor: '#f5f5f5',
-      position: 'relative',
-      overflow: 'hidden'
-    }}
-  >
-    <Typography variant="h6" fontWeight="bold" gutterBottom>
-      Multi-Agent Composition Canvas
+  <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', position: 'relative', height: 300 }}>
+    <Typography variant="h6" gutterBottom>Agent Composition Canvas</Typography>
+    <Typography variant="body2" color="text.secondary" mb={2}>
+      Visual representation of your multi-agent system flow
     </Typography>
     
-    {/* Input Node */}
-    <Paper 
-      sx={{ 
-        position: 'absolute', 
-        top: 180, 
-        left: 20, 
-        p: 2, 
-        borderLeft: '4px solid #4caf50',
-        width: 120,
-        bgcolor: '#e8f5e8'
-      }}
-    >
-      <Typography variant="subtitle2" fontWeight="bold">Input</Typography>
-      <Typography variant="caption">System input data</Typography>
-    </Paper>
+    {/* Mock agent nodes */}
+    <Box sx={{ position: 'absolute', top: 80, left: 50, width: 120, height: 60, bgcolor: '#e3f2fd', border: '2px solid #1976d2', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Typography variant="caption" fontWeight="bold">Input</Typography>
+    </Box>
     
-    {/* Agent Nodes */}
-    <Paper 
-      sx={{ 
-        position: 'absolute', 
-        top: 80, 
-        left: 240, 
-        p: 2, 
-        borderLeft: '4px solid #1976d2',
-        width: 150,
-        bgcolor: '#e3f2fd'
-      }}
-    >
-      <Typography variant="subtitle2" fontWeight="bold">Content Generator</Typography>
-      <Typography variant="caption">OpenAI GPT-4</Typography>
-    </Paper>
+    <Box sx={{ position: 'absolute', top: 160, left: 200, width: 120, height: 60, bgcolor: '#f3e5f5', border: '2px solid #9c27b0', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Typography variant="caption" fontWeight="bold">Content Gen</Typography>
+    </Box>
     
-    <Paper 
-      sx={{ 
-        position: 'absolute', 
-        top: 220, 
-        left: 240, 
-        p: 2, 
-        borderLeft: '4px solid #1976d2',
-        width: 150,
-        bgcolor: '#e3f2fd'
-      }}
-    >
-      <Typography variant="subtitle2" fontWeight="bold">Sentiment Analyzer</Typography>
-      <Typography variant="caption">OpenAI GPT-4</Typography>
-    </Paper>
+    <Box sx={{ position: 'absolute', top: 80, left: 350, width: 120, height: 60, bgcolor: '#e8f5e8', border: '2px solid #4caf50', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Typography variant="caption" fontWeight="bold">Sentiment</Typography>
+    </Box>
     
-    <Paper 
-      sx={{ 
-        position: 'absolute', 
-        top: 150, 
-        left: 460, 
-        p: 2, 
-        borderLeft: '4px solid #1976d2',
-        width: 150,
-        bgcolor: '#e3f2fd'
-      }}
-    >
-      <Typography variant="subtitle2" fontWeight="bold">Customer Support</Typography>
-      <Typography variant="caption">Anthropic Claude</Typography>
-    </Paper>
+    <Box sx={{ position: 'absolute', top: 160, left: 500, width: 120, height: 60, bgcolor: '#fff3e0', border: '2px solid #ff9800', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Typography variant="caption" fontWeight="bold">Support</Typography>
+    </Box>
     
-    {/* Output Node */}
-    <Paper 
-      sx={{ 
-        position: 'absolute', 
-        top: 150, 
-        left: 680, 
-        p: 2, 
-        borderLeft: '4px solid #9c27b0',
-        width: 120,
-        bgcolor: '#f3e5f5'
-      }}
-    >
-      <Typography variant="subtitle2" fontWeight="bold">Output</Typography>
-      <Typography variant="caption">Final response</Typography>
-    </Paper>
+    <Box sx={{ position: 'absolute', top: 80, left: 650, width: 120, height: 60, bgcolor: '#fce4ec', border: '2px solid #e91e63', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Typography variant="caption" fontWeight="bold">Output</Typography>
+    </Box>
     
-    {/* Connection Lines */}
-    <Box sx={{ position: 'absolute', top: 190, left: 140, height: 2, width: 100, bgcolor: '#1976d2' }} />
-    <Box sx={{ position: 'absolute', top: 100, left: 390, height: 2, width: 70, bgcolor: '#1976d2', transform: 'rotate(30deg)' }} />
-    <Box sx={{ position: 'absolute', top: 230, left: 390, height: 2, width: 70, bgcolor: '#1976d2', transform: 'rotate(-30deg)' }} />
+    {/* Mock connection lines */}
+    <Box sx={{ position: 'absolute', top: 110, left: 170, height: 2, width: 30, bgcolor: '#1976d2' }} />
+    <Box sx={{ position: 'absolute', top: 110, left: 170, height: 70, width: 2, bgcolor: '#1976d2' }} />
+    <Box sx={{ position: 'absolute', top: 180, left: 170, height: 2, width: 30, bgcolor: '#1976d2' }} />
+    
+    <Box sx={{ position: 'absolute', top: 110, left: 470, height: 2, width: 30, bgcolor: '#4caf50' }} />
+    <Box sx={{ position: 'absolute', top: 110, left: 470, height: 70, width: 2, bgcolor: '#4caf50' }} />
+    <Box sx={{ position: 'absolute', top: 180, left: 470, height: 2, width: 30, bgcolor: '#4caf50' }} />
+    
+    <Box sx={{ position: 'absolute', top: 190, left: 320, height: 2, width: 180, bgcolor: '#9c27b0' }} />
     <Box sx={{ position: 'absolute', top: 160, left: 610, height: 2, width: 70, bgcolor: '#1976d2' }} />
   </Paper>
 );
 
-// Mock component for the agent library
-const AgentLibrary: React.FC = () => (
-  <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
-    <Typography variant="h6" gutterBottom>Available Wrapped Agents</Typography>
-    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-      <Chip label="Content Generator (OpenAI)" color="primary" sx={{ cursor: 'pointer' }} />
-      <Chip label="Customer Support (Anthropic)" color="secondary" sx={{ cursor: 'pointer' }} />
-      <Chip label="Code Assistant (OpenAI)" color="success" sx={{ cursor: 'pointer' }} />
-      <Chip label="Data Analyzer (Custom API)" color="warning" sx={{ cursor: 'pointer' }} />
-      <Chip label="Translation Service (Cohere)" color="info" sx={{ cursor: 'pointer' }} />
-      <Chip label="Sentiment Analyzer (OpenAI)" color="error" sx={{ cursor: 'pointer' }} />
-    </Stack>
-  </Paper>
-);
+// Real Agent Library component that loads user's wrapped agents
+const AgentLibrary: React.FC<{ 
+  onAgentSelect: (agentId: string) => void;
+  selectedAgents: string[];
+}> = ({ onAgentSelect, selectedAgents }) => {
+  const { wrappers, loading } = useAgentWrappers();
 
-// Mock component for the flow configuration
-const FlowConfiguration: React.FC = () => (
-  <Paper sx={{ p: 3 }}>
-    <Typography variant="h6" gutterBottom>Execution Flow</Typography>
-    <Stack direction="row" spacing={2} mb={3}>
-      <Button variant="outlined" size="small">Sequential</Button>
-      <Button variant="contained" size="small">Parallel</Button>
-      <Button variant="outlined" size="small">Conditional</Button>
-    </Stack>
-    
-    <Typography variant="h6" gutterBottom>Data Mapping</Typography>
-    <TableContainer component={Paper} variant="outlined">
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Source</TableCell>
-            <TableCell>Source Field</TableCell>
-            <TableCell>Target</TableCell>
-            <TableCell>Target Field</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          <TableRow>
-            <TableCell>Input</TableCell>
-            <TableCell>query</TableCell>
-            <TableCell>Content Generator</TableCell>
-            <TableCell>prompt</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Input</TableCell>
-            <TableCell>query</TableCell>
-            <TableCell>Sentiment Analyzer</TableCell>
-            <TableCell>text</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Content Generator</TableCell>
-            <TableCell>completion</TableCell>
-            <TableCell>Customer Support</TableCell>
-            <TableCell>context</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Sentiment Analyzer</TableCell>
-            <TableCell>sentiment</TableCell>
-            <TableCell>Customer Support</TableCell>
-            <TableCell>tone</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Customer Support</TableCell>
-            <TableCell>response</TableCell>
-            <TableCell>Output</TableCell>
-            <TableCell>result</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </TableContainer>
-  </Paper>
-);
+  if (loading) {
+    return (
+      <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+        <Typography variant="h6" gutterBottom>Available Wrapped Agents</Typography>
+        <Typography variant="body2" color="text.secondary">Loading your wrapped agents...</Typography>
+      </Paper>
+    );
+  }
 
-// Mock component for governance rules
-const GovernanceRules: React.FC = () => (
-  <Paper sx={{ p: 3 }}>
-    <Typography variant="h6" gutterBottom>Governance Controls</Typography>
-    
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Governance Policy</InputLabel>
-          <Select defaultValue="standard" label="Governance Policy">
-            <MenuItem value="standard">Standard Compliance</MenuItem>
-            <MenuItem value="strict">Strict Governance</MenuItem>
-            <MenuItem value="minimal">Minimal Controls</MenuItem>
-            <MenuItem value="custom">Custom Policy</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-      
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Cross-Agent Validation</InputLabel>
-          <Select defaultValue="enabled" label="Cross-Agent Validation">
-            <MenuItem value="enabled">Enabled</MenuItem>
-            <MenuItem value="disabled">Disabled</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-      
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Error Handling</InputLabel>
-          <Select defaultValue="fallback" label="Error Handling">
-            <MenuItem value="fallback">Use Fallback Responses</MenuItem>
-            <MenuItem value="retry">Retry Failed Agents</MenuItem>
-            <MenuItem value="abort">Abort on Failure</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-      
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth>
-          <InputLabel>Logging Level</InputLabel>
-          <Select defaultValue="detailed" label="Logging Level">
-            <MenuItem value="minimal">Minimal</MenuItem>
-            <MenuItem value="standard">Standard</MenuItem>
-            <MenuItem value="detailed">Detailed</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-    </Grid>
-  </Paper>
-);
+  if (wrappers.length === 0) {
+    return (
+      <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+        <Typography variant="h6" gutterBottom>Available Wrapped Agents</Typography>
+        <Alert severity="info">
+          <AlertTitle>No Wrapped Agents Found</AlertTitle>
+          You need to wrap individual agents first before creating multi-agent systems. 
+          Go to the Single Agent Wrapping page to wrap your agents.
+        </Alert>
+      </Paper>
+    );
+  }
 
-// Mock component for the review step
-const ReviewStep: React.FC = () => (
-  <Paper sx={{ p: 3 }}>
-    <Typography variant="h6" gutterBottom>Review Configuration</Typography>
+  return (
+    <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+      <Typography variant="h6" gutterBottom>Available Wrapped Agents</Typography>
+      <Typography variant="body2" color="text.secondary" mb={2}>
+        Click on agents to add them to your multi-agent system
+      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {wrappers.map((wrapper) => (
+          <Chip
+            key={wrapper.id}
+            label={`${wrapper.name} (${wrapper.supportedProviders[0] || 'Custom'})`}
+            color={selectedAgents.includes(wrapper.id) ? "primary" : "default"}
+            variant={selectedAgents.includes(wrapper.id) ? "filled" : "outlined"}
+            onClick={() => onAgentSelect(wrapper.id)}
+            sx={{ cursor: 'pointer', mb: 1 }}
+          />
+        ))}
+      </Stack>
+    </Paper>
+  );
+};
+
+// Real Flow Configuration component
+const FlowConfiguration: React.FC<{
+  flowType: FlowType;
+  onFlowTypeChange: (flowType: FlowType) => void;
+  connections: AgentConnection[];
+  onConnectionsChange: (connections: AgentConnection[]) => void;
+  selectedAgents: string[];
+}> = ({ flowType, onFlowTypeChange, connections, onConnectionsChange, selectedAgents }) => {
+  const { wrappers } = useAgentWrappers();
+  
+  const getAgentName = (agentId: string) => {
+    const wrapper = wrappers.find(w => w.id === agentId);
+    return wrapper ? wrapper.name : agentId;
+  };
+
+  const addConnection = () => {
+    if (selectedAgents.length < 2) return;
     
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <Typography variant="subtitle2" fontWeight="bold">Multi-Agent System Name</Typography>
-        <Typography variant="body2" color="text.secondary">Customer Support Pipeline</Typography>
-      </Grid>
+    const newConnection: AgentConnection = {
+      sourceAgentId: selectedAgents[0],
+      targetAgentId: selectedAgents[1],
+      sourceField: 'output',
+      targetField: 'input'
+    };
+    
+    onConnectionsChange([...connections, newConnection]);
+  };
+
+  const removeConnection = (index: number) => {
+    const newConnections = connections.filter((_, i) => i !== index);
+    onConnectionsChange(newConnections);
+  };
+
+  return (
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>Execution Flow</Typography>
+      <Stack direction="row" spacing={2} mb={3}>
+        <Button 
+          variant={flowType === 'sequential' ? 'contained' : 'outlined'} 
+          size="small"
+          onClick={() => onFlowTypeChange('sequential')}
+        >
+          Sequential
+        </Button>
+        <Button 
+          variant={flowType === 'parallel' ? 'contained' : 'outlined'} 
+          size="small"
+          onClick={() => onFlowTypeChange('parallel')}
+        >
+          Parallel
+        </Button>
+        <Button 
+          variant={flowType === 'conditional' ? 'contained' : 'outlined'} 
+          size="small"
+          onClick={() => onFlowTypeChange('conditional')}
+        >
+          Conditional
+        </Button>
+        <Button 
+          variant={flowType === 'custom' ? 'contained' : 'outlined'} 
+          size="small"
+          onClick={() => onFlowTypeChange('custom')}
+        >
+          Custom
+        </Button>
+      </Stack>
       
-      <Grid item xs={12} md={6}>
-        <Typography variant="subtitle2" fontWeight="bold">System Type</Typography>
-        <Typography variant="body2" color="text.secondary">Parallel Processing</Typography>
-      </Grid>
+      <Typography variant="h6" gutterBottom>Data Mapping</Typography>
       
-      <Grid item xs={12}>
-        <Typography variant="subtitle2" fontWeight="bold">Agents</Typography>
-        <Typography variant="body2" color="text.secondary">Content Generator, Sentiment Analyzer, Customer Support</Typography>
-      </Grid>
+      {selectedAgents.length >= 2 && (
+        <Box mb={2}>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={addConnection}
+            startIcon={<Add />}
+          >
+            Add Connection
+          </Button>
+        </Box>
+      )}
       
-      <Grid item xs={12} md={6}>
-        <Typography variant="subtitle2" fontWeight="bold">Governance Policy</Typography>
-        <Typography variant="body2" color="text.secondary">Standard Compliance</Typography>
-      </Grid>
+      {connections.length > 0 ? (
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Source Agent</TableCell>
+                <TableCell>Source Field</TableCell>
+                <TableCell>Target Agent</TableCell>
+                <TableCell>Target Field</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {connections.map((connection, index) => (
+                <TableRow key={index}>
+                  <TableCell>{getAgentName(connection.sourceAgentId)}</TableCell>
+                  <TableCell>{connection.sourceField}</TableCell>
+                  <TableCell>{getAgentName(connection.targetAgentId)}</TableCell>
+                  <TableCell>{connection.targetField}</TableCell>
+                  <TableCell>
+                    <IconButton 
+                      size="small" 
+                      onClick={() => removeConnection(index)}
+                      color="error"
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Alert severity="info">
+          No connections defined. Add connections to specify how data flows between agents.
+        </Alert>
+      )}
+    </Paper>
+  );
+};
+
+// Real Governance Rules component
+const GovernanceRules: React.FC<{
+  governanceRules: MultiAgentSystem['governanceRules'];
+  onGovernanceRulesChange: (rules: MultiAgentSystem['governanceRules']) => void;
+}> = ({ governanceRules, onGovernanceRulesChange }) => {
+  const updateRule = (key: keyof MultiAgentSystem['governanceRules'], value: any) => {
+    onGovernanceRulesChange({
+      ...governanceRules,
+      [key]: value
+    });
+  };
+
+  const updateRateLimiting = (key: keyof MultiAgentSystem['governanceRules']['rateLimiting'], value: number) => {
+    onGovernanceRulesChange({
+      ...governanceRules,
+      rateLimiting: {
+        ...governanceRules.rateLimiting,
+        [key]: value
+      }
+    });
+  };
+
+  return (
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>System Governance</Typography>
       
-      <Grid item xs={12} md={6}>
-        <Typography variant="subtitle2" fontWeight="bold">Error Handling</Typography>
-        <Typography variant="body2" color="text.secondary">Use Fallback Responses</Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Governance Policy</InputLabel>
+            <Select
+              value={governanceRules.governancePolicy}
+              onChange={(e) => updateRule('governancePolicy', e.target.value)}
+              label="Governance Policy"
+            >
+              <MenuItem value="minimal">Minimal - Basic logging only</MenuItem>
+              <MenuItem value="standard">Standard - Balanced governance</MenuItem>
+              <MenuItem value="strict">Strict - Full compliance monitoring</MenuItem>
+              <MenuItem value="custom">Custom - User-defined rules</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Error Handling</InputLabel>
+            <Select
+              value={governanceRules.errorHandling}
+              onChange={(e) => updateRule('errorHandling', e.target.value)}
+              label="Error Handling"
+            >
+              <MenuItem value="fallback">Fallback - Use backup agents</MenuItem>
+              <MenuItem value="retry">Retry - Attempt again</MenuItem>
+              <MenuItem value="abort">Abort - Stop execution</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Logging Level</InputLabel>
+            <Select
+              value={governanceRules.loggingLevel}
+              onChange={(e) => updateRule('loggingLevel', e.target.value)}
+              label="Logging Level"
+            >
+              <MenuItem value="minimal">Minimal - Errors only</MenuItem>
+              <MenuItem value="standard">Standard - Key events</MenuItem>
+              <MenuItem value="detailed">Detailed - Full trace</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Typography gutterBottom>Max Execution Time (seconds)</Typography>
+          <Slider
+            value={governanceRules.maxExecutionTime}
+            onChange={(_, value) => updateRule('maxExecutionTime', value as number)}
+            min={30}
+            max={600}
+            step={30}
+            marks={[
+              { value: 30, label: '30s' },
+              { value: 300, label: '5m' },
+              { value: 600, label: '10m' }
+            ]}
+            valueLabelDisplay="auto"
+          />
+        </Grid>
+        
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={governanceRules.crossAgentValidation}
+                onChange={(e) => updateRule('crossAgentValidation', e.target.checked)}
+              />
+            }
+            label="Enable Cross-Agent Validation"
+          />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Rate Limit (requests/minute)"
+            type="number"
+            value={governanceRules.rateLimiting.requestsPerMinute}
+            onChange={(e) => updateRateLimiting('requestsPerMinute', parseInt(e.target.value) || 60)}
+            margin="normal"
+          />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Burst Limit"
+            type="number"
+            value={governanceRules.rateLimiting.burstLimit}
+            onChange={(e) => updateRateLimiting('burstLimit', parseInt(e.target.value) || 10)}
+            margin="normal"
+          />
+        </Grid>
       </Grid>
-    </Grid>
-  </Paper>
-);
+    </Paper>
+  );
+};
 
 // Success component with "What You Can Do Next" links
-const SuccessStep: React.FC = () => (
+const SuccessStep: React.FC<{ systemId: string | null }> = ({ systemId }) => (
   <Box textAlign="center" py={10} px={6}>
     <CheckCircle sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
     
     <Typography variant="h4" gutterBottom>
       Multi-Agent System Successfully Created
     </Typography>
-    <Typography variant="body1" color="text.secondary" mb={6}>
+    <Typography variant="body1" color="text.secondary" mb={2}>
       Your multi-agent system is now wrapped with governance controls
     </Typography>
+    {systemId && (
+      <Typography variant="body2" color="text.secondary" mb={6}>
+        System ID: {systemId}
+      </Typography>
+    )}
     
     <Box maxWidth={400} mx="auto">
       <Typography variant="h6" gutterBottom>
@@ -351,7 +449,7 @@ const SuccessStep: React.FC = () => (
           fullWidth
           size="large"
         >
-          View scorecard
+          View system dashboard
         </Button>
         
         <Button 
@@ -388,122 +486,282 @@ const steps = [
 
 const MultiAgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
+  const { createSystem } = useMultiAgentSystems();
   
+  // System configuration state
+  const [systemName, setSystemName] = useState('');
+  const [systemDescription, setSystemDescription] = useState('');
+  const [systemType, setSystemType] = useState<FlowType>('sequential');
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [agentRoles, setAgentRoles] = useState<{ [agentId: string]: AgentRole }>({});
+  const [connections, setConnections] = useState<AgentConnection[]>([]);
+  const [governanceRules, setGovernanceRules] = useState<MultiAgentSystem['governanceRules']>({
+    crossAgentValidation: true,
+    errorHandling: 'fallback',
+    loggingLevel: 'standard',
+    governancePolicy: 'standard',
+    maxExecutionTime: 300,
+    rateLimiting: {
+      requestsPerMinute: 60,
+      burstLimit: 10
+    }
+  });
+  const [isCreating, setIsCreating] = useState(false);
+  const [createdSystemId, setCreatedSystemId] = useState<string | null>(null);
+
   const handleNext = () => {
     if (activeStep === steps.length - 1) {
-      setIsComplete(true);
+      handleCreateSystem();
     } else {
       setActiveStep(activeStep + 1);
     }
   };
-  
-  const handlePrevious = () => {
+
+  const handleBack = () => {
     setActiveStep(activeStep - 1);
   };
-  
+
+  const handleAgentSelect = (agentId: string) => {
+    if (selectedAgents.includes(agentId)) {
+      // Remove agent
+      setSelectedAgents(prev => prev.filter(id => id !== agentId));
+      // Remove agent role
+      const newRoles = { ...agentRoles };
+      delete newRoles[agentId];
+      setAgentRoles(newRoles);
+      // Remove connections involving this agent
+      setConnections(prev => prev.filter(conn => 
+        conn.sourceAgentId !== agentId && conn.targetAgentId !== agentId
+      ));
+    } else {
+      // Add agent
+      setSelectedAgents(prev => [...prev, agentId]);
+      // Add default role
+      setAgentRoles(prev => ({
+        ...prev,
+        [agentId]: {
+          id: uuidv4(),
+          name: `Role for ${agentId}`,
+          description: 'Default role description',
+          responsibilities: ['Process input', 'Generate output'],
+          inputTypes: ['text'],
+          outputTypes: ['text']
+        }
+      }));
+    }
+  };
+
+  const handleCreateSystem = async () => {
+    setIsCreating(true);
+    
+    try {
+      const systemId = uuidv4();
+      const system: MultiAgentSystem = {
+        id: systemId,
+        name: systemName,
+        description: systemDescription,
+        version: '1.0.0',
+        flowType: systemType,
+        agents: selectedAgents.map((agentId, index) => ({
+          agentId,
+          role: agentRoles[agentId],
+          position: { x: index * 200, y: 100 }
+        })),
+        connections,
+        governanceRules,
+        metrics: {
+          requestCount: 0,
+          successCount: 0,
+          errorCount: 0,
+          averageResponseTime: 0,
+          averageSystemResponseTime: 0,
+          agentFailureRates: {},
+          systemUptime: 100
+        },
+        enabled: false,
+        environment: 'draft',
+        userId: '', // Will be set by the registry
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const success = await createSystem(system);
+      if (success) {
+        setCreatedSystemId(systemId);
+        setActiveStep(steps.length); // Move to success step
+      } else {
+        throw new Error('Failed to create multi-agent system');
+      }
+    } catch (error) {
+      console.error('Error creating system:', error);
+      // Handle error - could show a snackbar or error message
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const canProceed = () => {
+    switch (activeStep) {
+      case 0: // Basic Information
+        return systemName.trim() !== '' && systemDescription.trim() !== '';
+      case 1: // Agent Selection
+        return selectedAgents.length >= 2;
+      case 2: // Flow Configuration
+        return true; // Always can proceed from flow config
+      case 3: // Governance Rules
+        return true; // Always can proceed from governance
+      default:
+        return true;
+    }
+  };
+
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>System Information</Typography>
+            <TextField
+              fullWidth
+              label="System Name"
+              value={systemName}
+              onChange={(e) => setSystemName(e.target.value)}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              value={systemDescription}
+              onChange={(e) => setSystemDescription(e.target.value)}
+              margin="normal"
+              multiline
+              rows={3}
+              required
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>System Type</InputLabel>
+              <Select
+                value={systemType}
+                onChange={(e) => setSystemType(e.target.value as FlowType)}
+                label="System Type"
+              >
+                <MenuItem value="sequential">Sequential - Agents execute in order</MenuItem>
+                <MenuItem value="parallel">Parallel - Agents execute simultaneously</MenuItem>
+                <MenuItem value="conditional">Conditional - Execution based on conditions</MenuItem>
+                <MenuItem value="custom">Custom - User-defined flow</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        );
+      case 1:
+        return (
+          <Box>
+            <AgentLibrary 
+              onAgentSelect={handleAgentSelect}
+              selectedAgents={selectedAgents}
+            />
+            <AgentCompositionCanvas />
+          </Box>
+        );
+      case 2:
+        return (
+          <FlowConfiguration
+            flowType={systemType}
+            onFlowTypeChange={setSystemType}
+            connections={connections}
+            onConnectionsChange={setConnections}
+            selectedAgents={selectedAgents}
+          />
+        );
+      case 3:
+        return (
+          <GovernanceRules
+            governanceRules={governanceRules}
+            onGovernanceRulesChange={setGovernanceRules}
+          />
+        );
+      case 4:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>Review Configuration</Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>System Details</Typography>
+                    <Typography><strong>Name:</strong> {systemName}</Typography>
+                    <Typography><strong>Type:</strong> {systemType}</Typography>
+                    <Typography><strong>Agents:</strong> {selectedAgents.length}</Typography>
+                    <Typography><strong>Connections:</strong> {connections.length}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>Governance</Typography>
+                    <Typography><strong>Policy:</strong> {governanceRules.governancePolicy}</Typography>
+                    <Typography><strong>Error Handling:</strong> {governanceRules.errorHandling}</Typography>
+                    <Typography><strong>Logging:</strong> {governanceRules.loggingLevel}</Typography>
+                    <Typography><strong>Max Time:</strong> {governanceRules.maxExecutionTime}s</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        );
+      default:
+        return <SuccessStep systemId={createdSystemId} />;
+    }
+  };
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box mb={4}>
-        <Typography variant="h4" gutterBottom>Multi-Agent Wrapping</Typography>
-        <Typography variant="body1" color="text.secondary">
-          Compose multiple agents into a unified workflow with governance controls
-        </Typography>
-      </Box>
-      
-      {!isComplete ? (
-        <>
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-          
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h5" gutterBottom>
-                {activeStep === 0 && "1. Basic Information"}
-                {activeStep === 1 && "2. Agent Selection"}
-                {activeStep === 2 && "3. Flow Configuration"}
-                {activeStep === 3 && "4. Governance Rules"}
-                {activeStep === 4 && "5. Review & Create"}
-              </Typography>
-              
-              {activeStep === 0 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Multi-Agent System Name"
-                      placeholder="e.g., Customer Support Pipeline, Content Generation Workflow"
-                      variant="outlined"
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={4}
-                      label="Description"
-                      placeholder="Describe the purpose and function of this multi-agent system"
-                      variant="outlined"
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>System Type</InputLabel>
-                      <Select label="System Type">
-                        <MenuItem value="sequential">Sequential Pipeline</MenuItem>
-                        <MenuItem value="parallel">Parallel Processing</MenuItem>
-                        <MenuItem value="conditional">Conditional Branching</MenuItem>
-                        <MenuItem value="custom">Custom Workflow</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              )}
-              
-              {activeStep === 1 && (
-                <Box>
-                  <AgentLibrary />
-                  <AgentCompositionCanvas />
-                  <Typography variant="body2" color="text.secondary" textAlign="center" mt={2}>
-                    Drag agents from the library to the canvas and connect them to create your multi-agent workflow
-                  </Typography>
-                </Box>
-              )}
-              
-              {activeStep === 2 && <FlowConfiguration />}
-              
-              {activeStep === 3 && <GovernanceRules />}
-              
-              {activeStep === 4 && <ReviewStep />}
-            </CardContent>
-          </Card>
-          
-          <Box display="flex" justifyContent="space-between">
-            <Button 
-              variant="outlined" 
-              onClick={handlePrevious}
+      <Typography variant="h4" gutterBottom align="center">
+        Multi-Agent System Wrapper
+      </Typography>
+      <Typography variant="body1" color="text.secondary" align="center" mb={4}>
+        Create governed multi-agent systems from your wrapped agents
+      </Typography>
+
+      <Box maxWidth="lg" mx="auto">
+        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+
+        <Card>
+          <CardContent sx={{ p: 4 }}>
+            {renderStepContent(activeStep)}
+          </CardContent>
+        </Card>
+
+        {activeStep < steps.length && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+            <Button
               disabled={activeStep === 0}
+              onClick={handleBack}
+              variant="outlined"
             >
-              Previous
+              Back
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
               onClick={handleNext}
+              variant="contained"
+              disabled={!canProceed() || isCreating}
             >
-              {activeStep === steps.length - 1 ? 'Create Multi-Agent System' : 'Next'}
+              {activeStep === steps.length - 1 ? 
+                (isCreating ? 'Creating System...' : 'Create System') : 
+                'Next'
+              }
             </Button>
           </Box>
-        </>
-      ) : (
-        <SuccessStep />
-      )}
+        )}
+      </Box>
     </Container>
   );
 };
