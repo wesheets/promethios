@@ -199,13 +199,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       {/* Governance Panel */}
       {showGovernance && <GovernancePanel />}
 
-      {/* Atlas Chat Integration */}
+      {/* Promethios Observer Integration */}
       <AtlasChatIntegration
         agentId={selectedAgent?.id}
         userType="authenticated"
         onGovernanceUpdate={(metrics) => {
           // Update governance metrics if needed
-          console.log('Atlas governance metrics:', metrics);
+          console.log('Promethios Observer governance metrics:', metrics);
         }}
       />
 

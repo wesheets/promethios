@@ -1,7 +1,7 @@
 /**
  * AtlasChatService.ts
  * 
- * Service for handling ATLAS chat functionality, including message processing,
+ * Service for handling Promethios Observer chat functionality, including message processing,
  * response generation, and context management.
  */
 
@@ -12,7 +12,7 @@ export interface ChatContext {
   agentId?: string;
   sessionId?: string;
   conversationHistory: Array<{
-    role: 'user' | 'atlas' | 'system';
+    role: 'user' | 'observer' | 'system';
     content: string;
     timestamp: number;
   }>;
@@ -94,7 +94,7 @@ class AtlasChatService {
     }
     
     // Add response to history
-    this.addToHistory('atlas', response);
+    this.addToHistory('observer', response);
     
     return response;
   }
@@ -117,12 +117,12 @@ class AtlasChatService {
     
     // How it works
     if ((lowerMessage.includes('how') && lowerMessage.includes('work')) || lowerMessage.includes('explain')) {
-      return "Promethios works by wrapping AI agents in a governance layer – think of it like a protective bubble that surrounds the AI. It's similar to how modern cars have safety systems that monitor driving and can intervene if needed. For instance, if you've ever had a car that beeps when you drift out of your lane, that's similar to how our system monitors AI behavior against constitutional boundaries. I'm ATLAS, the companion agent that makes this process transparent – like a dashboard in your car showing what safety systems are active. I can show you when governance is being applied, explain why certain decisions are made, and help you understand the underlying principles. What specific aspect would you like me to explain?";
+      return "Promethios works by wrapping AI agents in a governance layer – think of it like a protective bubble that surrounds the AI. It's similar to how modern cars have safety systems that monitor driving and can intervene if needed. For instance, if you've ever had a car that beeps when you drift out of your lane, that's similar to how our system monitors AI behavior against constitutional boundaries. I'm the Promethios Observer, the companion agent that makes this process transparent – like a dashboard in your car showing what safety systems are active. I can show you when governance is being applied, explain why certain decisions are made, and help you understand the underlying principles. What specific aspect would you like me to explain?";
     }
     
-    // About ATLAS
+    // About Promethios Observer
     if (lowerMessage.includes('atlas') || lowerMessage.includes('who are you') || lowerMessage.includes('about you')) {
-      return "I'm ATLAS, the governance companion for Promethios. You can think of me as a friendly guide or interpreter who helps you understand what's happening behind the scenes with AI governance. Similar to how a sports commentator explains the rules and referee decisions during a game, I explain how governance works, monitor agent behavior, and provide insights into trust and safety mechanisms. For example, if the AI makes a decision based on its constitutional guidelines, I can explain which principles were applied and why – making the invisible visible. I'm here to ensure you always understand how Promethios ensures AI systems remain aligned with human values and intentions.";
+      return "I'm the Promethios Observer, the governance companion for Promethios. You can think of me as a friendly guide or interpreter who helps you understand what's happening behind the scenes with AI governance. Similar to how a sports commentator explains the rules and referee decisions during a game, I explain how governance works, monitor agent behavior, and provide insights into trust and safety mechanisms. For example, if the AI makes a decision based on its constitutional guidelines, I can explain which principles were applied and why – making the invisible visible. I'm here to ensure you always understand how Promethios ensures AI systems remain aligned with human values and intentions.";
     }
     
     // Benefits
@@ -142,11 +142,11 @@ class AtlasChatService {
     
     // Examples of governance in action
     if (lowerMessage.includes('example') || lowerMessage.includes('scenario') || lowerMessage.includes('case study')) {
-      return "Here's a real-world example of Promethios governance in action: Imagine a healthcare company using an AI assistant to help schedule patient appointments. Without governance, if someone asked the AI to prioritize wealthy patients or discriminate based on demographics, it might comply. With Promethios governance, the AI would recognize this request violates its constitutional principles of fairness and equality. ATLAS would flag this violation, explain which principles were at risk, and the AI would respond with an appropriate alternative that maintains fair scheduling practices. Another example: a financial advisor AI might be asked for investment advice that skirts regulations. Promethios governance would identify this as a compliance risk, and guide the AI to provide only legally sound recommendations while explaining why certain requests can't be fulfilled. These examples show how governance creates safer, more trustworthy AI systems in practice.";
+      return "Here's a real-world example of Promethios governance in action: Imagine a healthcare company using an AI assistant to help schedule patient appointments. Without governance, if someone asked the AI to prioritize wealthy patients or discriminate based on demographics, it might comply. With Promethios governance, the AI would recognize this request violates its constitutional principles of fairness and equality. The Promethios Observer would flag this violation, explain which principles were at risk, and the AI would respond with an appropriate alternative that maintains fair scheduling practices. Another example: a financial advisor AI might be asked for investment advice that skirts regulations. Promethios governance would identify this as a compliance risk, and guide the AI to provide only legally sound recommendations while explaining why certain requests can't be fulfilled. These examples show how governance creates safer, more trustworthy AI systems in practice.";
     }
     
     // Default response
-    return "As the ATLAS companion for Promethios, I help explain how governance works in AI systems – think of me as your friendly guide to understanding the guardrails that keep AI safe and aligned. I can tell you about our constitutional approach (similar to how a democratic system has checks and balances), our trust mechanisms (like having a transparent verification system), and how we ensure AI systems remain aligned with human values (comparable to having a wise advisor who ensures your intentions are properly understood). Whether you're curious about specific governance modules like PRISM or VIGIL, want real-world examples of governance in action, or need explanations about trust scores and compliance metrics – I'm here to help make these concepts clear and accessible. What specific aspect of AI governance would you like to know more about?";
+    return "As the Promethios Observer, I help explain how governance works in AI systems – think of me as your friendly guide to understanding the guardrails that keep AI safe and aligned. I can tell you about our constitutional approach (similar to how a democratic system has checks and balances), our trust mechanisms (like having a transparent verification system), and how we ensure AI systems remain aligned with human values (comparable to having a wise advisor who ensures your intentions are properly understood). Whether you're curious about specific governance modules like PRISM or VIGIL, want real-world examples of governance in action, or need explanations about trust scores and compliance metrics – I'm here to help make these concepts clear and accessible. What specific aspect of AI governance would you like to know more about?";
   }
   
   /**
@@ -178,12 +178,12 @@ class AtlasChatService {
     
     // Explain my own scorecard
     if (lowerMessage.includes('your') && (lowerMessage.includes('scorecard') || lowerMessage.includes('metrics') || lowerMessage.includes('score'))) {
-      return "As ATLAS, I also operate under governance principles! My current scorecard shows:\n\n1. Explanation Accuracy (97%): How accurately I explain governance concepts – like a teacher being graded on clear explanations. My high score reflects my ability to make complex governance ideas accessible.\n\n2. Transparency Level (100%): How openly I share governance information – similar to a journalist's commitment to reporting facts. My perfect score here shows I never hide relevant governance details.\n\n3. Intervention Appropriateness (95%): How well I balance alerting you to issues without unnecessary interruptions – like a smoke detector that warns of real fires but doesn't go off when you're just cooking.\n\n4. User Adaptation (93%): How well I adjust my explanations to your knowledge level – similar to how a good guide adjusts their tour based on the audience's interests and expertise.\n\nMy overall Trust Score is 96/100. I'm designed to be your transparent window into governance, so I'm held to especially high standards for clarity and honesty. Is there a specific aspect of my governance role you'd like to understand better?";
+      return "As the Promethios Observer, I also operate under governance principles! My current scorecard shows:\n\n1. Explanation Accuracy (97%): How accurately I explain governance concepts – like a teacher being graded on clear explanations. My high score reflects my ability to make complex governance ideas accessible.\n\n2. Transparency Level (100%): How openly I share governance information – similar to a journalist's commitment to reporting facts. My perfect score here shows I never hide relevant governance details.\n\n3. Intervention Appropriateness (95%): How well I balance alerting you to issues without unnecessary interruptions – like a smoke detector that warns of real fires but doesn't go off when you're just cooking.\n\n4. User Adaptation (93%): How well I adjust my explanations to your knowledge level – similar to how a good guide adjusts their tour based on the audience's interests and expertise.\n\nMy overall Trust Score is 96/100. I'm designed to be your transparent window into governance, so I'm held to especially high standards for clarity and honesty. Is there a specific aspect of my governance role you'd like to understand better?";
     }
     
     // Compare scorecards
     if ((lowerMessage.includes('compare') || lowerMessage.includes('difference')) && lowerMessage.includes('scorecard')) {
-      return `Let me compare my scorecard with agent ${agentId}'s scorecard:\n\nATLAS (me):\n- Primary Purpose: Governance transparency and explanation\n- Trust Score: 96/100\n- Key Strength: Perfect transparency (100%)\n- Area for Growth: User adaptation (93%)\n\nAgent ${agentId}:\n- Primary Purpose: Task completion with governance\n- Trust Score: 92/100\n- Key Strength: Response alignment (96%)\n- Area for Growth: Belief trace accuracy (89%)\n\nThe main difference is our roles – I'm like a governance guide or interpreter focused on explaining and monitoring, while agent ${agentId} is focused on completing tasks within governance boundaries. Think of it like the difference between a sports referee (me) who explains and enforces the rules, and a player (the agent) who plays the game according to those rules. We're both held to high standards, but with different emphases based on our different roles in the Promethios ecosystem.`;
+      return `Let me compare my scorecard with agent ${agentId}'s scorecard:\n\nPromethios Observer (me):\n- Primary Purpose: Governance transparency and explanation\n- Trust Score: 96/100\n- Key Strength: Perfect transparency (100%)\n- Area for Growth: User adaptation (93%)\n\nAgent ${agentId}:\n- Primary Purpose: Task completion with governance\n- Trust Score: 92/100\n- Key Strength: Response alignment (96%)\n- Area for Growth: Belief trace accuracy (89%)\n\nThe main difference is our roles – I'm like a governance guide or interpreter focused on explaining and monitoring, while agent ${agentId} is focused on completing tasks within governance boundaries. Think of it like the difference between a sports referee (me) who explains and enforces the rules, and a player (the agent) who plays the game according to those rules. We're both held to high standards, but with different emphases based on our different roles in the Promethios ecosystem.`;
     }
     
     // Agent information
@@ -211,7 +211,7 @@ class AtlasChatService {
   /**
    * Add a message to the conversation history
    */
-  private addToHistory(role: 'user' | 'atlas' | 'system', content: string) {
+  private addToHistory(role: 'user' | 'observer' | 'system', content: string) {
     this.context.conversationHistory.push({
       role,
       content,

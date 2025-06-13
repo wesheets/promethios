@@ -124,7 +124,7 @@ export const AtlasChatIntegration: React.FC<AtlasChatIntegrationProps> = ({
       >
         <SecurityIcon color="primary" />
         <Typography variant="subtitle2" fontWeight="medium" sx={{ flex: 1 }}>
-          ATLAS Governance Monitor
+          Promethios Observer
         </Typography>
         
         {isMonitoring && (

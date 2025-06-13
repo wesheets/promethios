@@ -26,8 +26,9 @@ export default defineConfig({
     // Ensure environment variables are available in build
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
-        'cmu-playground': path.resolve(__dirname, 'public/cmu-playground/index.html')
+        main: path.resolve(__dirname, 'index.html')
+        // CMU playground disabled
+        // 'cmu-playground': path.resolve(__dirname, 'public/cmu-playground/index.html')
       }
     }
   },
