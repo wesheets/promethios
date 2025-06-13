@@ -1,5 +1,5 @@
 import { AgentWrapper, WrapperMetrics } from '../types';
-import { firestore } from '../../../firebase/config';
+import { db } from '../../../firebase/config';
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 
 /**
@@ -206,7 +206,7 @@ class AgentWrapperRegistry {
    */
   async loadWrappers(): Promise<void> {
     try {
-      const wrappersCollection = collection(firestore, 'agentWrappers');
+      const wrappersCollection = collection(db, 'agentWrappers');
       const snapshot = await getDocs(wrappersCollection);
       
       snapshot.forEach((doc) => {
@@ -270,7 +270,7 @@ class AgentWrapperRegistry {
    */
   private async persistWrapper(wrapper: AgentWrapper): Promise<void> {
     try {
-      const wrapperDoc = doc(firestore, 'agentWrappers', wrapper.id);
+      const wrapperDoc = doc(db, 'agentWrappers', wrapper.id);
       
       await setDoc(wrapperDoc, {
         name: wrapper.name,
@@ -301,7 +301,7 @@ class AgentWrapperRegistry {
    */
   private async removeWrapper(wrapperId: string): Promise<void> {
     try {
-      const wrapperDoc = doc(firestore, 'agentWrappers', wrapperId);
+      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
       await deleteDoc(wrapperDoc);
     } catch (error) {
       console.error('Error removing wrapper from Firebase:', error);
@@ -316,7 +316,7 @@ class AgentWrapperRegistry {
    */
   private async updateWrapperStatus(wrapperId: string, enabled: boolean): Promise<void> {
     try {
-      const wrapperDoc = doc(firestore, 'agentWrappers', wrapperId);
+      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
       await updateDoc(wrapperDoc, {
         enabled,
         updatedAt: new Date()
@@ -334,7 +334,7 @@ class AgentWrapperRegistry {
    */
   private async updateWrapperMetricsInFirebase(wrapperId: string, metrics: WrapperMetrics): Promise<void> {
     try {
-      const wrapperDoc = doc(firestore, 'agentWrappers', wrapperId);
+      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
       await updateDoc(wrapperDoc, {
         metrics,
         updatedAt: new Date()
