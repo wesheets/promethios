@@ -11,7 +11,7 @@ import AtlasChatService from './AtlasChatService';
 import AtlasChatImageUpload from './AtlasChatImageUpload';
 import AtlasChatFileUpload from './AtlasChatFileUpload';
 import AtlasChatImageAnalysis from './AtlasChatImageAnalysis';
-import AtlasChatDocumentAnalysis from './AtlasChatDocumentAnalysis';
+// import AtlasChatDocumentAnalysis from './AtlasChatDocumentAnalysis'; // Temporarily disabled
 import AtlasChatIPProtection from './AtlasChatIPProtection';
 import './AtlasChat.css';
 
@@ -53,7 +53,7 @@ const AtlasChatIntegration: React.FC<AtlasChatIntegrationProps> = ({
     }
   }));
   const imageAnalysisRef = useRef(new AtlasChatImageAnalysis());
-  const documentAnalysisRef = useRef(new AtlasChatDocumentAnalysis());
+  // const documentAnalysisRef = useRef(new AtlasChatDocumentAnalysis()); // Temporarily disabled
   const ipProtectionRef = useRef(new AtlasChatIPProtection());
   
   // Initialize chat with welcome message
@@ -212,11 +212,10 @@ const AtlasChatIntegration: React.FC<AtlasChatIntegrationProps> = ({
       }
       
       // Analyze the document
-      const analysisResult = await documentAnalysisRef.current.analyzeDocument(file);
+      // const analysisResult = await documentAnalysisRef.current.analyzeDocument(file); // Temporarily disabled
       
       // Generate response based on analysis
-      let responseContent = analysisResult.suggestedResponse || 
-        `I've analyzed the document "${file.name}" you shared, but I'm not sure what specific information you're looking for. Could you clarify what you'd like me to explain?`;
+      let responseContent = `I've received the document "${file.name}" you shared, but document analysis is temporarily disabled. Could you clarify what you'd like me to explain about this document?`;
       
       // Apply IP protection
       responseContent = ipProtectionRef.current.processResponse(responseContent, userType);
