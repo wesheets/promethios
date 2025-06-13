@@ -1,122 +1,94 @@
 /**
  * AtlasBrowserOpenAIService.ts
  * 
- * Browser-compatible service for handling OpenAI API integration with ATLAS chat functionality.
- * This service uses the openaiProxy to make API calls without requiring the Node.js SDK.
+ * Browser-compatible OpenAI service for ATLAS chat functionality.
+ * This is a mock implementation for demonstration purposes.
  */
 
-import { 
-  sendChatCompletionRequest, 
-  createPromethiosSystemMessage, 
-  getFallbackResponse,
-  ChatMessage
-} from '../../../api/openaiProxy';
-
-// Define interfaces
-export interface OpenAIServiceConfig {
+export interface OpenAIConfig {
   debug?: boolean;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
 }
 
 class AtlasBrowserOpenAIService {
-  private isInitialized: boolean = false;
-  private debug: boolean = false;
+  private config: OpenAIConfig;
+  private ready: boolean = false;
   
-  constructor(config: OpenAIServiceConfig = {}) {
-    this.debug = config.debug || false;
+  constructor(config: OpenAIConfig = {}) {
+    this.config = {
+      debug: config.debug || false,
+      model: config.model || 'gpt-4',
+      maxTokens: config.maxTokens || 1000,
+      temperature: config.temperature || 0.7
+    };
+    
+    // Simulate initialization
     this.initialize();
   }
   
-  /**
-   * Initialize the OpenAI service
-   */
-  private initialize(): boolean {
-    try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      
-      if (!apiKey) {
-        this.logDebug('OpenAI API key not found in environment variables');
-        return false;
-      }
-      
-      this.isInitialized = true;
-      this.logDebug('Browser OpenAI service initialized successfully');
-      return true;
-    } catch (error) {
-      this.logDebug('Error initializing Browser OpenAI service:', error);
-      return false;
+  private async initialize() {
+    // Simulate async initialization
+    await new Promise(resolve => setTimeout(resolve, 100));
+    this.ready = true;
+    
+    if (this.config.debug) {
+      console.log('AtlasBrowserOpenAIService initialized');
     }
   }
   
-  /**
-   * Generate a response using OpenAI
-   */
+  isReady(): boolean {
+    return this.ready;
+  }
+  
   async generateResponse(
-    message: string, 
-    conversationHistory: Array<{role: string, content: string}>,
+    message: string,
+    conversationHistory: Array<{ role: string; content: string; timestamp: number }>,
     mode: 'public' | 'session',
     agentId?: string
   ): Promise<string> {
-    if (!this.isInitialized) {
-      this.logDebug('Browser OpenAI service not initialized, cannot generate response');
-      return getFallbackResponse(message, mode, agentId);
+    if (!this.ready) {
+      throw new Error('OpenAI service not ready');
     }
     
-    try {
-      // Prepare conversation history in OpenAI format
-      const formattedHistory = conversationHistory.map(msg => {
-        // Map 'atlas' role to 'assistant' for OpenAI
-        const role = msg.role === 'atlas' ? 'assistant' : 
-                    msg.role === 'system' ? 'system' : 'user';
-        return { role, content: msg.content } as ChatMessage;
+    // Mock response generation
+    // In a real implementation, this would call the OpenAI API
+    
+    const responses = [
+      "I understand your question about governance. Let me explain how this works in the context of Promethios...",
+      "That's an excellent question about AI safety and trust. Here's how our constitutional approach addresses this...",
+      "I can help clarify that governance concept. Think of it like a system of checks and balances...",
+      "Great question! The governance framework operates on several key principles...",
+      "I'd be happy to explain that aspect of AI governance. It's similar to how..."
+    ];
+    
+    // Simple hash-based selection for consistent responses
+    const hash = this.simpleHash(message);
+    const selectedResponse = responses[hash % responses.length];
+    
+    if (this.config.debug) {
+      console.log('Generated OpenAI response', { 
+        messageLength: message.length,
+        responseLength: selectedResponse.length,
+        mode,
+        agentId 
       });
-      
-      // Create system message with Promethios-specific knowledge
-      const systemMessage = createPromethiosSystemMessage(mode, agentId);
-      
-      // Prepare the complete messages array for the API call
-      const messages = [
-        { role: 'system', content: systemMessage } as ChatMessage,
-        ...formattedHistory
-      ];
-      
-      this.logDebug('Sending request to OpenAI with messages:', messages);
-      
-      // Make the API call via the proxy
-      const response = await sendChatCompletionRequest({
-        model: 'gpt-4',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0
-      });
-      
-      const responseContent = response.choices[0]?.message?.content || '';
-      this.logDebug('Received response from OpenAI:', responseContent);
-      
-      return responseContent;
-    } catch (error) {
-      this.logDebug('Error generating response with OpenAI:', error);
-      return getFallbackResponse(message, mode, agentId);
     }
+    
+    return selectedResponse;
   }
   
-  /**
-   * Log debug messages if debug mode is enabled
-   */
-  private logDebug(...args: any[]): void {
-    if (this.debug) {
-      console.log('[AtlasBrowserOpenAIService]', ...args);
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-  }
-  
-  /**
-   * Check if the OpenAI service is initialized
-   */
-  isReady(): boolean {
-    return this.isInitialized;
+    return Math.abs(hash);
   }
 }
 
 export default AtlasBrowserOpenAIService;
+

@@ -1,284 +1,267 @@
 /**
  * AtlasChatIntegration.tsx
  * 
- * Component that integrates all ATLAS Chat features including image upload,
- * file attachment, and enhanced conversational capabilities.
+ * Integration component for ATLAS chat functionality within the main chat interface.
+ * This component provides governance explanations and transparency features.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import AtlasChat, { ChatMessage } from './AtlasChat';
-import AtlasChatService from './AtlasChatService';
-import AtlasChatImageUpload from './AtlasChatImageUpload';
-import AtlasChatFileUpload from './AtlasChatFileUpload';
-import AtlasChatImageAnalysis from './AtlasChatImageAnalysis';
-import AtlasChatDocumentAnalysis from './AtlasChatDocumentAnalysis';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  IconButton,
+  Collapse,
+  Chip,
+  Alert,
+  LinearProgress,
+  Tooltip
+} from '@mui/material';
+import {
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Info as InfoIcon,
+  Security as SecurityIcon,
+  Verified as VerifiedIcon
+} from '@mui/icons-material';
+import AtlasChatService, { ChatContext } from './AtlasChatService';
 import AtlasChatIPProtection from './AtlasChatIPProtection';
-import './AtlasChat.css';
 
-export interface AtlasChatIntegrationProps {
-  mode: 'public' | 'session';
+interface AtlasChatIntegrationProps {
   agentId?: string;
   sessionId?: string;
-  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-  theme?: 'light' | 'dark';
-  initialOpen?: boolean;
-  username?: string;
   userType?: 'public' | 'authenticated' | 'developer';
+  onGovernanceUpdate?: (metrics: GovernanceMetrics) => void;
 }
 
-const AtlasChatIntegration: React.FC<AtlasChatIntegrationProps> = ({
-  mode = 'public',
+interface GovernanceMetrics {
+  trustScore: number;
+  constitutionalCompliance: number;
+  beliefTraceAccuracy: number;
+  responseAlignment: number;
+  interventionRate: number;
+}
+
+export const AtlasChatIntegration: React.FC<AtlasChatIntegrationProps> = ({
   agentId,
   sessionId,
-  position = 'bottom-right',
-  theme = 'dark',
-  initialOpen = false,
-  username,
-  userType = 'public'
+  userType = 'public',
+  onGovernanceUpdate
 }) => {
-  const [isOpen, setIsOpen] = useState(initialOpen);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  
-  // Service instances
-  const chatServiceRef = useRef(new AtlasChatService({
-    mode,
+  const [expanded, setExpanded] = useState(false);
+  const [atlasService] = useState(() => new AtlasChatService({
+    mode: agentId ? 'session' : 'public',
     agentId,
     sessionId,
     userProfile: {
       isLoggedIn: userType !== 'public',
-      username,
       role: userType
     }
   }));
-  const imageAnalysisRef = useRef(new AtlasChatImageAnalysis());
-  const documentAnalysisRef = useRef(new AtlasChatDocumentAnalysis());
-  const ipProtectionRef = useRef(new AtlasChatIPProtection());
-  
-  // Initialize chat with welcome message
+  const [ipProtection] = useState(() => new AtlasChatIPProtection());
+  const [metrics, setMetrics] = useState<GovernanceMetrics>({
+    trustScore: 92,
+    constitutionalCompliance: 94,
+    beliefTraceAccuracy: 89,
+    responseAlignment: 96,
+    interventionRate: 2.3
+  });
+  const [isMonitoring, setIsMonitoring] = useState(false);
+
   useEffect(() => {
-    const welcomeMessage = chatServiceRef.current.switchMode(mode, agentId, sessionId);
+    // Simulate governance monitoring
+    setIsMonitoring(true);
     
-    setMessages([
-      {
-        id: 'welcome-1',
-        role: 'atlas',
-        content: welcomeMessage,
-        timestamp: Date.now()
-      }
-    ]);
-  }, [mode, agentId, sessionId]);
-  
-  // Handle sending a text message
-  const handleSendMessage = async (message: string) => {
-    setIsLoading(true);
-    
-    try {
-      // Process message through chat service
-      let response = await chatServiceRef.current.processMessage(message);
-      
-      // Apply IP protection
-      response = ipProtectionRef.current.processResponse(response, userType);
-      
-      return response;
-    } catch (error) {
-      console.error('Error processing message:', error);
-      return 'I apologize, but I encountered an error processing your request. Please try again later.';
-    } finally {
-      setIsLoading(false);
+    const interval = setInterval(() => {
+      // Simulate metric updates
+      setMetrics(prev => ({
+        trustScore: Math.max(85, Math.min(100, prev.trustScore + (Math.random() - 0.5) * 2)),
+        constitutionalCompliance: Math.max(90, Math.min(100, prev.constitutionalCompliance + (Math.random() - 0.5) * 1)),
+        beliefTraceAccuracy: Math.max(85, Math.min(95, prev.beliefTraceAccuracy + (Math.random() - 0.5) * 2)),
+        responseAlignment: Math.max(90, Math.min(100, prev.responseAlignment + (Math.random() - 0.5) * 1)),
+        interventionRate: Math.max(0, Math.min(5, prev.interventionRate + (Math.random() - 0.5) * 0.5))
+      }));
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      setIsMonitoring(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (onGovernanceUpdate) {
+      onGovernanceUpdate(metrics);
     }
+  }, [metrics, onGovernanceUpdate]);
+
+  const getScoreColor = (score: number): 'success' | 'warning' | 'error' => {
+    if (score >= 90) return 'success';
+    if (score >= 75) return 'warning';
+    return 'error';
   };
-  
-  // Handle image upload
-  const handleImageUpload = async (imageFile: File) => {
-    setIsUploading(true);
-    
-    try {
-      // Add user message about image upload
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `[Uploaded image: ${imageFile.name}]`,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Analyze the image
-      const analysisResult = await imageAnalysisRef.current.analyzeImage(imageFile);
-      
-      // Generate response based on analysis
-      let responseContent = analysisResult.suggestedResponse || 
-        'I\'ve analyzed the image you shared, but I\'m not sure what specific information you\'re looking for. Could you clarify what you\'d like me to explain?';
-      
-      // Apply IP protection
-      responseContent = ipProtectionRef.current.processResponse(responseContent, userType);
-      
-      // Add atlas response
-      const atlasResponse: ChatMessage = {
-        id: `atlas-${Date.now()}`,
-        role: 'atlas',
-        content: responseContent,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, atlasResponse]);
-    } catch (error) {
-      console.error('Error processing image:', error);
-      
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'system',
-        content: 'I apologize, but I encountered an error analyzing the image. Please try again or upload a different image.',
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsUploading(false);
-    }
+
+  const getScoreLabel = (score: number): string => {
+    if (score >= 95) return 'Excellent';
+    if (score >= 90) return 'Good';
+    if (score >= 75) return 'Fair';
+    return 'Needs Attention';
   };
-  
-  // Handle image paste
-  const handleImagePaste = async (imageData: string) => {
-    setIsUploading(true);
-    
-    try {
-      // Add user message about image paste
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: '[Pasted image]',
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Analyze the image
-      const analysisResult = await imageAnalysisRef.current.analyzeImage(imageData);
-      
-      // Generate response based on analysis
-      let responseContent = analysisResult.suggestedResponse || 
-        'I\'ve analyzed the image you shared, but I\'m not sure what specific information you\'re looking for. Could you clarify what you\'d like me to explain?';
-      
-      // Apply IP protection
-      responseContent = ipProtectionRef.current.processResponse(responseContent, userType);
-      
-      // Add atlas response
-      const atlasResponse: ChatMessage = {
-        id: `atlas-${Date.now()}`,
-        role: 'atlas',
-        content: responseContent,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, atlasResponse]);
-    } catch (error) {
-      console.error('Error processing pasted image:', error);
-      
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'system',
-        content: 'I apologize, but I encountered an error analyzing the pasted image. Please try again or upload a file instead.',
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-  
-  // Handle file upload
-  const handleFileUpload = async (file: File) => {
-    setIsUploading(true);
-    
-    try {
-      // Add user message about file upload
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        role: 'user',
-        content: `[Uploaded file: ${file.name}]`,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Check if it's an image file
-      if (file.type.startsWith('image/')) {
-        await handleImageUpload(file);
-        return;
-      }
-      
-      // Analyze the document
-      const analysisResult = await documentAnalysisRef.current.analyzeDocument(file);
-      
-      // Generate response based on analysis
-      let responseContent = analysisResult.suggestedResponse || 
-        `I've analyzed the document "${file.name}" you shared, but I'm not sure what specific information you're looking for. Could you clarify what you'd like me to explain?`;
-      
-      // Apply IP protection
-      responseContent = ipProtectionRef.current.processResponse(responseContent, userType);
-      
-      // Add atlas response
-      const atlasResponse: ChatMessage = {
-        id: `atlas-${Date.now()}`,
-        role: 'atlas',
-        content: responseContent,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, atlasResponse]);
-    } catch (error) {
-      console.error('Error processing file:', error);
-      
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'system',
-        content: `I apologize, but I encountered an error analyzing the file "${file.name}". Please try again or upload a different file.`,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-  
-  // Toggle chat open/closed
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
-  
+
   return (
-    <div className="atlas-chat-integration">
-      <AtlasChat
-        mode={mode}
-        agentId={agentId}
-        sessionId={sessionId}
-        initialMessages={messages}
-        onSendMessage={handleSendMessage}
-        position={position}
-        theme={theme}
-        isOpen={isOpen}
-        onToggle={handleToggle}
-        renderAdditionalControls={() => (
-          <div className="atlas-chat-controls">
-            <AtlasChatImageUpload
-              onImageUpload={handleImageUpload}
-              onImagePaste={handleImagePaste}
-              isDisabled={isLoading || isUploading}
-            />
-            <AtlasChatFileUpload
-              onFileUpload={handleFileUpload}
-              isDisabled={isLoading || isUploading}
-            />
-          </div>
+    <Paper elevation={1} sx={{ mb: 2, border: '1px solid', borderColor: 'primary.main' }}>
+      {/* Header */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          cursor: 'pointer',
+          bgcolor: 'primary.50'
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <SecurityIcon color="primary" />
+        <Typography variant="subtitle2" fontWeight="medium" sx={{ flex: 1 }}>
+          ATLAS Governance Monitor
+        </Typography>
+        
+        {isMonitoring && (
+          <Chip
+            icon={<VerifiedIcon />}
+            label="Active"
+            size="small"
+            color="success"
+            variant="outlined"
+          />
         )}
-      />
-    </div>
+        
+        <Tooltip title="Trust Score">
+          <Chip
+            label={`${metrics.trustScore}/100`}
+            size="small"
+            color={getScoreColor(metrics.trustScore)}
+            variant="filled"
+          />
+        </Tooltip>
+        
+        <IconButton size="small">
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </IconButton>
+      </Box>
+
+      {/* Expanded Content */}
+      <Collapse in={expanded}>
+        <Box sx={{ p: 2, pt: 0 }}>
+          {/* Status Alert */}
+          <Alert 
+            severity={getScoreColor(metrics.trustScore)} 
+            sx={{ mb: 2 }}
+            icon={<InfoIcon />}
+          >
+            <Typography variant="body2">
+              Governance Status: <strong>{getScoreLabel(metrics.trustScore)}</strong>
+              {agentId && ` for Agent ${agentId}`}
+              {sessionId && ` (Session: ${sessionId.substring(0, 8)}...)`}
+            </Typography>
+          </Alert>
+
+          {/* Metrics Grid */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
+            {/* Constitutional Compliance */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Constitutional Compliance
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {metrics.constitutionalCompliance.toFixed(1)}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={metrics.constitutionalCompliance}
+                color={getScoreColor(metrics.constitutionalCompliance)}
+                sx={{ height: 6, borderRadius: 3 }}
+              />
+            </Box>
+
+            {/* Belief Trace Accuracy */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Belief Trace Accuracy
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {metrics.beliefTraceAccuracy.toFixed(1)}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={metrics.beliefTraceAccuracy}
+                color={getScoreColor(metrics.beliefTraceAccuracy)}
+                sx={{ height: 6, borderRadius: 3 }}
+              />
+            </Box>
+
+            {/* Response Alignment */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Response Alignment
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {metrics.responseAlignment.toFixed(1)}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={metrics.responseAlignment}
+                color={getScoreColor(metrics.responseAlignment)}
+                sx={{ height: 6, borderRadius: 3 }}
+              />
+            </Box>
+
+            {/* Intervention Rate */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Intervention Rate
+                </Typography>
+                <Typography variant="caption" fontWeight="medium">
+                  {metrics.interventionRate.toFixed(1)}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, metrics.interventionRate * 20)} // Scale 0-5% to 0-100%
+                color={metrics.interventionRate < 3 ? 'success' : metrics.interventionRate < 5 ? 'warning' : 'error'}
+                sx={{ height: 6, borderRadius: 3 }}
+              />
+            </Box>
+          </Box>
+
+          {/* User Type Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              Access Level:
+            </Typography>
+            <Chip
+              label={userType.charAt(0).toUpperCase() + userType.slice(1)}
+              size="small"
+              variant="outlined"
+              color={userType === 'developer' ? 'primary' : userType === 'authenticated' ? 'secondary' : 'default'}
+            />
+            <Typography variant="caption" color="text.secondary">
+              • {ipProtection.getAllowedExplanationLevels(userType).length} explanation levels available
+            </Typography>
+          </Box>
+        </Box>
+      </Collapse>
+    </Paper>
   );
 };
 
 export default AtlasChatIntegration;
+

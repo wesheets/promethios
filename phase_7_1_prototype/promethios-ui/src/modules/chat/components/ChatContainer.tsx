@@ -15,6 +15,7 @@ import EnhancedMessageInput from './EnhancedMessageInput';
 import GovernancePanel from './GovernancePanel';
 import FileUploadComponents from './FileUploadComponents';
 import AgentSelector from './AgentSelector';
+import AtlasChatIntegration from '../../../components/atlas/chat/AtlasChatIntegration';
 
 interface ChatContainerProps {
   height?: string | number;
@@ -197,6 +198,16 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
       {/* Governance Panel */}
       {showGovernance && <GovernancePanel />}
+
+      {/* Atlas Chat Integration */}
+      <AtlasChatIntegration
+        agentId={selectedAgent?.id}
+        userType="authenticated"
+        onGovernanceUpdate={(metrics) => {
+          // Update governance metrics if needed
+          console.log('Atlas governance metrics:', metrics);
+        }}
+      />
 
       {/* Agent Selector */}
       <AgentSelector
