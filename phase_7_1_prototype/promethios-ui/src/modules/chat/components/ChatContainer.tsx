@@ -11,6 +11,7 @@ import { FileUploadResult } from '../services/FileUploadService';
 import { adHocMultiAgentService, MultiAgentConversation } from '../services/AdHocMultiAgentService';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import EnhancedMessageInput from './EnhancedMessageInput';
 import GovernancePanel from './GovernancePanel';
 import FileUploadComponents from './FileUploadComponents';
 import AgentSelector from './AgentSelector';
@@ -28,13 +29,30 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [activeTab, setActiveTab] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
+  const [useEnhancedInput, setUseEnhancedInput] = useState(true);
 
-  const handleSendMessage = async (content: string) => {
-    // Add user message
+  const handleSendMessage = async (content: string, attachments?: any[]) => {
+    // Add user message with attachments
     const userMessage = messageService.addMessage({
       content,
       sender: 'user'
     });
+
+    // Handle attachments if present
+    if (attachments && attachments.length > 0) {
+      const attachmentInfo = attachments.map(att => {
+        if (att.type === 'image') {
+          return `📷 ${att.name}`;
+        }
+        return `📎 ${att.name}`;
+      }).join(', ');
+      
+      // Add attachment info to message
+      const attachmentMessage = messageService.addMessage({
+        content: `Attachments: ${attachmentInfo}`,
+        sender: 'system'
+      });
+    }
 
     // Handle different modes
     if (mode === 'multi-agent' && (selectedAgent || multiAgentConfig)) {
@@ -166,6 +184,15 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           }
           label="Multi-Agent Mode"
         />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={useEnhancedInput}
+              onChange={(e) => setUseEnhancedInput(e.target.checked)}
+            />
+          }
+          label="Enhanced Input (Copy/Paste)"
+        />
       </Box>
 
       {/* Governance Panel */}
@@ -202,7 +229,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           }}
         >
           <MessageList messages={messages} />
-          <MessageInput onSendMessage={handleSendMessage} />
+          {useEnhancedInput ? (
+            <EnhancedMessageInput onSendMessage={handleSendMessage} />
+          ) : (
+            <MessageInput onSendMessage={(content) => handleSendMessage(content)} />
+          )}
         </Paper>
       )}
 
