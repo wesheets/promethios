@@ -84,42 +84,20 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     const loadData = async () => {
       try {
         setLoading(true);
-        
-        // Load agents from wrapper registry
-        await agentWrapperRegistry.loadWrappers();
-        const wrappers = agentWrapperRegistry.getAllWrappers();
-        
-        // Convert wrappers to agents for the chat interface
-        const userAgents: Agent[] = wrappers.map(wrapper => ({
-          id: wrapper.id,
-          name: wrapper.name,
-          description: wrapper.description,
-          capabilities: wrapper.supportedProviders,
-          category: 'wrapped',
-          status: agentWrapperRegistry.isWrapperEnabled(wrapper.id) ? 'online' : 'offline',
-          avatar: undefined,
-          version: wrapper.version
-        }));
-        
-        // Load multi-agent systems
-        await multiAgentSystemRegistry.loadSystems();
-        const userSystems = multiAgentSystemRegistry.getAllSystems();
-        
+        const [userAgents, userSystems] = await Promise.all([
+          agentWrapperRegistry.getUserAgents(userId),
+          multiAgentSystemRegistry.getUserSystems(userId)
+        ]);
         setAgents(userAgents);
         setMultiAgentSystems(userSystems);
       } catch (error) {
         console.error('Error loading agents and systems:', error);
-        // Set empty arrays on error
-        setAgents([]);
-        setMultiAgentSystems([]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (userId) {
-      loadData();
-    }
+    loadData();
   }, [userId]);
 
   // Get current selection display
