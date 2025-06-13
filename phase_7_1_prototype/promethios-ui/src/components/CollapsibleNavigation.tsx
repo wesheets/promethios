@@ -124,7 +124,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
         { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
         { id: 'agent-profiles', label: 'Agent Profiles', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
-        { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/agents/chat' },
+        { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/chat' },
         { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
         { id: 'registry', label: 'Registry', icon: <RegistryIcon />, path: '/ui/agents/registry' },
         { id: 'benchmarks', label: 'Benchmarks', icon: <BenchmarksIcon />, path: '/ui/agents/benchmarks' },
