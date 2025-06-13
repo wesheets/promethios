@@ -576,9 +576,9 @@ class AtlasChatDocumentAnalysis {
     let currentTitle = '';
     let currentContent: string[] = [];
     
-    for (const line of lines) {
-      // Check if line is a potential title (all caps, not too long)
-      if (line === line.toUpperCase() && line.length < 50 && line.length > 3) {
+    for (const textLine of lines) {
+      // Check if textLine is a potential title (all caps, not too long)
+      if (textLine === textLine.toUpperCase() && textLine.length < 50 && textLine.length > 3) {
         // Save previous section if it exists
         if (currentTitle && currentContent.length > 0) {
           sections.push({
@@ -588,11 +588,11 @@ class AtlasChatDocumentAnalysis {
         }
         
         // Start new section
-        currentTitle = line;
+        currentTitle = textLine;
         currentContent = [];
       } else {
         // Add to current section content
-        currentContent.push(line);
+        currentContent.push(textLine);
       }
     }
     
@@ -635,10 +635,10 @@ class AtlasChatDocumentAnalysis {
   }
   
   /**
-   * Check if a line is likely a heading
+   * Check if a textLine is likely a heading
    */
-  private isLikelyHeading(line: string): boolean {
-    const trimmed = line.trim();
+  private isLikelyHeading(textLine: string): boolean {
+    const trimmed = textLine.trim();
     
     // All caps, not too long
     if (trimmed === trimmed.toUpperCase() && trimmed.length < 50 && trimmed.length > 3) {
