@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -24,6 +25,9 @@ const auth = getAuth(app);
 // Initialize Firestore
 const db = getFirestore(app);
 
+// Initialize Storage
+const storage = getStorage(app);
+
 // Configure Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
@@ -31,5 +35,5 @@ googleProvider.setCustomParameters({
 });
 
 // Export Firebase services
-export { auth, db, googleProvider, firebaseConfig };
+export { auth, db, storage, googleProvider, firebaseConfig };
 export default app;
