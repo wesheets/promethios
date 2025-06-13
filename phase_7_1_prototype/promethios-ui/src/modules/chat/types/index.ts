@@ -31,3 +31,17 @@ export interface ChatSession {
   userId: string;
 }
 
+export interface MultiAgentSystem {
+  id: string;
+  name: string;
+  description: string;
+  agents: Agent[];
+  coordinationPattern: string;
+}
+
+export interface AdHocMultiAgentConfig {
+  agents: Agent[];
+  coordinationPattern: 'sequential' | 'parallel' | 'hierarchical';
+  maxAgents: number;
+}
+
