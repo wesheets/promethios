@@ -172,42 +172,42 @@ This document tracks all stubbed functionalities within the Promethios UI projec
 - **Location**: `ScorecardMetricRegistry`, `AgentEvaluationService` (backend services) and corresponding UI components.
 - **Dependency**: Firebase Firestore (if Firebase-backed) or a dedicated backend API.
 - **Action Required**: Implement CRUD operations for scorecard data persistence. Define Firestore collections/security rules or backend API endpoints.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented with Firebase integration in `ScorecardServices.ts`
 
 ### 2. Governance Identity Data Persistence (Firebase/Backend API)
 - **Description**: Storing and retrieving `AgentIdentity`, `AgentAttestation`, and `AgentRoleDefinition` data.
 - **Location**: `AgentIdentityRegistry`, `AgentAttestationService`, `AgentRoleService` (backend services) and corresponding UI components.
 - **Dependency**: Firebase Firestore (if Firebase-backed) or a dedicated backend API.
 - **Action Required**: Implement CRUD operations for governance identity data persistence. Define Firestore collections/security rules or backend API endpoints.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented with Firebase integration in `AgentIdentityRegistry.ts` and `AttestationAndRoleServices.ts`
 
 ### 3. Agent Data Source Integration
 - **Description**: The Agent Scorecard module depends on a source of agent data, typically from the Governance Identity module.
 - **Location**: `AgentEvaluationService`.
 - **Dependency**: `AgentIdentityRegistry`.
 - **Action Required**: Ensure seamless data flow and API integration between Agent Scorecard and Governance Identity modules.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Integrated via `AgentWrapperIntegration.ts`
 
 ### 4. Data Visualization Components
 - **Description**: Implementation of `MetricVisualization Widgets` (e.g., Gauge, Bar Chart, Trend Line) for displaying scorecard data.
 - **Location**: `AgentScorecardDashboard`, `AgentDetailView`.
 - **Dependency**: A charting library (e.g., Chart.js, Recharts) or custom SVG/Canvas rendering.
 - **Action Required**: Select and integrate a suitable charting library or develop custom visualization components.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented with Material-UI progress bars and custom gauge components in Agent Profiles UI
 
 ### 5. User/Owner Information Integration (Firebase)
 - **Description**: `AgentIdentity` includes an `ownerId` which links to a user. This requires integration with Firebase Authentication for user resolution and potentially user roles for access control.
 - **Location**: `AgentIdentityRegistry`, `AgentRegistrationForm`, `AgentDetailView`.
 - **Dependency**: Firebase Authentication.
 - **Action Required**: Implement logic to associate agents with Firebase users and enforce access control based on user authentication and roles.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented with user-scoped data isolation in all services
 
 ### 6. UI Route Mapping
 - **Description**: New UI routes need to be defined and integrated into the application's routing system.
 - **Location**: Application routing configuration.
 - **Dependency**: React Router (or similar routing library).
 - **Action Required**: Add routes for `/agents/:agentId/scorecard`, `/dashboard/agent-scorecards`, `/admin/scorecard-templates`, `/agents`, `/admin/agents`, `/agents/:agentId`.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented Agent Profiles route `/ui/agents/profiles` in UIIntegration.tsx
 
 ### 7. Feature Toggle Integration
 - **Description**: Visibility and functionality of these modules will be controlled by feature toggles.
@@ -221,7 +221,7 @@ This document tracks all stubbed functionalities within the Promethios UI projec
 - **Location**: Backend services and UI components of Agent Scorecard and Governance Identity.
 - **Dependency**: Agent Wrapping module, Emotional Veritas module, Observer Agent module.
 - **Action Required**: Define and implement APIs/mechanisms for data exchange between these modules.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Integrated with Agent Wrapping module via automatic identity/scorecard assignment
 
 ## Toggleable and Multi-Agent Chat Interfaces
 
@@ -244,7 +244,7 @@ This document tracks all stubbed functionalities within the Promethios UI projec
 - **Location**: `AgentSelectionList`.
 - **Dependency**: Agent Identity module (specifically `AgentIdentityRegistry`).
 - **Action Required**: Integrate with the Agent Identity module to fetch available agents and their capabilities.
-- **Status**: [ ] To Do
+- **Status**: [✅] **COMPLETED** - Implemented in Multi-Agent Wrapper with real agent selection from wrapped agents
 
 ### 4. Governance Metrics Integration
 - **Description**: The Governance Mode needs to display governance metrics and compliance information from the Governance module.
