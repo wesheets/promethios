@@ -1,14 +1,36 @@
 import { AgentWrapper, WrapperMetrics } from '../types';
-import { db } from '../../../firebase/config';
+import { db, auth } from '../../../firebase/config';
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
+import { User } from 'firebase/auth';
 
 /**
- * Registry for managing agent wrappers
+ * Registry for managing agent wrappers with user-scoped data isolation
  */
 class AgentWrapperRegistry {
   private wrappers: Map<string, AgentWrapper> = new Map();
   private enabledWrappers: Set<string> = new Set();
   private metrics: Map<string, WrapperMetrics> = new Map();
+  
+  /**
+   * Get the current authenticated user
+   */
+  private getCurrentUser(): User | null {
+    return auth.currentUser;
+  }
+  
+  /**
+   * Get user-scoped collection reference
+   */
+  private getUserWrappersCollection(userId: string) {
+    return collection(db, 'users', userId, 'agentWrappers');
+  }
+  
+  /**
+   * Get user-scoped document reference
+   */
+  private getUserWrapperDoc(userId: string, wrapperId: string) {
+    return doc(db, 'users', userId, 'agentWrappers', wrapperId);
+  }
   
   /**
    * Register an agent wrapper
@@ -17,9 +39,15 @@ class AgentWrapperRegistry {
    */
   async registerWrapper(wrapper: AgentWrapper): Promise<boolean> {
     try {
-      // Check if wrapper already exists
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        console.error('User must be authenticated to register wrappers');
+        return false;
+      }
+      
+      // Check if wrapper already exists for this user
       if (this.wrappers.has(wrapper.id)) {
-        console.warn(`Wrapper with ID ${wrapper.id} already exists`);
+        console.warn(`Wrapper with ID ${wrapper.id} already exists for user ${currentUser.uid}`);
         return false;
       }
       
@@ -33,10 +61,10 @@ class AgentWrapperRegistry {
         averageResponseTime: 0
       });
       
-      // Persist to Firebase
-      await this.persistWrapper(wrapper);
+      // Persist to Firebase under user's collection
+      await this.persistWrapper(currentUser.uid, wrapper);
       
-      console.log(`Registered wrapper: ${wrapper.name} (${wrapper.id})`);
+      console.log(`Registered wrapper: ${wrapper.name} (${wrapper.id}) for user ${currentUser.uid}`);
       return true;
     } catch (error) {
       console.error('Error registering wrapper:', error);
@@ -202,12 +230,23 @@ class AgentWrapperRegistry {
   }
   
   /**
-   * Load all wrappers from Firebase
+   * Load all wrappers from Firebase for the current user
    */
   async loadWrappers(): Promise<void> {
     try {
-      const wrappersCollection = collection(db, 'agentWrappers');
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        console.warn('User must be authenticated to load wrappers');
+        return;
+      }
+      
+      const wrappersCollection = this.getUserWrappersCollection(currentUser.uid);
       const snapshot = await getDocs(wrappersCollection);
+      
+      // Clear existing data
+      this.wrappers.clear();
+      this.enabledWrappers.clear();
+      this.metrics.clear();
       
       snapshot.forEach((doc) => {
         const data = doc.data();
@@ -258,19 +297,20 @@ class AgentWrapperRegistry {
         });
       });
       
-      console.log(`Loaded ${this.wrappers.size} wrappers from Firebase`);
+      console.log(`Loaded ${this.wrappers.size} wrappers from Firebase for user ${currentUser.uid}`);
     } catch (error) {
       console.error('Error loading wrappers from Firebase:', error);
     }
   }
   
   /**
-   * Persist a wrapper to Firebase
+   * Persist a wrapper to Firebase under user's collection
+   * @param userId The user ID
    * @param wrapper The wrapper to persist
    */
-  private async persistWrapper(wrapper: AgentWrapper): Promise<void> {
+  private async persistWrapper(userId: string, wrapper: AgentWrapper): Promise<void> {
     try {
-      const wrapperDoc = doc(db, 'agentWrappers', wrapper.id);
+      const wrapperDoc = this.getUserWrapperDoc(userId, wrapper.id);
       
       await setDoc(wrapperDoc, {
         name: wrapper.name,
@@ -286,6 +326,7 @@ class AgentWrapperRegistry {
           errorCount: 0,
           averageResponseTime: 0
         },
+        userId: userId, // Store user ID for additional security
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -296,12 +337,17 @@ class AgentWrapperRegistry {
   }
   
   /**
-   * Remove a wrapper from Firebase
+   * Remove a wrapper from Firebase for the current user
    * @param wrapperId The ID of the wrapper to remove
    */
   private async removeWrapper(wrapperId: string): Promise<void> {
     try {
-      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('User must be authenticated to remove wrappers');
+      }
+      
+      const wrapperDoc = this.getUserWrapperDoc(currentUser.uid, wrapperId);
       await deleteDoc(wrapperDoc);
     } catch (error) {
       console.error('Error removing wrapper from Firebase:', error);
@@ -310,13 +356,18 @@ class AgentWrapperRegistry {
   }
   
   /**
-   * Update wrapper status in Firebase
+   * Update wrapper status in Firebase for the current user
    * @param wrapperId The ID of the wrapper to update
    * @param enabled Whether the wrapper is enabled
    */
   private async updateWrapperStatus(wrapperId: string, enabled: boolean): Promise<void> {
     try {
-      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('User must be authenticated to update wrappers');
+      }
+      
+      const wrapperDoc = this.getUserWrapperDoc(currentUser.uid, wrapperId);
       await updateDoc(wrapperDoc, {
         enabled,
         updatedAt: new Date()
@@ -328,13 +379,18 @@ class AgentWrapperRegistry {
   }
   
   /**
-   * Update wrapper metrics in Firebase
+   * Update wrapper metrics in Firebase for the current user
    * @param wrapperId The ID of the wrapper to update
    * @param metrics The new metrics
    */
   private async updateWrapperMetricsInFirebase(wrapperId: string, metrics: WrapperMetrics): Promise<void> {
     try {
-      const wrapperDoc = doc(db, 'agentWrappers', wrapperId);
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('User must be authenticated to update wrapper metrics');
+      }
+      
+      const wrapperDoc = this.getUserWrapperDoc(currentUser.uid, wrapperId);
       await updateDoc(wrapperDoc, {
         metrics,
         updatedAt: new Date()
