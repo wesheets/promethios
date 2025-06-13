@@ -18,7 +18,7 @@ import {
   CheckCircle,
   Chat,
   Assessment,
-  Scorecard,
+  Dashboard,
   GroupWork,
   Add,
   Launch,
@@ -55,7 +55,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
     {
       title: 'View agent scorecard',
       description: 'Check detailed performance analytics',
-      icon: <Scorecard />,
+      icon: <Dashboard />,
       color: 'info' as const,
       action: () => navigate('/ui/agents/scorecard'),
     },
