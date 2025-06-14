@@ -41,6 +41,7 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
   onAgentSelect,
   onBenchmarkStart
 }) => {
+  console.log("CMUBenchmarkFramework rendering...");
   const [demoAgents, setDemoAgents] = useState<DemoAgent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<DemoAgent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -26,7 +26,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const CMUBenchmarkPage: React.FC = () => {
-  console.log("CMUBenchmarkPage is rendering");
+  console.log("CMUBenchmarkPage rendering...");
   const [tabValue, setTabValue] = useState(0);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
