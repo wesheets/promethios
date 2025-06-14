@@ -483,7 +483,7 @@ export const FullChatPage: React.FC<FullChatPageProps> = ({
         </Box>
 
         {/* Governance Panel */}
-        {isGovernanceActive && showGovernancePanel && !isMobile && (
+        {isGovernanceEnabled && shouldShowGovernancePanel && !isMobile && (
           <Box sx={{ 
             width: 350, 
             flexShrink: 0, 
@@ -551,7 +551,7 @@ export const FullChatPage: React.FC<FullChatPageProps> = ({
       </Box>
 
       {/* Mobile FAB for governance */}
-      {isMobile && isGovernanceActive && (
+      {isMobile && isGovernanceEnabled && (
         <Fab
           color="primary"
           sx={{ position: 'fixed', bottom: 16, right: 16 }}

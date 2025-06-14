@@ -97,21 +97,21 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
   // Get current mode configuration
   const getModeConfig = (mode: ChatMode) => {
     switch (mode) {
-      case ChatMode.STANDARD:
+      case 'standard':
         return { 
           color: '#2196F3', 
           icon: <PersonIcon />, 
           label: 'Standard Chat',
           description: 'Direct conversation with selected agent'
         };
-      case ChatMode.GOVERNANCE:
+      case 'governance':
         return { 
           color: '#4CAF50', 
           icon: <SecurityIcon />, 
           label: 'Governed Chat',
           description: 'Enhanced monitoring and compliance tracking'
         };
-      case ChatMode.MULTI_AGENT:
+      case 'multi-agent':
         return { 
           color: '#9C27B0', 
           icon: <GroupIcon />, 
@@ -124,11 +124,11 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
   };
 
   const modeConfig = getModeConfig(currentMode);
-  const isGovernanceActive = currentMode === ChatMode.GOVERNANCE || currentMode === ChatMode.MULTI_AGENT;
+  const isGovernanceActive = currentMode === 'governance' || currentMode === 'multi-agent';
 
   // Get current selection display name
   const getCurrentSelectionName = () => {
-    if (currentMode === ChatMode.MULTI_AGENT && adHocConfig) {
+    if (currentMode === 'multi-agent' && adHocConfig) {
       return adHocConfig.name || `Ad-hoc (${adHocConfig.agentIds.length} agents)`;
     }
     // This would be populated from actual agent/system data
