@@ -52,7 +52,7 @@ interface ChatContainerProps {
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
-  height = '100vh',
+  height = 'calc(100vh - 60px)', // Default to account for navigation
   agentId,
   multiAgentSystemId
 }) => {
@@ -523,12 +523,27 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         )}
 
         {/* Message List and Input (center) */}
-        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2, overflow: 'hidden' }}>
-          <MessageList messages={messages} />
-          <MessageInput 
-            onSendMessage={handleSendMessage} 
-            governanceEnabled={isGovernanceEnabled}
-          />
+        <Box sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          overflow: 'hidden',
+          height: '100%'
+        }}>
+          <Box sx={{ 
+            flexGrow: 1, 
+            overflow: 'auto',
+            p: 2,
+            pb: 0
+          }}>
+            <MessageList messages={messages} />
+          </Box>
+          <Box sx={{ flexShrink: 0 }}>
+            <MessageInput 
+              onSendMessage={handleSendMessage} 
+              governanceEnabled={isGovernanceEnabled}
+            />
+          </Box>
         </Box>
 
         {/* Governance Panel (right side) */}

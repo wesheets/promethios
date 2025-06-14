@@ -29,10 +29,11 @@ const ChatPage: React.FC = () => {
 
   return (
     <Box sx={{ 
-      height: '100vh', 
+      height: 'calc(100vh - 60px)', // Account for top navigation
       display: 'flex', 
       flexDirection: 'column',
-      backgroundColor: '#1a1a1a'
+      backgroundColor: '#1a1a1a',
+      overflow: 'hidden'
     }}>
       <ChatContainer 
         height="100%" 
