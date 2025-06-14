@@ -110,16 +110,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to login if not authenticated
   if (!currentUser) {
+      console.log("ProtectedRoute Debug: User not authenticated, redirecting to /login");
     return <Navigate to="/login" replace />;
   }
 
   // Redirect to onboarding if required and not completed (including null state for new users)
   if (requireOnboarding && (onboardingCompleted === false || onboardingCompleted === null)) {
-    console.log('Final check: Redirecting to onboarding - onboardingCompleted=', onboardingCompleted);
+    console.log("ProtectedRoute Debug: Onboarding required and not completed, redirecting to /ui/onboarding", { onboardingCompleted });
     return <Navigate to="/ui/onboarding" replace />;
   }
 
-  console.log('Final check: Allowing access to protected content', {
+  console.log("ProtectedRoute Debug: Allowing access to protected content", {
     requireOnboarding,
     onboardingCompleted,
     checkingOnboarding
