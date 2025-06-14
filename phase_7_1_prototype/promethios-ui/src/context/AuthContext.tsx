@@ -42,12 +42,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener with optimizations
+    console.log("AuthContext: Setting up auth state listener");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("AuthContext: Auth state changed. User:", user ? user.uid : "null");
       setCurrentUser(user);
       setLoading(false);
     }, (error) => {
-      console.error('Auth state change error:', error);
+      console.error("AuthContext: Auth state change error:", error);
       setLoading(false);
     });
 
