@@ -22,6 +22,7 @@ interface MainLayoutProxyProps {
 }
 
 const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
+  console.log("MainLayoutProxy rendering...");
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
