@@ -65,11 +65,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [multiAgentConversations, setMultiAgentConversations] = useState<MultiAgentConversation[]>([]);
   const [showWrappingPrompt, setShowWrappingPrompt] = useState<string | null>(null);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([
+    { id: 'new', name: 'New Chat', mode: 'standard mode', lastActivity: 'now' },
     { id: '1', name: 'Chat Session 1', mode: 'standard mode', lastActivity: '2 hours ago' },
     { id: '2', name: 'Chat Session 2', mode: 'governance mode', lastActivity: '2 hours ago' },
     { id: '3', name: 'Chat Session 3', mode: 'multi-agent mode', lastActivity: '2 hours ago' }
   ]);
-  const [selectedSession, setSelectedSession] = useState<string>('1');
+  const [selectedSession, setSelectedSession] = useState<string>('new');
   const [sessionMenuAnchor, setSessionMenuAnchor] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
@@ -122,6 +123,20 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         sender: 'system'
       });
     }
+
+    // Show thinking indicator
+    const thinkingMessage = messageService.addMessage({
+      content: '🤔 **Agent is thinking...**',
+      sender: 'system',
+      isThinking: true
+    });
+    setMessages(messageService.getMessages());
+
+    // Simulate thinking delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Remove thinking indicator
+    messageService.removeMessage(thinkingMessage.id);
 
     // Handle different modes
     if (isMultiAgentEnabled && (selectedAgent || multiAgentConfig || selectedMultiAgentSystem)) {
@@ -452,7 +467,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             <Switch
               checked={isGovernanceEnabled}
               onChange={(e) => setIsGovernanceEnabled(e.target.checked)}
-              color="error"
+              color="success"
             />
           }
           label={
@@ -469,7 +484,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
               <Switch
                 checked={isMultiAgentEnabled}
                 onChange={(e) => setIsMultiAgentEnabled(e.target.checked)}
-                color="success"
+                color="primary"
               />
             }
             label={
@@ -483,8 +498,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
       {/* Main Chat Area */}
       <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Agent Selector / Governance Panel (conditionally rendered) */}
-        {(isMultiAgentEnabled || isGovernanceEnabled) && (
+        {/* Agent Selector (left side) */}
+        {isMultiAgentEnabled && !multiAgentSystemId && (
           <Paper sx={{ 
             width: '300px', 
             height: '100%', 
@@ -494,29 +509,42 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             flexDirection: 'column',
             overflowY: 'auto'
           }}>
-            {isMultiAgentEnabled && !multiAgentSystemId && (
-              <AgentSelector
-                selectedAgent={selectedAgent}
-                setSelectedAgent={setSelectedAgent}
-                multiAgentConfig={multiAgentConfig}
-                setMultiAgentConfig={setMultiAgentConfig}
-                selectedMultiAgentSystem={selectedMultiAgentSystem}
-                setSelectedMultiAgentSystem={setSelectedMultiAgentSystem}
-                multiAgentConversations={multiAgentConversations}
-                setShowWrappingPrompt={setShowWrappingPrompt}
-              />
-            )}
-            {isGovernanceEnabled && (
-              <GovernancePanel />
-            )}
+            <AgentSelector
+              selectedAgent={selectedAgent}
+              setSelectedAgent={setSelectedAgent}
+              multiAgentConfig={multiAgentConfig}
+              setMultiAgentConfig={setMultiAgentConfig}
+              selectedMultiAgentSystem={selectedMultiAgentSystem}
+              setSelectedMultiAgentSystem={setSelectedMultiAgentSystem}
+              multiAgentConversations={multiAgentConversations}
+              setShowWrappingPrompt={setShowWrappingPrompt}
+            />
           </Paper>
         )}
 
-        {/* Message List and Input */}
+        {/* Message List and Input (center) */}
         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2, overflow: 'hidden' }}>
           <MessageList messages={messages} />
-          <MessageInput onSendMessage={handleSendMessage} />
+          <MessageInput 
+            onSendMessage={handleSendMessage} 
+            governanceEnabled={isGovernanceEnabled}
+          />
         </Box>
+
+        {/* Governance Panel (right side) */}
+        {isGovernanceEnabled && (
+          <Paper sx={{ 
+            width: '300px', 
+            height: '100%', 
+            backgroundColor: '#2a2a2a', 
+            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto'
+          }}>
+            <GovernancePanel />
+          </Paper>
+        )}
       </Box>
 
       {showWrappingPrompt && (
