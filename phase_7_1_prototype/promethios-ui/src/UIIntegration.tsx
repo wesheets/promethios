@@ -102,7 +102,7 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* CMU Benchmark Page route */}
-        <Route path="agents/benchmark" element={
+        <Route path="agents/benchmark/*" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <CMUBenchmarkPage />
