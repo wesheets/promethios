@@ -15,6 +15,8 @@ import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
 import ChatPage from './pages/ChatPage';
+import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
+import BenchmarkChatPage from './pages/BenchmarkChatPage';
 
 /**
  * UIIntegration Component
@@ -88,6 +90,22 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <ChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Benchmark Chat Page route */}
+        <Route path="agents/benchmark/chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <BenchmarkChatPage />
+          </ProtectedRoute>
+        } />
+        
+        {/* CMU Benchmark Page route */}
+        <Route path="agents/benchmark" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <CMUBenchmarkPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
