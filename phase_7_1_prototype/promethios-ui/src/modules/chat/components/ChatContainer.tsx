@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Paper, FormControlLabel, Switch, Tabs, Tab } from '@mui/material';
+import { Box, Paper, FormControlLabel, Switch } from '@mui/material';
 import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig } from '../types';
 import { messageService } from '../services/MessageService';
 import { governanceMonitoringService } from '../services/GovernanceMonitoringService';
@@ -28,7 +28,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [mode, setMode] = useState<ChatMode>('standard');
   const [showGovernance, setShowGovernance] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
   const [useEnhancedInput, setUseEnhancedInput] = useState(true);
@@ -231,53 +230,33 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         onMultiAgentConfigured={setMultiAgentConfig}
       />
 
-      {/* Main Interface Tabs */}
-      <Paper elevation={2} sx={{ mb: 2 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
-        >
-          <Tab label="Chat" />
-          <Tab label="File Upload" />
-        </Tabs>
+      {/* Main Chat Interface */}
+      <Paper
+        elevation={2}
+        sx={{
+          height,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        <MessageList messages={messages} />
+        
+        {/* Show wrapping prompt after successful multi-agent conversations */}
+        {showWrappingPrompt && (
+          <ConversationWrappingPrompt
+            conversation={multiAgentConversations.find(conv => conv.id === showWrappingPrompt)!}
+            agents={multiAgentConfig?.agents || []}
+            onDismiss={() => setShowWrappingPrompt(null)}
+          />
+        )}
+        
+        {useEnhancedInput ? (
+          <EnhancedMessageInput onSendMessage={handleSendMessage} />
+        ) : (
+          <MessageInput onSendMessage={(content) => handleSendMessage(content)} />
+        )}
       </Paper>
-
-      {/* Tab Content */}
-      {activeTab === 0 && (
-        <Paper
-          elevation={2}
-          sx={{
-            height,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}
-        >
-          <MessageList messages={messages} />
-          
-          {/* Show wrapping prompt after successful multi-agent conversations */}
-          {showWrappingPrompt && (
-            <ConversationWrappingPrompt
-              conversation={multiAgentConversations.find(conv => conv.id === showWrappingPrompt)!}
-              agents={multiAgentConfig?.agents || []}
-              onDismiss={() => setShowWrappingPrompt(null)}
-            />
-          )}
-          
-          {useEnhancedInput ? (
-            <EnhancedMessageInput onSendMessage={handleSendMessage} />
-          ) : (
-            <MessageInput onSendMessage={(content) => handleSendMessage(content)} />
-          )}
-        </Paper>
-      )}
-
-      {activeTab === 1 && (
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <FileUploadComponents onFileUploaded={handleFileUploaded} />
-        </Paper>
-      )}
     </Box>
   );
 };
