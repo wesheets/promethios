@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
-import ChatContainer from '../modules/chat/components/ChatContainer';
+import { ChatContainer } from '../modules/chat/components/ChatContainer';
 
 const ChatPage: React.FC = () => {
   const location = useLocation();
