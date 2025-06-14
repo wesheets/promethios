@@ -571,14 +571,14 @@ class AtlasChatDocumentAnalysis {
     
     // Simple section extraction based on all-caps titles
     // In a real implementation, this would be more sophisticated
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    const textLines = text.split('\n').map(textLine => textLine.trim()).filter(textLine => textLine);
     
     let currentTitle = '';
     let currentContent: string[] = [];
     
-    for (const line of lines) {
-      // Check if line is a potential title (all caps, not too long)
-      if (line === line.toUpperCase() && line.length < 50 && line.length > 3) {
+    for (const textLine of textLines) {
+      // Check if textLine is a potential title (all caps, not too long)
+      if (textLine === textLine.toUpperCase() && textLine.length < 50 && textLine.length > 3) {
         // Save previous section if it exists
         if (currentTitle && currentContent.length > 0) {
           sections.push({
@@ -588,11 +588,11 @@ class AtlasChatDocumentAnalysis {
         }
         
         // Start new section
-        currentTitle = line;
+        currentTitle = textLine;
         currentContent = [];
       } else {
         // Add to current section content
-        currentContent.push(line);
+        currentContent.push(textLine);
       }
     }
     
@@ -612,18 +612,18 @@ class AtlasChatDocumentAnalysis {
    */
   private findSection(text: string, sectionNames: string[]): string {
     const lowerText = text.toLowerCase();
-    const lines = text.split('\n');
+    const documentLines = text.split('\n');
     
-    for (let i = 0; i < lines.length; i++) {
-      const lowerLine = lines[i].toLowerCase().trim();
+    for (let i = 0; i < documentLines.length; i++) {
+      const lowerLine = documentLines[i].toLowerCase().trim();
       
       if (sectionNames.some(name => lowerLine.includes(name))) {
         // Found a section, extract content until next section or end
         let sectionContent = '';
         let j = i + 1;
         
-        while (j < lines.length && !this.isLikelyHeading(lines[j])) {
-          sectionContent += lines[j] + '\n';
+        while (j < documentLines.length && !this.isLikelyHeading(documentLines[j])) {
+          sectionContent += documentLines[j] + '\n';
           j++;
         }
         
@@ -637,8 +637,8 @@ class AtlasChatDocumentAnalysis {
   /**
    * Check if a line is likely a heading
    */
-  private isLikelyHeading(line: string): boolean {
-    const trimmed = line.trim();
+  private isLikelyHeading(textLine: string): boolean {
+    const trimmed = textLine.trim();
     
     // All caps, not too long
     if (trimmed === trimmed.toUpperCase() && trimmed.length < 50 && trimmed.length > 3) {
