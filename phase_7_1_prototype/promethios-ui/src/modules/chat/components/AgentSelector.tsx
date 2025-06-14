@@ -123,7 +123,8 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
           status: 'online',
           governanceScore: 90,
           capabilities: ['data-analysis', 'visualization', 'statistics']
-        },\n        {
+        },
+        {
           id: 'agent-5',
           name: 'Project Manager',
           description: 'Coordination and project management specialist',
