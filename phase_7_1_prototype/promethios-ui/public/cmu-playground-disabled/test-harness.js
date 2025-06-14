@@ -6,7 +6,7 @@
  */
 
 // Import the modules we need to test
-import { EnhancedRobustAPIClient } from './modules/enhancedRobustApiClient.js';
+import EnhancedRobustAPIClient from './modules/enhancedRobustApiClient.js';
 import { LLMAgentProvider } from './modules/llmAgentProvider.js';
 import { featureFlags } from './modules/featureFlags.js';
 import { API_CONFIG } from './modules/apiConfig.js';

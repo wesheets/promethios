@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    allowedHosts: [
+      '5173-ikqsf4kbgupdywfogsklu-0aaac96c.manusvm.computer'
+    ]
+  },
   build: {
     // Optimize bundle size
     rollupOptions: {
@@ -27,4 +35,5 @@ export default defineConfig({
     }
   }
 });
+
 

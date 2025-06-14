@@ -12,7 +12,23 @@ interface MessageProps {
 
 export const Message: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.sender === 'user';
-  
+  const isAgent = message.sender === 'agent';
+  const isSystem = message.sender === 'system';
+
+  let bgColor = 'grey.800'; // Default for agent/system messages
+  let textColor = 'white';
+
+  if (isUser) {
+    bgColor = 'primary.main';
+    textColor = 'primary.contrastText';
+  } else if (isAgent) {
+    bgColor = '#333333'; // Darker shade for agent messages
+    textColor = 'white';
+  } else if (isSystem) {
+    bgColor = '#2a2a2a'; // Even darker for system messages
+    textColor = 'grey.400';
+  }
+
   return (
     <Box
       sx={{
@@ -26,8 +42,9 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
         sx={{
           p: 2,
           maxWidth: '70%',
-          bgcolor: isUser ? 'primary.main' : 'grey.100',
-          color: isUser ? 'primary.contrastText' : 'text.primary'
+          bgcolor: bgColor,
+          color: textColor,
+          borderRadius: '10px'
         }}
       >
         <Typography variant="body1">
