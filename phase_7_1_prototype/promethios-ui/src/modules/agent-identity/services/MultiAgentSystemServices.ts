@@ -3,11 +3,11 @@ import {
   SystemAttestation,
   SystemScorecardResult,
   DEFAULT_SYSTEM_METRICS
-} from '../types/multiAgent';
+} from './types/multiAgent';
 import { 
   AgentIdentity,
   AgentScorecardResult 
-} from '../types';
+} from './types';
 import { db } from '../../../firebase/config';
 import { 
   collection, 
@@ -340,7 +340,8 @@ class MultiAgentSystemIntegration {
 }
 
 // Export singleton instances
-export const multiAgentSystemRegistry = new MultiAgentSystemIdentityRegistry();
-export const multiAgentScorecardService = new MultiAgentSystemScorecardService();
-export const multiAgentSystemIntegration = new MultiAgentSystemIntegration();
+// export const multiAgentSystemRegistry = new MultiAgentSystemIdentityRegistry();
+// export const multiAgentScorecardService = new MultiAgentSystemScorecardService();
+// export const multiAgentSystemIntegration = new MultiAgentSystemIntegration();
+
 
