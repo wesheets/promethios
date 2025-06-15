@@ -510,6 +510,6 @@ export class AgentEvaluationService {
     if (!metric.interpretationRule?.thresholds) return 'normal';
 
     const thresholds = metric.interpretationRule.thresholds;
-    const directi
+    const direction = metric.interpretationRule.direction;
 (Content truncated due to size limit. Use line ranges to read in chunks)
 
