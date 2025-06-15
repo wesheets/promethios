@@ -55,7 +55,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           localStorage.setItem(cacheKey, 'false');
         }
       }, 50); // Very quick check for new users
-    };
+    }
 
     if (!loading) {
       checkUserOnboarding();
