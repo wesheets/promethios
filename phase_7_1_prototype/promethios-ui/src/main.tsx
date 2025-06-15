@@ -1,3 +1,4 @@
+console.log("main.tsx: VERY FIRST LINE EXECUTED.");
 import React from 'react';
 console.log("main.tsx: File loaded and executing.");
 import ReactDOM from 'react-dom/client';
