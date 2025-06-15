@@ -1,4 +1,5 @@
 import React from 'react';
+console.log("main.tsx: File loaded and executing.");
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
