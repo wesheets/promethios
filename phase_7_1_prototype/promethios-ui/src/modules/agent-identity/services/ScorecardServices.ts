@@ -4,7 +4,7 @@ import {
   ScorecardTemplate,
   AgentScorecardResult,
   AgentComparisonResult 
-} from '../types';
+} from './types';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
@@ -510,21 +510,6 @@ export class AgentEvaluationService {
     if (!metric.interpretationRule?.thresholds) return 'normal';
 
     const thresholds = metric.interpretationRule.thresholds;
-    const direction = metric.interpretationRule.direction;
-
-    if (direction === 'higher_is_better') {
-      if (typeof thresholds.critical === 'number' && value < thresholds.critical) return 'critical';
-      if (typeof thresholds.warning === 'number' && value < thresholds.warning) return 'warning';
-    } else if (direction === 'lower_is_better') {
-      if (typeof thresholds.critical === 'number' && value > thresholds.critical) return 'critical';
-      if (typeof thresholds.warning === 'number' && value > thresholds.warning) return 'warning';
-    }
-
-    return 'normal';
-  }
-}
-
-// Export singleton instances
-export const scorecardMetricRegistry = ScorecardMetricRegistry.getInstance();
-export const agentEvaluationService = AgentEvaluationService.getInstance();
+    const directi
+(Content truncated due to size limit. Use line ranges to read in chunks)
 
