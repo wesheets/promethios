@@ -35,10 +35,10 @@ export class ScorecardMetricRegistry {
   registerMetric(metric: ScorecardMetric): boolean {
     try {
       this.metrics.set(metric.id, metric);
-      console.log('Metric registered successfully:', metric.id);
+      console.log('ScorecardServices: Metric registered successfully:', metric.id);
       return true;
     } catch (error) {
-      console.error('Error registering metric:', error);
+      console.error('ScorecardServices: Error registering metric:', error);
       return false;
     }
   }
@@ -52,11 +52,11 @@ export class ScorecardMetricRegistry {
     try {
       const deleted = this.metrics.delete(metricId);
       if (deleted) {
-        console.log('Metric deregistered successfully:', metricId);
+        console.log('ScorecardServices: Metric deregistered successfully:', metricId);
       }
       return deleted;
     } catch (error) {
-      console.error('Error deregistering metric:', error);
+      console.error('ScorecardServices: Error deregistering metric:', error);
       return false;
     }
   }
@@ -165,7 +165,6 @@ export class ScorecardMetricRegistry {
       weight: 0.25
     });
 
-    // Compliance Metrics
     this.registerMetric({
       id: 'governance-compliance',
       name: 'Governance Compliance',
@@ -184,7 +183,6 @@ export class ScorecardMetricRegistry {
       weight: 0.3
     });
 
-    // Robustness Metrics
     this.registerMetric({
       id: 'robustness',
       name: 'Robustness Score',
@@ -267,13 +265,14 @@ export class AgentEvaluationService {
    * @returns Promise<string> - The template ID
    */
   async saveScorecardTemplate(template: Omit<ScorecardTemplate, 'id'>): Promise<string> {
+    console.log('ScorecardServices: Attempting to save scorecard template.');
     try {
       const docRef = await addDoc(collection(db, 'scorecardTemplates'), template);
       await updateDoc(docRef, { id: docRef.id });
-      console.log('Scorecard template saved:', docRef.id);
+      console.log('ScorecardServices: Scorecard template saved:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('Error saving scorecard template:', error);
+      console.error('ScorecardServices: Error saving scorecard template:', error);
       throw new Error('Failed to save scorecard template');
     }
   }
@@ -284,17 +283,20 @@ export class AgentEvaluationService {
    * @returns Promise<ScorecardTemplate | null>
    */
   async getScorecardTemplate(templateId: string): Promise<ScorecardTemplate | null> {
+    console.log('ScorecardServices: Attempting to get scorecard template:', templateId);
     try {
       const docRef = doc(db, 'scorecardTemplates', templateId);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
+        console.log('ScorecardServices: Scorecard template found:', docSnap.id);
         return { id: docSnap.id, ...docSnap.data() } as ScorecardTemplate;
       }
       
+      console.log('ScorecardServices: Scorecard template not found:', templateId);
       return null;
     } catch (error) {
-      console.error('Error getting scorecard template:', error);
+      console.error('ScorecardServices: Error getting scorecard template:', error);
       throw new Error('Failed to retrieve scorecard template');
     }
   }
@@ -304,6 +306,7 @@ export class AgentEvaluationService {
    * @returns Promise<ScorecardTemplate[]>
    */
   async listScorecardTemplates(): Promise<ScorecardTemplate[]> {
+    console.log('ScorecardServices: Attempting to list all scorecard templates.');
     try {
       const q = query(collection(db, 'scorecardTemplates'), orderBy('name'));
       const querySnapshot = await getDocs(q);
@@ -313,9 +316,10 @@ export class AgentEvaluationService {
         templates.push({ id: doc.id, ...doc.data() } as ScorecardTemplate);
       });
       
+      console.log('ScorecardServices: Successfully listed scorecard templates. Count:', templates.length);
       return templates;
     } catch (error) {
-      console.error('Error listing scorecard templates:', error);
+      console.error('ScorecardServices: Error listing scorecard templates:', error);
       throw new Error('Failed to list scorecard templates');
     }
   }
@@ -332,6 +336,7 @@ export class AgentEvaluationService {
     templateId: string, 
     context: ScorecardContext
   ): Promise<AgentScorecardResult> {
+    console.log('ScorecardServices: Attempting to evaluate agent:', agentId, 'with template:', templateId);
     try {
       const template = await this.getScorecardTemplate(templateId);
       if (!template) {
@@ -346,7 +351,7 @@ export class AgentEvaluationService {
       for (const metricId of template.metricIds) {
         const metric = this.metricRegistry.getMetric(metricId);
         if (!metric) {
-          console.warn(`Metric ${metricId} not found in registry`);
+          console.warn(`ScorecardServices: Metric ${metricId} not found in registry`);
           continue;
         }
 
@@ -382,14 +387,16 @@ export class AgentEvaluationService {
       };
 
       // Save the result to Firebase
+      console.log('ScorecardServices: Attempting to save scorecard result for agent:', agentId);
       await addDoc(collection(db, 'scorecardResults'), {
         ...result,
         evaluationTimestamp: Timestamp.fromDate(result.evaluationTimestamp)
       });
 
+      console.log('ScorecardServices: Scorecard result saved for agent:', agentId);
       return result;
     } catch (error) {
-      console.error('Error evaluating agent:', error);
+      console.error('ScorecardServices: Error evaluating agent:', error);
       throw new Error('Failed to evaluate agent');
     }
   }
@@ -406,6 +413,7 @@ export class AgentEvaluationService {
     templateId?: string,
     timePeriod?: { start: Date; end: Date }
   ): Promise<AgentScorecardResult[]> {
+    console.log('ScorecardServices: Attempting to get evaluation history for agent:', agentId);
     try {
       let q = query(
         collection(db, 'scorecardResults'),
@@ -438,9 +446,10 @@ export class AgentEvaluationService {
         }
       });
 
+      console.log('ScorecardServices: Successfully retrieved evaluation history. Count:', results.length);
       return results;
     } catch (error) {
-      console.error('Error getting evaluation history:', error);
+      console.error('ScorecardServices: Error getting evaluation history:', error);
       throw new Error('Failed to retrieve evaluation history');
     }
   }
@@ -457,6 +466,7 @@ export class AgentEvaluationService {
     templateId: string,
     context: ScorecardContext
   ): Promise<AgentComparisonResult[]> {
+    console.log('ScorecardServices: Attempting to compare agents:', agentIds, 'with template:', templateId);
     try {
       const results: AgentComparisonResult[] = [];
 
@@ -472,9 +482,10 @@ export class AgentEvaluationService {
         result.rank = index + 1;
       });
 
+      console.log('ScorecardServices: Successfully compared agents. Count:', results.length);
       return results;
     } catch (error) {
-      console.error('Error comparing agents:', error);
+      console.error('ScorecardServices: Error comparing agents:', error);
       throw new Error('Failed to compare agents');
     }
   }
@@ -511,5 +522,25 @@ export class AgentEvaluationService {
 
     const thresholds = metric.interpretationRule.thresholds;
     const direction = metric.interpretationRule.direction;
-(Content truncated due to size limit. Use line ranges to read in chunks)
+
+    if (direction === 'higher_is_better') {
+      if (value < thresholds.critical) return 'critical';
+      if (value < thresholds.warning) return 'warning';
+    } else if (direction === 'lower_is_better') {
+      if (value > thresholds.critical) return 'critical';
+      if (value > thresholds.warning) return 'warning';
+    } else if (direction === 'target_range' && metric.interpretationRule.targetRange) {
+      const [min, max] = metric.interpretationRule.targetRange;
+      if (value < min || value > max) return 'critical';
+      // You might define a 'warning' range outside the target but within acceptable bounds
+    }
+
+    return 'normal';
+  }
+}
+
+// Singleton instance
+export const scorecardMetricRegistry = ScorecardMetricRegistry.getInstance();
+export const agentEvaluationService = AgentEvaluationService.getInstance();
+
 

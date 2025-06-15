@@ -34,6 +34,7 @@ class MultiAgentSystemIdentityRegistry {
    * Register a new multi-agent system identity
    */
   async registerSystem(systemData: Omit<MultiAgentSystemIdentity, 'id' | 'creationDate' | 'lastModifiedDate'>): Promise<string> {
+    console.log('MultiAgentSystemServices: Attempting to register system:', systemData.name);
     try {
       const systemIdentity: Omit<MultiAgentSystemIdentity, 'id'> = {
         ...systemData,
@@ -47,10 +48,10 @@ class MultiAgentSystemIdentityRegistry {
         lastModifiedDate: Timestamp.fromDate(systemIdentity.lastModifiedDate)
       });
 
-      console.log('Multi-agent system identity registered:', docRef.id);
+      console.log('MultiAgentSystemServices: Multi-agent system identity registered:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('Error registering multi-agent system identity:', error);
+      console.error('MultiAgentSystemServices: Error registering multi-agent system identity:', error);
       throw error;
     }
   }
@@ -59,12 +60,14 @@ class MultiAgentSystemIdentityRegistry {
    * Get system identity by ID
    */
   async getSystemIdentity(systemId: string): Promise<MultiAgentSystemIdentity | null> {
+    console.log('MultiAgentSystemServices: Attempting to get system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
+        console.log('MultiAgentSystemServices: System identity found:', systemId);
         return {
           id: docSnap.id,
           ...data,
@@ -73,9 +76,10 @@ class MultiAgentSystemIdentityRegistry {
         } as MultiAgentSystemIdentity;
       }
 
+      console.log('MultiAgentSystemServices: System identity not found:', systemId);
       return null;
     } catch (error) {
-      console.error('Error getting system identity:', error);
+      console.error('MultiAgentSystemServices: Error getting system identity:', error);
       throw error;
     }
   }
@@ -84,6 +88,7 @@ class MultiAgentSystemIdentityRegistry {
    * Get all system identities for a user
    */
   async getSystemIdentitiesByOwner(ownerId: string): Promise<MultiAgentSystemIdentity[]> {
+    console.log('MultiAgentSystemServices: Attempting to get system identities by owner:', ownerId);
     try {
       const q = query(
         collection(db, this.COLLECTION_NAME),
@@ -92,14 +97,16 @@ class MultiAgentSystemIdentityRegistry {
       );
 
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      const identities = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         creationDate: doc.data().creationDate.toDate(),
         lastModifiedDate: doc.data().lastModifiedDate.toDate()
       })) as MultiAgentSystemIdentity[];
+      console.log('MultiAgentSystemServices: Successfully retrieved system identities. Count:', identities.length);
+      return identities;
     } catch (error) {
-      console.error('Error getting system identities by owner:', error);
+      console.error('MultiAgentSystemServices: Error getting system identities by owner:', error);
       throw error;
     }
   }
@@ -108,6 +115,7 @@ class MultiAgentSystemIdentityRegistry {
    * Update system identity
    */
   async updateSystemIdentity(systemId: string, updates: Partial<MultiAgentSystemIdentity>): Promise<void> {
+    console.log('MultiAgentSystemServices: Attempting to update system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
       await updateDoc(docRef, {
@@ -115,9 +123,9 @@ class MultiAgentSystemIdentityRegistry {
         lastModifiedDate: Timestamp.fromDate(new Date())
       });
 
-      console.log('System identity updated:', systemId);
+      console.log('MultiAgentSystemServices: System identity updated:', systemId);
     } catch (error) {
-      console.error('Error updating system identity:', error);
+      console.error('MultiAgentSystemServices: Error updating system identity:', error);
       throw error;
     }
   }
@@ -126,13 +134,14 @@ class MultiAgentSystemIdentityRegistry {
    * Delete system identity
    */
   async deleteSystemIdentity(systemId: string): Promise<void> {
+    console.log('MultiAgentSystemServices: Attempting to delete system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
       await deleteDoc(docRef);
 
-      console.log('System identity deleted:', systemId);
+      console.log('MultiAgentSystemServices: System identity deleted:', systemId);
     } catch (error) {
-      console.error('Error deleting system identity:', error);
+      console.error('MultiAgentSystemServices: Error deleting system identity:', error);
       throw error;
     }
   }
@@ -149,6 +158,7 @@ class MultiAgentSystemScorecardService {
    * Create initial system scorecard
    */
   async createSystemScorecard(systemId: string, agentIds: string[]): Promise<SystemScorecardResult> {
+    console.log('MultiAgentSystemServices: Attempting to create system scorecard for system:', systemId);
     try {
       // Calculate initial system metrics
       const systemMetrics: Record<string, any> = {};
@@ -189,15 +199,16 @@ class MultiAgentSystemScorecardService {
       };
 
       // Save to Firebase
+      console.log('MultiAgentSystemServices: Saving system scorecard to Firebase for system:', systemId);
       await addDoc(collection(db, this.COLLECTION_NAME), {
         ...scorecardResult,
         evaluationTimestamp: Timestamp.fromDate(scorecardResult.evaluationTimestamp)
       });
 
-      console.log('System scorecard created:', systemId);
+      console.log('MultiAgentSystemServices: System scorecard created and saved:', systemId);
       return scorecardResult;
     } catch (error) {
-      console.error('Error creating system scorecard:', error);
+      console.error('MultiAgentSystemServices: Error creating system scorecard:', error);
       throw error;
     }
   }
@@ -206,6 +217,7 @@ class MultiAgentSystemScorecardService {
    * Get latest system scorecard
    */
   async getLatestSystemScorecard(systemId: string): Promise<SystemScorecardResult | null> {
+    console.log('MultiAgentSystemServices: Attempting to get latest system scorecard for system:', systemId);
     try {
       const q = query(
         collection(db, this.COLLECTION_NAME),
@@ -214,17 +226,21 @@ class MultiAgentSystemScorecardService {
       );
 
       const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) return null;
+      if (querySnapshot.empty) {
+        console.log('MultiAgentSystemServices: No system scorecard found for system:', systemId);
+        return null;
+      }
 
       const doc = querySnapshot.docs[0];
       const data = doc.data();
       
+      console.log('MultiAgentSystemServices: Latest system scorecard found for system:', systemId);
       return {
         ...data,
         evaluationTimestamp: data.evaluationTimestamp.toDate()
       } as SystemScorecardResult;
     } catch (error) {
-      console.error('Error getting latest system scorecard:', error);
+      console.error('MultiAgentSystemServices: Error getting latest system scorecard:', error);
       throw error;
     }
   }
@@ -254,9 +270,8 @@ class MultiAgentSystemIntegration {
     scorecard: SystemScorecardResult;
     attestations: SystemAttestation[];
   }> {
+    console.log('MultiAgentSystemServices: Setting up governance for multi-agent system:', systemData.name);
     try {
-      console.log('Setting up governance for multi-agent system:', systemData.name);
-
       // 1. Create system identity
       const systemId = await this.systemRegistry.registerSystem({
         name: systemData.name,
@@ -285,7 +300,7 @@ class MultiAgentSystemIntegration {
       // 3. Create system attestations
       const attestations = await this.createSystemAttestations(systemId, systemData);
 
-      console.log('Multi-agent system governance setup complete:', systemId);
+      console.log('MultiAgentSystemServices: Multi-agent system governance setup complete:', systemId);
 
       return {
         systemId,
@@ -293,12 +308,13 @@ class MultiAgentSystemIntegration {
         attestations
       };
     } catch (error) {
-      console.error('Error setting up system governance:', error);
+      console.error('MultiAgentSystemServices: Error setting up system governance:', error);
       throw error;
     }
   }
 
   private async createSystemAttestations(systemId: string, systemData: any): Promise<SystemAttestation[]> {
+    console.log('MultiAgentSystemServices: Creating system attestations for system:', systemId);
     const attestations: SystemAttestation[] = [
       {
         id: `${systemId}-workflow-compliance`,
@@ -333,15 +349,15 @@ class MultiAgentSystemIntegration {
     ];
 
     // Save attestations to Firebase (implementation would go here)
-    console.log('System attestations created:', attestations.length);
+    console.log('MultiAgentSystemServices: System attestations created. Count:', attestations.length);
     
     return attestations;
   }
 }
 
 // Export singleton instances
-// export const multiAgentSystemRegistry = new MultiAgentSystemIdentityRegistry();
-// export const multiAgentScorecardService = new MultiAgentSystemScorecardService();
-// export const multiAgentSystemIntegration = new MultiAgentSystemIntegration();
+export const multiAgentSystemRegistry = new MultiAgentSystemIdentityRegistry();
+export const multiAgentScorecardService = new MultiAgentSystemScorecardService();
+export const multiAgentSystemIntegration = new MultiAgentSystemIntegration();
 
 
