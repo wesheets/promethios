@@ -41,10 +41,10 @@ export const useUserPreferences = () => {
     const loadPreferences = async () => {
       if (!currentUser) {
         // For logged-out users, use localStorage
-        const localNavCollapsed = localStorage.getItem('navCollapsed');
+        const localNavCollapsed = localStorage.getItem("navCollapsed");
         setPreferences({
           ...defaultPreferences,
-          navigationCollapsed: localNavCollapsed === 'true',
+          navigationCollapsed: localNavCollapsed === "true",
         });
         setLoading(false);
         return;
@@ -52,6 +52,10 @@ export const useUserPreferences = () => {
 
       try {
         setLoading(true);
+        console.log("useUserPreferences: Current user before Firestore call:", currentUser);
+        if (currentUser) {
+          console.log("useUserPreferences: Current user UID before Firestore call:", currentUser.uid);
+        }
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         const docSnap = await getDoc(userPrefsRef);
 
@@ -141,4 +145,5 @@ export const useUserPreferences = () => {
     updateNotifications,
   };
 };
+
 
