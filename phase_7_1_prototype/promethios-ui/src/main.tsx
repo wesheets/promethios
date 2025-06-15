@@ -12,15 +12,19 @@ import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import App from './App';
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    {console.log("main.tsx: ReactDOM.createRoot rendering...")}
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <App />
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
-);
+try {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      {console.log("main.tsx: ReactDOM.createRoot rendering...")}
+      <ThemeProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <App />
+          </AnalyticsProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </React.StrictMode>,
+  );
+} catch (error) {
+  console.error("main.tsx: Error during ReactDOM.createRoot rendering:", error);
+}
