@@ -1,0 +1,20 @@
+
+> react_repo@0.0.0 build
+> npx vite build
+
+vite v6.3.5 building for production...
+transforming...
+✓ 12775 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.61 kB │ gzip:   0.34 kB
+dist/assets/index-BHe1uMEt.css    117.67 kB │ gzip:  18.41 kB
+dist/assets/vendor-CtFe0MYI.js    175.43 kB │ gzip:  57.69 kB
+dist/assets/mui-BzM__cY3.js       373.22 kB │ gzip: 110.74 kB
+dist/assets/index-D87ec2xU.js   1,526.75 kB │ gzip: 379.36 kB
+
+(!) Some chunks are larger than 1000 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 32.79s

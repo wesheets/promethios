@@ -15,9 +15,9 @@ interface ProtectedRouteProps {
  * It checks the user's onboarding status and redirects to onboarding if not completed.
  * Optimized for faster loading with aggressive caching and minimal checks.
  */
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requireOnboarding = true 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireOnboarding = true
 }) => {
   const { currentUser, loading } = useAuth();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
@@ -31,7 +31,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
 
-      const cachedStatus = localStorage.getItem(cacheKey);
+      const cachedStatus = localStorage.getItem(`onboarding_${currentUser.uid}`);
       console.log("ProtectedRoute: Current user exists, checking cache for onboarding status");
       
       if (cachedStatus !== null) {
@@ -48,11 +48,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         try {
           const completed = await checkOnboardingStatus(currentUser.uid);
           setOnboardingCompleted(completed);
-          localStorage.setItem(cacheKey, completed.toString());
+          localStorage.setItem(`onboarding_${currentUser.uid}`, completed.toString());
         } catch (error) {
           // Default to false for new users if Firebase fails
           setOnboardingCompleted(false);
-          localStorage.setItem(cacheKey, 'false');
+          localStorage.setItem(`onboarding_${currentUser.uid}`, 'false');
         }
       }, 50); // Very quick check for new users
     };
@@ -60,6 +60,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!loading) {
       checkUserOnboarding();
     }
+  }, [currentUser, loading]);
 
   // Minimize loading time - show content faster
   if (loading) {
@@ -116,6 +117,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     checkingOnboarding
   });
 
+
+
+
+
   // Render the protected content
   return <>{children}</>;
+}
+
 export default ProtectedRoute;
+
