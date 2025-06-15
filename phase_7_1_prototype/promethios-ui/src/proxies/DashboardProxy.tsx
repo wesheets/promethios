@@ -65,14 +65,14 @@ const DashboardProxy: React.FC = () => {
     if (!currentUser) return;
     
     try {
-      // Set up real-time listener for activities collection
-      const activitiesRef = collection(db, 'activities');
-      const activitiesQuery = query(
-        activitiesRef,
-        // Filter for this user's activities or global activities
-        // orderBy('timestamp', 'desc'),
-        limit(10)
-      );
+      // Temporarily comment out Firestore interaction to debug 'client is offline' error
+      // const activitiesRef = collection(db, 'activities');
+      // const activitiesQuery = query(
+      //   activitiesRef,
+      //   // Filter for this user's activities or global activities
+      //   // orderBy('timestamp', 'desc'),
+      //   limit(10)
+      // );
       
       // This would be the real implementation with Firestore
       // For now, we'll simulate real-time updates with a timer
@@ -289,3 +289,5 @@ const DashboardProxy: React.FC = () => {
 };
 
 export default DashboardProxy;
+
+
