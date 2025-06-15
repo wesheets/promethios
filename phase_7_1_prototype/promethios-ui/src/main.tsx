@@ -11,8 +11,9 @@ import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import App from './App';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    {console.log("main.tsx: ReactDOM.createRoot rendering...")}
     <ThemeProvider>
       <AuthProvider>
         <AnalyticsProvider>
