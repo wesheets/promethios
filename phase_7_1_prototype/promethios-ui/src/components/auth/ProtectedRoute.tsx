@@ -24,7 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    console.log("ProtectedRoute: checkUserOnboarding called");
+    const checkUserOnboarding = async () => {
       if (!currentUser) {
         console.log("ProtectedRoute: No current user, setting checkingOnboarding to false");
         setCheckingOnboarding(false);
@@ -60,7 +60,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!loading) {
       checkUserOnboarding();
     }
-  }, [currentUser, loading]);
 
   // Minimize loading time - show content faster
   if (loading) {
