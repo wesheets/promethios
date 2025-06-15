@@ -2,7 +2,7 @@ import {
   AgentAttestation,
   AgentRoleDefinition,
   AttestationTypeDefinition 
-} from '../types';
+} from './types';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
@@ -502,6 +502,7 @@ export class AgentRoleService {
 }
 
 // Export singleton instances
-export const agentAttestationService = AgentAttestationService.getInstance();
-export const agentRoleService = AgentRoleService.getInstance();
+// export const agentAttestationService = AgentAttestationService.getInstance();
+// export const agentRoleService = AgentRoleService.getInstance();
+
 
