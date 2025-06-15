@@ -72,6 +72,7 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  console.log("App.tsx: App component rendering...");
   return (
     <ThemeProvider>
       <AuthProvider>
