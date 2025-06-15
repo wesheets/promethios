@@ -21,8 +21,9 @@ app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 // For any other request, send the index.html file
 // This enables client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+app.get("*", (req, res) => {
+  console.log(`Server serving index.html for path: ${req.path}`);
+  res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
 });
 
 // Use the PORT environment variable provided by Render.com

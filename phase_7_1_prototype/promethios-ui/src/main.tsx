@@ -1,6 +1,4 @@
-console.log("main.tsx: VERY FIRST LINE EXECUTED.");
 import React from 'react';
-console.log("main.tsx: File loaded and executing.");
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
@@ -13,19 +11,14 @@ import Hero from './components/landing/Hero';
 import Features from './components/landing/Features';
 import App from './App';
 
-try {
-  ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-      {console.log("main.tsx: ReactDOM.createRoot rendering...")}
-      <ThemeProvider>
-        <AuthProvider>
-          <AnalyticsProvider>
-            <App />
-          </AnalyticsProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </React.StrictMode>,
-  );
-} catch (error) {
-  console.error("main.tsx: Error during ReactDOM.createRoot rendering:", error);
-}
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ThemeProvider>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <App />
+        </AnalyticsProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  </React.StrictMode>,
+);

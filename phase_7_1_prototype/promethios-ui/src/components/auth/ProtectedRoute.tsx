@@ -24,40 +24,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    const checkUserOnboarding = async () => {
-      console.log("ProtectedRoute: checkUserOnboarding called");
+    console.log("ProtectedRoute: checkUserOnboarding called");
       if (!currentUser) {
         console.log("ProtectedRoute: No current user, setting checkingOnboarding to false");
         setCheckingOnboarding(false);
         return;
       }
 
-      console.log("ProtectedRoute: Current user exists, checking cache for onboarding status");
-      const cacheKey = `onboarding_${currentUser.uid}`;
       const cachedStatus = localStorage.getItem(cacheKey);
+      console.log("ProtectedRoute: Current user exists, checking cache for onboarding status");
       
       if (cachedStatus !== null) {
         const completed = cachedStatus === 'true';
-        console.log("ProtectedRoute: Cached onboarding status found:", completed);
         setOnboardingCompleted(completed);
         setCheckingOnboarding(false);
         return; // Skip Firebase check for cached users
       }
 
-      console.log("ProtectedRoute: No cached onboarding status, checking Firebase");
-      setOnboardingCompleted(null); // Set to null initially to force proper check
       setCheckingOnboarding(false);
       
       // Check Firebase immediately for new users
       setTimeout(async () => {
         try {
-          console.log("ProtectedRoute: Calling checkOnboardingStatus for user:", currentUser.uid);
           const completed = await checkOnboardingStatus(currentUser.uid);
-          console.log('Firebase onboarding status for new user:', completed);
           setOnboardingCompleted(completed);
           localStorage.setItem(cacheKey, completed.toString());
         } catch (error) {
-          console.error('ProtectedRoute: Firebase onboarding check failed:', error);
           // Default to false for new users if Firebase fails
           setOnboardingCompleted(false);
           localStorage.setItem(cacheKey, 'false');
@@ -66,7 +58,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     };
 
     if (!loading) {
-      console.log("ProtectedRoute: Auth loading complete, initiating checkUserOnboarding");
       checkUserOnboarding();
     }
   }, [currentUser, loading]);
@@ -97,31 +88,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
     
     if (cachedStatus === 'true') {
-      console.log('User has completed onboarding (cached), allowing access');
       // User has completed onboarding, don't redirect
       return <>{children}</>;
     }
     
     // For new users (no cache) or incomplete users, redirect to onboarding if required
     if (requireOnboarding) {
-      console.log('Redirecting to onboarding - requireOnboarding=true, no completion cache');
       return <Navigate to="/ui/onboarding" replace />;
     }
     
-    console.log('Allowing access - requireOnboarding=false');
     // If onboarding not required, show content
     return <>{children}</>;
   }
 
   // Redirect to login if not authenticated
   if (!currentUser) {
-      console.log("ProtectedRoute Debug: User not authenticated, redirecting to /login");
     return <Navigate to="/login" replace />;
   }
 
   // Redirect to onboarding if required and not completed (including null state for new users)
   if (requireOnboarding && (onboardingCompleted === false || onboardingCompleted === null)) {
-    console.log("ProtectedRoute Debug: Onboarding required and not completed, redirecting to /ui/onboarding", { onboardingCompleted });
     return <Navigate to="/ui/onboarding" replace />;
   }
 

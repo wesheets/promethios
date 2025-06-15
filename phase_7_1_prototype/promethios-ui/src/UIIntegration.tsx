@@ -101,11 +101,13 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* CMU Benchmark Page route - Temporarily bypass ProtectedRoute for debugging */}
+        {/* CMU Benchmark Page route */}
         <Route path="agents/benchmark/*" element={
+          <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <CMUBenchmarkPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
         } />
         
         {/* Catch-all route - redirect new users to onboarding, completed users to dashboard */}

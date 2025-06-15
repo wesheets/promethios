@@ -45,7 +45,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log("AuthContext: Setting up auth state listener");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
+      console.log("AuthContext: Auth state changed. User object:", user);
       if (user) {
+        console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
       } else {
         console.log("AuthContext: No user detected (null).");
