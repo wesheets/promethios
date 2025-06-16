@@ -33,7 +33,7 @@ const Tooltip: React.FC<{ children: React.ReactNode; content: string }> = ({ chi
 
 const OnboardingFlow: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const { currentUser } = useAuth();
+  const { currentUser, db } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
@@ -65,7 +65,7 @@ const OnboardingFlow: React.FC = () => {
         setIsSubmitting(true);
         try {
           // First mark onboarding as complete to ensure state is updated
-          await updateOnboardingStatus(currentUser.uid, true);
+          await updateOnboardingStatus(currentUser.uid, true, db);
           
           // Then save agent configuration
           await saveAgentConfiguration(currentUser.uid, {
@@ -73,7 +73,7 @@ const OnboardingFlow: React.FC = () => {
             type: agentType,
             description: agentDescription,
             governanceLevel: governanceLevel
-          });
+          }, db);
           
           // Use a short timeout to ensure Firebase state is updated before navigation
           setTimeout(() => {

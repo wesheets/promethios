@@ -1,8 +1,7 @@
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from './config';
 
 // Store onboarding completion status in user profile
-export const updateOnboardingStatus = async (userId: string, completed: boolean) => {
+export const updateOnboardingStatus = async (userId: string, completed: boolean, db: any) => {
   try {
     console.log(`userService: Attempting to update onboarding status for user: ${userId}`);
     const userRef = doc(db, 'users', userId);
@@ -35,13 +34,7 @@ export const updateOnboardingStatus = async (userId: string, completed: boolean)
 };
 
 // Store agent configuration from onboarding
-export const saveAgentConfiguration = async (
-  userId: string, 
-  agentConfig: {
-    name: string;
-    type: string;
-    description?: string;
-    governanceLevel: string;
+export coexport const saveAgentConfiguration = async (userId: string, agentConfig: { name: string; type: string; description?: string; governanceLevel: string; }, db: any) => {ring;
   }
 ) => {
   try {
@@ -77,7 +70,7 @@ export const saveAgentConfiguration = async (
 };
 
 // Check if user has completed onboarding
-export const checkOnboardingStatus = async (userId: string) => {
+export const checkOnboardingStatus = async (userId: string, db: any) => {
   try {
     console.log(`userService: Checking onboarding status for user: ${userId}`);
     // Add timeout to prevent hanging

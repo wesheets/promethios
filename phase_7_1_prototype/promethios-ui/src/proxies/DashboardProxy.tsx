@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ObserverAgentProxy } from './index';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/config';
 
 /**
  * DashboardProxy Component
@@ -11,7 +9,7 @@ import { db } from '../firebase/config';
  * It provides the same dashboard content with metrics, activity feed, and Observer agent.
  */
 const DashboardProxy: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, db } = useAuth();
   const [governanceScore, setGovernanceScore] = useState(87);
   const [agentsCount, setAgentsCount] = useState(0);
   const [complianceStatus, setComplianceStatus] = useState('Compliant');

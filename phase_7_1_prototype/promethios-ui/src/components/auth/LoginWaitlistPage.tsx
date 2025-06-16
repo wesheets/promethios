@@ -9,9 +9,7 @@ import { addToWaitlist } from '../../firebase/waitlistService';
 const LoginWaitlistPage: React.FC = () => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
-  const { loginWithEmail, loginWithGoogle, signup, resetPassword } = useAuth();
-  
-  // State for login form
+      const { loginWithEmail, loginWithGoogle, signup, resetPassword, db } = useAuth();  // State for login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -113,7 +111,7 @@ const LoginWaitlistPage: React.FC = () => {
     
     try {
       // Store the waitlist entry in Firestore
-      const result = await addToWaitlist(waitlistEmail, role);
+      const result = await addToWaitlist(waitlistEmail, role, db);
       
       if (result === 'exists') {
         // Email already exists in waitlist, but we'll show success anyway
