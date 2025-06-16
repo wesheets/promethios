@@ -52,12 +52,9 @@ export const useUserPreferences = () => {
 
       try {
         setLoading(true);
-        console.log("useUserPreferences: Current user before Firestore call:", currentUser);
-        if (currentUser) {
-          console.log("useUserPreferences: Current user UID before Firestore call:", currentUser.uid);
-        }
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         const docSnap = await getDoc(userPrefsRef);
+        console.log("useUserPreferences: Successfully performed getDoc.", docSnap.exists() ? docSnap.data() : "Document does not exist");
 
         if (docSnap.exists()) {
           const firestorePrefs = docSnap.data() as UserPreferences;
