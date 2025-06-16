@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       setCurrentUser(user);
       setLoading(false);
+      console.log("AuthContext: currentUser set, loading is now false.");
     }, (error) => {
       console.error("AuthContext: Auth state change error:", error);
       setLoading(false);
