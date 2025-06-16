@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MultiAgentSystem } from '../types/multiAgent';
 import { multiAgentSystemRegistry } from '../services/MultiAgentSystemRegistry';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * Hook for managing multi-agent systems
@@ -10,27 +10,28 @@ export const useMultiAgentSystems = () => {
   const [systems, setSystems] = useState<MultiAgentSystem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, db, auth } = useAuth();
 
   // Load systems when user changes
   useEffect(() => {
-    if (user) {
-      loadSystems();
+    if (user && db && auth) {
+      loadSystems(db, auth);
     } else {
       setSystems([]);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, db, auth]);
 
   /**
    * Load all systems from Firebase
    */
-  const loadSystems = async () => {
+  const loadSystems = async (db: any, auth: any) => {
     try {
       setLoading(true);
       setError(null);
-      await multiAgentSystemRegistry.loadSystems();
-      const loadedSystems = multiAgentSystemRegistry.getAllSystems();
+      const registry = multiAgentSystemRegistry(db, auth);
+      await registry.loadSystems();
+      const loadedSystems = registry.getAllSystems();
       setSystems(loadedSystems);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load multi-agent systems');
@@ -44,12 +45,14 @@ export const useMultiAgentSystems = () => {
    * Create a new multi-agent system
    */
   const createSystem = async (system: MultiAgentSystem): Promise<boolean> => {
+    if (!db || !auth) return false;
     try {
       setError(null);
-      const success = await multiAgentSystemRegistry.createSystem(system);
+      const registry = multiAgentSystemRegistry(db, auth);
+      const success = await registry.createSystem(system);
       if (success) {
         // Reload systems to get the updated list
-        await loadSystems();
+        await loadSystems(db, auth);
       }
       return success;
     } catch (err) {
@@ -63,9 +66,11 @@ export const useMultiAgentSystems = () => {
    * Update an existing multi-agent system
    */
   const updateSystem = async (systemId: string, updates: Partial<MultiAgentSystem>): Promise<boolean> => {
+    if (!db || !auth) return false;
     try {
       setError(null);
-      const success = await multiAgentSystemRegistry.updateSystem(systemId, updates);
+      const registry = multiAgentSystemRegistry(db, auth);
+      const success = await registry.updateSystem(systemId, updates);
       if (success) {
         // Update local state
         setSystems(prevSystems =>
@@ -88,9 +93,11 @@ export const useMultiAgentSystems = () => {
    * Delete a multi-agent system
    */
   const deleteSystem = async (systemId: string): Promise<boolean> => {
+    if (!db || !auth) return false;
     try {
       setError(null);
-      const success = await multiAgentSystemRegistry.deleteSystem(systemId);
+      const registry = multiAgentSystemRegistry(db, auth);
+      const success = await registry.deleteSystem(systemId);
       if (success) {
         // Remove from local state
         setSystems(prevSystems =>

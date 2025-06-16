@@ -1,5 +1,4 @@
 import { MultiAgentSystem } from '../types/multiAgent';
-import { db, auth } from '../../../firebase/config';
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
@@ -8,28 +7,35 @@ import { User } from 'firebase/auth';
  */
 class MultiAgentSystemRegistry {
   private systems: Map<string, MultiAgentSystem> = new Map();
-  
+  private db: any;
+  private auth: any;
+
+  constructor(db: any, auth: any) {
+    this.db = db;
+    this.auth = auth;
+  }
+
   /**
    * Get the current authenticated user
    */
   private getCurrentUser(): User | null {
-    return auth.currentUser;
+    return this.auth.currentUser;
   }
-  
+
   /**
    * Get user-scoped collection reference
    */
   private getUserSystemsCollection(userId: string) {
-    return collection(db, 'users', userId, 'multiAgentSystems');
+    return collection(this.db, 'users', userId, 'multiAgentSystems');
   }
-  
+
   /**
    * Get user-scoped document reference
    */
   private getUserSystemDoc(userId: string, systemId: string) {
-    return doc(db, 'users', userId, 'multiAgentSystems', systemId);
+    return doc(this.db, 'users', userId, 'multiAgentSystems', systemId);
   }
-  
+
   /**
    * Create a new multi-agent system
    * @param system The system to create
@@ -42,24 +48,24 @@ class MultiAgentSystemRegistry {
         console.error('User must be authenticated to create multi-agent systems');
         return false;
       }
-      
+
       // Check if system already exists for this user
       if (this.systems.has(system.id)) {
         console.warn(`Multi-agent system with ID ${system.id} already exists for user ${currentUser.uid}`);
         return false;
       }
-      
+
       // Set user ID and timestamps
       system.userId = currentUser.uid;
       system.createdAt = new Date();
       system.updatedAt = new Date();
-      
+
       // Add system to registry
       this.systems.set(system.id, system);
-      
+
       // Persist to Firebase under user's collection
       await this.persistSystem(currentUser.uid, system);
-      
+
       console.log(`Created multi-agent system: ${system.name} (${system.id}) for user ${currentUser.uid}`);
       return true;
     } catch (error) {
@@ -67,7 +73,7 @@ class MultiAgentSystemRegistry {
       return false;
     }
   }
-  
+
   /**
    * Update an existing multi-agent system
    * @param systemId The ID of the system to update
@@ -81,29 +87,29 @@ class MultiAgentSystemRegistry {
         console.error('User must be authenticated to update multi-agent systems');
         return false;
       }
-      
+
       // Check if system exists
       if (!this.systems.has(systemId)) {
         console.warn(`Multi-agent system with ID ${systemId} does not exist`);
         return false;
       }
-      
+
       // Get current system
       const currentSystem = this.systems.get(systemId)!;
-      
+
       // Apply updates
       const updatedSystem = {
         ...currentSystem,
         ...updates,
         updatedAt: new Date()
       };
-      
+
       // Update in registry
       this.systems.set(systemId, updatedSystem);
-      
+
       // Update in Firebase
       await this.updateSystemInFirebase(currentUser.uid, systemId, updatedSystem);
-      
+
       console.log(`Updated multi-agent system: ${systemId}`);
       return true;
     } catch (error) {
@@ -111,7 +117,7 @@ class MultiAgentSystemRegistry {
       return false;
     }
   }
-  
+
   /**
    * Delete a multi-agent system
    * @param systemId The ID of the system to delete
@@ -124,19 +130,19 @@ class MultiAgentSystemRegistry {
         console.error('User must be authenticated to delete multi-agent systems');
         return false;
       }
-      
+
       // Check if system exists
       if (!this.systems.has(systemId)) {
         console.warn(`Multi-agent system with ID ${systemId} does not exist`);
         return false;
       }
-      
+
       // Remove from registry
       this.systems.delete(systemId);
-      
+
       // Remove from Firebase
       await this.removeSystemFromFirebase(currentUser.uid, systemId);
-      
+
       console.log(`Deleted multi-agent system: ${systemId}`);
       return true;
     } catch (error) {
@@ -144,7 +150,7 @@ class MultiAgentSystemRegistry {
       return false;
     }
   }
-  
+
   /**
    * Get a system by ID
    * @param systemId The ID of the system to get
@@ -153,7 +159,7 @@ class MultiAgentSystemRegistry {
   getSystem(systemId: string): MultiAgentSystem | null {
     return this.systems.get(systemId) || null;
   }
-  
+
   /**
    * Get all systems for the current user
    * @returns Array of all systems
@@ -161,7 +167,7 @@ class MultiAgentSystemRegistry {
   getAllSystems(): MultiAgentSystem[] {
     return Array.from(this.systems.values());
   }
-  
+
   /**
    * Enable a system
    * @param systemId The ID of the system to enable
@@ -170,7 +176,7 @@ class MultiAgentSystemRegistry {
   async enableSystem(systemId: string): Promise<boolean> {
     return this.updateSystem(systemId, { enabled: true });
   }
-  
+
   /**
    * Disable a system
    * @param systemId The ID of the system to disable
@@ -179,7 +185,7 @@ class MultiAgentSystemRegistry {
   async disableSystem(systemId: string): Promise<boolean> {
     return this.updateSystem(systemId, { enabled: false });
   }
-  
+
   /**
    * Update system environment
    * @param systemId The ID of the system to update
@@ -189,7 +195,7 @@ class MultiAgentSystemRegistry {
   async updateSystemEnvironment(systemId: string, environment: 'draft' | 'testing' | 'production'): Promise<boolean> {
     return this.updateSystem(systemId, { environment });
   }
-  
+
   /**
    * Load all systems from Firebase for the current user
    */
@@ -200,16 +206,16 @@ class MultiAgentSystemRegistry {
         console.warn('User must be authenticated to load multi-agent systems');
         return;
       }
-      
+
       const systemsCollection = this.getUserSystemsCollection(currentUser.uid);
       const snapshot = await getDocs(systemsCollection);
-      
+
       // Clear existing data
       this.systems.clear();
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data();
-        
+
         // Create system instance
         const system: MultiAgentSystem = {
           id: doc.id,
@@ -227,17 +233,17 @@ class MultiAgentSystemRegistry {
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date()
         };
-        
+
         // Add to registry
         this.systems.set(doc.id, system);
       });
-      
+
       console.log(`Loaded ${this.systems.size} multi-agent systems from Firebase for user ${currentUser.uid}`);
     } catch (error) {
       console.error('Error loading multi-agent systems from Firebase:', error);
     }
   }
-  
+
   /**
    * Persist a system to Firebase under user's collection
    * @param userId The user ID
@@ -246,7 +252,7 @@ class MultiAgentSystemRegistry {
   private async persistSystem(userId: string, system: MultiAgentSystem): Promise<void> {
     try {
       const systemDoc = this.getUserSystemDoc(userId, system.id);
-      
+
       await setDoc(systemDoc, {
         name: system.name,
         description: system.description,
@@ -267,7 +273,7 @@ class MultiAgentSystemRegistry {
       throw error;
     }
   }
-  
+
   /**
    * Update a system in Firebase for the current user
    * @param userId The user ID
@@ -295,7 +301,7 @@ class MultiAgentSystemRegistry {
       throw error;
     }
   }
-  
+
   /**
    * Remove a system from Firebase for the current user
    * @param userId The user ID
@@ -313,6 +319,8 @@ class MultiAgentSystemRegistry {
 }
 
 // Export singleton instance
-export const multiAgentSystemRegistry = new MultiAgentSystemRegistry();
+// This will be initialized with db and auth from AuthContext
+export const multiAgentSystemRegistry = (db: any, auth: any) => new MultiAgentSystemRegistry(db, auth);
 export default MultiAgentSystemRegistry;
+
 
