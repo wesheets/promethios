@@ -1,8 +1,3 @@
-/**
- * ChatContainer component for displaying chat messages and handling user input.
- * This is the initial version before any modifications.
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -33,7 +28,7 @@ import { adHocMultiAgentService, MultiAgentConversation } from '../services/AdHo
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import GovernancePanel from './GovernancePanel';
-import AgentSelector from './AgentSelector';
+import { AgentSelector } from './AgentSelector';
 import AtlasChatIntegration from '../../../components/atlas/chat/AtlasChatIntegration';
 import ConversationWrappingPrompt from '../../../modules/agent-wrapping/components/ConversationWrappingPrompt';
 import { useNavigate } from 'react-router-dom';
@@ -227,7 +222,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         
         const role = system.roles?.[agent.id] || 'general';
         const agentMessage = messageService.addMessage({
-          content: `**${agent.name}** (${role}): As part of ${system.name}, I'll address this from my ${role} perspective: ${content} - This requires coordinated analysis with my team members.`,
+          content: `**${agent.name}**: As part of ${system.name}, I'll address this from my ${role} perspective: ${content} - This requires coordinated analysis with my team members.`,
           sender: 'agent',
           agentId: agent.id,
           governanceStatus
@@ -291,7 +286,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           
           const role = config.roles?.[response.agentId] || 'general';
           const agentMessage = messageService.addMessage({
-            content: `**${response.agentName}** (${role}): ${response.content}`,
+            content: `**${response.agentName}**: ${response.content}`,
             sender: 'agent',
             agentId: response.agentId,
             governanceStatus
@@ -436,142 +431,107 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             </>
           )}
           {(agentId || multiAgentSystemId) && (
-            <Typography variant="h6" sx={{ color: 'white' }}>
-              {getCurrentSessionName()}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ color: 'white' }}>
+                {getCurrentSessionName()}
+              </Typography>
+              {getModeChips()}
+            </Box>
           )}
         </Box>
 
-        {/* Mode Chips */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {getModeChips()}
-          <IconButton size="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+        {/* Right-aligned controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isGovernanceEnabled}
+                onChange={(e) => setIsGovernanceEnabled(e.target.checked)}
+                name="governanceSwitch"
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: '#FFC107',
+                    '+ .MuiSwitch-track': { backgroundColor: '#FFC107' }
+                  }
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'white' }}>
+                Governance
+              </Typography>
+            }
+            labelPlacement="start"
+          />
+
+          {!agentId && !multiAgentSystemId && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isMultiAgentEnabled}
+                  onChange={(e) => setIsMultiAgentEnabled(e.target.checked)}
+                  name="multiAgentSwitch"
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: '#4CAF50',
+                      '+ .MuiSwitch-track': { backgroundColor: '#4CAF50' }
+                    }
+                  }}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: 'white' }}>
+                  Multi-Agent
+                </Typography>
+              }
+              labelPlacement="start"
+            />
+          )}
+
+          <IconButton sx={{ color: 'white' }}>
             <SettingsIcon />
           </IconButton>
         </Box>
       </Box>
 
-      {/* Mode Controls */}
-      <Box sx={{ 
-        p: 2, 
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        display: 'flex',
-        gap: 3,
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        flexWrap: 'wrap'
-      }}>
-        {/* Governance Mode Toggle */}
-        <FormControlLabel
-          control={
-            <Switch
-              checked={isGovernanceEnabled}
-              onChange={(e) => setIsGovernanceEnabled(e.target.checked)}
-              color="success"
-            />
-          }
-          label={
-            <Typography variant="body2" sx={{ color: 'white' }}>
-              Governance Mode
-            </Typography>
-          }
+      {/* Agent Selector (only visible if multi-agent mode is enabled and not a pre-wrapped system) */}
+      {isMultiAgentEnabled && !multiAgentSystemId && (
+        <AgentSelector
+          mode="multi-agent"
+          onAgentSelected={setSelectedAgent}
+          onMultiAgentConfigured={setMultiAgentConfig}
+          onMultiAgentSystemSelected={setSelectedMultiAgentSystem}
         />
+      )}
 
-        {/* Multi-Agent Mode Toggle (conditionally rendered) */}
-        {!multiAgentSystemId && (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isMultiAgentEnabled}
-                onChange={(e) => setIsMultiAgentEnabled(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={
-              <Typography variant="body2" sx={{ color: 'white' }}>
-                Multi-Agent Mode
-              </Typography>
-            }
-          />
-        )}
+      {/* Message List */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+        <MessageList messages={messages} />
       </Box>
 
-      {/* Main Chat Area */}
-      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Agent Selector (left side) */}
-        {isMultiAgentEnabled && !multiAgentSystemId && (
-          <Paper sx={{ 
-            width: '300px', 
-            height: '100%', 
-            backgroundColor: '#2a2a2a', 
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto'
-          }}>
-            <AgentSelector
-              selectedAgent={selectedAgent}
-              setSelectedAgent={setSelectedAgent}
-              multiAgentConfig={multiAgentConfig}
-              setMultiAgentConfig={setMultiAgentConfig}
-              selectedMultiAgentSystem={selectedMultiAgentSystem}
-              setSelectedMultiAgentSystem={setSelectedMultiAgentSystem}
-              multiAgentConversations={multiAgentConversations}
-              setShowWrappingPrompt={setShowWrappingPrompt}
-            />
-          </Paper>
-        )}
+      {/* Governance Panel */}
+      {isGovernanceEnabled && (
+        <GovernancePanel />
+      )}
 
-        {/* Message List and Input (center) */}
-        <Box sx={{ 
-          flexGrow: 1, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          overflow: 'hidden',
-          height: '100%'
-        }}>
-          <Box sx={{ 
-            flexGrow: 1, 
-            overflow: 'auto',
-            p: 2,
-            pb: 0
-          }}>
-            <MessageList messages={messages} />
-          </Box>
-          <Box sx={{ flexShrink: 0 }}>
-            <MessageInput 
-              onSendMessage={handleSendMessage} 
-              governanceEnabled={isGovernanceEnabled}
-            />
-          </Box>
-        </Box>
-
-        {/* Governance Panel (right side) */}
-        {isGovernanceEnabled && (
-          <Paper sx={{ 
-            width: '300px', 
-            height: '100%', 
-            backgroundColor: '#2a2a2a', 
-            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto'
-          }}>
-            <GovernancePanel />
-          </Paper>
-        )}
+      {/* Message Input */}
+      <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <MessageInput onSendMessage={handleSendMessage} />
       </Box>
 
+      {/* Atlas Chat Integration */}
+      <AtlasChatIntegration />
+
+      {/* Conversation Wrapping Prompt */}
       {showWrappingPrompt && (
         <ConversationWrappingPrompt
           conversationId={showWrappingPrompt}
           onClose={() => setShowWrappingPrompt(null)}
+          onWrapSuccess={() => setShowWrappingPrompt(null)} // Close after successful wrap
         />
       )}
-
-      {/* Atlas Chat Integration (if needed) */}
-      {/* <AtlasChatIntegration /> */}
     </Box>
   );
 };
+
 

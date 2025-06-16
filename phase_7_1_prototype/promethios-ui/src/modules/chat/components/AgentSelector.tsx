@@ -203,7 +203,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     setSelectedAgent(null);
     setSelectedSystem(null);
     onAgentSelected(null);
-    onMultiAgentSystemSelected(null);
+    onMultiAgentConfigured(null);
 
     // Update multi-agent configuration
     if (newSelection.length > 0) {
@@ -461,7 +461,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                       onChange={(e) => setSystemDescription(e.target.value)}
                       required
                       multiline
-                      rows={2}
+                      rows={3}
                       sx={{
                         '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
                         '& .MuiOutlinedInput-root': {
@@ -492,8 +492,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                       variant="contained"
                       startIcon={<SaveIcon />}
                       onClick={handleSaveAsSystem}
-                      disabled={disabled || selectedAgents.length < 2 || !systemName.trim() || !systemDescription.trim()}
-                      sx={{ mt: 2, backgroundColor: '#2196F3', '&:hover': { backgroundColor: '#1976D2' } }}
+                      sx={{ mt: 1, backgroundColor: '#2196F3', '&:hover': { backgroundColor: '#1976D2' } }}
                     >
                       Save as New System
                     </Button>
@@ -514,31 +513,12 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>No pre-wrapped systems available.</Typography>
                 ) : (
                   availableSystems.map((system) => (
-                    <Card
-                      key={system.id}
-                      variant="outlined"
-                      sx={{
-                        mb: 2,
-                        backgroundColor: selectedSystem?.id === system.id ? 'rgba(33, 150, 243, 0.2)' : '#3a3a3a',
-                        borderColor: selectedSystem?.id === system.id ? '#2196F3' : 'rgba(255, 255, 255, 0.2)',
-                        color: 'white'
-                      }}
-                    >
+                    <Card key={system.id} sx={{ mb: 2, backgroundColor: '#333', color: 'white' }}>
                       <CardContent>
-                        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <GroupIcon fontSize="small" /> {system.name}
-                          <Chip
-                            label={system.status}
-                            size="small"
-                            color={getStatusColor(system.status) as any}
-                            sx={{ ml: 'auto' }}
-                          />
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1 }}>
-                          {system.description}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                          Coordination: {system.coordinationPattern}
+                        <Typography variant="h6" sx={{ color: 'white' }}>{system.name}</Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{system.description}</Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                          Coordination: {system.coordinationPattern} | Agents: {system.agents.length}
                         </Typography>
                         <Box sx={{ mt: 1 }}>
                           {system.agents.map(agent => (
@@ -546,19 +526,19 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                               key={agent.id}
                               label={agent.name}
                               size="small"
-                              sx={{ mr: 0.5, mb: 0.5, backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white' }}
+                              sx={{ mr: 0.5, mb: 0.5, backgroundColor: '#555', color: 'white' }}
                             />
                           ))}
                         </Box>
                       </CardContent>
-                      <CardActions sx={{ justifyContent: 'flex-end' }}>
+                      <CardActions>
                         <Button
                           size="small"
                           onClick={() => handleSystemSelect(system)}
-                          disabled={disabled || selectedSystem?.id === system.id}
+                          disabled={disabled}
                           sx={{ color: '#2196F3' }}
                         >
-                          {selectedSystem?.id === system.id ? 'Selected' : 'Select System'}
+                          Select System
                         </Button>
                       </CardActions>
                     </Card>
@@ -572,4 +552,5 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     </Paper>
   );
 };
+
 
