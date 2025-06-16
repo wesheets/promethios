@@ -1,18 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
+import {
+  User,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
   createUserWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase/config';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { auth, googleProvider, app } from '../firebase/config';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
+  db: Firestore | null; // Add db to the context type
   loginWithEmail: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
@@ -23,10 +25,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   loading: true,
+  db: null, // Initialize db as null
   loginWithEmail: async () => {},
   loginWithGoogle: async () => {},
   signup: async () => {},
   resetPassword: async () => {},
+  logout: async () => {},
 });
 
 export const useAuth = () => {
@@ -40,6 +44,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbInstance, setDbInstance] = useState<Firestore | null>(null); // State for Firestore instance
 
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
@@ -47,8 +52,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
+        // Initialize Firestore only when a user is authenticated
+        const firestoreDb = getFirestore(app);
+        setDbInstance(firestoreDb);
       } else {
         console.log("AuthContext: No user detected (null).");
+        setDbInstance(null); // Clear Firestore instance if no user
       }
       setCurrentUser(user);
       setLoading(false);
@@ -56,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, (error) => {
       console.error("AuthContext: Auth state change error:", error);
       setLoading(false);
+      setDbInstance(null);
     });
 
     // Cleanup subscription on unmount
@@ -85,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     currentUser,
     loading,
+    db: dbInstance, // Provide the Firestore instance
     loginWithEmail,
     loginWithGoogle,
     signup,
@@ -98,4 +109,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
 

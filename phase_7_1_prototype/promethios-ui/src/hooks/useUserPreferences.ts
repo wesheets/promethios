@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 
 export interface UserPreferences {
@@ -31,7 +30,7 @@ const defaultPreferences: UserPreferences = {
 };
 
 export const useUserPreferences = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, db } = useAuth(); // Get db from AuthContext
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +38,8 @@ export const useUserPreferences = () => {
   // Load preferences from Firestore with localStorage fallback
   useEffect(() => {
     const loadPreferences = async () => {
-      if (!currentUser) {
-        // For logged-out users, use localStorage
+      if (!currentUser || !db) { // Ensure db is available
+        // For logged-out users or if db is not yet initialized, use localStorage
         const localNavCollapsed = localStorage.getItem("navCollapsed");
         setPreferences({
           ...defaultPreferences,
@@ -54,7 +53,6 @@ export const useUserPreferences = () => {
         setLoading(true);
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         const docSnap = await getDoc(userPrefsRef);
-        console.log("useUserPreferences: Successfully performed getDoc.", docSnap.exists() ? docSnap.data() : "Document does not exist");
 
         if (docSnap.exists()) {
           const firestorePrefs = docSnap.data() as UserPreferences;
@@ -87,7 +85,7 @@ export const useUserPreferences = () => {
     };
 
     loadPreferences();
-  }, [currentUser]);
+  }, [currentUser, db]); // Add db to dependency array
 
   // Update preferences in both Firestore and localStorage
   const updatePreferences = async (updates: Partial<UserPreferences>) => {
@@ -100,8 +98,8 @@ export const useUserPreferences = () => {
         localStorage.setItem('navCollapsed', String(updates.navigationCollapsed));
       }
 
-      // Update Firestore if user is logged in
-      if (currentUser) {
+      // Update Firestore if user is logged in and db is available
+      if (currentUser && db) {
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         await updateDoc(userPrefsRef, updates);
       }

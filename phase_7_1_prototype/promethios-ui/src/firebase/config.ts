@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// import { getFirestore } from "firebase/firestore"; // Temporarily remove Firestore initialization here
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -21,15 +21,14 @@ const app = initializeApp(firebaseConfig);
 // Initialize Auth
 const auth = getAuth(app);
 
-// Initialize Firestore
-const db = getFirestore(app);
-
 // Configure Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Export Firebase services
-export { auth, db, googleProvider, firebaseConfig };
+// Export Firebase services (db will be initialized in AuthContext)
+export { auth, googleProvider, firebaseConfig };
 export default app;
+
+
