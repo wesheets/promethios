@@ -10,14 +10,14 @@ export const useAgentWrappers = () => {
   const [wrappers, setWrappers] = useState<AgentWrapper[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const { user, db, auth } = useAuth();
 
   // Load wrappers on mount
   useEffect(() => {
     const loadWrappers = async () => {
       try {
         setLoading(true);
-        await agentWrapperRegistry.loadWrappers();
+        await agentWrapperRegistry.loadWrappers(db, auth);
         const allWrappers = agentWrapperRegistry.getAllWrappers();
         setWrappers(allWrappers);
         setError(null);
@@ -29,15 +29,15 @@ export const useAgentWrappers = () => {
       }
     };
 
-    if (user) {
+    if (user && db && auth) {
       loadWrappers();
     }
-  }, [user]);
+  }, [user, db, auth]);
 
   // Register a new wrapper
   const registerWrapper = async (wrapper: AgentWrapper): Promise<boolean> => {
     try {
-      const success = await agentWrapperRegistry.registerWrapper(wrapper);
+      const success = await agentWrapperRegistry.registerWrapper(db, auth, wrapper);
       if (success) {
         setWrappers(agentWrapperRegistry.getAllWrappers());
       }
@@ -52,7 +52,7 @@ export const useAgentWrappers = () => {
   // Deregister a wrapper
   const deregisterWrapper = async (wrapperId: string): Promise<boolean> => {
     try {
-      const success = await agentWrapperRegistry.deregisterWrapper(wrapperId);
+      const success = await agentWrapperRegistry.deregisterWrapper(db, auth, wrapperId);
       if (success) {
         setWrappers(agentWrapperRegistry.getAllWrappers());
       }
@@ -67,7 +67,7 @@ export const useAgentWrappers = () => {
   // Enable a wrapper
   const enableWrapper = async (wrapperId: string): Promise<boolean> => {
     try {
-      const success = await agentWrapperRegistry.enableWrapper(wrapperId);
+      const success = await agentWrapperRegistry.enableWrapper(db, auth, wrapperId);
       if (success) {
         // Update local state to reflect the change
         setWrappers(prev => 
@@ -87,7 +87,7 @@ export const useAgentWrappers = () => {
   // Disable a wrapper
   const disableWrapper = async (wrapperId: string): Promise<boolean> => {
     try {
-      const success = await agentWrapperRegistry.disableWrapper(wrapperId);
+      const success = await agentWrapperRegistry.disableWrapper(db, auth, wrapperId);
       if (success) {
         // Update local state to reflect the change
         setWrappers(prev => 
@@ -128,3 +128,5 @@ export const useAgentWrappers = () => {
 };
 
 export default useAgentWrappers;
+
+

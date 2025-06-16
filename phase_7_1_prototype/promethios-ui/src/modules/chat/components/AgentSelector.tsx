@@ -1,7 +1,3 @@
-/**
- * Enhanced Agent Selector with Ad Hoc and Pre-Wrapped Multi-Agent Systems
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -43,6 +39,7 @@ import {
 } from '../types';
 import { agentWrapperRegistry } from '../../agent-wrapping/services/AgentWrapperRegistry';
 import { multiAgentSystemRegistry } from '../../agent-wrapping/services/MultiAgentSystemRegistry';
+import { useAuth } from '../../../context/AuthContext';
 
 interface AgentSelectorProps {
   mode: ChatMode;
@@ -73,9 +70,13 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { db, auth } = useAuth();
+
   useEffect(() => {
-    loadAgentsAndSystems();
-  }, []);
+    if (db && auth) {
+      loadAgentsAndSystems();
+    }
+  }, [db, auth]);
 
   const loadAgentsAndSystems = async () => {
     setLoading(true);
@@ -86,8 +87,8 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
       const userId = 'demo-user';
 
       const [userAgents, userSystems] = await Promise.all([
-        agentWrapperRegistry.getUserAgents(userId),
-        multiAgentSystemRegistry.getUserSystems(userId)
+        agentWrapperRegistry.getUserAgents(db, auth, userId),
+        multiAgentSystemRegistry.getUserSystems(db, auth, userId)
       ]);
 
       // Add some demo agents if none exist
@@ -458,9 +459,9 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                       label="System Description"
                       value={systemDescription}
                       onChange={(e) => setSystemDescription(e.target.value)}
+                      required
                       multiline
                       rows={2}
-                      required
                       sx={{
                         '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
                         '& .MuiOutlinedInput-root': {
@@ -469,32 +470,32 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
                         }
                       }}
                     />
-                    
+
                     <FormControl size="small" sx={{ minWidth: 200 }}>
                       <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>System Type</InputLabel>
                       <Select
                         value={systemType}
                         label="System Type"
-                        onChange={(e) => setSystemType(e.target.value as 'sequential' | 'parallel' | 'hierarchical')}
+                        onChange={(e) => setSystemType(e.target.value as any)}
                         sx={{
                           color: 'white',
                           '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' }
                         }}
                       >
-                        <MenuItem value="parallel">Parallel (All respond simultaneously)</MenuItem>
-                        <MenuItem value="sequential">Sequential (One after another)</MenuItem>
-                        <MenuItem value="hierarchical">Hierarchical (By governance score)</MenuItem>
+                        <MenuItem value="parallel">Parallel</MenuItem>
+                        <MenuItem value="sequential">Sequential</MenuItem>
+                        <MenuItem value="hierarchical">Hierarchical</MenuItem>
                       </Select>
                     </FormControl>
-                    
+
                     <Button
                       variant="contained"
                       startIcon={<SaveIcon />}
                       onClick={handleSaveAsSystem}
-                      disabled={!systemName.trim() || !systemDescription.trim()}
-                      sx={{ mt: 1 }}
+                      disabled={disabled || selectedAgents.length < 2 || !systemName.trim() || !systemDescription.trim()}
+                      sx={{ mt: 2, backgroundColor: '#2196F3', '&:hover': { backgroundColor: '#1976D2' } }}
                     >
-                      Wrap as System
+                      Save as New System
                     </Button>
                   </Box>
                 </Box>
@@ -506,50 +507,64 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
           {tabValue === 1 && (
             <Box>
               <Typography variant="subtitle2" gutterBottom sx={{ color: 'white' }}>
-                Available Multi-Agent Systems
+                Select a Pre-Wrapped Multi-Agent System
               </Typography>
-
-              {availableSystems.length === 0 ? (
-                <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>No pre-wrapped systems available.</Typography>
-              ) : (
-                <Box>
-                  {availableSystems.map((system) => (
+              <Box>
+                {availableSystems.length === 0 ? (
+                  <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>No pre-wrapped systems available.</Typography>
+                ) : (
+                  availableSystems.map((system) => (
                     <Card
                       key={system.id}
                       variant="outlined"
                       sx={{
                         mb: 2,
-                        backgroundColor: selectedSystem?.id === system.id ? '#3a3a3a' : '#2a2a2a',
+                        backgroundColor: selectedSystem?.id === system.id ? 'rgba(33, 150, 243, 0.2)' : '#3a3a3a',
                         borderColor: selectedSystem?.id === system.id ? '#2196F3' : 'rgba(255, 255, 255, 0.2)',
                         color: 'white'
                       }}
                     >
                       <CardContent>
-                        <Typography variant="h6" sx={{ color: 'white' }}>{system.name}</Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{system.description}</Typography>
-                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <GroupIcon fontSize="small" /> {system.name}
+                          <Chip
+                            label={system.status}
+                            size="small"
+                            color={getStatusColor(system.status) as any}
+                            sx={{ ml: 'auto' }}
+                          />
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1 }}>
+                          {system.description}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                          Coordination: {system.coordinationPattern}
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
                           {system.agents.map(agent => (
-                            <Chip key={agent.id} label={agent.name} size="small" variant="outlined" sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }} />
+                            <Chip
+                              key={agent.id}
+                              label={agent.name}
+                              size="small"
+                              sx={{ mr: 0.5, mb: 0.5, backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white' }}
+                            />
                           ))}
                         </Box>
-                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mt: 1, display: 'block' }}>
-                          Coordination: {system.coordinationPattern} | Governance: {system.governanceScore}%
-                        </Typography>
                       </CardContent>
                       <CardActions sx={{ justifyContent: 'flex-end' }}>
                         <Button
                           size="small"
                           onClick={() => handleSystemSelect(system)}
-                          variant={selectedSystem?.id === system.id ? 'contained' : 'outlined'}
-                          sx={{ color: selectedSystem?.id === system.id ? 'white' : '#2196F3', borderColor: '#2196F3' }}
+                          disabled={disabled || selectedSystem?.id === system.id}
+                          sx={{ color: '#2196F3' }}
                         >
                           {selectedSystem?.id === system.id ? 'Selected' : 'Select System'}
                         </Button>
                       </CardActions>
                     </Card>
-                  ))}
-                </Box>
-              )}
+                  ))
+                )}
+              </Box>
             </Box>
           )}
         </Box>
@@ -557,6 +572,4 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     </Paper>
   );
 };
-
-export default AgentSelector;
 
