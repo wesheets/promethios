@@ -26,21 +26,21 @@ export class AgentWrapperIntegrationService {
    * @param userId - The user who wrapped the agent
    * @returns Promise<string> - The created agent identity ID
    */
-  async onAgentWrapped(wrappedAgent: AgentWrapper, userId: string): Promise<string> {
+  async onAgentWrapped(db: any, wrappedAgent: AgentWrapper, userId: string): Promise<string> {
     try {
       console.log('Processing agent wrapping completion for:', wrappedAgent.name);
 
       // Step 1: Create Agent Identity
-      const agentIdentityId = await this.createAgentIdentity(wrappedAgent, userId);
+      const agentIdentityId = await this.createAgentIdentity(db, wrappedAgent, userId);
       
       // Step 2: Assign Default Scorecard Template and Run Initial Evaluation
-      await this.assignDefaultScorecardAndEvaluate(agentIdentityId);
+      await this.assignDefaultScorecardAndEvaluate(db, agentIdentityId);
       
       // Step 3: Add Initial Attestations
-      await this.addInitialAttestations(agentIdentityId, wrappedAgent);
+      await this.addInitialAttestations(db, agentIdentityId, wrappedAgent);
       
       // Step 4: Trigger any additional governance setup
-      await this.setupGovernanceProfile(agentIdentityId, wrappedAgent);
+      await this.setupGovernanceProfile(db, agentIdentityId, wrappedAgent);
 
       console.log('Agent wrapping integration completed successfully:', agentIdentityId);
       return agentIdentityId;
@@ -53,7 +53,7 @@ export class AgentWrapperIntegrationService {
   /**
    * Create an agent identity from wrapped agent data
    */
-  private async createAgentIdentity(wrappedAgent: AgentWrapper, userId: string): Promise<string> {
+  private async createAgentIdentity(db: any, wrappedAgent: AgentWrapper, userId: string): Promise<string> {
     const agentIdentity = {
       name: wrappedAgent.name,
       version: '1.0.0', // Initial version
@@ -71,7 +71,7 @@ export class AgentWrapperIntegrationService {
       assignedRoles: [] // Will be assigned based on agent type
     };
 
-    return await agentIdentityRegistry.registerAgent(agentIdentity);
+    return await agentIdentityRegistry.registerAgent(db, agentIdentity);
   }
 
   /**
@@ -143,10 +143,10 @@ export class AgentWrapperIntegrationService {
   /**
    * Assign default scorecard template and run initial evaluation
    */
-  private async assignDefaultScorecardAndEvaluate(agentIdentityId: string): Promise<void> {
+  private async assignDefaultScorecardAndEvaluate(db: any, agentIdentityId: string): Promise<void> {
     try {
       // Create or get default scorecard template
-      const defaultTemplate = await this.getOrCreateDefaultScorecardTemplate();
+      const defaultTemplate = await this.getOrCreateDefaultScorecardTemplate(db);
       
       // Run initial evaluation
       const initialContext = {
@@ -172,7 +172,7 @@ export class AgentWrapperIntegrationService {
   /**
    * Get or create the default scorecard template
    */
-  private async getOrCreateDefaultScorecardTemplate() {
+  private async getOrCreateDefaultScorecardTemplate(db: any) {
     const templates = await agentEvaluationService.listScorecardTemplates();
     
     // Look for existing default template
@@ -207,7 +207,7 @@ export class AgentWrapperIntegrationService {
   /**
    * Add initial attestations based on agent configuration
    */
-  private async addInitialAttestations(agentIdentityId: string, wrappedAgent: AgentWrapper): Promise<void> {
+  private async addInitialAttestations(db: any, agentIdentityId: string, wrappedAgent: AgentWrapper): Promise<void> {
     try {
       const attestations = [];
       
@@ -262,7 +262,7 @@ export class AgentWrapperIntegrationService {
   /**
    * Set up governance profile for the agent
    */
-  private async setupGovernanceProfile(agentIdentityId: string, wrappedAgent: AgentWrapper): Promise<void> {
+  private async setupGovernanceProfile(db: any, agentIdentityId: string, wrappedAgent: AgentWrapper): Promise<void> {
     try {
       // Create a basic governance profile ID based on the agent's configuration
       let governanceProfileId = 'basic-profile';
@@ -272,7 +272,7 @@ export class AgentWrapperIntegrationService {
       }
       
       // Update the agent identity with the governance profile
-      await agentIdentityRegistry.updateAgentIdentity(agentIdentityId, {
+      await agentIdentityRegistry.updateAgentIdentity(db, agentIdentityId, {
         governanceProfileId
       });
       
@@ -287,10 +287,10 @@ export class AgentWrapperIntegrationService {
    * Called when an agent wrapper is updated
    * Updates the corresponding agent identity and triggers re-evaluation
    */
-  async onAgentWrapperUpdated(wrappedAgent: AgentWrapper, userId: string): Promise<void> {
+  async onAgentWrapperUpdated(db: any, wrappedAgent: AgentWrapper, userId: string): Promise<void> {
     try {
       // Find the agent identity by wrapper ID
-      const agents = await agentIdentityRegistry.listAgents({ ownerId: userId });
+      const agents = await agentIdentityRegistry.listAgents(db, { ownerId: userId });
       const agentIdentity = agents.find(agent => 
         agent.modelLink?.identifier === wrappedAgent.id
       );
@@ -301,14 +301,14 @@ export class AgentWrapperIntegrationService {
       }
       
       // Update agent identity with new information
-      await agentIdentityRegistry.updateAgentIdentity(agentIdentity.id, {
+      await agentIdentityRegistry.updateAgentIdentity(db, agentIdentity.id, {
         name: wrappedAgent.name,
         description: wrappedAgent.description || agentIdentity.description,
         tags: this.generateTagsFromWrapper(wrappedAgent)
       });
       
       // Trigger re-evaluation with default template
-      const defaultTemplate = await this.getOrCreateDefaultScorecardTemplate();
+      const defaultTemplate = await this.getOrCreateDefaultScorecardTemplate(db);
       await agentEvaluationService.evaluateAgent(
         agentIdentity.id,
         defaultTemplate.id,
@@ -326,10 +326,10 @@ export class AgentWrapperIntegrationService {
    * Called when an agent wrapper is deleted
    * Deactivates the corresponding agent identity
    */
-  async onAgentWrapperDeleted(wrapperId: string, userId: string): Promise<void> {
+  async onAgentWrapperDeleted(db: any, wrapperId: string, userId: string): Promise<void> {
     try {
       // Find the agent identity by wrapper ID
-      const agents = await agentIdentityRegistry.listAgents({ ownerId: userId });
+      const agents = await agentIdentityRegistry.listAgents(db, { ownerId: userId });
       const agentIdentity = agents.find(agent => 
         agent.modelLink?.identifier === wrapperId
       );
@@ -340,7 +340,7 @@ export class AgentWrapperIntegrationService {
       }
       
       // Deactivate the agent identity
-      await agentIdentityRegistry.deactivateAgent(agentIdentity.id);
+      await agentIdentityRegistry.deactivateAgent(db, agentIdentity.id);
       
       console.log('Agent identity deactivated for deleted wrapper:', agentIdentity.id);
     } catch (error) {
@@ -352,9 +352,9 @@ export class AgentWrapperIntegrationService {
   /**
    * Get agent identity by wrapper ID
    */
-  async getAgentIdentityByWrapperId(wrapperId: string, userId: string): Promise<string | null> {
+  async getAgentIdentityByWrapperId(db: any, wrapperId: string, userId: string): Promise<string | null> {
     try {
-      const agents = await agentIdentityRegistry.listAgents({ ownerId: userId });
+      const agents = await agentIdentityRegistry.listAgents(db, { ownerId: userId });
       const agentIdentity = agents.find(agent => 
         agent.modelLink?.identifier === wrapperId
       );
@@ -369,4 +369,5 @@ export class AgentWrapperIntegrationService {
 
 // Export singleton instance
 export const agentWrapperIntegrationService = AgentWrapperIntegrationService.getInstance();
+
 
