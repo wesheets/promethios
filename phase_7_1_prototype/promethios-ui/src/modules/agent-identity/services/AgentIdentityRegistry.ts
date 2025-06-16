@@ -1,11 +1,10 @@
-import { 
-  AgentIdentity, 
-  AgentModelLink, 
+import {
+  AgentIdentity,
+  AgentModelLink,
   AgentFilter,
-  CustomAttribute 
+  CustomAttribute
 } from '../types';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
 
 /**
  * AgentIdentityRegistry - Manages the identities of AI agents
@@ -29,7 +28,7 @@ export class AgentIdentityRegistry {
    * @param identity - The agent identity to register
    * @returns Promise<string> - The generated agent ID
    */
-  async registerAgent(identity: Omit<AgentIdentity, 'id' | 'creationDate' | 'lastModifiedDate'>): Promise<string> {
+  async registerAgent(db: any, identity: Omit<AgentIdentity, 'id' | 'creationDate' | 'lastModifiedDate'>): Promise<string> {
     try {
       const now = new Date();
       const agentData = {
@@ -57,7 +56,7 @@ export class AgentIdentityRegistry {
    * @param agentId - The agent ID to retrieve
    * @returns Promise<AgentIdentity | null>
    */
-  async getAgentIdentity(agentId: string): Promise<AgentIdentity | null> {
+  async getAgentIdentity(db: any, agentId: string): Promise<AgentIdentity | null> {
     try {
       const docRef = doc(db, 'agentIdentities', agentId);
       const docSnap = await getDoc(docRef);
@@ -85,7 +84,7 @@ export class AgentIdentityRegistry {
    * @param updates - Partial updates to apply
    * @returns Promise<boolean> - Success status
    */
-  async updateAgentIdentity(agentId: string, updates: Partial<AgentIdentity>): Promise<boolean> {
+  async updateAgentIdentity(db: any, agentId: string, updates: Partial<AgentIdentity>): Promise<boolean> {
     try {
       const docRef = doc(db, 'agentIdentities', agentId);
       
@@ -111,7 +110,7 @@ export class AgentIdentityRegistry {
    * @param filters - Optional filters to apply
    * @returns Promise<AgentIdentity[]>
    */
-  async listAgents(filters?: AgentFilter): Promise<AgentIdentity[]> {
+  async listAgents(db: any, filters?: AgentFilter): Promise<AgentIdentity[]> {
     try {
       let q = query(collection(db, 'agentIdentities'), orderBy('creationDate', 'desc'));
 
@@ -161,9 +160,9 @@ export class AgentIdentityRegistry {
    * @param modelDetails - The model link details
    * @returns Promise<boolean> - Success status
    */
-  async linkAgentToModel(agentId: string, modelDetails: AgentModelLink): Promise<boolean> {
+  async linkAgentToModel(db: any, agentId: string, modelDetails: AgentModelLink): Promise<boolean> {
     try {
-      return await this.updateAgentIdentity(agentId, { modelLink: modelDetails });
+      return await this.updateAgentIdentity(db, agentId, { modelLink: modelDetails });
     } catch (error) {
       console.error('Error linking agent to model:', error);
       throw new Error('Failed to link agent to model');
@@ -199,16 +198,16 @@ export class AgentIdentityRegistry {
    * @param ownerId - The owner ID
    * @returns Promise<AgentIdentity[]>
    */
-  async getAgentsByOwner(ownerId: string): Promise<AgentIdentity[]> {
-    return this.listAgents({ ownerId });
+  async getAgentsByOwner(db: any, ownerId: string): Promise<AgentIdentity[]> {
+    return this.listAgents(db, { ownerId });
   }
 
   /**
    * Get active agents only
    * @returns Promise<AgentIdentity[]>
    */
-  async getActiveAgents(): Promise<AgentIdentity[]> {
-    return this.listAgents({ status: 'active' });
+  async getActiveAgents(db: any): Promise<AgentIdentity[]> {
+    return this.listAgents(db, { status: 'active' });
   }
 
   /**
@@ -216,8 +215,8 @@ export class AgentIdentityRegistry {
    * @param agentId - The agent ID to deactivate
    * @returns Promise<boolean>
    */
-  async deactivateAgent(agentId: string): Promise<boolean> {
-    return this.updateAgentIdentity(agentId, { status: 'inactive' });
+  async deactivateAgent(db: any, agentId: string): Promise<boolean> {
+    return this.updateAgentIdentity(db, agentId, { status: 'inactive' });
   }
 
   /**
@@ -225,11 +224,12 @@ export class AgentIdentityRegistry {
    * @param agentId - The agent ID to reactivate
    * @returns Promise<boolean>
    */
-  async reactivateAgent(agentId: string): Promise<boolean> {
-    return this.updateAgentIdentity(agentId, { status: 'active' });
+  async reactivateAgent(db: any, agentId: string): Promise<boolean> {
+    return this.updateAgentIdentity(db, agentId, { status: 'active' });
   }
 }
 
 // Export singleton instance
 export const agentIdentityRegistry = AgentIdentityRegistry.getInstance();
+
 
