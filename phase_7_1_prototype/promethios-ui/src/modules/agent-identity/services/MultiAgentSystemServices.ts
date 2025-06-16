@@ -1,26 +1,25 @@
-import { 
+import {
   MultiAgentSystemIdentity,
   SystemAttestation,
   SystemScorecardResult,
   DEFAULT_SYSTEM_METRICS
 } from './types/multiAgent';
-import { 
+import {
   AgentIdentity,
-  AgentScorecardResult 
+  AgentScorecardResult
 } from './types';
-import { db } from '../../../firebase/config';
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  getDocs, 
-  getDoc, 
-  query, 
-  where, 
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  getDoc,
+  query,
+  where,
   orderBy,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore';
 
 /**
@@ -33,7 +32,7 @@ class MultiAgentSystemIdentityRegistry {
   /**
    * Register a new multi-agent system identity
    */
-  async registerSystem(systemData: Omit<MultiAgentSystemIdentity, 'id' | 'creationDate' | 'lastModifiedDate'>): Promise<string> {
+  async registerSystem(db: any, systemData: Omit<MultiAgentSystemIdentity, 'id' | 'creationDate' | 'lastModifiedDate'>): Promise<string> {
     console.log('MultiAgentSystemServices: Attempting to register system:', systemData.name);
     try {
       const systemIdentity: Omit<MultiAgentSystemIdentity, 'id'> = {
@@ -59,7 +58,7 @@ class MultiAgentSystemIdentityRegistry {
   /**
    * Get system identity by ID
    */
-  async getSystemIdentity(systemId: string): Promise<MultiAgentSystemIdentity | null> {
+  async getSystemIdentity(db: any, systemId: string): Promise<MultiAgentSystemIdentity | null> {
     console.log('MultiAgentSystemServices: Attempting to get system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
@@ -87,7 +86,7 @@ class MultiAgentSystemIdentityRegistry {
   /**
    * Get all system identities for a user
    */
-  async getSystemIdentitiesByOwner(ownerId: string): Promise<MultiAgentSystemIdentity[]> {
+  async getSystemIdentitiesByOwner(db: any, ownerId: string): Promise<MultiAgentSystemIdentity[]> {
     console.log('MultiAgentSystemServices: Attempting to get system identities by owner:', ownerId);
     try {
       const q = query(
@@ -114,7 +113,7 @@ class MultiAgentSystemIdentityRegistry {
   /**
    * Update system identity
    */
-  async updateSystemIdentity(systemId: string, updates: Partial<MultiAgentSystemIdentity>): Promise<void> {
+  async updateSystemIdentity(db: any, systemId: string, updates: Partial<MultiAgentSystemIdentity>): Promise<void> {
     console.log('MultiAgentSystemServices: Attempting to update system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
@@ -133,7 +132,7 @@ class MultiAgentSystemIdentityRegistry {
   /**
    * Delete system identity
    */
-  async deleteSystemIdentity(systemId: string): Promise<void> {
+  async deleteSystemIdentity(db: any, systemId: string): Promise<void> {
     console.log('MultiAgentSystemServices: Attempting to delete system identity:', systemId);
     try {
       const docRef = doc(db, this.COLLECTION_NAME, systemId);
@@ -157,7 +156,7 @@ class MultiAgentSystemScorecardService {
   /**
    * Create initial system scorecard
    */
-  async createSystemScorecard(systemId: string, agentIds: string[]): Promise<SystemScorecardResult> {
+  async createSystemScorecard(db: any, systemId: string, agentIds: string[]): Promise<SystemScorecardResult> {
     console.log('MultiAgentSystemServices: Attempting to create system scorecard for system:', systemId);
     try {
       // Calculate initial system metrics
@@ -216,7 +215,7 @@ class MultiAgentSystemScorecardService {
   /**
    * Get latest system scorecard
    */
-  async getLatestSystemScorecard(systemId: string): Promise<SystemScorecardResult | null> {
+  async getLatestSystemScorecard(db: any, systemId: string): Promise<SystemScorecardResult | null> {
     console.log('MultiAgentSystemServices: Attempting to get latest system scorecard for system:', systemId);
     try {
       const q = query(
@@ -265,7 +264,7 @@ class MultiAgentSystemIntegration {
   /**
    * Setup complete governance for a new multi-agent system
    */
-  async setupSystemGovernance(systemData: any): Promise<{
+  async setupSystemGovernance(db: any, systemData: any): Promise<{
     systemId: string;
     scorecard: SystemScorecardResult;
     attestations: SystemAttestation[];
@@ -273,7 +272,7 @@ class MultiAgentSystemIntegration {
     console.log('MultiAgentSystemServices: Setting up governance for multi-agent system:', systemData.name);
     try {
       // 1. Create system identity
-      const systemId = await this.systemRegistry.registerSystem({
+      const systemId = await this.systemRegistry.registerSystem(db, {
         name: systemData.name,
         version: '1.0.0',
         description: systemData.description,
@@ -293,12 +292,13 @@ class MultiAgentSystemIntegration {
 
       // 2. Create initial system scorecard
       const scorecard = await this.scorecardService.createSystemScorecard(
-        systemId, 
+        db,
+        systemId,
         systemData.selectedAgents.map((agent: any) => agent.id)
       );
 
       // 3. Create system attestations
-      const attestations = await this.createSystemAttestations(systemId, systemData);
+      const attestations = await this.createSystemAttestations(db, systemId, systemData);
 
       console.log('MultiAgentSystemServices: Multi-agent system governance setup complete:', systemId);
 
@@ -313,7 +313,7 @@ class MultiAgentSystemIntegration {
     }
   }
 
-  private async createSystemAttestations(systemId: string, systemData: any): Promise<SystemAttestation[]> {
+  private async createSystemAttestations(db: any, systemId: string, systemData: any): Promise<SystemAttestation[]> {
     console.log('MultiAgentSystemServices: Creating system attestations for system:', systemId);
     const attestations: SystemAttestation[] = [
       {
@@ -359,7 +359,5 @@ class MultiAgentSystemIntegration {
 export const multiAgentSystemRegistry = new MultiAgentSystemIdentityRegistry();
 export const multiAgentScorecardService = new MultiAgentSystemScorecardService();
 export const multiAgentSystemIntegration = new MultiAgentSystemIntegration();
-
-
 
 

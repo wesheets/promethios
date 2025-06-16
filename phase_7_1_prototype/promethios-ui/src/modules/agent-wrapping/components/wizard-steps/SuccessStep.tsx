@@ -65,7 +65,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
   onCreateAnother,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, db } = useAuth();
   const [agentIdentityId, setAgentIdentityId] = useState<string | null>(null);
   const [integrationLoading, setIntegrationLoading] = useState(true);
   const [integrationError, setIntegrationError] = useState<string | null>(null);
@@ -75,21 +75,21 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
   // Trigger identity and scorecard creation when component mounts
   useEffect(() => {
     const setupAgentIdentityAndScorecard = async () => {
-      if (!user) return;
+      if (!user || !db) return;
 
       try {
         setIntegrationLoading(true);
         setIntegrationError(null);
         
         // Create agent identity and assign scorecard
-        const identityId = await agentWrapperIntegrationService.onAgentWrapped(wrapper, user.uid);
+        const identityId = await agentWrapperIntegrationService.onAgentWrapped(db, wrapper, user.uid);
         setAgentIdentityId(identityId);
         
         // Load initial scorecard data
-        await loadScorecardData(identityId);
+        await loadScorecardData(db, identityId);
         
         // Load governance data
-        await loadGovernanceData(identityId);
+        await loadGovernanceData(db, identityId);
         
         console.log('Agent identity and scorecard setup completed:', identityId);
       } catch (error) {
@@ -101,12 +101,12 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
     };
 
     setupAgentIdentityAndScorecard();
-  }, [wrapper, user]);
+  }, [wrapper, user, db]);
 
-  const loadScorecardData = async (identityId: string) => {
+  const loadScorecardData = async (db: any, identityId: string) => {
     try {
       // Get the latest evaluation for this agent
-      const evaluations = await agentEvaluationService.getAgentEvaluationHistory(identityId);
+      const evaluations = await agentEvaluationService.getAgentEvaluationHistory(db, identityId);
       
       if (evaluations.length > 0) {
         const latestEvaluation = evaluations[0];
@@ -145,10 +145,10 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
     }
   };
 
-  const loadGovernanceData = async (identityId: string) => {
+  const loadGovernanceData = async (db: any, identityId: string) => {
     try {
       // Get attestations for this agent
-      const attestations = await agentAttestationService.listAttestationsForAgent(identityId);
+      const attestations = await agentAttestationService.listAttestationsForAgent(db, identityId);
       const activeAttestations = attestations.filter(a => a.status === 'active');
       
       // Get unique attestation types
@@ -458,99 +458,38 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="Status"
-                    secondary={
-                      <Chip label="Active" color="success" size="small" />
-                    }
+                    primary="Model"
+                    secondary={wrapper.model || 'N/A'}
                   />
                 </ListItem>
-                {!integrationLoading && agentIdentityId && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Security fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Governance"
-                      secondary={
-                        <Chip label="Enabled" color="primary" size="small" />
-                      }
-                    />
-                  </ListItem>
-                )}
+                <ListItem>
+                  <ListItemText
+                    primary="Description"
+                    secondary={wrapper.description || 'No description provided.'}
+                  />
+                </ListItem>
               </List>
             </Grid>
           </Grid>
         </CardContent>
       </Card>
 
-      <Alert severity="success" sx={{ mb: 4, textAlign: 'left' }}>
-        <Typography variant="body2">
-          <strong>What happens next?</strong> Your agent is now registered in the Promethios platform 
-          with a complete governance identity and scorecard. All requests will be monitored for 
-          compliance, and you can track performance metrics in real-time.
-        </Typography>
-      </Alert>
-
-      <Typography variant="h5" gutterBottom sx={{ mt: 4, mb: 3 }}>
-        What would you like to do next?
-      </Typography>
-
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {quickActions.map((action, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card 
-              variant="outlined" 
-              sx={{ 
-                cursor: action.disabled ? 'not-allowed' : 'pointer',
-                opacity: action.disabled ? 0.6 : 1,
-                transition: 'all 0.2s',
-                '&:hover': action.disabled ? {} : {
-                  transform: 'translateY(-2px)',
-                  boxShadow: 2,
-                },
-              }}
-              onClick={action.disabled ? undefined : action.action}
-            >
-              <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                <Box 
-                  sx={{ 
-                    color: `${action.color}.main`,
-                    mb: 2,
-                    '& svg': { fontSize: 40 }
-                  }}
-                >
-                  {action.icon}
-                </Box>
-                <Typography variant="h6" gutterBottom>
-                  {action.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {action.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Divider sx={{ my: 4 }} />
-
-      <Box display="flex" justifyContent="center" gap={2}>
-        <Button
-          variant="outlined"
-          startIcon={<Add />}
-          onClick={onCreateAnother}
-          size="large"
-        >
-          Wrap Another Agent
-        </Button>
+      <Box display="flex" justifyContent="center" gap={2} mt={4}>
         <Button
           variant="contained"
+          color="primary"
+          onClick={() => navigate('/ui/agents')}
           startIcon={<Launch />}
-          onClick={() => navigate('/ui/dashboard')}
-          size="large"
         >
-          Go to Dashboard
+          Go to My Agents
+        </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={onCreateAnother}
+          startIcon={<Add />}
+        >
+          Wrap Another Agent
         </Button>
       </Box>
     </Box>
@@ -558,4 +497,5 @@ const SuccessStep: React.FC<SuccessStepProps> = ({
 };
 
 export default SuccessStep;
+
 
