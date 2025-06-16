@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { 
-  ScorecardTemplate, 
-  AgentScorecardResult, 
-  ScorecardContext, 
+import {
+  ScorecardTemplate,
+  AgentScorecardResult,
+  ScorecardContext,
   ScorecardMetric,
-  AgentComparisonResult 
+  AgentComparisonResult
 } from '../types';
 import { agentEvaluationService, scorecardMetricRegistry } from '../services/ScorecardServices';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * React hook for managing scorecard templates
@@ -15,16 +16,19 @@ export const useScorecardTemplates = () => {
   const [templates, setTemplates] = useState<ScorecardTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    loadTemplates();
-  }, []);
+    if (db) {
+      loadTemplates();
+    }
+  }, [db]);
 
   const loadTemplates = async () => {
     try {
       setLoading(true);
       setError(null);
-      const templateList = await agentEvaluationService.listScorecardTemplates();
+      const templateList = await agentEvaluationService.listScorecardTemplates(db);
       setTemplates(templateList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load templates');
@@ -37,7 +41,7 @@ export const useScorecardTemplates = () => {
   const createTemplate = async (templateData: Omit<ScorecardTemplate, 'id'>) => {
     try {
       setError(null);
-      const templateId = await agentEvaluationService.saveScorecardTemplate(templateData);
+      const templateId = await agentEvaluationService.saveScorecardTemplate(db, templateData);
       await loadTemplates(); // Reload to get updated list
       return templateId;
     } catch (err) {
@@ -50,7 +54,7 @@ export const useScorecardTemplates = () => {
   const getTemplate = async (templateId: string): Promise<ScorecardTemplate | null> => {
     try {
       setError(null);
-      return await agentEvaluationService.getScorecardTemplate(templateId);
+      return await agentEvaluationService.getScorecardTemplate(db, templateId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get template';
       setError(errorMessage);
@@ -75,20 +79,21 @@ export const useAgentEvaluations = (agentId: string | null) => {
   const [evaluations, setEvaluations] = useState<AgentScorecardResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (agentId) {
+    if (agentId && db) {
       loadEvaluations(agentId);
     } else {
       setEvaluations([]);
     }
-  }, [agentId]);
+  }, [agentId, db]);
 
   const loadEvaluations = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-      const evaluationList = await agentEvaluationService.getAgentEvaluationHistory(id);
+      const evaluationList = await agentEvaluationService.getAgentEvaluationHistory(db, id);
       setEvaluations(evaluationList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load evaluations');
@@ -99,11 +104,11 @@ export const useAgentEvaluations = (agentId: string | null) => {
   };
 
   const evaluateAgent = async (templateId: string, context: ScorecardContext = {}) => {
-    if (!agentId) return null;
+    if (!agentId || !db) return null;
 
     try {
       setError(null);
-      const result = await agentEvaluationService.evaluateAgent(agentId, templateId, context);
+      const result = await agentEvaluationService.evaluateAgent(db, agentId, templateId, context);
       
       // Add the new evaluation to the list
       setEvaluations(prev => [result, ...prev]);
@@ -120,11 +125,11 @@ export const useAgentEvaluations = (agentId: string | null) => {
     templateId?: string,
     timePeriod?: { start: Date; end: Date }
   ) => {
-    if (!agentId) return [];
+    if (!agentId || !db) return [];
 
     try {
       setError(null);
-      return await agentEvaluationService.getAgentEvaluationHistory(agentId, templateId, timePeriod);
+      return await agentEvaluationService.getAgentEvaluationHistory(db, agentId, templateId, timePeriod);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get evaluation history';
       setError(errorMessage);
@@ -207,17 +212,19 @@ export const useAgentComparison = () => {
   const [comparisonResults, setComparisonResults] = useState<AgentComparisonResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   const compareAgents = async (
     agentIds: string[],
     templateId: string,
     context: ScorecardContext = {}
   ) => {
+    if (!db) return [];
     try {
       setLoading(true);
       setError(null);
       
-      const results = await agentEvaluationService.compareAgents(agentIds, templateId, context);
+      const results = await agentEvaluationService.compareAgents(db, agentIds, templateId, context);
       setComparisonResults(results);
       
       return results;
@@ -251,21 +258,22 @@ export const useScorecardTemplate = (templateId: string | null) => {
   const [template, setTemplate] = useState<ScorecardTemplate | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (templateId) {
+    if (templateId && db) {
       loadTemplate(templateId);
     } else {
       setTemplate(null);
     }
-  }, [templateId]);
+  }, [templateId, db]);
 
   const loadTemplate = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const templateData = await agentEvaluationService.getScorecardTemplate(id);
+      const templateData = await agentEvaluationService.getScorecardTemplate(db, id);
       setTemplate(templateData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load template');

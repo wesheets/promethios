@@ -1,12 +1,11 @@
-import { 
-  ScorecardMetric, 
+import {
+  ScorecardMetric,
   ScorecardContext,
   ScorecardTemplate,
   AgentScorecardResult,
-  AgentComparisonResult 
+  AgentComparisonResult
 } from './types';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
 
 /**
  * ScorecardMetricRegistry - Manages the lifecycle of metrics used in agent scorecards
@@ -264,7 +263,7 @@ export class AgentEvaluationService {
    * @param template - The template to save
    * @returns Promise<string> - The template ID
    */
-  async saveScorecardTemplate(template: Omit<ScorecardTemplate, 'id'>): Promise<string> {
+  async saveScorecardTemplate(db: any, template: Omit<ScorecardTemplate, 'id'>): Promise<string> {
     console.log('ScorecardServices: Attempting to save scorecard template.');
     try {
       const docRef = await addDoc(collection(db, 'scorecardTemplates'), template);
@@ -282,7 +281,7 @@ export class AgentEvaluationService {
    * @param templateId - The template ID
    * @returns Promise<ScorecardTemplate | null>
    */
-  async getScorecardTemplate(templateId: string): Promise<ScorecardTemplate | null> {
+  async getScorecardTemplate(db: any, templateId: string): Promise<ScorecardTemplate | null> {
     console.log('ScorecardServices: Attempting to get scorecard template:', templateId);
     try {
       const docRef = doc(db, 'scorecardTemplates', templateId);
@@ -305,7 +304,7 @@ export class AgentEvaluationService {
    * List all scorecard templates
    * @returns Promise<ScorecardTemplate[]>
    */
-  async listScorecardTemplates(): Promise<ScorecardTemplate[]> {
+  async listScorecardTemplates(db: any): Promise<ScorecardTemplate[]> {
     console.log('ScorecardServices: Attempting to list all scorecard templates.');
     try {
       const q = query(collection(db, 'scorecardTemplates'), orderBy('name'));
@@ -332,13 +331,14 @@ export class AgentEvaluationService {
    * @returns Promise<AgentScorecardResult>
    */
   async evaluateAgent(
+    db: any,
     agentId: string, 
     templateId: string, 
     context: ScorecardContext
   ): Promise<AgentScorecardResult> {
     console.log('ScorecardServices: Attempting to evaluate agent:', agentId, 'with template:', templateId);
     try {
-      const template = await this.getScorecardTemplate(templateId);
+      const template = await this.getScorecardTemplate(db, templateId);
       if (!template) {
         throw new Error('Scorecard template not found');
       }
@@ -382,8 +382,7 @@ export class AgentEvaluationService {
         templateId,
         evaluationTimestamp: new Date(),
         context,
-        overallScore: Math.round(overallScore),
-        metricValues
+        overallScore: Math.round(overallScore)
       };
 
       // Save the result to Firebase
@@ -409,6 +408,7 @@ export class AgentEvaluationService {
    * @returns Promise<AgentScorecardResult[]>
    */
   async getAgentEvaluationHistory(
+    db: any,
     agentId: string,
     templateId?: string,
     timePeriod?: { start: Date; end: Date }
@@ -462,6 +462,7 @@ export class AgentEvaluationService {
    * @returns Promise<AgentComparisonResult[]>
    */
   async compareAgents(
+    db: any,
     agentIds: string[],
     templateId: string,
     context: ScorecardContext
@@ -472,7 +473,7 @@ export class AgentEvaluationService {
 
       // Evaluate each agent
       for (const agentId of agentIds) {
-        const evaluation = await this.evaluateAgent(agentId, templateId, context);
+        const evaluation = await this.evaluateAgent(db, agentId, templateId, context);
         results.push({ ...evaluation, rank: 0 }); // Rank will be calculated below
       }
 
@@ -490,56 +491,35 @@ export class AgentEvaluationService {
     }
   }
 
-  /**
-   * Normalize a metric value to a 0-100 score
-   */
   private normalizeScore(value: number, metric: ScorecardMetric): number {
-    if (!metric.interpretationRule) return value;
-
-    const rule = metric.interpretationRule;
-    
-    if (rule.direction === 'higher_is_better') {
-      return Math.min(100, Math.max(0, value));
-    } else if (rule.direction === 'lower_is_better') {
-      // For lower-is-better metrics, invert the score
-      const maxValue = rule.thresholds?.critical || 5000;
-      return Math.max(0, 100 - (value / maxValue) * 100);
-    } else if (rule.direction === 'target_range' && rule.targetRange) {
-      const [min, max] = rule.targetRange;
-      if (value >= min && value <= max) return 100;
-      const distance = Math.min(Math.abs(value - min), Math.abs(value - max));
-      return Math.max(0, 100 - distance);
+    // Simple linear normalization for demonstration
+    // In a real system, this would be more sophisticated based on metric type and distribution
+    if (metric.interpretationRule?.direction === 'lower_is_better') {
+      // For 'lower is better', invert the score
+      return Math.max(0, 100 - (value / (metric.interpretationRule.thresholds?.critical || 1)) * 100);
+    } else {
+      return Math.min(100, (value / (metric.interpretationRule.thresholds?.critical || 100)) * 100);
     }
-
-    return value;
   }
 
-  /**
-   * Get the status of a metric value
-   */
   private getMetricStatus(value: number, metric: ScorecardMetric): 'critical' | 'warning' | 'normal' {
-    if (!metric.interpretationRule?.thresholds) return 'normal';
+    const { direction, thresholds } = metric.interpretationRule || {};
+    if (!thresholds) return 'normal';
 
-    const thresholds = metric.interpretationRule.thresholds;
-    const direction = metric.interpretationRule.direction;
+    const { warning, critical } = thresholds;
 
-    if (direction === 'higher_is_better') {
-      if (value < thresholds.critical) return 'critical';
-      if (value < thresholds.warning) return 'warning';
-    } else if (direction === 'lower_is_better') {
-      if (value > thresholds.critical) return 'critical';
-      if (value > thresholds.warning) return 'warning';
-    } else if (direction === 'target_range' && metric.interpretationRule.targetRange) {
-      const [min, max] = metric.interpretationRule.targetRange;
-      if (value < min || value > max) return 'critical';
-      // You might define a 'warning' range outside the target but within acceptable bounds
+    if (direction === 'lower_is_better') {
+      if (value >= critical) return 'critical';
+      if (value >= warning) return 'warning';
+    } else {
+      if (value <= critical) return 'critical';
+      if (value <= warning) return 'warning';
     }
-
     return 'normal';
   }
 }
 
-// Singleton instance
+// Export singleton instances
 export const scorecardMetricRegistry = ScorecardMetricRegistry.getInstance();
 export const agentEvaluationService = AgentEvaluationService.getInstance();
 
