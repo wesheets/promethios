@@ -34,9 +34,7 @@ export const updateOnboardingStatus = async (userId: string, completed: boolean,
 };
 
 // Store agent configuration from onboarding
-export coexport const saveAgentConfiguration = async (userId: string, agentConfig: { name: string; type: string; description?: string; governanceLevel: string; }, db: any) => {ring;
-  }
-) => {
+export const saveAgentConfiguration = async (userId: string, agentConfig: { name: string; type: string; description?: string; governanceLevel: string; }, db: any) => {
   try {
     console.log(`userService: Attempting to save agent configuration for user: ${userId}`);
     const userRef = doc(db, 'users', userId);
