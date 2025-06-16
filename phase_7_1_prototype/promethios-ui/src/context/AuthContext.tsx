@@ -9,7 +9,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { auth, googleProvider, app } from '../firebase/config';
+import app, { auth, googleProvider } from '../firebase/config'; // Corrected import for 'app'
 
 interface AuthContextType {
   currentUser: User | null;
