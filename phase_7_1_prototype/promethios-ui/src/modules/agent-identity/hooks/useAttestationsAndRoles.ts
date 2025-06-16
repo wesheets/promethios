@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   AgentAttestation,
   AgentRoleDefinition,
-  AttestationTypeDefinition 
+  AttestationTypeDefinition
 } from '../types';
 import { agentAttestationService, agentRoleService } from '../services/AttestationAndRoleServices';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * React hook for managing agent attestations
@@ -13,20 +14,21 @@ export const useAgentAttestations = (agentId: string | null) => {
   const [attestations, setAttestations] = useState<AgentAttestation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (agentId) {
+    if (agentId && db) {
       loadAttestations(agentId);
     } else {
       setAttestations([]);
     }
-  }, [agentId]);
+  }, [agentId, db]);
 
   const loadAttestations = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-      const attestationList = await agentAttestationService.listAttestationsForAgent(id);
+      const attestationList = await agentAttestationService.listAttestationsForAgent(db, id);
       setAttestations(attestationList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load attestations');
@@ -37,11 +39,11 @@ export const useAgentAttestations = (agentId: string | null) => {
   };
 
   const addAttestation = async (attestationData: Omit<AgentAttestation, 'id'>) => {
-    if (!agentId) return null;
+    if (!agentId || !db) return null;
 
     try {
       setError(null);
-      const attestationId = await agentAttestationService.addAttestation(agentId, attestationData);
+      const attestationId = await agentAttestationService.addAttestation(db, agentId, attestationData);
       
       // Reload attestations to get the updated list
       await loadAttestations(agentId);
@@ -55,11 +57,11 @@ export const useAgentAttestations = (agentId: string | null) => {
   };
 
   const revokeAttestation = async (attestationId: string, reason: string) => {
-    if (!agentId) return false;
+    if (!agentId || !db) return false;
 
     try {
       setError(null);
-      const success = await agentAttestationService.revokeAttestation(agentId, attestationId, reason);
+      const success = await agentAttestationService.revokeAttestation(db, agentId, attestationId, reason);
       
       if (success) {
         // Update the local state
@@ -81,11 +83,11 @@ export const useAgentAttestations = (agentId: string | null) => {
   };
 
   const getExpiringAttestations = async (daysAhead: number = 30) => {
-    if (!agentId) return [];
+    if (!agentId || !db) return [];
 
     try {
       setError(null);
-      return await agentAttestationService.getExpiringAttestations(agentId, daysAhead);
+      return await agentAttestationService.getExpiringAttestations(db, agentId, daysAhead);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get expiring attestations';
       setError(errorMessage);
@@ -94,11 +96,11 @@ export const useAgentAttestations = (agentId: string | null) => {
   };
 
   const hasValidAttestation = async (attestationType: string) => {
-    if (!agentId) return false;
+    if (!agentId || !db) return false;
 
     try {
       setError(null);
-      return await agentAttestationService.hasValidAttestation(agentId, attestationType);
+      return await agentAttestationService.hasValidAttestation(db, agentId, attestationType);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to check attestation';
       setError(errorMessage);
@@ -169,20 +171,21 @@ export const useAgentRoles = (agentId: string | null) => {
   const [roles, setRoles] = useState<AgentRoleDefinition[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (agentId) {
+    if (agentId && db) {
       loadAgentRoles(agentId);
     } else {
       setRoles([]);
     }
-  }, [agentId]);
+  }, [agentId, db]);
 
   const loadAgentRoles = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-      const roleList = await agentRoleService.getAgentRoles(id);
+      const roleList = await agentRoleService.getAgentRoles(db, id);
       setRoles(roleList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agent roles');
@@ -193,11 +196,11 @@ export const useAgentRoles = (agentId: string | null) => {
   };
 
   const assignRole = async (roleId: string) => {
-    if (!agentId) return false;
+    if (!agentId || !db) return false;
 
     try {
       setError(null);
-      const success = await agentRoleService.assignRoleToAgent(agentId, roleId);
+      const success = await agentRoleService.assignRoleToAgent(db, agentId, roleId);
       
       if (success) {
         // Reload roles to get the updated list
@@ -213,11 +216,11 @@ export const useAgentRoles = (agentId: string | null) => {
   };
 
   const unassignRole = async (roleId: string) => {
-    if (!agentId) return false;
+    if (!agentId || !db) return false;
 
     try {
       setError(null);
-      const success = await agentRoleService.unassignRoleFromAgent(agentId, roleId);
+      const success = await agentRoleService.unassignRoleFromAgent(db, agentId, roleId);
       
       if (success) {
         // Remove the role from local state
@@ -249,16 +252,19 @@ export const useRoleDefinitions = () => {
   const [roleDefinitions, setRoleDefinitions] = useState<AgentRoleDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    loadRoleDefinitions();
-  }, []);
+    if (db) {
+      loadRoleDefinitions();
+    }
+  }, [db]);
 
   const loadRoleDefinitions = async () => {
     try {
       setLoading(true);
       setError(null);
-      const definitions = await agentRoleService.listRoleDefinitions();
+      const definitions = await agentRoleService.listRoleDefinitions(db);
       setRoleDefinitions(definitions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load role definitions');
@@ -271,7 +277,7 @@ export const useRoleDefinitions = () => {
   const createRoleDefinition = async (roleData: Omit<AgentRoleDefinition, 'id'>) => {
     try {
       setError(null);
-      const roleId = await agentRoleService.defineRole(roleData);
+      const roleId = await agentRoleService.defineRole(db, roleData);
       
       // Reload role definitions to get the updated list
       await loadRoleDefinitions();
@@ -287,7 +293,7 @@ export const useRoleDefinitions = () => {
   const getRoleDefinition = async (roleId: string): Promise<AgentRoleDefinition | null> => {
     try {
       setError(null);
-      return await agentRoleService.getRoleDefinition(roleId);
+      return await agentRoleService.getRoleDefinition(db, roleId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get role definition';
       setError(errorMessage);
@@ -296,9 +302,10 @@ export const useRoleDefinitions = () => {
   };
 
   const getAgentsWithRole = async (roleId: string): Promise<string[]> => {
+    if (!db) return [];
     try {
       setError(null);
-      return await agentRoleService.getAgentsWithRole(roleId);
+      return await agentRoleService.getAgentsWithRole(db, roleId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get agents with role';
       setError(errorMessage);
@@ -324,21 +331,22 @@ export const useRoleDefinition = (roleId: string | null) => {
   const [roleDefinition, setRoleDefinition] = useState<AgentRoleDefinition | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (roleId) {
+    if (roleId && db) {
       loadRoleDefinition(roleId);
     } else {
       setRoleDefinition(null);
     }
-  }, [roleId]);
+  }, [roleId, db]);
 
   const loadRoleDefinition = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const definition = await agentRoleService.getRoleDefinition(id);
+      const definition = await agentRoleService.getRoleDefinition(db, id);
       setRoleDefinition(definition);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load role definition');

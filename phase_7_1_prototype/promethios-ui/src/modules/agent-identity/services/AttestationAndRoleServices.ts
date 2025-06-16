@@ -1,10 +1,9 @@
-import { 
+import {
   AgentAttestation,
   AgentRoleDefinition,
-  AttestationTypeDefinition 
+  AttestationTypeDefinition
 } from './types';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
 
 /**
  * AgentAttestationService - Manages attestations for agents
@@ -31,7 +30,7 @@ export class AgentAttestationService {
    * @param attestation - The attestation to add
    * @returns Promise<string> - The attestation ID
    */
-  async addAttestation(agentId: string, attestation: Omit<AgentAttestation, 'id'>): Promise<string> {
+  async addAttestation(db: any, agentId: string, attestation: Omit<AgentAttestation, 'id'>): Promise<string> {
     console.log('AttestationAndRoleServices: Attempting to add attestation for agent:', agentId);
     try {
       const attestationData = {
@@ -61,7 +60,7 @@ export class AgentAttestationService {
    * @param attestationId - The attestation ID
    * @returns Promise<AgentAttestation | null>
    */
-  async getAttestation(agentId: string, attestationId: string): Promise<AgentAttestation | null> {
+  async getAttestation(db: any, agentId: string, attestationId: string): Promise<AgentAttestation | null> {
     console.log('AttestationAndRoleServices: Attempting to get attestation:', attestationId, 'for agent:', agentId);
     try {
       const docRef = doc(db, 'agentAttestations', attestationId);
@@ -98,7 +97,7 @@ export class AgentAttestationService {
    * @param agentId - The agent ID
    * @returns Promise<AgentAttestation[]>
    */
-  async listAttestationsForAgent(agentId: string): Promise<AgentAttestation[]> {
+  async listAttestationsForAgent(db: any, agentId: string): Promise<AgentAttestation[]> {
     console.log('AttestationAndRoleServices: Attempting to list attestations for agent:', agentId);
     try {
       const q = query(
@@ -135,13 +134,13 @@ export class AgentAttestationService {
    * @param reason - The revocation reason
    * @returns Promise<boolean> - Success status
    */
-  async revokeAttestation(agentId: string, attestationId: string, reason: string): Promise<boolean> {
+  async revokeAttestation(db: any, agentId: string, attestationId: string, reason: string): Promise<boolean> {
     console.log('AttestationAndRoleServices: Attempting to revoke attestation:', attestationId, 'for agent:', agentId);
     try {
       const docRef = doc(db, 'agentAttestations', attestationId);
       
       // Verify the attestation exists and belongs to the agent
-      const attestation = await this.getAttestation(agentId, attestationId);
+      const attestation = await this.getAttestation(db, agentId, attestationId);
       if (!attestation) {
         throw new Error('Attestation not found or does not belong to the specified agent');
       }
@@ -199,10 +198,10 @@ export class AgentAttestationService {
    * @param attestationType - The attestation type to check
    * @returns Promise<boolean>
    */
-  async hasValidAttestation(agentId: string, attestationType: string): Promise<boolean> {
+  async hasValidAttestation(db: any, agentId: string, attestationType: string): Promise<boolean> {
     console.log('AttestationAndRoleServices: Checking for valid attestation for agent:', agentId, 'type:', attestationType);
     try {
-      const attestations = await this.listAttestationsForAgent(agentId);
+      const attestations = await this.listAttestationsForAgent(db, agentId);
       const now = new Date();
       
       const isValid = attestations.some(attestation => 
@@ -224,10 +223,10 @@ export class AgentAttestationService {
    * @param daysAhead - Number of days to look ahead for expiring attestations
    * @returns Promise<AgentAttestation[]>
    */
-  async getExpiringAttestations(agentId: string, daysAhead: number = 30): Promise<AgentAttestation[]> {
+  async getExpiringAttestations(db: any, agentId: string, daysAhead: number = 30): Promise<AgentAttestation[]> {
     console.log('AttestationAndRoleServices: Getting expiring attestations for agent:', agentId, 'days ahead:', daysAhead);
     try {
-      const attestations = await this.listAttestationsForAgent(agentId);
+      const attestations = await this.listAttestationsForAgent(db, agentId);
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() + daysAhead);
       
@@ -325,7 +324,7 @@ export class AgentRoleService {
    * @param role - The role definition
    * @returns Promise<string> - The role ID
    */
-  async defineRole(role: Omit<AgentRoleDefinition, 'id'>): Promise<string> {
+  async defineRole(db: any, role: Omit<AgentRoleDefinition, 'id'>): Promise<string> {
     console.log('AttestationAndRoleServices: Attempting to define role.');
     try {
       const docRef = await addDoc(collection(db, 'agentRoles'), role);
@@ -346,7 +345,7 @@ export class AgentRoleService {
    * @param roleId - The role ID
    * @returns Promise<AgentRoleDefinition | null>
    */
-  async getRoleDefinition(roleId: string): Promise<AgentRoleDefinition | null> {
+  async getRoleDefinition(db: any, roleId: string): Promise<AgentRoleDefinition | null> {
     console.log('AttestationAndRoleServices: Attempting to get role definition:', roleId);
     try {
       const docRef = doc(db, 'agentRoles', roleId);
@@ -369,7 +368,7 @@ export class AgentRoleService {
    * List all role definitions
    * @returns Promise<AgentRoleDefinition[]>
    */
-  async listRoleDefinitions(): Promise<AgentRoleDefinition[]> {
+  async listRoleDefinitions(db: any): Promise<AgentRoleDefinition[]> {
     console.log('AttestationAndRoleServices: Attempting to list role definitions.');
     try {
       const q = query(collection(db, 'agentRoles'), orderBy('name'));
@@ -394,11 +393,11 @@ export class AgentRoleService {
    * @param roleId - The role ID
    * @returns Promise<boolean> - Success status
    */
-  async assignRoleToAgent(agentId: string, roleId: string): Promise<boolean> {
+  async assignRoleToAgent(db: any, agentId: string, roleId: string): Promise<boolean> {
     console.log('AttestationAndRoleServices: Attempting to assign role:', roleId, 'to agent:', agentId);
     try {
       // Verify the role exists
-      const role = await this.getRoleDefinition(roleId);
+      const role = await this.getRoleDefinition(db, roleId);
       if (!role) {
         throw new Error('Role definition not found');
       }
@@ -425,7 +424,7 @@ export class AgentRoleService {
    * @param roleId - The role ID
    * @returns Promise<boolean> - Success status
    */
-  async unassignRoleFromAgent(agentId: string, roleId: string): Promise<boolean> {
+  async unassignRoleFromAgent(db: any, agentId: string, roleId: string): Promise<boolean> {
     console.log('AttestationAndRoleServices: Attempting to unassign role:', roleId, 'from agent:', agentId);
     try {
       const q = query(
@@ -448,81 +447,13 @@ export class AgentRoleService {
           unassignedDate: Timestamp.fromDate(new Date())
         })
       );
-
       await Promise.all(updatePromises);
-      
+
       console.log('AttestationAndRoleServices: Role unassigned from agent successfully:', { agentId, roleId });
       return true;
     } catch (error) {
       console.error('AttestationAndRoleServices: Error unassigning role from agent:', error);
       throw new Error('Failed to unassign role from agent');
-    }
-  }
-
-  /**
-   * Get all roles assigned to an agent
-   * @param agentId - The agent ID
-   * @returns Promise<AgentRoleDefinition[]>
-   */
-  async getAgentRoles(agentId: string): Promise<AgentRoleDefinition[]> {
-    console.log('AttestationAndRoleServices: Attempting to get roles for agent:', agentId);
-    try {
-      const q = query(
-        collection(db, 'agentRoleAssignments'),
-        where('agentId', '==', agentId),
-        where('status', '==', 'active')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const roleIds: string[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        roleIds.push(doc.data().roleId);
-      });
-
-      // Fetch role definitions
-      const roles: AgentRoleDefinition[] = [];
-      for (const roleId of roleIds) {
-        const role = await this.getRoleDefinition(roleId);
-        if (role) {
-          roles.push(role);
-        }
-      }
-      
-      console.log('AttestationAndRoleServices: Successfully retrieved roles. Count:', roles.length);
-      return roles;
-    } catch (error) {
-      console.error('AttestationAndRoleServices: Error getting agent roles:', error);
-      throw new Error('Failed to get agent roles');
-    }
-  }
-
-  /**
-   * Get all agents with a specific role
-   * @param roleId - The role ID
-   * @returns Promise<string[]> - Array of agent IDs
-   */
-  async getAgentsWithRole(roleId: string): Promise<string[]> {
-    console.log('AttestationAndRoleServices: Attempting to get agents with role:', roleId);
-    try {
-      const q = query(
-        collection(db, 'agentRoleAssignments'),
-        where('roleId', '==', roleId),
-        where('status', '==', 'active')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const agentIds: string[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        agentIds.push(doc.data().agentId);
-      });
-      
-      console.log('AttestationAndRoleServices: Successfully retrieved agents with role. Count:', agentIds.length);
-      return agentIds;
-    } catch (error) {
-      console.error('AttestationAndRoleServices: Error getting agents with role:', error);
-      throw new Error('Failed to get agents with role');
     }
   }
 }
