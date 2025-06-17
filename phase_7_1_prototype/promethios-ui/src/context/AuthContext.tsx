@@ -8,8 +8,8 @@ import {
   createUserWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import app, { auth, googleProvider } from '../firebase/config'; // Corrected import for 'app'
+
+import app, { auth, googleProvider, db } from '../firebase/config'; // Corrected import for 'app' and added db
 
 interface AuthContextType {
   currentUser: User | null;
@@ -44,7 +44,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dbInstance, setDbInstance] = useState<Firestore | null>(null); // State for Firestore instance
+  const [dbInstance, setDbInstance] = useState<Firestore | null>(db); // Use db from config directly
 
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
@@ -53,8 +53,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
         // Initialize Firestore only when a user is authenticated
-        const firestoreDb = getFirestore(app);
-        setDbInstance(firestoreDb);
+        // const firestoreDb = getFirestore(app);
+        // setDbInstance(firestoreDb);
       } else {
         console.log("AuthContext: No user detected (null).");
         setDbInstance(null); // Clear Firestore instance if no user
