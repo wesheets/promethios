@@ -60,41 +60,41 @@ const DashboardProxy: React.FC = () => {
   }, [currentUser]);
   
   // Set up real-time listener for activity feed
-  useEffect(() => {
-    if (!currentUser) return;
+  // useEffect(() => {
+  //   if (!currentUser) return;
     
-    try {
-      // Temporarily comment out Firestore interaction to debug 'client is offline' error
-      // const activitiesRef = collection(db, 'activities');
-      // const activitiesQuery = query(
-      //   activitiesRef,
-      //   // Filter for this user's activities or global activities
-      //   // orderBy('timestamp', 'desc'),
-      //   limit(10)
-      // );
+  //   try {
+  //     // Temporarily comment out Firestore interaction to debug 'client is offline' error
+  //     // const activitiesRef = collection(db, 'activities');
+  //     // const activitiesQuery = query(
+  //     //   activitiesRef,
+  //     //   // Filter for this user's activities or global activities
+  //     //   // orderBy('timestamp', 'desc'),
+  //     //   limit(10)
+  //     // );
       
-      // This would be the real implementation with Firestore
-      // For now, we'll simulate real-time updates with a timer
-      const interval = setInterval(() => {
-        // Generate a new activity every 30 seconds
-        const newActivity = {
-          id: Date.now(),
-          message: getRandomActivity(),
-          timestamp: new Date().toISOString()
-        };
+  //     // This would be the real implementation with Firestore
+  //     // For now, we'll simulate real-time updates with a timer
+  //     const interval = setInterval(() => {
+  //       // Generate a new activity every 30 seconds
+  //       const newActivity = {
+  //         id: Date.now(),
+  //         message: getRandomActivity(),
+  //         timestamp: new Date().toISOString()
+  //       };
         
-        setRecentActivities(prev => {
-          // Add new activity to the beginning and limit to 10 items
-          const updated = [newActivity, ...prev];
-          return updated.slice(0, 10);
-        });
-      }, 30000); // Every 30 seconds
+  //       setRecentActivities(prev => {
+  //         // Add new activity to the beginning and limit to 10 items
+  //         const updated = [newActivity, ...prev];
+  //         return updated.slice(0, 10);
+  //       });
+  //     }, 30000); // Every 30 seconds
       
-      return () => clearInterval(interval);
-    } catch (error) {
-      console.error('Error setting up activity listener:', error);
-    }
-  }, [currentUser]);
+  //     return () => clearInterval(interval);
+  //   } catch (error) {
+  //     console.error('Error setting up activity listener:', error);
+  //   }
+  // }, [currentUser]);
   
   // Generate random activity for simulation
   const getRandomActivity = () => {
