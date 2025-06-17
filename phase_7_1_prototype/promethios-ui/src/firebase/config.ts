@@ -29,7 +29,8 @@ googleProvider.setCustomParameters({
 
 const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  localCache: persistentLocalCache()
+  localCache: persistentLocalCache(),
+  synchronizeTabs: true
 });
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
