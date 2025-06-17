@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, persistentLocalCache, initializeFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -29,7 +29,6 @@ googleProvider.setCustomParameters({
 
 const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  cache: 'memory'
 });
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
