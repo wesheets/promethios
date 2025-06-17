@@ -39,6 +39,7 @@ export const useUserPreferences = () => {
   useEffect(() => {
     const loadPreferences = async () => {
       if (!currentUser || !db) { // Ensure db is available
+        console.log("useUserPreferences: currentUser or db not available. currentUser:", currentUser, "db:", db);
         // For logged-out users or if db is not yet initialized, use localStorage
         const localNavCollapsed = localStorage.getItem("navCollapsed");
         setPreferences({
