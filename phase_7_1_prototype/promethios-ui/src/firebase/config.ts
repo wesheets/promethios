@@ -29,7 +29,6 @@ googleProvider.setCustomParameters({
 
 const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  cache: 'memory'
 });
 console.log('Firestore initialized with options:', db.settings);
 export { auth, googleProvider, firebaseConfig, db };
