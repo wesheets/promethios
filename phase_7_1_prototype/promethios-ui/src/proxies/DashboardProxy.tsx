@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import ObserverAgentProxy from '../proxies/ObserverAgentProxy';
 
 /**
