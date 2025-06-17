@@ -91,19 +91,6 @@ const DashboardProxy: React.FC = () => {
       }, 30000); // Every 30 seconds
       
       return () => clearInterval(interval);
-      
-      // In a real implementation, we would use onSnapshot:
-      /*
-      const unsubscribe = onSnapshot(activitiesQuery, (snapshot) => {
-        const activities = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setRecentActivities(activities);
-      });
-      
-      return () => unsubscribe();
-      */
     } catch (error) {
       console.error('Error setting up activity listener:', error);
     }
