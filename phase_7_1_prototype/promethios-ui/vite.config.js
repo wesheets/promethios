@@ -8,9 +8,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: [
-      '5173-ikqsf4kbgupdywfogsklu-0aaac96c.manusvm.computer'
-    ]
+    allowedHosts: ['*']
   },
   build: {
     // Optimize bundle size

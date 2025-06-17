@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AgentIdentity, AgentFilter } from '../types';
 import { agentIdentityRegistry } from '../services/AgentIdentityRegistry';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * React hook for managing agent identities
@@ -11,12 +11,14 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
   const [agents, setAgents] = useState<AgentIdentity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, db } = useAuth();
 
   // Load agents on mount and when filters change
   useEffect(() => {
-    loadAgents();
-  }, [filters, user]);
+    if (db) {
+      loadAgents();
+    }
+  }, [filters, user, db]);
 
   const loadAgents = async () => {
     try {
@@ -29,7 +31,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
         effectiveFilters.ownerId = user.uid;
       }
       
-      const agentList = await agentIdentityRegistry.listAgents(effectiveFilters);
+      const agentList = await agentIdentityRegistry.listAgents(db, effectiveFilters);
       setAgents(agentList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agents');
@@ -49,7 +51,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
         ownerId: agentData.ownerId || user?.uid || ''
       };
       
-      const agentId = await agentIdentityRegistry.registerAgent(agentWithOwner);
+      const agentId = await agentIdentityRegistry.registerAgent(db, agentWithOwner);
       
       // Reload agents to get the updated list
       await loadAgents();
@@ -66,7 +68,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
     try {
       setError(null);
       
-      const success = await agentIdentityRegistry.updateAgentIdentity(agentId, updates);
+      const success = await agentIdentityRegistry.updateAgentIdentity(db, agentId, updates);
       
       if (success) {
         // Update the local state
@@ -92,7 +94,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
       setError(null);
       
       // Soft delete by setting status to inactive
-      const success = await agentIdentityRegistry.deactivateAgent(agentId);
+      const success = await agentIdentityRegistry.deactivateAgent(db, agentId);
       
       if (success) {
         // Remove from local state or update status based on current filters
@@ -120,7 +122,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
   const getAgent = async (agentId: string): Promise<AgentIdentity | null> => {
     try {
       setError(null);
-      return await agentIdentityRegistry.getAgentIdentity(agentId);
+      return await agentIdentityRegistry.getAgentIdentity(db, agentId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get agent';
       setError(errorMessage);
@@ -151,21 +153,22 @@ export const useAgentIdentity = (agentId: string | null) => {
   const [agent, setAgent] = useState<AgentIdentity | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { db } = useAuth();
 
   useEffect(() => {
-    if (agentId) {
+    if (agentId && db) {
       loadAgent(agentId);
     } else {
       setAgent(null);
     }
-  }, [agentId]);
+  }, [agentId, db]);
 
   const loadAgent = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const agentData = await agentIdentityRegistry.getAgentIdentity(id);
+      const agentData = await agentIdentityRegistry.getAgentIdentity(db, id);
       setAgent(agentData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agent');
@@ -176,12 +179,12 @@ export const useAgentIdentity = (agentId: string | null) => {
   };
 
   const updateAgent = async (updates: Partial<AgentIdentity>) => {
-    if (!agentId) return false;
+    if (!agentId || !db) return false;
     
     try {
       setError(null);
       
-      const success = await agentIdentityRegistry.updateAgentIdentity(agentId, updates);
+      const success = await agentIdentityRegistry.updateAgentIdentity(db, agentId, updates);
       
       if (success && agent) {
         setAgent({ ...agent, ...updates, lastModifiedDate: new Date() });
