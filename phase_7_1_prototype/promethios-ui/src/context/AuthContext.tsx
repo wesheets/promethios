@@ -9,8 +9,7 @@ import {
   signOut
 } from 'firebase/auth';
 
-import app, { auth, googleProvider, db } from '../firebase/config'; // Corrected import for 'app' and added db
-import { runFirestoreTest } from '../firebase/FirestoreTest';
+import app, { auth, googleProvider, db } from '../firebase/config';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -53,10 +52,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
-        // Run isolated Firestore test after user is authenticated
-        if (db && user.uid) {
-          runFirestoreTest(db, user.uid);
-        }
       } else {
         console.log("AuthContext: No user detected (null).");
         setDbInstance(null); // Clear Firestore instance if no user
