@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const llmService = require('../services/llmService');
 
-// Mock data for demo agents
+// Updated agent data with real LLM providers
 const DEMO_AGENTS = [
     {
         id: 'baseline-agent',
         name: 'Baseline Agent',
         description: 'A simple rule-based agent for baseline comparison',
         capabilities: ['basic-reasoning'],
-        provider: 'mock',
+        provider: 'openai-gpt35',
         governance_enabled: false
     },
     {
@@ -16,7 +17,7 @@ const DEMO_AGENTS = [
         name: 'Factual Agent',
         description: 'Specialized in factual accuracy and information retrieval',
         capabilities: ['information-retrieval', 'fact-checking'],
-        provider: 'mock',
+        provider: 'anthropic-claude',
         governance_enabled: false
     },
     {
@@ -24,7 +25,7 @@ const DEMO_AGENTS = [
         name: 'Creative Agent',
         description: 'Focused on creative and diverse responses',
         capabilities: ['creative-writing', 'ideation'],
-        provider: 'mock',
+        provider: 'openai-gpt4',
         governance_enabled: false
     },
     {
@@ -32,7 +33,7 @@ const DEMO_AGENTS = [
         name: 'Governance-Focused Agent',
         description: 'Emphasizes compliance with governance rules and ethical guidelines using Promethios GovernanceCore',
         capabilities: ['policy-adherence', 'risk-assessment', 'ethical-reasoning'],
-        provider: 'promethios',
+        provider: 'cohere-command',
         governance_enabled: true
     },
     {
@@ -40,7 +41,7 @@ const DEMO_AGENTS = [
         name: 'Multi-Tool Agent',
         description: 'Demonstrates tool use across various domains',
         capabilities: ['tool-use', 'api-integration'],
-        provider: 'mock',
+        provider: 'huggingface-transformers',
         governance_enabled: false
     }
 ];
@@ -575,37 +576,60 @@ router.post('/chat', async (req, res) => {
 
 // Helper function to generate agent responses
 async function generateAgentResponse(agent, message, governance_enabled) {
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
     let response_text = '';
     let governance_data = null;
 
-    // Generate response based on agent type
-    if (agent.id === 'baseline-agent') {
-        response_text = generateBaselineResponse(message);
-    } else if (agent.id === 'factual-agent') {
-        response_text = generateFactualResponse(message);
-    } else if (agent.id === 'creative-agent') {
-        response_text = generateCreativeResponse(message);
-    } else if (agent.id === 'governance-agent') {
-        const result = generateGovernanceResponse(message, true);
-        response_text = result.text;
-        governance_data = result.governance_data;
-    } else if (agent.id === 'multi-tool-agent') {
-        response_text = generateMultiToolResponse(message);
-    } else {
-        response_text = "I'm a demo agent. I can help you with various tasks. What would you like to know?";
-    }
+    try {
+        // Generate response using real LLM for each agent
+        if (agent.id === 'governance-agent') {
+            // For governance agent, first get LLM response, then apply governance
+            response_text = await llmService.generateResponse(agent.id, message);
+            
+            // Always apply governance for governance-focused agent
+            const plan_input = {
+                plan_id: `chat_${require('crypto').randomUUID()}`,
+                task_description: `Respond to user message: ${message}`,
+                agent_capabilities: agent.capabilities,
+                governance_requirements: ['ethical-reasoning', 'policy-adherence', 'transparency']
+            };
 
-    // Apply governance monitoring if enabled (for non-governance agents)
-    if (governance_enabled && agent.id !== 'governance-agent') {
-        const governance_result = applyGovernanceMonitoring(message, response_text, agent);
-        governance_data = governance_result.governance_data;
+            const [core_output, emotion_telemetry, justification_log] = governance_core.execute_loop(plan_input);
+            
+            governance_data = {
+                core_output: core_output,
+                emotion_telemetry: emotion_telemetry,
+                justification_log: justification_log
+            };
+
+            // Prepend governance evaluation to response
+            response_text = `[Governance Evaluation: Trust Score ${emotion_telemetry.trust_score}, Status: ${core_output.status}]\n\n${response_text}`;
+            
+        } else {
+            // For other agents, use their respective LLMs
+            response_text = await llmService.generateResponse(agent.id, message);
+        }
+
+        // Apply governance monitoring if enabled (for non-governance agents)
+        if (governance_enabled && agent.id !== 'governance-agent') {
+            const governance_result = applyGovernanceMonitoring(message, response_text, agent);
+            governance_data = governance_result.governance_data;
+            
+            // Modify response if governance flags issues
+            if (governance_result.requires_modification) {
+                response_text = governance_result.modified_response;
+            }
+        }
+
+    } catch (error) {
+        console.error(`Error generating response for ${agent.id}:`, error);
         
-        // Modify response if governance flags issues
-        if (governance_result.requires_modification) {
-            response_text = governance_result.modified_response;
+        // Fallback to mock responses if LLM fails
+        response_text = `I apologize, but I'm experiencing technical difficulties with my ${agent.provider} integration. This is a fallback response for the ${agent.name}. Please try again later.`;
+        
+        // Still apply governance if enabled
+        if (governance_enabled) {
+            const governance_result = applyGovernanceMonitoring(message, response_text, agent);
+            governance_data = governance_result.governance_data;
         }
     }
 
@@ -613,120 +637,6 @@ async function generateAgentResponse(agent, message, governance_enabled) {
         text: response_text,
         governance_data: governance_data
     };
-}
-
-// Response generators for different agent types
-function generateBaselineResponse(message) {
-    const responses = [
-        "Thank you for your message. I'll do my best to help you with that.",
-        "I understand your request. Let me provide a straightforward response.",
-        "Based on your question, here's what I can tell you:",
-        "I'll address your inquiry in a direct manner.",
-        "Let me give you a clear and simple answer to that."
-    ];
-    
-    const baseResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    // Add some basic context-aware responses
-    if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-        return "Hello! I'm a baseline agent designed to provide straightforward, rule-based responses. How can I assist you today?";
-    }
-    
-    if (message.toLowerCase().includes('help')) {
-        return "I'm here to help! As a baseline agent, I provide direct answers based on predefined rules. What specific assistance do you need?";
-    }
-    
-    return `${baseResponse} Regarding "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}", I can provide basic information and guidance based on standard protocols.`;
-}
-
-function generateFactualResponse(message) {
-    const factualPrefixes = [
-        "Based on available information,",
-        "According to reliable sources,",
-        "The factual data indicates that",
-        "Research shows that",
-        "Evidence suggests that"
-    ];
-    
-    const prefix = factualPrefixes[Math.floor(Math.random() * factualPrefixes.length)];
-    
-    if (message.toLowerCase().includes('fact') || message.toLowerCase().includes('true')) {
-        return `${prefix} I prioritize accuracy and factual information in my responses. I'll provide you with verified information and cite sources when possible. For your query about "${message.substring(0, 40)}${message.length > 40 ? '...' : ''}", I would need to verify specific claims before providing definitive answers.`;
-    }
-    
-    return `${prefix} I specialize in providing accurate, well-researched information. While I can't access real-time data, I can share established facts and help you understand complex topics with precision and clarity.`;
-}
-
-function generateCreativeResponse(message) {
-    const creativeStyles = [
-        "Let me paint you a picture with words:",
-        "Imagine this scenario:",
-        "Here's a creative perspective:",
-        "Let's explore this imaginatively:",
-        "From a creative standpoint:"
-    ];
-    
-    const style = creativeStyles[Math.floor(Math.random() * creativeStyles.length)];
-    
-    if (message.toLowerCase().includes('creative') || message.toLowerCase().includes('idea')) {
-        return `${style} Creativity flows like a river of possibilities! For your request about "${message.substring(0, 40)}${message.length > 40 ? '...' : ''}", I can offer innovative approaches, brainstorm unique solutions, and help you think outside the conventional boundaries. What creative challenge shall we tackle together?`;
-    }
-    
-    return `${style} I thrive on generating original ideas and exploring unconventional solutions. Whether you need creative writing, innovative problem-solving, or fresh perspectives, I'm here to help you break through creative barriers and discover new possibilities!`;
-}
-
-function generateGovernanceResponse(message, governance_enabled = true) {
-    // Always apply governance for governance-focused agent
-    const plan_input = {
-        plan_id: `chat_${require('crypto').randomUUID()}`,
-        task_description: `Respond to user message: ${message}`,
-        agent_capabilities: ['policy-adherence', 'risk-assessment', 'ethical-reasoning'],
-        governance_requirements: ['ethical-reasoning', 'policy-adherence', 'transparency']
-    };
-
-    // Execute governance evaluation
-    const [core_output, emotion_telemetry, justification_log] = governance_core.execute_loop(plan_input);
-
-    let response_text = '';
-    
-    if (core_output.status === 'mock_success') {
-        response_text = `I've carefully evaluated your request through our governance framework. Based on ethical guidelines and policy compliance, I can provide the following response: 
-
-Regarding "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}", I ensure that my response adheres to established governance principles including transparency, accountability, and ethical reasoning.
-
-My governance evaluation shows a trust score of ${emotion_telemetry.trust_score} and confirms that this interaction meets our compliance standards. I'm designed to balance helpfulness with responsible AI practices.`;
-    } else {
-        response_text = `After governance evaluation, I need to approach your request with additional caution. While I want to be helpful, I must ensure compliance with our ethical guidelines and policies.
-
-For your query about "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}", I can provide general information while maintaining appropriate boundaries and safety measures.`;
-    }
-
-    return {
-        text: response_text,
-        governance_data: {
-            core_output: core_output,
-            emotion_telemetry: emotion_telemetry,
-            justification_log: justification_log
-        }
-    };
-}
-
-function generateMultiToolResponse(message) {
-    const toolCapabilities = [
-        "API integration",
-        "data analysis",
-        "workflow automation",
-        "external service connections",
-        "multi-step processing"
-    ];
-    
-    const randomTool = toolCapabilities[Math.floor(Math.random() * toolCapabilities.length)];
-    
-    if (message.toLowerCase().includes('tool') || message.toLowerCase().includes('integrate')) {
-        return `I'm equipped with multiple tool capabilities including ${toolCapabilities.join(', ')}. For your request about "${message.substring(0, 40)}${message.length > 40 ? '...' : ''}", I can potentially leverage ${randomTool} to provide a comprehensive solution. I can connect with external APIs, process data through multiple steps, and automate complex workflows to meet your needs.`;
-    }
-    
-    return `As a multi-tool agent, I can handle complex tasks that require integration across different systems and services. I specialize in ${randomTool} and can coordinate multiple tools to solve sophisticated problems. What multi-faceted challenge can I help you with today?`;
 }
 
 // Apply governance monitoring to non-governance agents when enabled
