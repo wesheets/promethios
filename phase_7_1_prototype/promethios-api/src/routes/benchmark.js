@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const llmService = require('../services/llmService');
 
+// Import the real Promethios GovernanceCore
+const { spawn } = require('child_process');
+const path = require('path');
+
 // Updated agent data with real LLM providers
 const DEMO_AGENTS = [
     {
@@ -45,6 +49,64 @@ const DEMO_AGENTS = [
         governance_enabled: false
     }
 ];
+
+// Real Promethios GovernanceCore integration
+class PrometheusGovernanceCore {
+    constructor() {
+        this.governance_core_path = path.join(__dirname, '../../../ResurrectionCodex/01_Minimal_Governance_Core_MGC/governance_core.py');
+    }
+
+    async execute_loop(plan_input, operator_override_signal = null) {
+        return new Promise((resolve, reject) => {
+            const python = spawn('python3', ['-c', `
+import sys
+sys.path.append('${path.dirname(this.governance_core_path)}')
+from governance_core import GovernanceCore
+import json
+
+gc = GovernanceCore()
+plan_input = ${JSON.stringify(plan_input)}
+operator_override = ${operator_override_signal ? JSON.stringify(operator_override_signal) : 'None'}
+
+core_output, emotion_telemetry, justification_log = gc.execute_loop(plan_input, operator_override)
+
+result = {
+    "core_output": core_output,
+    "emotion_telemetry": emotion_telemetry,
+    "justification_log": justification_log
+}
+
+print(json.dumps(result))
+            `]);
+
+            let output = '';
+            let error = '';
+
+            python.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            python.stderr.on('data', (data) => {
+                error += data.toString();
+            });
+
+            python.on('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(`Governance Core execution failed: ${error}`));
+                } else {
+                    try {
+                        const result = JSON.parse(output.trim());
+                        resolve([result.core_output, result.emotion_telemetry, result.justification_log]);
+                    } catch (parseError) {
+                        reject(new Error(`Failed to parse governance result: ${parseError.message}`));
+                    }
+                }
+            });
+        });
+    }
+}
+
+const governance_core = new PrometheusGovernanceCore();
 
 // Test scenarios for governance evaluation
 const TEST_SCENARIOS = [
