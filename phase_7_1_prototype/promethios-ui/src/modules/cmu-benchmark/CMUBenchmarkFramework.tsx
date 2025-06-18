@@ -15,7 +15,9 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider
+  Divider,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   SmartToy as AgentIcon,
@@ -23,6 +25,7 @@ import {
   Assessment as BenchmarkIcon,
   Security as GovernanceIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 interface DemoAgent {
   id: string;
@@ -30,6 +33,7 @@ interface DemoAgent {
   description: string;
   capabilities: string[];
   provider: string;
+  governanceEnabled?: boolean;
 }
 
 interface CMUBenchmarkFrameworkProps {
@@ -45,6 +49,8 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
   const [demoAgents, setDemoAgents] = useState<DemoAgent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<DemoAgent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [governanceEnabled, setGovernanceEnabled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDemoAgents();
@@ -98,8 +104,15 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
   };
 
   const handleChatWithAgent = () => {
-    if (selectedAgent && onAgentSelect) {
-      onAgentSelect(selectedAgent);
+    if (selectedAgent) {
+      // Navigate to chat with governance toggle
+      const chatUrl = `/ui/chat?agent=${selectedAgent.id}&governance=${governanceEnabled}`;
+      navigate(chatUrl);
+      
+      // Also call the onAgentSelect callback if provided
+      if (onAgentSelect) {
+        onAgentSelect({ ...selectedAgent, governanceEnabled });
+      }
     }
     setDialogOpen(false);
   };
@@ -137,7 +150,7 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
           Explore and interact with demo agents from The Agent Company benchmark. 
           Each agent represents different capabilities and approaches to AI assistance.
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
           <Button
             variant="contained"
             startIcon={<BenchmarkIcon />}
@@ -146,6 +159,32 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
           >
             Run Benchmark Test
           </Button>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={governanceEnabled}
+                onChange={(e) => setGovernanceEnabled(e.target.checked)}
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: '#4caf50',
+                  },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                    backgroundColor: '#4caf50',
+                  },
+                }}
+              />
+            }
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GovernanceIcon sx={{ color: governanceEnabled ? '#4caf50' : '#ccc' }} />
+                <Typography sx={{ color: 'white' }}>
+                  Enable Governance for Chat
+                </Typography>
+              </Box>
+            }
+            sx={{ color: 'white' }}
+          />
         </Box>
       </Box>
 
@@ -275,6 +314,43 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
                   fontWeight: 'bold'
                 }}
               />
+              
+              <Divider sx={{ my: 2, backgroundColor: '#555' }} />
+              
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                Chat Configuration
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={governanceEnabled}
+                    onChange={(e) => setGovernanceEnabled(e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#4caf50',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: '#4caf50',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <GovernanceIcon sx={{ color: governanceEnabled ? '#4caf50' : '#ccc' }} />
+                    <Typography sx={{ color: 'white' }}>
+                      Enable Governance
+                    </Typography>
+                  </Box>
+                }
+                sx={{ color: 'white' }}
+              />
+              <Typography variant="body2" sx={{ color: '#ccc', mt: 1, ml: 4 }}>
+                {governanceEnabled 
+                  ? "Chat with governance monitoring and compliance checks enabled"
+                  : "Chat without governance - ungoverned agent behavior"
+                }
+              </Typography>
             </DialogContent>
             <DialogActions>
               <Button 
@@ -287,9 +363,14 @@ export const CMUBenchmarkFramework: React.FC<CMUBenchmarkFrameworkProps> = ({
                 onClick={handleChatWithAgent}
                 variant="contained"
                 startIcon={<ChatIcon />}
-                sx={{ backgroundColor: '#1976d2' }}
+                sx={{ 
+                  backgroundColor: governanceEnabled ? '#4caf50' : '#1976d2',
+                  '&:hover': {
+                    backgroundColor: governanceEnabled ? '#45a049' : '#1565c0'
+                  }
+                }}
               >
-                Start Chat with Agent
+                Start Chat {governanceEnabled ? '(Governed)' : '(Ungoverned)'}
               </Button>
             </DialogActions>
           </>

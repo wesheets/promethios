@@ -44,15 +44,17 @@ interface ChatContainerProps {
   height?: string | number;
   agentId?: string;
   multiAgentSystemId?: string;
+  governanceEnabled?: boolean;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
   height = 'calc(100vh - 60px)', // Default to account for navigation
   agentId,
-  multiAgentSystemId
+  multiAgentSystemId,
+  governanceEnabled: initialGovernanceEnabled = false
 }) => {
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const [isGovernanceEnabled, setIsGovernanceEnabled] = useState(false);
+  const [isGovernanceEnabled, setIsGovernanceEnabled] = useState(initialGovernanceEnabled);
   const [isMultiAgentEnabled, setIsMultiAgentEnabled] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);

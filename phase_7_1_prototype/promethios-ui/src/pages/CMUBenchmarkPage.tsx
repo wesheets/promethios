@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
 import { CMUBenchmarkFramework } from '../modules/cmu-benchmark/CMUBenchmarkFramework';
 import { BenchmarkTestRunner } from '../modules/cmu-benchmark/BenchmarkTestRunner';
+import { useNavigate } from 'react-router-dom';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -28,6 +29,7 @@ function TabPanel(props: TabPanelProps) {
 export const CMUBenchmarkPage: React.FC = () => {
   console.log("CMUBenchmarkPage rendering...");
   const [tabValue, setTabValue] = useState(0);
+  const navigate = useNavigate();
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -37,6 +39,7 @@ export const CMUBenchmarkPage: React.FC = () => {
     // Navigate to chat with selected agent
     console.log('Selected agent for chat:', agent);
     // This would typically navigate to the chat page with the agent pre-selected
+    navigate(`/ui/chat?agent=${agent.id}`);
   };
 
   const handleBenchmarkStart = () => {
@@ -76,4 +79,5 @@ export const CMUBenchmarkPage: React.FC = () => {
 };
 
 export default CMUBenchmarkPage;
+
 

@@ -11,12 +11,14 @@ const ChatPage: React.FC = () => {
   const location = useLocation();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
+  const [governanceEnabled, setGovernanceEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     // Parse URL parameters to determine which agent or system to chat with
     const urlParams = new URLSearchParams(location.search);
     const agentId = urlParams.get('agent');
     const systemId = urlParams.get('system');
+    const governance = urlParams.get('governance');
     
     if (agentId) {
       setSelectedAgent(agentId);
@@ -25,6 +27,9 @@ const ChatPage: React.FC = () => {
       setSelectedSystem(systemId);
       setSelectedAgent(null);
     }
+    
+    // Set governance based on URL parameter
+    setGovernanceEnabled(governance === 'true');
   }, [location.search]);
 
   return (
@@ -38,6 +43,8 @@ const ChatPage: React.FC = () => {
       <ChatContainer 
         height="100%" 
         agentId={selectedAgent || undefined}
+        multiAgentSystemId={selectedSystem || undefined}
+        governanceEnabled={governanceEnabled}
       />
     </Box>
   );
