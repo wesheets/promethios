@@ -74,9 +74,9 @@ export const useUserPreferences = () => {
           await setDoc(userPrefsRef, initialPrefs);
           setPreferences(initialPrefs);
         }
-      } catch (err) {
-        console.error('Error loading user preferences:', err);
-        setError('Failed to load preferences');
+      } catch (err: any) {
+        console.error("useUserPreferences: Error loading user preferences:", err.code, err.message, err);
+        setError("Failed to load preferences");
         
         // Fallback to localStorage
         const localNavCollapsed = localStorage.getItem('navCollapsed');
