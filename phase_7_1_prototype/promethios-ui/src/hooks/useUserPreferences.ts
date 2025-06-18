@@ -52,13 +52,16 @@ export const useUserPreferences = () => {
 
       try {
         setLoading(true);
+        console.log("useUserPreferences: Attempting to get user preferences for UID:", currentUser.uid);
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         const docSnap = await getDoc(userPrefsRef);
 
         if (docSnap.exists()) {
+          console.log("useUserPreferences: User preferences found:", docSnap.data());
           const firestorePrefs = docSnap.data() as UserPreferences;
           setPreferences(firestorePrefs);
         } else {
+          console.log("useUserPreferences: No Firestore document exists for UID:", currentUser.uid, ", checking localStorage for migration.");
           // No Firestore document exists, check localStorage for migration
           const localNavCollapsed = localStorage.getItem('navCollapsed');
           const initialPrefs = {
@@ -66,6 +69,7 @@ export const useUserPreferences = () => {
             navigationCollapsed: localNavCollapsed === 'true',
           };
           
+          console.log("useUserPreferences: Creating initial Firestore document with preferences:", initialPrefs);
           // Create initial Firestore document
           await setDoc(userPrefsRef, initialPrefs);
           setPreferences(initialPrefs);
