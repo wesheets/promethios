@@ -38,51 +38,14 @@ export const useUserPreferences = () => {
   // Load preferences from Firestore with localStorage fallback
   useEffect(() => {
     const loadPreferences = async () => {
-      if (!currentUser || !db) { // Ensure db is available
-        console.log("useUserPreferences: currentUser or db not available. currentUser:", currentUser, "db:", db);
-        // For logged-out users or if db is not yet initialized, use localStorage
-        const localNavCollapsed = localStorage.getItem("navCollapsed");
-        setPreferences({
-          ...defaultPreferences,
-          navigationCollapsed: localNavCollapsed === "true",
-        });
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
-        const docSnap = await getDoc(userPrefsRef);
-
-        if (docSnap.exists()) {
-          const firestorePrefs = docSnap.data() as UserPreferences;
-          setPreferences(firestorePrefs);
-        } else {
-          // No Firestore document exists, check localStorage for migration
-          const localNavCollapsed = localStorage.getItem('navCollapsed');
-          const initialPrefs = {
-            ...defaultPreferences,
-            navigationCollapsed: localNavCollapsed === 'true',
-          };
-          
-          // Create initial Firestore document
-          await setDoc(userPrefsRef, initialPrefs);
-          setPreferences(initialPrefs);
-        }
-      } catch (err) {
-        console.error('Error loading user preferences:', err);
-        setError('Failed to load preferences');
-        
-        // Fallback to localStorage
-        const localNavCollapsed = localStorage.getItem('navCollapsed');
-        setPreferences({
-          ...defaultPreferences,
-          navigationCollapsed: localNavCollapsed === 'true',
-        });
-      } finally {
-        setLoading(false);
-      }
+      console.log("useUserPreferences: Temporarily skipping Firestore interaction.");
+      const localNavCollapsed = localStorage.getItem("navCollapsed");
+      setPreferences({
+        ...defaultPreferences,
+        navigationCollapsed: localNavCollapsed === "true",
+      });
+      setLoading(false);
+      return;
     };
 
     loadPreferences();
