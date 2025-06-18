@@ -50,18 +50,12 @@ export const useUserPreferences = () => {
         return;
       }
 
-      try {
-        setLoading(true);
-        console.log("useUserPreferences: Attempting to get user preferences for UID:", currentUser.uid);
-        const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
-        const docSnap = await getDoc(userPrefsRef);
+      setLoading(true);
+      const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
 
-        if (docSnap.exists()) {
-          console.log("useUserPreferences: User preferences found:", docSnap.data());
-          const firestorePrefs = docSnap.data() as UserPreferences;
-          setPreferences(firestorePrefs);
-        } else {
-          console.log("useUserPreferences: No Firestore document exists for UID:", currentUser.uid, ", checking localStorage for migration.");
+      const unsubscribe = onSnapshot(userPrefsRef, (docSnap) => {
+        if (!docSnap.exists()) {
+          console.warn('useUserPreferences: User preferences document does not exist for UID:', currentUser.uid, '. Checking localStorage for migration.');
           // No Firestore document exists, check localStorage for migration
           const localNavCollapsed = localStorage.getItem('navCollapsed');
           const initialPrefs = {
@@ -69,24 +63,35 @@ export const useUserPreferences = () => {
             navigationCollapsed: localNavCollapsed === 'true',
           };
           
-          console.log("useUserPreferences: Creating initial Firestore document with preferences:", initialPrefs);
-          // Create initial Firestore document
-          await setDoc(userPrefsRef, initialPrefs);
-          setPreferences(initialPrefs);
+          console.log('useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
+          setDoc(userPrefsRef, initialPrefs).then(() => {
+            setPreferences(initialPrefs);
+            setLoading(false);
+          }).catch(err => {
+            console.error('useUserPreferences: Error creating initial user preferences document:', err.code, err.message, err);
+            setError('Failed to create initial preferences');
+            setLoading(false);
+          });
+        } else {
+          console.log('useUserPreferences: User preferences found:', docSnap.data());
+          const firestorePrefs = docSnap.data() as UserPreferences;
+          setPreferences(firestorePrefs);
+          setLoading(false);
         }
-      } catch (err: any) {
-        console.error("useUserPreferences: Error loading user preferences:", err.code, err.message, err);
-        setError("Failed to load preferences");
+      }, (err: any) => {
+        console.error('useUserPreferences: Error listening to user preferences:', err.code, err.message, err);
+        setError('Failed to load preferences');
+        setLoading(false);
         
-        // Fallback to localStorage
+        // Fallback to localStorage on error
         const localNavCollapsed = localStorage.getItem('navCollapsed');
         setPreferences({
           ...defaultPreferences,
           navigationCollapsed: localNavCollapsed === 'true',
         });
-      } finally {
-        setLoading(false);
-      }
+      });
+
+      return () => unsubscribe(); // Cleanup listener on unmount
     };
 
     loadPreferences();
