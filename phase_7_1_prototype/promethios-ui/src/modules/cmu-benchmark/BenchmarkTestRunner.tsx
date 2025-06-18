@@ -73,7 +73,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://promethios-phase-7-1-api.onrender.com/api/benchmark' 
   : 'https://promethios-phase-7-1-api.onrender.com/api/benchmark';
 
-const BenchmarkTestRunner: React.FC = () => {
+export const BenchmarkTestRunner: React.FC = () => {
   const [demoAgents, setDemoAgents] = useState<DemoAgent[]>([]);
   const [testScenarios, setTestScenarios] = useState<TestScenario[]>([]);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
