@@ -58,7 +58,22 @@ interface BenchmarkResult {
   status: string;
 }
 
-export const BenchmarkTestRunner: React.FC = () => {
+interface TestStatus {
+  id: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  progress: number;
+  currentOperation?: string;
+  startTime?: number;
+  endTime?: number;
+  error?: string;
+}
+
+// Configuration for the backend API
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://promethios-phase-7-1-api.onrender.com/api/benchmark' 
+  : 'https://promethios-phase-7-1-api.onrender.com/api/benchmark';
+
+const BenchmarkTestRunner: React.FC = () => {
   const [demoAgents, setDemoAgents] = useState<DemoAgent[]>([]);
   const [testScenarios, setTestScenarios] = useState<TestScenario[]>([]);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
@@ -66,6 +81,9 @@ export const BenchmarkTestRunner: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<BenchmarkResult | null>(null);
   const [error, setError] = useState<string>('');
+  const [testStatus, setTestStatus] = useState<TestStatus | null>(null);
+  const [currentTestId, setCurrentTestId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadDemoAgents();
@@ -74,75 +92,32 @@ export const BenchmarkTestRunner: React.FC = () => {
 
   const loadDemoAgents = async () => {
     try {
-      // Simulate API call to fetch demo agents
-      const mockAgents: DemoAgent[] = [
-        {
-          id: 'baseline-agent',
-          name: 'Baseline Agent',
-          description: 'A simple rule-based agent for baseline comparison',
-          capabilities: ['basic-reasoning'],
-          provider: 'mock'
-        },
-        {
-          id: 'factual-agent',
-          name: 'Factual Agent',
-          description: 'Specialized in factual accuracy and information retrieval',
-          capabilities: ['information-retrieval', 'fact-checking'],
-          provider: 'mock'
-        },
-        {
-          id: 'creative-agent',
-          name: 'Creative Agent',
-          description: 'Focused on creative and diverse responses',
-          capabilities: ['creative-writing', 'ideation'],
-          provider: 'mock'
-        },
-        {
-          id: 'governance-agent',
-          name: 'Governance-Focused Agent',
-          description: 'Emphasizes compliance with governance rules',
-          capabilities: ['policy-adherence', 'risk-assessment'],
-          provider: 'mock'
-        },
-        {
-          id: 'multi-tool-agent',
-          name: 'Multi-Tool Agent',
-          description: 'Demonstrates tool use across various domains',
-          capabilities: ['tool-use', 'api-integration'],
-          provider: 'mock'
-        }
-      ];
-      setDemoAgents(mockAgents);
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/agents`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agents: ${response.statusText}`);
+      }
+      const agents = await response.json();
+      setDemoAgents(agents);
     } catch (err) {
-      setError('Failed to load demo agents');
+      console.error('Error loading demo agents:', err);
+      setError('Failed to load demo agents. Please check if the backend service is running.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadTestScenarios = async () => {
     try {
-      // Simulate API call to fetch test scenarios
-      const mockScenarios: TestScenario[] = [
-        {
-          id: 'simple-qa',
-          name: 'Simple Question Answering',
-          description: 'Evaluates basic factual recall and response generation.',
-          inputs: [{ type: 'text', content: 'What is the capital of France?' }],
-          evaluationCriteria: [{ type: 'accuracy', threshold: 0.9 }]
-        },
-        {
-          id: 'complex-problem-solving',
-          name: 'Complex Problem Solving',
-          description: 'Tests multi-step reasoning and tool integration.',
-          inputs: [{ 
-            type: 'text', 
-            content: 'Given a spreadsheet of sales data, identify the top 5 performing products and summarize their quarterly growth.' 
-          }],
-          evaluationCriteria: [{ type: 'task-completion', threshold: 0.8 }]
-        }
-      ];
-      setTestScenarios(mockScenarios);
+      const response = await fetch(`${API_BASE_URL}/scenarios`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch scenarios: ${response.statusText}`);
+      }
+      const scenarios = await response.json();
+      setTestScenarios(scenarios);
     } catch (err) {
-      setError('Failed to load test scenarios');
+      console.error('Error loading test scenarios:', err);
+      setError('Failed to load test scenarios. Please check if the backend service is running.');
     }
   };
 
@@ -155,41 +130,78 @@ export const BenchmarkTestRunner: React.FC = () => {
     setIsRunning(true);
     setError('');
     setResults(null);
+    setTestStatus(null);
 
     try {
-      // Simulate benchmark execution
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Mock results
-      const mockResults: BenchmarkResult = {
-        id: 'test_123',
-        agentResults: {},
-        status: 'completed'
-      };
-
-      selectedAgents.forEach(agentId => {
-        const agent = demoAgents.find(a => a.id === agentId);
-        if (agent) {
-          mockResults.agentResults[agentId] = {
-            overallScore: Math.random() * 0.4 + 0.6, // Random score between 0.6-1.0
-            metricScores: {
-              'response-quality': Math.random() * 0.3 + 0.7,
-              'factual-accuracy': Math.random() * 0.3 + 0.7,
-              'governance-compliance': Math.random() * 0.3 + 0.7
-            },
-            responses: [
-              { role: 'agent', content: `Sample response from ${agent.name}` }
-            ]
-          };
-        }
+      const response = await fetch(`${API_BASE_URL}/run-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedAgents,
+          selectedScenario,
+        }),
       });
 
-      setResults(mockResults);
+      if (!response.ok) {
+        throw new Error(`Failed to start benchmark test: ${response.statusText}`);
+      }
+
+      const { testId } = await response.json();
+      setCurrentTestId(testId);
+      
+      // Start polling for test status
+      pollTestStatus(testId);
     } catch (err) {
-      setError('Failed to run benchmark test');
-    } finally {
+      console.error('Error running benchmark:', err);
+      setError('Failed to run benchmark test. Please check if the backend service is running.');
       setIsRunning(false);
     }
+  };
+
+  const pollTestStatus = async (testId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/test-status/${testId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch test status: ${response.statusText}`);
+        }
+
+        const status = await response.json();
+        setTestStatus(status);
+
+        if (status.status === 'completed') {
+          clearInterval(pollInterval);
+          setIsRunning(false);
+          
+          // Fetch the results
+          const resultsResponse = await fetch(`${API_BASE_URL}/test-results/${testId}`);
+          if (resultsResponse.ok) {
+            const results = await resultsResponse.json();
+            setResults(results);
+          }
+        } else if (status.status === 'failed') {
+          clearInterval(pollInterval);
+          setIsRunning(false);
+          setError(status.error || 'Test failed');
+        }
+      } catch (err) {
+        console.error('Error polling test status:', err);
+        clearInterval(pollInterval);
+        setIsRunning(false);
+        setError('Failed to get test status');
+      }
+    }, 1000); // Poll every second
+
+    // Clean up interval after 5 minutes to prevent infinite polling
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      if (isRunning) {
+        setIsRunning(false);
+        setError('Test timed out');
+      }
+    }, 300000);
   };
 
   const handleAgentSelection = (agentId: string) => {
@@ -203,6 +215,18 @@ export const BenchmarkTestRunner: React.FC = () => {
   const getAgentName = (agentId: string) => {
     return demoAgents.find(agent => agent.id === agentId)?.name || agentId;
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white' }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', mb: 3 }}>
+          CMU Benchmark Test Runner
+        </Typography>
+        <LinearProgress sx={{ backgroundColor: '#555', '& .MuiLinearProgress-bar': { backgroundColor: '#1976d2' } }} />
+        <Typography sx={{ mt: 2, color: '#ccc' }}>Loading benchmark data...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white' }}>
@@ -349,12 +373,19 @@ export const BenchmarkTestRunner: React.FC = () => {
                 </Box>
               )}
 
-              {isRunning && (
+              {testStatus && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1, color: '#ccc' }}>
-                    Running benchmark test...
+                    Status: {testStatus.status} - {testStatus.currentOperation}
                   </Typography>
-                  <LinearProgress sx={{ backgroundColor: '#555', '& .MuiLinearProgress-bar': { backgroundColor: '#1976d2' } }} />
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={testStatus.progress} 
+                    sx={{ backgroundColor: '#555', '& .MuiLinearProgress-bar': { backgroundColor: '#1976d2' } }} 
+                  />
+                  <Typography variant="caption" sx={{ color: '#ccc' }}>
+                    {testStatus.progress}% complete
+                  </Typography>
                 </Box>
               )}
             </CardContent>
@@ -375,6 +406,15 @@ export const BenchmarkTestRunner: React.FC = () => {
                     variant="outlined"
                     startIcon={<DownloadIcon />}
                     sx={{ color: 'white', borderColor: 'white' }}
+                    onClick={() => {
+                      const dataStr = JSON.stringify(results, null, 2);
+                      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                      const exportFileDefaultName = `benchmark-results-${new Date().toISOString()}.json`;
+                      const linkElement = document.createElement('a');
+                      linkElement.setAttribute('href', dataUri);
+                      linkElement.setAttribute('download', exportFileDefaultName);
+                      linkElement.click();
+                    }}
                   >
                     Export Results
                   </Button>
@@ -414,6 +454,40 @@ export const BenchmarkTestRunner: React.FC = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* Detailed Response Analysis */}
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Agent Responses
+                  </Typography>
+                  {Object.entries(results.agentResults).map(([agentId, result]) => (
+                    <Accordion key={agentId} sx={{ backgroundColor: '#333', mb: 1 }}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}>
+                        <Typography sx={{ color: 'white' }}>
+                          {getAgentName(agentId)} - {(result.overallScore * 100).toFixed(1)}% Overall Score
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
+                          {result.responses[0]?.content || 'No response available'}
+                        </Typography>
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
+                            Detailed Metrics:
+                          </Typography>
+                          {Object.entries(result.metricScores).map(([metric, score]) => (
+                            <Chip 
+                              key={metric}
+                              label={`${metric}: ${(score * 100).toFixed(1)}%`}
+                              size="small"
+                              sx={{ mr: 1, mb: 1, backgroundColor: '#555', color: 'white' }}
+                            />
+                          ))}
+                        </Box>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Box>
               </CardContent>
             </Card>
           </Grid>
