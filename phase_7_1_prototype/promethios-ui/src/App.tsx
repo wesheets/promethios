@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -73,6 +73,20 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   console.log("App.tsx: App component rendering...");
+
+  useEffect(() => {
+    const testNetwork = async () => {
+      try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/todos/1");
+        const data = await response.json();
+        console.log("Network Test: Public API call successful:", data);
+      } catch (error) {
+        console.error("Network Test: Public API call failed:", error);
+      }
+    };
+    testNetwork();
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
