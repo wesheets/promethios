@@ -27,9 +27,7 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+const db = getFirestore(app);
 console.log('Firestore initialized with options:', db.settings);
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
