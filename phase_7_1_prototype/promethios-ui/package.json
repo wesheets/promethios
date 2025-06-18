@@ -61,7 +61,7 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.5.2",
     "express": "^4.21.2",
-    "firebase": "^11.9.1",
+    "firebase": "^11.8.1",
     "framer-motion": "^12.17.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.364.0",
@@ -107,3 +107,5 @@
     "typescript-eslint": "^8.15.0"
   }
 }
+
+
