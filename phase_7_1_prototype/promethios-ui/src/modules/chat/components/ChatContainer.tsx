@@ -147,6 +147,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   };
 
   const handleStandardMessage = async (content: string) => {
+    // Check if we have a specific agent selected from benchmark
+    if (agentId) {
+      await handleBenchmarkAgentMessage(content, agentId);
+      return;
+    }
+
     // Simulate governance analysis if enabled
     let governanceStatus = 'compliant';
     if (isGovernanceEnabled) {
@@ -176,6 +182,57 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       sender: 'agent',
       governanceStatus
     });
+  };
+
+  const handleBenchmarkAgentMessage = async (content: string, selectedAgentId: string) => {
+    try {
+      // Call the API with the selected agent and governance setting
+      const result = await messageService.sendMessageToAgent(
+        selectedAgentId,
+        content,
+        isGovernanceEnabled
+      );
+
+      if (result.success && result.response) {
+        // Add the agent's response
+        const agentMessage = messageService.addMessage({
+          content: result.response,
+          sender: 'agent',
+          agentId: selectedAgentId,
+          governanceStatus: isGovernanceEnabled ? 'monitored' : 'unmonitored'
+        });
+
+        // If governance data is present, show governance monitoring
+        if (result.governance_data && isGovernanceEnabled) {
+          const governanceMessage = messageService.addMessage({
+            content: `🛡️ **Governance Monitor**: This interaction was evaluated with trust score: ${result.governance_data.emotion_telemetry?.trust_score || 'N/A'}, status: ${result.governance_data.core_output?.status || 'unknown'}`,
+            sender: 'system',
+            governanceStatus: 'monitored'
+          });
+
+          // Update governance metrics
+          governanceMonitoringService.addAlert({
+            type: 'info',
+            message: `Governance monitoring applied to ${selectedAgentId}`,
+            agentId: selectedAgentId
+          });
+        }
+      } else {
+        // Handle API error
+        const errorMessage = messageService.addMessage({
+          content: `❌ **Error**: ${result.error || 'Failed to get response from agent'}`,
+          sender: 'system',
+          governanceStatus: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error in benchmark agent message:', error);
+      const errorMessage = messageService.addMessage({
+        content: `❌ **Error**: Failed to communicate with agent. Please try again.`,
+        sender: 'system',
+        governanceStatus: 'error'
+      });
+    }
   };
 
   const handleMultiAgentMessage = async (content: string) => {

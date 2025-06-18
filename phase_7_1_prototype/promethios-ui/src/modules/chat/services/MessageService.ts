@@ -6,6 +6,7 @@ import { Message } from '../types';
 
 export class MessageService {
   private messages: Message[] = [];
+  private apiBaseUrl = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
   addMessage(message: Omit<Message, 'id' | 'timestamp'>): Message {
     const newMessage: Message = {
@@ -24,6 +25,60 @@ export class MessageService {
 
   clearMessages(): void {
     this.messages = [];
+  }
+
+  removeMessage(messageId: string): void {
+    this.messages = this.messages.filter(msg => msg.id !== messageId);
+  }
+
+  async sendMessageToAgent(
+    agentId: string, 
+    message: string, 
+    governanceEnabled: boolean = false
+  ): Promise<{
+    success: boolean;
+    response?: string;
+    governance_data?: any;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/benchmark/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agent_id: agentId,
+          message: message,
+          governance_enabled: governanceEnabled
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        return {
+          success: true,
+          response: data.response,
+          governance_data: data.governance_data
+        };
+      } else {
+        return {
+          success: false,
+          error: data.error || 'Unknown error occurred'
+        };
+      }
+    } catch (error) {
+      console.error('Error sending message to agent:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred'
+      };
+    }
   }
 }
 
