@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
