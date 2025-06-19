@@ -32,6 +32,8 @@ import {
   Business as BusinessIcon,
   Science as ScienceIcon
 } from '@mui/icons-material';
+import { SHARED_DEMO_AGENTS, DemoAgent } from '../shared/DemoAgents';
+import { useAgentContext } from '../context/AgentContext';
 
 interface WrapperAgent {
   id: string;
@@ -53,7 +55,7 @@ interface AgentWrapperProps {
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
-// Demo agents for the Agent Wrapper (different from CMU benchmark agents)
+// Demo agents for the Agent Wrapper (subset of shared demo agents)
 const DEMO_WRAPPER_AGENTS: WrapperAgent[] = [
   {
     id: 'helpful-assistant',
@@ -118,8 +120,8 @@ const DEMO_WRAPPER_AGENTS: WrapperAgent[] = [
 ];
 
 export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) => {
+  const { addWrappedAgent, wrappedAgents } = useAgentContext();
   const [demoAgents, setDemoAgents] = useState<WrapperAgent[]>(DEMO_WRAPPER_AGENTS);
-  const [wrappedAgents, setWrappedAgents] = useState<WrapperAgent[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<WrapperAgent | null>(null);
   const [newAgent, setNewAgent] = useState<Partial<WrapperAgent>>({
@@ -173,14 +175,19 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
       // Simulate API call to wrap the agent
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const wrappedAgent: WrapperAgent = {
+      const wrappedAgent: any = {
         ...agent,
         id: `wrapped_${agent.id}_${Date.now()}`,
         status: 'active',
-        api_endpoint: `${API_BASE_URL}/api/chat/chat`
+        api_endpoint: `${API_BASE_URL}/api/chat/chat`,
+        role: agent.type === 'assistant' ? 'specialist' : 
+              agent.type === 'creative' ? 'specialist' :
+              agent.type === 'tool' ? 'executor' : 'specialist',
+        collaboration_style: 'parallel'
       };
 
-      setWrappedAgents(prev => [...prev, wrappedAgent]);
+      // Add to shared context
+      addWrappedAgent(wrappedAgent);
       
       if (onAgentWrapped) {
         onAgentWrapped(wrappedAgent);
@@ -221,7 +228,7 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
     setError(null);
 
     try {
-      const agent: WrapperAgent = {
+      const agent: any = {
         id: `custom_${Date.now()}`,
         name: newAgent.name!,
         description: newAgent.description!,
@@ -232,10 +239,15 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
         governance_enabled: newAgent.governance_enabled!,
         status: 'active',
         api_endpoint: `${API_BASE_URL}/api/chat/chat`,
-        system_prompt: newAgent.system_prompt
+        system_prompt: newAgent.system_prompt,
+        role: newAgent.type === 'assistant' ? 'specialist' : 
+              newAgent.type === 'creative' ? 'specialist' :
+              newAgent.type === 'tool' ? 'executor' : 'specialist',
+        collaboration_style: 'parallel'
       };
 
-      setWrappedAgents(prev => [...prev, agent]);
+      // Add to shared context
+      addWrappedAgent(agent);
       
       if (onAgentWrapped) {
         onAgentWrapped(agent);
@@ -399,7 +411,7 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
       {wrappedAgents.length > 0 && (
         <Box>
           <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
-            Your Wrapped Agents
+            Your Wrapped Agents ({wrappedAgents.length})
           </Typography>
           
           <Grid container spacing={3}>
@@ -413,10 +425,10 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
                         {agent.name}
                       </Typography>
                       <Chip 
-                        label="ACTIVE" 
+                        label={agent.user_created ? "CUSTOM" : "DEMO"} 
                         size="small" 
                         sx={{ 
-                          backgroundColor: '#4caf50', 
+                          backgroundColor: agent.user_created ? '#1976d2' : '#4caf50', 
                           color: 'white'
                         }}
                       />
@@ -511,7 +523,7 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
               </Box>
 
               <Alert severity="info" sx={{ backgroundColor: '#1976d2', color: 'white', mb: 2 }}>
-                This demo agent will be wrapped with Promethios governance, adding trust metrics, compliance monitoring, and ethical oversight.
+                This demo agent will be wrapped with Promethios governance, adding trust metrics, compliance monitoring, and ethical oversight. Once wrapped, it will be available for multi-agent team building.
               </Alert>
             </Box>
           ) : (

@@ -44,9 +44,12 @@ import {
   Chat as ChatIcon,
   Assessment as AssessmentIcon,
   CheckCircle as CheckIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Warning as WarningIcon,
+  ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { SHARED_DEMO_AGENTS, DEMO_TEAM_TEMPLATES, DemoAgent } from '../shared/DemoAgents';
+import { useAgentContext } from '../context/AgentContext';
 
 interface MultiAgentTeam {
   id: string;
@@ -67,7 +70,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://promethios-phase-
 const steps = ['Basic Info', 'Agent Selection', 'Flow Configuration', 'Governance Rules', 'Review & Create'];
 
 export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCreated }) => {
-  const [availableAgents, setAvailableAgents] = useState<DemoAgent[]>(SHARED_DEMO_AGENTS);
+  const { wrappedAgents, hasWrappedAgents, userCreatedAgents } = useAgentContext();
   const [activeTeams, setActiveTeams] = useState<MultiAgentTeam[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -129,8 +132,8 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
     setError(null);
 
     try {
-      // Get agents for this template
-      const templateAgents = availableAgents.filter(agent => 
+      // Get agents for this template from shared demo agents
+      const templateAgents = SHARED_DEMO_AGENTS.filter(agent => 
         template.agent_ids.includes(agent.id)
       );
 
@@ -231,6 +234,43 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
     }
   };
 
+  // Empty state component for when no agents are wrapped
+  const EmptyAgentState = () => (
+    <Box sx={{ 
+      textAlign: 'center', 
+      py: 8, 
+      backgroundColor: '#2a2a2a', 
+      borderRadius: 2,
+      border: '2px dashed #555'
+    }}>
+      <WarningIcon sx={{ fontSize: 64, color: '#ff9800', mb: 2 }} />
+      <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
+        No Wrapped Agents Available
+      </Typography>
+      <Typography variant="body1" sx={{ color: '#ccc', mb: 4, maxWidth: 600, mx: 'auto' }}>
+        To create multi-agent teams, you need to first wrap individual agents with Promethios governance. 
+        Start by wrapping your first agent in the Agent Wrapper, then return here to build collaborative teams.
+      </Typography>
+      <Button
+        variant="contained"
+        size="large"
+        startIcon={<ArrowForwardIcon />}
+        sx={{ 
+          backgroundColor: '#1976d2',
+          '&:hover': { backgroundColor: '#1565c0' },
+          px: 4,
+          py: 1.5
+        }}
+        onClick={() => {
+          // Navigate to Agent Wrapper - this would be handled by your router
+          window.location.href = '/agents/wrapping';
+        }}
+      >
+        Wrap Your First Agent
+      </Button>
+    </Box>
+  );
+
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white' }}>
       <Box sx={{ mb: 4 }}>
@@ -248,7 +288,7 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
         )}
       </Box>
 
-      {/* Demo Templates Section */}
+      {/* Demo Templates Section - Always show these */}
       <Box sx={{ mb: 6 }}>
         <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
           🚀 Demo Team Templates - Try These First!
@@ -347,34 +387,48 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
 
       <Divider sx={{ my: 4, backgroundColor: '#555' }} />
 
-      {/* Create Custom Team Section */}
+      {/* Create Custom Team Section - Show empty state if no wrapped agents */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
           Create Custom Multi-Agent Team
         </Typography>
         <Typography variant="body2" sx={{ color: '#ccc', mb: 3 }}>
-          Build your own custom multi-agent team by selecting individual agents and configuring their collaboration workflow.
+          Build your own custom multi-agent team by selecting from your wrapped agents and configuring their collaboration workflow.
         </Typography>
         
-        <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedTemplate(null);
-            setActiveStep(0);
-            setDialogOpen(true);
-          }}
-          sx={{ 
-            color: 'white', 
-            borderColor: 'white',
-            '&:hover': {
-              borderColor: '#1976d2',
-              backgroundColor: 'rgba(25, 118, 210, 0.1)'
-            }
-          }}
-        >
-          Create Custom Team
-        </Button>
+        {!hasWrappedAgents ? (
+          <EmptyAgentState />
+        ) : (
+          <Box>
+            <Alert severity="info" sx={{ backgroundColor: '#1976d2', color: 'white', mb: 3 }}>
+              <Typography variant="body2">
+                You have {wrappedAgents.length} wrapped agent{wrappedAgents.length !== 1 ? 's' : ''} available 
+                ({userCreatedAgents.length} custom, {wrappedAgents.length - userCreatedAgents.length} demo). 
+                Select 2 or more agents to create a collaborative team.
+              </Typography>
+            </Alert>
+            
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelectedTemplate(null);
+                setActiveStep(0);
+                setDialogOpen(true);
+              }}
+              sx={{ 
+                color: 'white', 
+                borderColor: 'white',
+                '&:hover': {
+                  borderColor: '#1976d2',
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)'
+                }
+              }}
+            >
+              Create Custom Team
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* Active Teams Section */}
@@ -469,7 +523,7 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
               </Typography>
               <List sx={{ backgroundColor: '#333', borderRadius: 1 }}>
                 {selectedTemplate.agent_ids.map((agentId: string, index: number) => {
-                  const agent = availableAgents.find(a => a.id === agentId);
+                  const agent = SHARED_DEMO_AGENTS.find(a => a.id === agentId);
                   if (!agent) return null;
                   
                   return (
@@ -613,51 +667,59 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
                   </StepLabel>
                   <StepContent>
                     <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
-                      Select agents to include in your multi-agent team (minimum 2 required):
+                      Select agents from your wrapped agents to include in your multi-agent team (minimum 2 required):
                     </Typography>
-                    <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                      <Grid container spacing={2}>
-                        {availableAgents.map(agent => (
-                          <Grid item xs={12} md={6} key={agent.id}>
-                            <Card 
-                              sx={{ 
-                                backgroundColor: newTeam.selected_agents.find(a => a.id === agent.id) ? '#1976d2' : '#333',
-                                cursor: 'pointer',
-                                transition: 'background-color 0.2s'
-                              }}
-                              onClick={() => handleAgentSelection(
-                                agent, 
-                                !newTeam.selected_agents.find(a => a.id === agent.id)
-                              )}
-                            >
-                              <CardContent sx={{ p: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                  <Checkbox
-                                    checked={!!newTeam.selected_agents.find(a => a.id === agent.id)}
-                                    sx={{ color: 'white', p: 0, mr: 1 }}
-                                  />
-                                  <Typography variant="body1" sx={{ color: 'white', flex: 1 }}>
-                                    {agent.name}
+                    
+                    {wrappedAgents.length === 0 ? (
+                      <Alert severity="warning" sx={{ backgroundColor: '#ff9800', color: 'white', mb: 2 }}>
+                        No wrapped agents available. Please wrap some agents first in the Agent Wrapper.
+                      </Alert>
+                    ) : (
+                      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                        <Grid container spacing={2}>
+                          {wrappedAgents.map(agent => (
+                            <Grid item xs={12} md={6} key={agent.id}>
+                              <Card 
+                                sx={{ 
+                                  backgroundColor: newTeam.selected_agents.find(a => a.id === agent.id) ? '#1976d2' : '#333',
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.2s'
+                                }}
+                                onClick={() => handleAgentSelection(
+                                  agent as any, 
+                                  !newTeam.selected_agents.find(a => a.id === agent.id)
+                                )}
+                              >
+                                <CardContent sx={{ p: 2 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Checkbox
+                                      checked={!!newTeam.selected_agents.find(a => a.id === agent.id)}
+                                      sx={{ color: 'white', p: 0, mr: 1 }}
+                                    />
+                                    <Typography variant="body1" sx={{ color: 'white', flex: 1 }}>
+                                      {agent.name}
+                                    </Typography>
+                                    <Chip 
+                                      label={agent.user_created ? 'CUSTOM' : 'DEMO'} 
+                                      size="small" 
+                                      sx={{ 
+                                        backgroundColor: agent.user_created ? '#1976d2' : '#4caf50', 
+                                        color: 'white',
+                                        fontSize: '0.7rem'
+                                      }}
+                                    />
+                                  </Box>
+                                  <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.8rem' }}>
+                                    {agent.description}
                                   </Typography>
-                                  <Chip 
-                                    label={agent.role || 'specialist'} 
-                                    size="small" 
-                                    sx={{ 
-                                      backgroundColor: getRoleColor(agent.role || 'specialist'), 
-                                      color: 'white',
-                                      fontSize: '0.7rem'
-                                    }}
-                                  />
-                                </Box>
-                                <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.8rem' }}>
-                                  {agent.description}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Box>
+                    )}
+                    
                     <Box sx={{ mt: 2 }}>
                       <Button
                         variant="contained"
