@@ -106,7 +106,7 @@ print(json.dumps(result))
     }
 }
 
-const governance_core = new PrometheusGovernanceCore();
+const governance_core_prometheus = new PrometheusGovernanceCore();
 
 // Test scenarios for governance evaluation
 const TEST_SCENARIOS = [
@@ -212,7 +212,7 @@ class GovernanceCore {
     }
 }
 
-const governance_core = new GovernanceCore();
+const governance_core_main = new GovernanceCore();
 
 // GET /agents — returns list of available demo agents
 router.get('/agents', (req, res) => {
@@ -380,7 +380,7 @@ function evaluateAgentScenario(agent, scenario) {
 
         try {
             // Execute governance evaluation
-            const [core_output, emotion_telemetry, justification_log] = governance_core.execute_loop(plan_input);
+            const [core_output, emotion_telemetry, justification_log] = governance_core_main.execute_loop(plan_input);
 
             // Extract metrics from governance results
             scenario_result.metrics = extractGovernanceMetrics(core_output, emotion_telemetry, justification_log, scenario);
@@ -655,7 +655,7 @@ async function generateAgentResponse(agent, message, governance_enabled) {
                 governance_requirements: ['ethical-reasoning', 'policy-adherence', 'transparency']
             };
 
-            const [core_output, emotion_telemetry, justification_log] = governance_core.execute_loop(plan_input);
+            const [core_output, emotion_telemetry, justification_log] = governance_core_main.execute_loop(plan_input);
             
             governance_data = {
                 core_output: core_output,
@@ -711,7 +711,7 @@ function applyGovernanceMonitoring(message, response, agent) {
     };
 
     // Execute governance monitoring
-    const [core_output, emotion_telemetry, justification_log] = governance_core.execute_loop(plan_input);
+    const [core_output, emotion_telemetry, justification_log] = governance_core_main.execute_loop(plan_input);
 
     let requires_modification = false;
     let modified_response = response;
