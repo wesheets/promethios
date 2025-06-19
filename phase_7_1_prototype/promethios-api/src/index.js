@@ -16,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/benchmark', require('./routes/benchmark'));
+app.use('/api/chat', require('./routes/chat'));
 app.use('/api/feedback', require('./routes/feedback'));
 
 // Health check endpoint
