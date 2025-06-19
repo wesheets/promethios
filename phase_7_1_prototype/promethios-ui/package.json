@@ -59,7 +59,7 @@
     "cmdk": "1.0.0",
     "cohere-ai": "^7.17.1",
     "date-fns": "^3.3.1",
-    "dotenv": "^16.5.0",
+
     "embla-carousel-react": "^8.5.2",
     "express": "^4.21.2",
     "firebase": "11.8.1",
