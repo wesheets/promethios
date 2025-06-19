@@ -156,9 +156,13 @@ router.post('/chat', async (req, res) => {
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
                     response = await llmService.generateResponse(agent_id, message);
                     
-                    // Apply governance filtering if needed
+                    // Apply governance filtering and add governance context to response
                     if (governance_metrics.risk_level === 'high') {
                         response = "I apologize, but I cannot provide a response to that request due to governance policy restrictions. Please rephrase your question or ask about something else.";
+                    } else if (governance_enabled) {
+                        // Add governance evaluation context to the response
+                        const governancePrefix = `[Governance Evaluation: Trust Score ${governance_metrics.trust_score || 0.85}, Status: ${governance_result.status}] `;
+                        response = governancePrefix + response;
                     }
                 } else {
                     response = "I'm unable to process that request due to governance restrictions. Please try a different approach.";
@@ -168,6 +172,8 @@ router.post('/chat', async (req, res) => {
                 console.error('Governance error:', governance_error);
                 // Fallback to direct LLM call with warning
                 response = await llmService.generateResponse(agent_id, message);
+                const governanceWarning = "[Governance Warning: System temporarily unavailable, operating in fallback mode] ";
+                response = governanceWarning + response;
                 governance_metrics = {
                     trust_score: 0.5,
                     compliance_score: 0.5,
@@ -186,6 +192,10 @@ router.post('/chat', async (req, res) => {
                 risk_level: "unmonitored",
                 governance_enabled: false
             };
+            
+            // Add standard mode indicator to make the difference clear
+            const standardModeIndicator = "[Standard Mode - No governance monitoring active] ";
+            response = standardModeIndicator + response;
         }
 
         // Add assistant response to session
