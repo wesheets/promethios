@@ -123,7 +123,7 @@ class CompatibilityVerificationEngine:
         """
         # Validate the version string
         try:
-            semver.parse(version)
+            semver.Version.parse(version)
         except ValueError:
             logger.error(f"Invalid version string: {version}")
             raise ValueError(f"Invalid version string: {version}")
@@ -182,8 +182,8 @@ class CompatibilityVerificationEngine:
         
         # Check framework version compatibility
         framework_compatible = (
-            semver.compare(self.framework_version, min_framework_version) >= 0 and
-            semver.compare(self.framework_version, max_framework_version) <= 0
+            semver.Version.parse(self.framework_version).compare(semver.Version.parse(min_framework_version)) >= 0 and
+            semver.Version.parse(self.framework_version).compare(semver.Version.parse(max_framework_version)) <= 0
         )
         
         # Check module compatibility
@@ -236,8 +236,8 @@ class CompatibilityVerificationEngine:
             
             # Check version compatibility
             dep_version = dep_extension["version"]
-            if (semver.compare(dep_version, min_version) < 0 or
-                semver.compare(dep_version, max_version) > 0):
+            if (semver.Version.parse(dep_version).compare(semver.Version.parse(min_version)) < 0 or
+                semver.Version.parse(dep_version).compare(semver.Version.parse(max_version)) > 0):
                 dependencies_compatible = False
                 incompatible_dependencies.append({
                     "extension_id": dependency_id,

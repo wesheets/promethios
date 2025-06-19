@@ -1,3 +1,9 @@
+"""
+FastAPI application for Promethios Governance Core Runtime.
+
+This module provides the main FastAPI application with governance loop execution endpoints.
+"""
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 import json
@@ -242,5 +248,5 @@ async def root():
     return {"message": "Promethios Governance Core Runtime is active."}
 
 # --- To run locally (for development) --- #
-# uvicorn main:app --reload --port 8000
+# uvicorn src.api_server:app --reload --port 8000
 

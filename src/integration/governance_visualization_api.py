@@ -364,3 +364,63 @@ def register_api(app):
     """Register the governance visualization API with the Flask app."""
     app.register_blueprint(governance_visualization_api)
     logger.info("Governance Visualization API registered")
+
+class GovernanceVisualizationAPI:
+    """
+    API class for governance visualization endpoints.
+    This class wraps the Flask blueprint functionality for programmatic access.
+    """
+    
+    def __init__(self):
+        """Initialize the GovernanceVisualizationAPI."""
+        self.state_visualizer = None
+        self.metrics_dashboard = None
+        self.health_reporter = None
+        self.data_transformer = None
+        self._initialize_components()
+    
+    def _initialize_components(self):
+        """Initialize visualization components if not already initialized."""
+        from src.core.visualization.visualization_data_transformer import VisualizationDataTransformer
+        from src.core.visualization.governance_state_visualizer import GovernanceStateVisualizer
+        from src.core.visualization.trust_metrics_dashboard import TrustMetricsDashboard
+        from src.core.visualization.governance_health_reporter import GovernanceHealthReporter
+        
+        if self.data_transformer is None:
+            self.data_transformer = VisualizationDataTransformer()
+        
+        if self.state_visualizer is None:
+            self.state_visualizer = GovernanceStateVisualizer(data_transformer=self.data_transformer)
+        
+        if self.metrics_dashboard is None:
+            self.metrics_dashboard = TrustMetricsDashboard(data_transformer=self.data_transformer)
+        
+        if self.health_reporter is None:
+            self.health_reporter = GovernanceHealthReporter(data_transformer=self.data_transformer)
+    
+    def get_governance_state(self, view_type='overview', component_id=None):
+        """Get governance state visualization data."""
+        return self.state_visualizer.generate_governance_state_view(
+            view_type=view_type,
+            component_id=component_id
+        )
+    
+    def get_trust_metrics(self, view_type='overview', metric_type=None, time_period='daily'):
+        """Get trust metrics visualization data."""
+        return self.metrics_dashboard.generate_trust_metrics_view(
+            view_type=view_type,
+            metric_type=metric_type,
+            time_period=time_period
+        )
+    
+    def get_health_report(self, include_attestation=True, include_policy=True, 
+                         include_requirement=True, include_boundary=True, include_audit=True):
+        """Get governance health report visualization data."""
+        return self.health_reporter.generate_health_report(
+            include_attestation=include_attestation,
+            include_policy=include_policy,
+            include_requirement=include_requirement,
+            include_boundary=include_boundary,
+            include_audit=include_audit
+        )
+

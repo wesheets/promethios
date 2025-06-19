@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useObserver } from '../../components/observer/ObserverContext';
-import { notifyObserver } from '../../components/observer/ObserverAgent';
+import { useObserver } from '../components/observer/ObserverContext';
+import { notifyObserver } from '../components/observer/ObserverAgent';
 
 // Types
 interface GovernanceExplorerProps {
