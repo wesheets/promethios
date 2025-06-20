@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useUserPreferences } from '../hooks/useUserPreferences';
+import { useAdminCheck } from '../hooks/useAdminCheck';
 
 // Import navigation components
 import NewHeader from '../components/navigation/NewHeader';
@@ -26,6 +27,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
+  const { isAdmin } = useAdminCheck();
 
   // For logged-out users, show existing NewHeader
   if (!currentUser) {
@@ -75,7 +77,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       {/* Collapsible Left Navigation for logged-in users */}
       <CollapsibleNavigation 
         userPermissions={['view']}
-        isAdmin={false}
+        isAdmin={isAdmin}
       />
       
       {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
