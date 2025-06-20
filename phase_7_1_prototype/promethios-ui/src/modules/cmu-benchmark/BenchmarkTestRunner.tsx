@@ -125,12 +125,12 @@ export const BenchmarkTestRunner: React.FC = () => {
   };
 
   const handleRunBenchmark = () => {
-    if (selectedAgents.length === 0 || !selectedScenario) {
-      setError('Please select at least one agent and a test scenario');
+    if (selectedAgents.length === 0) {
+      setError('Please select at least one agent');
       return;
     }
 
-    // Open the chat popup instead of running the old benchmark
+    // Open the chat popup with selected agents and available scenarios
     setChatPopupOpen(true);
     setError('');
   };
@@ -209,6 +209,154 @@ export const BenchmarkTestRunner: React.FC = () => {
         CMU Benchmark Test Runner
       </Typography>
 
+      {/* Introduction Section */}
+      <Card sx={{ 
+        backgroundColor: '#0f172a', 
+        border: '1px solid #334155',
+        borderRadius: '12px',
+        mb: 4,
+        overflow: 'hidden'
+      }}>
+        <Box sx={{
+          background: 'linear-gradient(90deg, #1e40af, #7c3aed)',
+          height: '4px'
+        }} />
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3 }}>
+            <Box sx={{
+              width: 60,
+              height: 60,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #1e40af, #7c3aed)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Typography sx={{ fontSize: '24px' }}>🧪</Typography>
+            </Box>
+            
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h5" sx={{ 
+                color: 'white',
+                fontWeight: 600,
+                mb: 2
+              }}>
+                About CMU Agent Company Benchmark
+              </Typography>
+              
+              <Typography variant="body1" sx={{ 
+                color: '#cbd5e1',
+                lineHeight: 1.6,
+                mb: 3
+              }}>
+                The CMU Agent Company benchmark is a comprehensive evaluation framework designed to test AI agents' 
+                ability to perform complex, multi-step tasks in realistic business scenarios. This interactive test 
+                environment allows you to compare different agents' performance across various dimensions.
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    p: 3
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      color: '#3b82f6',
+                      fontWeight: 600,
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      📊 What We Test
+                    </Typography>
+                    <Box component="ul" sx={{ 
+                      color: '#94a3b8',
+                      pl: 2,
+                      m: 0,
+                      '& li': { mb: 0.5 }
+                    }}>
+                      <li>Task completion accuracy</li>
+                      <li>Multi-step reasoning</li>
+                      <li>Tool usage efficiency</li>
+                      <li>Error handling & recovery</li>
+                      <li>Governance compliance</li>
+                    </Box>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Box sx={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    p: 3
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      color: '#10b981',
+                      fontWeight: 600,
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      📈 Results You'll See
+                    </Typography>
+                    <Box component="ul" sx={{ 
+                      color: '#94a3b8',
+                      pl: 2,
+                      m: 0,
+                      '& li': { mb: 0.5 }
+                    }}>
+                      <li>Overall performance scores</li>
+                      <li>Task-by-task breakdown</li>
+                      <li>Response time metrics</li>
+                      <li>Trust & safety ratings</li>
+                      <li>Comparative analysis</li>
+                    </Box>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Box sx={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    p: 3
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      color: '#f59e0b',
+                      fontWeight: 600,
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      🎯 How It Works
+                    </Typography>
+                    <Box component="ul" sx={{ 
+                      color: '#94a3b8',
+                      pl: 2,
+                      m: 0,
+                      '& li': { mb: 0.5 }
+                    }}>
+                      <li>Select agents to test</li>
+                      <li>Start interactive session</li>
+                      <li>Choose test scenarios</li>
+                      <li>Watch real-time execution</li>
+                      <li>Review detailed results</li>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3, backgroundColor: '#d32f2f', color: 'white' }}>
           {error}
@@ -220,145 +368,344 @@ export const BenchmarkTestRunner: React.FC = () => {
         <Grid item xs={12} md={6}>
           <Card sx={{ backgroundColor: '#2a2a2a', color: 'white' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Select Demo Agents
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                  Select Demo Agents
+                </Typography>
+                <Chip 
+                  label={`${selectedAgents.length} Selected`}
+                  sx={{ 
+                    backgroundColor: selectedAgents.length > 0 ? '#10b981' : '#6b7280',
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+              </Box>
               <Grid container spacing={2}>
-                {demoAgents.map(agent => (
-                  <Grid item xs={12} key={agent.id}>
-                    <Card 
-                      sx={{ 
-                        backgroundColor: selectedAgents.includes(agent.id) ? '#3a3a3a' : '#333',
-                        cursor: 'pointer',
-                        border: selectedAgents.includes(agent.id) ? '2px solid #1976d2' : '1px solid #555'
-                      }}
-                      onClick={() => handleAgentSelection(agent.id)}
-                    >
-                      <CardContent>
-                        <Typography variant="subtitle1" sx={{ color: 'white' }}>
-                          {agent.name}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
-                          {agent.description}
-                        </Typography>
-                        <Box>
-                          {agent.capabilities.map(capability => (
+                {demoAgents.map(agent => {
+                  const isSelected = selectedAgents.includes(agent.id);
+                  return (
+                    <Grid item xs={12} key={agent.id}>
+                      <Card 
+                        sx={{ 
+                          backgroundColor: isSelected ? '#1e3a8a' : '#2d3748',
+                          cursor: 'pointer',
+                          border: isSelected ? '2px solid #3b82f6' : '1px solid #4a5568',
+                          borderRadius: '12px',
+                          transition: 'all 0.2s ease-in-out',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          '&:hover': {
+                            backgroundColor: isSelected ? '#1e40af' : '#374151',
+                            borderColor: isSelected ? '#60a5fa' : '#6b7280',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                          },
+                          '&:before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: isSelected 
+                              ? 'linear-gradient(90deg, #3b82f6, #10b981)' 
+                              : 'transparent',
+                            transition: 'all 0.2s ease-in-out'
+                          }
+                        }}
+                        onClick={() => handleAgentSelection(agent.id)}
+                      >
+                        <CardContent sx={{ p: 3 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="h6" sx={{ 
+                                color: 'white',
+                                fontWeight: 600,
+                                mb: 0.5
+                              }}>
+                                {agent.name}
+                              </Typography>
+                              <Typography variant="body2" sx={{ 
+                                color: '#a0aec0',
+                                lineHeight: 1.5,
+                                mb: 2
+                              }}>
+                                {agent.description}
+                              </Typography>
+                            </Box>
+                            {isSelected && (
+                              <Box sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                backgroundColor: '#10b981',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                ml: 2
+                              }}>
+                                <Typography sx={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>
+                                  ✓
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <Typography variant="caption" sx={{ 
+                              color: '#6b7280',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              Provider:
+                            </Typography>
                             <Chip 
-                              key={capability} 
-                              label={capability} 
-                              size="small" 
-                              sx={{ mr: 0.5, mb: 0.5, backgroundColor: '#555', color: 'white' }}
+                              label={agent.provider || 'OpenAI'}
+                              size="small"
+                              sx={{ 
+                                backgroundColor: '#374151',
+                                color: '#d1d5db',
+                                fontSize: '0.75rem',
+                                height: 20
+                              }}
                             />
-                          ))}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
+                          </Box>
+                          
+                          <Box>
+                            <Typography variant="caption" sx={{ 
+                              color: '#6b7280',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              display: 'block',
+                              mb: 1
+                            }}>
+                              Capabilities:
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {agent.capabilities.map((capability, index) => (
+                                <Chip 
+                                  key={capability} 
+                                  label={capability} 
+                                  size="small" 
+                                  sx={{ 
+                                    backgroundColor: isSelected ? '#1e40af' : '#4a5568',
+                                    color: isSelected ? '#bfdbfe' : '#d1d5db',
+                                    fontSize: '0.75rem',
+                                    height: 24,
+                                    '&:hover': {
+                                      backgroundColor: isSelected ? '#1d4ed8' : '#6b7280'
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
               </Grid>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Test Scenario Selection */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ backgroundColor: '#2a2a2a', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Select Test Scenario
-              </Typography>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel sx={{ color: 'white' }}>Test Scenario</InputLabel>
-                <Select
-                  value={selectedScenario}
-                  onChange={(e) => setSelectedScenario(e.target.value)}
-                  sx={{ color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' } }}
-                >
-                  {testScenarios.map(scenario => (
-                    <MenuItem key={scenario.id} value={scenario.id}>
-                      {scenario.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {selectedScenario && (
-                <Box>
-                  {testScenarios
-                    .filter(scenario => scenario.id === selectedScenario)
-                    .map(scenario => (
-                      <Box key={scenario.id}>
-                        <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
-                          {scenario.description}
-                        </Typography>
-                        <Accordion sx={{ backgroundColor: '#333' }}>
-                          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}>
-                            <Typography sx={{ color: 'white' }}>View Details</Typography>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                              Test Input:
-                            </Typography>
-                            {scenario.inputs.map((input, index) => (
-                              <Typography key={index} variant="body2" sx={{ color: '#ccc', mb: 1 }}>
-                                {input.content}
-                              </Typography>
-                            ))}
-                          </AccordionDetails>
-                        </Accordion>
-                      </Box>
-                    ))}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Test Scenario Selection - REMOVED */}
+        {/* Scenarios will now be available in the chat popup */}
 
         {/* Run Test */}
         <Grid item xs={12}>
-          <Card sx={{ backgroundColor: '#2a2a2a', color: 'white' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6">
-                  Run Benchmark Test
-                </Typography>
+          <Card sx={{ 
+            backgroundColor: '#2a2a2a', 
+            color: 'white',
+            borderRadius: '12px',
+            border: '1px solid #4a5568'
+          }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" sx={{ 
+                    color: 'white',
+                    fontWeight: 600,
+                    mb: 1
+                  }}>
+                    🚀 Run Benchmark Test
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    Start an interactive test session with your selected agents
+                  </Typography>
+                </Box>
                 <Button
                   variant="contained"
+                  size="large"
                   startIcon={<ChatIcon />}
                   onClick={handleRunBenchmark}
-                  disabled={selectedAgents.length === 0 || !selectedScenario}
-                  sx={{ backgroundColor: '#1976d2' }}
+                  disabled={selectedAgents.length === 0}
+                  sx={{ 
+                    backgroundColor: selectedAgents.length > 0 ? '#10b981' : '#6b7280',
+                    color: 'white',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    boxShadow: selectedAgents.length > 0 
+                      ? '0 4px 14px 0 rgba(16, 185, 129, 0.3)' 
+                      : 'none',
+                    '&:hover': {
+                      backgroundColor: selectedAgents.length > 0 ? '#059669' : '#6b7280',
+                      boxShadow: selectedAgents.length > 0 
+                        ? '0 6px 20px 0 rgba(16, 185, 129, 0.4)' 
+                        : 'none'
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#6b7280',
+                      color: '#9ca3af'
+                    }
+                  }}
                 >
                   Start Interactive Test
                 </Button>
               </Box>
 
+              {/* Requirements Check */}
+              <Box sx={{ 
+                backgroundColor: '#1f2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                p: 3,
+                mb: 3
+              }}>
+                <Typography variant="subtitle2" sx={{ 
+                  color: 'white',
+                  fontWeight: 600,
+                  mb: 2,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Requirements Check:
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      backgroundColor: selectedAgents.length > 0 ? '#10b981' : '#6b7280',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Typography sx={{ 
+                        color: 'white', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold' 
+                      }}>
+                        {selectedAgents.length > 0 ? '✓' : '○'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ 
+                      color: selectedAgents.length > 0 ? '#d1fae5' : '#9ca3af'
+                    }}>
+                      Select at least one agent ({selectedAgents.length} selected)
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      backgroundColor: '#10b981',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Typography sx={{ 
+                        color: 'white', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold' 
+                      }}>
+                        ✓
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ 
+                      color: '#d1fae5'
+                    }}>
+                      Test scenarios available in chat popup
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
               {selectedAgents.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ 
+                    color: 'white',
+                    fontWeight: 600,
+                    mb: 2,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
                     Selected Agents:
                   </Typography>
-                  {selectedAgents.map(agentId => (
-                    <Chip 
-                      key={agentId} 
-                      label={getAgentName(agentId)} 
-                      sx={{ mr: 1, backgroundColor: '#1976d2', color: 'white' }}
-                    />
-                  ))}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedAgents.map(agentId => (
+                      <Chip 
+                        key={agentId} 
+                        label={getAgentName(agentId)} 
+                        sx={{ 
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          fontWeight: 500,
+                          '&:hover': {
+                            backgroundColor: '#2563eb'
+                          }
+                        }}
+                      />
+                    ))}
+                  </Box>
                 </Box>
               )}
 
               {testStatus && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 1, color: '#ccc' }}>
+                <Box sx={{ 
+                  backgroundColor: '#1e3a8a',
+                  border: '1px solid #3b82f6',
+                  borderRadius: '8px',
+                  p: 3
+                }}>
+                  <Typography variant="body2" sx={{ 
+                    mb: 2, 
+                    color: '#bfdbfe',
+                    fontWeight: 500
+                  }}>
                     Status: {testStatus.status} - {testStatus.currentOperation}
                   </Typography>
                   <LinearProgress 
                     variant="determinate" 
                     value={testStatus.progress} 
-                    sx={{ backgroundColor: '#555', '& .MuiLinearProgress-bar': { backgroundColor: '#1976d2' } }} 
+                    sx={{ 
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: '#1e40af', 
+                      '& .MuiLinearProgress-bar': { 
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                      } 
+                    }} 
                   />
-                  <Typography variant="caption" sx={{ color: '#ccc' }}>
+                  <Typography variant="caption" sx={{ 
+                    color: '#bfdbfe',
+                    fontWeight: 500,
+                    mt: 1,
+                    display: 'block'
+                  }}>
                     {testStatus.progress}% complete
                   </Typography>
                 </Box>
@@ -473,8 +820,10 @@ export const BenchmarkTestRunner: React.FC = () => {
       <BenchmarkChatPopup
         open={chatPopupOpen}
         onClose={() => setChatPopupOpen(false)}
-        selectedAgents={selectedAgents.map(id => demoAgents.find(agent => agent.id === id)!).filter(Boolean)}
-        selectedScenario={testScenarios.find(scenario => scenario.id === selectedScenario)}
+        selectedAgents={selectedAgents}
+        selectedScenario=""
+        demoAgents={demoAgents}
+        testScenarios={testScenarios}
       />
     </Box>
   );
