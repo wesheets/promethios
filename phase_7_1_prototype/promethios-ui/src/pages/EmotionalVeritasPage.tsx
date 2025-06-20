@@ -680,19 +680,27 @@ const EmotionalVeritasPage: React.FC = () => {
           </Grid>
 
           {/* VERITAS Integration Demo */}
-          <Card sx={{ mb: 4 }}>
+          <Card sx={{ mb: 4, backgroundColor: '#2d3748', color: 'white' }}>
             <CardHeader
-              title="VERITAS Emotional Integration"
-              subheader="Real-time factual verification with emotional context analysis"
+              title={<Typography variant="h6" sx={{ color: 'white' }}>VERITAS Emotional Integration</Typography>}
+              subheader={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Real-time factual verification with emotional context analysis</Typography>}
               action={
                 <FormControlLabel
                   control={
                     <Switch
                       checked={veritasEnabled}
                       onChange={(e) => setVeritasEnabled(e.target.checked)}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#3182ce',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#3182ce',
+                        },
+                      }}
                     />
                   }
-                  label="VERITAS Enabled"
+                  label={<Typography sx={{ color: 'white' }}>VERITAS Enabled</Typography>}
                 />
               }
             />
@@ -705,7 +713,7 @@ const EmotionalVeritasPage: React.FC = () => {
                   onTraceUpdate={(entry) => console.log('Trace update:', entry)}
                 />
               ) : (
-                <Alert severity="info">
+                <Alert severity="info" sx={{ backgroundColor: '#4a5568', color: 'white', '& .MuiAlert-icon': { color: '#3182ce' } }}>
                   VERITAS integration is disabled. Enable to see real-time factual verification with emotional context.
                 </Alert>
               )}

@@ -252,7 +252,7 @@ const LoginWaitlistPage: React.FC = () => {
                     <button
                       onClick={handleLoginWithGoogle}
                       disabled={isLoggingIn}
-                      className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                      className="w-full flex justify-center items-center py-2 px-4 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-200 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
                     >
                       <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24">
                         <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">

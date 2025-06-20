@@ -705,14 +705,14 @@ const GovernanceReportsPage: React.FC = () => {
         <Grid container spacing={3}>
           {reportTemplates.map((template) => (
             <Grid item xs={12} md={6} lg={4} key={template.id}>
-              <Card sx={{ height: '100%' }}>
+              <Card sx={{ height: '100%', backgroundColor: '#2d3748', color: 'white' }}>
                 <CardHeader
                   avatar={
                     <Avatar sx={{ bgcolor: template.color }}>
                       {template.icon}
                     </Avatar>
                   }
-                  title={template.name}
+                  title={<Typography variant="h6" sx={{ color: 'white' }}>{template.name}</Typography>}
                   subheader={
                     <Box display="flex" gap={1} mt={1}>
                       <Chip
@@ -723,7 +723,8 @@ const GovernanceReportsPage: React.FC = () => {
                       <Chip
                         label={template.format.toUpperCase()}
                         size="small"
-                        variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                        variant="outlined" 
+                        sx={{ backgroundColor: '#4a5568', color: 'white', borderColor: '#4a5568' }}
                       />
                     </Box>
                   }
@@ -734,7 +735,7 @@ const GovernanceReportsPage: React.FC = () => {
                   </Typography>
                   
                   <Box mb={2}>
-                    <Typography variant="subtitle2" gutterBottom>
+                    <Typography variant="subtitle2" sx={{ color: 'white' }} gutterBottom>
                       Sections ({template.sections.length})
                     </Typography>
                     {template.sections.slice(0, 3).map((section) => (
@@ -742,8 +743,8 @@ const GovernanceReportsPage: React.FC = () => {
                         key={section.id}
                         label={section.name}
                         size="small"
-                        variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
-                        sx={{ mr: 0.5, mb: 0.5 }}
+                        variant="outlined" 
+                        sx={{ mr: 0.5, mb: 0.5, backgroundColor: '#4a5568', color: 'white', borderColor: '#4a5568' }}
                       />
                     ))}
                     {template.sections.length > 3 && (
@@ -768,22 +769,25 @@ const GovernanceReportsPage: React.FC = () => {
                       variant="contained"
                       startIcon={<PlayArrow />}
                       onClick={() => handleGenerateReport(template)}
+                      sx={{ backgroundColor: '#3182ce', '&:hover': { backgroundColor: '#2c5aa0' } }}
                     >
                       Generate
                     </Button>
                     <Button
                       size="small"
-                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                      variant="outlined"
                       startIcon={<Visibility />}
                       onClick={() => handlePreviewReport(template)}
+                      sx={{ backgroundColor: '#4a5568', color: 'white', borderColor: '#4a5568', '&:hover': { backgroundColor: '#2d3748' } }}
                     >
                       Preview
                     </Button>
                     <Button
                       size="small"
-                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                      variant="outlined"
                       startIcon={<Schedule />}
                       onClick={() => handleScheduleReport(template)}
+                      sx={{ backgroundColor: '#4a5568', color: 'white', borderColor: '#4a5568', '&:hover': { backgroundColor: '#2d3748' } }}
                     >
                       Schedule
                     </Button>
