@@ -587,7 +587,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -605,7 +605,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -625,7 +625,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -646,7 +646,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -664,7 +664,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -682,7 +682,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -700,7 +700,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -720,7 +720,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -1109,7 +1109,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -1127,7 +1127,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -1145,7 +1145,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -1189,7 +1189,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
                 }}
               />
             </Grid>

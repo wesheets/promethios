@@ -421,7 +421,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -439,7 +439,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -500,7 +500,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -518,7 +518,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -538,7 +538,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -556,7 +556,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -574,7 +574,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -825,7 +825,7 @@ const OrganizationSettingsPage: React.FC = () => {
                         '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                       },
                       '& .MuiInputLabel-root': { color: '#a0aec0' },
-                      '& .MuiInputBase-input': { color: 'white' }
+                      '& .MuiInputBase-input': { color: 'white !important' }
                     }}
                   />
                 </CardContent>
@@ -853,7 +853,7 @@ const OrganizationSettingsPage: React.FC = () => {
                         '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                       },
                       '& .MuiInputLabel-root': { color: '#a0aec0' },
-                      '& .MuiInputBase-input': { color: 'white' }
+                      '& .MuiInputBase-input': { color: 'white !important' }
                     }}
                   />
                 </CardContent>
@@ -1034,7 +1034,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
@@ -1069,7 +1069,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                   },
                   '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white' }
+                  '& .MuiInputBase-input': { color: 'white !important' }
                 }}
               />
             </Grid>
