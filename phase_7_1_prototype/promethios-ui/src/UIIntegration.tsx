@@ -38,6 +38,8 @@ import DataManagementSettingsPage from './pages/DataManagementSettingsPage';
 import GuidedToursPage from './pages/GuidedToursPage';
 import DocumentationPage from './pages/DocumentationPage';
 import SupportPage from './pages/SupportPage';
+import BenchmarkChatPage from './pages/BenchmarkChatPage';
+import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import ChatGPTWrapperStub from './pages/ChatGPTWrapperStub';
 import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
 import GeminiWrapperStub from './pages/GeminiWrapperStub';
