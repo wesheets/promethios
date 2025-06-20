@@ -34,13 +34,7 @@ import {
   LinearProgress,
   Accordion,
   AccordionSummary,
-  AccordionDetails,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot
+  AccordionDetails
 } from '@mui/material';
 import {
   Verified,
@@ -724,32 +718,31 @@ const TrustAttestationsPage: React.FC = () => {
 
           <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
             <CardContent>
-              <Timeline>
-                {attestations.flatMap(attestation => 
-                  attestation.verification_history.map((verification, index) => (
-                    <TimelineItem key={`${attestation.attestation_id}-${index}`}>
-                      <TimelineSeparator>
-                        <TimelineDot sx={{ 
-                          backgroundColor: verification.verification_status === 'valid' ? '#10b981' : '#ef4444' 
-                        }}>
-                          {verification.verification_status === 'valid' ? <CheckCircle /> : <Error />}
-                        </TimelineDot>
-                        <TimelineConnector />
-                      </TimelineSeparator>
-                      <TimelineContent>
-                        <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                          {attestation.subject_name} - {attestation.attestation_type} Verification
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                          Status: {verification.verification_status} | 
-                          Verifier: {verification.verifier_instance_id} | 
-                          Time: {formatTimestamp(verification.timestamp)}
-                        </Typography>
-                      </TimelineContent>
-                    </TimelineItem>
-                  ))
-                )}
-              </Timeline>
+              <Typography variant="h6" gutterBottom>Verification Events</Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 3 }}>
+                Recent verification attempts and their outcomes
+              </Typography>
+
+              {attestations.flatMap(attestation => 
+                attestation.verification_history.map((verification, index) => (
+                  <Box key={`${attestation.attestation_id}-${index}`} sx={{ mb: 3, p: 2, backgroundColor: '#2d3748', borderRadius: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      {verification.verification_status === 'valid' ? 
+                        <CheckCircle sx={{ color: '#10b981', mr: 2 }} /> : 
+                        <Error sx={{ color: '#ef4444', mr: 2 }} />
+                      }
+                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                        {attestation.subject_name} - {attestation.attestation_type} Verification
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: '#a0aec0', ml: 4 }}>
+                      Status: {verification.verification_status} | 
+                      Verifier: {verification.verifier_instance_id} | 
+                      Time: {formatTimestamp(verification.timestamp)}
+                    </Typography>
+                  </Box>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabPanel>
