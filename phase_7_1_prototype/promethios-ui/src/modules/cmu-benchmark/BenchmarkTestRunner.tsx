@@ -468,6 +468,14 @@ export const BenchmarkTestRunner: React.FC = () => {
           </Grid>
         )}
       </Grid>
+
+      {/* Benchmark Chat Popup */}
+      <BenchmarkChatPopup
+        open={chatPopupOpen}
+        onClose={() => setChatPopupOpen(false)}
+        selectedAgents={selectedAgents.map(id => demoAgents.find(agent => agent.id === id)!).filter(Boolean)}
+        selectedScenario={testScenarios.find(scenario => scenario.id === selectedScenario)}
+      />
     </Box>
   );
 };

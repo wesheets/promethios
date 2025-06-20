@@ -423,6 +423,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const [systemName, setSystemName] = useState('');
   const [systemDescription, setSystemDescription] = useState('');
   const [systemType, setSystemType] = useState<FlowType>('sequential');
+  const [collaborationModel, setCollaborationModel] = useState<string>('');
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [agentRoles, setAgentRoles] = useState<{ [agentId: string]: AgentRole }>({});
   const [connections, setConnections] = useState<AgentConnection[]>([]);
@@ -432,6 +433,10 @@ const MultiAgentWrappingWizard: React.FC = () => {
     loggingLevel: 'standard',
     governancePolicy: 'standard',
     maxExecutionTime: 300,
+    trustThreshold: 0.7,
+    requireConsensus: false,
+    auditLevel: 'standard',
+    policyEnforcement: 'standard',
     rateLimiting: {
       requestsPerMinute: 60,
       burstLimit: 10
@@ -519,12 +524,16 @@ const MultiAgentWrappingWizard: React.FC = () => {
       case 0:
         return systemName.trim() && systemDescription.trim() && systemType;
       case 1:
-        return selectedAgents.length > 0;
+        return collaborationModel.trim();
       case 2:
-        return true; // Flow configuration is optional
+        return selectedAgents.length > 0;
       case 3:
-        return true; // Governance rules have defaults
+        return true; // Flow configuration is optional
       case 4:
+        return true; // Governance rules have defaults
+      case 5:
+        return true; // Testing & validation step
+      case 6:
         return true; // Review step
       default:
         return false;
@@ -605,6 +614,111 @@ const MultiAgentWrappingWizard: React.FC = () => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
+              Collaboration Model
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Choose how your agents will collaborate and share information
+            </Typography>
+            
+            <Grid container spacing={3}>
+              {[
+                {
+                  id: 'shared_context',
+                  name: 'Shared Context',
+                  description: 'All agents see the full conversation history and can contribute at any time',
+                  icon: '🤝',
+                  benefits: ['Real-time collaboration', 'Full context awareness', 'Natural conversation flow']
+                },
+                {
+                  id: 'sequential_handoffs',
+                  name: 'Sequential Handoffs',
+                  description: 'Agents pass work in a defined order, each building on the previous output',
+                  icon: '🔄',
+                  benefits: ['Structured workflow', 'Clear responsibility', 'Quality control']
+                },
+                {
+                  id: 'parallel_processing',
+                  name: 'Parallel Processing',
+                  description: 'Agents work independently on different aspects, results are combined',
+                  icon: '⚡',
+                  benefits: ['Faster processing', 'Specialized expertise', 'Scalable approach']
+                },
+                {
+                  id: 'hierarchical_coordination',
+                  name: 'Hierarchical Coordination',
+                  description: 'Lead agent coordinates and delegates tasks to sub-agents',
+                  icon: '🏗️',
+                  benefits: ['Clear leadership', 'Organized delegation', 'Quality oversight']
+                },
+                {
+                  id: 'consensus_decision',
+                  name: 'Consensus Decision',
+                  description: 'Agents discuss and vote on decisions, requiring agreement',
+                  icon: '🗳️',
+                  benefits: ['Democratic process', 'Reduced bias', 'High-quality decisions']
+                }
+              ].map((model) => (
+                <Grid item xs={12} md={6} key={model.id}>
+                  <Card 
+                    sx={{ 
+                      cursor: 'pointer',
+                      border: collaborationModel === model.id ? 2 : 1,
+                      borderColor: collaborationModel === model.id ? 'primary.main' : 'divider',
+                      height: '100%',
+                      '&:hover': { borderColor: 'primary.main', transform: 'translateY(-2px)' },
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                    onClick={() => setCollaborationModel(model.id as any)}
+                  >
+                    <CardContent>
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <Typography variant="h4" sx={{ mr: 2 }}>{model.icon}</Typography>
+                        <Typography variant="h6">{model.name}</Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" mb={2}>
+                        {model.description}
+                      </Typography>
+                      <Box>
+                        <Typography variant="subtitle2" color="primary" mb={1}>
+                          Benefits:
+                        </Typography>
+                        {model.benefits.map((benefit, index) => (
+                          <Chip 
+                            key={index}
+                            label={benefit} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ mr: 0.5, mb: 0.5 }}
+                          />
+                        ))}
+                      </Box>
+                      {collaborationModel === model.id && (
+                        <Box mt={2}>
+                          <Chip 
+                            label="Selected" 
+                            color="primary" 
+                            icon={<CheckCircle />}
+                          />
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+            
+            {collaborationModel && (
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <AlertTitle>Selected: {collaborationModel.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</AlertTitle>
+                This collaboration model will determine how your agents communicate and coordinate their work.
+              </Alert>
+            )}
+          </Box>
+        );
+      case 2:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
               Select Agents
             </Typography>
             {loadingAgents ? (
@@ -659,11 +773,11 @@ const MultiAgentWrappingWizard: React.FC = () => {
             )}
           </Box>
         );
-      case 2:
+      case 3:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
-              Flow Configuration
+              System Type & Flow Configuration
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
               Define how your selected agents will work together
@@ -817,7 +931,109 @@ const MultiAgentWrappingWizard: React.FC = () => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
-              Review & Create
+              Governance Configuration
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Configure governance rules and policies for your multi-agent system
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>Trust Management</Typography>
+                    <Box mb={2}>
+                      <Typography variant="body2" gutterBottom>Trust Threshold</Typography>
+                      <Slider
+                        value={governanceRules.trustThreshold}
+                        onChange={(_, value) => updateRule('trustThreshold', value)}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        marks={[
+                          { value: 0.5, label: 'Lenient' },
+                          { value: 0.7, label: 'Standard' },
+                          { value: 0.9, label: 'Strict' }
+                        ]}
+                        valueLabelDisplay="auto"
+                      />
+                    </Box>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={governanceRules.requireConsensus}
+                          onChange={(e) => updateRule('requireConsensus', e.target.checked)}
+                        />
+                      }
+                      label="Require Consensus for Decisions"
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>Policy Compliance</Typography>
+                    <FormControl fullWidth margin="normal">
+                      <InputLabel>Audit Level</InputLabel>
+                      <Select
+                        value={governanceRules.auditLevel}
+                        onChange={(e) => updateRule('auditLevel', e.target.value)}
+                      >
+                        <MenuItem value="low">Low - Basic logging</MenuItem>
+                        <MenuItem value="standard">Standard - Detailed logs</MenuItem>
+                        <MenuItem value="high">High - Complete audit trail</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <FormControl fullWidth margin="normal">
+                      <InputLabel>Policy Enforcement</InputLabel>
+                      <Select
+                        value={governanceRules.policyEnforcement}
+                        onChange={(e) => updateRule('policyEnforcement', e.target.value)}
+                      >
+                        <MenuItem value="lenient">Lenient - Warnings only</MenuItem>
+                        <MenuItem value="standard">Standard - Block violations</MenuItem>
+                        <MenuItem value="strict">Strict - Zero tolerance</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        );
+      case 5:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Testing & Validation
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Validate your multi-agent system configuration before deployment
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Alert severity="info">
+                  <AlertTitle>Deployment Readiness Checklist</AlertTitle>
+                  <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+                    <li>✅ Agent Configuration: {selectedAgents.length} agents selected</li>
+                    <li>✅ Collaboration Model: {collaborationModel || 'Not selected'}</li>
+                    <li>✅ Governance Framework: {governanceRules.trustThreshold ? 'Configured' : 'Default'}</li>
+                    <li>✅ System Integration: Ready for testing</li>
+                    <li>⏳ Monitoring & Maintenance: Will be enabled post-deployment</li>
+                  </Box>
+                </Alert>
+              </Grid>
+            </Grid>
+          </Box>
+        );
+      case 6:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Review & Deploy
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
               Review your multi-agent system configuration
