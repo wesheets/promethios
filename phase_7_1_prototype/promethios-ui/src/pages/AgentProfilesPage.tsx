@@ -96,6 +96,266 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// Add Agent Dialog Component
+interface AddAgentDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onAgentAdded: (agent: AgentProfile) => void;
+}
+
+const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentAdded }) => {
+  const [agentName, setAgentName] = useState('');
+  const [description, setDescription] = useState('');
+  const [apiEndpoint, setApiEndpoint] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API call to add agent
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create new agent profile as unwrapped
+      const newAgent: AgentProfile = {
+        identity: {
+          id: `agent-${Date.now()}`,
+          name: agentName.trim(),
+          version: '1.0.0',
+          description: description.trim() || `AI agent: ${agentName}`,
+          ownerId: 'user-1',
+          creationDate: new Date(),
+          lastModifiedDate: new Date(),
+          status: 'active'
+        },
+        latestScorecard: null,
+        attestationCount: 0,
+        lastActivity: null,
+        healthStatus: 'healthy',
+        trustLevel: 'medium',
+        isWrapped: false,
+        governancePolicy: null,
+        isDeployed: false,
+        // Store API details for later use in wrapping wizard
+        apiDetails: {
+          endpoint: apiEndpoint.trim(),
+          key: apiKey.trim(),
+          provider: provider.trim() || 'Custom'
+        }
+      };
+
+      onAgentAdded(newAgent);
+      
+      // Reset form
+      setAgentName('');
+      setDescription('');
+      setApiEndpoint('');
+      setApiKey('');
+      setProvider('');
+      
+    } catch (error) {
+      console.error('Error adding agent:', error);
+      alert('Failed to add agent. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: '#2d3748',
+          color: 'white',
+          border: '1px solid #4a5568',
+        },
+      }}
+    >
+      <DialogTitle sx={{ color: 'white' }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Add sx={{ color: '#3182ce' }} />
+          Add New Agent
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
+          Connect your existing AI agent by providing its API details. The agent will appear as 
+          "unwrapped" in your My Agents list, ready for governance wrapping.
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Agent Name *"
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+              placeholder="e.g., Customer Support Bot"
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#718096' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputLabel-root': { color: '#a0aec0' },
+              }}
+            />
+            
+            <TextField
+              fullWidth
+              label="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of your agent's capabilities"
+              multiline
+              rows={3}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#718096' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputLabel-root': { color: '#a0aec0' },
+              }}
+            />
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel sx={{ color: '#a0aec0' }}>Provider</InputLabel>
+              <Select
+                value={provider}
+                label="Provider"
+                onChange={(e) => setProvider(e.target.value)}
+                sx={{
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                }}
+              >
+                <MenuItem value="">Select Provider</MenuItem>
+                <MenuItem value="OpenAI">OpenAI</MenuItem>
+                <MenuItem value="Anthropic">Anthropic</MenuItem>
+                <MenuItem value="Google">Google</MenuItem>
+                <MenuItem value="Azure">Azure OpenAI</MenuItem>
+                <MenuItem value="Custom">Custom/Other</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="API Endpoint *"
+              value={apiEndpoint}
+              onChange={(e) => setApiEndpoint(e.target.value)}
+              placeholder="https://api.openai.com/v1/chat/completions"
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#718096' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputLabel-root': { color: '#a0aec0' },
+              }}
+            />
+            
+            <TextField
+              fullWidth
+              label="API Key *"
+              type={showApiKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Your API key from the provider"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      edge="end"
+                      sx={{ color: '#a0aec0' }}
+                    >
+                      {showApiKey ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#718096' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputLabel-root': { color: '#a0aec0' },
+              }}
+            />
+            
+            <Alert 
+              severity="info" 
+              sx={{ 
+                backgroundColor: '#1e3a8a', 
+                color: 'white',
+                '& .MuiAlert-icon': { color: 'white' },
+              }}
+            >
+              <Typography variant="body2">
+                Your API credentials are stored securely and will be used to connect 
+                to your agent during the wrapping process.
+              </Typography>
+            </Alert>
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button 
+          onClick={onClose}
+          disabled={isSubmitting}
+          sx={{ color: '#a0aec0' }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={isSubmitting || !agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()}
+          sx={{
+            backgroundColor: '#3182ce',
+            color: 'white',
+            '&:hover': { backgroundColor: '#2c5aa0' },
+            '&:disabled': { backgroundColor: '#6b7280' },
+          }}
+        >
+          {isSubmitting ? 'Adding Agent...' : 'Add Agent'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 // Add New Agent Button Component
 const AddNewAgentButton: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -112,8 +372,8 @@ const AddNewAgentButton: React.FC = () => {
 
   const handleImportAPI = () => {
     handleClose();
-    // Navigate to agent wrapping wizard for API import
-    window.location.href = '/ui/agents/wrapping?mode=import';
+    // Open the Add Agent dialog instead of navigating away
+    setShowAddAgentDialog(true);
   };
 
   const handleTemplateLibrary = () => {
@@ -268,7 +528,16 @@ const AgentProfileCard: React.FC<{
         return {
           label: 'Wrap Agent',
           icon: <Settings />,
-          action: () => window.location.href = `/ui/agents/wrapping?agentId=${profile.identity.id}`,
+          action: () => {
+            // Pass agent data to wrapping wizard via URL params
+            const agentData = encodeURIComponent(JSON.stringify({
+              id: profile.identity.id,
+              name: profile.identity.name,
+              description: profile.identity.description,
+              apiDetails: profile.apiDetails
+            }));
+            window.location.href = `/ui/agents/wrapping?agentData=${agentData}`;
+          },
           color: '#3182ce'
         };
       case 'wrapped':
@@ -473,6 +742,9 @@ const AgentProfilesPage: React.FC = () => {
   // Selection state for multi-agent system creation
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  
+  // Add Agent dialog state
+  const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
 
   // Mock data - would be replaced with actual hooks
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
@@ -1019,6 +1291,17 @@ const AgentProfilesPage: React.FC = () => {
             </Grid>
           )}
         </TabPanel>
+        
+        {/* Add Agent Dialog */}
+        <AddAgentDialog 
+          open={showAddAgentDialog}
+          onClose={() => setShowAddAgentDialog(false)}
+          onAgentAdded={(newAgent) => {
+            // Add the new agent to the list as unwrapped
+            setAgentProfiles(prev => [...prev, newAgent]);
+            setShowAddAgentDialog(false);
+          }}
+        />
       </Container>
     </ThemeProvider>
   );
