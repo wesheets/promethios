@@ -1,0 +1,33 @@
+{
+  "name": "promethios-multi-agent-tests",
+  "version": "1.0.0",
+  "description": "Test suite for Promethios Multi-Agent Coordination Module",
+  "main": "test_coordination.js",
+  "scripts": {
+    "test": "mocha test_coordination.js --timeout 10000",
+    "test:watch": "mocha test_coordination.js --timeout 10000 --watch",
+    "test:coverage": "nyc mocha test_coordination.js --timeout 10000",
+    "lint": "eslint *.js"
+  },
+  "keywords": [
+    "promethios",
+    "multi-agent",
+    "coordination",
+    "governance",
+    "testing"
+  ],
+  "author": "Promethios Team",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^10.0.0",
+    "nyc": "^15.1.0",
+    "eslint": "^8.0.0"
+  },
+  "dependencies": {
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+

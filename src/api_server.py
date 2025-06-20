@@ -6,6 +6,7 @@ This module provides the main FastAPI application with governance loop execution
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import json
 import jsonschema # For request validation
 import os
@@ -13,12 +14,27 @@ import uuid
 
 from src.main.runtime_executor import RuntimeExecutor, load_schema # Assuming runtime_executor.py is in the same directory or accessible
 
+# Import multi-agent routes
+from src.api.multi_agent import router as multi_agent_router
+
 # --- FastAPI App Initialization --- #
 app = FastAPI(
     title="Promethios Governance Core Runtime",
     version="2.1.0",
-    description="HTTP API for executing the Promethios GovernanceCore loop."
+    description="HTTP API for executing the Promethios GovernanceCore loop and multi-agent coordination."
 )
+
+# Add CORS middleware for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify actual origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include multi-agent routes
+app.include_router(multi_agent_router, prefix="/api/multi_agent", tags=["Multi-Agent"])
 
 # --- Schema Loading for Request Validation --- #
 # These paths assume main.py is in the root of promethios_repo

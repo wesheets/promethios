@@ -24,6 +24,8 @@ class CoordinationManager {
    * @param {Object} options.roleManager - Role Manager instance
    * @param {Object} options.taskAllocator - Task Allocator instance
    * @param {Object} options.governanceExchangeProtocol - Governance Exchange Protocol instance
+   * @param {Object} options.sharedContextManager - Shared Context Manager instance
+   * @param {Object} options.agentCommunicationProtocol - Agent Communication Protocol instance
    * @param {Object} options.adaptiveLearningLoop - Adaptive Learning Loop instance
    * @param {Object} options.config - Configuration settings
    */
@@ -34,6 +36,8 @@ class CoordinationManager {
     this.roleManager = options.roleManager;
     this.taskAllocator = options.taskAllocator;
     this.governanceExchangeProtocol = options.governanceExchangeProtocol;
+    this.sharedContextManager = options.sharedContextManager;
+    this.agentCommunicationProtocol = options.agentCommunicationProtocol;
     this.adaptiveLearningLoop = options.adaptiveLearningLoop;
     this.config = options.config || {};
     
@@ -56,6 +60,7 @@ class CoordinationManager {
    * @param {string} options.name - Context name
    * @param {string[]} options.agentIds - IDs of agents to include
    * @param {Object} options.policies - Coordination policies
+   * @param {string} options.collaborationModel - Collaboration model (shared_context, sequential, etc.)
    * @returns {Object} Created context
    */
   createContext(options) {
@@ -66,6 +71,7 @@ class CoordinationManager {
       name: options.name,
       agentIds: [...options.agentIds],
       policies: options.policies || {},
+      collaborationModel: options.collaborationModel || 'shared_context',
       status: 'active',
       createdAt: new Date().toISOString(),
       tasks: []
@@ -88,7 +94,29 @@ class CoordinationManager {
     // Register context with message bus
     this.messageBus.registerContext(contextId, options.agentIds);
     
-    this.logger.info('Created coordination context', { contextId, name: options.name });
+    // Create shared context if shared context manager is available
+    if (this.sharedContextManager) {
+      this.sharedContextManager.createSharedContext(contextId, options.agentIds, {
+        collaborationModel: context.collaborationModel,
+        metadata: { name: options.name, policies: options.policies }
+      });
+    }
+    
+    // Register agents with communication protocol if available
+    if (this.agentCommunicationProtocol) {
+      options.agentIds.forEach(agentId => {
+        // Get agent info from registry
+        const agentInfo = this.agentRegistry.getAgent ? this.agentRegistry.getAgent(agentId) : { id: agentId };
+        this.agentCommunicationProtocol.registerAgent(agentId, agentInfo);
+      });
+    }
+    
+    this.logger.info('Created coordination context', { 
+      contextId, 
+      name: options.name,
+      collaborationModel: context.collaborationModel,
+      agentCount: options.agentIds.length
+    });
     
     return context;
   }

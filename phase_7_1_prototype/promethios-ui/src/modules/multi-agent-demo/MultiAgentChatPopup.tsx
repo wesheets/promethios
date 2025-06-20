@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -34,6 +34,8 @@ import {
   RadioButtonUnchecked as WorkingIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
+import { useConversationHistory, useAgentStatus } from '../../hooks/useMultiAgentCoordination';
+import { multiAgentService } from '../../services/multiAgentService';
 
 interface Agent {
   id: string;
@@ -80,22 +82,42 @@ interface MultiAgentChatPopupProps {
   onClose: () => void;
   selectedAgents: Agent[];
   selectedScenario?: TestScenario;
+  contextId: string | null;
+  multiAgentState: any;
+  multiAgentActions: any;
 }
 
 export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
   open,
   onClose,
   selectedAgents,
-  selectedScenario
+  selectedScenario,
+  contextId,
+  multiAgentState,
+  multiAgentActions
 }) => {
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
   const [userMessage, setUserMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Use real conversation history and agent status
+  const { history, isLoading: historyLoading } = useConversationHistory(contextId || '', { limit: 50 });
+  const { agentStatuses, isLoading: statusLoading } = useAgentStatus(contextId || '');
+
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [history?.messages]);
+
+  // Initialize with scenario prompt if available
+  useEffect(() => {
+    if (open && selectedScenario && contextId && history?.messages.length === 0) {
+      handleSendMessage(selectedScenario.prompt, true);
+    }
+  }, [open, selectedScenario, contextId, history?.messages.length]);
     if (open && selectedAgents.length > 0) {
       initializeAgentStatuses();
       if (selectedScenario) {
@@ -137,37 +159,46 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!userMessage.trim() && uploadedFiles.length === 0) return;
+  const handleSendMessage = async (message?: string, isSystemMessage = false) => {
+    const messageToSend = message || userMessage.trim();
+    if (!messageToSend && uploadedFiles.length === 0) return;
+    if (!contextId) {
+      setError('No multi-agent context available');
+      return;
+    }
 
     setIsProcessing(true);
-    
-    // Add user message to chat
-    const userChatMessage: ChatMessage = {
-      id: Date.now().toString(),
-      agentId: 'user',
-      agentName: 'You',
-      content: userMessage,
-      timestamp: new Date(),
-      type: 'message'
-    };
-    setChatMessages(prev => [...prev, userChatMessage]);
-
-    // Update agent statuses to thinking
-    setAgentStatuses(prev => prev.map(status => ({
-      ...status,
-      status: 'thinking',
-      currentTask: 'Analyzing user request...'
-    })));
+    setError(null);
 
     try {
-      // Simulate multi-agent processing
-      await simulateMultiAgentCollaboration(userMessage);
+      // Send message through real multi-agent service
+      const result = await multiAgentActions.sendMessage({
+        context_id: contextId,
+        from_agent_id: 'user',
+        to_agent_ids: selectedAgents.map(a => a.id),
+        message: {
+          type: isSystemMessage ? 'system_prompt' : 'user_message',
+          content: messageToSend,
+          files: uploadedFiles.map(f => f.name),
+          governance_enabled: governanceEnabled
+        },
+        require_response: true,
+        priority: 'normal'
+      });
+
+      console.log('Message sent successfully:', result);
+      
+      // Clear input if not a system message
+      if (!isSystemMessage) {
+        setUserMessage('');
+        setUploadedFiles([]);
+      }
+
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsProcessing(false);
-      setUserMessage('');
     }
   };
 
@@ -242,47 +273,36 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
     }
   };
 
-  const getAgentSpecificResponse = (agent: Agent, message: string) => {
-    switch (agent.id) {
-      case 'creative_agent':
-        return `I'll brainstorm creative approaches for this task. Here are some innovative ideas and out-of-the-box solutions...`;
-      case 'factual_agent':
-        return `Let me gather and verify the factual information needed. Based on my analysis of reliable sources...`;
-      case 'governance_focused_agent':
-        return `I'll ensure we comply with all relevant policies and regulations. Here's my compliance assessment...`;
-      case 'multi_tool_agent':
-        return `I can coordinate the technical implementation and tool integration. Here's my execution plan...`;
-      default:
-        return `I'll provide a straightforward analysis of this request. Here's my assessment...`;
-    }
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setUploadedFiles(prev => [...prev, ...files]);
   };
 
-  const downloadReport = () => {
-    const report = {
-      timestamp: new Date().toISOString(),
-      governanceEnabled,
-      selectedAgents: selectedAgents.map(a => a.name),
-      agentStatuses,
-      chatMessages,
-      metrics: {
-        averageTrustScore: agentStatuses.reduce((sum, status) => sum + status.trustScore, 0) / agentStatuses.length,
-        totalTasksCompleted: agentStatuses.reduce((sum, status) => sum + status.tasksCompleted, 0),
-        averageResponseTime: agentStatuses.reduce((sum, status) => sum + status.responseTime, 0) / agentStatuses.length
-      }
-    };
+  const downloadReport = async () => {
+    if (!contextId) return;
 
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `promethios-multi-agent-demo-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const metrics = await multiAgentService.getCollaborationMetrics(contextId);
+      const report = {
+        timestamp: new Date().toISOString(),
+        contextId,
+        governanceEnabled,
+        selectedAgents: selectedAgents.map(a => a.name),
+        scenario: selectedScenario?.name || 'Custom',
+        metrics,
+        conversationHistory: history?.messages || [],
+        agentStatuses
+      };
+
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `multi-agent-report-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
   };
 
   return (
@@ -309,6 +329,13 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
         <Box display="flex" alignItems="center">
           <GroupIcon sx={{ mr: 1, color: '#10B981' }} />
           <Typography variant="h6">Promethios Multi-Agent Demo</Typography>
+          {contextId && (
+            <Chip 
+              label={`Context: ${contextId.slice(-8)}`} 
+              size="small" 
+              sx={{ ml: 2, backgroundColor: '#10B981', color: 'white' }}
+            />
+          )}
         </Box>
         <Box display="flex" alignItems="center" gap={2}>
           <FormControlLabel
@@ -342,6 +369,7 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
             startIcon={<DownloadIcon />}
             onClick={downloadReport}
             sx={{ color: 'white', borderColor: 'white' }}
+            disabled={!contextId}
           >
             Download Report
           </Button>
@@ -352,6 +380,23 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 0, backgroundColor: '#0F172A' }}>
+        {/* Error Display */}
+        {error && (
+          <Alert severity="error" sx={{ m: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Loading Display */}
+        {(historyLoading || statusLoading || isProcessing) && (
+          <Box sx={{ p: 2 }}>
+            <LinearProgress sx={{ backgroundColor: '#334155', '& .MuiLinearProgress-bar': { backgroundColor: '#10B981' } }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+              {isProcessing ? 'Processing message...' : 'Loading conversation...'}
+            </Typography>
+          </Box>
+        )}
+
         <Grid container sx={{ height: '100%' }}>
           {/* Agent Status Panel */}
           <Grid item xs={4} sx={{ borderRight: '1px solid #334155', p: 2 }}>
@@ -361,7 +406,7 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
             
             <Box display="flex" flexDirection="column" gap={2}>
               {selectedAgents.map((agent) => {
-                const status = agentStatuses.find(s => s.id === agent.id);
+                const status = agentStatuses?.find(s => s.agent_id === agent.id);
                 return (
                   <Card key={agent.id} sx={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
                     <CardContent sx={{ p: 2 }}>
@@ -388,7 +433,7 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
                       </Box>
                       
                       <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mb: 1 }}>
-                        {status?.currentTask || 'Ready to collaborate'}
+                        {status?.current_task || 'Ready to collaborate'}
                       </Typography>
                       
                       {status && (
@@ -398,12 +443,12 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
                               Trust Score
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#10B981' }}>
-                              {(status.trustScore * 100).toFixed(0)}%
+                              {((status.trust_score || 0) * 100).toFixed(0)}%
                             </Typography>
                           </Box>
                           <LinearProgress 
                             variant="determinate" 
-                            value={status.trustScore * 100}
+                            value={(status.trust_score || 0) * 100}
                             sx={{
                               backgroundColor: '#334155',
                               '& .MuiLinearProgress-bar': {
@@ -424,47 +469,56 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
           <Grid item xs={8} sx={{ display: 'flex', flexDirection: 'column' }}>
             {/* Chat Messages */}
             <Box sx={{ flex: 1, p: 2, overflowY: 'auto', maxHeight: 'calc(90vh - 200px)' }}>
-              {chatMessages.length === 0 ? (
+              {(!history?.messages || history.messages.length === 0) ? (
                 <Box textAlign="center" py={4}>
                   <Typography variant="body1" sx={{ color: '#94A3B8' }}>
-                    Start a conversation with your agent team...
+                    {contextId ? 'Start a conversation with your agent team...' : 'Create a context to begin chatting'}
                   </Typography>
                 </Box>
               ) : (
-                chatMessages.map((message) => (
+                history.messages.map((message) => (
                   <Box key={message.id} mb={2}>
                     <Paper sx={{ 
                       p: 2, 
-                      backgroundColor: message.agentId === 'user' ? '#1E293B' : '#0F172A',
+                      backgroundColor: message.from_agent_id === 'user' ? '#1E293B' : '#0F172A',
                       border: '1px solid #334155'
                     }}>
                       <Box display="flex" alignItems="center" mb={1}>
                         <Typography variant="subtitle2" sx={{ 
-                          color: message.agentId === 'user' ? '#3B82F6' : getAgentColor(message.agentId),
+                          color: message.from_agent_id === 'user' ? '#3B82F6' : getAgentColor(message.from_agent_id),
                           fontWeight: 'bold'
                         }}>
-                          {message.agentName}
+                          {message.from_agent_id === 'user' ? 'You' : 
+                           selectedAgents.find(a => a.id === message.from_agent_id)?.name || message.from_agent_id}
                         </Typography>
                         <Typography variant="caption" sx={{ ml: 'auto', color: '#94A3B8' }}>
-                          {message.timestamp.toLocaleTimeString()}
+                          {new Date(message.timestamp).toLocaleTimeString()}
                         </Typography>
                       </Box>
                       <Typography variant="body2" sx={{ color: 'white', whiteSpace: 'pre-wrap' }}>
                         {message.content}
                       </Typography>
-                      {message.trustScore && (
+                      {message.governance_data && (
                         <Box mt={1}>
                           <Chip 
-                            label={`Trust: ${(message.trustScore * 100).toFixed(0)}%`}
+                            label={`Trust: ${((message.governance_data.trust_score || 0) * 100).toFixed(0)}%`}
                             size="small"
-                            sx={{ backgroundColor: '#10B981', color: 'white' }}
+                            sx={{ backgroundColor: '#10B981', color: 'white', mr: 1 }}
                           />
+                          {message.governance_data.compliant && (
+                            <Chip 
+                              label="Compliant"
+                              size="small"
+                              sx={{ backgroundColor: '#059669', color: 'white' }}
+                            />
+                          )}
                         </Box>
                       )}
                     </Paper>
                   </Box>
                 ))
               )}
+              <div ref={chatEndRef} />
             </Box>
 
             {/* Input Area */}
@@ -525,8 +579,8 @@ export const MultiAgentChatPopup: React.FC<MultiAgentChatPopupProps> = ({
                 
                 <Button
                   variant="contained"
-                  onClick={handleSendMessage}
-                  disabled={isProcessing || (!userMessage.trim() && uploadedFiles.length === 0)}
+                  onClick={() => handleSendMessage()}
+                  disabled={isProcessing || (!userMessage.trim() && uploadedFiles.length === 0) || !contextId}
                   sx={{
                     backgroundColor: '#10B981',
                     '&:hover': { backgroundColor: '#059669' }

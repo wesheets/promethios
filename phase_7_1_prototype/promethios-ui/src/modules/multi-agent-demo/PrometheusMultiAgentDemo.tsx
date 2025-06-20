@@ -30,6 +30,8 @@ import {
   Build as BuildIcon
 } from '@mui/icons-material';
 import { MultiAgentChatPopup } from './MultiAgentChatPopup';
+import { useMultiAgentCoordination } from '../../hooks/useMultiAgentCoordination';
+import { multiAgentService } from '../../services/multiAgentService';
 
 interface Agent {
   id: string;
@@ -58,6 +60,13 @@ export const PrometheusMultiAgentDemo: React.FC = () => {
   const [chatPopupOpen, setChatPopupOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [scenarios, setScenarios] = useState<TestScenario[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [currentContextId, setCurrentContextId] = useState<string | null>(null);
+
+  // Use real multi-agent coordination
+  const [multiAgentState, multiAgentActions] = useMultiAgentCoordination({
+    autoStart: false
+  });
 
   useEffect(() => {
     loadDemoData();
@@ -65,18 +74,78 @@ export const PrometheusMultiAgentDemo: React.FC = () => {
 
   const loadDemoData = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Load demo agents
-      const agentsResponse = await fetch('/api/demo-agents');
-      const agentsData = await agentsResponse.json();
-      setAgents(agentsData);
+      // Load demo agents (using static data for now, can be moved to API later)
+      const demoAgents: Agent[] = [
+        {
+          id: 'creative_agent',
+          name: 'Creative Agent',
+          description: 'Specializes in creative writing, brainstorming, and innovative solutions',
+          capabilities: ['creative_writing', 'brainstorming', 'storytelling'],
+          provider: 'anthropic',
+          model: 'claude-3-sonnet',
+          icon: 'psychology',
+          governance_enabled: true
+        },
+        {
+          id: 'factual_agent',
+          name: 'Factual Agent',
+          description: 'Focuses on research, fact-checking, and analytical tasks',
+          capabilities: ['research', 'fact_checking', 'analysis'],
+          provider: 'openai',
+          model: 'gpt-4',
+          icon: 'analytics',
+          governance_enabled: true
+        },
+        {
+          id: 'governance_agent',
+          name: 'Governance Agent',
+          description: 'Ensures compliance, policy adherence, and ethical considerations',
+          capabilities: ['governance', 'compliance', 'ethics'],
+          provider: 'anthropic',
+          model: 'claude-3-opus',
+          icon: 'shield',
+          governance_enabled: true
+        }
+      ];
+      
+      setAgents(demoAgents);
 
       // Load test scenarios
-      const scenariosResponse = await fetch('/api/test-scenarios');
-      const scenariosData = await scenariosResponse.json();
-      setScenarios(scenariosData);
+      const demoScenarios: TestScenario[] = [
+        {
+          id: 'customer_support',
+          name: 'Customer Support Team',
+          description: 'Collaborative customer support with creative and factual agents',
+          prompt: 'Help a customer who is having trouble with their account login',
+          expected_capabilities: ['problem_solving', 'communication', 'technical_support'],
+          governance_requirements: ['data_privacy', 'customer_service_standards']
+        },
+        {
+          id: 'content_creation',
+          name: 'Content Creation Team',
+          description: 'Create engaging content with fact-checking and governance oversight',
+          prompt: 'Create a blog post about sustainable technology trends',
+          expected_capabilities: ['creative_writing', 'research', 'fact_checking'],
+          governance_requirements: ['accuracy_standards', 'content_guidelines']
+        },
+        {
+          id: 'strategic_planning',
+          name: 'Strategic Planning Team',
+          description: 'Develop strategic plans with creative input and governance review',
+          prompt: 'Develop a strategic plan for expanding into new markets',
+          expected_capabilities: ['strategic_thinking', 'market_analysis', 'risk_assessment'],
+          governance_requirements: ['business_ethics', 'compliance_review']
+        }
+      ];
+      
+      setScenarios(demoScenarios);
+      
     } catch (error) {
       console.error('Error loading demo data:', error);
+      setError('Failed to load demo data. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -90,12 +159,47 @@ export const PrometheusMultiAgentDemo: React.FC = () => {
     );
   };
 
-  const handleStartDemo = () => {
+  const handleStartDemo = async () => {
     if (selectedAgents.length === 0) {
-      alert('Please select at least one agent to start the demo.');
+      setError('Please select at least one agent to start the demo.');
       return;
     }
-    setChatPopupOpen(true);
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Create a real multi-agent context
+      const selectedScenarioData = scenarios.find(s => s.id === selectedScenario);
+      const contextName = selectedScenarioData?.name || 'Multi-Agent Demo';
+      
+      const context = await multiAgentActions.createContext({
+        name: contextName,
+        agent_ids: selectedAgents,
+        collaboration_model: 'shared_context',
+        policies: {
+          trustThreshold: 0.7,
+          requireConsensus: false,
+          governanceEnabled: true,
+          auditLevel: 'standard'
+        },
+        governance_enabled: true,
+        metadata: {
+          scenario: selectedScenario,
+          demo: true,
+          created_by: 'prometheus_demo'
+        }
+      });
+
+      setCurrentContextId(context.context_id);
+      setChatPopupOpen(true);
+      
+    } catch (error) {
+      console.error('Error creating multi-agent context:', error);
+      setError('Failed to start demo. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getAgentIcon = (iconName: string) => {
@@ -161,39 +265,65 @@ export const PrometheusMultiAgentDemo: React.FC = () => {
                 <Typography variant="h5" component="h2">
                   Select Demo Agents
                 </Typography>
+                 {/* Error Display */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Loading Display */}
+      {isLoading && (
+        <Box sx={{ mb: 3 }}>
+          <LinearProgress />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+            {multiAgentState.isLoading ? 'Creating multi-agent context...' : 'Loading demo data...'}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Multi-Agent State Display */}
+      {multiAgentState.context && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Multi-agent context created: {multiAgentState.context.name} (ID: {multiAgentState.context.context_id})
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {/* Agent Selection */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                <GroupIcon sx={{ mr: 1, color: 'primary.main' }} />
+                <Typography variant="h5" component="h2">
+                  Select Agents
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
+                  {selectedAgents.length} selected
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Choose agents with different specializations to form your team
-              </Typography>
               
               <Grid container spacing={2}>
                 {agents.map((agent) => (
-                  <Grid item xs={12} sm={6} key={agent.id}>
+                  <Grid item xs={12} sm={6} md={4} key={agent.id}>
                     <Card 
-                      variant="outlined" 
                       sx={{ 
                         cursor: 'pointer',
-                        border: selectedAgents.includes(agent.id) ? 2 : 1,
-                        borderColor: selectedAgents.includes(agent.id) 
-                          ? getAgentColor(agent.id) 
-                          : 'divider',
-                        backgroundColor: selectedAgents.includes(agent.id) 
-                          ? `${getAgentColor(agent.id)}10` 
-                          : 'background.paper',
-                        transition: 'all 0.2s ease-in-out',
+                        border: selectedAgents.includes(agent.id) ? '2px solid #10B981' : '1px solid #e0e0e0',
+                        backgroundColor: selectedAgents.includes(agent.id) ? '#f0fdf4' : 'white',
                         '&:hover': {
-                          borderColor: getAgentColor(agent.id),
-                          backgroundColor: `${getAgentColor(agent.id)}05`
-                        }
+                          boxShadow: 3,
+                          transform: 'translateY(-2px)',
+                        },
+                        transition: 'all 0.2s ease-in-out'
                       }}
                       onClick={() => handleAgentToggle(agent.id)}
                     >
                       <CardContent sx={{ p: 2 }}>
                         <Box display="flex" alignItems="center" mb={1}>
-                          <Box sx={{ color: getAgentColor(agent.id), mr: 1 }}>
-                            {getAgentIcon(agent.icon)}
-                          </Box>
-                          <Typography variant="h6" component="h3">
+                          {getAgentIcon(agent.icon)}
+                          <Typography variant="h6" sx={{ ml: 1, fontSize: '1rem' }}>
                             {agent.name}
                           </Typography>
                           {agent.governance_enabled && (
@@ -345,9 +475,15 @@ export const PrometheusMultiAgentDemo: React.FC = () => {
       {/* Multi-Agent Chat Popup */}
       <MultiAgentChatPopup
         open={chatPopupOpen}
-        onClose={() => setChatPopupOpen(false)}
+        onClose={() => {
+          setChatPopupOpen(false);
+          setCurrentContextId(null);
+        }}
         selectedAgents={selectedAgents.map(id => agents.find(a => a.id === id)!).filter(Boolean)}
         selectedScenario={scenarios.find(s => s.id === selectedScenario)}
+        contextId={currentContextId}
+        multiAgentState={multiAgentState}
+        multiAgentActions={multiAgentActions}
       />
     </Container>
   );

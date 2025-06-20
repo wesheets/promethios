@@ -339,10 +339,12 @@ const SuccessStep: React.FC<{ systemId: string | null }> = ({ systemId }) => {
 // Steps for the wizard
 const steps = [
   'Basic Info',
+  'Collaboration Model',
   'Agent Selection', 
-  'Flow Configuration',
-  'Governance Rules',
-  'Review & Create'
+  'System Type & Flow',
+  'Governance Configuration',
+  'Testing & Validation',
+  'Review & Deploy'
 ];
 
 // Demo multi-agent team templates for quick setup

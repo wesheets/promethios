@@ -23,6 +23,9 @@ const MessageBus = require('./message_bus');
 const RoleManager = require('./role_manager');
 const TaskAllocator = require('./task_allocator');
 const GovernanceExchangeProtocol = require('./governance_exchange_protocol');
+const SharedContextManager = require('./shared_context_manager');
+const AgentCommunicationProtocol = require('./agent_communication_protocol');
+const MultiAgentGovernance = require('./multi_agent_governance');
 
 /**
  * Multi-Agent Coordination Framework main class
@@ -49,6 +52,27 @@ class MultiAgentCoordination {
     this.config = options.config || {};
     
     // Initialize core components
+    this.sharedContextManager = new SharedContextManager({
+      logger: this.logger,
+      config: this.config.sharedContextManager || {}
+    });
+    
+    this.multiAgentGovernance = new MultiAgentGovernance({
+      logger: this.logger,
+      governanceExchangeProtocol: this.governanceExchangeProtocol,
+      governanceIdentity: this.governanceIdentity,
+      prismObserver: this.prismObserver,
+      vigilObserver: this.vigilObserver,
+      config: this.config.multiAgentGovernance || {}
+    });
+    
+    this.agentCommunicationProtocol = new AgentCommunicationProtocol({
+      logger: this.logger,
+      sharedContextManager: this.sharedContextManager,
+      governanceExchangeProtocol: this.multiAgentGovernance,
+      config: this.config.agentCommunicationProtocol || {}
+    });
+    
     this.agentRegistry = new AgentRegistry({
       logger: this.logger,
       governanceIdentity: this.governanceIdentity,
@@ -88,6 +112,9 @@ class MultiAgentCoordination {
       roleManager: this.roleManager,
       taskAllocator: this.taskAllocator,
       governanceExchangeProtocol: this.governanceExchangeProtocol,
+      sharedContextManager: this.sharedContextManager,
+      agentCommunicationProtocol: this.agentCommunicationProtocol,
+      multiAgentGovernance: this.multiAgentGovernance,
       adaptiveLearningLoop: this.adaptiveLearningLoop,
       config: this.config.coordinationManager || {}
     });
@@ -148,26 +175,41 @@ class MultiAgentCoordination {
   }
   
   /**
-   * Create a coordination context for a group of agents
+   * Create a new coordination context with governance
    * 
-   * @param {Object} options - Coordination context options
+   * @param {Object} options - Context options
    * @param {string} options.name - Context name
    * @param {string[]} options.agentIds - IDs of agents to include
-   * @param {Object} options.roles - Role definitions
-   * @param {Object} options.policies - Coordination policies
-   * @returns {Object} Created coordination context
+   * @param {Object} options.roles - Agent roles
+   * @param {Object} options.policies - Coordination and governance policies
+   * @param {Object} options.metadata - Additional metadata
+   * @returns {Object} Created context
    */
   createCoordinationContext(options) {
-    this.logger.info('Creating coordination context', { name: options.name });
-    
     // Verify all agents are registered
     const unregisteredAgents = options.agentIds.filter(id => !this.agentRegistry.isAgentRegistered(id));
     if (unregisteredAgents.length > 0) {
       throw new Error(`Agents not registered: ${unregisteredAgents.join(', ')}`);
     }
     
-    // Create context
-    const context = this.coordinationManager.createContext(options);
+    // Create the coordination context
+    const context = this.coordinationManager.createContext({
+      name: options.name,
+      agentIds: options.agentIds,
+      policies: options.policies,
+      collaborationModel: options.collaborationModel || 'shared_context'
+    });
+    
+    // Initialize governance for the context if enabled
+    if (options.policies?.governanceEnabled !== false) {
+      const governanceResult = this.multiAgentGovernance.initializeContextGovernance(
+        context.id,
+        options.agentIds,
+        options.policies || {}
+      );
+      
+      context.governance = governanceResult;
+    }
     
     // Assign roles
     if (options.roles) {
