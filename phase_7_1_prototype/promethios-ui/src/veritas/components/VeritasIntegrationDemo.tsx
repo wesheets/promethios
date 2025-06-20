@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useVeritasEnforcement } from '../hooks/useVeritasEnforcement';
+import useVeritasEnforcement from '../hooks/useVeritasEnforcement';
 
 interface VeritasIntegrationDemoProps {
   initialTrustScore?: number;

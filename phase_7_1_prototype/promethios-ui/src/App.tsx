@@ -17,10 +17,17 @@ import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
+import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
+import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
+import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
+import GovernanceReportsPage from './pages/GovernanceReportsPage';
+import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
+import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
+import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import UIIntegration from './UIIntegration';
 
 // Create a wrapper component to use the useLocation hook
@@ -43,7 +50,15 @@ const AppContent: React.FC = () => {
                   <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
                   {/* Redirect to new dashboard implementation */}
                   <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
+                  
+                  {/* Governance Routes */}
                   <Route path="/governance" element={<GovernancePage />} />
+                  <Route path="/governance/overview" element={<GovernanceOverviewPage />} />
+                  <Route path="/governance/policies" element={<GovernancePoliciesPage />} />
+                  <Route path="/governance/violations" element={<GovernanceViolationsPage />} />
+                  <Route path="/governance/reports" element={<GovernanceReportsPage />} />
+                  <Route path="/governance/emotional-veritas" element={<EmotionalVeritasPage />} />
+                  
                   <Route path="/documentation" element={<DocumentationPage />} />
                   <Route path="/benchmark" element={
                     <>
@@ -51,43 +66,42 @@ const AppContent: React.FC = () => {
                       <CMUBenchmarkDashboard />
                     </>
                   } />
+                  <Route path="/cmu-benchmark" element={<CMUBenchmarkPage />} />
+                  <Route path="/multi-agent-wrapping" element={<MultiAgentWrappingPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/atlas-demo" element={<AtlasDemoPage />} />
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
-                  <Route path="/comparison-simulator" element={<GovernedVsUngoverned />} />
-                  <Route path="/admin/waitlist" element={<AdminExportWaitlist />} />
-                  {/* CMU Playground disabled as it's no longer needed */}
-                  {/* <Route path="/cmu-playground" element={<CMUPlaygroundPage />} /> */}
+                  <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
+                  <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
                   
-                  {/* New UI Integration - Render the new UI components for all /ui/ routes */}
+                  {/* UI Integration Routes */}
                   <Route path="/ui/*" element={<UIIntegration />} />
+                  
+                  {/* Catch-all route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-              </div>
-              {/* Only show Footer for non-UI routes */}
-              {!isUIRoute && <Footer />}
-              {!isUIRoute && <FeedbackWidget />}
-            </div>
+      </div>
+      {/* Only show Footer for non-UI routes */}
+      {!isUIRoute && <Footer />}
+      <FeedbackWidget />
+    </div>
   );
 };
 
 const App: React.FC = () => {
-  console.log("App.tsx: App component rendering...");
-
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AnalyticsProvider>
+    <AnalyticsProvider>
+      <ThemeProvider>
+        <AuthProvider>
           <Router>
             <AppContent />
           </Router>
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </AnalyticsProvider>
   );
 };
 
 export default App;
-
-
 
