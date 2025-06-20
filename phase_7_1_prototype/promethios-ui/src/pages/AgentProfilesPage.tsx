@@ -74,6 +74,7 @@ import { useMultiAgentSystems } from '../modules/agent-wrapping/hooks/useMultiAg
 import { useAgentIdentities } from '../modules/agent-identity/hooks/useAgentIdentities';
 import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
 import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
+import PublishToRegistryModal from '../components/PublishToRegistryModal';
 
 // Extended AgentProfile interface for our UI needs
 interface AgentProfile extends BaseAgentProfile {
@@ -762,6 +763,14 @@ const AgentProfilesPage: React.FC = () => {
   
   // Add Agent dialog state
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
+  
+  // Publish to Registry modal state
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [wrappedAgentData, setWrappedAgentData] = useState<{
+    name: string;
+    type: 'single' | 'multi-agent';
+    governanceTier: 'basic' | 'enhanced' | 'strict';
+  } | null>(null);
 
   // Mock data - would be replaced with actual hooks
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
@@ -1314,11 +1323,39 @@ const AgentProfilesPage: React.FC = () => {
           open={showAddAgentDialog}
           onClose={() => setShowAddAgentDialog(false)}
           onAgentAdded={(newAgent) => {
-            // Add the new agent to the list as unwrapped
-            setAgentProfiles(prev => [...prev, newAgent]);
+            // Add the new agent to the list as wrapped
+            setAgentProfiles(prev => [...prev, { ...newAgent, isWrapped: true }]);
             setShowAddAgentDialog(false);
+            
+            // Show publish to registry modal after successful wrapping
+            setWrappedAgentData({
+              name: newAgent.name,
+              type: 'single', // Assuming single agent for now
+              governanceTier: 'enhanced' // Default governance tier
+            });
+            setShowPublishModal(true);
           }}
         />
+
+        {/* Publish to Registry Modal */}
+        {wrappedAgentData && (
+          <PublishToRegistryModal
+            open={showPublishModal}
+            onClose={() => {
+              setShowPublishModal(false);
+              setWrappedAgentData(null);
+            }}
+            agentName={wrappedAgentData.name}
+            agentType={wrappedAgentData.type}
+            governanceTier={wrappedAgentData.governanceTier}
+            onPublish={(publishData) => {
+              console.log('Publishing agent to registry:', publishData);
+              // Here you would integrate with the actual registry API
+              setShowPublishModal(false);
+              setWrappedAgentData(null);
+            }}
+          />
+        )}
       </Container>
     </ThemeProvider>
   );
