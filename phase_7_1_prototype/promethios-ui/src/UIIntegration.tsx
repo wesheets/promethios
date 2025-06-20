@@ -25,6 +25,9 @@ import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import DeployPage from './pages/DeployPage';
 import RegistryPage from './pages/RegistryPage';
+import TrustMetricsOverviewPage from './pages/TrustMetricsOverviewPage';
+import TrustBoundariesPage from './pages/TrustBoundariesPage';
+import TrustAttestationsPage from './pages/TrustAttestationsPage';
 
 /**
  * UIIntegration Component
@@ -166,6 +169,31 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EmotionalVeritasPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Trust Metrics Routes */}
+        <Route path="trust/overview" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <TrustMetricsOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="trust/boundaries" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <TrustBoundariesPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="trust/attestations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <TrustAttestationsPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

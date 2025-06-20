@@ -149,9 +149,9 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       label: 'Trust Metrics',
       icon: <TrustIcon />,
       children: [
-        { id: 'trust-overview', label: 'Overview', icon: <OverviewIcon />, path: '/ui/trust-metrics/overview' },
-        { id: 'boundaries', label: 'Boundaries', icon: <BoundariesIcon />, path: '/ui/trust-metrics/boundaries' },
-        { id: 'attestations', label: 'Attestations', icon: <AttestationsIcon />, path: '/ui/trust-metrics/attestations' },
+        { id: 'trust-overview', label: 'Overview', icon: <OverviewIcon />, path: '/ui/trust/overview' },
+        { id: 'boundaries', label: 'Boundaries', icon: <BoundariesIcon />, path: '/ui/trust/boundaries' },
+        { id: 'attestations', label: 'Attestations', icon: <AttestationsIcon />, path: '/ui/trust/attestations' },
       ],
     },
     {
