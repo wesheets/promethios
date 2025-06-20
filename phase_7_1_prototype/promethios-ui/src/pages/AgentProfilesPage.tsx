@@ -370,7 +370,11 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
 };
 
 // Add New Agent Button Component
-const AddNewAgentButton: React.FC = () => {
+interface AddNewAgentButtonProps {
+  onShowAddAgentDialog: () => void;
+}
+
+const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDialog }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showFoundryDialog, setShowFoundryDialog] = useState(false);
   const open = Boolean(anchorEl);
@@ -386,7 +390,7 @@ const AddNewAgentButton: React.FC = () => {
   const handleImportAPI = () => {
     handleClose();
     // Open the Add Agent dialog instead of navigating away
-    setShowAddAgentDialog(true);
+    onShowAddAgentDialog();
   };
 
   const handleTemplateLibrary = () => {
@@ -943,7 +947,7 @@ const AgentProfilesPage: React.FC = () => {
                   {selectionMode ? 'Cancel Selection' : 'Select for Multi-Agent'}
                 </Button>
               )}
-              <AddNewAgentButton />
+              <AddNewAgentButton onShowAddAgentDialog={() => setShowAddAgentDialog(true)} />
             </Stack>
           </Box>
           
