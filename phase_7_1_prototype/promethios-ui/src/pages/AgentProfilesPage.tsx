@@ -65,6 +65,7 @@ import {
   Edit,
   Delete,
   Launch,
+  LibraryBooks,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
