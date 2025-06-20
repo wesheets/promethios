@@ -57,7 +57,7 @@ import {
   Speed,
   Gavel,
   Assignment,
-  Timeline as TimelineIcon,
+  Schedule as TimelineIcon,
   TrendingUp,
   Download,
   Share,
