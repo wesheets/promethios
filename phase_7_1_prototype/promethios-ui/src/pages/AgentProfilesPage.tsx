@@ -25,6 +25,14 @@ import {
   AlertTitle,
   Divider,
   Badge,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Fab,
 } from '@mui/material';
 import {
   Search,
@@ -45,6 +53,15 @@ import {
   Security,
   Speed,
   Verified,
+  Add,
+  Build,
+  Api,
+  CloudUpload,
+  Policy,
+  Visibility,
+  Edit,
+  Delete,
+  Launch,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
@@ -76,6 +93,160 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// Add New Agent Button Component
+const AddNewAgentButton: React.FC = () => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [showFoundryDialog, setShowFoundryDialog] = useState(false);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleImportAPI = () => {
+    handleClose();
+    // Navigate to agent wrapping wizard for API import
+    window.location.href = '/ui/agents/wrapping?mode=import';
+  };
+
+  const handleFoundryBeta = () => {
+    handleClose();
+    setShowFoundryDialog(true);
+  };
+
+  return (
+    <>
+      <Button
+        variant="contained"
+        startIcon={<Add />}
+        onClick={handleClick}
+        sx={{
+          backgroundColor: '#3182ce',
+          color: 'white',
+          '&:hover': { backgroundColor: '#2c5aa0' },
+          px: 3,
+          py: 1.5,
+        }}
+      >
+        Add New Agent
+      </Button>
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2d3748',
+            color: 'white',
+            border: '1px solid #4a5568',
+            minWidth: 280,
+          },
+        }}
+      >
+        <MenuItem onClick={handleImportAPI} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Api sx={{ color: '#3182ce' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Import API Agent"
+            secondary="Connect your existing agent via API endpoint"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={handleFoundryBeta} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Build sx={{ color: '#f59e0b' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary={
+              <Box display="flex" alignItems="center" gap={1}>
+                <span>Build with Foundry</span>
+                <Chip 
+                  label="Beta" 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: '#f59e0b', 
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    height: 20,
+                  }} 
+                />
+              </Box>
+            }
+            secondary="Let Promethios build your agent (coming soon)"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+      </Menu>
+
+      {/* Foundry Beta Dialog */}
+      <Dialog 
+        open={showFoundryDialog} 
+        onClose={() => setShowFoundryDialog(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2d3748',
+            color: 'white',
+            border: '1px solid #4a5568',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Build sx={{ color: '#f59e0b' }} />
+            Promethios Foundry
+            <Chip 
+              label="Beta" 
+              size="small" 
+              sx={{ 
+                backgroundColor: '#f59e0b', 
+                color: 'white',
+                fontSize: '0.7rem',
+                height: 20,
+              }} 
+            />
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ color: '#a0aec0', mb: 2 }}>
+            The Promethios Foundry allows you to describe what you want your agent to do, 
+            and we'll build it for you automatically with proper governance integration.
+          </Typography>
+          <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+            <Typography variant="body2">
+              🚧 This feature is currently in development. For now, please use the 
+              "Import API Agent" option to add your existing agents to Promethios.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowFoundryDialog(false)}
+            sx={{ color: '#a0aec0' }}
+          >
+            Close
+          </Button>
+          <Button 
+            variant="contained"
+            onClick={handleImportAPI}
+            sx={{
+              backgroundColor: '#3182ce',
+              color: 'white',
+              '&:hover': { backgroundColor: '#2c5aa0' },
+            }}
+          >
+            Import API Agent Instead
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
 // Agent Profile Card Component
 const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
   const getHealthStatusColor = (status: string) => {
@@ -87,113 +258,137 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
     }
   };
 
-  const getTrustLevelColor = (level: string) => {
-    switch (level) {
-      case 'high': return 'success';
-      case 'medium': return 'warning';
-      case 'low': return 'error';
-      default: return 'default';
+  const getLifecycleStatus = (profile: AgentProfile) => {
+    // Determine lifecycle status based on agent state
+    if (!profile.isWrapped) return { status: 'unwrapped', label: '🔴 Unwrapped', color: '#ef4444' };
+    if (!profile.governancePolicy) return { status: 'wrapped', label: '🟡 Wrapped - No Policy', color: '#f59e0b' };
+    if (!profile.isDeployed) return { status: 'governed', label: '🟢 Governed', color: '#10b981' };
+    return { status: 'deployed', label: '🚀 Deployed', color: '#3182ce' };
+  };
+
+  const getNextAction = (profile: AgentProfile) => {
+    const lifecycle = getLifecycleStatus(profile);
+    switch (lifecycle.status) {
+      case 'unwrapped':
+        return {
+          label: 'Wrap Agent',
+          icon: <Settings />,
+          action: () => window.location.href = `/ui/agents/wrapping?agentId=${profile.identity.id}`,
+          color: '#3182ce'
+        };
+      case 'wrapped':
+        return {
+          label: 'Apply Policy',
+          icon: <Policy />,
+          action: () => window.location.href = `/ui/governance/policies?agentId=${profile.identity.id}`,
+          color: '#10b981'
+        };
+      case 'governed':
+        return {
+          label: 'Deploy',
+          icon: <Launch />,
+          action: () => window.location.href = `/ui/agents/deploy?agentId=${profile.identity.id}`,
+          color: '#8b5cf6'
+        };
+      case 'deployed':
+        return {
+          label: 'Manage',
+          icon: <Visibility />,
+          action: () => window.location.href = `/ui/agents/manage?agentId=${profile.identity.id}`,
+          color: '#6b7280'
+        };
     }
   };
 
-  const getHealthIcon = (status: string) => {
-    switch (status) {
-      case 'healthy': return <CheckCircle />;
-      case 'warning': return <Warning />;
-      case 'critical': return <Error />;
-      default: return <Remove />;
-    }
-  };
+  const lifecycle = getLifecycleStatus(profile);
+  const nextAction = getNextAction(profile);
 
   return (
-    <Card sx={{ height: '100%', position: 'relative' }}>
+    <Card 
+      sx={{ 
+        height: '100%', 
+        backgroundColor: '#2d3748', 
+        color: 'white',
+        border: '1px solid #4a5568',
+        '&:hover': { borderColor: '#718096' },
+      }}
+    >
       <CardContent>
+        {/* Header with Avatar and Status */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Box display="flex" alignItems="center" gap={2}>
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
+            <Avatar sx={{ bgcolor: '#3182ce', width: 48, height: 48 }}>
               <Person />
             </Avatar>
             <Box>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                 {profile.identity.name}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 v{profile.identity.version}
               </Typography>
             </Box>
           </Box>
-          <IconButton size="small">
+          <IconButton size="small" sx={{ color: '#a0aec0' }}>
             <MoreVert />
           </IconButton>
         </Box>
 
-        <Box mb={3}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {profile.identity.description}
-          </Typography>
+        {/* Lifecycle Status */}
+        <Box mb={2}>
+          <Chip
+            label={lifecycle.label}
+            size="small"
+            sx={{
+              backgroundColor: lifecycle.color,
+              color: 'white',
+              fontWeight: 600,
+              mb: 1,
+            }}
+          />
+          {profile.governancePolicy && (
+            <Chip
+              label={`Policy: ${profile.governancePolicy}`}
+              size="small"
+              variant="outlined"
+              sx={{
+                borderColor: '#4a5568',
+                color: '#a0aec0',
+                ml: 1,
+              }}
+            />
+          )}
         </Box>
 
-        {/* Health Status and Trust Level */}
-        <Stack direction="row" spacing={1} mb={2}>
-          <Chip
-            icon={getHealthIcon(profile.healthStatus)}
-            label={profile.healthStatus}
-            color={getHealthStatusColor(profile.healthStatus) as any}
-            size="small"
-          />
-          <Chip
-            label={`${profile.trustLevel} trust`}
-            color={getTrustLevelColor(profile.trustLevel) as any}
-            size="small"
-          />
-          <Chip
-            label={profile.identity.status}
-            variant="outlined"
-            size="small"
-          />
-        </Stack>
+        {/* Description */}
+        <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+          {profile.identity.description}
+        </Typography>
 
-        {/* Scorecard Preview */}
-        {profile.latestScorecard && (
-          <Box mb={3}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="body2" color="text.secondary">
-                Overall Score
-              </Typography>
-              <Typography variant="h6" color="primary">
-                {profile.latestScorecard.overallScore}/100
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={profile.latestScorecard.overallScore || 0}
-              sx={{ height: 8, borderRadius: 4 }}
-            />
-          </Box>
-        )}
-
-        {/* Key Metrics */}
-        <Grid container spacing={1} mb={3}>
+        {/* Health and Trust Metrics */}
+        <Grid container spacing={2} mb={2}>
           <Grid item xs={6}>
-            <Box textAlign="center" p={1} bgcolor="background.paper" borderRadius={1}>
+            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
               <Typography variant="body2" color="text.secondary">
-                Attestations
+                Health
               </Typography>
-              <Typography variant="h6">
-                {profile.attestationCount}
-              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                {profile.healthStatus === 'healthy' && <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />}
+                {profile.healthStatus === 'warning' && <Warning sx={{ color: '#f59e0b', fontSize: 16 }} />}
+                {profile.healthStatus === 'critical' && <Error sx={{ color: '#ef4444', fontSize: 16 }} />}
+                <Typography variant="body2" sx={{ color: 'white', textTransform: 'capitalize' }}>
+                  {profile.healthStatus}
+                </Typography>
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={6}>
-            <Box textAlign="center" p={1} bgcolor="background.paper" borderRadius={1}>
+            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
               <Typography variant="body2" color="text.secondary">
-                Last Active
+                Trust Score
               </Typography>
-              <Typography variant="body2">
-                {profile.lastActivity ? 
-                  new Date(profile.lastActivity).toLocaleDateString() : 
-                  'Never'
-                }
+              <Typography variant="h6" sx={{ color: '#3182ce' }}>
+                {profile.latestScorecard?.overallScore || 0}/100
               </Typography>
             </Box>
           </Grid>
@@ -204,206 +399,133 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
           <Button
             variant="contained"
             size="small"
-            startIcon={<Chat />}
+            startIcon={nextAction.icon}
             fullWidth
+            onClick={nextAction.action}
+            sx={{
+              backgroundColor: nextAction.color,
+              color: 'white',
+              '&:hover': { opacity: 0.8 },
+            }}
+          >
+            {nextAction.label}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Chat />}
+            sx={{
+              borderColor: '#4a5568',
+              color: '#a0aec0',
+              '&:hover': { borderColor: '#718096', backgroundColor: '#1a202c' },
+            }}
             onClick={() => window.location.href = `/ui/chat?agent=${profile.identity.id}`}
           >
             Chat
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Assessment />}
-            fullWidth
-          >
-            Scorecard
-          </Button>
         </Stack>
       </CardContent>
     </Card>
   );
 };
-
-// Multi-Agent System Profile Card Component
-const SystemProfileCard: React.FC<{ profile: SystemProfile }> = ({ profile }) => {
-  const getHealthStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'success';
-      case 'warning': return 'warning';
-      case 'critical': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getHealthIcon = (status: string) => {
-    switch (status) {
-      case 'healthy': return <CheckCircle />;
-      case 'warning': return <Warning />;
-      case 'critical': return <Error />;
-      default: return <Remove />;
-    }
-  };
-
-  return (
-    <Card sx={{ height: '100%', position: 'relative' }}>
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              <Group />
-            </Avatar>
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {profile.identity.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {profile.identity.systemType} • {profile.identity.agentIds.length} agents
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small">
-            <MoreVert />
-          </IconButton>
-        </Box>
-
-        <Box mb={3}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {profile.identity.description}
-          </Typography>
-        </Box>
-
-        {/* Health Status and Trust Level */}
-        <Stack direction="row" spacing={1} mb={2}>
-          <Chip
-            icon={getHealthIcon(profile.healthStatus)}
-            label={profile.healthStatus}
-            color={getHealthStatusColor(profile.healthStatus) as any}
-            size="small"
-          />
-          <Chip
-            label={`${profile.trustLevel} trust`}
-            color={getHealthStatusColor(profile.trustLevel) as any}
-            size="small"
-          />
-          <Chip
-            label={profile.identity.status}
-            variant="outlined"
-            size="small"
-          />
-        </Stack>
-
-        {/* System Scorecard Preview */}
-        {profile.latestScorecard && (
-          <Box mb={3}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="body2" color="text.secondary">
-                System Score
-              </Typography>
-              <Typography variant="h6" color="primary">
-                {profile.latestScorecard.overallScore}/100
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={profile.latestScorecard.overallScore || 0}
-              sx={{ height: 8, borderRadius: 4 }}
-            />
-            
-            {/* System-specific metrics */}
-            <Grid container spacing={1} mt={1}>
-              <Grid item xs={4}>
-                <Box textAlign="center">
-                  <Typography variant="caption" color="text.secondary">
-                    Workflow
-                  </Typography>
-                  <Typography variant="body2" color="success.main">
-                    {profile.latestScorecard.workflowEfficiency}%
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={4}>
-                <Box textAlign="center">
-                  <Typography variant="caption" color="text.secondary">
-                    Trust
-                  </Typography>
-                  <Typography variant="body2" color="info.main">
-                    {profile.latestScorecard.crossAgentTrust}%
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={4}>
-                <Box textAlign="center">
-                  <Typography variant="caption" color="text.secondary">
-                    Coordination
-                  </Typography>
-                  <Typography variant="body2" color="secondary.main">
-                    {profile.latestScorecard.coordinationScore}%
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
-
-        {/* Key Metrics */}
-        <Grid container spacing={1} mb={3}>
-          <Grid item xs={6}>
-            <Box textAlign="center" p={1} bgcolor="background.paper" borderRadius={1}>
-              <Typography variant="body2" color="text.secondary">
-                Agents
-              </Typography>
-              <Typography variant="h6">
-                {profile.identity.agentIds.length}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6}>
-            <Box textAlign="center" p={1} bgcolor="background.paper" borderRadius={1}>
-              <Typography variant="body2" color="text.secondary">
-                Attestations
-              </Typography>
-              <Typography variant="h6">
-                {profile.attestationCount}
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Action Buttons */}
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Chat />}
-            fullWidth
-            onClick={() => window.location.href = `/ui/chat?system=${profile.identity.id}`}
-          >
-            Chat
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Assessment />}
-            fullWidth
-          >
-            System Scorecard
-          </Button>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-};
-
 // Main Agent Profiles Page Component
 const AgentProfilesPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [healthFilter, setHealthFilter] = useState('all');
+  const [governanceFilter, setGovernanceFilter] = useState('all');
 
   // Mock data - would be replaced with actual hooks
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
   const [systemProfiles, setSystemProfiles] = useState<SystemProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Mock data loading
+    const loadProfiles = async () => {
+      setLoading(true);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock agent profiles with lifecycle states
+      const mockAgentProfiles: AgentProfile[] = [
+        {
+          identity: {
+            id: 'agent-1',
+            name: 'Customer Support Assistant',
+            version: '1.2.0',
+            description: 'AI assistant for customer support inquiries',
+            ownerId: 'user-1',
+            creationDate: new Date('2024-01-15'),
+            lastModifiedDate: new Date('2024-06-10'),
+            status: 'active'
+          },
+          latestScorecard: {
+            agentId: 'agent-1',
+            templateId: 'default',
+            evaluationTimestamp: new Date(),
+            context: {},
+            overallScore: 92,
+            metricValues: {}
+          },
+          attestationCount: 3,
+          lastActivity: new Date('2024-06-12'),
+          healthStatus: 'healthy',
+          trustLevel: 'high',
+          isWrapped: true,
+          governancePolicy: 'HIPAA Strict',
+          isDeployed: true
+        },
+        {
+          identity: {
+            id: 'agent-2',
+            name: 'Data Analysis Bot',
+            version: '2.1.0',
+            description: 'Specialized in data analysis and reporting',
+            ownerId: 'user-1',
+            creationDate: new Date('2024-02-20'),
+            lastModifiedDate: new Date('2024-06-08'),
+            status: 'active'
+          },
+          latestScorecard: {
+            agentId: 'agent-2',
+            templateId: 'default',
+            evaluationTimestamp: new Date(),
+            context: {},
+            overallScore: 78,
+            metricValues: {}
+          },
+          attestationCount: 2,
+          lastActivity: new Date('2024-06-11'),
+          healthStatus: 'warning',
+          trustLevel: 'medium',
+          isWrapped: true,
+          governancePolicy: 'Financial Services',
+          isDeployed: false
+        },
+        {
+          identity: {
+            id: 'agent-3',
+            name: 'Content Generator',
+            version: '1.0.0',
+            description: 'Generates marketing content and copy',
+            ownerId: 'user-1',
+            creationDate: new Date('2024-06-15'),
+            lastModifiedDate: new Date('2024-06-15'),
+            status: 'active'
+          },
+          latestScorecard: null,
+          attestationCount: 0,
+          lastActivity: null,
+          healthStatus: 'healthy',
+          trustLevel: 'medium',
+          isWrapped: false,
+          governancePolicy: null,
+          isDeployed: false
+        }
+      ];emProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -543,19 +665,25 @@ const AgentProfilesPage: React.FC = () => {
   return (
     <ThemeProvider theme={darkTheme}>
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Header with Add New Agent Button */}
         <Box mb={4}>
-          <Typography variant="h4" gutterBottom>
-            Agent Profiles
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage and monitor your individual agents and multi-agent systems
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+            <Box>
+              <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+                My Agents
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Manage and monitor your individual agents and multi-agent systems
+              </Typography>
+            </Box>
+            <AddNewAgentButton />
+          </Box>
         </Box>
 
-        {/* Filters and Search */}
+        {/* Enhanced Filters and Search */}
         <Box mb={4}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 fullWidth
                 placeholder="Search agents and systems..."
@@ -568,30 +696,55 @@ const AgentProfilesPage: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#2d3748',
+                    color: 'white',
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#718096' },
+                    '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                  },
+                  '& .MuiInputLabel-root': { color: '#a0aec0' },
+                }}
               />
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={2}>
               <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
+                <InputLabel sx={{ color: '#a0aec0' }}>Lifecycle Status</InputLabel>
                 <Select
                   value={statusFilter}
-                  label="Status"
+                  label="Lifecycle Status"
                   onChange={(e) => setStatusFilter(e.target.value)}
+                  sx={{
+                    backgroundColor: '#2d3748',
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                  }}
                 >
                   <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="deprecated">Deprecated</MenuItem>
+                  <MenuItem value="unwrapped">🔴 Unwrapped</MenuItem>
+                  <MenuItem value="wrapped">🟡 Wrapped - No Policy</MenuItem>
+                  <MenuItem value="governed">🟢 Governed</MenuItem>
+                  <MenuItem value="deployed">🚀 Deployed</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={2}>
               <FormControl fullWidth>
-                <InputLabel>Health</InputLabel>
+                <InputLabel sx={{ color: '#a0aec0' }}>Health</InputLabel>
                 <Select
                   value={healthFilter}
                   label="Health"
                   onChange={(e) => setHealthFilter(e.target.value)}
+                  sx={{
+                    backgroundColor: '#2d3748',
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                  }}
                 >
                   <MenuItem value="all">All Health</MenuItem>
                   <MenuItem value="healthy">Healthy</MenuItem>
@@ -601,14 +754,54 @@ const AgentProfilesPage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} md={2}>
-              <Button
-                variant="outlined"
-                startIcon={<Refresh />}
-                fullWidth
-                onClick={() => window.location.reload()}
-              >
-                Refresh
-              </Button>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Governance Policy</InputLabel>
+                <Select
+                  value={governanceFilter}
+                  label="Governance Policy"
+                  onChange={(e) => setGovernanceFilter(e.target.value)}
+                  sx={{
+                    backgroundColor: '#2d3748',
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                  }}
+                >
+                  <MenuItem value="all">All Policies</MenuItem>
+                  <MenuItem value="hipaa">HIPAA Strict</MenuItem>
+                  <MenuItem value="financial">Financial Services</MenuItem>
+                  <MenuItem value="general">General Business</MenuItem>
+                  <MenuItem value="none">No Policy</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={() => window.location.reload()}
+                  sx={{
+                    borderColor: '#4a5568',
+                    color: '#a0aec0',
+                    '&:hover': { borderColor: '#718096', backgroundColor: '#2d3748' },
+                  }}
+                >
+                  Refresh
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterList />}
+                  sx={{
+                    borderColor: '#4a5568',
+                    color: '#a0aec0',
+                    '&:hover': { borderColor: '#718096', backgroundColor: '#2d3748' },
+                  }}
+                >
+                  More Filters
+                </Button>
+              </Stack>
             </Grid>
           </Grid>
         </Box>

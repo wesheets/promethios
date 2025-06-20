@@ -81,8 +81,17 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Agent Profiles Page route */}
+        {/* Agent Profiles Page route (now "My Agents") */}
         <Route path="agents/profiles" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentProfilesPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agent Systems Page route (new multi-agent management) */}
+        <Route path="agents/systems" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentProfilesPage />
