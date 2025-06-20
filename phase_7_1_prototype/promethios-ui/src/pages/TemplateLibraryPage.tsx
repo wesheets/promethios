@@ -32,7 +32,7 @@ import {
   FilterList,
   Refresh,
   LibraryBooks,
-  Fork,
+  CallSplit,
   Star,
   Download,
   Verified,
@@ -282,7 +282,7 @@ const TemplateCard: React.FC<{ template: AgentTemplate; onFork: (template: Agent
       <CardActions sx={{ p: 2, pt: 0 }}>
         <Button
           variant="contained"
-          startIcon={<Fork />}
+          startIcon={<CallSplit />}
           fullWidth
           onClick={() => onFork(template)}
           sx={{
@@ -336,7 +336,7 @@ const ForkDialog: React.FC<{
     >
       <DialogTitle sx={{ color: 'white' }}>
         <Box display="flex" alignItems="center" gap={1}>
-          <Fork sx={{ color: '#3182ce' }} />
+          <CallSplit sx={{ color: '#3182ce' }} />
           Fork Agent Template
         </Box>
       </DialogTitle>
