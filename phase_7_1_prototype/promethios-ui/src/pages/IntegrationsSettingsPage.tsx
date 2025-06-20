@@ -547,7 +547,7 @@ const IntegrationsSettingsPage: React.FC = () => {
               }
             }}
           >
-            <Tab icon={<Integration />} label="External Systems" />
+            <Tab icon={<Hub />} label="External Systems" />
             <Tab icon={<Key />} label="API Keys" />
             <Tab icon={<Webhook />} label="Webhooks" />
             <Tab icon={<Settings />} label="Configuration" />
