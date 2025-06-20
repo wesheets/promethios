@@ -68,6 +68,7 @@ interface RegistryAgent {
   description: string;
   category: string;
   industry: string;
+  type: 'single' | 'multi-agent'; // New field for agent type
   author: {
     name: string;
     avatar: string;
@@ -83,14 +84,20 @@ interface RegistryAgent {
     compliant: boolean;
     policies: string[];
     trustScore: number;
+    tier: 'basic' | 'enhanced' | 'strict'; // New governance tier
   };
   pricing: {
     type: 'free' | 'paid' | 'freemium';
     price?: number;
+    betaFeature: boolean; // Mark pricing as beta
   };
   lastUpdated: Date;
   featured: boolean;
   capabilities: string[];
+  // Multi-agent specific fields
+  agentCount?: number;
+  orchestrationType?: 'sequential' | 'parallel' | 'hierarchical';
+  systemComplexity?: 'simple' | 'moderate' | 'complex';
 }
 
 interface TabPanelProps {
@@ -307,9 +314,9 @@ const AgentRegistryCard: React.FC<{ agent: RegistryAgent; onFork: (agent: Regist
           </Grid>
         </Grid>
 
-        {/* Governance */}
+        {/* Governance and Type */}
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Security sx={{ 
                 color: agent.governance.compliant ? '#10b981' : '#ef4444', 
@@ -320,30 +327,90 @@ const AgentRegistryCard: React.FC<{ agent: RegistryAgent; onFork: (agent: Regist
               }}>
                 {agent.governance.compliant ? 'Governance Compliant' : 'Needs Review'}
               </Typography>
+              {/* Governance Tier Badge */}
+              <Chip 
+                label={agent.governance.tier.toUpperCase()}
+                size="small"
+                sx={{ 
+                  backgroundColor: 
+                    agent.governance.tier === 'strict' ? '#dc2626' :
+                    agent.governance.tier === 'enhanced' ? '#f59e0b' : '#6b7280',
+                  color: 'white',
+                  fontSize: '0.6rem',
+                  height: 16
+                }}
+              />
             </Box>
             <Typography variant="caption" sx={{ color: '#a0aec0' }}>
               Trust: {agent.governance.trustScore}/100
             </Typography>
           </Box>
+          
+          {/* Agent Type and Multi-Agent Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip 
+              label={agent.type === 'single' ? 'Single Agent' : 'Multi-Agent System'}
+              size="small"
+              sx={{ 
+                backgroundColor: agent.type === 'single' ? '#3b82f6' : '#8b5cf6',
+                color: 'white',
+                fontSize: '0.7rem',
+                height: 18
+              }}
+            />
+            {agent.type === 'multi-agent' && (
+              <>
+                <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                  {agent.agentCount} agents • {agent.orchestrationType}
+                </Typography>
+                <Chip 
+                  label={agent.systemComplexity}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: 
+                      agent.systemComplexity === 'complex' ? '#dc2626' :
+                      agent.systemComplexity === 'moderate' ? '#f59e0b' : '#10b981',
+                    color: 'white',
+                    fontSize: '0.6rem',
+                    height: 16
+                  }}
+                />
+              </>
+            )}
+          </Box>
         </Box>
 
-        {/* Pricing */}
+        {/* Pricing with Beta Badge */}
         <Box sx={{ mb: 2 }}>
-          <Chip 
-            label={
-              agent.pricing.type === 'free' 
-                ? 'Free' 
-                : agent.pricing.type === 'paid' 
-                  ? `$${agent.pricing.price}/month`
-                  : 'Freemium'
-            }
-            size="small"
-            sx={{ 
-              backgroundColor: agent.pricing.type === 'free' ? '#10b981' : '#3b82f6',
-              color: 'white',
-              fontWeight: 500
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip 
+              label={
+                agent.pricing.type === 'free' 
+                  ? 'Free' 
+                  : agent.pricing.type === 'paid' 
+                    ? `$${agent.pricing.price}/month`
+                    : 'Freemium'
+              }
+              size="small"
+              sx={{ 
+                backgroundColor: agent.pricing.type === 'free' ? '#10b981' : '#3b82f6',
+                color: 'white',
+                fontSize: '0.7rem'
+              }}
+            />
+            {agent.pricing.betaFeature && (
+              <Chip 
+                label="💰 Beta - Coming Soon"
+                size="small"
+                sx={{ 
+                  backgroundColor: '#f59e0b',
+                  color: 'white',
+                  fontSize: '0.6rem',
+                  height: 18
+                }}
+              />
+            )}
+          </Box>
         </Box>
 
         {/* Action Buttons */}
@@ -404,12 +471,13 @@ const RegistryPage: React.FC = () => {
       const mockRegistryAgents: RegistryAgent[] = [
         {
           id: 'registry-1',
-          name: 'Customer Support Pro',
-          description: 'Advanced customer support agent with sentiment analysis, ticket routing, and escalation management. Handles complex queries with empathy and efficiency.',
+          name: 'Customer Support Assistant',
+          description: 'AI-powered customer service agent with natural language processing, sentiment analysis, and multi-channel support.',
           category: 'Customer Service',
           industry: 'Technology',
+          type: 'single',
           author: {
-            name: 'Promethios Team',
+            name: 'TechCorp Solutions',
             avatar: '/api/placeholder/32/32',
             verified: true
           },
@@ -418,28 +486,34 @@ const RegistryPage: React.FC = () => {
           downloads: 15420,
           forks: 234,
           visibility: 'public',
-          tags: ['support', 'sentiment-analysis', 'escalation', 'multilingual'],
+          tags: ['customer-service', 'nlp', 'sentiment-analysis', 'multi-channel'],
           governance: {
             compliant: true,
-            policies: ['GDPR', 'SOC2', 'Privacy'],
-            trustScore: 96
+            policies: ['GDPR', 'CCPA', 'SOC2'],
+            trustScore: 94,
+            tier: 'enhanced'
           },
           pricing: {
             type: 'freemium',
-            price: 29
+            price: 49,
+            betaFeature: true
           },
-          lastUpdated: new Date('2024-06-10'),
+          lastUpdated: new Date('2024-06-15'),
           featured: true,
-          capabilities: ['Natural Language Processing', 'Sentiment Analysis', 'Multi-language Support']
+          capabilities: ['Natural Language Processing', 'Sentiment Analysis', 'Multi-channel Support']
         },
         {
           id: 'registry-2',
-          name: 'Financial Analyst AI',
-          description: 'Comprehensive financial analysis agent for market research, risk assessment, and investment recommendations with regulatory compliance.',
-          category: 'Data Analysis',
-          industry: 'Finance',
+          name: 'Financial Analysis Suite',
+          description: 'Comprehensive financial modeling and risk assessment agent with regulatory compliance and real-time market data integration.',
+          category: 'Finance',
+          industry: 'Financial Services',
+          type: 'multi-agent',
+          agentCount: 4,
+          orchestrationType: 'hierarchical',
+          systemComplexity: 'complex',
           author: {
-            name: 'FinTech Solutions',
+            name: 'FinanceAI Corp',
             avatar: '/api/placeholder/32/32',
             verified: true
           },
@@ -452,11 +526,13 @@ const RegistryPage: React.FC = () => {
           governance: {
             compliant: true,
             policies: ['SOX', 'FINRA', 'Basel III'],
-            trustScore: 98
+            trustScore: 98,
+            tier: 'strict'
           },
           pricing: {
             type: 'paid',
-            price: 99
+            price: 99,
+            betaFeature: true
           },
           lastUpdated: new Date('2024-06-12'),
           featured: true,
@@ -468,6 +544,7 @@ const RegistryPage: React.FC = () => {
           description: 'Multi-modal content creation agent for blogs, social media, marketing copy, and visual content with brand consistency.',
           category: 'Content Creation',
           industry: 'Marketing',
+          type: 'single',
           author: {
             name: 'Creative Labs',
             avatar: '/api/placeholder/32/32',
@@ -482,10 +559,12 @@ const RegistryPage: React.FC = () => {
           governance: {
             compliant: true,
             policies: ['Copyright', 'Brand Safety'],
-            trustScore: 87
+            trustScore: 87,
+            tier: 'basic'
           },
           pricing: {
-            type: 'free'
+            type: 'free',
+            betaFeature: false
           },
           lastUpdated: new Date('2024-06-08'),
           featured: false,
@@ -493,59 +572,68 @@ const RegistryPage: React.FC = () => {
         },
         {
           id: 'registry-4',
-          name: 'Healthcare Assistant',
-          description: 'HIPAA-compliant healthcare agent for patient inquiries, appointment scheduling, and medical information assistance.',
-          category: 'Customer Service',
+          name: 'Healthcare Diagnostic Team',
+          description: 'Multi-agent system for medical diagnosis, treatment recommendations, and patient care coordination with HIPAA compliance.',
+          category: 'Healthcare',
           industry: 'Healthcare',
+          type: 'multi-agent',
+          agentCount: 6,
+          orchestrationType: 'parallel',
+          systemComplexity: 'complex',
           author: {
             name: 'MedTech Innovations',
             avatar: '/api/placeholder/32/32',
             verified: true
           },
-          version: '3.0.0',
+          version: '3.0.1',
           rating: 4.7,
-          downloads: 6780,
+          downloads: 3210,
           forks: 45,
           visibility: 'public',
-          tags: ['healthcare', 'hipaa', 'patient-care', 'scheduling'],
+          tags: ['healthcare', 'diagnosis', 'hipaa', 'patient-care'],
           governance: {
             compliant: true,
-            policies: ['HIPAA', 'HITECH', 'FDA'],
-            trustScore: 99
+            policies: ['HIPAA', 'FDA', 'Medical Ethics'],
+            trustScore: 96,
+            tier: 'strict'
           },
           pricing: {
             type: 'paid',
-            price: 149
+            price: 299,
+            betaFeature: true
           },
-          lastUpdated: new Date('2024-06-14'),
-          featured: false,
-          capabilities: ['Medical Knowledge', 'HIPAA Compliance', 'Patient Communication']
+          lastUpdated: new Date('2024-06-10'),
+          featured: true,
+          capabilities: ['Medical Diagnosis', 'Treatment Planning', 'Patient Coordination']
         },
         {
           id: 'registry-5',
           name: 'E-commerce Optimizer',
-          description: 'Intelligent e-commerce agent for product recommendations, inventory management, and customer journey optimization.',
-          category: 'Automation',
+          description: 'Smart e-commerce agent for product recommendations, inventory management, and customer behavior analysis.',
+          category: 'E-commerce',
           industry: 'Retail',
+          type: 'single',
           author: {
-            name: 'RetailTech Pro',
+            name: 'RetailBot Inc',
             avatar: '/api/placeholder/32/32',
             verified: false
           },
           version: '1.8.3',
           rating: 4.4,
-          downloads: 9870,
+          downloads: 9876,
           forks: 123,
           visibility: 'public',
-          tags: ['ecommerce', 'recommendations', 'inventory', 'optimization'],
+          tags: ['e-commerce', 'recommendations', 'inventory', 'analytics'],
           governance: {
             compliant: false,
-            policies: ['PCI DSS'],
-            trustScore: 73
+            policies: ['Basic Privacy'],
+            trustScore: 73,
+            tier: 'basic'
           },
           pricing: {
             type: 'freemium',
-            price: 59
+            price: 59,
+            betaFeature: true
           },
           lastUpdated: new Date('2024-06-05'),
           featured: false,
@@ -553,10 +641,14 @@ const RegistryPage: React.FC = () => {
         },
         {
           id: 'registry-6',
-          name: 'Security Monitor',
-          description: 'Advanced cybersecurity agent for threat detection, incident response, and security compliance monitoring.',
+          name: 'Security Operations Center',
+          description: 'Multi-agent cybersecurity system for threat detection, incident response, and security compliance monitoring.',
           category: 'Security',
           industry: 'Technology',
+          type: 'multi-agent',
+          agentCount: 8,
+          orchestrationType: 'sequential',
+          systemComplexity: 'complex',
           author: {
             name: 'CyberGuard Systems',
             avatar: '/api/placeholder/32/32',
@@ -571,11 +663,13 @@ const RegistryPage: React.FC = () => {
           governance: {
             compliant: true,
             policies: ['ISO 27001', 'NIST', 'SOC2'],
-            trustScore: 97
+            trustScore: 97,
+            tier: 'strict'
           },
           pricing: {
             type: 'paid',
-            price: 199
+            price: 199,
+            betaFeature: true
           },
           lastUpdated: new Date('2024-06-13'),
           featured: true,
@@ -788,36 +882,36 @@ const RegistryPage: React.FC = () => {
                     '&.Mui-selected': { color: '#3b82f6' }
                   },
                   '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
-                }}
-              >
-                <Tab 
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Public />
-                      Public Registry ({publicAgents.length})
-                    </Box>
-                  } 
-                />
-                <Tab 
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Lock />
-                      My Agents ({privateAgents.length})
-                    </Box>
-                  } 
-                />
-              </Tabs>
-            </Box>
+              {/* Agent Type Tabs */}
+          <Box sx={{ mb: 3 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange}
+              sx={{
+                '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
+                '& .MuiTab-root': { 
+                  color: '#a0aec0',
+                  '&.Mui-selected': { color: '#3b82f6' }
+                }
+              }}
+            >
+              <Tab label="Single Agents" />
+              <Tab label="Multi-Agent Systems" />
+              <Tab label="My Library" />
+            </Tabs>
+          </Box>
 
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <TabPanel value={tabValue} index={0}>
-              {filteredAgents.length === 0 ? (
+              {/* Single Agents */}
+              {filteredAgents.filter(agent => agent.type === 'single').length === 0 ? (
                 <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
-                  <AlertTitle>No Agents Found</AlertTitle>
-                  Try adjusting your search terms or filters to find more agents.
+                  <AlertTitle>No Single Agents Found</AlertTitle>
+                  Try adjusting your search criteria or browse our featured agents above.
                 </Alert>
               ) : (
                 <Grid container spacing={3}>
-                  {filteredAgents.map((agent) => (
+                  {filteredAgents.filter(agent => agent.type === 'single').map((agent) => (
                     <Grid item xs={12} md={6} lg={4} key={agent.id}>
                       <AgentRegistryCard agent={agent} onFork={handleFork} />
                     </Grid>
@@ -827,6 +921,25 @@ const RegistryPage: React.FC = () => {
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
+              {/* Multi-Agent Systems */}
+              {filteredAgents.filter(agent => agent.type === 'multi-agent').length === 0 ? (
+                <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+                  <AlertTitle>No Multi-Agent Systems Found</AlertTitle>
+                  Try adjusting your search criteria or browse our featured systems above.
+                </Alert>
+              ) : (
+                <Grid container spacing={3}>
+                  {filteredAgents.filter(agent => agent.type === 'multi-agent').map((agent) => (
+                    <Grid item xs={12} md={6} lg={4} key={agent.id}>
+                      <AgentRegistryCard agent={agent} onFork={handleFork} />
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+              {/* My Library */}
               <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
                 <AlertTitle>Your Private Agent Library</AlertTitle>
                 This section will show agents you've created, forked, or have private access to within your organization.

@@ -61,6 +61,7 @@ interface DeployedAgent {
   id: string;
   name: string;
   type: 'external' | 'foundry';
+  agentType: 'single' | 'multi-agent'; // New field for agent type
   status: 'running' | 'stopped' | 'error' | 'deploying';
   endpoint?: string;
   provider?: string;
@@ -82,6 +83,14 @@ interface DeployedAgent {
     costToday: number;
     requestsIncluded: number;
     overageRate: number;
+  };
+  // Multi-agent specific fields
+  agentCount?: number;
+  orchestrationType?: 'sequential' | 'parallel' | 'hierarchical';
+  systemHealth?: {
+    activeAgents: number;
+    failedAgents: number;
+    coordinationLatency: number;
   };
 }
 
@@ -181,7 +190,38 @@ const DeployedAgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => {
                   height: 20
                 }}
               />
+              <Chip 
+                label={agent.agentType === 'single' ? 'Single Agent' : 'Multi-Agent System'}
+                size="small"
+                sx={{ 
+                  backgroundColor: agent.agentType === 'single' ? '#3b82f6' : '#8b5cf6',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  height: 20
+                }}
+              />
             </Box>
+            
+            {/* Multi-Agent System Info */}
+            {agent.agentType === 'multi-agent' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                  {agent.agentCount} agents • {agent.orchestrationType} orchestration
+                </Typography>
+                {agent.systemHealth && (
+                  <Chip 
+                    label={`${agent.systemHealth.activeAgents}/${agent.agentCount} active`}
+                    size="small"
+                    sx={{ 
+                      backgroundColor: agent.systemHealth.failedAgents > 0 ? '#dc2626' : '#10b981',
+                      color: 'white',
+                      fontSize: '0.6rem',
+                      height: 16
+                    }}
+                  />
+                )}
+              </Box>
+            )}
           </Box>
           <IconButton sx={{ color: '#a0aec0' }}>
             <MoreVert />
@@ -334,6 +374,7 @@ const DeployPage: React.FC = () => {
           id: 'deployed-1',
           name: 'Customer Support Assistant',
           type: 'external',
+          agentType: 'single',
           status: 'running',
           endpoint: 'https://api.openai.com/v1/chat/completions',
           provider: 'OpenAI',
@@ -359,8 +400,11 @@ const DeployPage: React.FC = () => {
         },
         {
           id: 'deployed-2',
-          name: 'Financial Analysis Bot',
+          name: 'Financial Analysis Suite',
           type: 'external',
+          agentType: 'multi-agent',
+          agentCount: 4,
+          orchestrationType: 'hierarchical',
           status: 'running',
           endpoint: 'https://api.anthropic.com/v1/messages',
           provider: 'Anthropic',
@@ -382,12 +426,18 @@ const DeployPage: React.FC = () => {
             costToday: 18.43,
             requestsIncluded: 500,
             overageRate: 0.025
+          },
+          systemHealth: {
+            activeAgents: 4,
+            failedAgents: 0,
+            coordinationLatency: 45
           }
         },
         {
           id: 'deployed-3',
           name: 'Content Generator Pro',
           type: 'foundry',
+          agentType: 'single',
           status: 'deploying',
           deployedAt: new Date('2024-06-15'),
           lastActivity: new Date(),
@@ -411,8 +461,42 @@ const DeployPage: React.FC = () => {
         },
         {
           id: 'deployed-4',
+          name: 'Healthcare Diagnostic Team',
+          type: 'foundry',
+          agentType: 'multi-agent',
+          agentCount: 6,
+          orchestrationType: 'parallel',
+          status: 'running',
+          deployedAt: new Date('2024-06-13'),
+          lastActivity: new Date(),
+          metrics: {
+            uptime: 98.7,
+            responseTime: 312,
+            successRate: 97.8,
+            requestsToday: 456,
+            governanceScore: 99
+          },
+          governance: {
+            policy: 'HIPAA Strict',
+            violations: 0,
+            lastCheck: new Date()
+          },
+          billing: {
+            costToday: 45.23,
+            requestsIncluded: 200,
+            overageRate: 0.08
+          },
+          systemHealth: {
+            activeAgents: 6,
+            failedAgents: 0,
+            coordinationLatency: 78
+          }
+        },
+        {
+          id: 'deployed-5',
           name: 'Data Analysis Assistant',
           type: 'external',
+          agentType: 'single',
           status: 'error',
           endpoint: 'https://custom-api.company.com/agent',
           provider: 'Custom',
@@ -434,6 +518,39 @@ const DeployPage: React.FC = () => {
             costToday: 0,
             requestsIncluded: 2000,
             overageRate: 0.01
+          }
+        },
+        {
+          id: 'deployed-6',
+          name: 'Security Operations Center',
+          type: 'foundry',
+          agentType: 'multi-agent',
+          agentCount: 8,
+          orchestrationType: 'sequential',
+          status: 'running',
+          deployedAt: new Date('2024-06-11'),
+          lastActivity: new Date(),
+          metrics: {
+            uptime: 99.9,
+            responseTime: 156,
+            successRate: 99.7,
+            requestsToday: 2341,
+            governanceScore: 98
+          },
+          governance: {
+            policy: 'Security Compliance',
+            violations: 0,
+            lastCheck: new Date()
+          },
+          billing: {
+            costToday: 67.89,
+            requestsIncluded: 1000,
+            overageRate: 0.05
+          },
+          systemHealth: {
+            activeAgents: 8,
+            failedAgents: 0,
+            coordinationLatency: 23
           }
         }
       ];
@@ -555,7 +672,7 @@ const DeployPage: React.FC = () => {
 
           {/* Deployment Tabs */}
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
-            <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
+            <Box sx={{ borderBottom            <Box sx={{ mb: 3 }}>
               <Tabs 
                 value={tabValue} 
                 onChange={handleTabChange}
@@ -571,7 +688,7 @@ const DeployPage: React.FC = () => {
                   label={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Api />
-                      External Wrapped Agents ({externalAgents.length})
+                      Single Agent Deployments ({deployedAgents.filter(a => a.agentType === 'single').length})
                     </Box>
                   } 
                 />
@@ -579,18 +696,7 @@ const DeployPage: React.FC = () => {
                   label={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Build />
-                      Foundry Built Agents ({foundryAgents.length})
-                      <Chip 
-                        label="Beta" 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: '#f59e0b', 
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          height: 20,
-                          ml: 1
-                        }} 
-                      />
+                      Multi-Agent System Deployments ({deployedAgents.filter(a => a.agentType === 'multi-agent').length})
                     </Box>
                   } 
                 />
@@ -598,14 +704,15 @@ const DeployPage: React.FC = () => {
             </Box>
 
             <TabPanel value={tabValue} index={0}>
-              {externalAgents.length === 0 ? (
+              {/* Single Agent Deployments */}
+              {deployedAgents.filter(a => a.agentType === 'single').length === 0 ? (
                 <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
-                  <AlertTitle>No External Agents Deployed</AlertTitle>
-                  You haven't deployed any external wrapped agents yet. Start by wrapping your existing agents with Promethios governance.
+                  <AlertTitle>No Single Agent Deployments</AlertTitle>
+                  You haven't deployed any single agents yet. Start by deploying individual agents from your agent library.
                 </Alert>
               ) : (
                 <Grid container spacing={3}>
-                  {externalAgents.map((agent) => (
+                  {deployedAgents.filter(a => a.agentType === 'single').map((agent) => (
                     <Grid item xs={12} md={6} lg={4} key={agent.id}>
                       <DeployedAgentCard agent={agent} />
                     </Grid>
@@ -615,19 +722,15 @@ const DeployPage: React.FC = () => {
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              <Alert severity="info" sx={{ backgroundColor: '#7c3aed', color: 'white', mb: 3 }}>
-                <AlertTitle>Foundry Built Agents - Beta</AlertTitle>
-                Foundry-built agent deployment is currently in beta. These agents are built and hosted entirely within Promethios infrastructure with native governance integration.
-              </Alert>
-              
-              {foundryAgents.length === 0 ? (
+              {/* Multi-Agent System Deployments */}
+              {deployedAgents.filter(a => a.agentType === 'multi-agent').length === 0 ? (
                 <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
-                  <AlertTitle>No Foundry Agents Deployed</AlertTitle>
-                  You haven't deployed any Foundry-built agents yet. Create your first agent using the Promethios Foundry to get started.
+                  <AlertTitle>No Multi-Agent System Deployments</AlertTitle>
+                  You haven't deployed any multi-agent systems yet. Create and deploy orchestrated agent teams for complex workflows.
                 </Alert>
               ) : (
                 <Grid container spacing={3}>
-                  {foundryAgents.map((agent) => (
+                  {deployedAgents.filter(a => a.agentType === 'multi-agent').map((agent) => (
                     <Grid item xs={12} md={6} lg={4} key={agent.id}>
                       <DeployedAgentCard agent={agent} />
                     </Grid>
