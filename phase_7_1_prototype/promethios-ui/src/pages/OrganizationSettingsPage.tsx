@@ -824,6 +824,7 @@ const OrganizationSettingsPage: React.FC = () => {
                         '&:hover fieldset': { borderColor: '#3b82f6' },
                         '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                       },
+                      '& .MuiInputLabel-root': { color: '#a0aec0' },
                       '& .MuiInputBase-input': { color: 'white' }
                     }}
                   />
@@ -851,6 +852,7 @@ const OrganizationSettingsPage: React.FC = () => {
                         '&:hover fieldset': { borderColor: '#3b82f6' },
                         '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
                       },
+                      '& .MuiInputLabel-root': { color: '#a0aec0' },
                       '& .MuiInputBase-input': { color: 'white' }
                     }}
                   />

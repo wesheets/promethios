@@ -101,23 +101,21 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
 
   const handleLogout = () => {
     handleProfileMenuClose();
-    if (onLogout) {
-      onLogout();
-    }
+    logout(); // Use the logout function from useAuth
   };
 
   const handleDashboardClick = () => {
-    navigate('/dashboard');
+    navigate('/ui/dashboard');
   };
 
   const handleSettingsClick = () => {
     handleProfileMenuClose();
-    navigate('/settings');
+    navigate('/ui/settings/preferences'); // Navigate to preferences as main settings page
   };
 
   const handleProfileClick = () => {
     handleProfileMenuClose();
-    navigate('/settings/profile');
+    navigate('/ui/settings/profile');
   };
 
   if (!isLoggedIn) {

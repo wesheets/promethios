@@ -441,7 +441,7 @@ const IntegrationsSettingsPage: React.FC = () => {
       case 'analytics': return <Analytics />;
       case 'storage': return <Storage />;
       case 'security': return <Security />;
-      default: return <Integration />;
+      default: return <Hub />;
     }
   };
 
