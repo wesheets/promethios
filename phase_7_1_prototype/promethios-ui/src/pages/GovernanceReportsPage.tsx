@@ -529,14 +529,14 @@ const GovernanceReportsPage: React.FC = () => {
         </Box>
         <Box display="flex" gap={2}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
           >
             Refresh
           </Button>
           <Button
-            variant="outlined"
+            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
             startIcon={<CloudDownload />}
             onClick={exportAllReports}
           >
@@ -723,7 +723,7 @@ const GovernanceReportsPage: React.FC = () => {
                       <Chip
                         label={template.format.toUpperCase()}
                         size="small"
-                        variant="outlined"
+                        variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                       />
                     </Box>
                   }
@@ -742,7 +742,7 @@ const GovernanceReportsPage: React.FC = () => {
                         key={section.id}
                         label={section.name}
                         size="small"
-                        variant="outlined"
+                        variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                         sx={{ mr: 0.5, mb: 0.5 }}
                       />
                     ))}
@@ -773,7 +773,7 @@ const GovernanceReportsPage: React.FC = () => {
                     </Button>
                     <Button
                       size="small"
-                      variant="outlined"
+                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                       startIcon={<Visibility />}
                       onClick={() => handlePreviewReport(template)}
                     >
@@ -781,7 +781,7 @@ const GovernanceReportsPage: React.FC = () => {
                     </Button>
                     <Button
                       size="small"
-                      variant="outlined"
+                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                       startIcon={<Schedule />}
                       onClick={() => handleScheduleReport(template)}
                     >
@@ -945,7 +945,7 @@ const GovernanceReportsPage: React.FC = () => {
                             label={template.schedule}
                             size="small"
                             color="primary"
-                            variant="outlined"
+                            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                           />
                         </TableCell>
                         <TableCell>
@@ -1179,7 +1179,7 @@ const GovernanceReportsPage: React.FC = () => {
               <TextField
                 fullWidth
                 label="Template Name"
-                variant="outlined"
+                variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                 placeholder="e.g., Weekly Security Report"
               />
             </Grid>
@@ -1204,7 +1204,7 @@ const GovernanceReportsPage: React.FC = () => {
                 label="Description"
                 multiline
                 rows={3}
-                variant="outlined"
+                variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                 placeholder="Describe what this report template will generate..."
               />
             </Grid>

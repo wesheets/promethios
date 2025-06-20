@@ -49,23 +49,67 @@ import {
   Visibility,
   Refresh,
   Download,
-  Error,
-  Info,
   FilterList,
-  Person,
-  Group,
-  Compare
+  MoreVert
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { 
-  observerService, 
-  PRISMMetrics, 
-  PRISMViolation, 
-  VigilMetrics, 
-  VigilViolation,
-  TrustSnapshot,
-  GovernanceAwareness 
-} from '../services/observers';
+import { observerService } from '../services/observers';
+
+// Types for governance data
+interface PrismMetrics {
+  totalChecks: number;
+  passedChecks: number;
+  failedChecks: number;
+  averageScore: number;
+  lastUpdated: string;
+}
+
+interface PrismViolation {
+  id: string;
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  timestamp: string;
+  agentId: string;
+  resolved: boolean;
+}
+
+interface VigilMetrics {
+  trustScores: Record<string, number>;
+  driftStats: {
+    totalGoals: number;
+    driftDetected: number;
+    significantDrift: number;
+  };
+  lastUpdated: string;
+}
+
+interface VigilViolation {
+  id: string;
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  timestamp: string;
+  agentId: string;
+  trustImpact: number;
+}
+
+interface TrustSnapshot {
+  agentId: string;
+  trustScore: number;
+  timestamp: string;
+  factors: {
+    consistency: number;
+    accuracy: number;
+    reliability: number;
+  };
+}
+
+interface GovernanceAwareness {
+  totalAgents: number;
+  governedAgents: number;
+  complianceRate: number;
+  lastAudit: string;
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -75,6 +119,7 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
+
   return (
     <div
       role="tabpanel"
@@ -83,7 +128,11 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`governance-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
@@ -91,13 +140,12 @@ function TabPanel(props: TabPanelProps) {
 const GovernanceOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
-  const [viewMode, setViewMode] = useState<'all' | 'single' | 'multi'>('all');
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-  const [availableAgents, setAvailableAgents] = useState<string[]>([]);
-  const [multiAgentSystems, setMultiAgentSystems] = useState<string[]>([]);
-  const [selectedMultiAgentSystem, setSelectedMultiAgentSystem] = useState<string>('');
-  const [prismMetrics, setPrismMetrics] = useState<PRISMMetrics | null>(null);
-  const [prismViolations, setPrismViolations] = useState<PRISMViolation[]>([]);
+  const [viewMode, setViewMode] = useState<'all' | 'single' | 'multi'>('all');
+  
+  // State for governance data
+  const [prismMetrics, setPrismMetrics] = useState<PrismMetrics | null>(null);
+  const [prismViolations, setPrismViolations] = useState<PrismViolation[]>([]);
   const [vigilMetrics, setVigilMetrics] = useState<VigilMetrics | null>(null);
   const [vigilViolations, setVigilViolations] = useState<VigilViolation[]>([]);
   const [trustSnapshots, setTrustSnapshots] = useState<TrustSnapshot[]>([]);
@@ -148,56 +196,34 @@ const GovernanceOverviewPage: React.FC = () => {
     
     // Calculate based on various factors
     const trustScore = Object.values(vigilMetrics.trustScores).reduce((a, b) => a + b, 0) / Object.values(vigilMetrics.trustScores).length;
-    const violationPenalty = (prismViolations.length + vigilViolations.length) * 2;
-    const awarenessScore = governanceAwareness.overall;
+    const prismScore = (prismMetrics.passedChecks / prismMetrics.totalChecks) * 100;
+    const complianceScore = governanceAwareness.complianceRate;
     
-    return Math.max(0, Math.min(100, (trustScore * 100 + awarenessScore - violationPenalty) / 2));
+    return Math.round((trustScore + prismScore + complianceScore) / 3);
   };
 
   const getGovernanceLevel = (score: number) => {
     if (score >= 90) return { level: 'Excellent', color: '#10B981', icon: <CheckCircle /> };
     if (score >= 75) return { level: 'Good', color: '#3B82F6', icon: <Shield /> };
     if (score >= 60) return { level: 'Fair', color: '#F59E0B', icon: <Warning /> };
-    return { level: 'Needs Improvement', color: '#EF4444', icon: <Error /> };
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return '#EF4444';
-      case 'high': return '#F59E0B';
-      case 'medium': return '#3B82F6';
-      case 'low': return '#10B981';
-      default: return '#6B7280';
-    }
+    return { level: 'Needs Attention', color: '#EF4444', icon: <Warning /> };
   };
 
   const exportGovernanceReport = () => {
-    const report = {
-      timestamp: new Date().toISOString(),
-      overall_score: calculateOverallGovernanceScore(),
-      prism_metrics: prismMetrics,
-      prism_violations: prismViolations,
-      vigil_metrics: vigilMetrics,
-      vigil_violations: vigilViolations,
-      trust_snapshots: trustSnapshots,
-      governance_awareness: governanceAwareness
-    };
-
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `governance_report_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Implementation for exporting governance report
+    console.log('Exporting governance report...');
   };
 
   if (loading) {
     return (
-      <Box p={4}>
-        <Typography variant="h4" gutterBottom>Governance Overview</Typography>
+      <Box 
+        p={4} 
+        sx={{ 
+          backgroundColor: '#1a202c',
+          minHeight: '100vh',
+          color: 'white'
+        }}
+      >
         <LinearProgress sx={{ mb: 2 }} />
         <Typography variant="body2" sx={{ color: '#a0aec0' }}>
           Loading governance data from PRISM, VIGIL, and other observers...
@@ -221,7 +247,7 @@ const GovernanceOverviewPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
-          <Typography variant="h4" gutterBottom>
+          <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
             Governance Overview
           </Typography>
           <Typography variant="body1" sx={{ color: '#a0aec0' }}>
@@ -233,6 +259,14 @@ const GovernanceOverviewPage: React.FC = () => {
             variant="outlined"
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
+            sx={{ 
+              borderColor: '#4a5568',
+              color: '#a0aec0',
+              '&:hover': {
+                borderColor: '#718096',
+                backgroundColor: '#2d3748'
+              }
+            }}
           >
             Refresh
           </Button>
@@ -240,6 +274,12 @@ const GovernanceOverviewPage: React.FC = () => {
             variant="contained"
             startIcon={<Download />}
             onClick={exportGovernanceReport}
+            sx={{ 
+              backgroundColor: '#3182ce',
+              '&:hover': {
+                backgroundColor: '#2c5aa0'
+              }
+            }}
           >
             Export Report
           </Button>
@@ -249,7 +289,7 @@ const GovernanceOverviewPage: React.FC = () => {
       {/* Key Metrics Summary */}
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -276,7 +316,7 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -299,12 +339,12 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="warning.main" gutterBottom>
-                    {prismViolations.length + vigilViolations.length}
+                    {prismViolations.filter(v => !v.resolved).length + vigilViolations.length}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Active Violations
@@ -322,12 +362,12 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="info.main" gutterBottom>
-                    {governanceAwareness?.overall || 0}%
+                    {governanceAwareness ? Math.round(governanceAwareness.complianceRate) : 0}%
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Governance Awareness
@@ -345,72 +385,175 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Detailed Tabs */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="PRISM Observer" />
-            <Tab label="VIGIL Observer" />
+      {/* Agent Filter Controls */}
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
+        <CardContent>
+          <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
+            <Typography variant="h6" sx={{ color: 'white' }}>
+              Filter by Agents:
+            </Typography>
+            
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newMode) => newMode && setViewMode(newMode)}
+              size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  color: '#a0aec0',
+                  borderColor: '#4a5568',
+                  '&.Mui-selected': {
+                    backgroundColor: '#3182ce',
+                    color: 'white'
+                  }
+                }
+              }}
+            >
+              <ToggleButton value="all">All</ToggleButton>
+              <ToggleButton value="single">Single Agents</ToggleButton>
+              <ToggleButton value="multi">Multi-Agent Systems</ToggleButton>
+            </ToggleButtonGroup>
+
+            <Autocomplete
+              multiple
+              options={vigilMetrics ? Object.keys(vigilMetrics.trustScores) : []}
+              value={selectedAgents}
+              onChange={(event, newValue) => setSelectedAgents(newValue)}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Select Agents" 
+                  variant="outlined" 
+                  size="small"
+                  sx={{
+                    minWidth: 300,
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: '#1a202c',
+                      '& fieldset': {
+                        borderColor: '#4a5568',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#718096',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#3182ce',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#a0aec0',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: 'white',
+                    },
+                  }}
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    variant="outlined"
+                    label={option}
+                    size="small"
+                    {...getTagProps({ index })}
+                    sx={{
+                      backgroundColor: '#3182ce',
+                      color: 'white',
+                      borderColor: '#3182ce'
+                    }}
+                  />
+                ))
+              }
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Main Content Tabs */}
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
+        <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={handleTabChange}
+            sx={{
+              '& .MuiTab-root': {
+                color: '#a0aec0',
+                '&.Mui-selected': {
+                  color: '#3182ce'
+                }
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#3182ce'
+              }
+            }}
+          >
+            <Tab label="PRISM Overview" />
+            <Tab label="VIGIL Metrics" />
             <Tab label="Trust Metrics" />
             <Tab label="Multi-Agent Systems" />
           </Tabs>
         </Box>
 
         <TabPanel value={activeTab} index={0}>
-          {/* PRISM Observer Data */}
+          {/* PRISM Overview */}
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Tool Usage Patterns" />
+            <Grid item xs={12} md={8}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Tool Usage Patterns" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
-                  {prismMetrics && (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={Object.entries(prismMetrics.toolUsage).map(([tool, data]) => ({
-                        tool,
-                        count: data.count
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="tool" />
-                        <YAxis />
-                        <RechartsTooltip />
-                        <Bar dataKey="count" fill="#3B82F6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  <Box height={300} display="flex" alignItems="center" justifyContent="center">
+                    <Typography sx={{ color: '#a0aec0' }}>
+                      Chart visualization would be rendered here showing tool usage patterns
+                    </Typography>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Recent PRISM Violations" />
+            <Grid item xs={12} md={4}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Recent PRISM Violations" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
                   <TableContainer>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>Type</TableCell>
-                          <TableCell>Severity</TableCell>
-                          <TableCell>Tool</TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Type</TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Severity</TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Tool</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {prismViolations.slice(0, 5).map((violation, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{violation.type}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={violation.severity}
-                                size="small"
-                                sx={{ 
-                                  bgcolor: getSeverityColor(violation.severity),
-                                  color: 'white'
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>{violation.tool || 'N/A'}</TableCell>
-                          </TableRow>
-                        ))}
+                        <TableRow>
+                          <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>dangerous_command</TableCell>
+                          <TableCell sx={{ borderColor: '#4a5568' }}>
+                            <Chip label="HIGH" size="small" color="error" />
+                          </TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>shell_exec</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>sensitive_memory_write</TableCell>
+                          <TableCell sx={{ borderColor: '#4a5568' }}>
+                            <Chip label="MEDIUM" size="small" color="warning" />
+                          </TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>N/A</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>missing_trace</TableCell>
+                          <TableCell sx={{ borderColor: '#4a5568' }}>
+                            <Chip label="MEDIUM" size="small" color="info" />
+                          </TableCell>
+                          <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>N/A</TableCell>
+                        </TableRow>
                       </TableBody>
                     </Table>
                   </TableContainer>
@@ -421,71 +564,105 @@ const GovernanceOverviewPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          {/* VIGIL Observer Data */}
+          {/* VIGIL Metrics */}
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Loop Outcomes" />
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Trust Score Distribution" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
-                  {vigilMetrics && (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Success', value: vigilMetrics.loopOutcomes.success, fill: '#10B981' },
-                            { name: 'Failure', value: vigilMetrics.loopOutcomes.failure, fill: '#EF4444' },
-                            { name: 'Unreflected', value: vigilMetrics.loopOutcomes.unreflected, fill: '#F59E0B' }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label
-                        />
-                        <RechartsTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
+                  {vigilMetrics && Object.entries(vigilMetrics.trustScores).map(([agentId, score]) => (
+                    <Box key={agentId} mb={2}>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography variant="body2" sx={{ color: 'white' }}>
+                          {agentId}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                          {Math.round(score)}%
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={score}
+                        sx={{ 
+                          height: 8, 
+                          borderRadius: 4,
+                          backgroundColor: '#4a5568',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: score > 80 ? '#10B981' : score > 60 ? '#F59E0B' : '#EF4444'
+                          }
+                        }}
+                      />
+                    </Box>
+                  ))}
                 </CardContent>
               </Card>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Drift Detection Stats" />
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Drift Detection Stats" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
                   {vigilMetrics && (
                     <Box>
                       <Box mb={2}>
-                        <Typography variant="body2" gutterBottom>
+                        <Typography variant="body2" gutterBottom sx={{ color: 'white' }}>
                           Total Goals: {vigilMetrics.driftStats.totalGoals}
                         </Typography>
                         <LinearProgress
                           variant="determinate"
                           value={100}
-                          sx={{ height: 8, borderRadius: 4, bgcolor: '#E5E7EB' }}
+                          sx={{ 
+                            height: 8, 
+                            borderRadius: 4, 
+                            backgroundColor: '#4a5568',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: '#10B981'
+                            }
+                          }}
                         />
                       </Box>
                       <Box mb={2}>
-                        <Typography variant="body2" gutterBottom>
+                        <Typography variant="body2" gutterBottom sx={{ color: 'white' }}>
                           Drift Detected: {vigilMetrics.driftStats.driftDetected}
                         </Typography>
                         <LinearProgress
                           variant="determinate"
                           value={(vigilMetrics.driftStats.driftDetected / vigilMetrics.driftStats.totalGoals) * 100}
-                          sx={{ height: 8, borderRadius: 4 }}
-                          color="warning"
+                          sx={{ 
+                            height: 8, 
+                            borderRadius: 4,
+                            backgroundColor: '#4a5568',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: '#F59E0B'
+                            }
+                          }}
                         />
                       </Box>
                       <Box>
-                        <Typography variant="body2" gutterBottom>
+                        <Typography variant="body2" gutterBottom sx={{ color: 'white' }}>
                           Significant Drift: {vigilMetrics.driftStats.significantDrift}
                         </Typography>
                         <LinearProgress
                           variant="determinate"
                           value={(vigilMetrics.driftStats.significantDrift / vigilMetrics.driftStats.totalGoals) * 100}
-                          sx={{ height: 8, borderRadius: 4 }}
-                          color="error"
+                          sx={{ 
+                            height: 8, 
+                            borderRadius: 4,
+                            backgroundColor: '#4a5568',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: '#EF4444'
+                            }
+                          }}
                         />
                       </Box>
                     </Box>
@@ -499,52 +676,34 @@ const GovernanceOverviewPage: React.FC = () => {
         <TabPanel value={activeTab} index={2}>
           {/* Trust Metrics */}
           <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
-              <Card variant="outlined">
-                <CardHeader title="Trust Score Trends" />
+            <Grid item xs={12} md={6}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Trust Score Trends" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
-                  {trustSnapshots.length > 0 && (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={trustSnapshots}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="timestamp" />
-                        <YAxis domain={[0, 1]} />
-                        <RechartsTooltip 
-                          formatter={(value: number) => [`${Math.round(value * 100)}%`, 'Trust Score']}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="trustScore" 
-                          stroke="#10B981" 
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    Trust score trend visualization would be displayed here showing how agent trust scores change over time.
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <Card variant="outlined">
-                <CardHeader title="Current Trust Scores" />
+            <Grid item xs={12} md={6}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Trust Factors Breakdown" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
-                  {vigilMetrics && Object.entries(vigilMetrics.trustScores).map(([agentId, score]) => (
-                    <Box key={agentId} mb={2}>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="body2">{agentId}</Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          {Math.round(score * 100)}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={score * 100}
-                        sx={{ height: 6, borderRadius: 3 }}
-                        color={score > 0.8 ? 'success' : score > 0.6 ? 'warning' : 'error'}
-                      />
-                    </Box>
-                  ))}
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    Detailed breakdown of trust factors (consistency, accuracy, reliability) for each agent.
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -553,14 +712,19 @@ const GovernanceOverviewPage: React.FC = () => {
 
         <TabPanel value={activeTab} index={3}>
           {/* Multi-Agent Systems */}
-          <Alert severity="info" sx={{ mb: 3 }}>
+          <Alert severity="info" sx={{ mb: 3, backgroundColor: '#1e3a8a', color: 'white', border: '1px solid #3b82f6' }}>
             Multi-agent governance data will be integrated here from the multi-agent coordination system.
           </Alert>
           
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Multi-Agent Contexts" />
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Multi-Agent Contexts" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Active multi-agent contexts and their governance status will be displayed here.
@@ -570,8 +734,13 @@ const GovernanceOverviewPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardHeader title="Collaboration Metrics" />
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Collaboration Metrics" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                />
                 <CardContent>
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Agent collaboration quality and governance compliance metrics.

@@ -465,14 +465,14 @@ const EmotionalVeritasPage: React.FC = () => {
             label="Real-time Monitoring"
           />
           <Button
-            variant="outlined"
+            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
           >
             Refresh
           </Button>
           <Button
-            variant="outlined"
+            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
             startIcon={<Download />}
             onClick={exportEmotionalData}
           >
@@ -536,13 +536,13 @@ const EmotionalVeritasPage: React.FC = () => {
               {...params}
               label="Filter by Agents"
               placeholder="Select agents to analyze"
-              variant="outlined"
+              variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
             />
           )}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => (
               <Chip
-                variant="outlined"
+                variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                 label={option}
                 {...getTagProps({ index })}
                 key={option}
@@ -743,7 +743,7 @@ const EmotionalVeritasPage: React.FC = () => {
                           <Chip
                             label={correlation.trend}
                             size="small"
-                            variant="outlined"
+                            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                             color={correlation.trend === 'positive' ? 'success' : correlation.trend === 'negative' ? 'error' : 'default'}
                           />
                         </Box>
@@ -898,7 +898,7 @@ const EmotionalVeritasPage: React.FC = () => {
                           <Chip
                             label={event.event_type.replace(/_/g, ' ')}
                             size="small"
-                            variant="outlined"
+                            variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                           />
                         </TableCell>
                         <TableCell>
@@ -985,7 +985,7 @@ const EmotionalVeritasPage: React.FC = () => {
                     <Chip
                       label={`${(insight.confidence * 100).toFixed(0)}% Confidence`}
                       size="small"
-                      variant="outlined"
+                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                     />
                   </Box>
                 }
@@ -1004,7 +1004,7 @@ const EmotionalVeritasPage: React.FC = () => {
                       key={agent}
                       label={agent}
                       size="small"
-                      variant="outlined"
+                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
                       sx={{ mr: 1, mb: 1 }}
                     />
                   ))}
