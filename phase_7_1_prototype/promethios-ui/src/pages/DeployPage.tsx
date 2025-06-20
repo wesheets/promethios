@@ -672,7 +672,7 @@ const DeployPage: React.FC = () => {
 
           {/* Deployment Tabs */}
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
-            <Box sx={{ borderBottom            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 3 }}>
               <Tabs 
                 value={tabValue} 
                 onChange={handleTabChange}

@@ -1012,8 +1012,8 @@ const EmotionalVeritasPage: React.FC = () => {
                       key={agent}
                       label={agent}
                       size="small"
-                      variant="outlined" sx={{ backgroundColor: '#2d3748', color: 'white' }}
-                      sx={{ mr: 1, mb: 1 }}
+                      variant="outlined" 
+                      sx={{ backgroundColor: '#2d3748', color: 'white', mr: 1, mb: 1 }}
                     />
                   ))}
                 </Box>
