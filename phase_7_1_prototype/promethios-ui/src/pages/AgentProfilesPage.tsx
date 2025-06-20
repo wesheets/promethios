@@ -486,47 +486,6 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           />
         </MenuItem>
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
-        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to ChatGPT wrapping */ }} sx={{ py: 2 }}>
-          <ListItemIcon>
-            <SmartToy sx={{ color: '#10b981' }} />
-          </ListItemIcon>
-          <ListItemText 
-            primary="Wrap ChatGPT"
-            secondary="Connect your OpenAI account with governance"
-            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
-          />
-        </MenuItem>
-        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Claude wrapping */ }} sx={{ py: 2 }}>
-          <ListItemIcon>
-            <Psychology sx={{ color: '#8b5cf6' }} />
-          </ListItemIcon>
-          <ListItemText 
-            primary="Wrap Claude"
-            secondary="Connect your Anthropic account with governance"
-            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
-          />
-        </MenuItem>
-        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Gemini wrapping */ }} sx={{ py: 2 }}>
-          <ListItemIcon>
-            <AutoAwesome sx={{ color: '#f59e0b' }} />
-          </ListItemIcon>
-          <ListItemText 
-            primary="Wrap Gemini"
-            secondary="Connect your Google AI account with governance"
-            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
-          />
-        </MenuItem>
-        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Perplexity wrapping */ }} sx={{ py: 2 }}>
-          <ListItemIcon>
-            <Search sx={{ color: '#ef4444' }} />
-          </ListItemIcon>
-          <ListItemText 
-            primary="Wrap Perplexity"
-            secondary="Connect your Perplexity account with governance"
-            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
-          />
-        </MenuItem>
-        <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
         <MenuItem onClick={handleTemplateLibrary} sx={{ py: 2 }}>
           <ListItemIcon>
             <LibraryBooks sx={{ color: '#10b981' }} />
