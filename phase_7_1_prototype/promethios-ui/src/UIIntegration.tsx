@@ -104,25 +104,25 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* Big 4 LLM Wrapper Stubs */}
-        <Route path="agents/wrap-chatgpt" element={
+        <Route path="ui/agents/wrap-chatgpt" element={
           <ProtectedRoute requireOnboarding={false}>
             <ChatGPTWrapperStub />
           </ProtectedRoute>
         } />
         
-        <Route path="agents/wrap-claude" element={
+        <Route path="ui/agents/wrap-claude" element={
           <ProtectedRoute requireOnboarding={false}>
             <ClaudeWrapperStub />
           </ProtectedRoute>
         } />
         
-        <Route path="agents/wrap-gemini" element={
+        <Route path="ui/agents/wrap-gemini" element={
           <ProtectedRoute requireOnboarding={false}>
             <GeminiWrapperStub />
           </ProtectedRoute>
         } />
         
-        <Route path="agents/wrap-perplexity" element={
+        <Route path="ui/agents/wrap-perplexity" element={
           <ProtectedRoute requireOnboarding={false}>
             <PerplexityWrapperStub />
           </ProtectedRoute>
