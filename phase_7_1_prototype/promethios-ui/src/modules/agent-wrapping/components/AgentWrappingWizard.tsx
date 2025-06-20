@@ -11,7 +11,24 @@ import {
   Alert,
   CircularProgress,
   Fade,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
+import {
+  SmartToy as AgentIcon,
+  Security as GovernanceIcon,
+  Psychology as PsychologyIcon,
+  Code as CodeIcon,
+  Business as BusinessIcon,
+  Science as ScienceIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAgentWrappers } from '../hooks/useAgentWrappers';
 import { AgentWrapper } from '../types';
@@ -54,12 +71,54 @@ export interface WizardFormData {
   securityScore: number;
 }
 
+// Demo agents for quick wrapping demonstration
+const DEMO_AGENTS = [
+  {
+    id: 'helpful-assistant-demo',
+    name: 'Helpful Assistant',
+    description: 'A general-purpose AI assistant that provides helpful, harmless, and honest responses.',
+    type: 'assistant',
+    provider: 'OpenAI',
+    model: 'gpt-3.5-turbo',
+    capabilities: ['general-assistance', 'question-answering', 'conversation'],
+    governance_enabled: true,
+    icon: <PsychologyIcon />,
+    color: '#2196f3'
+  },
+  {
+    id: 'code-specialist-demo',
+    name: 'Code Specialist',
+    description: 'A specialized coding assistant for programming tasks, debugging, and code review.',
+    type: 'specialist',
+    provider: 'OpenAI',
+    model: 'gpt-4',
+    capabilities: ['code-generation', 'debugging', 'code-review'],
+    governance_enabled: true,
+    icon: <CodeIcon />,
+    color: '#9c27b0'
+  },
+  {
+    id: 'business-analyst-demo',
+    name: 'Business Analyst',
+    description: 'A business-focused AI for strategy, analysis, and market research.',
+    type: 'specialist',
+    provider: 'Anthropic',
+    model: 'claude-3-sonnet',
+    capabilities: ['business-analysis', 'strategy-planning', 'market-research'],
+    governance_enabled: true,
+    icon: <BusinessIcon />,
+    color: '#ff9800'
+  }
+];
+
 const AgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdWrapper, setCreatedWrapper] = useState<AgentWrapper | null>(null);
+  const [showDemoDialog, setShowDemoDialog] = useState(false);
+  const [selectedDemoAgent, setSelectedDemoAgent] = useState<any>(null);
   
   const { registerWrapper } = useAgentWrappers();
   const navigate = useNavigate();
@@ -115,6 +174,110 @@ const AgentWrappingWizard: React.FC = () => {
 
   const handleBack = () => {
     setActiveStep(prev => prev - 1);
+  };
+
+  const handleWrapDemoAgent = async (demoAgent: any) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Create a simplified wrapper for demo agent
+      const wrapper: AgentWrapper = {
+        id: `demo_wrapper_${demoAgent.id}_${Date.now()}`,
+        name: `${demoAgent.name} (Demo)`,
+        description: `${demoAgent.description} - Wrapped with Promethios governance for demonstration.`,
+        version: '1.0.0',
+        supportedProviders: [demoAgent.provider],
+        inputSchema: {
+          id: `${demoAgent.id}_input_schema`,
+          version: '1.0.0',
+          definition: {
+            type: 'object',
+            properties: {
+              message: { type: 'string', description: 'User message' },
+              context: { type: 'string', description: 'Additional context' }
+            },
+            required: ['message']
+          },
+          validate: (data: any) => ({
+            valid: !!data.message,
+            errors: !data.message ? [{ path: 'message', message: 'Message is required', code: 'REQUIRED_FIELD_MISSING' }] : []
+          })
+        },
+        outputSchema: {
+          id: `${demoAgent.id}_output_schema`,
+          version: '1.0.0',
+          definition: {
+            type: 'object',
+            properties: {
+              response: { type: 'string', description: 'Agent response' },
+              confidence: { type: 'number', description: 'Response confidence score' },
+              governance_score: { type: 'number', description: 'Governance trust score' }
+            },
+            required: ['response']
+          },
+          validate: (data: any) => ({
+            valid: !!data.response,
+            errors: !data.response ? [{ path: 'response', message: 'Response is required', code: 'REQUIRED_FIELD_MISSING' }] : []
+          })
+        },
+        wrap: async (request: any, context: any) => {
+          console.log(`Demo wrapping request for ${wrapper.name}:`, request);
+          
+          // Simulate governance checks for demo
+          const governanceChecks = {
+            trustScore: Math.random() * 0.3 + 0.7, // 0.7-1.0 for demo
+            compliancePass: true,
+            rateLimitOk: true,
+            demo: true
+          };
+          
+          return {
+            ...request,
+            _governance: governanceChecks,
+            _wrapper: {
+              id: wrapper.id,
+              name: wrapper.name,
+              timestamp: Date.now(),
+              demo: true
+            }
+          };
+        },
+        unwrap: async (response: any, context: any) => {
+          console.log(`Demo unwrapping response for ${wrapper.name}:`, response);
+          return {
+            ...response,
+            _validation: { valid: true, errors: [] },
+            _unwrapped: true,
+            _demo: true
+          };
+        },
+        initialize: async () => {
+          console.log(`Initializing demo wrapper ${wrapper.name}`);
+          return true;
+        },
+        cleanup: async () => {
+          console.log(`Cleaning up demo wrapper ${wrapper.name}`);
+          return true;
+        }
+      };
+
+      // Register the demo wrapper
+      const success = await registerWrapper(wrapper);
+      
+      if (success) {
+        setCreatedWrapper(wrapper);
+        setIsComplete(true);
+        setShowDemoDialog(false);
+      } else {
+        throw new Error('Failed to register demo agent wrapper');
+      }
+    } catch (err) {
+      console.error('Error wrapping demo agent:', err);
+      setError(err instanceof Error ? err.message : 'Failed to wrap demo agent');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleComplete = async () => {
@@ -332,6 +495,99 @@ const AgentWrappingWizard: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Demo Agents Section */}
+      <Paper elevation={1} sx={{ p: 3, mb: 4, backgroundColor: 'rgba(76, 175, 80, 0.05)', border: '1px solid rgba(76, 175, 80, 0.2)' }}>
+        <Box mb={2}>
+          <Typography variant="h6" gutterBottom sx={{ color: '#4caf50', fontWeight: 600 }}>
+            🚀 Try a Demo Agent First
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Click any demo agent below to auto-populate the wizard and see how easy agent wrapping is!
+          </Typography>
+        </Box>
+        
+        <Grid container spacing={2}>
+          {DEMO_AGENTS.map((agent) => (
+            <Grid item xs={12} md={4} key={agent.id}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: 3,
+                    borderColor: agent.color
+                  }
+                }}
+                onClick={() => {
+                  // Pre-populate wizard with demo agent data
+                  setFormData({
+                    agentName: agent.name,
+                    description: agent.description,
+                    provider: agent.provider,
+                    apiEndpoint: agent.provider === 'OpenAI' ? 'https://api.openai.com/v1/chat/completions' :
+                                agent.provider === 'Anthropic' ? 'https://api.anthropic.com/v1/messages' :
+                                'https://api.cohere.ai/v1/generate',
+                    authMethod: 'Bearer Token',
+                    apiKey: `demo_${agent.provider.toLowerCase()}_key_12345`,
+                    model: agent.model,
+                    inputSchema: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string', description: 'User message' },
+                        context: { type: 'string', description: 'Additional context' }
+                      },
+                      required: ['message']
+                    },
+                    outputSchema: {
+                      type: 'object',
+                      properties: {
+                        response: { type: 'string', description: 'Agent response' },
+                        confidence: { type: 'number', description: 'Response confidence score' }
+                      },
+                      required: ['response']
+                    },
+                    trustThreshold: 0.8,
+                    complianceLevel: 'standard',
+                    enableLogging: true,
+                    enableRateLimiting: true,
+                    maxRequestsPerMinute: 60,
+                    estimatedCost: '$0.02/request',
+                    securityScore: 85
+                  });
+                  setError(null);
+                }}
+              >
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ color: agent.color, mr: 1 }}>
+                      {agent.icon}
+                    </Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {agent.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                    {agent.description}
+                  </Typography>
+                  <Chip 
+                    label={agent.provider} 
+                    size="small" 
+                    sx={{ 
+                      backgroundColor: agent.color, 
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      height: 20
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Paper>
+
       <Paper elevation={2} sx={{ p: 4 }}>
         <Box mb={4}>
           <Typography variant="h4" component="h1" gutterBottom>

@@ -22,41 +22,40 @@ def health_check():
 
 @app.route("/api/demo-agents", methods=["GET"])
 def get_demo_agents():
-    agents = [
-        {"id": "baseline_agent", "name": "Baseline Agent", "description": "A standard agent for baseline comparisons."},
-        {"id": "factual_agent", "name": "Factual Agent", "description": "An agent focused on providing accurate and factual information."},
-        {"id": "creative_agent", "name": "Creative Agent", "description": "An agent designed for creative and imaginative tasks."},
-        {"id": "governance_focused_agent", "name": "Governance-Focused Agent", "description": "An agent with built-in awareness of governance policies."},
-        {"id": "multi_tool_agent", "name": "Multi-Tool Agent", "description": "An agent capable of using multiple external tools."}
-    ]
-    return jsonify(agents)
+    """Get list of available demo agents from the benchmark service"""
+    try:
+        agents = benchmark_service.get_demo_agents()
+        return jsonify({"success": True, "agents": agents})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/test-scenarios", methods=["GET"])
 def get_test_scenarios():
-    scenarios = [
-        {"id": "customer_service", "name": "Customer Service", "description": "Scenario for handling customer inquiries and complaints."},
-        {"id": "financial_advice", "name": "Financial Advice", "description": "Scenario for providing financial guidance with compliance."},
-        {"id": "healthcare_information", "name": "Healthcare Information", "description": "Scenario for providing health-related information without medical diagnosis."},
-        {"id": "content_moderation", "name": "Content Moderation", "description": "Scenario for moderating user-generated content."},
-        {"id": "creative_writing", "name": "Creative Writing", "description": "Scenario for generating creative text while adhering to guidelines."}
-    ]
-    return jsonify(scenarios)
+    """Get list of available test scenarios from the benchmark service"""
+    try:
+        scenarios = benchmark_service.get_test_scenarios()
+        return jsonify({"success": True, "scenarios": scenarios})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/chat/send", methods=["POST"])
 async def send_chat_message():
+    """Send a message to an agent and get response with optional governance"""
     data = request.get_json()
     agent_id = data.get("agent_id")
     message = data.get("message")
     governance_enabled = data.get("governance_enabled", False)
+    scenario_id = data.get("scenario_id")
 
     if not agent_id or not message:
         return jsonify({"success": False, "error": "agent_id and message are required"}), 400
 
     try:
-        response = await benchmark_service.run_agent_interaction(
+        response = await benchmark_service.send_message_to_agent(
             agent_id=agent_id,
             message=message,
-            governance_enabled=governance_enabled
+            governance_enabled=governance_enabled,
+            scenario_id=scenario_id
         )
         return jsonify({"success": True, "response": response})
     except Exception as e:

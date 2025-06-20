@@ -308,28 +308,184 @@ class CMUBenchmarkService:
     
     async def _call_governance_api(self, governance_request: Dict[str, Any]) -> Dict[str, Any]:
         """Call the existing Promethios governance API"""
-        # This would integrate with the actual Promethios governance API
-        # For now, simulate the API response structure
-        
-        # Simulate policy evaluation
-        policy_response = await self._evaluate_policies(governance_request)
-        
-        # Simulate compliance monitoring
-        compliance_response = await self._monitor_compliance(governance_request)
-        
-        # Simulate reflection process
-        reflection_response = await self._create_reflection(governance_request)
-        
-        return {
-            "original_response": governance_request["content"],
-            "modified_response": policy_response.get("modified_content", governance_request["content"]),
-            "policy_evaluation": policy_response,
-            "compliance_result": compliance_response,
-            "reflection_record": reflection_response,
-            "governance_applied": policy_response.get("violations_found", False),
-            "timestamp": datetime.now().isoformat()
-        }
+        try:
+            import requests
+            import uuid
+            
+            # Prepare the request for the Promethios governance API
+            request_id = str(uuid.uuid4())
+            
+            # Structure the request according to the actual loop_execute_request schema
+            api_request = {
+                "request_id": request_id,
+                "plan_input": {
+                    "agent_id": governance_request["agent_id"],
+                    "content": governance_request["content"],
+                    "context": governance_request.get("context", {}),
+                    "task_type": "agent_response_evaluation",
+                    "timestamp": governance_request.get("context", {}).get("timestamp"),
+                    "source": "cmu_benchmark",
+                    "evaluation_criteria": [
+                        "policy_compliance",
+                        "trust_assessment", 
+                        "risk_evaluation",
+                        "content_appropriateness"
+                    ]
+                }
+            }
+            
+            # Make the API call to the Promethios governance core
+            response = requests.post(
+                "http://localhost:8000/loop/execute",
+                json=api_request,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                governance_result = response.json()
+                
+                # Extract governance data from the response
+                return {
+                    "request_id": request_id,
+                    "execution_status": governance_result.get("execution_status", "SUCCESS"),
+                    "original_response": governance_request["content"],
+                    "modified_response": self._extract_modified_response(governance_result, governance_request["content"]),
+                    "governance_core_output": governance_result.get("governance_core_output"),
+                    "emotion_telemetry": governance_result.get("emotion_telemetry"),
+                    "justification_log": governance_result.get("justification_log"),
+                    "trust_score": self._extract_trust_score(governance_result),
+                    "compliance_status": self._extract_compliance_status(governance_result),
+                    "policy_violations": self._extract_policy_violations(governance_result),
+                    "cryptographic_seal": self._extract_seal_info(governance_result),
+                    "governance_enabled": True,
+                    "timestamp": governance_request.get("context", {}).get("timestamp"),
+                    "seal_file_path": self._get_seal_file_path(request_id)
+                }
+            else:
+                # Handle API errors
+                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+                return await self._fallback_governance(governance_request["content"], governance_request["agent_id"], 
+                                                     error=f"Governance API error: {response.status_code} - {error_data}")
+                
+        except Exception as e:
+            # Fallback to basic governance simulation if API is not available
+            return await self._fallback_governance(governance_request["content"], governance_request["agent_id"], 
+                                                 error=str(e))
     
+    def _get_seal_file_path(self, request_id: str) -> str:
+        """Get the expected path for the cryptographic seal file"""
+        return f"/home/ubuntu/promethios/logs/seals/{request_id}.seal.json"
+    
+    def _extract_modified_response(self, governance_result: Dict[str, Any], original_content: str) -> str:
+        """Extract the modified response from governance result"""
+        # Check if governance modified the response
+        governance_output = governance_result.get("governance_core_output", {})
+        
+        if isinstance(governance_output, dict):
+            # Look for modified content in various possible locations
+            modified_content = (
+                governance_output.get("modified_content") or
+                governance_output.get("approved_content") or
+                governance_output.get("final_response")
+            )
+            
+            if modified_content:
+                return modified_content
+        
+        # If no modification found, return original content
+        return original_content
+    
+    def _extract_trust_score(self, governance_result: Dict[str, Any]) -> float:
+        """Extract trust score from governance result"""
+        emotion_telemetry = governance_result.get("emotion_telemetry", {})
+        
+        if isinstance(emotion_telemetry, dict):
+            # Look for trust score in emotion telemetry
+            trust_score = (
+                emotion_telemetry.get("trust_score") or
+                emotion_telemetry.get("overall_trust") or
+                emotion_telemetry.get("confidence_score")
+            )
+            
+            if isinstance(trust_score, (int, float)):
+                return float(trust_score)
+        
+        # Default trust score if not found
+        return 0.85
+    
+    def _extract_compliance_status(self, governance_result: Dict[str, Any]) -> str:
+        """Extract compliance status from governance result"""
+        justification_log = governance_result.get("justification_log", {})
+        
+        if isinstance(justification_log, dict):
+            # Look for compliance status
+            compliance = (
+                justification_log.get("compliance_status") or
+                justification_log.get("validation_passed") or
+                justification_log.get("policy_compliance")
+            )
+            
+            if compliance is True or compliance == "PASSED":
+                return "COMPLIANT"
+            elif compliance is False or compliance == "FAILED":
+                return "NON_COMPLIANT"
+            elif isinstance(compliance, str):
+                return compliance.upper()
+        
+        # Check execution status as fallback
+        if governance_result.get("execution_status") == "SUCCESS":
+            return "COMPLIANT"
+        else:
+            return "UNDER_REVIEW"
+    
+    def _extract_policy_violations(self, governance_result: Dict[str, Any]) -> List[str]:
+        """Extract policy violations from governance result"""
+        violations = []
+        
+        justification_log = governance_result.get("justification_log", {})
+        if isinstance(justification_log, dict):
+            # Look for violations in various formats
+            violation_data = (
+                justification_log.get("policy_violations") or
+                justification_log.get("violations") or
+                justification_log.get("issues") or
+                []
+            )
+            
+            if isinstance(violation_data, list):
+                violations.extend([str(v) for v in violation_data])
+            elif isinstance(violation_data, str):
+                violations.append(violation_data)
+        
+        # Check error details for additional violations
+        error_details = governance_result.get("error_details")
+        if error_details and isinstance(error_details, dict):
+            error_message = error_details.get("message", "")
+            if "violation" in error_message.lower() or "policy" in error_message.lower():
+                violations.append(error_message)
+        
+        return violations
+    
+    def _extract_seal_info(self, governance_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract cryptographic seal information from governance result"""
+        # The seal information might be in the governance_core_output or as metadata
+        governance_output = governance_result.get("governance_core_output", {})
+        
+        seal_info = {
+            "execution_id": governance_result.get("request_id"),
+            "timestamp": governance_result.get("timestamp"),
+            "hash_verification": "PENDING",
+            "seal_status": "GENERATED" if governance_result.get("execution_status") == "SUCCESS" else "FAILED"
+        }
+        
+        if isinstance(governance_output, dict):
+            # Look for seal-related information
+            seal_data = governance_output.get("seal_info") or governance_output.get("verification_data")
+            if seal_data:
+                seal_info.update(seal_data)
+        
+        return seal_info    
     async def _evaluate_policies(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate content against governance policies using Promethios policy API"""
         # This would call the actual /policy endpoint
@@ -416,15 +572,41 @@ class CMUBenchmarkService:
             }
         }
     
-    async def _fallback_governance(self, response: str, agent_id: str) -> Dict[str, Any]:
+    async def _fallback_governance(self, response: str, agent_id: str, error: str = None) -> Dict[str, Any]:
         """Fallback governance simulation when API is not available"""
         return {
+            "request_id": f"fallback_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "execution_status": "FALLBACK",
             "original_response": response,
             "modified_response": response,
-            "governance_applied": False,
-            "compliance_score": 85,
-            "note": "Using fallback governance - integrate with Promethios governance API for full functionality",
-            "timestamp": datetime.now().isoformat()
+            "governance_core_output": {
+                "plan_status": "FALLBACK_MODE",
+                "note": "Using fallback governance - Promethios governance API not available"
+            },
+            "emotion_telemetry": {
+                "trust_score": 0.75,
+                "status": "simulated",
+                "note": "Fallback trust score"
+            },
+            "justification_log": {
+                "compliance_status": "UNKNOWN",
+                "validation_passed": None,
+                "note": "Fallback mode - no real governance validation"
+            },
+            "trust_score": 0.75,
+            "compliance_status": "UNKNOWN",
+            "policy_violations": [],
+            "cryptographic_seal": {
+                "execution_id": None,
+                "timestamp": datetime.now().isoformat(),
+                "hash_verification": "UNAVAILABLE",
+                "seal_status": "NOT_GENERATED",
+                "note": "Governance API unavailable"
+            },
+            "governance_enabled": False,
+            "timestamp": datetime.now().isoformat(),
+            "error": error,
+            "seal_file_path": None
         }
     
     # Additional methods needed for the Flask API
