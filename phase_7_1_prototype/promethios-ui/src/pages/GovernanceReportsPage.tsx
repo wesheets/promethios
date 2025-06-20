@@ -509,14 +509,21 @@ const GovernanceReportsPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+    <Box 
+      p={4}
+      sx={{ 
+        backgroundColor: '#1a202c',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Governance Reports
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Generate, schedule, and manage governance reports for compliance and audit
           </Typography>
         </Box>
@@ -549,14 +556,14 @@ const GovernanceReportsPage: React.FC = () => {
       {reportMetrics && (
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="primary" gutterBottom>
                       {reportMetrics.total_reports}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Total Reports
                     </Typography>
                   </Box>
@@ -569,14 +576,14 @@ const GovernanceReportsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="success.main" gutterBottom>
                       {reportMetrics.reports_this_month}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       This Month
                     </Typography>
                   </Box>
@@ -589,14 +596,14 @@ const GovernanceReportsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="info.main" gutterBottom>
                       {reportMetrics.total_downloads}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Downloads
                     </Typography>
                   </Box>
@@ -609,14 +616,14 @@ const GovernanceReportsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="warning.main" gutterBottom>
                       {reportMetrics.avg_generation_time}s
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Avg Generation
                     </Typography>
                   </Box>
@@ -629,14 +636,14 @@ const GovernanceReportsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="success.main" gutterBottom>
                       {reportMetrics.compliance_score}%
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Compliance
                     </Typography>
                   </Box>
@@ -649,14 +656,14 @@ const GovernanceReportsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="info.main" gutterBottom>
                       {reportMetrics.audit_coverage}%
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Audit Coverage
                     </Typography>
                   </Box>
@@ -722,7 +729,7 @@ const GovernanceReportsPage: React.FC = () => {
                   }
                 />
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }} paragraph>
                     {template.description}
                   </Typography>
                   
@@ -740,17 +747,17 @@ const GovernanceReportsPage: React.FC = () => {
                       />
                     ))}
                     {template.sections.length > 3 && (
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                         +{template.sections.length - 3} more
                       </Typography>
                     )}
                   </Box>
 
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Schedule: {template.schedule}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Last Generated: {new Date(template.last_generated).toLocaleDateString()}
                     </Typography>
                   </Box>
@@ -790,7 +797,7 @@ const GovernanceReportsPage: React.FC = () => {
 
       {/* Generated Reports View */}
       {viewMode === 'generated' && (
-        <Card>
+        <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
           <CardHeader
             title="Generated Reports"
             subheader={`${generatedReports.length} reports available for download`}
@@ -817,7 +824,7 @@ const GovernanceReportsPage: React.FC = () => {
                           <Typography variant="body2" fontWeight="medium">
                             {report.template_name}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                             ID: {report.id}
                           </Typography>
                         </Box>
@@ -834,7 +841,7 @@ const GovernanceReportsPage: React.FC = () => {
                         <Typography variant="body2">
                           {new Date(report.generated_at).toLocaleDateString()}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                           {new Date(report.generated_at).toLocaleTimeString()}
                         </Typography>
                       </TableCell>
@@ -891,7 +898,7 @@ const GovernanceReportsPage: React.FC = () => {
 
       {/* Scheduled Reports View */}
       {viewMode === 'scheduled' && (
-        <Card>
+        <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
           <CardHeader
             title="Scheduled Reports"
             subheader="Automated report generation schedules"
@@ -927,7 +934,7 @@ const GovernanceReportsPage: React.FC = () => {
                               <Typography variant="body2" fontWeight="medium">
                                 {template.name}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                                 {template.category}
                               </Typography>
                             </Box>
@@ -1265,19 +1272,19 @@ const GovernanceReportsPage: React.FC = () => {
                   />
                   <CardContent>
                     {section.type === 'summary' && (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                         Executive summary with key findings and recommendations
                       </Typography>
                     )}
                     {section.type === 'chart' && (
                       <Box height={200} display="flex" alignItems="center" justifyContent="center" bgcolor="#f5f5f5">
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                           Chart visualization will appear here
                         </Typography>
                       </Box>
                     )}
                     {section.type === 'table' && (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                         Data table with detailed metrics and information
                       </Typography>
                     )}

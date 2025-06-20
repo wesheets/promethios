@@ -199,7 +199,7 @@ const GovernanceOverviewPage: React.FC = () => {
       <Box p={4}>
         <Typography variant="h4" gutterBottom>Governance Overview</Typography>
         <LinearProgress sx={{ mb: 2 }} />
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
           Loading governance data from PRISM, VIGIL, and other observers...
         </Typography>
       </Box>
@@ -210,14 +210,21 @@ const GovernanceOverviewPage: React.FC = () => {
   const governanceLevel = getGovernanceLevel(overallScore);
 
   return (
-    <Box p={4}>
+    <Box 
+      p={4} 
+      sx={{ 
+        backgroundColor: '#1a202c',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Governance Overview
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Comprehensive governance monitoring across all agents and systems
           </Typography>
         </Box>
@@ -242,14 +249,14 @@ const GovernanceOverviewPage: React.FC = () => {
       {/* Key Metrics Summary */}
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="primary" gutterBottom>
                     {Math.round(overallScore)}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Overall Governance Score
                   </Typography>
                 </Box>
@@ -269,14 +276,14 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="success.main" gutterBottom>
                     {vigilMetrics ? Object.keys(vigilMetrics.trustScores).length : 0}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Monitored Agents
                   </Typography>
                 </Box>
@@ -284,7 +291,7 @@ const GovernanceOverviewPage: React.FC = () => {
                   <Security />
                 </Avatar>
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                 Active governance monitoring
               </Typography>
             </CardContent>
@@ -292,14 +299,14 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="warning.main" gutterBottom>
                     {prismViolations.length + vigilViolations.length}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Active Violations
                   </Typography>
                 </Box>
@@ -307,7 +314,7 @@ const GovernanceOverviewPage: React.FC = () => {
                   <Warning />
                 </Avatar>
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                 Across all systems
               </Typography>
             </CardContent>
@@ -315,14 +322,14 @@ const GovernanceOverviewPage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="info.main" gutterBottom>
                     {governanceAwareness?.overall || 0}%
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Governance Awareness
                   </Typography>
                 </Box>
@@ -330,7 +337,7 @@ const GovernanceOverviewPage: React.FC = () => {
                   <Assessment />
                 </Avatar>
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                 Self-reflection quality
               </Typography>
             </CardContent>
@@ -339,7 +346,7 @@ const GovernanceOverviewPage: React.FC = () => {
       </Grid>
 
       {/* Detailed Tabs */}
-      <Card>
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
             <Tab label="PRISM Observer" />
@@ -555,7 +562,7 @@ const GovernanceOverviewPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader title="Multi-Agent Contexts" />
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Active multi-agent contexts and their governance status will be displayed here.
                   </Typography>
                 </CardContent>
@@ -566,7 +573,7 @@ const GovernanceOverviewPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader title="Collaboration Metrics" />
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Agent collaboration quality and governance compliance metrics.
                   </Typography>
                 </CardContent>

@@ -356,14 +356,21 @@ const GovernanceViolationsPage: React.FC = () => {
   );
 
   return (
-    <Box p={4}>
+    <Box 
+      p={4}
+      sx={{ 
+        backgroundColor: '#1a202c',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Governance Violations
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Monitor and manage governance violations across all agents and systems
           </Typography>
         </Box>
@@ -389,14 +396,14 @@ const GovernanceViolationsPage: React.FC = () => {
       {violationSummary && (
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="text.primary" gutterBottom>
                       {violationSummary.total}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Total Violations
                     </Typography>
                   </Box>
@@ -410,7 +417,7 @@ const GovernanceViolationsPage: React.FC = () => {
                   ) : (
                     <TrendingUp sx={{ color: '#EF4444', mr: 1 }} />
                   )}
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                     {violationSummary.trendPercent}% vs last period
                   </Typography>
                 </Box>
@@ -419,14 +426,14 @@ const GovernanceViolationsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="error.main" gutterBottom>
                       {violationSummary.critical}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Critical
                     </Typography>
                   </Box>
@@ -439,14 +446,14 @@ const GovernanceViolationsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="warning.main" gutterBottom>
                       {violationSummary.high}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       High
                     </Typography>
                   </Box>
@@ -459,14 +466,14 @@ const GovernanceViolationsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="info.main" gutterBottom>
                       {violationSummary.medium}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Medium
                     </Typography>
                   </Box>
@@ -479,14 +486,14 @@ const GovernanceViolationsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="success.main" gutterBottom>
                       {violationSummary.resolved}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Resolved
                     </Typography>
                   </Box>
@@ -499,14 +506,14 @@ const GovernanceViolationsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <Card>
+            <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography variant="h3" color="error.main" gutterBottom>
                       {violationSummary.active}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Active
                     </Typography>
                   </Box>
@@ -660,7 +667,7 @@ const GovernanceViolationsPage: React.FC = () => {
       </Card>
 
       {/* Violations Table */}
-      <Card>
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
         <CardHeader
           title={`Violations (${filteredViolations.length})`}
           subheader={`Showing ${paginatedViolations.length} of ${filteredViolations.length} violations`}
@@ -703,7 +710,7 @@ const GovernanceViolationsPage: React.FC = () => {
                           <Typography variant="body2" fontWeight="medium">
                             {violation.agent_name}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                             {violation.agent_id}
                           </Typography>
                         </Box>
@@ -757,7 +764,7 @@ const GovernanceViolationsPage: React.FC = () => {
                       <Typography variant="body2">
                         {new Date(violation.created_at).toLocaleDateString()}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                         {new Date(violation.created_at).toLocaleTimeString()}
                       </Typography>
                     </TableCell>
@@ -818,20 +825,20 @@ const GovernanceViolationsPage: React.FC = () => {
                     Basic Information
                   </Typography>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">ID</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>ID</Typography>
                     <Typography variant="body1">{selectedViolation.id}</Typography>
                   </Box>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">Source</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Source</Typography>
                     <Box display="flex" alignItems="center">
                       {getSourceIcon(selectedViolation.source)}
                       <Typography variant="body1" ml={1}>{selectedViolation.source}</Typography>
                     </Box>
                   </Box>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">Agent</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Agent</Typography>
                     <Typography variant="body1">{selectedViolation.agent_name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                       {selectedViolation.agent_id} ({selectedViolation.agent_type})
                     </Typography>
                   </Box>
@@ -842,13 +849,13 @@ const GovernanceViolationsPage: React.FC = () => {
                     Violation Details
                   </Typography>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">Type</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Type</Typography>
                     <Typography variant="body1">
                       {selectedViolation.type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </Typography>
                   </Box>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">Severity</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Severity</Typography>
                     <Chip
                       label={selectedViolation.severity}
                       sx={{
@@ -858,7 +865,7 @@ const GovernanceViolationsPage: React.FC = () => {
                     />
                   </Box>
                   <Box mb={2}>
-                    <Typography variant="body2" color="text.secondary">Impact Score</Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Impact Score</Typography>
                     <Box display="flex" alignItems="center">
                       <LinearProgress
                         variant="determinate"
@@ -890,7 +897,7 @@ const GovernanceViolationsPage: React.FC = () => {
                     <Typography variant="subtitle2" gutterBottom>
                       Tool Context
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Tool: {selectedViolation.tool}
                     </Typography>
                   </Grid>
@@ -912,10 +919,10 @@ const GovernanceViolationsPage: React.FC = () => {
                     Timeline
                   </Typography>
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Created: {new Date(selectedViolation.created_at).toLocaleString()}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       Updated: {new Date(selectedViolation.updated_at).toLocaleString()}
                     </Typography>
                   </Box>

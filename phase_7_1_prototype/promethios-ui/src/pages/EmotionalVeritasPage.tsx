@@ -436,14 +436,21 @@ const EmotionalVeritasPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+    <Box 
+      p={4}
+      sx={{ 
+        backgroundColor: '#1a202c',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Emotional Veritas
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Advanced emotional monitoring with governance correlation and trust analysis
           </Typography>
         </Box>
@@ -557,7 +564,7 @@ const EmotionalVeritasPage: React.FC = () => {
               )
               .map(([agentId, metrics]) => (
                 <Grid item xs={12} md={6} lg={4} key={agentId}>
-                  <Card>
+                  <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                     <CardHeader
                       avatar={
                         <Avatar sx={{ bgcolor: getEmotionalColor(metrics.emotional_intelligence) }}>
@@ -570,7 +577,7 @@ const EmotionalVeritasPage: React.FC = () => {
                     <CardContent>
                       <Grid container spacing={2}>
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Sentiment
                           </Typography>
                           <Box display="flex" alignItems="center">
@@ -592,7 +599,7 @@ const EmotionalVeritasPage: React.FC = () => {
                         </Grid>
 
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Stability
                           </Typography>
                           <Box display="flex" alignItems="center">
@@ -614,7 +621,7 @@ const EmotionalVeritasPage: React.FC = () => {
                         </Grid>
 
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Stress Level
                           </Typography>
                           <Box display="flex" alignItems="center">
@@ -636,7 +643,7 @@ const EmotionalVeritasPage: React.FC = () => {
                         </Grid>
 
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Empathy
                           </Typography>
                           <Box display="flex" alignItems="center">
@@ -659,10 +666,10 @@ const EmotionalVeritasPage: React.FC = () => {
                       </Grid>
 
                       <Box mt={2}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                           Interaction Quality: {(metrics.interaction_quality * 100).toFixed(0)}%
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                           Mood Variance: {(metrics.mood_variance * 100).toFixed(0)}%
                         </Typography>
                       </Box>
@@ -718,7 +725,7 @@ const EmotionalVeritasPage: React.FC = () => {
               )
               .map((correlation) => (
                 <Grid item xs={12} md={6} lg={4} key={correlation.agent_id}>
-                  <Card>
+                  <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                     <CardHeader
                       avatar={
                         <Avatar sx={{ bgcolor: getRiskLevelColor(correlation.risk_level) }}>
@@ -745,7 +752,7 @@ const EmotionalVeritasPage: React.FC = () => {
                     <CardContent>
                       <Grid container spacing={2} mb={2}>
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Trust Score
                           </Typography>
                           <Typography variant="h6" color="primary">
@@ -753,7 +760,7 @@ const EmotionalVeritasPage: React.FC = () => {
                           </Typography>
                         </Grid>
                         <Grid item xs={6}>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                             Emotional Score
                           </Typography>
                           <Typography variant="h6" color="secondary">
@@ -763,7 +770,7 @@ const EmotionalVeritasPage: React.FC = () => {
                       </Grid>
 
                       <Box mb={2}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }} gutterBottom>
                           Correlation Strength
                         </Typography>
                         <Box display="flex" alignItems="center">
@@ -807,7 +814,7 @@ const EmotionalVeritasPage: React.FC = () => {
           </Grid>
 
           {/* Correlation Chart */}
-          <Card>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
             <CardHeader title="Trust vs Emotional Score Correlation" />
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -845,7 +852,7 @@ const EmotionalVeritasPage: React.FC = () => {
 
       {/* Emotional Events Tab */}
       {viewMode === 'events' && (
-        <Card>
+        <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
           <CardHeader
             title="Emotional Events"
             subheader={`${emotionalEvents.length} events tracked`}
@@ -881,7 +888,7 @@ const EmotionalVeritasPage: React.FC = () => {
                               <Typography variant="body2" fontWeight="medium">
                                 {event.agent_name}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                                 {event.agent_id}
                               </Typography>
                             </Box>
@@ -909,7 +916,7 @@ const EmotionalVeritasPage: React.FC = () => {
                             <Typography variant="body2">
                               Sentiment: {(event.emotional_state.sentiment * 100).toFixed(0)}%
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                               Arousal: {(event.emotional_state.arousal * 100).toFixed(0)}% | 
                               Valence: {(event.emotional_state.valence * 100).toFixed(0)}%
                             </Typography>
@@ -940,7 +947,7 @@ const EmotionalVeritasPage: React.FC = () => {
                           <Typography variant="body2">
                             {new Date(event.timestamp).toLocaleDateString()}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                             {new Date(event.timestamp).toLocaleTimeString()}
                           </Typography>
                         </TableCell>

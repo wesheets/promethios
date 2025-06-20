@@ -369,14 +369,21 @@ const GovernancePoliciesPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+    <Box 
+      p={4}
+      sx={{ 
+        backgroundColor: '#1a202c',
+        minHeight: '100vh',
+        color: 'white'
+      }}
+    >
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Governance Policies
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Manage policy templates and agent-specific governance configurations
           </Typography>
         </Box>
@@ -484,7 +491,7 @@ const GovernancePoliciesPage: React.FC = () => {
                   }
                 />
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }} paragraph>
                     {template.description}
                   </Typography>
                   
@@ -501,13 +508,13 @@ const GovernancePoliciesPage: React.FC = () => {
                           variant="outlined"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                           {rule.action}
                         </Typography>
                       </Box>
                     ))}
                     {template.rules.length > 3 && (
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                         +{template.rules.length - 3} more rules
                       </Typography>
                     )}
@@ -540,7 +547,7 @@ const GovernancePoliciesPage: React.FC = () => {
 
       {/* Agent Assignments View */}
       {viewMode === 'assignments' && (
-        <Card>
+        <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
           <CardHeader
             title="Policy Assignments"
             subheader={`${agentPolicies.length} agents with assigned policies`}
@@ -576,7 +583,7 @@ const GovernancePoliciesPage: React.FC = () => {
                                 <Typography variant="body2" fontWeight="medium">
                                   {policy.agent_name}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" sx={{ color: '#a0aec0' }}>
                                   {policy.agent_id}
                                 </Typography>
                               </Box>
@@ -680,7 +687,7 @@ const GovernancePoliciesPage: React.FC = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="h6">{template.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                       {template.rules.length} rules
                     </Typography>
                   </Box>
@@ -821,7 +828,7 @@ const GovernancePoliciesPage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6">{selectedTemplate.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     {selectedTemplate.description}
                   </Typography>
                 </Box>
