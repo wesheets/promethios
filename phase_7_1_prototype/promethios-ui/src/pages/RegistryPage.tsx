@@ -870,19 +870,7 @@ const RegistryPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Registry Tabs */}
-          <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
-            <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
-              <Tabs 
-                value={tabValue} 
-                onChange={handleTabChange}
-                sx={{
-                  '& .MuiTab-root': { 
-                    color: '#a0aec0',
-                    '&.Mui-selected': { color: '#3b82f6' }
-                  },
-                  '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
-              {/* Agent Type Tabs */}
+          {/* Agent Type Tabs */}
           <Box sx={{ mb: 3 }}>
             <Tabs 
               value={tabValue} 
