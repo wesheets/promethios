@@ -72,7 +72,19 @@ import { useAgentWrappers } from '../modules/agent-wrapping/hooks/useAgentWrappe
 import { useMultiAgentSystems } from '../modules/agent-wrapping/hooks/useMultiAgentSystems';
 import { useAgentIdentities } from '../modules/agent-identity/hooks/useAgentIdentities';
 import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
-import { AgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
+import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
+
+// Extended AgentProfile interface for our UI needs
+interface AgentProfile extends BaseAgentProfile {
+  isWrapped: boolean;
+  governancePolicy: string | null;
+  isDeployed: boolean;
+  apiDetails?: {
+    endpoint: string;
+    key: string;
+    provider: string;
+  };
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
