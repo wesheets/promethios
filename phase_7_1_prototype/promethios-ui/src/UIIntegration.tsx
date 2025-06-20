@@ -71,7 +71,7 @@ const UIIntegration: React.FC = () => {
         <Route path="dashboard" element={
           <ProtectedRoute requireOnboarding={true}>
             <MainLayoutProxy>
-              <DashboardProxy />
+              <DashboardPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
