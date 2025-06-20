@@ -29,8 +29,10 @@ import {
   PlayArrow as PlayIcon,
   Assessment as AssessmentIcon,
   Compare as CompareIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Chat as ChatIcon
 } from '@mui/icons-material';
+import { BenchmarkChatPopup } from './BenchmarkChatPopup';
 
 interface DemoAgent {
   id: string;
@@ -84,6 +86,7 @@ export const BenchmarkTestRunner: React.FC = () => {
   const [testStatus, setTestStatus] = useState<TestStatus | null>(null);
   const [currentTestId, setCurrentTestId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [chatPopupOpen, setChatPopupOpen] = useState(false);
 
   useEffect(() => {
     loadDemoAgents();
@@ -121,43 +124,15 @@ export const BenchmarkTestRunner: React.FC = () => {
     }
   };
 
-  const handleRunBenchmark = async () => {
+  const handleRunBenchmark = () => {
     if (selectedAgents.length === 0 || !selectedScenario) {
       setError('Please select at least one agent and a test scenario');
       return;
     }
 
-    setIsRunning(true);
+    // Open the chat popup instead of running the old benchmark
+    setChatPopupOpen(true);
     setError('');
-    setResults(null);
-    setTestStatus(null);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/run-test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          selectedAgents,
-          selectedScenario,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to start benchmark test: ${response.statusText}`);
-      }
-
-      const { testId } = await response.json();
-      setCurrentTestId(testId);
-      
-      // Start polling for test status
-      pollTestStatus(testId);
-    } catch (err) {
-      console.error('Error running benchmark:', err);
-      setError('Failed to run benchmark test. Please check if the backend service is running.');
-      setIsRunning(false);
-    }
   };
 
   const pollTestStatus = async (testId: string) => {
@@ -349,12 +324,12 @@ export const BenchmarkTestRunner: React.FC = () => {
                 </Typography>
                 <Button
                   variant="contained"
-                  startIcon={<PlayIcon />}
+                  startIcon={<ChatIcon />}
                   onClick={handleRunBenchmark}
-                  disabled={isRunning || selectedAgents.length === 0 || !selectedScenario}
+                  disabled={selectedAgents.length === 0 || !selectedScenario}
                   sx={{ backgroundColor: '#1976d2' }}
                 >
-                  {isRunning ? 'Running...' : 'Run Test'}
+                  Start Interactive Test
                 </Button>
               </Box>
 
