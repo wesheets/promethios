@@ -55,7 +55,7 @@ import {
   Article,
   VideoLibrary,
   School,
-  Community,
+  Groups,
   Forum,
   LiveHelp
 } from '@mui/icons-material';
@@ -795,7 +795,7 @@ const SupportPage: React.FC = () => {
                   <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
                     <CardContent>
                       <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center' }}>
-                        <Community sx={{ mr: 1, color: '#10b981' }} />
+                        <Groups sx={{ mr: 1, color: '#10b981' }} />
                         Community
                       </Typography>
                       <List>
