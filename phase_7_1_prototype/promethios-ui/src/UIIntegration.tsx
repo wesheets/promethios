@@ -28,6 +28,11 @@ import RegistryPage from './pages/RegistryPage';
 import TrustMetricsOverviewPage from './pages/TrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
+import UserProfileSettingsPage from './pages/UserProfileSettingsPage';
+import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
+import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
+import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
+import DataManagementSettingsPage from './pages/DataManagementSettingsPage';
 
 /**
  * UIIntegration Component
@@ -195,6 +200,54 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <TrustAttestationsPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Settings Routes */}
+        <Route path="settings/profile" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <UserProfileSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="settings/preferences" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <PreferencesSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="settings/organization" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <OrganizationSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="settings/integrations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <IntegrationsSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="settings/data" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DataManagementSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Default Settings route - redirect to profile */}
+        <Route path="settings" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <Navigate to="settings/profile" replace />
           </ProtectedRoute>
         } />
         
