@@ -33,6 +33,9 @@ import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
 import DataManagementSettingsPage from './pages/DataManagementSettingsPage';
+import GuidedToursPage from './pages/GuidedToursPage';
+import DocumentationPage from './pages/DocumentationPage';
+import SupportPage from './pages/SupportPage';
 
 /**
  * UIIntegration Component
@@ -248,6 +251,38 @@ const UIIntegration: React.FC = () => {
         <Route path="settings" element={
           <ProtectedRoute requireOnboarding={false}>
             <Navigate to="settings/profile" replace />
+          </ProtectedRoute>
+        } />
+        
+        {/* Help Routes */}
+        <Route path="help/tours" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <GuidedToursPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="help/documentation" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DocumentationPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="help/support" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <SupportPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Default Help route - redirect to tours */}
+        <Route path="help" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <Navigate to="help/tours" replace />
           </ProtectedRoute>
         } />
         

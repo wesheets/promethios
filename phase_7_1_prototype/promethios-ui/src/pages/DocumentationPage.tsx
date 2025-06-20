@@ -1,544 +1,988 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Grid,
+  TextField,
+  InputAdornment,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Chip,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Breadcrumbs,
+  Link,
+  Divider,
+  Alert
+} from '@mui/material';
+import {
+  Search,
+  ExpandMore,
+  Article,
+  Code,
+  Settings,
+  Security,
+  Group,
+  Policy,
+  Assessment,
+  Integration,
+  Help,
+  Launch,
+  ContentCopy,
+  CheckCircle,
+  Warning,
+  Info,
+  Error as ErrorIcon,
+  NavigateNext,
+  Home,
+  Api,
+  Description,
+  Build,
+  CloudUpload
+} from '@mui/icons-material';
 
-// Agent wrapping examples for different frameworks
-const agentWrappingExamples = {
-  python: `
-# Python Agent Wrapping Example
-from promethios import wrap_agent, PRISMObserver, VigilObserver
-
-# Define your agent function or class
-def my_agent(input_text):
-    # Agent logic here
-    return "Agent response"
-
-# Wrap your agent with Promethios governance
-governed_agent = wrap_agent(
-    agent=my_agent,
-    observers=[PRISMObserver(), VigilObserver()],
-    config={
-        "agent_id": "my-python-agent",
-        "trace_validation": "standard",
-        "trust_threshold": 0.7
-    }
-)
-
-# Use the governed agent
-response = governed_agent("User query")
-print(response)
-  `,
-  javascript: `
-// JavaScript Agent Wrapping Example
-import { wrapAgent, PRISMObserver, VigilObserver } from 'promethios';
-
-// Define your agent function
-function myAgent(inputText) {
-  // Agent logic here
-  return "Agent response";
+interface DocumentationSection {
+  id: string;
+  title: string;
+  description: string;
+  category: 'getting-started' | 'api-reference' | 'user-guides' | 'configuration' | 'troubleshooting';
+  icon: React.ReactNode;
+  content: string;
+  lastUpdated: string;
+  tags: string[];
+  relatedSections?: string[];
 }
 
-// Wrap your agent with Promethios governance
-const governedAgent = wrapAgent({
-  agent: myAgent,
-  observers: [new PRISMObserver(), new VigilObserver()],
-  config: {
-    agentId: "my-js-agent",
-    traceValidation: "standard",
-    trustThreshold: 0.7
-  }
-});
-
-// Use the governed agent
-const response = await governedAgent("User query");
-console.log(response);
-  `,
-  typescript: `
-// TypeScript Agent Wrapping Example
-import { wrapAgent, PRISMObserver, VigilObserver, AgentConfig } from 'promethios';
-
-// Define your agent function with types
-function myAgent(inputText: string): Promise<string> {
-  // Agent logic here
-  return Promise.resolve("Agent response");
+interface APIEndpoint {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  path: string;
+  description: string;
+  parameters?: { name: string; type: string; required: boolean; description: string }[];
+  requestBody?: string;
+  responseExample?: string;
 }
-
-// Define configuration with TypeScript interface
-const config: AgentConfig = {
-  agentId: "my-ts-agent",
-  traceValidation: "standard",
-  trustThreshold: 0.7
-};
-
-// Wrap your agent with Promethios governance
-const governedAgent = wrapAgent({
-  agent: myAgent,
-  observers: [new PRISMObserver(), new VigilObserver()],
-  config
-});
-
-// Use the governed agent
-const response = await governedAgent("User query");
-console.log(response);
-  `,
-  langchain: `
-// LangChain Agent Wrapping Example
-import { ChatOpenAI } from "langchain/chat_models/openai";
-import { ConversationChain } from "langchain/chains";
-import { wrapLangChainAgent, PRISMObserver, VigilObserver } from 'promethios/langchain';
-
-// Create a LangChain agent
-const llm = new ChatOpenAI({
-  temperature: 0,
-  modelName: "gpt-4"
-});
-const chain = new ConversationChain({ llm });
-
-// Wrap the LangChain agent with Promethios governance
-const governedChain = wrapLangChainAgent({
-  agent: chain,
-  observers: [new PRISMObserver(), new VigilObserver()],
-  config: {
-    agentId: "my-langchain-agent",
-    traceValidation: "standard",
-    trustThreshold: 0.7
-  }
-});
-
-// Use the governed agent
-const response = await governedChain.call({ input: "User query" });
-console.log(response);
-  `,
-  llamaindex: `
-// LlamaIndex Agent Wrapping Example
-import { VectorStoreIndex } from "llamaindex";
-import { wrapLlamaIndexAgent, PRISMObserver, VigilObserver } from 'promethios/llamaindex';
-
-// Create a LlamaIndex agent
-const documents = [...]; // Your documents
-const index = await VectorStoreIndex.fromDocuments(documents);
-const queryEngine = index.asQueryEngine();
-
-// Wrap the LlamaIndex agent with Promethios governance
-const governedQueryEngine = wrapLlamaIndexAgent({
-  agent: queryEngine,
-  observers: [new PRISMObserver(), new VigilObserver()],
-  config: {
-    agentId: "my-llamaindex-agent",
-    traceValidation: "standard",
-    trustThreshold: 0.7
-  }
-});
-
-// Use the governed agent
-const response = await governedQueryEngine.query("User query");
-console.log(response);
-  `
-};
-
-// SDK installation examples
-const sdkInstallationExamples = {
-  npm: `npm install promethios`,
-  yarn: `yarn add promethios`,
-  pip: `pip install promethios`,
-  poetry: `poetry add promethios`
-};
 
 const DocumentationPage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('getting-started');
-  const [activeFramework, setActiveFramework] = useState('python');
-  const [activeInstallMethod, setActiveInstallMethod] = useState('npm');
-  const [loading, setLoading] = useState(false);
-  const [apiDocs, setApiDocs] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('getting-started');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedSection, setSelectedSection] = useState<DocumentationSection | null>(null);
+  const [showSectionDialog, setShowSectionDialog] = useState<boolean>(false);
+  const [breadcrumbs, setBreadcrumbs] = useState<string[]>(['Documentation']);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, navigate]);
+  const categories = [
+    { id: 'getting-started', name: 'Getting Started', icon: <Home /> },
+    { id: 'user-guides', name: 'User Guides', icon: <Description /> },
+    { id: 'api-reference', name: 'API Reference', icon: <Api /> },
+    { id: 'configuration', name: 'Configuration', icon: <Settings /> },
+    { id: 'troubleshooting', name: 'Troubleshooting', icon: <Build /> }
+  ];
 
-  // Fetch API documentation
-  useEffect(() => {
-    const fetchApiDocs = async () => {
-      try {
-        setLoading(true);
-        // Mock data for demo
-        setApiDocs({
-          version: "1.0.0",
-          endpoints: [
-            {
-              name: "Register Agent",
-              path: "/agents/register",
-              method: "POST",
-              description: "Register a new agent with Promethios governance"
-            },
-            {
-              name: "Get Agent Status",
-              path: "/agents/{agentId}/status",
-              method: "GET",
-              description: "Get the current status of a registered agent"
-            },
-            {
-              name: "Get PRISM Metrics",
-              path: "/observers/prism/metrics",
-              method: "GET",
-              description: "Get metrics from the PRISM observer"
-            },
-            {
-              name: "Get Vigil Metrics",
-              path: "/observers/vigil/metrics",
-              method: "GET",
-              description: "Get metrics from the Vigil observer"
-            }
-          ]
-        });
-      } catch (error) {
-        console.error('Error fetching API docs:', error);
-      } finally {
-        setLoading(false);
+  const documentationSections: DocumentationSection[] = [
+    {
+      id: 'platform-overview',
+      title: 'Platform Overview',
+      description: 'Introduction to Promethios and core concepts of AI governance',
+      category: 'getting-started',
+      icon: <Home />,
+      content: `# Promethios Platform Overview
+
+Promethios is a comprehensive AI governance platform that enables organizations to deploy, monitor, and govern AI agents with confidence. The platform provides four core areas:
+
+## Core Sections
+
+### 1. Agents
+- **Agent Wrapping**: Transform existing AI agents with governance controls
+- **My Agents**: Monitor and manage your deployed agent ecosystem  
+- **Templates**: Quick-start templates for common agent types
+- **Deploy**: Deploy agents with proper oversight and monitoring
+- **Registry**: Browse and discover pre-built agent solutions
+- **Benchmarks**: Evaluate agent performance and capabilities
+- **Chat**: Interactive testing and communication with agents
+
+### 2. Governance
+- **Overview**: High-level governance metrics and health dashboard
+- **Policies**: Create and manage governance policies and rules
+- **Violations**: Monitor policy breaches and compliance issues
+- **Reports**: Generate compliance reports and audit trails
+- **Emotional Veritas**: Sentiment analysis and emotional governance
+
+### 3. Trust Metrics
+- **Overview**: Trust scoring dashboard with four dimensions
+- **Boundaries**: Configure trust thresholds and safety limits
+- **Attestations**: Manage verification chains and credibility records
+
+### 4. Settings
+- **User Profile**: Personal account and security settings
+- **Preferences**: UI customization and notification preferences
+- **Organization**: Team management and billing configuration
+- **Integrations**: External system connections and API management
+- **Data Management**: Export/import capabilities and data controls
+
+## Trust Dimensions
+
+Promethios evaluates trust across four key dimensions:
+- **Competence**: Technical capability and accuracy
+- **Reliability**: Consistency and dependability
+- **Honesty**: Truthfulness and transparency in responses
+- **Transparency**: Explainability and auditability of decisions`,
+      lastUpdated: '2025-06-20',
+      tags: ['overview', 'getting-started', 'platform'],
+      relatedSections: ['navigation-guide', 'first-steps']
+    },
+    {
+      id: 'navigation-guide',
+      title: 'Navigation Guide',
+      description: 'How to navigate the Promethios interface and access key features',
+      category: 'getting-started',
+      icon: <Help />,
+      content: `# Navigation Guide
+
+## Main Navigation Structure
+
+### Sidebar Navigation
+The left sidebar provides access to all major platform sections:
+
+1. **Dashboard** - Main overview and quick actions
+2. **Agents** - Complete agent lifecycle management
+3. **Governance** - Policy and compliance management  
+4. **Trust Metrics** - Trust scoring and verification
+5. **Settings** - Platform and user configuration
+6. **Help** - Documentation, tours, and support
+
+### Top Navigation
+- **Search Bar** - Global search across the platform
+- **Notifications** - System alerts and updates
+- **User Menu** - Profile, settings, and logout options
+
+### Observer Agent
+The Observer Agent provides contextual help and guidance throughout the platform. Look for the floating chat bubble in the bottom-right corner.
+
+## Quick Access Patterns
+
+### Keyboard Shortcuts
+- \`Ctrl/Cmd + K\` - Open global search
+- \`Ctrl/Cmd + /\` - Open help panel
+- \`Ctrl/Cmd + ,\` - Open settings
+- \`Esc\` - Close dialogs and panels
+
+### Breadcrumb Navigation
+Use breadcrumbs at the top of each page to understand your current location and navigate back to parent sections.`,
+      lastUpdated: '2025-06-20',
+      tags: ['navigation', 'interface', 'shortcuts'],
+      relatedSections: ['platform-overview', 'observer-agent']
+    },
+    {
+      id: 'agent-wrapping-guide',
+      title: 'Agent Wrapping Guide',
+      description: 'Step-by-step guide to wrapping existing AI agents with governance controls',
+      category: 'user-guides',
+      icon: <Group />,
+      content: `# Agent Wrapping Guide
+
+## Overview
+Agent wrapping allows you to add governance controls to existing AI agents without modifying their core functionality.
+
+## Step-by-Step Process
+
+### 1. Access Agent Wrapping
+Navigate to **Agents > Wrapping** from the main sidebar.
+
+### 2. Choose Wrapping Type
+- **Single Agent Wrapping**: Wrap individual agents
+- **Multi-Agent Wrapping**: Wrap multiple agents simultaneously
+
+### 3. Configure Agent Details
+- **Agent Name**: Descriptive name for identification
+- **Agent Type**: Select from predefined categories
+- **API Endpoint**: Connection details for your existing agent
+- **Authentication**: Configure API keys or authentication methods
+
+### 4. Set Governance Policies
+- **Policy Templates**: Choose from HIPAA, SOC2, or custom templates
+- **Compliance Rules**: Define specific compliance requirements
+- **Monitoring Level**: Set observation and logging intensity
+
+### 5. Configure Trust Settings
+- **Trust Thresholds**: Set minimum trust scores required
+- **Trust Dimensions**: Configure competence, reliability, honesty, transparency weights
+- **Attestation Requirements**: Define verification requirements
+
+### 6. Deploy and Monitor
+- **Deployment**: Deploy the wrapped agent to your environment
+- **Monitoring**: Track performance and compliance in real-time
+- **Alerts**: Configure notifications for policy violations or trust issues
+
+## Best Practices
+- Start with template policies and customize as needed
+- Set conservative trust thresholds initially
+- Monitor wrapped agents closely during the first week
+- Regular review and adjustment of governance settings`,
+      lastUpdated: '2025-06-20',
+      tags: ['agents', 'wrapping', 'governance', 'deployment'],
+      relatedSections: ['policy-management', 'trust-configuration']
+    },
+    {
+      id: 'trust-api-reference',
+      title: 'Trust API Reference',
+      description: 'Complete API documentation for trust evaluation and management',
+      category: 'api-reference',
+      icon: <Api />,
+      content: `# Trust API Reference
+
+## Base URL
+\`\`\`
+https://api.promethios.com/v1/trust
+\`\`\`
+
+## Authentication
+All API requests require authentication using API keys:
+\`\`\`
+Authorization: Bearer YOUR_API_KEY
+\`\`\`
+
+## Endpoints
+
+### Evaluate Trust
+\`POST /evaluate\`
+
+Evaluate trust between agents or systems.
+
+**Request Body:**
+\`\`\`json
+{
+  "agent_id": "agent-123",
+  "target_id": "agent-456", 
+  "context": {
+    "interaction_history": 15,
+    "domain": "financial_analysis",
+    "criticality": "high"
+  },
+  "evidence": [
+    {
+      "type": "past_interaction",
+      "outcome": "success",
+      "timestamp": "2025-05-21T14:30:00Z",
+      "details": {
+        "task": "data_analysis",
+        "accuracy": 0.98,
+        "timeliness": 0.95
       }
-    };
-
-    fetchApiDocs();
-  }, []);
-
-  // Render getting started tab
-  const renderGettingStartedTab = () => {
-    return (
-      <div className="space-y-6">
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">What is Promethios?</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios is an AI governance framework that helps developers ensure their AI agents operate safely, 
-            transparently, and in accordance with established principles. It provides tools for monitoring, 
-            validating, and enforcing governance policies on AI systems.
-          </p>
-          <p className="text-gray-700 dark:text-gray-300">
-            With Promethios, you can wrap your existing AI agents with governance capabilities without 
-            significantly changing your codebase or workflow.
-          </p>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Key Features</h3>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-            <li><strong>Belief Trace Validation:</strong> Ensure AI agents properly trace the sources of their beliefs</li>
-            <li><strong>Trust Decay Monitoring:</strong> Track and manage trust scores for AI agents over time</li>
-            <li><strong>Governance Enforcement:</strong> Apply governance policies to AI agent behavior</li>
-            <li><strong>Real-time Monitoring:</strong> Monitor AI agent performance and compliance in real-time</li>
-            <li><strong>Framework Agnostic:</strong> Works with various AI frameworks and libraries</li>
-          </ul>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Installation</h3>
-          <div className="mb-4">
-            <div className="flex space-x-4 mb-2">
-              <button
-                onClick={() => setActiveInstallMethod('npm')}
-                className={`px-3 py-1 text-sm rounded ${
-                  activeInstallMethod === 'npm' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                npm
-              </button>
-              <button
-                onClick={() => setActiveInstallMethod('yarn')}
-                className={`px-3 py-1 text-sm rounded ${
-                  activeInstallMethod === 'yarn' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                yarn
-              </button>
-              <button
-                onClick={() => setActiveInstallMethod('pip')}
-                className={`px-3 py-1 text-sm rounded ${
-                  activeInstallMethod === 'pip' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                pip
-              </button>
-              <button
-                onClick={() => setActiveInstallMethod('poetry')}
-                className={`px-3 py-1 text-sm rounded ${
-                  activeInstallMethod === 'poetry' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                poetry
-              </button>
-            </div>
-            <div className="bg-gray-800 rounded-md p-4">
-              <code className="text-white font-mono text-sm">
-                {sdkInstallationExamples[activeInstallMethod]}
-              </code>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Quick Start</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Here's a simple example of how to wrap an AI agent with Promethios governance:
-          </p>
-          <div className="bg-gray-800 rounded-md p-4">
-            <code className="text-white font-mono text-sm whitespace-pre">
-              {agentWrappingExamples.python}
-            </code>
-          </div>
-        </section>
-      </div>
-    );
-  };
-
-  // Render agent wrapping tab
-  const renderAgentWrappingTab = () => {
-    return (
-      <div className="space-y-6">
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Agent Wrapping Guide</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios uses a wrapping approach to add governance capabilities to your AI agents. This allows you to 
-            maintain your existing codebase while adding monitoring, validation, and enforcement features.
-          </p>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            The wrapping process involves three main components:
-          </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300 mb-4">
-            <li><strong>Agent:</strong> Your existing AI agent implementation</li>
-            <li><strong>Observers:</strong> Components that monitor and validate agent behavior (PRISM, Vigil)</li>
-            <li><strong>Configuration:</strong> Settings that control how governance is applied</li>
-          </ul>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Framework Examples</h3>
-          <div className="mb-4">
-            <div className="flex flex-wrap space-x-2 mb-2">
-              <button
-                onClick={() => setActiveFramework('python')}
-                className={`px-3 py-1 text-sm rounded mb-2 ${
-                  activeFramework === 'python' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                Python
-              </button>
-              <button
-                onClick={() => setActiveFramework('javascript')}
-                className={`px-3 py-1 text-sm rounded mb-2 ${
-                  activeFramework === 'javascript' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                JavaScript
-              </button>
-              <button
-                onClick={() => setActiveFramework('typescript')}
-                className={`px-3 py-1 text-sm rounded mb-2 ${
-                  activeFramework === 'typescript' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                TypeScript
-              </button>
-              <button
-                onClick={() => setActiveFramework('langchain')}
-                className={`px-3 py-1 text-sm rounded mb-2 ${
-                  activeFramework === 'langchain' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                LangChain
-              </button>
-              <button
-                onClick={() => setActiveFramework('llamaindex')}
-                className={`px-3 py-1 text-sm rounded mb-2 ${
-                  activeFramework === 'llamaindex' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                LlamaIndex
-              </button>
-            </div>
-            <div className="bg-gray-800 rounded-md p-4">
-              <code className="text-white font-mono text-sm whitespace-pre">
-                {agentWrappingExamples[activeFramework]}
-              </code>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Advanced Configuration</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios offers advanced configuration options to customize governance for your specific needs:
-          </p>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">PRISM Observer Configuration</h4>
-            <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
-              <li><strong>traceValidationLevel:</strong> Controls how strictly belief traces are validated (standard, strict, lenient)</li>
-              <li><strong>manifestValidationLevel:</strong> Controls how strictly agent manifests are validated</li>
-              <li><strong>samplingRate:</strong> Percentage of agent actions to monitor (1-100)</li>
-              <li><strong>missingTraceThreshold:</strong> Percentage of missing traces allowed before violation</li>
-            </ul>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Vigil Observer Configuration</h4>
-            <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
-              <li><strong>driftThreshold:</strong> Percentage of drift allowed before warning</li>
-              <li><strong>significantDriftThreshold:</strong> Percentage of drift allowed before violation</li>
-              <li><strong>trustScoreMinimum:</strong> Minimum trust score required (0.0-1.0)</li>
-              <li><strong>unreflectedFailureLimit:</strong> Number of unreflected failures allowed</li>
-            </ul>
-          </div>
-        </section>
-      </div>
-    );
-  };
-
-  // Render API reference tab
-  const renderApiReferenceTab = () => {
-    if (loading) {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      );
     }
+  ],
+  "trust_dimensions": ["competence", "reliability", "honesty", "transparency"]
+}
+\`\`\`
 
-    return (
-      <div className="space-y-6">
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">API Reference</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Promethios provides a RESTful API for integrating with your existing systems and monitoring your AI agents.
-          </p>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-2">API Version</h4>
-            <p className="text-gray-700 dark:text-gray-300">
-              {apiDocs?.version || 'N/A'}
-            </p>
-          </div>
-        </section>
+**Response:**
+\`\`\`json
+{
+  "evaluation_id": "trust-789",
+  "trust_scores": {
+    "competence": 0.92,
+    "reliability": 0.88,
+    "honesty": 0.95,
+    "transparency": 0.85
+  },
+  "aggregate_score": 0.90,
+  "confidence": 0.85,
+  "recommendations": [
+    "Trust for standard operations",
+    "Verify outputs for critical financial calculations"
+  ],
+  "timestamp": "2025-05-22T03:52:35Z"
+}
+\`\`\`
 
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Endpoints</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Path</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-600">
-                {apiDocs?.endpoints.map((endpoint, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{endpoint.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        endpoint.method === 'GET' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                        endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                        endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                        endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                      }`}>
-                        {endpoint.method}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">{endpoint.path}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{endpoint.description}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+### Query Trust History
+\`GET /query\`
 
-        <section>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Authentication</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            All API requests require authentication using an API key. You can obtain an API key from your Promethios dashboard.
-          </p>
-          <div className="bg-gray-800 rounded-md p-4">
-            <code className="text-white font-mono text-sm">
-              curl -X GET "https://api.promethios.ai/observers/prism/metrics" \<br />
-              &nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY"
-            </code>
-          </div>
-        </section>
-      </div>
-    );
+Retrieve trust evaluation history and trends.
+
+**Parameters:**
+- \`agent_id\` (required): Agent identifier
+- \`start_date\` (optional): Start date for query range
+- \`end_date\` (optional): End date for query range
+- \`limit\` (optional): Maximum number of results (default: 100)
+
+### Update Trust Information
+\`PUT /update\`
+
+Update trust evaluation with new evidence.
+
+**Request Body:**
+\`\`\`json
+{
+  "evaluation_id": "trust-789",
+  "new_evidence": [
+    {
+      "type": "certification",
+      "issuer": "TrustAuthority",
+      "level": "gold",
+      "expiration": "2026-01-01T00:00:00Z"
+    }
+  ]
+}
+\`\`\``,
+      lastUpdated: '2025-06-20',
+      tags: ['api', 'trust', 'reference', 'endpoints'],
+      relatedSections: ['policy-api-reference', 'authentication-guide']
+    },
+    {
+      id: 'policy-api-reference',
+      title: 'Policy API Reference',
+      description: 'API documentation for governance policy management and enforcement',
+      category: 'api-reference',
+      icon: <Policy />,
+      content: `# Policy API Reference
+
+## Base URL
+\`\`\`
+https://api.promethios.com/v1/policy
+\`\`\`
+
+## Endpoints
+
+### Enforce Policy
+\`POST /enforce\`
+
+Evaluate an action against governance policies.
+
+**Request Body:**
+\`\`\`json
+{
+  "agent_id": "agent-123",
+  "task_id": "task-456",
+  "action_type": "file_write",
+  "action_details": {
+    "path": "/home/user/sensitive_data.txt",
+    "content": "This is sensitive information",
+    "mode": "append"
+  },
+  "context": {
+    "user_permission_level": "standard",
+    "previous_actions": ["file_read", "network_access"],
+    "environment": "production"
+  }
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "policy_decision_id": "policy-123",
+  "action": "deny",
+  "reason": "Insufficient permissions for sensitive data access",
+  "modifications": null,
+  "applicable_policies": ["data-protection-policy", "file-access-policy"],
+  "confidence": 0.95,
+  "timestamp": "2025-05-22T03:50:15Z"
+}
+\`\`\`
+
+### Query Policies
+\`GET /query\`
+
+Retrieve policy information and configurations.
+
+**Parameters:**
+- \`policy_type\` (optional): Filter by policy type
+- \`agent_id\` (optional): Filter by agent
+- \`active_only\` (optional): Return only active policies
+
+### Get Policy Decision
+\`GET /decision/{decision_id}\`
+
+Retrieve details of a specific policy decision.`,
+      lastUpdated: '2025-06-20',
+      tags: ['api', 'policy', 'governance', 'enforcement'],
+      relatedSections: ['trust-api-reference', 'policy-management']
+    },
+    {
+      id: 'settings-configuration',
+      title: 'Settings Configuration',
+      description: 'Complete guide to configuring platform settings and preferences',
+      category: 'configuration',
+      icon: <Settings />,
+      content: `# Settings Configuration
+
+## User Profile Settings
+
+### Personal Information
+- **Name and Contact**: Update your display name, email, and phone number
+- **Avatar Upload**: Upload and crop profile photos with drag & drop support
+- **Location and Timezone**: Configure your location and timezone preferences
+- **Bio and Roles**: Add professional bio and role information
+
+### Security Settings
+- **Password Management**: Change passwords with strength validation
+- **Two-Factor Authentication**: Enable 2FA for enhanced security
+- **Active Sessions**: Monitor and manage active login sessions
+- **API Key Management**: Generate and manage API keys for programmatic access
+
+### Privacy Controls
+- **Profile Visibility**: Control who can see your profile information
+- **Data Download**: Request and download your personal data
+- **Account Deletion**: Permanently delete your account and data
+
+## Preferences Settings
+
+### UI & Appearance
+- **Theme Selection**: Choose between light, dark, and auto themes
+- **Color Schemes**: Customize primary and accent colors
+- **Font Size**: Adjust text size for accessibility
+- **Layout Density**: Configure compact or comfortable layouts
+- **Sidebar Width**: Customize navigation sidebar width
+- **Animations**: Enable or disable UI animations
+
+### Notifications
+- **Email Notifications**: Configure email notification preferences
+- **Desktop Notifications**: Enable browser notifications
+- **SMS Notifications**: Set up SMS alerts for critical events
+- **Quiet Hours**: Define do-not-disturb time periods
+- **Notification Categories**: Customize notifications by type
+
+### Language & Region
+- **Language**: Select interface language
+- **Date/Time Format**: Configure date and time display formats
+- **Number Format**: Set number and currency formatting
+- **Timezone**: Configure timezone for scheduling and timestamps
+
+## Organization Settings
+
+### Company Information
+- **Organization Details**: Company name, domain, industry, and size
+- **Contact Information**: Billing email, admin email, and support contacts
+- **Location**: Primary business location and website
+
+### Team Management
+- **Member Invitation**: Invite team members with role assignment
+- **Role Management**: Define and assign user roles and permissions
+- **Department Organization**: Organize team members by department
+- **Access Control**: Manage user access and permissions
+
+### Security & Compliance
+- **SSO Configuration**: Set up Single Sign-On integration
+- **Password Policies**: Define organization password requirements
+- **Session Management**: Configure session timeout and security settings
+- **Data Retention**: Set data retention policies and compliance rules
+
+## Integration Settings
+
+### External Systems
+- **Communication Tools**: Connect Slack, Microsoft Teams, Discord
+- **Productivity Platforms**: Integrate Jira, Asana, Notion, Trello
+- **Development Tools**: Connect GitHub, GitLab, Jenkins, Docker Hub
+- **Monitoring Systems**: Integrate Datadog, New Relic, Prometheus
+- **Cloud Storage**: Connect AWS S3, Google Cloud Storage, Azure Blob
+
+### API Management
+- **API Key Generation**: Create API keys with specific permissions
+- **Webhook Configuration**: Set up webhooks for real-time notifications
+- **Rate Limiting**: Configure API rate limits and quotas
+- **Access Logs**: Monitor API usage and access patterns
+
+## Data Management Settings
+
+### Export & Import
+- **Data Export**: Export configurations, reports, and user data
+- **Backup Creation**: Create full system backups
+- **Import Validation**: Validate and import configuration files
+- **Migration Tools**: Migrate data between environments
+
+### Privacy & Compliance
+- **GDPR Compliance**: Configure GDPR data subject rights
+- **Data Retention**: Set automated data retention policies
+- **Audit Logging**: Enable comprehensive audit trail logging
+- **Compliance Reporting**: Generate compliance reports for regulations`,
+      lastUpdated: '2025-06-20',
+      tags: ['settings', 'configuration', 'preferences', 'organization'],
+      relatedSections: ['user-management', 'security-guide']
+    },
+    {
+      id: 'common-issues',
+      title: 'Common Issues & Solutions',
+      description: 'Troubleshooting guide for frequently encountered problems',
+      category: 'troubleshooting',
+      icon: <Build />,
+      content: `# Common Issues & Solutions
+
+## Authentication Issues
+
+### Problem: Cannot log in to the platform
+**Symptoms:** Login page shows error messages or redirects back to login
+
+**Solutions:**
+1. **Clear browser cache and cookies**
+   - Chrome: Settings > Privacy > Clear browsing data
+   - Firefox: Settings > Privacy > Clear Data
+   - Safari: Develop > Empty Caches
+
+2. **Check credentials**
+   - Verify email address is correct
+   - Ensure password is entered correctly
+   - Try password reset if needed
+
+3. **Browser compatibility**
+   - Use supported browsers: Chrome 90+, Firefox 88+, Safari 14+
+   - Disable browser extensions that might interfere
+   - Try incognito/private browsing mode
+
+### Problem: Two-factor authentication not working
+**Solutions:**
+1. **Time synchronization**
+   - Ensure device time is synchronized
+   - Check timezone settings
+   - Try generating a new code
+
+2. **Backup codes**
+   - Use backup codes if available
+   - Contact support to reset 2FA
+
+## Agent Management Issues
+
+### Problem: Agent wrapping fails
+**Symptoms:** Error messages during agent wrapping process
+
+**Solutions:**
+1. **API connectivity**
+   - Verify agent API endpoint is accessible
+   - Check authentication credentials
+   - Test API connection manually
+
+2. **Configuration validation**
+   - Ensure all required fields are completed
+   - Verify policy templates are properly configured
+   - Check trust threshold settings
+
+3. **Network issues**
+   - Verify firewall settings allow connections
+   - Check proxy configuration if applicable
+   - Ensure SSL certificates are valid
+
+### Problem: Deployed agents not responding
+**Solutions:**
+1. **Health checks**
+   - Monitor agent health status in dashboard
+   - Check system resource usage
+   - Verify network connectivity
+
+2. **Log analysis**
+   - Review agent logs for error messages
+   - Check governance policy violations
+   - Monitor trust score changes
+
+## Trust Metrics Issues
+
+### Problem: Trust scores not updating
+**Solutions:**
+1. **Data collection**
+   - Verify agents are sending telemetry data
+   - Check attestation chain completeness
+   - Ensure evidence is being recorded
+
+2. **Configuration review**
+   - Verify trust dimension weights
+   - Check boundary configurations
+   - Review evaluation criteria
+
+### Problem: False trust alerts
+**Solutions:**
+1. **Threshold adjustment**
+   - Review and adjust trust thresholds
+   - Analyze historical trust patterns
+   - Consider environmental factors
+
+2. **Evidence quality**
+   - Improve evidence collection methods
+   - Enhance attestation processes
+   - Regular calibration of trust models
+
+## Performance Issues
+
+### Problem: Slow page loading
+**Solutions:**
+1. **Browser optimization**
+   - Clear browser cache
+   - Disable unnecessary extensions
+   - Update to latest browser version
+
+2. **Network diagnostics**
+   - Check internet connection speed
+   - Test from different networks
+   - Contact IT support for network issues
+
+3. **Platform status**
+   - Check platform status page
+   - Monitor system performance metrics
+   - Contact support if issues persist
+
+## Data Issues
+
+### Problem: Missing or incorrect data
+**Solutions:**
+1. **Data synchronization**
+   - Trigger manual data refresh
+   - Check integration connections
+   - Verify data source configurations
+
+2. **Permission verification**
+   - Ensure proper access permissions
+   - Check role-based access controls
+   - Verify organization membership
+
+## Getting Additional Help
+
+### Contact Support
+- **Email**: support@promethios.com
+- **Chat**: Use the Observer Agent for immediate assistance
+- **Documentation**: Search this documentation for detailed guides
+- **Community**: Join our community forum for peer support
+
+### Escalation Process
+1. **Level 1**: Self-service documentation and FAQ
+2. **Level 2**: Observer Agent and chat support
+3. **Level 3**: Email support with detailed issue description
+4. **Level 4**: Phone support for critical issues (Enterprise plans)
+
+### Information to Include
+When contacting support, please include:
+- Detailed description of the issue
+- Steps to reproduce the problem
+- Browser and operating system information
+- Screenshots or error messages
+- Account and organization information`,
+      lastUpdated: '2025-06-20',
+      tags: ['troubleshooting', 'issues', 'solutions', 'support'],
+      relatedSections: ['authentication-guide', 'performance-optimization']
+    }
+  ];
+
+  const filteredSections = documentationSections.filter(section => {
+    const matchesCategory = selectedCategory === 'all' || section.category === selectedCategory;
+    const matchesSearch = section.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         section.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         section.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleSectionClick = (section: DocumentationSection) => {
+    setSelectedSection(section);
+    setShowSectionDialog(true);
+    setBreadcrumbs(['Documentation', section.title]);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Breadcrumbs
+          separator={<NavigateNext fontSize="small" />}
+          sx={{ mb: 2, '& .MuiBreadcrumbs-separator': { color: '#a0aec0' } }}
+        >
+          {breadcrumbs.map((crumb, index) => (
+            <Typography
+              key={index}
+              variant="body2"
+              sx={{ 
+                color: index === breadcrumbs.length - 1 ? 'white' : '#a0aec0',
+                cursor: index < breadcrumbs.length - 1 ? 'pointer' : 'default'
+              }}
+              onClick={() => {
+                if (index === 0) {
+                  setBreadcrumbs(['Documentation']);
+                  setShowSectionDialog(false);
+                }
+              }}
+            >
+              {crumb}
+            </Typography>
+          ))}
+        </Breadcrumbs>
+
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
           Documentation
-        </h1>
-        
-        {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'getting-started'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-              onClick={() => setActiveTab('getting-started')}
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+          Comprehensive guides, API references, and troubleshooting resources for Promethios
+        </Typography>
+      </Box>
+
+      {/* Search and Categories */}
+      <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', mb: 4 }}>
+        <CardContent>
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search documentation..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: '#a0aec0' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputBase-input': { color: 'white' },
+                  '& .MuiInputBase-input::placeholder': { color: '#a0aec0' }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Tabs
+                value={selectedCategory}
+                onChange={(e, newValue) => setSelectedCategory(newValue)}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  '& .MuiTab-root': { color: '#a0aec0', minWidth: 'auto' },
+                  '& .Mui-selected': { color: '#3b82f6' },
+                  '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
+                }}
+              >
+                {categories.map((category) => (
+                  <Tab
+                    key={category.id}
+                    label={category.name}
+                    value={category.id}
+                    icon={category.icon}
+                    iconPosition="start"
+                  />
+                ))}
+              </Tabs>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Documentation Sections */}
+      <Grid container spacing={3}>
+        {filteredSections.map((section) => (
+          <Grid item xs={12} md={6} lg={4} key={section.id}>
+            <Card 
+              sx={{ 
+                backgroundColor: '#2d3748', 
+                border: '1px solid #4a5568',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  borderColor: '#3b82f6',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(59, 130, 246, 0.15)'
+                }
+              }}
+              onClick={() => handleSectionClick(section)}
             >
-              Getting Started
-            </button>
-            <button
-              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'agent-wrapping'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-              onClick={() => setActiveTab('agent-wrapping')}
-            >
-              Agent Wrapping
-            </button>
-            <button
-              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'api-reference'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-              onClick={() => setActiveTab('api-reference')}
-            >
-              API Reference
-            </button>
-          </nav>
-        </div>
-        
-        {/* Tab content */}
-        {activeTab === 'getting-started' && renderGettingStartedTab()}
-        {activeTab === 'agent-wrapping' && renderAgentWrappingTab()}
-        {activeTab === 'api-reference' && renderApiReferenceTab()}
-      </div>
-    </div>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                  <Box sx={{ 
+                    backgroundColor: '#3b82f6', 
+                    borderRadius: 1, 
+                    p: 1, 
+                    mr: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {section.icon}
+                  </Box>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                      {section.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                      {section.description}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                  {section.tags.slice(0, 3).map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      size="small"
+                      variant="outlined"
+                      sx={{ borderColor: '#4a5568', color: '#a0aec0', fontSize: '0.75rem' }}
+                    />
+                  ))}
+                </Box>
+
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                  Last updated: {section.lastUpdated}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Section Detail Dialog */}
+      <Dialog
+        open={showSectionDialog}
+        onClose={() => setShowSectionDialog(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { backgroundColor: '#2d3748', color: 'white', maxHeight: '90vh' }
+        }}
+      >
+        {selectedSection && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ 
+                  backgroundColor: '#3b82f6', 
+                  borderRadius: 1, 
+                  p: 1, 
+                  mr: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {selectedSection.icon}
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ color: 'white' }}>
+                    {selectedSection.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    {selectedSection.description}
+                  </Typography>
+                </Box>
+              </Box>
+              <IconButton onClick={() => setShowSectionDialog(false)} sx={{ color: '#a0aec0' }}>
+                <Launch />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                  {selectedSection.tags.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      size="small"
+                      variant="outlined"
+                      sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
+                    />
+                  ))}
+                </Box>
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                  Last updated: {selectedSection.lastUpdated}
+                </Typography>
+              </Box>
+
+              <Box sx={{ 
+                backgroundColor: '#1a202c', 
+                border: '1px solid #4a5568', 
+                borderRadius: 1, 
+                p: 3,
+                position: 'relative'
+              }}>
+                <IconButton
+                  onClick={() => copyToClipboard(selectedSection.content)}
+                  sx={{ 
+                    position: 'absolute', 
+                    top: 8, 
+                    right: 8, 
+                    color: '#a0aec0',
+                    '&:hover': { color: 'white' }
+                  }}
+                >
+                  <ContentCopy fontSize="small" />
+                </IconButton>
+                <Typography 
+                  component="pre" 
+                  sx={{ 
+                    color: '#a0aec0', 
+                    whiteSpace: 'pre-wrap', 
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6
+                  }}
+                >
+                  {selectedSection.content}
+                </Typography>
+              </Box>
+
+              {selectedSection.relatedSections && selectedSection.relatedSections.length > 0 && (
+                <>
+                  <Divider sx={{ borderColor: '#4a5568', my: 3 }} />
+                  <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                    Related Documentation
+                  </Typography>
+                  <List>
+                    {selectedSection.relatedSections.map((relatedId) => {
+                      const relatedSection = documentationSections.find(s => s.id === relatedId);
+                      return relatedSection ? (
+                        <ListItem 
+                          key={relatedId} 
+                          sx={{ px: 0, cursor: 'pointer' }}
+                          onClick={() => handleSectionClick(relatedSection)}
+                        >
+                          <ListItemIcon>
+                            {relatedSection.icon}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={relatedSection.title}
+                            secondary={relatedSection.description}
+                            primaryTypographyProps={{ color: 'white' }}
+                            secondaryTypographyProps={{ color: '#a0aec0' }}
+                          />
+                        </ListItem>
+                      ) : null;
+                    })}
+                  </List>
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowSectionDialog(false)} sx={{ color: '#a0aec0' }}>
+                Close
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<ContentCopy />}
+                onClick={() => copyToClipboard(selectedSection.content)}
+                sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
+              >
+                Copy Content
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+    </Box>
   );
 };
 
 export default DocumentationPage;
+
