@@ -22,6 +22,7 @@ import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
 import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
 import GovernanceReportsPage from './pages/GovernanceReportsPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
+import TemplateLibraryPage from './pages/TemplateLibraryPage';
 
 /**
  * UIIntegration Component
@@ -90,11 +91,11 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Agent Systems Page route (new multi-agent management) */}
-        <Route path="agents/systems" element={
+        {/* Template Library Page route */}
+        <Route path="agents/templates" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AgentProfilesPage />
+              <TemplateLibraryPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

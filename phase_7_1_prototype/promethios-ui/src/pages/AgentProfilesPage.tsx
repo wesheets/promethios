@@ -116,9 +116,10 @@ const AddNewAgentButton: React.FC = () => {
     window.location.href = '/ui/agents/wrapping?mode=import';
   };
 
-  const handleFoundryBeta = () => {
+  const handleTemplateLibrary = () => {
     handleClose();
-    setShowFoundryDialog(true);
+    // Navigate to template library
+    window.location.href = '/ui/agents/templates';
   };
 
   return (
@@ -161,27 +162,13 @@ const AddNewAgentButton: React.FC = () => {
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>
-        <MenuItem onClick={handleFoundryBeta} sx={{ py: 2 }}>
+        <MenuItem onClick={handleTemplateLibrary} sx={{ py: 2 }}>
           <ListItemIcon>
-            <Build sx={{ color: '#f59e0b' }} />
+            <LibraryBooks sx={{ color: '#10b981' }} />
           </ListItemIcon>
           <ListItemText 
-            primary={
-              <Box display="flex" alignItems="center" gap={1}>
-                <span>Build with Foundry</span>
-                <Chip 
-                  label="Beta" 
-                  size="small" 
-                  sx={{ 
-                    backgroundColor: '#f59e0b', 
-                    color: 'white',
-                    fontSize: '0.7rem',
-                    height: 20,
-                  }} 
-                />
-              </Box>
-            }
-            secondary="Let Promethios build your agent (coming soon)"
+            primary="Browse Template Library"
+            secondary="Fork governance-enhanced agent blueprints"
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>

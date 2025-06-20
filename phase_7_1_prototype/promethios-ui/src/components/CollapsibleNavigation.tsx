@@ -48,6 +48,7 @@ import {
   Support as SupportIcon,
   AutoAwesome as WrapIcon,
   Hub as MultiAgentIcon,
+  LibraryBooks as LibraryBooksIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -122,7 +123,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       icon: <AgentsIcon />,
       children: [
         { id: 'my-agents', label: 'My Agents', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
-        { id: 'agent-systems', label: 'Agent Systems', icon: <MultiAgentIcon />, path: '/ui/agents/systems' },
+        { id: 'template-library', label: 'Template Library', icon: <LibraryBooksIcon />, path: '/ui/agents/templates' },
         { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
         { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
         { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/chat' },
