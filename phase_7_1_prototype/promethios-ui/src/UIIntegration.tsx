@@ -17,6 +17,11 @@ import AgentProfilesPage from './pages/AgentProfilesPage';
 import ChatPage from './pages/ChatPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import BenchmarkChatPage from './pages/BenchmarkChatPage';
+import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
+import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
+import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
+import GovernanceReportsPage from './pages/GovernanceReportsPage';
+import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 
 /**
  * UIIntegration Component
@@ -90,6 +95,47 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <ChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Governance Routes */}
+        <Route path="governance/overview" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <GovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/policies" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <GovernancePoliciesPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/violations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <GovernanceViolationsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/reports" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <GovernanceReportsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/veritas" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <EmotionalVeritasPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
