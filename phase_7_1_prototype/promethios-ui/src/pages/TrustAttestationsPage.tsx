@@ -63,7 +63,7 @@ import {
   Share,
   Visibility,
   VerifiedUser,
-  Certificate,
+  Badge,
   AccountTree,
   History
 } from '@mui/icons-material';
@@ -314,7 +314,7 @@ const TrustAttestationsPage: React.FC = () => {
       case 'integrity': return <Security />;
       case 'compliance': return <Gavel />;
       case 'behavior': return <Speed />;
-      default: return <Certificate />;
+      default: return <Badge />;
     }
   };
 
@@ -392,7 +392,7 @@ const TrustAttestationsPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Certificate sx={{ color: '#3b82f6', mr: 2 }} />
+                <Badge sx={{ color: '#3b82f6', mr: 2 }} />
                 <Typography variant="h6">Total Attestations</Typography>
               </Box>
               <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
