@@ -23,6 +23,8 @@ import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
 import GovernanceReportsPage from './pages/GovernanceReportsPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
+import DeployPage from './pages/DeployPage';
+import RegistryPage from './pages/RegistryPage';
 
 /**
  * UIIntegration Component
@@ -96,6 +98,24 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <TemplateLibraryPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Deploy Page route */}
+        <Route path="agents/deploy" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DeployPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Registry Page route */}
+        <Route path="agents/registry" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <RegistryPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
