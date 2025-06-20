@@ -172,7 +172,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       icon: <HelpIcon />,
       children: [
         { id: 'tours', label: 'Guided Tours', icon: <ToursIcon />, path: '/ui/help/tours' },
-        { id: 'docs', label: 'Documentation', icon: <DocsIcon />, path: '/ui/help/docs' },
+        { id: 'docs', label: 'Documentation', icon: <DocsIcon />, path: '/ui/help/documentation' },
         { id: 'support', label: 'Support', icon: <SupportIcon />, path: '/ui/help/support' },
       ],
     },
