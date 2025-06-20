@@ -33,6 +33,9 @@ import {
   DialogContent,
   DialogActions,
   Fab,
+  Checkbox,
+  FormControlLabel,
+  Slide,
 } from '@mui/material';
 import {
   Search,
@@ -248,7 +251,12 @@ const AddNewAgentButton: React.FC = () => {
   );
 };
 // Agent Profile Card Component
-const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
+const AgentProfileCard: React.FC<{ 
+  profile: AgentProfile; 
+  selectionMode: boolean;
+  isSelected: boolean;
+  onSelectionChange: (agentId: string, selected: boolean) => void;
+}> = ({ profile, selectionMode, isSelected, onSelectionChange }) => {
   const getHealthStatusColor = (status: string) => {
     switch (status) {
       case 'healthy': return 'success';
@@ -302,6 +310,7 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
 
   const lifecycle = getLifecycleStatus(profile);
   const nextAction = getNextAction(profile);
+  const canBeSelected = profile.isWrapped && selectionMode; // Only wrapped agents can be selected for multi-agent systems
 
   return (
     <Card 
@@ -309,10 +318,27 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
         height: '100%', 
         backgroundColor: '#2d3748', 
         color: 'white',
-        border: '1px solid #4a5568',
-        '&:hover': { borderColor: '#718096' },
+        border: isSelected ? '2px solid #3182ce' : '1px solid #4a5568',
+        '&:hover': { borderColor: isSelected ? '#3182ce' : '#718096' },
+        position: 'relative',
       }}
     >
+      {/* Selection Checkbox */}
+      {canBeSelected && (
+        <Box position="absolute" top={8} right={8} zIndex={1}>
+          <Checkbox
+            checked={isSelected}
+            onChange={(e) => onSelectionChange(profile.identity.id, e.target.checked)}
+            sx={{
+              color: '#a0aec0',
+              '&.Mui-checked': { color: '#3182ce' },
+              backgroundColor: 'rgba(45, 55, 72, 0.8)',
+              borderRadius: 1,
+            }}
+          />
+        </Box>
+      )}
+      
       <CardContent>
         {/* Header with Avatar and Status */}
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
@@ -329,9 +355,11 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
               </Typography>
             </Box>
           </Box>
-          <IconButton size="small" sx={{ color: '#a0aec0' }}>
-            <MoreVert />
-          </IconButton>
+          {!canBeSelected && (
+            <IconButton size="small" sx={{ color: '#a0aec0' }}>
+              <MoreVert />
+            </IconButton>
+          )}
         </Box>
 
         {/* Lifecycle Status */}
@@ -395,35 +423,54 @@ const AgentProfileCard: React.FC<{ profile: AgentProfile }> = ({ profile }) => {
         </Grid>
 
         {/* Action Buttons */}
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={nextAction.icon}
-            fullWidth
-            onClick={nextAction.action}
-            sx={{
-              backgroundColor: nextAction.color,
-              color: 'white',
-              '&:hover': { opacity: 0.8 },
-            }}
-          >
-            {nextAction.label}
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Chat />}
-            sx={{
-              borderColor: '#4a5568',
-              color: '#a0aec0',
-              '&:hover': { borderColor: '#718096', backgroundColor: '#1a202c' },
-            }}
-            onClick={() => window.location.href = `/ui/chat?agent=${profile.identity.id}`}
-          >
-            Chat
-          </Button>
-        </Stack>
+        {!selectionMode && (
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={nextAction.icon}
+              fullWidth
+              onClick={nextAction.action}
+              sx={{
+                backgroundColor: nextAction.color,
+                color: 'white',
+                '&:hover': { opacity: 0.8 },
+              }}
+            >
+              {nextAction.label}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Chat />}
+              sx={{
+                borderColor: '#4a5568',
+                color: '#a0aec0',
+                '&:hover': { borderColor: '#718096', backgroundColor: '#1a202c' },
+              }}
+              onClick={() => window.location.href = `/ui/chat?agent=${profile.identity.id}`}
+            >
+              Chat
+            </Button>
+          </Stack>
+        )}
+        
+        {/* Selection Mode Info */}
+        {selectionMode && canBeSelected && (
+          <Box textAlign="center" py={1}>
+            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              {isSelected ? 'Selected for multi-agent system' : 'Click checkbox to select'}
+            </Typography>
+          </Box>
+        )}
+        
+        {selectionMode && !canBeSelected && (
+          <Box textAlign="center" py={1}>
+            <Typography variant="body2" sx={{ color: '#6b7280' }}>
+              {!profile.isWrapped ? 'Must be wrapped first' : 'Not available for selection'}
+            </Typography>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
@@ -435,11 +482,42 @@ const AgentProfilesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [healthFilter, setHealthFilter] = useState('all');
   const [governanceFilter, setGovernanceFilter] = useState('all');
+  
+  // Selection state for multi-agent system creation
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
 
   // Mock data - would be replaced with actual hooks
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
   const [systemProfiles, setSystemProfiles] = useState<SystemProfile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleAgentSelection = (agentId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedAgents(prev => [...prev, agentId]);
+    } else {
+      setSelectedAgents(prev => prev.filter(id => id !== agentId));
+    }
+  };
+
+  const handleCreateMultiAgentSystem = () => {
+    if (selectedAgents.length < 2) {
+      alert('Please select at least 2 agents to create a multi-agent system');
+      return;
+    }
+    
+    // Navigate to multi-agent wrapping wizard with selected agents
+    const agentParams = selectedAgents.map(id => `agentId=${id}`).join('&');
+    window.location.href = `/ui/agents/multi-wrapping?${agentParams}`;
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedAgents([]); // Clear selections when toggling
+  };
+
+  const wrappedAgents = agentProfiles.filter(agent => agent.isWrapped);
+  const canCreateMultiAgent = selectedAgents.length >= 2;
 
   useEffect(() => {
     // Mock data loading
@@ -676,8 +754,62 @@ const AgentProfilesPage: React.FC = () => {
                 Manage and monitor your individual agents and multi-agent systems
               </Typography>
             </Box>
-            <AddNewAgentButton />
+            <Stack direction="row" spacing={2}>
+              {wrappedAgents.length >= 2 && (
+                <Button
+                  variant={selectionMode ? "contained" : "outlined"}
+                  startIcon={<Group />}
+                  onClick={handleToggleSelectionMode}
+                  sx={{
+                    backgroundColor: selectionMode ? '#8b5cf6' : 'transparent',
+                    borderColor: '#8b5cf6',
+                    color: selectionMode ? 'white' : '#8b5cf6',
+                    '&:hover': { 
+                      backgroundColor: selectionMode ? '#7c3aed' : 'rgba(139, 92, 246, 0.1)',
+                      borderColor: '#7c3aed',
+                    },
+                  }}
+                >
+                  {selectionMode ? 'Cancel Selection' : 'Select for Multi-Agent'}
+                </Button>
+              )}
+              <AddNewAgentButton />
+            </Stack>
           </Box>
+          
+          {/* Multi-Agent Creation Bar */}
+          {selectionMode && (
+            <Slide direction="down" in={selectionMode} mountOnEnter unmountOnExit>
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  backgroundColor: '#1e3a8a', 
+                  color: 'white',
+                  '& .MuiAlert-icon': { color: 'white' },
+                }}
+                action={
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={!canCreateMultiAgent}
+                    onClick={handleCreateMultiAgentSystem}
+                    sx={{
+                      backgroundColor: canCreateMultiAgent ? '#10b981' : '#6b7280',
+                      color: 'white',
+                      '&:hover': { backgroundColor: canCreateMultiAgent ? '#059669' : '#6b7280' },
+                    }}
+                  >
+                    Create Multi-Agent System ({selectedAgents.length})
+                  </Button>
+                }
+              >
+                <Typography variant="body2">
+                  Select 2 or more wrapped agents to create a multi-agent system. 
+                  Selected: {selectedAgents.length} agents
+                </Typography>
+              </Alert>
+            </Slide>
+          )}
         </Box>
 
         {/* Enhanced Filters and Search */}
@@ -934,7 +1066,12 @@ const AgentProfilesPage: React.FC = () => {
                     {'systemType' in profile.identity ? (
                       <SystemProfileCard profile={profile as SystemProfile} />
                     ) : (
-                      <AgentProfileCard profile={profile as AgentProfile} />
+                      <AgentProfileCard 
+                        profile={profile as AgentProfile}
+                        selectionMode={false}
+                        isSelected={false}
+                        onSelectionChange={() => {}}
+                      />
                     )}
                   </Grid>
                 ))}
@@ -961,7 +1098,12 @@ const AgentProfilesPage: React.FC = () => {
             <Grid container spacing={3}>
               {filteredAgentProfiles.map((profile) => (
                 <Grid item xs={12} md={6} lg={4} key={profile.identity.id}>
-                  <AgentProfileCard profile={profile} />
+                  <AgentProfileCard 
+                    profile={profile}
+                    selectionMode={selectionMode}
+                    isSelected={selectedAgents.includes(profile.identity.id)}
+                    onSelectionChange={handleAgentSelection}
+                  />
                 </Grid>
               ))}
             </Grid>
