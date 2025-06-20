@@ -15,6 +15,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
 import AgentTemplatesPage from './pages/AgentTemplatesPage';
+import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import ChatPage from './pages/ChatPage';
