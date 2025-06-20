@@ -10,7 +10,7 @@ import {
   WorkflowSpecificProxy
 } from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
