@@ -10,21 +10,21 @@ import {
   WorkflowSpecificProxy
 } from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import ProtectedRimport { Routes, Route, Navigate } from 'react-router-dom';
+import DashboardPage from './pages/DashboardPage';
+import AgentProfilesPage from './pages/AgentProfilesPage';
+import AgentTemplatesPage from './pages/AgentTemplatesPage';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
-import AgentProfilesPage from './pages/AgentProfilesPage';
 import ChatPage from './pages/ChatPage';
-import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
-import BenchmarkChatPage from './pages/BenchmarkChatPage';
+import DeployPage from './pages/DeployPage';
+import RegistryPage from './pages/RegistryPage';
+import BenchmarksPage from './pages/BenchmarksPage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
 import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
 import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
 import GovernanceReportsPage from './pages/GovernanceReportsPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
-import TemplateLibraryPage from './pages/TemplateLibraryPage';
-import DeployPage from './pages/DeployPage';
-import RegistryPage from './pages/RegistryPage';
 import TrustMetricsOverviewPage from './pages/TrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
@@ -36,6 +36,10 @@ import DataManagementSettingsPage from './pages/DataManagementSettingsPage';
 import GuidedToursPage from './pages/GuidedToursPage';
 import DocumentationPage from './pages/DocumentationPage';
 import SupportPage from './pages/SupportPage';
+import ChatGPTWrapperStub from './pages/ChatGPTWrapperStub';
+import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
+import GeminiWrapperStub from './pages/GeminiWrapperStub';
+import PerplexityWrapperStub from './pages/PerplexityWrapperStub';
 
 /**
  * UIIntegration Component
@@ -92,6 +96,31 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <MultiAgentWrappingPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Big 4 LLM Wrapper Stubs */}
+        <Route path="agents/wrap-chatgpt" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <ChatGPTWrapperStub />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="agents/wrap-claude" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <ClaudeWrapperStub />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="agents/wrap-gemini" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <GeminiWrapperStub />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="agents/wrap-perplexity" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <PerplexityWrapperStub />
           </ProtectedRoute>
         } />
         

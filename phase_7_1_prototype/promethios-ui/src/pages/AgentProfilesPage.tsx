@@ -66,6 +66,10 @@ import {
   Delete,
   Launch,
   LibraryBooks,
+  SmartToy,
+  Psychology,
+  AutoAwesome,
+  Divider as DividerIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
@@ -430,6 +434,47 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           },
         }}
       >
+        <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <SmartToy sx={{ color: '#10b981' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap ChatGPT"
+            secondary="Add governance to your existing ChatGPT account"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => navigate('/ui/agents/wrap-claude')} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Psychology sx={{ color: '#8b5cf6' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Claude"
+            secondary="Add governance to your existing Claude account"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => navigate('/ui/agents/wrap-gemini')} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <AutoAwesome sx={{ color: '#f59e0b' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Gemini"
+            secondary="Add governance to your existing Gemini account"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => navigate('/ui/agents/wrap-perplexity')} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Search sx={{ color: '#06b6d4' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Perplexity"
+            secondary="Add governance to your existing Perplexity account"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
         <MenuItem onClick={handleImportAPI} sx={{ py: 2 }}>
           <ListItemIcon>
             <Api sx={{ color: '#3182ce' }} />
@@ -440,6 +485,48 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>
+        <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to ChatGPT wrapping */ }} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <SmartToy sx={{ color: '#10b981' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap ChatGPT"
+            secondary="Connect your OpenAI account with governance"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Claude wrapping */ }} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Psychology sx={{ color: '#8b5cf6' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Claude"
+            secondary="Connect your Anthropic account with governance"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Gemini wrapping */ }} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <AutoAwesome sx={{ color: '#f59e0b' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Gemini"
+            secondary="Connect your Google AI account with governance"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); /* TODO: Navigate to Perplexity wrapping */ }} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Search sx={{ color: '#ef4444' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Wrap Perplexity"
+            secondary="Connect your Perplexity account with governance"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
         <MenuItem onClick={handleTemplateLibrary} sx={{ py: 2 }}>
           <ListItemIcon>
             <LibraryBooks sx={{ color: '#10b981' }} />
