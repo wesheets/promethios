@@ -73,8 +73,8 @@ import {
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
-import { useAgentWrappers } from '../modules/agent-wrapping/hooks/useAgentWrappers';
-import { useMultiAgentSystems } from '../modules/agent-wrapping/hooks/useMultiAgentSystems';
+import { useAgentWrappersUnified } from '../modules/agent-wrapping/hooks/useAgentWrappersUnified';
+import { useMultiAgentSystemsUnified } from '../modules/agent-wrapping/hooks/useMultiAgentSystemsUnified';
 import { useAgentIdentities } from '../modules/agent-identity/hooks/useAgentIdentities';
 import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
 import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
@@ -818,10 +818,83 @@ const AgentProfilesPage: React.FC = () => {
     governanceTier: 'basic' | 'enhanced' | 'strict';
   } | null>(null);
 
-  // Mock data - would be replaced with actual hooks
-  const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
-  const [systemProfiles, setSystemProfiles] = useState<SystemProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Unified storage hooks for real data
+  const {
+    wrappers: agentWrappers,
+    activeWrappers,
+    loading: wrappersLoading,
+    error: wrappersError,
+    createWrapper,
+    updateWrapper,
+    deleteWrapper,
+    deployWrapper,
+    suspendWrapper,
+    refreshWrappers,
+    isStorageReady: wrappersStorageReady
+  } = useAgentWrappersUnified('user-1'); // TODO: Get real user ID from auth context
+
+  const {
+    contexts: multiAgentContexts,
+    activeContexts,
+    loading: contextsLoading,
+    error: contextsError,
+    createContext,
+    sendMessage,
+    refreshContexts,
+    isStorageReady: contextsStorageReady
+  } = useMultiAgentSystemsUnified('user-1'); // TODO: Get real user ID from auth context
+
+  // Convert wrappers to agent profiles for UI compatibility
+  const agentProfiles: AgentProfile[] = agentWrappers.map(wrapper => ({
+    id: wrapper.id,
+    name: wrapper.name,
+    description: wrapper.description,
+    type: 'ai_agent',
+    capabilities: wrapper.supportedProviders,
+    metadata: {
+      version: wrapper.version,
+      description: wrapper.description,
+      ownerId: wrapper.userId,
+      creationDate: new Date(wrapper.createdAt),
+      lastModifiedDate: new Date(wrapper.lastModified),
+      status: wrapper.isActive ? 'active' : 'inactive'
+    },
+    latestScorecard: null,
+    attestationCount: 0,
+    lastActivity: wrapper.usageMetrics.lastUsed ? new Date(wrapper.usageMetrics.lastUsed) : null,
+    healthStatus: wrapper.deploymentStatus === 'deployed' ? 'healthy' : 
+                  wrapper.deploymentStatus === 'suspended' ? 'warning' : 'error',
+    trustLevel: wrapper.governanceData.trustScore >= 80 ? 'high' : 
+                wrapper.governanceData.trustScore >= 60 ? 'medium' : 'low',
+    isWrapped: true,
+    governancePolicy: wrapper.governanceData.complianceScore >= 80 ? 'strict' : 'basic',
+    isDeployed: wrapper.deploymentStatus === 'deployed',
+    apiDetails: {
+      endpoint: 'configured',
+      key: 'configured',
+      provider: wrapper.supportedProviders[0] || 'Custom'
+    }
+  }));
+
+  // System profiles from multi-agent contexts
+  const systemProfiles: SystemProfile[] = multiAgentContexts.map(context => ({
+    id: context.context_id,
+    name: context.name,
+    description: `Multi-agent system with ${context.agent_ids.length} agents`,
+    type: 'multi_agent_system',
+    agentIds: context.agent_ids,
+    collaborationModel: context.collaboration_model,
+    status: context.status as 'active' | 'inactive' | 'error',
+    createdAt: new Date(context.created_at),
+    lastActivity: new Date(context.lastActivity),
+    metrics: {
+      totalMessages: context.persistentData.conversationHistory.length,
+      activeAgents: context.agent_ids.length,
+      averageResponseTime: 0 // TODO: Calculate from metrics
+    }
+  }));
+
+  const loading = wrappersLoading || contextsLoading;
 
   const handleAgentSelection = (agentId: string, selected: boolean) => {
     if (selected) {
@@ -1368,18 +1441,49 @@ const AgentProfilesPage: React.FC = () => {
         <AddAgentDialog 
           open={showAddAgentDialog}
           onClose={() => setShowAddAgentDialog(false)}
-          onAgentAdded={(newAgent) => {
-            // Add the new agent to the list as wrapped
-            setAgentProfiles(prev => [...prev, { ...newAgent, isWrapped: true }]);
-            setShowAddAgentDialog(false);
-            
-            // Show publish to registry modal after successful wrapping
-            setWrappedAgentData({
-              name: newAgent.name,
-              type: 'single', // Assuming single agent for now
-              governanceTier: 'enhanced' // Default governance tier
-            });
-            setShowPublishModal(true);
+          onAgentAdded={async (newAgent) => {
+            try {
+              // Create agent wrapper using unified storage
+              const wrapperId = await createWrapper({
+                name: newAgent.name,
+                description: newAgent.description,
+                version: '1.0.0',
+                supportedProviders: [newAgent.apiDetails?.provider || 'Custom'],
+                inputSchema: {
+                  id: 'default-input',
+                  version: '1.0.0',
+                  definition: {},
+                  validate: () => ({ valid: true, errors: [] })
+                },
+                outputSchema: {
+                  id: 'default-output',
+                  version: '1.0.0',
+                  definition: {},
+                  validate: () => ({ valid: true, errors: [] })
+                },
+                wrap: async (request, context) => request,
+                unwrap: async (response, context) => response,
+                initialize: async () => true
+              });
+
+              console.log('Agent wrapper created:', wrapperId);
+              setShowAddAgentDialog(false);
+              
+              // Show publish to registry modal after successful wrapping
+              setWrappedAgentData({
+                name: newAgent.name,
+                type: 'single',
+                governanceTier: 'enhanced'
+              });
+              setShowPublishModal(true);
+              
+              // Refresh the wrappers list
+              await refreshWrappers();
+              
+            } catch (error) {
+              console.error('Failed to create agent wrapper:', error);
+              alert('Failed to create agent wrapper. Please try again.');
+            }
           }}
         />
 
