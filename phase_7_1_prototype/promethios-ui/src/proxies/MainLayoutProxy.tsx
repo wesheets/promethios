@@ -9,6 +9,7 @@ import { useAdminCheck } from '../hooks/useAdminCheck';
 import NewHeader from '../components/navigation/NewHeader';
 import HeaderNavigation from '../components/HeaderNavigation';
 import CollapsibleNavigation from '../components/CollapsibleNavigation';
+import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
 
 /**
@@ -54,6 +55,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         >
           {children}
         </Box>
+        <Footer />
       </Box>
     );
   }
@@ -70,7 +72,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
 
   // For logged-in users, show new navigation
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       <CssBaseline />
       
       {/* Header Navigation Bar for logged-in users */}
@@ -81,31 +83,35 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         unreadNotifications={0}
       />
       
-      {/* Collapsible Left Navigation for logged-in users */}
-      <CollapsibleNavigation 
-        userPermissions={['view']}
-        isAdmin={isAdmin}
-      />
-      
-      {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          mt: '64px', // Header height
-          ml: preferences.navigationCollapsed ? '60px' : '260px',
-          transition: theme => theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          p: 3,
-          backgroundColor: '#1a202c', // Dark background to match the theme
-          minHeight: 'calc(100vh - 64px)', // Full height minus header
-          color: 'white', // Light text for dark background
-        }}
-      >
-        {children}
+      <Box sx={{ display: 'flex', flex: 1 }}>
+        {/* Collapsible Left Navigation for logged-in users */}
+        <CollapsibleNavigation 
+          userPermissions={['view']}
+          isAdmin={isAdmin}
+        />
+        
+        {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            mt: '64px', // Header height
+            ml: preferences.navigationCollapsed ? '60px' : '260px',
+            transition: theme => theme.transitions.create('margin', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+            p: 3,
+            backgroundColor: '#1a202c', // Dark background to match the theme
+            minHeight: 'calc(100vh - 64px)', // Full height minus header
+            color: 'white', // Light text for dark background
+          }}
+        >
+          {children}
+        </Box>
       </Box>
+      
+      <Footer />
     </Box>
   );
 };
