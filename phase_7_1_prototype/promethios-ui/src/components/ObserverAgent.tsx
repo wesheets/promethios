@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import useContextAwareness from '../hooks/useContextAwareness';
 import { useObserverPreferences } from '../hooks/useObserverPreferences';
-import { observerAgentService } from '../services/observerAgentService';
+import { observerAgentServiceUnified } from '../services/observerAgentServiceUnified';
 import ObserverSettings from './ObserverSettings';
 import ObserverTrustMetrics from './ObserverTrustMetrics';
 
@@ -88,9 +88,32 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize observer service
+  // Initialize observer service with storage integration
   useEffect(() => {
-    observerAgentService.initialize(userId, userRole);
+    const initializeObserver = async () => {
+      try {
+        const sessionId = await observerAgentServiceUnified.startSession(userId, userRole);
+        console.log('Observer Agent session started:', sessionId);
+        
+        // Load chat history from storage
+        const chatHistory = await observerAgentServiceUnified.getChatHistory();
+        setChatHistory(chatHistory);
+        
+        // Load preferences from storage
+        const storedPreferences = await observerAgentServiceUnified.getPreferences();
+        if (storedPreferences) {
+          // Update local preferences state if needed
+          setState(prev => ({
+            ...prev,
+            pulsingEnabled: storedPreferences.pulsingEnabled
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to initialize Observer Agent:', error);
+      }
+    };
+    
+    initializeObserver();
   }, [userId, userRole]);
 
   // Update pulsing enabled state when preferences change
@@ -212,24 +235,31 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
     // Track user action
     trackUserAction('sent_chat_message');
 
-    // Add user message
-    setChatHistory(prev => [...prev, {
-      type: 'user',
+    // Add user message to local state immediately for better UX
+    const userMessage = {
+      type: 'user' as const,
       message: chatInput,
-      timestamp: Date.now()
-    }]);
+      timestamp: Date.now(),
+      sessionId: observerAgentServiceUnified.getCurrentSessionId()
+    };
+    
+    setChatHistory(prev => [...prev, userMessage]);
 
-    // Use observer service for intelligent response
+    // Use unified observer service for intelligent response with storage
     setState(prev => ({ ...prev, isLoadingLLM: true }));
     
     try {
-      const response = await observerAgentService.sendMessage(chatInput);
+      const response = await observerAgentServiceUnified.sendMessage(chatInput);
       
-      setChatHistory(prev => [...prev, {
-        type: 'agent',
+      // Add agent response to local state
+      const agentMessage = {
+        type: 'agent' as const,
         message: response.responseText,
-        timestamp: Date.now()
-      }]);
+        timestamp: Date.now(),
+        sessionId: observerAgentServiceUnified.getCurrentSessionId()
+      };
+      
+      setChatHistory(prev => [...prev, agentMessage]);
       
       // Add any new suggestions from the response
       if (response.suggestions) {
@@ -246,11 +276,15 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
         }));
       }
     } catch (error) {
-      setChatHistory(prev => [...prev, {
-        type: 'agent',
+      const errorMessage = {
+        type: 'agent' as const,
         message: 'I apologize, but I encountered an error processing your request. Please try again.',
-        timestamp: Date.now()
-      }]);
+        timestamp: Date.now(),
+        sessionId: observerAgentServiceUnified.getCurrentSessionId()
+      };
+      
+      setChatHistory(prev => [...prev, errorMessage]);
+      console.error('Observer Agent error:', error);
     } finally {
       setState(prev => ({ ...prev, isLoadingLLM: false }));
     }

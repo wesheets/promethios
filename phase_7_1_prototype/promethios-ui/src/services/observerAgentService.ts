@@ -409,10 +409,9 @@ class ObserverAgentService {
   private eventListeners: Array<(event: ObservableEvent) => void> = [];
   
   constructor() {
-    // Initialize with real OpenAI config
-    // Note: In production, API key should come from environment variables
+    // Initialize with real OpenAI config from environment variables
     this.openAIService = new OpenAIService({
-      apiKey: process.env.OPENAI_API_KEY || 'your-openai-api-key-here',
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '',
       model: 'gpt-4',
       maxTokens: 500,
       temperature: 0.7
