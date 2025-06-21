@@ -9,6 +9,8 @@ import { useAdminCheck } from '../hooks/useAdminCheck';
 import NewHeader from '../components/navigation/NewHeader';
 import HeaderNavigation from '../components/HeaderNavigation';
 import CollapsibleNavigation from '../components/CollapsibleNavigation';
+import ObserverAgent from '../components/ObserverAgent';
+import TestAuth from '../components/TestAuth';
 
 /**
  * MainLayoutProxy Component
@@ -35,6 +37,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <CssBaseline />
         <NewHeader />
+        <TestAuth />
         <Box 
           component="main" 
           sx={{
@@ -78,6 +81,13 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       <CollapsibleNavigation 
         userPermissions={['view']}
         isAdmin={isAdmin}
+      />
+      
+      {/* Observer Agent - Intelligent Assistant */}
+      <ObserverAgent 
+        currentRoute={location.pathname}
+        userId={currentUser.uid}
+        userRole={isAdmin ? 'admin' : 'user'}
       />
       
       {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
