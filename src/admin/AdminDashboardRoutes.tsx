@@ -2,12 +2,13 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import AgentManagementRoutes from './AgentManagementRoutes';
+import DualVeritasAdminPage from './EmotionalVeritasAdminPage';
 
 /**
  * AdminDashboardRoutes Component
  * 
  * This component defines the routes for the admin dashboard section.
- * It includes routes for the analytics dashboard and agent management.
+ * It includes routes for the analytics dashboard, agent management, and Emotional Veritas controls.
  */
 const AdminDashboardRoutes: React.FC = () => {
   console.log('AdminDashboardRoutes rendering'); // Debug log
@@ -22,6 +23,9 @@ const AdminDashboardRoutes: React.FC = () => {
       
       {/* Agent Management Routes - uses nested routing */}
       <Route path="/agents/*" element={<AgentManagementRoutes />} />
+      
+      {/* Emotional Veritas Admin Controls */}
+      <Route path="/governance/emotional-veritas" element={<DualVeritasAdminPage />} />
       
       {/* Fallback route - redirects to dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
