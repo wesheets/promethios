@@ -9,7 +9,7 @@ import { useAdminCheck } from '../hooks/useAdminCheck';
 import NewHeader from '../components/navigation/NewHeader';
 import HeaderNavigation from '../components/HeaderNavigation';
 import CollapsibleNavigation from '../components/CollapsibleNavigation';
-import ObserverAgent from '../components/ObserverAgent';
+import SimpleObserverAgent from '../components/SimpleObserverAgent';
 import TestAuth from '../components/TestAuth';
 
 /**
@@ -30,6 +30,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
+
+  // Debug authentication state
+  console.log("Current user:", currentUser);
+  console.log("Is admin:", isAdmin);
+  console.log("Location:", location.pathname);
 
   // For logged-out users, show existing NewHeader
   if (!currentUser) {
@@ -83,12 +88,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         isAdmin={isAdmin}
       />
       
-      {/* Observer Agent - Intelligent Assistant */}
-      <ObserverAgent 
-        currentRoute={location.pathname}
-        userId={currentUser.uid}
-        userRole={isAdmin ? 'admin' : 'user'}
-      />
+      {/* Simple Observer Agent Test */}
+      <SimpleObserverAgent />
       
       {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
       <Box
