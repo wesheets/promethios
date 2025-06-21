@@ -10,15 +10,15 @@ import {
   CogIcon, 
   ShieldCheckIcon,
   ViewGridIcon,
-  DocumentReportIcon,
+  DocumentTextIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
-  ChatIcon,
-  CloudUploadIcon,
+  ChatBubbleLeftIcon,
+  CloudArrowUpIcon,
   IdentificationIcon,
   HeartIcon,
-  PuzzleIcon,
-  DatabaseIcon,
+  PuzzlePieceIcon,
+  CircleStackIcon,
   QuestionMarkCircleIcon,
   BookOpenIcon
 } from '@heroicons/react/24/outline';
@@ -151,9 +151,9 @@ const AdminDashboardLayout: React.FC = () => {
         path: '/admin/dashboard/governance',
         children: [
           { id: 'governance-overview', name: 'Overview', icon: HomeIcon, path: '/admin/dashboard/governance/overview' },
-          { id: 'governance-policies', name: 'Policies', icon: DocumentReportIcon, path: '/admin/dashboard/governance/policies' },
+          { id: 'governance-policies', name: 'Policies', icon: DocumentTextIcon, path: '/admin/dashboard/governance/policies' },
           { id: 'governance-violations', name: 'Violations', icon: ExclamationCircleIcon, path: '/admin/dashboard/governance/violations' },
-          { id: 'governance-reports', name: 'Reports', icon: DocumentReportIcon, path: '/admin/dashboard/governance/reports' },
+          { id: 'governance-reports', name: 'Reports', icon: DocumentTextIcon, path: '/admin/dashboard/governance/reports' },
           { id: 'governance-emotional-veritas', name: 'Emotional Veritas', icon: HeartIcon, path: '/admin/dashboard/governance/emotional-veritas' }
         ]
       },
@@ -175,11 +175,11 @@ const AdminDashboardLayout: React.FC = () => {
         path: '/admin/dashboard/agents',
         children: [
           { id: 'agents-management', name: 'All Agents', icon: ViewGridIcon, path: '/admin/dashboard/agents-management' },
-          { id: 'agents-wrapping', name: 'Agent Wrapping', icon: PuzzleIcon, path: '/admin/dashboard/agents/wrapping' },
-          { id: 'agents-chat', name: 'Chat', icon: ChatIcon, path: '/admin/dashboard/agents/chat' },
-          { id: 'agents-deploy', name: 'Deploy', icon: CloudUploadIcon, path: '/admin/dashboard/agents/deploy' },
+          { id: 'agents-wrapping', name: 'Agent Wrapping', icon: PuzzlePieceIcon, path: '/admin/dashboard/agents/wrapping' },
+          { id: 'agents-chat', name: 'Chat', icon: ChatBubbleLeftIcon, path: '/admin/dashboard/agents/chat' },
+          { id: 'agents-deploy', name: 'Deploy', icon: CloudArrowUpIcon, path: '/admin/dashboard/agents/deploy' },
           { id: 'agents-registry', name: 'Registry', icon: ViewGridIcon, path: '/admin/dashboard/agents/registry' },
-          { id: 'agents-scorecard', name: 'Scorecard', icon: DocumentReportIcon, path: '/admin/dashboard/agents/scorecard' },
+          { id: 'agents-scorecard', name: 'Scorecard', icon: DocumentTextIcon, path: '/admin/dashboard/agents/scorecard' },
           { id: 'agents-identity', name: 'Identity', icon: IdentificationIcon, path: '/admin/dashboard/agents/identity' },
           { id: 'agents-benchmarks', name: 'Benchmarks', icon: ChartBarIcon, path: '/admin/dashboard/agents/benchmarks' }
         ]
@@ -193,8 +193,8 @@ const AdminDashboardLayout: React.FC = () => {
           { id: 'settings-profile', name: 'User Profile', icon: UserGroupIcon, path: '/admin/dashboard/settings/profile' },
           { id: 'settings-preferences', name: 'Preferences', icon: CogIcon, path: '/admin/dashboard/settings/preferences' },
           { id: 'settings-organization', name: 'Organization', icon: UserGroupIcon, path: '/admin/dashboard/settings/organization' },
-          { id: 'settings-integrations', name: 'Integrations', icon: PuzzleIcon, path: '/admin/dashboard/settings/integrations' },
-          { id: 'settings-data-management', name: 'Data Management', icon: DatabaseIcon, path: '/admin/dashboard/settings/data-management' }
+          { id: 'settings-integrations', name: 'Integrations', icon: PuzzlePieceIcon, path: '/admin/dashboard/settings/integrations' },
+          { id: 'settings-data-management', name: 'Data Management', icon: CircleStackIcon, path: '/admin/dashboard/settings/data-management' }
         ]
       },
       { 
@@ -204,7 +204,7 @@ const AdminDashboardLayout: React.FC = () => {
         path: '/admin/dashboard/help',
         children: [
           { id: 'help-tours', name: 'Guided Tours', icon: BookOpenIcon, path: '/admin/dashboard/help/tours' },
-          { id: 'help-documentation', name: 'Documentation', icon: DocumentReportIcon, path: '/admin/dashboard/help/documentation' },
+          { id: 'help-documentation', name: 'Documentation', icon: DocumentTextIcon, path: '/admin/dashboard/help/documentation' },
           { id: 'help-support', name: 'Support', icon: QuestionMarkCircleIcon, path: '/admin/dashboard/help/support' }
         ]
       }
