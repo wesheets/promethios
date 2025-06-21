@@ -79,6 +79,7 @@ import { useAgentIdentities } from '../modules/agent-identity/hooks/useAgentIden
 import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
 import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
 import PublishToRegistryModal from '../components/PublishToRegistryModal';
+import { agentBackendService } from '../services/agentBackendService';
 
 // Extended AgentProfile interface for our UI needs
 interface AgentProfile extends BaseAgentProfile {
@@ -818,6 +819,10 @@ const AgentProfilesPage: React.FC = () => {
     governanceTier: 'basic' | 'enhanced' | 'strict';
   } | null>(null);
 
+  // Agent profiles state for real backend data
+  const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // Unified storage hooks for real data
   const {
     wrappers: agentWrappers,
@@ -844,38 +849,6 @@ const AgentProfilesPage: React.FC = () => {
     isStorageReady: contextsStorageReady
   } = useMultiAgentSystemsUnified('user-1'); // TODO: Get real user ID from auth context
 
-  // Convert wrappers to agent profiles for UI compatibility
-  const agentProfiles: AgentProfile[] = agentWrappers.map(wrapper => ({
-    id: wrapper.id,
-    name: wrapper.name,
-    description: wrapper.description,
-    type: 'ai_agent',
-    capabilities: wrapper.supportedProviders,
-    metadata: {
-      version: wrapper.version,
-      description: wrapper.description,
-      ownerId: wrapper.userId,
-      creationDate: new Date(wrapper.createdAt),
-      lastModifiedDate: new Date(wrapper.lastModified),
-      status: wrapper.isActive ? 'active' : 'inactive'
-    },
-    latestScorecard: null,
-    attestationCount: 0,
-    lastActivity: wrapper.usageMetrics.lastUsed ? new Date(wrapper.usageMetrics.lastUsed) : null,
-    healthStatus: wrapper.deploymentStatus === 'deployed' ? 'healthy' : 
-                  wrapper.deploymentStatus === 'suspended' ? 'warning' : 'error',
-    trustLevel: wrapper.governanceData.trustScore >= 80 ? 'high' : 
-                wrapper.governanceData.trustScore >= 60 ? 'medium' : 'low',
-    isWrapped: true,
-    governancePolicy: wrapper.governanceData.complianceScore >= 80 ? 'strict' : 'basic',
-    isDeployed: wrapper.deploymentStatus === 'deployed',
-    apiDetails: {
-      endpoint: 'configured',
-      key: 'configured',
-      provider: wrapper.supportedProviders[0] || 'Custom'
-    }
-  }));
-
   // System profiles from multi-agent contexts
   const systemProfiles: SystemProfile[] = multiAgentContexts.map(context => ({
     id: context.context_id,
@@ -894,7 +867,8 @@ const AgentProfilesPage: React.FC = () => {
     }
   }));
 
-  const loading = wrappersLoading || contextsLoading;
+  // Combine loading states
+  const combinedLoading = loading || wrappersLoading || contextsLoading;
 
   const handleAgentSelection = (agentId: string, selected: boolean) => {
     if (selected) {
@@ -924,110 +898,67 @@ const AgentProfilesPage: React.FC = () => {
   const canCreateMultiAgent = selectedAgents.length >= 2;
 
   useEffect(() => {
-    // Mock data loading
+    // Real data loading from backend API
     const loadProfiles = async () => {
       setLoading(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock agent profiles with lifecycle states
-      const mockAgentProfiles: AgentProfile[] = [
-        {
-          identity: {
-            id: 'agent-1',
-            name: 'Customer Support Assistant',
-            version: '1.2.0',
-            description: 'AI assistant for customer support inquiries',
-            ownerId: 'user-1',
-            creationDate: new Date('2024-01-15'),
-            lastModifiedDate: new Date('2024-06-10'),
-            status: 'active'
-          },
-          latestScorecard: {
-            agentId: 'agent-1',
-            templateId: 'default',
-            evaluationTimestamp: new Date(),
-            context: {},
-            overallScore: 92,
-            metricValues: {}
-          },
-          attestationCount: 3,
-          lastActivity: new Date('2024-06-12'),
-          healthStatus: 'healthy',
-          trustLevel: 'high',
-          isWrapped: true,
-          governancePolicy: 'HIPAA Strict',
-          isDeployed: true
-        },
-        {
-          identity: {
-            id: 'agent-2',
-            name: 'Data Analysis Bot',
-            version: '2.1.0',
-            description: 'Specialized in data analysis and reporting',
-            ownerId: 'user-1',
-            creationDate: new Date('2024-02-20'),
-            lastModifiedDate: new Date('2024-06-08'),
-            status: 'active'
-          },
-          latestScorecard: {
-            agentId: 'agent-2',
-            templateId: 'default',
-            evaluationTimestamp: new Date(),
-            context: {},
-            overallScore: 78,
-            metricValues: {}
-          },
-          attestationCount: 2,
-          lastActivity: new Date('2024-06-11'),
-          healthStatus: 'warning',
-          trustLevel: 'medium',
-          isWrapped: true,
-          governancePolicy: 'Financial Services',
-          isDeployed: false
-        },
-        {
-          identity: {
-            id: 'agent-3',
-            name: 'Content Generator',
-            version: '1.0.0',
-            description: 'Generates marketing content and copy',
-            ownerId: 'user-1',
-            creationDate: new Date('2024-06-15'),
-            lastModifiedDate: new Date('2024-06-15'),
-            status: 'active'
-          },
-          latestScorecard: null,
-          attestationCount: 0,
-          lastActivity: null,
-          healthStatus: 'healthy',
-          trustLevel: 'medium',
-          isWrapped: false,
-          governancePolicy: null,
-          isDeployed: false
-        }
-      ];
-
-      // Mock system profiles
-      const mockSystemProfiles: SystemProfile[] = [];
-
-      setAgentProfiles(mockAgentProfiles);
-      setSystemProfiles(mockSystemProfiles);
-      setLoading(false);
+      try {
+        // Load real agents from backend
+        const backendAgents = await agentBackendService.listAgents('user-1'); // TODO: Get real user ID from auth
+        
+        // Transform backend agents to frontend format
+        const realAgentProfiles: AgentProfile[] = backendAgents.map(backendAgent => {
+          const transformed = agentBackendService.transformAgentProfile(backendAgent);
+          return {
+            id: transformed.id,
+            name: transformed.name,
+            description: transformed.description,
+            type: 'ai_agent',
+            capabilities: ['ai_assistant'], // TODO: Get from backend
+            metadata: {
+              version: transformed.version,
+              description: transformed.description,
+              ownerId: transformed.ownerId,
+              creationDate: new Date(transformed.createdAt),
+              lastModifiedDate: new Date(transformed.lastUpdated),
+              status: transformed.status
+            },
+            latestScorecard: null, // Will be loaded separately
+            attestationCount: 0,
+            lastActivity: new Date(transformed.lastUpdated),
+            healthStatus: transformed.healthStatus as 'healthy' | 'warning' | 'error',
+            trustLevel: transformed.trustScore >= 80 ? 'high' : 
+                       transformed.trustScore >= 60 ? 'medium' : 'low',
+            isWrapped: true, // All backend agents are considered wrapped
+            governancePolicy: transformed.governanceIdentity.complianceLevel,
+            isDeployed: transformed.status === 'deployed',
+            apiDetails: {
+              endpoint: 'configured',
+              key: 'configured',
+              provider: 'Backend'
+            }
+          };
+        });
+        
+        setAgentProfiles(realAgentProfiles);
+        
+      } catch (error) {
+        console.error('Error loading agent profiles:', error);
+        // Fallback to empty array on error
+        setAgentProfiles([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadProfiles();
   }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
+  // Filter agent profiles
   const filteredAgentProfiles = agentProfiles.filter(profile => {
-    const matchesSearch = profile.identity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         profile.identity.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || profile.identity.status === statusFilter;
+    const matchesSearch = profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         profile.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || profile.metadata.status === statusFilter;
     const matchesHealth = healthFilter === 'all' || profile.healthStatus === healthFilter;
     
     return matchesSearch && matchesStatus && matchesHealth;
@@ -1273,7 +1204,7 @@ const AgentProfilesPage: React.FC = () => {
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
           {/* Overview Tab - Combined view */}
-          {loading ? (
+          {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
               <Typography>Loading profiles...</Typography>
             </Box>
@@ -1384,7 +1315,7 @@ const AgentProfilesPage: React.FC = () => {
 
         <TabPanel value={tabValue} index={1}>
           {/* Individual Agents Tab */}
-          {loading ? (
+          {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
               <Typography>Loading agent profiles...</Typography>
             </Box>
@@ -1414,7 +1345,7 @@ const AgentProfilesPage: React.FC = () => {
 
         <TabPanel value={tabValue} index={2}>
           {/* Multi-Agent Systems Tab */}
-          {loading ? (
+          {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
               <Typography>Loading system profiles...</Typography>
             </Box>
