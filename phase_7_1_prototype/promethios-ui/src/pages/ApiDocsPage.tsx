@@ -438,20 +438,57 @@ curl -X PUT https://api.promethios.com/policy/policy_123 \\
               </div>
             </div>
 
+            {/* Pricing & Access Section */}
             <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 p-8 rounded-lg">
-              <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
-              <p className="text-gray-300 mb-6">
-                Join thousands of developers building safer AI applications with Promethios.
-              </p>
+              <h3 className="text-2xl font-bold mb-4">API Access & Pricing</h3>
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-gray-800/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-green-400 mb-2">Free Tier</h4>
+                  <div className="text-2xl font-bold mb-2">$0/month</div>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• 1,000 API calls/month</li>
+                    <li>• Basic governance policies</li>
+                    <li>• Community support</li>
+                    <li>• Standard trust scoring</li>
+                  </ul>
+                </div>
+                <div className="bg-gray-800/50 p-6 rounded-lg border border-blue-500">
+                  <h4 className="text-lg font-semibold text-blue-400 mb-2">Pro</h4>
+                  <div className="text-2xl font-bold mb-2">$99/month</div>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• 100,000 API calls/month</li>
+                    <li>• Custom governance policies</li>
+                    <li>• Priority support</li>
+                    <li>• Advanced analytics</li>
+                  </ul>
+                </div>
+                <div className="bg-gray-800/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-purple-400 mb-2">Enterprise</h4>
+                  <div className="text-2xl font-bold mb-2">Custom</div>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Unlimited API calls</li>
+                    <li>• On-premise deployment</li>
+                    <li>• Custom model training</li>
+                    <li>• Dedicated support</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="bg-yellow-900/20 border border-yellow-600 p-4 rounded-lg mb-6">
+                <h4 className="text-yellow-400 font-semibold mb-2">🔒 IP Protection Notice</h4>
+                <p className="text-sm text-gray-300">
+                  Our API provides governance results and trust scores without exposing our proprietary algorithms, 
+                  training data, or model weights. Your data remains secure and our intellectual property is protected.
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => setActiveTab('quickstart')}
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                 >
-                  Start Building
+                  Start Free Trial
                 </button>
                 <button className="border border-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                  Request API Access
+                  Contact Sales
                 </button>
               </div>
             </div>
@@ -480,10 +517,16 @@ curl -X PUT https://api.promethios.com/policy/policy_123 \\
                   Get Your API Key
                 </h3>
                 <p className="text-gray-300 mb-4">
-                  Sign up for a Promethios account and generate your API credentials from the developer dashboard.
+                  Sign up for a Promethios account and generate your API credentials from the developer dashboard. 
+                  Start with our free tier - 1,000 API calls per month with no credit card required.
                 </p>
+                <div className="bg-green-900/20 border border-green-600 p-3 rounded-lg mb-4">
+                  <p className="text-sm text-green-400">
+                    ✅ Free Tier: 1,000 API calls/month • Basic governance policies • No credit card required
+                  </p>
+                </div>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition-colors">
-                  Get API Key
+                  Get Free API Key
                 </button>
               </div>
 
@@ -605,9 +648,28 @@ curl -H "Authorization: Bearer pk_live_123..." \\
                 <li>• Never expose API keys in client-side code</li>
                 <li>• Use environment variables to store credentials</li>
                 <li>• Rotate API keys regularly</li>
-                <li>• Implement proper rate limiting in your applications</li>
-                <li>• Monitor API usage for unusual activity</li>
+                <li>• Implement rate limiting in your applications</li>
+                <li>• Monitor API usage for unusual patterns</li>
               </ul>
+            </div>
+
+            <div className="bg-blue-900/20 border border-blue-600 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold mb-3 text-blue-400">🔒 Data & IP Protection</h3>
+              <div className="space-y-3 text-gray-300">
+                <p>
+                  <strong>Your Data Security:</strong> All API requests are encrypted in transit (TLS 1.3) and at rest. 
+                  We never store your AI prompts or responses beyond the session scope required for governance validation.
+                </p>
+                <p>
+                  <strong>Our IP Protection:</strong> The API provides governance results without exposing our proprietary 
+                  algorithms, model weights, or training data. You receive trust scores and violation flags, not our 
+                  underlying intelligence.
+                </p>
+                <p>
+                  <strong>Compliance:</strong> Our API infrastructure is SOC 2 Type II certified and complies with 
+                  GDPR, HIPAA, and other major data protection regulations.
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
