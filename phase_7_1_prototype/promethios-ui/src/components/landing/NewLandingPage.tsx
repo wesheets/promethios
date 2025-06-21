@@ -6,6 +6,7 @@ import FloatingObserver from './FloatingObserver';
 import InteractiveDemos from './InteractiveDemos';
 import TemplateLibraryPreview from './TemplateLibraryPreview';
 import PrometheusStackShowcase from './PrometheusStackShowcase';
+import '../../styles/hero-animations.css';
 
 const NewLandingPage: React.FC = () => {
   const { user } = useAuth();
@@ -13,127 +14,136 @@ const NewLandingPage: React.FC = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-        <div className="max-w-screen-xl mx-auto">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-            <div className="lg:w-1/2 text-center lg:text-left">
-              {/* Brand Badge */}
-              <div className="flex items-center justify-center lg:justify-start space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+      {/* Hero Section with Video Background */}
+      <section className="relative w-full h-screen overflow-hidden">
+        {/* Full-width Video Background */}
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/animation.mp4" type="video/mp4" />
+        </video>
+        
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/40 video-overlay"></div>
+        
+        {/* Content Container */}
+        <div className="relative z-10 h-full flex items-center px-4 sm:px-6 lg:px-8 hero-content">
+          <div className="max-w-screen-xl mx-auto w-full">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 h-full">
+              
+              {/* Left-aligned Content */}
+              <div className="lg:w-1/2 text-left">
+                {/* Main Headline */}
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                  <span className="text-white">Govern, Monitor,</span><br />
+                  <span className="text-white">and </span>
+                  <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-pulse glow-text">Trust</span>
+                  <span className="text-white"> your AI</span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="text-xl mb-8 text-gray-200 max-w-2xl">
+                  Promethios wraps any LLM or agent with real-time policy enforcement, 
+                  trust scoring, and hallucination prevention — no retraining required.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                  <Link 
+                    to="/demo" 
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    Try Governance Demo
+                  </Link>
+                  <Link 
+                    to={user ? "/ui/dashboard" : "/ui/onboarding"} 
+                    className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
+                  >
+                    {user ? "Go to Dashboard" : "Wrap an Agent"}
+                  </Link>
                 </div>
-                <span className="text-lg font-semibold text-white">PROMETHIOS</span>
+
+                {/* Trust Indicators */}
+                <div className="flex items-center space-x-6 text-sm text-gray-300">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>Framework agnostic</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    <span>Prevents hallucinations</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                <span className="text-white">Govern, Monitor,</span><br />
-                <span className="text-white">and </span>
-                <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">Trust</span>
-                <span className="text-white"> your AI</span>
-              </h1>
-
-              {/* Subtitle */}
-              <p className="text-xl mb-8 text-gray-300 max-w-2xl mx-auto lg:mx-0">
-                Promethios wraps any LLM or agent with real-time policy enforcement, 
-                trust scoring, and hallucination prevention — no retraining required.
-              </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-                <Link 
-                  to="/demo" 
-                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  Try Governance Demo
-                </Link>
-                <Link 
-                  to={user ? "/ui/dashboard" : "/ui/onboarding"} 
-                  className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
-                >
-                  {user ? "Go to Dashboard" : "Wrap an Agent"}
-                </Link>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="flex items-center justify-center lg:justify-start space-x-6 text-sm text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Framework agnostic</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                  <span>Prevents hallucinations</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard Preview */}
-            <div className="lg:w-1/2">
-              <div className="relative">
-                {/* Background Glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl blur-xl"></div>
-                
-                {/* Dashboard Container */}
-                <div className="relative bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-2xl">
-                  {/* Dashboard Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <span className="text-gray-400 text-sm">AI Governance Dashboard</span>
-                  </div>
-
-                  {/* Trust Score */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-semibold">Trust Score</span>
-                      <span className="text-2xl font-bold text-green-400">85%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-3">
-                      <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full" style={{width: '85%'}}></div>
-                    </div>
-                  </div>
-
-                  {/* Status Indicators */}
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        <span className="text-gray-300 text-sm">Vigil: Monitoring active</span>
+              {/* Right-aligned Trust Score Box */}
+              <div className="lg:w-1/2 flex justify-end">
+                <div className="relative">
+                  {/* Pulsing Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-blue-500/30 rounded-xl blur-xl animate-pulse"></div>
+                  
+                  {/* Trust Score Container */}
+                  <div className="relative bg-gray-800/90 backdrop-blur-sm border border-gray-600/50 rounded-xl p-6 shadow-2xl pulse-glow">
+                    {/* Dashboard Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       </div>
-                      <span className="text-green-400 text-sm">✓</span>
+                      <span className="text-gray-300 text-sm">AI Governance Dashboard</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                        <span className="text-gray-300 text-sm">PRISM: Transparency enabled</span>
-                      </div>
-                      <span className="text-blue-400 text-sm">✓</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                        <span className="text-gray-300 text-sm">Veritas: Fact-checking active</span>
-                      </div>
-                      <span className="text-purple-400 text-sm">✓</span>
-                    </div>
-                  </div>
 
-                  {/* Recent Activity */}
-                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-green-300 font-semibold text-sm">Hallucination prevented</span>
+                    {/* Trust Score */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-semibold">Trust Score</span>
+                        <span className="text-2xl font-bold text-green-400 animate-pulse">85%</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-3">
+                        <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full trust-bar" style={{width: '85%'}}></div>
+                      </div>
                     </div>
-                    <p className="text-gray-300 text-xs">
-                      Blocked fabricated legal case "Johnson v. Smith" - redirected to verified sources
-                    </p>
+
+                    {/* Status Indicators */}
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                          <span className="text-gray-300 text-sm">Vigil: Monitoring active</span>
+                        </div>
+                        <span className="text-green-400 text-sm">✓</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                          <span className="text-gray-300 text-sm">PRISM: Transparency enabled</span>
+                        </div>
+                        <span className="text-blue-400 text-sm">✓</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          <span className="text-gray-300 text-sm">Veritas: Fact-checking active</span>
+                        </div>
+                        <span className="text-purple-400 text-sm">✓</span>
+                      </div>
+                    </div>
+
+                    {/* Recent Activity */}
+                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-300 font-semibold text-sm">Hallucination prevented</span>
+                      </div>
+                      <p className="text-gray-300 text-xs">
+                        Blocked fabricated legal case "Johnson v. Smith" - redirected to verified sources
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
