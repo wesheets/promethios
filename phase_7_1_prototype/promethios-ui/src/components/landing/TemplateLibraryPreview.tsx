@@ -86,13 +86,24 @@ const TemplateLibraryPreview: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
-      <div className="max-w-screen-xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 text-white">
-            📚 Template Library
+    <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 relative overflow-hidden">
+      {/* Subtle pattern background */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
+      </div>
+      
+      <div className="max-w-screen-xl mx-auto relative">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center space-x-2 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 rounded-full px-6 py-2 mb-6">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-blue-600 font-semibold">50+ Ready Templates</span>
+          </div>
+          <h2 className="text-5xl font-bold mb-6 text-gray-900">
+            📚 Template <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Library</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Pre-built governance templates for common use cases. 
             Fork, customize, and deploy with one click.
           </p>
@@ -104,10 +115,10 @@ const TemplateLibraryPreview: React.FC = () => {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                 selectedCategory === category
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                  ? 'bg-blue-500 text-white shadow-lg scale-105'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 hover:border-gray-300'
               }`}
             >
               {category}
@@ -120,26 +131,26 @@ const TemplateLibraryPreview: React.FC = () => {
           {filteredTemplates.map((template) => (
             <div
               key={template.id}
-              className="bg-gray-900 rounded-xl border border-gray-700 hover:border-gray-600 transition-all duration-200 overflow-hidden group hover:shadow-xl"
+              className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden group hover:shadow-xl hover:-translate-y-1"
             >
               {/* Template Header */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${template.color} rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                  <div className={`w-12 h-12 bg-gradient-to-r ${template.color} rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-lg`}>
                     {template.icon}
                   </div>
                   <div className="text-right">
-                    <div className={`text-lg font-bold ${getTrustScoreColor(template.trustScore)}`}>
+                    <div className={`text-lg font-bold ${template.trustScore >= 90 ? 'text-green-600' : template.trustScore >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
                       {template.trustScore}%
                     </div>
-                    <div className="text-xs text-gray-400">Trust Score</div>
+                    <div className="text-xs text-gray-500">Trust Score</div>
                   </div>
                 </div>
 
-                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                   {template.name}
                 </h3>
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                   {template.description}
                 </p>
 
@@ -148,7 +159,7 @@ const TemplateLibraryPreview: React.FC = () => {
                   {template.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-md"
+                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md border border-gray-200"
                     >
                       {tag}
                     </span>

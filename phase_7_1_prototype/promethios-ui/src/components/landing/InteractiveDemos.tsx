@@ -77,13 +77,23 @@ const InteractiveDemos: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
-      <div className="max-w-screen-xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 text-white">
-            🎯 Want to see how Promethios stops AI hallucinations?
+    <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+      
+      <div className="max-w-screen-xl mx-auto relative">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-6 py-2 mb-6">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-green-400 font-semibold">Live Governance Playground</span>
+          </div>
+          <h2 className="text-5xl font-bold mb-6 text-white">
+            🎯 Want to see how Promethios stops AI <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">hallucinations</span>?
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
             Interactive demos showing real-time governance in action.
             Watch AI violations get prevented before they reach users.
           </p>

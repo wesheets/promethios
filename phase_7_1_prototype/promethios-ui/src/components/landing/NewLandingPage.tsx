@@ -142,60 +142,71 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* What Promethios Does Section */}
-      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
-        <div className="max-w-screen-xl mx-auto">
+      {/* What Promethios Does Section - Light Variant */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-slate-800 relative">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
+        
+        <div className="max-w-screen-xl mx-auto relative">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 text-white">What Promethios Does</h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <h2 className="text-4xl font-bold mb-6 text-white">
+              What Promethios Does
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               The observability and compliance layer for multi-agent AI systems.
               Comprehensive governance that makes AI trustworthy by design.
             </p>
+            {/* Horizontal divider */}
+            <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 mx-auto mt-8"></div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Governance Wrapping */}
-            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-blue-500 transition-all duration-200">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6">
+            <div className="bg-gray-700/50 backdrop-blur-sm p-8 rounded-xl border border-gray-600 hover:border-blue-400 hover:bg-gray-700/70 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white">🛡️ Governance Wrapping</h3>
-              <p className="text-gray-300">
+              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors">🛡️ Governance Wrapping</h3>
+              <p className="text-gray-300 leading-relaxed">
                 Wrap any agent with zero code. Apply policies like HIPAA, SOC2, GDPR.
               </p>
             </div>
 
             {/* Trust Score Engine */}
-            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-green-500 transition-all duration-200">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-6">
+            <div className="bg-gray-700/50 backdrop-blur-sm p-8 rounded-xl border border-gray-600 hover:border-green-400 hover:bg-gray-700/70 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white">📊 Trust Score Engine</h3>
-              <p className="text-gray-300">
+              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-green-400 transition-colors">📊 Trust Score Engine</h3>
+              <p className="text-gray-300 leading-relaxed">
                 Dynamic trust ratings with attestation, boundary, and reliability scores.
               </p>
             </div>
 
             {/* Agent Integrity Reports */}
-            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-purple-500 transition-all duration-200">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6">
+            <div className="bg-gray-700/50 backdrop-blur-sm p-8 rounded-xl border border-gray-600 hover:border-purple-400 hover:bg-gray-700/70 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white">🧠 Agent Integrity Reports</h3>
-              <p className="text-gray-300">
+              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-400 transition-colors">🧠 Agent Integrity Reports</h3>
+              <p className="text-gray-300 leading-relaxed">
                 Prevent hallucinations in real-time. Show users when AI goes off track.
               </p>
             </div>
 
             {/* Multi-Agent Collaboration */}
-            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-orange-500 transition-all duration-200">
-              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-6">
+            <div className="bg-gray-700/50 backdrop-blur-sm p-8 rounded-xl border border-gray-600 hover:border-orange-400 hover:bg-gray-700/70 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
@@ -247,33 +258,81 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Trust in Action Section */}
-      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
-        <div className="max-w-screen-xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 text-white">Trust in Action</h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+      {/* Trust in Action Section - Minimalist Split */}
+      <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Subtle geometric background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='none'/%3E%3Cpath d='M0 0l100 100M100 0L0 100' stroke='%23000' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
+        
+        <div className="max-w-screen-xl mx-auto relative">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-bold mb-6 text-gray-900">
+              Trust in <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Action</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Real-time analytics and proof of success from our governance platform.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-green-400 mb-2">85</div>
-              <div className="text-gray-300">Average Trust Score</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {/* Average Trust Score */}
+            <div className="text-center group">
+              <div className="relative">
+                <div className="text-7xl font-black text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                  85
+                  <span className="text-3xl text-green-500">%</span>
+                </div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+              <div className="text-lg font-semibold text-gray-700 mb-2">Average Trust Score</div>
+              <div className="text-sm text-gray-500">Across all governed agents</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-400 mb-2">243</div>
-              <div className="text-gray-300">Violations Prevented</div>
+
+            {/* Violations Prevented */}
+            <div className="text-center group">
+              <div className="relative">
+                <div className="text-7xl font-black text-red-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                  243
+                </div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
+              </div>
+              <div className="text-lg font-semibold text-gray-700 mb-2">Violations Prevented</div>
+              <div className="text-sm text-gray-500">This month alone</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-400 mb-2">1.2M</div>
-              <div className="text-gray-300">Governed Responses</div>
+
+            {/* Governed Responses */}
+            <div className="text-center group">
+              <div className="relative">
+                <div className="text-7xl font-black text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                  1.2
+                  <span className="text-3xl text-blue-500">M</span>
+                </div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-400 rounded-full animate-pulse"></div>
+              </div>
+              <div className="text-lg font-semibold text-gray-700 mb-2">Governed Responses</div>
+              <div className="text-sm text-gray-500">Successfully processed</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-orange-400 mb-2">92%</div>
-              <div className="text-gray-300">SOC2 Compliance</div>
+
+            {/* SOC2 Compliance */}
+            <div className="text-center group">
+              <div className="relative">
+                <div className="text-7xl font-black text-purple-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                  92
+                  <span className="text-3xl text-purple-500">%</span>
+                </div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-400 rounded-full animate-pulse"></div>
+              </div>
+              <div className="text-lg font-semibold text-gray-700 mb-2">SOC2 Compliance</div>
+              <div className="text-sm text-gray-500">Enterprise ready</div>
             </div>
+          </div>
+
+          {/* Bottom accent line */}
+          <div className="mt-20 flex justify-center">
+            <div className="w-32 h-1 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 rounded-full"></div>
           </div>
         </div>
       </section>

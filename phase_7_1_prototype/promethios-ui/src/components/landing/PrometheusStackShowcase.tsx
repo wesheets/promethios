@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const PrometheusStackShowcase: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState('vigil');
+  const [isHovered, setIsHovered] = useState<string | null>(null);
 
   const stackComponents = {
     vigil: {
@@ -10,9 +11,11 @@ const PrometheusStackShowcase: React.FC = () => {
       description: "Real-time agent behavior analysis and anomaly detection",
       icon: "👁️",
       color: "from-green-500 to-green-600",
+      borderColor: "border-green-400",
+      glowColor: "shadow-green-500/20",
       features: [
         "Continuous behavior monitoring",
-        "Anomaly detection algorithms",
+        "Anomaly detection algorithms", 
         "Real-time alerting system",
         "Pattern recognition engine"
       ],
@@ -24,14 +27,16 @@ const PrometheusStackShowcase: React.FC = () => {
     },
     prism: {
       name: "PRISM",
-      subtitle: "Transparency Engine",
+      subtitle: "Transparency Engine", 
       description: "Explainable AI decisions with full audit trails",
       icon: "🔍",
       color: "from-blue-500 to-blue-600",
+      borderColor: "border-blue-400",
+      glowColor: "shadow-blue-500/20",
       features: [
         "Decision path visualization",
         "Confidence scoring",
-        "Source attribution",
+        "Source attribution", 
         "Audit trail generation"
       ],
       metrics: {
@@ -43,9 +48,11 @@ const PrometheusStackShowcase: React.FC = () => {
     veritas: {
       name: "Veritas",
       subtitle: "Truth Verification",
-      description: "Fact-checking and hallucination prevention system",
+      description: "Fact-checking and hallucination prevention system", 
       icon: "✅",
       color: "from-purple-500 to-purple-600",
+      borderColor: "border-purple-400",
+      glowColor: "shadow-purple-500/20",
       features: [
         "Real-time fact verification",
         "Source validation",
@@ -70,13 +77,32 @@ const PrometheusStackShowcase: React.FC = () => {
   ];
 
   return (
-    <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
-      <div className="max-w-screen-xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 text-white">
-            🏗️ The Promethios Stack
+    <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative overflow-hidden">
+      {/* Blueprint background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='10' height='10' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 10 0 L 0 0 0 10' fill='none' stroke='%2300d4ff' stroke-width='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23grid)'/%3E%3C/svg%3E")`,
+        }}></div>
+      </div>
+      
+      {/* Blueprint frame border */}
+      <div className="absolute inset-4 border border-cyan-500/30 rounded-lg pointer-events-none">
+        <div className="absolute -top-2 -left-2 w-4 h-4 border-l-2 border-t-2 border-cyan-400"></div>
+        <div className="absolute -top-2 -right-2 w-4 h-4 border-r-2 border-t-2 border-cyan-400"></div>
+        <div className="absolute -bottom-2 -left-2 w-4 h-4 border-l-2 border-b-2 border-cyan-400"></div>
+        <div className="absolute -bottom-2 -right-2 w-4 h-4 border-r-2 border-b-2 border-cyan-400"></div>
+      </div>
+      
+      <div className="max-w-screen-xl mx-auto relative">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center space-x-2 bg-cyan-500/10 backdrop-blur-sm border border-cyan-500/30 rounded-full px-6 py-2 mb-6">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+            <span className="text-cyan-400 font-semibold">System Architecture</span>
+          </div>
+          <h2 className="text-5xl font-bold mb-6 text-white">
+            🏗️ The <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Promethios Stack</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
             Three core systems working together to provide comprehensive AI governance.
             Framework-agnostic and enterprise-ready.
           </p>
@@ -88,26 +114,36 @@ const PrometheusStackShowcase: React.FC = () => {
             {Object.entries(stackComponents).map(([key, component]) => (
               <div
                 key={key}
-                className={`p-6 rounded-xl border cursor-pointer transition-all duration-200 ${
+                className={`p-6 rounded-xl border cursor-pointer transition-all duration-300 group ${
                   activeComponent === key
-                    ? 'bg-gray-700 border-blue-500 shadow-lg'
-                    : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                    ? `bg-slate-800/80 ${component.borderColor} ${component.glowColor} shadow-2xl backdrop-blur-sm`
+                    : 'bg-slate-800/50 border-slate-600 hover:border-slate-500 hover:bg-slate-800/70'
                 }`}
                 onClick={() => setActiveComponent(key)}
+                onMouseEnter={() => setIsHovered(key)}
+                onMouseLeave={() => setIsHovered(null)}
               >
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${component.color} rounded-lg flex items-center justify-center text-2xl`}>
+                  <div className={`w-12 h-12 bg-gradient-to-r ${component.color} rounded-lg flex items-center justify-center text-2xl transition-all duration-300 ${
+                    isHovered === key || activeComponent === key ? 'scale-110 shadow-lg' : ''
+                  }`}>
                     {component.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white">{component.name}</h3>
-                    <p className="text-gray-400 text-sm">{component.subtitle}</p>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                      {component.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
+                      {component.subtitle}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     {activeComponent === key && (
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
                     )}
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-5 h-5 text-gray-400 transition-all duration-300 ${
+                      isHovered === key ? 'text-cyan-400 translate-x-1' : ''
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
@@ -116,8 +152,12 @@ const PrometheusStackShowcase: React.FC = () => {
             ))}
 
             {/* Integration Showcase */}
-            <div className="mt-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
-              <h4 className="text-white font-semibold mb-4">🔌 Integrations</h4>
+            <div className="mt-8 p-6 bg-slate-800/50 rounded-xl border border-slate-600 backdrop-blur-sm">
+              <h4 className="text-white font-semibold mb-4 flex items-center space-x-2">
+                <span>🔌</span>
+                <span>Framework Integrations</span>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              </h4>
               <div className="grid grid-cols-3 gap-3">
                 {integrations.map((integration, index) => (
                   <div
