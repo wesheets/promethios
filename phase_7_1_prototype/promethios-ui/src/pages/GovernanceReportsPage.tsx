@@ -69,7 +69,6 @@ import {
   Print,
   PictureAsPdf,
   TableChart,
-  BarChart,
   Timeline,
   Security,
   Gavel,

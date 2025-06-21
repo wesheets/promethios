@@ -14,6 +14,8 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import OnboardingWelcome from './components/onboarding/OnboardingWelcome';
 import OnboardingDemo from './components/onboarding/OnboardingDemo';
 import OnboardingSetup from './components/onboarding/OnboardingSetup';
+import OnboardingMetrics from './components/onboarding/OnboardingMetrics';
+import OnboardingObserver from './components/onboarding/OnboardingObserver';
 import DashboardPage from './pages/DashboardPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
 import AgentTemplatesPage from './pages/AgentTemplatesPage';
@@ -65,8 +67,8 @@ const UIIntegration: React.FC = () => {
         <Route path="onboarding">
           <Route path="demo" element={<OnboardingDemo />} />
           <Route path="setup" element={<OnboardingSetup />} />
-          <Route path="metrics" element={<Navigate to="../dashboard" replace />} />
-          <Route path="observer" element={<Navigate to="../dashboard" replace />} />
+          <Route path="metrics" element={<OnboardingMetrics />} />
+          <Route path="observer" element={<OnboardingObserver />} />
           <Route path="welcome" element={<OnboardingWelcomeProxy />} />
           <Route path="workflow/:workflowType" element={<WorkflowSpecificProxy />} />
           <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />

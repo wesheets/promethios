@@ -411,8 +411,34 @@ const SolutionDemo: React.FC = () => {
 
 // Ready Demo Component
 const ReadyDemo: React.FC = () => {
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false); // This would come from user state in real app
+
+  const handleGetStarted = () => {
+    setShowAnimation(true);
+    // After animation, navigate to setup
+    setTimeout(() => {
+      // navigate('/ui/onboarding/setup');
+    }, 2000);
+  };
+
   return (
-    <div className="text-center space-y-8">
+    <div className="text-center space-y-8 relative">
+      {/* Shield Animation Overlay */}
+      {showAnimation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl p-8 text-white animate-scale-in">
+            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold mb-2">🛡️ AI Protection Activated</h3>
+            <p className="text-lg opacity-90">Your AI is now under Promethios governance</p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl p-8 text-white">
           <h2 className="text-3xl font-bold mb-4">Your AI is Ready to be Governed</h2>
@@ -422,7 +448,28 @@ const ReadyDemo: React.FC = () => {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white/10 rounded-lg p-4">
+            {/* Quick Setup */}
+            <div className="bg-white/10 rounded-lg p-4 relative">
+              {/* Status Badge */}
+              <div className="absolute -top-2 -right-2">
+                {isConfigured ? (
+                  <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Enabled</span>
+                  </div>
+                ) : (
+                  <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Not Yet Configured</span>
+                  </div>
+                )}
+              </div>
+              
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -432,7 +479,18 @@ const ReadyDemo: React.FC = () => {
               <p className="text-sm opacity-90">Configure governance in minutes</p>
             </div>
             
-            <div className="bg-white/10 rounded-lg p-4">
+            {/* Immediate Protection */}
+            <div className="bg-white/10 rounded-lg p-4 relative">
+              {/* Status Badge */}
+              <div className="absolute -top-2 -right-2">
+                <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Enabled</span>
+                </div>
+              </div>
+              
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -442,7 +500,18 @@ const ReadyDemo: React.FC = () => {
               <p className="text-sm opacity-90">Start preventing hallucinations right away</p>
             </div>
             
-            <div className="bg-white/10 rounded-lg p-4">
+            {/* Observer Agent */}
+            <div className="bg-white/10 rounded-lg p-4 relative">
+              {/* Status Badge */}
+              <div className="absolute -top-2 -right-2">
+                <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Ready</span>
+                </div>
+              </div>
+              
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -451,6 +520,19 @@ const ReadyDemo: React.FC = () => {
               <h3 className="font-semibold mb-2">Observer Agent</h3>
               <p className="text-sm opacity-90">Your AI governance assistant is ready</p>
             </div>
+          </div>
+
+          {/* Enhanced Get Started Button */}
+          <div className="mt-8">
+            <button
+              onClick={handleGetStarted}
+              className="inline-flex items-center px-8 py-4 bg-white text-gray-900 font-bold rounded-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Get Started - Activate Protection
+            </button>
           </div>
         </div>
       </div>
