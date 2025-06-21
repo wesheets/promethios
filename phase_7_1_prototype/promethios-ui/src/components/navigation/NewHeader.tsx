@@ -44,28 +44,34 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
               Learn
             </Link>
             <Link 
+              to="/templates" 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/templates') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            >
+              Template Library
+            </Link>
+            <Link 
+              to="/demo" 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/demo') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            >
+              Live Demo
+            </Link>
+            <Link 
+              to={user ? "/ui/dashboard" : "/dashboard-preview"} 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/ui/dashboard') || isActive('/dashboard-preview') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+            >
+              Dashboard
+            </Link>
+            <Link 
               to="/api" 
               className={`px-3 py-2 text-sm font-medium ${isActive('/api') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             >
-              API
+              API / Docs
             </Link>
             <Link 
               to="/solutions" 
               className={`px-3 py-2 text-sm font-medium ${isActive('/solutions') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             >
               Solutions
-            </Link>
-            <Link 
-              to="/ui/dashboard" 
-              className={`px-3 py-2 text-sm font-medium ${isActive('/ui/dashboard') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/ai-governance" 
-              className={`px-3 py-2 text-sm font-medium ${isActive('/ai-governance') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
-            >
-              AI Governance
             </Link>
             <div className="relative">
               <button 
