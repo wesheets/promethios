@@ -140,7 +140,7 @@ const ProblemDemo: React.FC = () => {
                 U
               </div>
               <div className="flex-1">
-                <p className="text-white">Tell me about the landmark case Johnson v. Smith (2023) regarding AI liability.</p>
+                <p className="text-white">Tell me about the landmark case Miller v. DowTech (2023) regarding AI liability.</p>
               </div>
             </div>
           </div>
@@ -155,10 +155,10 @@ const ProblemDemo: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-white mb-3">
-                    Johnson v. Smith (2023) was indeed a landmark case that established important precedents for AI liability. 
-                    In this case, the Supreme Court ruled that AI systems can be held directly liable for damages when they 
-                    operate autonomously. The court found that Smith's AI trading algorithm caused $50 million in losses 
-                    to Johnson's portfolio through reckless decision-making.
+                    In the fictional case Miller v. DowTech (2023), AI-assisted legal software misrepresented case law, 
+                    resulting in a $12M malpractice lawsuit. The court found that DowTech's AI system fabricated 
+                    precedents that led to catastrophic legal advice. Miller's law firm lost their largest client 
+                    and faced regulatory sanctions after relying on the AI's false citations.
                   </p>
                   <div className="bg-red-900/30 border border-red-500 rounded-lg p-3">
                     <div className="flex items-center space-x-2">
@@ -178,12 +178,45 @@ const ProblemDemo: React.FC = () => {
 
       {/* Right Side - Impact */}
       <div className="space-y-6">
+        {/* Real-World Impact Stats - Moved up for better flow */}
+        <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-500/30 rounded-xl p-6">
+          <h4 className="text-white font-semibold mb-2 flex items-center">
+            <svg className="w-5 h-5 text-orange-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
+            </svg>
+            Real-World Impact
+          </h4>
+          <p className="text-gray-300 text-sm">
+            <strong className="text-orange-300">15-20% of AI responses</strong> contain factual errors or hallucinations. 
+            In critical domains like legal, medical, or financial advice, even a single hallucination 
+            can have severe consequences.
+          </p>
+        </div>
+
+        {/* Personal Engagement Question */}
+        <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <h4 className="text-white font-semibold mb-4">❓ Quick Check</h4>
+          <p className="text-gray-300 mb-4">Have you ever caught an AI making something up?</p>
+          <div className="space-y-2">
+            <button className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors">
+              ✅ Yes - I've seen AI hallucinations before
+            </button>
+            <button className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors">
+              ❌ No - This is new to me
+            </button>
+            <button className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors">
+              🤔 Not sure - I might have missed them
+            </button>
+          </div>
+        </div>
+
+        {/* Risk Categories */}
         <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
           <h3 className="text-white font-semibold mb-4 flex items-center">
             <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-            The Risks of Ungovemed AI
+            The Consequences
           </h3>
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
@@ -209,15 +242,6 @@ const ProblemDemo: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-500/30 rounded-xl p-6">
-          <h4 className="text-white font-semibold mb-2">Real-World Impact</h4>
-          <p className="text-gray-300 text-sm">
-            Studies show that 15-20% of AI responses contain factual errors or hallucinations. 
-            In critical domains like legal, medical, or financial advice, even a single hallucination 
-            can have severe consequences.
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -242,15 +266,24 @@ const SolutionDemo: React.FC = () => {
       {/* Left Side - Promethios-Governed AI */}
       <div className="bg-gray-800 rounded-xl border border-green-500/30 overflow-hidden">
         <div className="bg-green-900/20 px-6 py-4 border-b border-green-500/30">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Promethios-Governed AI</h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <p className="text-green-300 text-sm">🛡️ Governance Mode: Active</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white font-semibold">Promethios-Governed AI</h3>
-              <p className="text-green-300 text-sm">Real-time governance and fact-checking</p>
+            <div className="text-right">
+              <div className="text-green-300 text-xs">Real-time validation, fact-checking,</div>
+              <div className="text-green-300 text-xs">and audit logging enabled</div>
             </div>
           </div>
         </div>
@@ -297,13 +330,18 @@ const SolutionDemo: React.FC = () => {
                     involving AI liability instead?
                   </p>
                   <div className="bg-green-900/30 border border-green-500 rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-green-400 text-sm font-medium">✓ HALLUCINATION PREVENTED</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-400 text-sm font-bold">✅ REAL-TIME BLOCKED</span>
+                      </div>
+                      <div className="bg-green-800 px-2 py-1 rounded text-green-300 text-xs font-mono">
+                        Intercepted in 1.2s
+                      </div>
                     </div>
-                    <p className="text-green-300 text-sm mt-1">Veritas prevented fabrication of false legal information</p>
+                    <p className="text-green-300 text-sm">Veritas stopped false information before it was sent.</p>
                   </div>
                 </div>
               </div>
