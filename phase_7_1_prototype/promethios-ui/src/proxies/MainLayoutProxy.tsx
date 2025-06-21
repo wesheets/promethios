@@ -9,7 +9,6 @@ import { useAdminCheck } from '../hooks/useAdminCheck';
 import NewHeader from '../components/navigation/NewHeader';
 import HeaderNavigation from '../components/HeaderNavigation';
 import CollapsibleNavigation from '../components/CollapsibleNavigation';
-import FloatingObserverAgent from '../components/FloatingObserverAgent';
 import TestAuth from '../components/TestAuth';
 
 /**
@@ -87,9 +86,6 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         userPermissions={['view']}
         isAdmin={isAdmin}
       />
-      
-      {/* Floating Observer Agent - appears on all pages */}
-      <FloatingObserverAgent />
       
       {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
       <Box
