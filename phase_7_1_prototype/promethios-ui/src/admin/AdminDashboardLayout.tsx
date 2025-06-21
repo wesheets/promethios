@@ -21,7 +21,7 @@ import {
   DatabaseIcon,
   QuestionMarkCircleIcon,
   BookOpenIcon
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 
 // Navigation item interface
 interface NavItem {

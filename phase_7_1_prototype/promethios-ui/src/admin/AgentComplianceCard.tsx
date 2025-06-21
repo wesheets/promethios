@@ -11,7 +11,7 @@ import {
   ExclamationCircleIcon,
   ShieldExclamationIcon,
   ClockIcon
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 
 // Agent interface
 interface Agent {

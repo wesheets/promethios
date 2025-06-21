@@ -13,10 +13,10 @@ import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserver
 import { 
   ExclamationCircleIcon,
   CheckCircleIcon,
-  FilterIcon,
+  FunnelIcon,
   SortAscendingIcon,
-  RefreshIcon
-} from '@heroicons/react/outline';
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
 
 // Agent interface
 interface Agent {
@@ -292,7 +292,7 @@ const AgentGovernanceDashboard: React.FC = () => {
           onClick={handleRefresh}
           className="flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
-          <RefreshIcon className="h-4 w-4 mr-2" />
+          <ArrowPathIcon className="h-4 w-4 mr-2" />
           Refresh
         </button>
       </div>
@@ -300,7 +300,7 @@ const AgentGovernanceDashboard: React.FC = () => {
       {/* Filters */}
       <div className="bg-navy-800 rounded-lg p-4">
         <div className="flex items-center mb-2">
-          <FilterIcon className="h-5 w-5 mr-2 text-gray-400" />
+          <FunnelIcon className="h-5 w-5 mr-2 text-gray-400" />
           <h2 className="text-lg font-medium">Filters</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

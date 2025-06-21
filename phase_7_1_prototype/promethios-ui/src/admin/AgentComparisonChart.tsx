@@ -18,7 +18,7 @@ import {
   Legend
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
-import { FilterIcon, RefreshIcon } from '@heroicons/react/outline';
+import { ArrowPathIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
 
 // Register ChartJS components
@@ -439,7 +439,7 @@ const AgentComparisonChart: React.FC<AgentComparisonChartProps> = ({
           onClick={handleRefresh}
           className="flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
-          <RefreshIcon className="h-4 w-4 mr-2" />
+          <ArrowPathIcon className="h-4 w-4 mr-2" />
           Refresh
         </button>
       </div>
@@ -447,7 +447,7 @@ const AgentComparisonChart: React.FC<AgentComparisonChartProps> = ({
       {/* Filters */}
       <div className="bg-navy-800 rounded-lg p-4">
         <div className="flex items-center mb-3">
-          <FilterIcon className="h-5 w-5 mr-2 text-gray-400" />
+          <FunnelIcon className="h-5 w-5 mr-2 text-gray-400" />
           <h3 className="text-sm font-medium">Filters & Options</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

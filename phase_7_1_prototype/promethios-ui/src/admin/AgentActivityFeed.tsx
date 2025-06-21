@@ -11,10 +11,9 @@ import {
   UserCircleIcon,
   ExclamationCircleIcon,
   ShieldCheckIcon,
-  RefreshIcon,
-  BellIcon,
-  FilterIcon
-} from '@heroicons/react/outline';
+  ArrowPathIcon,
+  FunnelIcon
+} from '@heroicons/react/24/outline';
 import { useAgentManagement } from './AgentManagementContext';
 import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
 
@@ -367,7 +366,7 @@ const AgentActivityFeed: React.FC<AgentActivityFeedProps> = ({
             } transition-colors`}
             title="Refresh"
           >
-            <RefreshIcon className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -375,7 +374,7 @@ const AgentActivityFeed: React.FC<AgentActivityFeedProps> = ({
       {/* Filters */}
       <div className="bg-navy-800 rounded-lg p-4">
         <div className="flex items-center mb-3">
-          <FilterIcon className="h-5 w-5 mr-2 text-gray-400" />
+          <FunnelIcon className="h-5 w-5 mr-2 text-gray-400" />
           <h3 className="text-sm font-medium">Filters</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -12,7 +12,7 @@ import {
   SaveIcon,
   TrashIcon,
   PlusIcon
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 import { useAgentManagement, Agent } from './AgentManagementContext';
 import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
 
