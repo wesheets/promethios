@@ -1,0 +1,251 @@
+import { StorageProvider, StorageOptions, StorageEvent, StorageNamespace, StoragePolicy } from './storage/types';
+import { LocalStorageProvider } from './storage/LocalStorageProvider';
+import { MemoryStorageProvider } from './storage/MemoryStorageProvider';
+import { FirebaseStorageProvider } from './storage/FirebaseStorageProvider';
+import storageManifest from '../config/storage_manifest.json';
+
+export class UnifiedStorageService {
+  private providers = new Map<string, StorageProvider>();
+  private namespaces = new Map<string, StorageNamespace>();
+  private eventListeners = new Set<(event: StorageEvent) => void>();
+  private isInitialized = false;
+
+  constructor() {
+    this.initializeProviders();
+    this.loadNamespaces();
+  }
+
+  private initializeProviders(): void {
+    // Initialize providers with fallback chain
+    const localStorage = new LocalStorageProvider();
+    const memory = new MemoryStorageProvider();
+    const firebase = new FirebaseStorageProvider(localStorage);
+
+    this.providers.set('localStorage', localStorage);
+    this.providers.set('memory', memory);
+    this.providers.set('firebase', firebase);
+  }
+
+  private loadNamespaces(): void {
+    for (const [name, config] of Object.entries(storageManifest)) {
+      const namespace: StorageNamespace = {
+        name,
+        policy: config as StoragePolicy,
+        description: config.description
+      };
+      this.namespaces.set(name, namespace);
+    }
+    this.isInitialized = true;
+  }
+
+  private getProvider(namespace: string): StorageProvider {
+    const namespaceConfig = this.namespaces.get(namespace);
+    if (!namespaceConfig) {
+      throw new Error(`Unknown namespace: ${namespace}`);
+    }
+
+    const primaryProvider = this.providers.get(namespaceConfig.policy.provider);
+    if (!primaryProvider) {
+      throw new Error(`Unknown provider: ${namespaceConfig.policy.provider}`);
+    }
+
+    return primaryProvider;
+  }
+
+  private getNamespacedKey(namespace: string, key: string): string {
+    return `${namespace}.${key}`;
+  }
+
+  private emitEvent(event: StorageEvent): void {
+    this.eventListeners.forEach(listener => {
+      try {
+        listener(event);
+      } catch (error) {
+        console.error('Error in storage event listener:', error);
+      }
+    });
+  }
+
+  // Public API
+  async get<T>(namespace: string, key: string): Promise<T | null> {
+    try {
+      const provider = this.getProvider(namespace);
+      const namespacedKey = this.getNamespacedKey(namespace, key);
+      const value = await provider.get<T>(namespacedKey);
+
+      this.emitEvent({
+        type: 'set',
+        namespace,
+        key,
+        value,
+        timestamp: Date.now(),
+        provider: provider.name
+      });
+
+      return value;
+    } catch (error) {
+      this.emitEvent({
+        type: 'error',
+        namespace,
+        key,
+        timestamp: Date.now(),
+        provider: 'unknown',
+        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+      throw error;
+    }
+  }
+
+  async set<T>(namespace: string, key: string, value: T, options?: StorageOptions): Promise<void> {
+    try {
+      const provider = this.getProvider(namespace);
+      const namespaceConfig = this.namespaces.get(namespace);
+      const namespacedKey = this.getNamespacedKey(namespace, key);
+
+      // Apply namespace policy defaults
+      const mergedOptions: StorageOptions = {
+        ttl: namespaceConfig?.policy.ttl,
+        encrypt: namespaceConfig?.policy.encrypt,
+        namespace,
+        ...options
+      };
+
+      await provider.set(namespacedKey, value, mergedOptions);
+
+      this.emitEvent({
+        type: 'set',
+        namespace,
+        key,
+        value,
+        timestamp: Date.now(),
+        provider: provider.name
+      });
+    } catch (error) {
+      this.emitEvent({
+        type: 'error',
+        namespace,
+        key,
+        timestamp: Date.now(),
+        provider: 'unknown',
+        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+      throw error;
+    }
+  }
+
+  async delete(namespace: string, key: string): Promise<void> {
+    try {
+      const provider = this.getProvider(namespace);
+      const namespacedKey = this.getNamespacedKey(namespace, key);
+      
+      await provider.delete(namespacedKey);
+
+      this.emitEvent({
+        type: 'delete',
+        namespace,
+        key,
+        timestamp: Date.now(),
+        provider: provider.name
+      });
+    } catch (error) {
+      this.emitEvent({
+        type: 'error',
+        namespace,
+        key,
+        timestamp: Date.now(),
+        provider: 'unknown',
+        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+      throw error;
+    }
+  }
+
+  async clear(namespace: string): Promise<void> {
+    try {
+      const provider = this.getProvider(namespace);
+      const keys = await this.keys(namespace);
+      
+      for (const key of keys) {
+        await this.delete(namespace, key);
+      }
+
+      this.emitEvent({
+        type: 'clear',
+        namespace,
+        timestamp: Date.now(),
+        provider: provider.name
+      });
+    } catch (error) {
+      this.emitEvent({
+        type: 'error',
+        namespace,
+        timestamp: Date.now(),
+        provider: 'unknown',
+        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+      throw error;
+    }
+  }
+
+  async keys(namespace: string): Promise<string[]> {
+    try {
+      const provider = this.getProvider(namespace);
+      const allKeys = await provider.keys();
+      const namespacePrefix = `${namespace}.`;
+      
+      return allKeys
+        .filter(key => key.startsWith(namespacePrefix))
+        .map(key => key.substring(namespacePrefix.length));
+    } catch (error) {
+      console.error(`Error getting keys for namespace ${namespace}:`, error);
+      return [];
+    }
+  }
+
+  async size(namespace: string): Promise<number> {
+    try {
+      const keys = await this.keys(namespace);
+      return keys.length;
+    } catch (error) {
+      console.error(`Error getting size for namespace ${namespace}:`, error);
+      return 0;
+    }
+  }
+
+  // Event system
+  addEventListener(listener: (event: StorageEvent) => void): () => void {
+    this.eventListeners.add(listener);
+    return () => this.eventListeners.delete(listener);
+  }
+
+  // Utility methods
+  getNamespaces(): string[] {
+    return Array.from(this.namespaces.keys());
+  }
+
+  getNamespaceConfig(namespace: string): StorageNamespace | undefined {
+    return this.namespaces.get(namespace);
+  }
+
+  async getProviderHealth(): Promise<Record<string, boolean>> {
+    const health: Record<string, boolean> = {};
+    
+    for (const [name, provider] of this.providers.entries()) {
+      try {
+        health[name] = await provider.isAvailable();
+      } catch {
+        health[name] = false;
+      }
+    }
+    
+    return health;
+  }
+
+  isReady(): boolean {
+    return this.isInitialized;
+  }
+}
+
+// Singleton instance
+export const unifiedStorage = new UnifiedStorageService();
+

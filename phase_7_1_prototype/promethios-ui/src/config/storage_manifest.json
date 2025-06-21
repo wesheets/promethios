@@ -1,0 +1,91 @@
+{
+  "user": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 31536000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "server-wins",
+    "retention": "1y",
+    "compliance": ["GDPR"],
+    "description": "User profile data, preferences, and settings"
+  },
+  "observer": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 86400000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "server-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Observer agent conversations and insights"
+  },
+  "notifications": {
+    "provider": "localStorage",
+    "fallback": "memory",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "batched",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "User notifications and alerts"
+  },
+  "governance": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "server-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "HIPAA", "SOX"],
+    "description": "Governance policies, violations, and compliance data"
+  },
+  "preferences": {
+    "provider": "localStorage",
+    "fallback": "memory",
+    "ttl": 31536000000,
+    "encrypt": false,
+    "sync": "manual",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": [],
+    "description": "UI preferences, themes, and user settings"
+  },
+  "agents": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 86400000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "server-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Agent configurations, templates, and orchestration data"
+  },
+  "ui": {
+    "provider": "localStorage",
+    "fallback": "memory",
+    "ttl": 86400000,
+    "encrypt": false,
+    "sync": "manual",
+    "conflictResolution": "client-wins",
+    "retention": "24h",
+    "compliance": [],
+    "description": "Temporary UI state, form data, and session information"
+  },
+  "cache": {
+    "provider": "memory",
+    "fallback": "localStorage",
+    "ttl": 3600000,
+    "encrypt": false,
+    "sync": "manual",
+    "conflictResolution": "client-wins",
+    "retention": "1h",
+    "compliance": [],
+    "description": "Temporary cache data for performance optimization"
+  }
+}
+
