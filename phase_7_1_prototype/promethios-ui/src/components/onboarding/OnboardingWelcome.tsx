@@ -56,8 +56,12 @@ const OnboardingWelcome: React.FC = () => {
                   and <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">Trust</span> your AI
                 </h1>
                 
+                <p className="text-2xl text-white font-semibold mb-4">
+                  Promethios makes AI safe for production.
+                </p>
+                
                 <p className="text-xl text-gray-300 leading-relaxed">
-                  Promethios prevents AI hallucinations, ensures compliance, and builds trust through 
+                  Prevents AI hallucinations, ensures compliance, and builds trust through 
                   real-time governance. Framework agnostic and enterprise-ready.
                 </p>
               </div>
@@ -156,8 +160,13 @@ const OnboardingWelcome: React.FC = () => {
           {/* See Governance in Action */}
           <div 
             onClick={() => handlePathSelect('demo')}
-            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-green-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
+            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-green-500 hover:shadow-lg transition-all duration-200 cursor-pointer relative"
           >
+            {/* Recommended Badge */}
+            <div className="absolute -top-3 left-4 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              ✅ Recommended First Step
+            </div>
+            
             <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -167,8 +176,8 @@ const OnboardingWelcome: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-green-400 transition-colors">
               See Governance in Action
             </h3>
-            <p className="text-gray-400 text-sm">
-              Watch how Promethios prevents hallucinations and ensures AI reliability in real-time scenarios.
+            <p className="text-gray-400 text-sm mb-3">
+              <strong className="text-gray-300">Live demo:</strong> Watch governance prevent hallucinations in real time.
             </p>
             <div className="mt-4 flex items-center text-green-400 text-sm font-medium">
               Start demo
@@ -191,8 +200,8 @@ const OnboardingWelcome: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
               Explore Trust Metrics
             </h3>
-            <p className="text-gray-400 text-sm">
-              Understand how trust scores work and see live governance metrics from your AI systems.
+            <p className="text-gray-400 text-sm mb-3">
+              <strong className="text-gray-300">Understand the math</strong> behind AI integrity and trust scoring.
             </p>
             <div className="mt-4 flex items-center text-blue-400 text-sm font-medium">
               View dashboard
@@ -215,8 +224,8 @@ const OnboardingWelcome: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors">
               Meet Your Observer Agent
             </h3>
-            <p className="text-gray-400 text-sm">
-              Chat with your AI governance assistant and learn how it helps maintain trust and compliance.
+            <p className="text-gray-400 text-sm mb-3">
+              <strong className="text-gray-300">Chat with the built-in AI guardian</strong> watching over your models.
             </p>
             <div className="mt-4 flex items-center text-purple-400 text-sm font-medium">
               Start chat
@@ -239,8 +248,8 @@ const OnboardingWelcome: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">
               Quick Setup
             </h3>
-            <p className="text-gray-400 text-sm">
-              Configure your governance preferences and get started with Promethios in minutes.
+            <p className="text-gray-400 text-sm mb-3">
+              <strong className="text-gray-300">Fast path to wrapping</strong> your first agent with compliance controls.
             </p>
             <div className="mt-4 flex items-center text-orange-400 text-sm font-medium">
               Configure now
