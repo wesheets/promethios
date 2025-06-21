@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
     <footer className="bg-gray-900 text-white py-16 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Pre-footer CTA Banner */}
-        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-xl p-8 mb-16 text-center max-w-screen-xl mx-auto">
+        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-xl p-8 mb-16 text-center">
           <h3 className="text-2xl font-bold mb-4 text-white">
             🔥 Ready to govern your first agent?
           </h3>
@@ -44,7 +44,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12 max-w-screen-xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Logo and Newsletter */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-4">
@@ -237,7 +237,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center max-w-screen-xl mx-auto">
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
             <p className="text-gray-400 text-sm">
               © {new Date().getFullYear()} Promethios. All rights reserved.
@@ -299,7 +299,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Global Stats Banner */}
-        <div className="mt-8 text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700 max-w-screen-xl mx-auto">
+        <div className="mt-8 text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700">
           <p className="text-gray-300 text-sm">
             🌍 Promethios is protecting <span className="text-green-400 font-semibold">4,319 active agents</span> across <span className="text-blue-400 font-semibold">42 countries</span>
           </p>
