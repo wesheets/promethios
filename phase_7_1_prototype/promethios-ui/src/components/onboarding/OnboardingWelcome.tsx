@@ -6,12 +6,9 @@ import { updateOnboardingStatus } from '../../firebase/userService';
 const OnboardingWelcome: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleWorkflowSelect = (workflow: string) => {
-    // Navigate to workflow-specific page with the selected workflow
-    navigate(`/ui/onboarding/workflow/${workflow}`, { 
-      state: { selectedWorkflow: workflow },
-      replace: true 
-    });
+  const handlePathSelect = (path: string) => {
+    // Navigate to the selected onboarding path
+    navigate(`/ui/onboarding/${path}`, { replace: true });
   };
 
   const handleSkip = () => {
@@ -22,118 +19,246 @@ const OnboardingWelcome: React.FC = () => {
       updateOnboardingStatus(auth.currentUser.uid, true).catch(console.error);
     }
     
-    // Force navigation to agent wizard
-    window.location.href = '/ui/agent-wizard';
+    // Navigate directly to dashboard
+    navigate('/ui/dashboard', { replace: true });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome to Promethios
-          </h1>
-          <p className="text-lg text-gray-300">
-            Choose your AI governance workflow to get started
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #22c55e 0%, transparent 50%), 
+                             radial-gradient(circle at 75% 75%, #3b82f6 0%, transparent 50%)`,
+          }} />
+        </div>
+        
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-6 py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Side - Hero Content */}
+            <div className="space-y-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <span className="text-lg font-semibold text-white">PROMETHIOS</span>
+              </div>
+              
+              <div className="space-y-6">
+                <h1 className="text-5xl lg:text-6xl font-bold text-white leading-tight">
+                  Govern, Monitor,
+                  <br />
+                  and <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">Trust</span> your AI
+                </h1>
+                
+                <p className="text-xl text-gray-300 leading-relaxed">
+                  Promethios prevents AI hallucinations, ensures compliance, and builds trust through 
+                  real-time governance. Framework agnostic and enterprise-ready.
+                </p>
+              </div>
+
+              {/* Key Benefits */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="w-8 h-8 bg-green-900 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-white font-medium">Framework agnostic</span>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <span className="text-white font-medium">Prevents hallucinations</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePathSelect('demo')}
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-blue-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                See how it works
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Right Side - Visual Demo Preview */}
+            <div className="relative">
+              <div className="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
+                <div className="bg-gray-700 px-4 py-3 flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-300 text-sm ml-4">AI Governance Dashboard</span>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium">Trust Score</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-16 h-2 bg-gray-600 rounded-full overflow-hidden">
+                        <div className="w-4/5 h-full bg-gradient-to-r from-green-400 to-green-500"></div>
+                      </div>
+                      <span className="text-green-400 font-semibold">85%</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-gray-300 text-sm">Vigil: Monitoring active</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                      <span className="text-gray-300 text-sm">PRISM: Transparency enabled</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                      <span className="text-gray-300 text-sm">Veritas: Fact-checking active</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-green-400 text-sm font-medium">Hallucination prevented</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* How would you like to start? Section */}
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-white mb-4">How would you like to start?</h2>
+          <p className="text-lg text-gray-300">Select a path to begin exploring Promethios capabilities</p>
         </div>
 
-        {/* Workflow Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Quick Start Workflow */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* See Governance in Action */}
           <div 
-            onClick={() => handleWorkflowSelect('quick-start')}
-            className="border-2 border-gray-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group bg-gray-700"
+            onClick={() => handlePathSelect('demo')}
+            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-green-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-blue-900 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white group-hover:text-blue-400">
-                Quick Start
-              </h3>
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
             </div>
-            <p className="text-gray-300">
-              Get up and running quickly with pre-configured governance settings for common use cases.
+            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-green-400 transition-colors">
+              See Governance in Action
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Watch how Promethios prevents hallucinations and ensures AI reliability in real-time scenarios.
             </p>
+            <div className="mt-4 flex items-center text-green-400 text-sm font-medium">
+              Start demo
+              <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
           </div>
 
-          {/* Custom Setup Workflow */}
+          {/* Explore Trust Metrics */}
           <div 
-            onClick={() => handleWorkflowSelect('custom-setup')}
-            className="border-2 border-gray-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group bg-gray-700"
+            onClick={() => handlePathSelect('metrics')}
+            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-blue-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-900 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white group-hover:text-blue-400">
-                Custom Setup
-              </h3>
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
+              </svg>
             </div>
-            <p className="text-gray-300">
-              Configure detailed <span className="text-blue-400 underline cursor-help relative group/tooltip">governance settings<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Rules and policies that ensure AI systems operate safely and ethically</span></span> tailored to your specific requirements and use cases.
+            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+              Explore Trust Metrics
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Understand how trust scores work and see live governance metrics from your AI systems.
             </p>
+            <div className="mt-4 flex items-center text-blue-400 text-sm font-medium">
+              View dashboard
+              <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
           </div>
 
-          {/* Enterprise Workflow */}
+          {/* Meet Your Observer Agent */}
           <div 
-            onClick={() => handleWorkflowSelect('enterprise')}
-            className="border-2 border-gray-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group bg-gray-700"
+            onClick={() => handlePathSelect('observer')}
+            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-purple-900 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white group-hover:text-blue-400">
-                Enterprise
-              </h3>
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
             </div>
-            <p className="text-gray-300">
-              Advanced governance features for large organizations with complex <span className="text-blue-400 underline cursor-help relative group/tooltip">compliance requirements<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Legal and regulatory standards that organizations must meet</span></span>.
+            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors">
+              Meet Your Observer Agent
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Chat with your AI governance assistant and learn how it helps maintain trust and compliance.
             </p>
+            <div className="mt-4 flex items-center text-purple-400 text-sm font-medium">
+              Start chat
+              <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
           </div>
 
-          {/* Learning Mode Workflow */}
+          {/* Quick Setup */}
           <div 
-            onClick={() => handleWorkflowSelect('learning-mode')}
-            className="border-2 border-gray-600 rounded-lg p-6 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group bg-gray-700"
+            onClick={() => handlePathSelect('setup')}
+            className="group bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-orange-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-orange-900 rounded-lg flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white group-hover:text-blue-400">
-                Learning Mode
-              </h3>
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
-            <p className="text-gray-300">
-              Interactive tutorials and guided learning to understand <span className="text-blue-400 underline cursor-help relative group/tooltip">AI governance<span className="invisible group-hover/tooltip:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg border border-gray-600 whitespace-nowrap z-10">Framework for ensuring AI systems are developed and deployed responsibly</span></span> concepts and best practices.
+            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">
+              Quick Setup
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Configure your governance preferences and get started with Promethios in minutes.
             </p>
+            <div className="mt-4 flex items-center text-orange-400 text-sm font-medium">
+              Configure now
+              <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center">
+        {/* Skip Option */}
+        <div className="text-center mt-12">
           <button
             onClick={handleSkip}
-            className="text-gray-400 hover:text-gray-200 font-medium"
+            className="text-gray-400 hover:text-gray-200 font-medium underline"
           >
-            Skip for now
+            Skip onboarding and go to dashboard
           </button>
-          <div className="text-sm text-gray-500">
-            Step 1 of 3
-          </div>
         </div>
       </div>
     </div>

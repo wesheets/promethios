@@ -1,0 +1,424 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const OnboardingDemo: React.FC = () => {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const steps = [
+    {
+      title: "The Problem: AI Hallucinations",
+      subtitle: "See how ungovemed AI can create false information"
+    },
+    {
+      title: "The Solution: Promethios Governance", 
+      subtitle: "Watch how our system prevents hallucinations in real-time"
+    },
+    {
+      title: "Your AI, Governed",
+      subtitle: "Ready to implement trustworthy AI governance?"
+    }
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+        setIsAnimating(false);
+      }, 300);
+    } else {
+      navigate('/ui/onboarding/setup');
+    }
+  };
+
+  const handleSkip = () => {
+    navigate('/ui/dashboard');
+  };
+
+  const handleBack = () => {
+    navigate('/ui/onboarding');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white font-medium">{steps[currentStep].title}</span>
+            <span className="text-gray-400 text-sm">{currentStep + 1} of {steps.length}</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-white mb-4">{steps[currentStep].title}</h1>
+          <p className="text-xl text-gray-300">{steps[currentStep].subtitle}</p>
+        </div>
+
+        {/* Step Content */}
+        <div className={`transition-opacity duration-300 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+          {currentStep === 0 && <ProblemDemo />}
+          {currentStep === 1 && <SolutionDemo />}
+          {currentStep === 2 && <ReadyDemo />}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center mt-12">
+          <button
+            onClick={handleBack}
+            className="flex items-center text-gray-400 hover:text-gray-200 font-medium"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+
+          <button
+            onClick={handleSkip}
+            className="text-gray-400 hover:text-gray-200 font-medium"
+          >
+            Skip to dashboard
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200"
+          >
+            {currentStep === steps.length - 1 ? 'Get Started' : 'Continue'}
+            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Problem Demo Component
+const ProblemDemo: React.FC = () => {
+  const [showResponse, setShowResponse] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowResponse(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Left Side - Ungovemed AI */}
+      <div className="bg-gray-800 rounded-xl border border-red-500/30 overflow-hidden">
+        <div className="bg-red-900/20 px-6 py-4 border-b border-red-500/30">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">Ungovemed AI System</h3>
+              <p className="text-red-300 text-sm">No governance or fact-checking</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                U
+              </div>
+              <div className="flex-1">
+                <p className="text-white">Tell me about the landmark case Johnson v. Smith (2023) regarding AI liability.</p>
+              </div>
+            </div>
+          </div>
+
+          {showResponse && (
+            <div className="bg-gray-700 rounded-lg p-4 animate-fade-in">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white mb-3">
+                    Johnson v. Smith (2023) was indeed a landmark case that established important precedents for AI liability. 
+                    In this case, the Supreme Court ruled that AI systems can be held directly liable for damages when they 
+                    operate autonomously. The court found that Smith's AI trading algorithm caused $50 million in losses 
+                    to Johnson's portfolio through reckless decision-making.
+                  </p>
+                  <div className="bg-red-900/30 border border-red-500 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <span className="text-red-400 text-sm font-medium">⚠️ HALLUCINATION DETECTED</span>
+                    </div>
+                    <p className="text-red-300 text-sm mt-1">This case does not exist. The AI fabricated this entire legal precedent.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Side - Impact */}
+      <div className="space-y-6">
+        <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <h3 className="text-white font-semibold mb-4 flex items-center">
+            <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            The Risks of Ungovemed AI
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+              <div>
+                <p className="text-white font-medium">Legal Misinformation</p>
+                <p className="text-gray-400 text-sm">Fabricated court cases can mislead legal professionals</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+              <div>
+                <p className="text-white font-medium">Financial Risk</p>
+                <p className="text-gray-400 text-sm">False information can lead to poor investment decisions</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+              <div>
+                <p className="text-white font-medium">Reputation Damage</p>
+                <p className="text-gray-400 text-sm">Organizations lose trust when AI provides false information</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-500/30 rounded-xl p-6">
+          <h4 className="text-white font-semibold mb-2">Real-World Impact</h4>
+          <p className="text-gray-300 text-sm">
+            Studies show that 15-20% of AI responses contain factual errors or hallucinations. 
+            In critical domains like legal, medical, or financial advice, even a single hallucination 
+            can have severe consequences.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Solution Demo Component  
+const SolutionDemo: React.FC = () => {
+  const [showResponse, setShowResponse] = useState(false);
+  const [showVeritas, setShowVeritas] = useState(false);
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setShowVeritas(true), 1000);
+    const timer2 = setTimeout(() => setShowResponse(true), 2500);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Left Side - Promethios-Governed AI */}
+      <div className="bg-gray-800 rounded-xl border border-green-500/30 overflow-hidden">
+        <div className="bg-green-900/20 px-6 py-4 border-b border-green-500/30">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">Promethios-Governed AI</h3>
+              <p className="text-green-300 text-sm">Real-time governance and fact-checking</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                U
+              </div>
+              <div className="flex-1">
+                <p className="text-white">Tell me about the landmark case Johnson v. Smith (2023) regarding AI liability.</p>
+              </div>
+            </div>
+          </div>
+
+          {showVeritas && (
+            <div className="bg-purple-900/20 border border-purple-500 rounded-lg p-3 animate-fade-in">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+                <span className="text-purple-300 text-sm font-medium">Veritas Fact-Checking</span>
+              </div>
+              <p className="text-purple-200 text-sm">Searching legal databases for "Johnson v. Smith (2023)"...</p>
+              <p className="text-purple-200 text-sm mt-1">⚠️ No matching case found in verified legal records</p>
+            </div>
+          )}
+
+          {showResponse && (
+            <div className="bg-gray-700 rounded-lg p-4 animate-fade-in">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white mb-3">
+                    I cannot find any verified information about "Johnson v. Smith (2023)" in legal databases. 
+                    This case does not appear to exist in court records.
+                  </p>
+                  <p className="text-white mb-3">
+                    However, I can provide information about actual AI liability cases or discuss the current 
+                    legal framework around AI responsibility. Would you like me to search for real cases 
+                    involving AI liability instead?
+                  </p>
+                  <div className="bg-green-900/30 border border-green-500 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-green-400 text-sm font-medium">✓ HALLUCINATION PREVENTED</span>
+                    </div>
+                    <p className="text-green-300 text-sm mt-1">Veritas prevented fabrication of false legal information</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Side - How It Works */}
+      <div className="space-y-6">
+        <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <h3 className="text-white font-semibold mb-4 flex items-center">
+            <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            How Promethios Works
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-green-900 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Vigil Monitoring</p>
+                <p className="text-gray-400 text-sm">Continuously watches AI behavior for anomalies</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-purple-900 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Veritas Fact-Checking</p>
+                <p className="text-gray-400 text-sm">Validates information against trusted sources</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">PRISM Transparency</p>
+                <p className="text-gray-400 text-sm">Explains AI reasoning and decision-making</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500/30 rounded-xl p-6">
+          <h4 className="text-white font-semibold mb-2">Real-Time Protection</h4>
+          <p className="text-gray-300 text-sm">
+            Promethios operates in real-time, intercepting and validating AI responses before they reach users. 
+            This prevents hallucinations, ensures compliance, and maintains trust in your AI systems.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Ready Demo Component
+const ReadyDemo: React.FC = () => {
+  return (
+    <div className="text-center space-y-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl p-8 text-white">
+          <h2 className="text-3xl font-bold mb-4">Your AI is Ready to be Governed</h2>
+          <p className="text-xl mb-6">
+            You've seen how Promethios prevents hallucinations and ensures trustworthy AI. 
+            Now let's set up governance for your specific use case.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="bg-white/10 rounded-lg p-4">
+              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold mb-2">Quick Setup</h3>
+              <p className="text-sm opacity-90">Configure governance in minutes</p>
+            </div>
+            
+            <div className="bg-white/10 rounded-lg p-4">
+              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold mb-2">Immediate Protection</h3>
+              <p className="text-sm opacity-90">Start preventing hallucinations right away</p>
+            </div>
+            
+            <div className="bg-white/10 rounded-lg p-4">
+              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold mb-2">Observer Agent</h3>
+              <p className="text-sm opacity-90">Your AI governance assistant is ready</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default OnboardingDemo;
+

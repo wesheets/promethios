@@ -11,6 +11,9 @@ import {
 } from './proxies';
 import { ObserverProvider } from './context/ObserverContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import OnboardingWelcome from './components/onboarding/OnboardingWelcome';
+import OnboardingDemo from './components/onboarding/OnboardingDemo';
+import OnboardingSetup from './components/onboarding/OnboardingSetup';
 import DashboardPage from './pages/DashboardPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
 import AgentTemplatesPage from './pages/AgentTemplatesPage';
@@ -60,11 +63,15 @@ const UIIntegration: React.FC = () => {
       <Routes>
         {/* Onboarding flow routes */}
         <Route path="onboarding">
+          <Route path="demo" element={<OnboardingDemo />} />
+          <Route path="setup" element={<OnboardingSetup />} />
+          <Route path="metrics" element={<Navigate to="../dashboard" replace />} />
+          <Route path="observer" element={<Navigate to="../dashboard" replace />} />
           <Route path="welcome" element={<OnboardingWelcomeProxy />} />
           <Route path="workflow/:workflowType" element={<WorkflowSpecificProxy />} />
           <Route path="goal-selection" element={<OnboardingGoalSelectionProxy />} />
           <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />
-          <Route index element={<Navigate to="welcome" replace />} />
+          <Route index element={<OnboardingWelcome />} />
         </Route>
         
         {/* Render the dashboard with MainLayout - protected by onboarding */}
