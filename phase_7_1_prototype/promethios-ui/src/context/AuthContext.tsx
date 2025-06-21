@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
+import { Firestore } from 'firebase/firestore';
 
 import app, { auth, googleProvider, db } from '../firebase/config';
 
