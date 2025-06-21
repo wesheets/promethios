@@ -40,8 +40,7 @@ import DocumentationPage from './pages/DocumentationPage';
 import SupportPage from './pages/SupportPage';
 import BenchmarkChatPage from './pages/BenchmarkChatPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
-import AdminDashboardLayout from './admin/AdminDashboardLayout';
-import { AdminDashboardProvider } from './admin/AdminDashboardContext';
+import SimpleAdminDashboard from './admin/SimpleAdminDashboard';
 import ChatGPTWrapperStub from './pages/ChatGPTWrapperStub';
 import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
 import GeminiWrapperStub from './pages/GeminiWrapperStub';
@@ -348,9 +347,7 @@ const UIIntegration: React.FC = () => {
         {/* Admin Dashboard route - requires admin privileges */}
         <Route path="admin/dashboard/*" element={
           <ProtectedRoute requireOnboarding={true}>
-            <AdminDashboardProvider>
-              <AdminDashboardLayout />
-            </AdminDashboardProvider>
+            <SimpleAdminDashboard />
           </ProtectedRoute>
         } />
         
