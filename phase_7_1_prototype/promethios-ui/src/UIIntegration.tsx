@@ -40,7 +40,7 @@ import DocumentationPage from './pages/DocumentationPage';
 import SupportPage from './pages/SupportPage';
 import BenchmarkChatPage from './pages/BenchmarkChatPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminDashboardLayout from './admin/AdminDashboardLayout';
 import ChatGPTWrapperStub from './pages/ChatGPTWrapperStub';
 import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
 import GeminiWrapperStub from './pages/GeminiWrapperStub';
@@ -345,11 +345,9 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* Admin Dashboard route - requires admin privileges */}
-        <Route path="admin/dashboard" element={
+        <Route path="admin/dashboard/*" element={
           <ProtectedRoute requireOnboarding={true}>
-            <MainLayoutProxy>
-              <AdminDashboardPage />
-            </MainLayoutProxy>
+            <AdminDashboardLayout />
           </ProtectedRoute>
         } />
         
