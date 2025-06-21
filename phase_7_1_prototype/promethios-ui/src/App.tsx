@@ -16,6 +16,7 @@ import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import LearnPage from './pages/LearnPage';
+import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
@@ -54,6 +55,8 @@ const AppContent: React.FC = () => {
                   
                   {/* Main Navigation Pages */}
                   <Route path="/learn" element={<LearnPage />} />
+                  <Route path="/templates" element={<TemplateLibraryPage />} />
+                  <Route path="/template-library" element={<TemplateLibraryPage />} />
                   
                   {/* Governance Routes */}
                   <Route path="/governance" element={<GovernancePage />} />

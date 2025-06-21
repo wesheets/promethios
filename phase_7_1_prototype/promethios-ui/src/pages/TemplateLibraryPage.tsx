@@ -1,724 +1,586 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  Button,
-  Stack,
-  Avatar,
-  IconButton,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-  Badge,
-  Tooltip,
-} from '@mui/material';
-import {
-  Search,
-  FilterList,
-  Refresh,
-  LibraryBooks,
-  CallSplit,
-  Star,
-  Download,
-  Verified,
-  Security,
-  Business,
-  Psychology,
-  Code,
-  Analytics,
-  Support,
-  ContentCopy,
-  Launch,
-  Info,
-  CheckCircle,
-  Warning,
-} from '@mui/icons-material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-// Dark theme for consistency
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    background: {
-      default: '#1a202c',
-      paper: '#2d3748',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#a0aec0',
-    },
-  },
-});
-
-// Template interface
-interface AgentTemplate {
+interface Template {
   id: string;
   name: string;
-  description: string;
   category: string;
-  governanceLevel: 'basic' | 'enhanced' | 'strict';
-  trustScore: number;
-  downloads: number;
-  stars: number;
-  tags: string[];
-  author: string;
-  version: string;
-  lastUpdated: Date;
-  verified: boolean;
-  previewImage?: string;
-  capabilities: string[];
-  governancePolicies: string[];
-  complianceFrameworks: string[];
+  industry: string;
+  description: string;
+  setupTime: string;
+  trustScoreImpact: number;
+  frameworks: string[];
+  compliance: string[];
+  violationsPrevented: number;
+  deployments: number;
+  featured: boolean;
+  complexity: 'Beginner' | 'Intermediate' | 'Advanced';
+  icon: string;
+  color: string;
 }
 
-// Template Card Component
-const TemplateCard: React.FC<{ template: AgentTemplate; onFork: (template: AgentTemplate) => void }> = ({ 
-  template, 
-  onFork 
-}) => {
-  const getGovernanceLevelColor = (level: string) => {
-    switch (level) {
-      case 'strict': return '#ef4444';
-      case 'enhanced': return '#f59e0b';
-      case 'basic': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+const templates: Template[] = [
+  {
+    id: 'healthcare-hipaa',
+    name: 'Healthcare HIPAA Compliance',
+    category: 'Industry Compliance',
+    industry: 'Healthcare',
+    description: 'Complete HIPAA-compliant governance for medical AI systems. Includes patient data protection, PHI detection, and medical ethics enforcement.',
+    setupTime: '15 min',
+    trustScoreImpact: 94,
+    frameworks: ['OpenAI', 'Claude', 'LangChain'],
+    compliance: ['HIPAA', 'FDA 21 CFR Part 11'],
+    violationsPrevented: 127,
+    deployments: 89,
+    featured: true,
+    complexity: 'Intermediate',
+    icon: '🏥',
+    color: 'from-green-500 to-green-600'
+  },
+  {
+    id: 'financial-sox',
+    name: 'Financial Services SOX/PCI',
+    category: 'Industry Compliance',
+    industry: 'Financial',
+    description: 'SOX and PCI DSS compliant governance for trading algorithms, fraud detection, and financial advisory AI systems.',
+    setupTime: '20 min',
+    trustScoreImpact: 91,
+    frameworks: ['OpenAI', 'Gemini', 'Custom APIs'],
+    compliance: ['SOX', 'PCI DSS', 'GDPR'],
+    violationsPrevented: 203,
+    deployments: 156,
+    featured: true,
+    complexity: 'Advanced',
+    icon: '🏦',
+    color: 'from-blue-500 to-blue-600'
+  },
+  {
+    id: 'legal-ethics',
+    name: 'Legal Ethics & Bar Compliance',
+    category: 'Industry Compliance',
+    industry: 'Legal',
+    description: 'Prevent Johnson v. Smith scenarios with comprehensive legal AI governance. Includes citation verification and ethical guidelines.',
+    setupTime: '10 min',
+    trustScoreImpact: 96,
+    frameworks: ['OpenAI', 'Claude', 'LangChain'],
+    compliance: ['ABA Model Rules', 'State Bar Ethics'],
+    violationsPrevented: 89,
+    deployments: 67,
+    featured: true,
+    complexity: 'Intermediate',
+    icon: '⚖️',
+    color: 'from-purple-500 to-purple-600'
+  },
+  {
+    id: 'customer-service',
+    name: 'Customer Service Bot Governance',
+    category: 'Use Case',
+    industry: 'General',
+    description: 'Brand safety, escalation policies, and customer satisfaction optimization for AI-powered support systems.',
+    setupTime: '5 min',
+    trustScoreImpact: 87,
+    frameworks: ['OpenAI', 'Claude', 'Dialogflow'],
+    compliance: ['CCPA', 'GDPR'],
+    violationsPrevented: 156,
+    deployments: 234,
+    featured: false,
+    complexity: 'Beginner',
+    icon: '💬',
+    color: 'from-cyan-500 to-cyan-600'
+  },
+  {
+    id: 'content-generation',
+    name: 'Content Generation Governance',
+    category: 'Use Case',
+    industry: 'Media',
+    description: 'Copyright compliance, fact-checking, and brand voice consistency for AI content creation systems.',
+    setupTime: '8 min',
+    trustScoreImpact: 89,
+    frameworks: ['OpenAI', 'Claude', 'Cohere'],
+    compliance: ['DMCA', 'Copyright Law'],
+    violationsPrevented: 78,
+    deployments: 145,
+    featured: false,
+    complexity: 'Beginner',
+    icon: '✍️',
+    color: 'from-orange-500 to-orange-600'
+  },
+  {
+    id: 'code-generation',
+    name: 'Secure Code Generation',
+    category: 'Use Case',
+    industry: 'Technology',
+    description: 'Security scanning, license compliance, and code quality enforcement for AI-powered development tools.',
+    setupTime: '12 min',
+    trustScoreImpact: 92,
+    frameworks: ['OpenAI Codex', 'GitHub Copilot', 'Custom'],
+    compliance: ['OWASP', 'License Compliance'],
+    violationsPrevented: 134,
+    deployments: 198,
+    featured: false,
+    complexity: 'Advanced',
+    icon: '💻',
+    color: 'from-indigo-500 to-indigo-600'
+  },
+  {
+    id: 'education-ferpa',
+    name: 'Education FERPA Compliance',
+    category: 'Industry Compliance',
+    industry: 'Education',
+    description: 'Student data privacy and academic integrity governance for educational AI applications.',
+    setupTime: '15 min',
+    trustScoreImpact: 93,
+    frameworks: ['OpenAI', 'Claude', 'Custom'],
+    compliance: ['FERPA', 'COPPA'],
+    violationsPrevented: 45,
+    deployments: 78,
+    featured: false,
+    complexity: 'Intermediate',
+    icon: '🎓',
+    color: 'from-teal-500 to-teal-600'
+  },
+  {
+    id: 'quick-demo',
+    name: '5-Minute Demo Setup',
+    category: 'Quick Start',
+    industry: 'General',
+    description: 'Instant governance setup for testing and demonstration purposes. Perfect for proof-of-concepts.',
+    setupTime: '5 min',
+    trustScoreImpact: 75,
+    frameworks: ['OpenAI', 'Claude', 'Any API'],
+    compliance: ['Basic Monitoring'],
+    violationsPrevented: 23,
+    deployments: 567,
+    featured: false,
+    complexity: 'Beginner',
+    icon: '⚡',
+    color: 'from-yellow-500 to-yellow-600'
+  }
+];
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Customer Support': return <Support />;
-      case 'Data Analysis': return <Analytics />;
-      case 'Content Creation': return <ContentCopy />;
-      case 'Security': return <Security />;
-      case 'Business Intelligence': return <Business />;
-      case 'Healthcare': return <Psychology />;
-      default: return <Code />;
-    }
-  };
-
-  return (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        backgroundColor: '#2d3748', 
-        color: 'white',
-        border: '1px solid #4a5568',
-        '&:hover': { borderColor: '#718096', transform: 'translateY(-2px)' },
-        transition: 'all 0.2s ease-in-out',
-      }}
-    >
-      <CardContent>
-        {/* Header with Icon and Verification */}
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Avatar sx={{ bgcolor: '#3182ce', width: 48, height: 48 }}>
-              {getCategoryIcon(template.category)}
-            </Avatar>
-            <Box>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                  {template.name}
-                </Typography>
-                {template.verified && (
-                  <Tooltip title="Verified by Promethios">
-                    <Verified sx={{ color: '#3182ce', fontSize: 20 }} />
-                  </Tooltip>
-                )}
-              </Box>
-              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                v{template.version} • by {template.author}
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" sx={{ color: '#a0aec0' }}>
-            <Info />
-          </IconButton>
-        </Box>
-
-        {/* Category and Governance Level */}
-        <Box mb={2}>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            <Chip
-              label={template.category}
-              size="small"
-              sx={{
-                backgroundColor: '#4a5568',
-                color: 'white',
-                mb: 1,
-              }}
-            />
-            <Chip
-              label={`${template.governanceLevel} governance`}
-              size="small"
-              sx={{
-                backgroundColor: getGovernanceLevelColor(template.governanceLevel),
-                color: 'white',
-                mb: 1,
-              }}
-            />
-          </Stack>
-        </Box>
-
-        {/* Description */}
-        <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2, minHeight: 40 }}>
-          {template.description}
-        </Typography>
-
-        {/* Capabilities */}
-        <Box mb={2}>
-          <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
-            Key Capabilities:
-          </Typography>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-            {template.capabilities.slice(0, 3).map((capability, index) => (
-              <Chip
-                key={index}
-                label={capability}
-                size="small"
-                variant="outlined"
-                sx={{
-                  borderColor: '#4a5568',
-                  color: '#a0aec0',
-                  fontSize: '0.7rem',
-                  height: 24,
-                  mb: 0.5,
-                }}
-              />
-            ))}
-            {template.capabilities.length > 3 && (
-              <Chip
-                label={`+${template.capabilities.length - 3} more`}
-                size="small"
-                variant="outlined"
-                sx={{
-                  borderColor: '#4a5568',
-                  color: '#a0aec0',
-                  fontSize: '0.7rem',
-                  height: 24,
-                  mb: 0.5,
-                }}
-              />
-            )}
-          </Stack>
-        </Box>
-
-        {/* Governance Policies */}
-        <Box mb={2}>
-          <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
-            Governance Policies:
-          </Typography>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-            {template.governancePolicies.map((policy, index) => (
-              <Chip
-                key={index}
-                label={policy}
-                size="small"
-                sx={{
-                  backgroundColor: '#1e3a8a',
-                  color: 'white',
-                  fontSize: '0.7rem',
-                  height: 24,
-                  mb: 0.5,
-                }}
-              />
-            ))}
-          </Stack>
-        </Box>
-
-        {/* Stats */}
-        <Grid container spacing={2} mb={2}>
-          <Grid item xs={4}>
-            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
-              <Typography variant="body2" color="text.secondary">
-                Trust Score
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#3182ce' }}>
-                {template.trustScore}/100
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={4}>
-            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
-              <Typography variant="body2" color="text.secondary">
-                Downloads
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#10b981' }}>
-                {template.downloads.toLocaleString()}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={4}>
-            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
-              <Typography variant="body2" color="text.secondary">
-                Stars
-              </Typography>
-              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                <Star sx={{ color: '#f59e0b', fontSize: 16 }} />
-                <Typography variant="body2" sx={{ color: 'white' }}>
-                  {template.stars}
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-
-      <CardActions sx={{ p: 2, pt: 0 }}>
-        <Button
-          variant="contained"
-          startIcon={<CallSplit />}
-          fullWidth
-          onClick={() => onFork(template)}
-          sx={{
-            backgroundColor: '#3182ce',
-            color: 'white',
-            '&:hover': { backgroundColor: '#2c5aa0' },
-          }}
-        >
-          Fork Template
-        </Button>
-      </CardActions>
-    </Card>
-  );
-};
-
-// Fork Dialog Component
-const ForkDialog: React.FC<{
-  open: boolean;
-  template: AgentTemplate | null;
-  onClose: () => void;
-  onConfirm: (templateId: string, agentName: string) => void;
-}> = ({ open, template, onClose, onConfirm }) => {
-  const [agentName, setAgentName] = useState('');
-
-  useEffect(() => {
-    if (template) {
-      setAgentName(`My ${template.name}`);
-    }
-  }, [template]);
-
-  const handleConfirm = () => {
-    if (template && agentName.trim()) {
-      onConfirm(template.id, agentName.trim());
-      onClose();
-    }
-  };
-
-  return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          backgroundColor: '#2d3748',
-          color: 'white',
-          border: '1px solid #4a5568',
-        },
-      }}
-    >
-      <DialogTitle sx={{ color: 'white' }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <CallSplit sx={{ color: '#3182ce' }} />
-          Fork Agent Template
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        {template && (
-          <>
-            <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-              You're about to fork <strong>{template.name}</strong> and create your own agent.
-              This will create a new unwrapped agent in your "My Agents" section that you own and control.
-            </Typography>
-            
-            <TextField
-              fullWidth
-              label="Agent Name"
-              value={agentName}
-              onChange={(e) => setAgentName(e.target.value)}
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& fieldset': { borderColor: '#4a5568' },
-                  '&:hover fieldset': { borderColor: '#718096' },
-                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                },
-                '& .MuiInputLabel-root': { color: '#a0aec0' },
-              }}
-            />
-
-            <Alert 
-              severity="info" 
-              sx={{ 
-                backgroundColor: '#1e3a8a', 
-                color: 'white',
-                '& .MuiAlert-icon': { color: 'white' },
-              }}
-            >
-              <Typography variant="body2">
-                <strong>You will own this agent.</strong> Promethios provides the governance-enhanced 
-                blueprint, but you control the agent's behavior, data, and deployment.
-              </Typography>
-            </Alert>
-          </>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button 
-          onClick={onClose}
-          sx={{ color: '#a0aec0' }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={!agentName.trim()}
-          sx={{
-            backgroundColor: '#3182ce',
-            color: 'white',
-            '&:hover': { backgroundColor: '#2c5aa0' },
-          }}
-        >
-          Fork & Create Agent
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-// Main Template Library Page Component
 const TemplateLibraryPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [governanceFilter, setGovernanceFilter] = useState('all');
-  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [forkDialogOpen, setForkDialogOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [selectedComplexity, setSelectedComplexity] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  useEffect(() => {
-    // Mock data loading
-    const loadTemplates = async () => {
-      setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockTemplates: AgentTemplate[] = [
-        {
-          id: 'template-1',
-          name: 'HIPAA-Compliant Support Assistant',
-          description: 'Healthcare customer support agent with strict privacy controls and audit trails',
-          category: 'Customer Support',
-          governanceLevel: 'strict',
-          trustScore: 95,
-          downloads: 1247,
-          stars: 89,
-          tags: ['healthcare', 'hipaa', 'privacy'],
-          author: 'Promethios',
-          version: '2.1.0',
-          lastUpdated: new Date('2024-06-15'),
-          verified: true,
-          capabilities: ['HIPAA Compliance', 'Audit Logging', 'Privacy Controls', 'Medical Terminology'],
-          governancePolicies: ['HIPAA Strict', 'Data Retention', 'Access Control'],
-          complianceFrameworks: ['HIPAA', 'SOC 2', 'ISO 27001']
-        },
-        {
-          id: 'template-2',
-          name: 'Financial Services Analyst',
-          description: 'AI agent for financial data analysis with regulatory compliance and risk management',
-          category: 'Data Analysis',
-          governanceLevel: 'enhanced',
-          trustScore: 92,
-          downloads: 856,
-          stars: 67,
-          tags: ['finance', 'compliance', 'analysis'],
-          author: 'Promethios',
-          version: '1.8.0',
-          lastUpdated: new Date('2024-06-10'),
-          verified: true,
-          capabilities: ['Financial Analysis', 'Risk Assessment', 'Regulatory Compliance', 'Report Generation'],
-          governancePolicies: ['Financial Services', 'Data Classification', 'Audit Trail'],
-          complianceFrameworks: ['SOX', 'PCI DSS', 'GDPR']
-        },
-        {
-          id: 'template-3',
-          name: 'Content Creation Assistant',
-          description: 'Marketing content generator with brand guidelines and approval workflows',
-          category: 'Content Creation',
-          governanceLevel: 'basic',
-          trustScore: 88,
-          downloads: 2103,
-          stars: 124,
-          tags: ['marketing', 'content', 'branding'],
-          author: 'Promethios',
-          version: '1.5.0',
-          lastUpdated: new Date('2024-06-08'),
-          verified: true,
-          capabilities: ['Content Generation', 'Brand Compliance', 'SEO Optimization', 'Multi-format Output'],
-          governancePolicies: ['General Business', 'Content Review', 'Brand Guidelines'],
-          complianceFrameworks: ['GDPR', 'CCPA']
-        },
-        {
-          id: 'template-4',
-          name: 'Security Monitoring Agent',
-          description: 'Cybersecurity monitoring with threat detection and incident response protocols',
-          category: 'Security',
-          governanceLevel: 'strict',
-          trustScore: 97,
-          downloads: 634,
-          stars: 78,
-          tags: ['security', 'monitoring', 'threats'],
-          author: 'Promethios',
-          version: '3.0.0',
-          lastUpdated: new Date('2024-06-12'),
-          verified: true,
-          capabilities: ['Threat Detection', 'Incident Response', 'Log Analysis', 'Alert Management'],
-          governancePolicies: ['Security Strict', 'Incident Handling', 'Data Protection'],
-          complianceFrameworks: ['ISO 27001', 'NIST', 'SOC 2']
-        },
-        {
-          id: 'template-5',
-          name: 'Business Intelligence Reporter',
-          description: 'Automated business reporting with data visualization and executive summaries',
-          category: 'Business Intelligence',
-          governanceLevel: 'enhanced',
-          trustScore: 90,
-          downloads: 945,
-          stars: 56,
-          tags: ['business', 'reporting', 'analytics'],
-          author: 'Promethios',
-          version: '2.3.0',
-          lastUpdated: new Date('2024-06-05'),
-          verified: true,
-          capabilities: ['Data Visualization', 'Executive Reporting', 'KPI Tracking', 'Trend Analysis'],
-          governancePolicies: ['Business Intelligence', 'Data Governance', 'Report Approval'],
-          complianceFrameworks: ['SOX', 'GDPR']
-        },
-        {
-          id: 'template-6',
-          name: 'Healthcare Diagnostic Assistant',
-          description: 'Medical diagnostic support with clinical guidelines and safety protocols',
-          category: 'Healthcare',
-          governanceLevel: 'strict',
-          trustScore: 98,
-          downloads: 423,
-          stars: 92,
-          tags: ['healthcare', 'diagnostics', 'clinical'],
-          author: 'Promethios',
-          version: '1.9.0',
-          lastUpdated: new Date('2024-06-14'),
-          verified: true,
-          capabilities: ['Clinical Guidelines', 'Diagnostic Support', 'Safety Protocols', 'Medical Records'],
-          governancePolicies: ['HIPAA Strict', 'Clinical Safety', 'Medical Ethics'],
-          complianceFrameworks: ['HIPAA', 'FDA', 'ISO 13485']
-        }
-      ];
-
-      setTemplates(mockTemplates);
-      setLoading(false);
-    };
-
-    loadTemplates();
-  }, []);
-
-  const handleFork = (template: AgentTemplate) => {
-    setSelectedTemplate(template);
-    setForkDialogOpen(true);
-  };
-
-  const handleConfirmFork = (templateId: string, agentName: string) => {
-    // In a real implementation, this would call an API to fork the template
-    console.log(`Forking template ${templateId} as "${agentName}"`);
-    
-    // Navigate to My Agents page with success message
-    window.location.href = `/ui/agents/profiles?forked=${encodeURIComponent(agentName)}`;
-  };
+  const categories = ['all', 'Industry Compliance', 'Use Case', 'Quick Start'];
+  const industries = ['all', 'Healthcare', 'Financial', 'Legal', 'Education', 'Media', 'Technology', 'General'];
+  const complexities = ['all', 'Beginner', 'Intermediate', 'Advanced'];
 
   const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter;
-    const matchesGovernance = governanceFilter === 'all' || template.governanceLevel === governanceFilter;
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    const matchesIndustry = selectedIndustry === 'all' || template.industry === selectedIndustry;
+    const matchesComplexity = selectedComplexity === 'all' || template.complexity === selectedComplexity;
+    const matchesSearch = searchTerm === '' || 
+      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesSearch && matchesCategory && matchesGovernance;
+    return matchesCategory && matchesIndustry && matchesComplexity && matchesSearch;
   });
 
-  const categories = Array.from(new Set(templates.map(t => t.category)));
+  const featuredTemplates = templates.filter(t => t.featured);
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Header */}
-        <Box mb={4}>
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-            <Box>
-              <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
-                Template Library
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Browse and fork governance-enhanced agent blueprints. You own and control all forked agents.
-              </Typography>
-            </Box>
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={() => window.location.reload()}
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                '&:hover': { borderColor: '#718096', backgroundColor: '#2d3748' },
-              }}
-            >
-              Refresh
-            </Button>
-          </Box>
-          
-          <Alert 
-            severity="info" 
-            sx={{ 
-              backgroundColor: '#1e3a8a', 
-              color: 'white',
-              '& .MuiAlert-icon': { color: 'white' },
-            }}
-          >
-            <Typography variant="body2">
-              <strong>Fork-and-Own Model:</strong> These are verified blueprints, not hosted agents. 
-              When you fork a template, you create and own the agent. Promethios provides governance 
-              tools, not control over your agents.
-            </Typography>
-          </Alert>
-        </Box>
+    <div className="w-full bg-gray-900 text-white">
+      {/* Hero Section */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
 
-        {/* Filters */}
-        <Box mb={4}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                placeholder="Search templates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#2d3748',
-                    color: 'white',
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#718096' },
-                    '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: '#a0aec0' }}>Category</InputLabel>
-                <Select
-                  value={categoryFilter}
-                  label="Category"
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#2d3748',
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
-                  }}
-                >
-                  <MenuItem value="all">All Categories</MenuItem>
-                  {categories.map(category => (
-                    <MenuItem key={category} value={category}>{category}</MenuItem>
+        <div className="max-w-screen-xl mx-auto relative">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 bg-blue-900/20 border border-blue-500/30 rounded-full px-4 py-2 mb-6">
+              <span className="text-blue-400 text-sm font-semibold">Template Library</span>
+            </div>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              Ready-to-Deploy <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">AI Governance</span>
+            </h1>
+            <p className="text-xl sm:text-2xl mb-8 text-gray-300 max-w-4xl mx-auto leading-relaxed">
+              From HIPAA compliance to financial regulations — get production-ready governance in minutes, not months. 
+              Choose from industry-tested templates used by thousands of organizations.
+            </p>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-400 mb-2">50+</div>
+                <div className="text-gray-300">Ready Templates</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-400 mb-2">1.2K+</div>
+                <div className="text-gray-300">Active Deployments</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-purple-400 mb-2">99.7%</div>
+                <div className="text-gray-300">Success Rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Templates */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6 text-white">
+              Featured Templates
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Our most popular and battle-tested governance templates
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredTemplates.map((template) => (
+              <div key={template.id} className="bg-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-gray-600 transition-all duration-300 group cursor-pointer">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${template.color} rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-200`}>
+                    {template.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">{template.name}</h3>
+                    <p className="text-gray-400 text-sm">{template.industry} • {template.complexity}</p>
+                  </div>
+                </div>
+
+                <p className="text-gray-300 mb-6 leading-relaxed">{template.description}</p>
+
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Trust Score Impact</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`bg-gradient-to-r ${template.color} h-2 rounded-full`}
+                          style={{ width: `${template.trustScoreImpact}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-white font-semibold text-sm">{template.trustScoreImpact}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Setup Time</span>
+                    <span className="text-green-400 font-semibold text-sm">{template.setupTime}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Violations Prevented</span>
+                    <span className="text-blue-400 font-semibold text-sm">{template.violationsPrevented}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {template.compliance.slice(0, 2).map((comp, index) => (
+                    <span key={index} className="bg-green-900/30 text-green-300 px-2 py-1 rounded-full text-xs">
+                      {comp}
+                    </span>
                   ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: '#a0aec0' }}>Governance Level</InputLabel>
-                <Select
-                  value={governanceFilter}
-                  label="Governance Level"
-                  onChange={(e) => setGovernanceFilter(e.target.value)}
-                  sx={{
-                    backgroundColor: '#2d3748',
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
-                  }}
-                >
-                  <MenuItem value="all">All Levels</MenuItem>
-                  <MenuItem value="basic">Basic Governance</MenuItem>
-                  <MenuItem value="enhanced">Enhanced Governance</MenuItem>
-                  <MenuItem value="strict">Strict Governance</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', textAlign: 'center' }}>
-                {filteredTemplates.length} templates
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
+                  {template.compliance.length > 2 && (
+                    <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">
+                      +{template.compliance.length - 2} more
+                    </span>
+                  )}
+                </div>
 
-        {/* Templates Grid */}
-        {loading ? (
-          <Box display="flex" justifyContent="center" py={8}>
-            <Typography>Loading templates...</Typography>
-          </Box>
-        ) : filteredTemplates.length === 0 ? (
-          <Alert severity="info">
-            No templates found matching your criteria. Try adjusting your filters.
-          </Alert>
-        ) : (
-          <Grid container spacing={3}>
-            {filteredTemplates.map((template) => (
-              <Grid item xs={12} md={6} lg={4} key={template.id}>
-                <TemplateCard template={template} onFork={handleFork} />
-              </Grid>
+                <div className="flex space-x-3">
+                  <button className={`flex-1 bg-gradient-to-r ${template.color} text-white font-semibold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity text-sm`}>
+                    Deploy Now
+                  </button>
+                  <button className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 px-4 rounded-lg transition-colors text-sm">
+                    Preview
+                  </button>
+                </div>
+              </div>
             ))}
-          </Grid>
-        )}
+          </div>
+        </div>
+      </section>
 
-        {/* Fork Dialog */}
-        <ForkDialog
-          open={forkDialogOpen}
-          template={selectedTemplate}
-          onClose={() => setForkDialogOpen(false)}
-          onConfirm={handleConfirmFork}
-        />
-      </Container>
-    </ThemeProvider>
+      {/* Template Browser */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6 text-white">
+              Browse All Templates
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Find the perfect governance template for your specific needs
+            </p>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Search Templates</label>
+                <input
+                  type="text"
+                  placeholder="Search by name or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category === 'all' ? 'All Categories' : category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Industry Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Industry</label>
+                <select
+                  value={selectedIndustry}
+                  onChange={(e) => setSelectedIndustry(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {industries.map((industry) => (
+                    <option key={industry} value={industry}>
+                      {industry === 'all' ? 'All Industries' : industry}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Complexity Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Complexity</label>
+                <select
+                  value={selectedComplexity}
+                  onChange={(e) => setSelectedComplexity(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {complexities.map((complexity) => (
+                    <option key={complexity} value={complexity}>
+                      {complexity === 'all' ? 'All Levels' : complexity}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-700">
+              <div className="text-gray-300">
+                Showing {filteredTemplates.length} of {templates.length} templates
+              </div>
+              <button 
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedIndustry('all');
+                  setSelectedComplexity('all');
+                  setSearchTerm('');
+                }}
+                className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredTemplates.map((template) => (
+              <div key={template.id} className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-all duration-300 group cursor-pointer">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className={`w-10 h-10 bg-gradient-to-r ${template.color} rounded-lg flex items-center justify-center text-lg group-hover:scale-110 transition-transform duration-200`}>
+                    {template.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white group-hover:text-blue-300 transition-colors">{template.name}</h3>
+                    <p className="text-gray-400 text-xs">{template.category}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-green-400 font-semibold text-sm">{template.setupTime}</div>
+                    <div className="text-gray-400 text-xs">setup</div>
+                  </div>
+                </div>
+
+                <p className="text-gray-300 text-sm mb-4 leading-relaxed line-clamp-3">{template.description}</p>
+
+                <div className="flex items-center space-x-4 mb-4 text-xs text-gray-400">
+                  <div className="flex items-center space-x-1">
+                    <span>🎯</span>
+                    <span>{template.trustScoreImpact}% trust</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span>🛡️</span>
+                    <span>{template.violationsPrevented} prevented</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span>🚀</span>
+                    <span>{template.deployments} deployed</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {template.frameworks.slice(0, 3).map((framework, index) => (
+                    <span key={index} className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded-full text-xs">
+                      {framework}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex space-x-2">
+                  <button className={`flex-1 bg-gradient-to-r ${template.color} text-white font-semibold py-2 px-3 rounded-lg hover:opacity-90 transition-opacity text-sm`}>
+                    Deploy
+                  </button>
+                  <button className="bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-3 rounded-lg transition-colors text-sm">
+                    Preview
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredTemplates.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold text-white mb-4">No templates found</h3>
+              <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
+              <button 
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedIndustry('all');
+                  setSelectedComplexity('all');
+                  setSearchTerm('');
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Template Marketplace */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-900/20 to-blue-900/20">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6 text-white">
+              Community Template Marketplace
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Share your governance templates with the community and discover solutions from other organizations
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Share Your Templates</h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Help the community by sharing your custom governance templates. 
+                Earn recognition and contribute to the collective knowledge of AI governance.
+              </p>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span>Automated template validation</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span>Community feedback and ratings</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span>Attribution and recognition</span>
+                </div>
+              </div>
+              <button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200">
+                Submit Template
+              </button>
+            </div>
+
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-blue-500/30 rounded-xl p-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Discover Community Solutions</h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Explore templates created by other organizations. Find unique solutions 
+                for niche use cases and specialized industries.
+              </p>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>Peer-reviewed templates</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>Real-world usage statistics</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>Community support and discussion</span>
+                </div>
+              </div>
+              <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200">
+                Browse Community
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-gray-900 to-gray-800">
+        <div className="max-w-screen-xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-6 text-white">
+            Ready to Deploy Governance?
+          </h2>
+          <p className="text-xl mb-8 text-gray-300 max-w-3xl mx-auto">
+            Choose a template and get production-ready AI governance running in minutes.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link 
+              to="/ui/onboarding" 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              Deploy Your First Template
+            </Link>
+            <Link 
+              to="/demo" 
+              className="bg-transparent border-2 border-green-500 hover:bg-green-500 text-green-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
+            >
+              See Templates in Action
+            </Link>
+            <Link 
+              to="/learn" 
+              className="bg-transparent border-2 border-gray-600 hover:bg-gray-600 text-gray-300 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
+            >
+              Learn More
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 };
 
