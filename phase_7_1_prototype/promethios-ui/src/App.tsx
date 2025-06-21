@@ -18,6 +18,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import LearnPage from './pages/LearnPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import LiveDemoPage from './pages/LiveDemoPage';
+import MockDashboardPage from './pages/MockDashboardPage';
 import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
 import PrometheosGovernanceDashboard from './components/governance-demo/PrometheosGovernanceDashboard';
 import DashboardPage from './pages/DashboardPage';
@@ -51,15 +52,14 @@ const AppContent: React.FC = () => {
                   <Route path="/waitlist" element={<LoginWaitlistPage />} />
                   <Route path="/login" element={<LoginWaitlistPage />} />
                   <Route path="/verify-email" element={<EmailVerification />} />
-                  {/* Redirect old onboarding to new UI onboarding */}
+                             {/* Redirect legacy routes */}
                   <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
-                  {/* Redirect to new dashboard implementation */}
-                  <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
                   
                   {/* Main Navigation Pages */}
                   <Route path="/learn" element={<LearnPage />} />
                   <Route path="/templates" element={<TemplateLibraryPage />} />
                   <Route path="/live-demo" element={<LiveDemoPage />} />
+                  <Route path="/dashboard" element={<MockDashboardPage />} />
                   <Route path="/template-library" element={<TemplateLibraryPage />} />
                   
                   {/* Governance Routes */}
