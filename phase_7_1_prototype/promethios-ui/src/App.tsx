@@ -19,7 +19,7 @@ import LearnPage from './pages/LearnPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import LiveDemoPage from './pages/LiveDemoPage';
 import MockDashboardPage from './pages/MockDashboardPage';
-import ApiDocsPage from './pages/ApiDocsPage';
+import SolutionsPage from './pages/SolutionsPage';
 import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
@@ -60,6 +60,7 @@ const AppContent: React.FC = () => {
                   <Route path="/templates" element={<TemplateLibraryPage />} />
                   <Route path="/live-demo" element={<LiveDemoPage />} />
                   <Route path="/dashboard" element={<MockDashboardPage />} />
+                  <Route path="/solutions" element={<SolutionsPage />} />
                   <Route path="/api-docs" element={<ApiDocsPage />} />
                   <Route path="/template-library" element={<TemplateLibraryPage />} />
                   

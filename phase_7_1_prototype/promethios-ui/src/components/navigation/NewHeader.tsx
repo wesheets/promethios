@@ -50,20 +50,20 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
               Template Library
             </Link>
             <Link 
-              to="/demo" 
-              className={`px-3 py-2 text-sm font-medium ${isActive('/demo') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+              to="/live-demo" 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/live-demo') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             >
               Live Demo
             </Link>
             <Link 
-              to={user ? "/ui/dashboard" : "/dashboard-preview"} 
-              className={`px-3 py-2 text-sm font-medium ${isActive('/ui/dashboard') || isActive('/dashboard-preview') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+              to={user ? "/ui/dashboard" : "/dashboard"} 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/ui/dashboard') || isActive('/dashboard') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             >
               Dashboard
             </Link>
             <Link 
-              to="/api" 
-              className={`px-3 py-2 text-sm font-medium ${isActive('/api') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
+              to="/api-docs" 
+              className={`px-3 py-2 text-sm font-medium ${isActive('/api-docs') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
             >
               API / Docs
             </Link>
