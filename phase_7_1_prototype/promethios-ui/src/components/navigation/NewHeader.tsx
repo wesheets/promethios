@@ -84,20 +84,23 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
                 <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} ring-1 ring-black ring-opacity-5`}>
                   <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                     <Link 
-                      to="/about/company" 
+                      to="/about" 
                       className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                      onClick={() => setUserMenuOpen(false)}
                     >
-                      Company
+                      Our Story
                     </Link>
                     <Link 
-                      to="/about/team" 
+                      to="/about#team" 
                       className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                      onClick={() => setUserMenuOpen(false)}
                     >
                       Team
                     </Link>
                     <Link 
-                      to="/about/careers" 
+                      to="/about#careers" 
                       className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                      onClick={() => setUserMenuOpen(false)}
                     >
                       Careers
                     </Link>
