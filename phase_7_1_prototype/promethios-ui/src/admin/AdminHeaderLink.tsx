@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../core/auth/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import authService from '../core/firebase/authService';
 import { getVigilObserverExtensionPoint } from '../core/extensions/vigilObserverExtension';
 
