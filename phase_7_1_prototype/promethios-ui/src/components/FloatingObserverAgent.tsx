@@ -114,40 +114,29 @@ const FloatingObserverAgent: React.FC = () => {
     // Simulate thinking delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Try OpenAI API first, fallback to intelligent responses
+    // Try backend API first, fallback to intelligent responses
     try {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (apiKey) {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4',
-            messages: [
-              {
-                role: 'system',
-                content: `You are the Promethios Observer Agent, an intelligent AI governance assistant. You help users with AI governance, trust metrics, compliance, and platform navigation. Current context: ${context}. Be helpful, concise, and focus on governance-related guidance.`
-              },
-              {
-                role: 'user',
-                content: message
-              }
-            ],
-            max_tokens: 200,
-            temperature: 0.7
-          })
-        });
+      // Call your backend API endpoint for OpenAI integration
+      const response = await fetch('/api/observer/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message,
+          context: context,
+          systemPrompt: `You are the Promethios Observer Agent, an intelligent AI governance assistant. You help users with AI governance, trust metrics, compliance, and platform navigation. Current context: ${context}. Be helpful, concise, and focus on governance-related guidance.`
+        })
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          return data.choices[0].message.content;
-        }
+      if (response.ok) {
+        const data = await response.json();
+        return data.response || data.message;
+      } else {
+        console.log('Backend API unavailable, using fallback response');
       }
     } catch (error) {
-      console.log('OpenAI API unavailable, using fallback response');
+      console.log('Backend API error, using fallback response:', error);
     }
 
     // Intelligent fallback responses based on context and message
@@ -196,14 +185,31 @@ const FloatingObserverAgent: React.FC = () => {
         }`}
         onClick={toggleExpanded}
       >
-        <div className={`w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors ${
-          state.isPulsing ? 'ring-4 ring-blue-300 ring-opacity-50' : ''
-        }`}>
-          <div className="text-white text-xl">🤖</div>
+        <div className={`flex items-center space-x-2 bg-green-600 rounded-full shadow-lg hover:bg-green-700 transition-colors ${
+          state.isPulsing ? 'ring-4 ring-green-300 ring-opacity-50' : ''
+        } ${state.isExpanded ? 'px-3 py-2' : 'w-12 h-12'}`}>
+          {!state.isExpanded && (
+            <div className="w-12 h-12 flex items-center justify-center">
+              <div className="text-white text-xl">🛡️</div>
+            </div>
+          )}
+          {state.isExpanded && (
+            <>
+              <div className="text-white text-lg">🛡️</div>
+              <span className="text-white text-sm font-medium">Observer</span>
+            </>
+          )}
           {state.isPulsing && (
-            <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-30"></div>
+            <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-30"></div>
           )}
         </div>
+        
+        {/* Label when collapsed */}
+        {!state.isExpanded && (
+          <div className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+            Observer Agent
+          </div>
+        )}
       </div>
 
       {/* Expanded Sidebar */}
@@ -213,12 +219,12 @@ const FloatingObserverAgent: React.FC = () => {
           <div className="p-4 border-b border-gray-700 bg-gray-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm">🤖</span>
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">🛡️</span>
                 </div>
                 <div>
                   <h3 className="text-white font-semibold">Observer Agent</h3>
-                  <p className="text-gray-400 text-xs">Intelligent Governance Assistant</p>
+                  <p className="text-gray-400 text-xs">Governance Assistant</p>
                 </div>
               </div>
               <button 
@@ -237,7 +243,7 @@ const FloatingObserverAgent: React.FC = () => {
               </div>
               <div className="flex items-center justify-between text-xs mt-1">
                 <span className="text-gray-300">Trust Score: {state.trustScore}%</span>
-                <span className="text-blue-400">OpenAI Ready</span>
+                <span className="text-green-400">Backend Ready</span>
               </div>
             </div>
           </div>
@@ -246,7 +252,7 @@ const FloatingObserverAgent: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {state.messages.length === 0 && (
               <div className="text-center text-gray-400 mt-8">
-                <div className="text-4xl mb-2">🤖</div>
+                <div className="text-4xl mb-2">🛡️</div>
                 <p className="text-sm">Hi! I'm your AI governance assistant.</p>
                 <p className="text-xs mt-1">Ask me about trust metrics, compliance, or governance!</p>
               </div>
@@ -307,7 +313,7 @@ const FloatingObserverAgent: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              Powered by OpenAI • Governed by Promethios
+              Powered by Backend API • Governed by Promethios
             </p>
           </div>
         </div>
