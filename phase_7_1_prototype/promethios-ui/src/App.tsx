@@ -22,6 +22,7 @@ import MockDashboardPage from './pages/MockDashboardPage';
 import SolutionsPage from './pages/SolutionsPage';
 import ApiDocsPage from './pages/ApiDocsPage';
 import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
+import PrometheosGovernanceDashboard from './components/governance-demo/PrometheosGovernanceDashboard';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
