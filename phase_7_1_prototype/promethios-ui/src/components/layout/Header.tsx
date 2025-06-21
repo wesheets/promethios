@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/SimpleAuthContext';
 import { motion } from 'framer-motion';
+import NotificationCenter from '../notifications/NotificationCenter';
 
 const Header: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -144,9 +145,18 @@ const Header: React.FC = () => {
           </nav>
           
           {/* Right side buttons */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             {isAuthenticated ? (
-              <div className="relative ml-3">
+              <>
+                {/* Notification Center */}
+                <NotificationCenter 
+                  maxNotifications={5}
+                  showBadge={true}
+                  className="flex-shrink-0"
+                />
+                
+                {/* User Menu */}
+                <div className="relative ml-3">
                 <div>
                   <button
                     type="button"
@@ -231,6 +241,7 @@ const Header: React.FC = () => {
                   </motion.div>
                 )}
               </div>
+              </>
             ) : (
               <div className="flex space-x-4">
                 <Link

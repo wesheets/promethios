@@ -24,7 +24,9 @@ import {
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/SimpleAuthContext';
+import { useNotifications } from '../hooks/useNotifications';
+import NotificationItem from './notifications/NotificationItem';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -76,12 +78,30 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
   isLoggedIn,
   userName = 'User',
   userRole = 'User',
-  unreadNotifications = 0,
+  unreadNotifications: propUnreadNotifications = 0,
 }) => {
   const { logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+
+  // Use the notification system
+  const {
+    notifications,
+    unreadCount,
+    loading: notificationsLoading,
+    markAsRead,
+    deleteNotification,
+    triggerTestNotification,
+    clearAll
+  } = useNotifications({
+    autoInitialize: true,
+    enableTestProvider: true,
+    maxNotifications: 10
+  });
+
+  // Use unreadCount from notification system, fallback to prop
+  const displayUnreadCount = unreadCount || propUnreadNotifications;
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -97,6 +117,42 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
 
   const handleNotificationMenuClose = () => {
     setNotificationAnchorEl(null);
+  };
+
+  const handleNotificationAction = async (notificationId: string, actionId: string) => {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification) return;
+
+    const action = notification.actions?.find(a => a.id === actionId);
+    if (!action) return;
+
+    if (action.type === 'dismiss') {
+      await deleteNotification(notificationId);
+    } else if (action.type === 'link' && action.url) {
+      navigate(action.url);
+      handleNotificationMenuClose();
+    } else if (action.type === 'button' && action.handler) {
+      action.handler(notification);
+    }
+  };
+
+  const handleNotificationClick = async (notificationId: string) => {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification && !notification.read) {
+      await markAsRead(notificationId);
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    await clearAll();
+    handleNotificationMenuClose();
+  };
+
+  // Test function for development
+  const handleTestNotification = async () => {
+    const types = ['governance', 'trust', 'observer', 'system'] as const;
+    const randomType = types[Math.floor(Math.random() * types.length)];
+    await triggerTestNotification(randomType);
   };
 
   const handleLogout = () => {
@@ -175,11 +231,11 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
           {/* Notifications */}
           <IconButton
             size="large"
-            aria-label={`show ${unreadNotifications} new notifications`}
+            aria-label={`show ${displayUnreadCount} new notifications`}
             color="inherit"
             onClick={handleNotificationMenuOpen}
           >
-            <Badge badgeContent={unreadNotifications} color="error">
+            <Badge badgeContent={displayUnreadCount} color="error">
               <NotificationsIcon />
             </Badge>
           </IconButton>
@@ -270,27 +326,81 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
             sx: {
               backgroundColor: '#2d3748',
               color: 'white',
-              minWidth: 300,
-              maxHeight: 400,
+              minWidth: 400,
+              maxHeight: 500,
+              maxWidth: 500,
             },
           }}
         >
-          <MenuItem disabled>
-            <ListItemText primary="Notifications" />
+          {/* Header */}
+          <MenuItem disabled sx={{ justifyContent: 'space-between', py: 2 }}>
+            <Typography variant="h6">Notifications</Typography>
+            {notifications.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconButton
+                  size="small"
+                  onClick={handleTestNotification}
+                  sx={{ color: '#4299e1' }}
+                  title="Add test notification"
+                >
+                  <Typography variant="caption">Test</Typography>
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={handleClearAllNotifications}
+                  sx={{ color: '#f56565' }}
+                  title="Clear all notifications"
+                >
+                  <Typography variant="caption">Clear</Typography>
+                </IconButton>
+              </Box>
+            )}
           </MenuItem>
           <Divider sx={{ backgroundColor: '#4a5568' }} />
-          {unreadNotifications === 0 ? (
+          
+          {/* Notification List */}
+          {notificationsLoading ? (
             <MenuItem disabled>
-              <ListItemText primary="No new notifications" />
+              <ListItemText primary="Loading notifications..." />
             </MenuItem>
+          ) : notifications.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <NotificationsIcon sx={{ fontSize: 48, color: '#a0aec0', mb: 2 }} />
+              <Typography variant="body2" color="#a0aec0">
+                No notifications
+              </Typography>
+              <Typography variant="caption" color="#718096" sx={{ mt: 1, display: 'block' }}>
+                You're all caught up!
+              </Typography>
+              <IconButton
+                onClick={handleTestNotification}
+                sx={{ mt: 2, color: '#4299e1' }}
+                size="small"
+              >
+                <Typography variant="caption">Add Test Notification</Typography>
+              </IconButton>
+            </Box>
           ) : (
-            <MenuItem>
-              <ListItemText 
-                primary="New governance alert"
-                secondary="Agent policy violation detected"
-                secondaryTypographyProps={{ color: '#a0aec0' }}
-              />
-            </MenuItem>
+            <Box sx={{ maxHeight: 350, overflow: 'auto' }}>
+              {notifications.slice(0, 5).map((notification) => (
+                <Box key={notification.id} sx={{ borderBottom: '1px solid #4a5568' }}>
+                  <NotificationItem
+                    notification={notification}
+                    onAction={(actionId) => handleNotificationAction(notification.id, actionId)}
+                    onMarkAsRead={() => handleNotificationClick(notification.id)}
+                  />
+                </Box>
+              ))}
+              
+              {notifications.length > 5 && (
+                <MenuItem onClick={() => navigate('/notifications')}>
+                  <ListItemText 
+                    primary={`View all ${notifications.length} notifications`}
+                    sx={{ textAlign: 'center', color: '#4299e1' }}
+                  />
+                </MenuItem>
+              )}
+            </Box>
           )}
         </Menu>
       </Toolbar>
