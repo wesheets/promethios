@@ -55,3 +55,24 @@ export interface NotificationSettings {
   };
 }
 
+export interface NotificationHandler {
+  id: string;
+  name: string;
+  type: string;
+  priority: number;
+  handle(notification: Notification): Promise<void>;
+}
+
+export interface NotificationProcessor {
+  id: string;
+  name: string;
+  process(notification: Notification): Promise<Notification>;
+}
+
+export interface NotificationConfig {
+  providers: string[];
+  handlers: string[];
+  processors: string[];
+  settings: NotificationSettings;
+}
+
