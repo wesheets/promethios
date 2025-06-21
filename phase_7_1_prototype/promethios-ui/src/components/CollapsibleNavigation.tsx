@@ -625,7 +625,7 @@ Be helpful, concise, and focus on governance-related guidance using these real m
         {/* Observer Agent Chat Interface */}
         <Collapse in={observerExpanded && !collapsed} timeout="auto" unmountOnExit>
           <Box sx={{ p: 2, backgroundColor: '#111827' }}>
-            {/* Status Indicators */}
+            {/* Enhanced Status Indicators with Smart Alerts */}
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Box 
@@ -645,9 +645,90 @@ Be helpful, concise, and focus on governance-related guidance using these real m
               <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>
                 Context: {getCurrentContext()}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>
-                Trust Score: {extractDashboardData().trustScore} (Compliant)
-              </Typography>
+              
+              {/* Smart Trust Score Display with Alert */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  Trust Score: {extractDashboardData().trustScore}
+                </Typography>
+                {parseInt(extractDashboardData().trustScore) < 70 && (
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: '#f59e0b',
+                      animation: 'pulse 1s infinite',
+                      boxShadow: '0 0 8px rgba(245, 158, 11, 0.6)'
+                    }}
+                    title="Trust score needs attention"
+                  />
+                )}
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  (Compliant)
+                </Typography>
+              </Box>
+
+              {/* Smart Action Buttons */}
+              {extractDashboardData().violations !== '0' && (
+                <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box
+                    onClick={() => {
+                      const violationMessage = `I see you have ${extractDashboardData().violations} policy violations. Can you help me understand what these violations are and how to fix them?`;
+                      setObserverInput(violationMessage);
+                    }}
+                    sx={{
+                      px: 1,
+                      py: 0.5,
+                      backgroundColor: '#dc2626',
+                      borderRadius: 0.5,
+                      cursor: 'pointer',
+                      '&:hover': { backgroundColor: '#b91c1c' },
+                      transition: 'background-color 0.2s'
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: 'white', fontSize: '0.7rem' }}>
+                      🚨 Jump to Violations
+                    </Typography>
+                  </Box>
+                  
+                  <Box
+                    onClick={() => {
+                      const improveMessage = `How can I improve my trust score from ${extractDashboardData().trustScore}? What specific actions should I take?`;
+                      setObserverInput(improveMessage);
+                    }}
+                    sx={{
+                      px: 1,
+                      py: 0.5,
+                      backgroundColor: '#059669',
+                      borderRadius: 0.5,
+                      cursor: 'pointer',
+                      '&:hover': { backgroundColor: '#047857' },
+                      transition: 'background-color 0.2s'
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: 'white', fontSize: '0.7rem' }}>
+                      ⚡ Fix This
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Reflection Log Snippet */}
+              <Box 
+                sx={{ 
+                  mt: 1, 
+                  p: 1, 
+                  backgroundColor: '#1f2937', 
+                  borderRadius: 0.5,
+                  borderLeft: '2px solid #22c55e'
+                }}
+                title="Recent agent reflection"
+              >
+                <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.7rem', fontStyle: 'italic' }}>
+                  💭 Last Reflection: "Assistant noted transparency improvement needed on 6/20 regarding policy explanations."
+                </Typography>
+              </Box>
             </Box>
 
             {/* Chat Messages */}
@@ -663,9 +744,78 @@ Be helpful, concise, and focus on governance-related guidance using these real m
               }}
             >
               {observerMessages.length === 0 ? (
-                <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', mt: 2 }}>
-                  👋 Hi! I'm your governance assistant. Ask me about trust metrics, compliance, or platform navigation.
-                </Typography>
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', mt: 1 }}>
+                    👋 Hi! I'm your governance assistant.
+                  </Typography>
+                  
+                  {/* Smart Contextual Suggestions */}
+                  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {parseInt(extractDashboardData().trustScore) < 80 && (
+                      <Box
+                        onClick={() => {
+                          const suggestion = `My trust score is ${extractDashboardData().trustScore}. What are the main areas I should focus on to improve it?`;
+                          setObserverInput(suggestion);
+                          handleObserverSend();
+                        }}
+                        sx={{
+                          p: 1,
+                          backgroundColor: '#374151',
+                          borderRadius: 0.5,
+                          cursor: 'pointer',
+                          '&:hover': { backgroundColor: '#4b5563' },
+                          transition: 'background-color 0.2s'
+                        }}
+                      >
+                        <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                          💡 "How can I improve my trust score?"
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {extractDashboardData().violations !== '0' && (
+                      <Box
+                        onClick={() => {
+                          const suggestion = `I have ${extractDashboardData().violations} policy violations. What do these mean and how urgent are they?`;
+                          setObserverInput(suggestion);
+                          handleObserverSend();
+                        }}
+                        sx={{
+                          p: 1,
+                          backgroundColor: '#374151',
+                          borderRadius: 0.5,
+                          cursor: 'pointer',
+                          '&:hover': { backgroundColor: '#4b5563' },
+                          transition: 'background-color 0.2s'
+                        }}
+                      >
+                        <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                          🚨 "What are these policy violations?"
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    <Box
+                      onClick={() => {
+                        const suggestion = "What is governance and why is it important for my AI agents?";
+                        setObserverInput(suggestion);
+                        handleObserverSend();
+                      }}
+                      sx={{
+                        p: 1,
+                        backgroundColor: '#374151',
+                        borderRadius: 0.5,
+                        cursor: 'pointer',
+                        '&:hover': { backgroundColor: '#4b5563' },
+                        transition: 'background-color 0.2s'
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                        🛡️ "Explain governance to me"
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
               ) : (
                 observerMessages.map((message) => (
                   <Box key={message.id} sx={{ mb: 1 }}>
@@ -683,9 +833,56 @@ Be helpful, concise, and focus on governance-related guidance using these real m
                     <Typography variant="body2" sx={{ color: 'white', fontSize: '0.875rem' }}>
                       {message.text}
                     </Typography>
+                    
+                    {/* Smart Follow-up Actions for Observer Messages */}
+                    {message.sender === 'observer' && (
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {message.text.toLowerCase().includes('violation') && (
+                          <Box
+                            onClick={() => setObserverInput("Show me exactly where these violations are and how to fix them")}
+                            sx={{
+                              px: 1,
+                              py: 0.25,
+                              backgroundColor: '#374151',
+                              borderRadius: 0.25,
+                              cursor: 'pointer',
+                              '&:hover': { backgroundColor: '#4b5563' }
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.7rem' }}>
+                              📍 Show Details
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {message.text.toLowerCase().includes('improve') && (
+                          <Box
+                            onClick={() => setObserverInput("What changed recently that affected my scores?")}
+                            sx={{
+                              px: 1,
+                              py: 0.25,
+                              backgroundColor: '#374151',
+                              borderRadius: 0.25,
+                              cursor: 'pointer',
+                              '&:hover': { backgroundColor: '#4b5563' }
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.7rem' }}>
+                              📈 What Changed?
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 ))
-              )}
+              )}}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.875rem' }}>
+                      {message.text}
+                    </Typography>
+                  </Box>
               
               {/* Thinking Indicator */}
               {isThinking && (
