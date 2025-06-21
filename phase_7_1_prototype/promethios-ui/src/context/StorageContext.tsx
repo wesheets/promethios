@@ -222,9 +222,10 @@ export const useUserStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`user.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`user.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`user.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`user.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`user.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`user.${key}`, callback),
@@ -236,9 +237,10 @@ export const useObserverStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`observer.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`observer.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`observer.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`observer.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`observer.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`observer.${key}`, callback),
@@ -250,9 +252,10 @@ export const useNotificationStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`notifications.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`notifications.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`notifications.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`notifications.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`notifications.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`notifications.${key}`, callback),
@@ -264,9 +267,10 @@ export const usePreferencesStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`preferences.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`preferences.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`preferences.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`preferences.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`preferences.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`preferences.${key}`, callback),
@@ -278,9 +282,10 @@ export const useAgentStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`agents.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`agents.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`agents.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`agents.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`agents.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`agents.${key}`, callback),
@@ -292,9 +297,10 @@ export const useGovernanceStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`governance.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`governance.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`governance.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`governance.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`governance.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`governance.${key}`, callback),
@@ -306,9 +312,10 @@ export const useUIStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`ui.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`ui.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`ui.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`ui.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`ui.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`ui.${key}`, callback),
@@ -320,9 +327,10 @@ export const useCacheStorage = () => {
   const { storage } = useStorage();
   
   return {
-    get: <T>(key: string) => storage?.get<T>(`cache.${key}`),
-    set: <T>(key: string, value: T, policy?: StoragePolicy) => 
-      storage?.set(`cache.${key}`, value, policy),
+    get: function<T>(key: string) { return storage?.get<T>(`cache.${key}`); },
+    set: function<T>(key: string, value: T, policy?: StoragePolicy) { 
+      return storage?.set(`cache.${key}`, value, policy);
+    },
     delete: (key: string) => storage?.delete(`cache.${key}`),
     subscribe: (key: string, callback: (value: any) => void) => 
       storage?.subscribe(`cache.${key}`, callback),

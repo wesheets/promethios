@@ -1,7 +1,7 @@
 import { StorageProvider, StoragePolicy, StorageConfig, NamespaceConfig } from './types';
-import { LocalStorageProvider } from './LocalStorageProvider';
-import { MemoryStorageProvider } from './MemoryStorageProvider';
-import { FirebaseStorageProvider } from './FirebaseStorageProvider';
+import { LocalStorageProvider } from './storage/LocalStorageProvider';
+import { MemoryStorageProvider } from './storage/MemoryStorageProvider';
+import { FirebaseStorageProvider } from './storage/FirebaseStorageProvider';
 
 /**
  * Unified Storage Service

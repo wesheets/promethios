@@ -1,0 +1,175 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-06-21T20:30:00Z",
+  "namespaces": {
+    "user": {
+      "provider": "firebase",
+      "fallback": "localStorage",
+      "retention": "1y",
+      "encrypted": true,
+      "syncStrategy": "immediate",
+      "conflictResolution": "client-wins",
+      "gdprCategory": "essential",
+      "description": "User authentication, profile, and account data",
+      "estimatedSize": "small",
+      "criticalityLevel": "high",
+      "components": ["AuthContext", "UserProfile", "AccountSettings"]
+    },
+    "observer": {
+      "provider": "firebase",
+      "fallback": "localStorage",
+      "retention": "90d",
+      "encrypted": true,
+      "syncStrategy": "immediate",
+      "conflictResolution": "server-wins",
+      "description": "Observer Agent conversations, insights, and session data",
+      "estimatedSize": "medium",
+      "criticalityLevel": "high",
+      "components": ["ObserverAgent", "ObserverContext", "ObserverPreferences"],
+      "realtime": true
+    },
+    "notifications": {
+      "provider": "localStorage",
+      "fallback": "memory",
+      "retention": "30d",
+      "encrypted": true,
+      "syncStrategy": "batched",
+      "description": "In-app notifications and alerts",
+      "estimatedSize": "small",
+      "criticalityLevel": "medium",
+      "components": ["NotificationCenter", "NotificationService"],
+      "ttl": "30d"
+    },
+    "preferences": {
+      "provider": "localStorage",
+      "fallback": "memory",
+      "retention": "forever",
+      "encrypted": false,
+      "syncStrategy": "immediate",
+      "conflictResolution": "client-wins",
+      "gdprCategory": "functional",
+      "description": "User interface preferences and settings",
+      "estimatedSize": "tiny",
+      "criticalityLevel": "low",
+      "components": ["ThemeProvider", "LanguageSettings", "UIPreferences"]
+    },
+    "agents": {
+      "provider": "firebase",
+      "fallback": "localStorage",
+      "retention": "1y",
+      "encrypted": true,
+      "syncStrategy": "immediate",
+      "conflictResolution": "merge",
+      "description": "Agent configurations, templates, and management data",
+      "estimatedSize": "large",
+      "criticalityLevel": "high",
+      "components": ["AgentManager", "AgentTemplates", "AgentRegistry"]
+    },
+    "governance": {
+      "provider": "firebase",
+      "fallback": null,
+      "retention": "7y",
+      "encrypted": true,
+      "syncStrategy": "immediate",
+      "conflictResolution": "server-wins",
+      "gdprCategory": "legal",
+      "description": "Governance policies, violations, and compliance data",
+      "estimatedSize": "large",
+      "criticalityLevel": "critical",
+      "components": ["GovernanceEngine", "PolicyManager", "ComplianceReports"],
+      "complianceRequired": true,
+      "auditLog": true
+    },
+    "ui": {
+      "provider": "localStorage",
+      "fallback": "memory",
+      "retention": "24h",
+      "encrypted": false,
+      "syncStrategy": "never",
+      "description": "Temporary UI state and session data",
+      "estimatedSize": "small",
+      "criticalityLevel": "low",
+      "components": ["DashboardState", "NavigationState", "ModalState"],
+      "ttl": "24h",
+      "sessionOnly": true
+    },
+    "cache": {
+      "provider": "memory",
+      "fallback": "localStorage",
+      "retention": "1h",
+      "encrypted": false,
+      "syncStrategy": "never",
+      "description": "Temporary cache for API responses and computed data",
+      "estimatedSize": "medium",
+      "criticalityLevel": "low",
+      "components": ["APICache", "ComputedResults", "TempData"],
+      "ttl": "1h",
+      "volatile": true
+    }
+  },
+  "policies": {
+    "encryption": {
+      "required": ["user", "observer", "agents", "governance"],
+      "optional": ["notifications"],
+      "forbidden": ["ui", "cache", "preferences"]
+    },
+    "sync": {
+      "realtime": ["observer", "governance"],
+      "immediate": ["user", "agents", "preferences"],
+      "batched": ["notifications"],
+      "never": ["ui", "cache"]
+    },
+    "retention": {
+      "permanent": ["governance"],
+      "longTerm": ["user", "agents"],
+      "mediumTerm": ["observer"],
+      "shortTerm": ["notifications"],
+      "session": ["ui", "cache"]
+    },
+    "compliance": {
+      "gdpr": ["user", "preferences"],
+      "hipaa": [],
+      "sox": ["governance"],
+      "audit": ["governance", "user"]
+    }
+  },
+  "analytics": {
+    "growth": {
+      "fastGrowing": ["observer", "notifications"],
+      "steadyGrowth": ["user", "preferences"],
+      "stable": ["agents", "governance"],
+      "declining": ["ui", "cache"]
+    },
+    "usage": {
+      "high": ["user", "observer", "ui"],
+      "medium": ["notifications", "preferences"],
+      "low": ["agents", "governance", "cache"]
+    },
+    "performance": {
+      "critical": ["user", "observer"],
+      "important": ["notifications", "agents"],
+      "normal": ["preferences", "governance", "ui", "cache"]
+    }
+  },
+  "migration": {
+    "completed": ["notifications", "ui", "cache"],
+    "inProgress": ["observer", "preferences"],
+    "planned": ["user", "agents", "governance"],
+    "blocked": []
+  },
+  "monitoring": {
+    "alerts": {
+      "storageQuota": ["user", "agents", "governance"],
+      "syncFailures": ["observer", "governance"],
+      "encryptionErrors": ["user", "observer", "agents", "governance"],
+      "retentionViolations": ["governance"]
+    },
+    "metrics": {
+      "readLatency": ["user", "observer", "notifications"],
+      "writeLatency": ["user", "observer", "governance"],
+      "errorRate": ["all"],
+      "storageUsage": ["all"]
+    }
+  }
+}
+

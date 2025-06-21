@@ -1,5 +1,5 @@
 import { NotificationProvider, NotificationType } from '../types/notification';
-import { notificationService } from './NotificationService';
+import { NotificationService } from '../NotificationService';
 
 /**
  * Test notification provider for development and demonstration

@@ -4,13 +4,13 @@ import { Toaster } from 'react-hot-toast';
 
 // Context Providers
 import { StorageProvider } from './context/StorageContext';
-import { SimpleAuthProvider } from './context/SimpleAuthContext';
+import { AuthProvider } from './context/SimpleAuthContext';
 import { ObserverProvider } from './context/ObserverContextUnified';
 
 // Components
 import NewHeader from './components/navigation/NewHeader';
 import HeaderNavigation from './components/HeaderNavigation';
-import LandingPage from './pages/LandingPage';
+import LandingPage from './components/landing/NewLandingPage';
 import LearnPage from './pages/LearnPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import LiveDemoPage from './pages/LiveDemoPage';
@@ -19,11 +19,11 @@ import SolutionsPage from './pages/SolutionsPage';
 import AboutPage from './pages/AboutPage';
 
 // Dashboard Components
-import PrometheosGovernanceDashboard from './components/PrometheosGovernanceDashboard';
+import PrometheosGovernanceDashboard from './components/governance-demo/PrometheosGovernanceDashboard';
 import { StorageAdminDashboard } from './components/admin/StorageAdminDashboard';
 
 // Notification System
-import { NotificationCenter } from './components/notifications/NotificationCenter';
+import NotificationCenter from './components/notifications/NotificationCenter';
 
 // Styles
 import './App.css';
@@ -109,7 +109,7 @@ const AppContent: React.FC = () => {
       <StorageProvider>
         <StorageReadyChecker onReady={() => setIsStorageReady(true)}>
           {isStorageReady ? (
-            <SimpleAuthProvider>
+            <AuthProvider>
               <ObserverProvider>
                 <Router>
                   <div className="App">
@@ -161,7 +161,7 @@ const AppContent: React.FC = () => {
                   </div>
                 </Router>
               </ObserverProvider>
-            </SimpleAuthProvider>
+            </AuthProvider>
           ) : (
             <StorageLoadingScreen />
           )}
