@@ -876,13 +876,7 @@ Be helpful, concise, and focus on governance-related guidance using these real m
                     )}
                   </Box>
                 ))
-              )}}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.875rem' }}>
-                      {message.text}
-                    </Typography>
-                  </Box>
+              )}
               
               {/* Thinking Indicator */}
               {isThinking && (
