@@ -15,6 +15,7 @@ import InvestorDemoToggle from './components/common/InvestorDemoToggle';
 import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
 import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
+import LearnPage from './pages/LearnPage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
@@ -50,6 +51,9 @@ const AppContent: React.FC = () => {
                   <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
                   {/* Redirect to new dashboard implementation */}
                   <Route path="/dashboard" element={<Navigate to="/ui/onboarding" replace />} />
+                  
+                  {/* Main Navigation Pages */}
+                  <Route path="/learn" element={<LearnPage />} />
                   
                   {/* Governance Routes */}
                   <Route path="/governance" element={<GovernancePage />} />
