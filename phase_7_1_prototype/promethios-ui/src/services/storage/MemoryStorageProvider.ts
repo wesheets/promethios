@@ -1,273 +1,273 @@
-import { StorageProvider } from '../types/storage';
+import { StorageProvider, StoragePolicy } from './types';
 
 /**
- * In-memory implementation of the StorageProvider interface.
- * Useful for testing, temporary data, and fallback scenarios.
+ * In-memory implementation of the StorageProvider interface
+ * Provides fast, temporary storage that doesn't persist across sessions
+ * Ideal for development, testing, and temporary data
  */
 export class MemoryStorageProvider implements StorageProvider {
-  private storage: Map<string, {
-    data: any;
-    timestamp: number;
-    ttl?: number;
-  }> = new Map();
-  
-  private prefix: string;
-  
-  constructor(prefix: string = 'memory_') {
-    this.prefix = prefix;
+  private storage = new Map<string, any>();
+  private expirations = new Map<string, number>();
+  private subscriptions = new Map<string, Set<(value: any) => void>>();
+  private subscriptionCounter = 0;
+  private cleanupInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Start cleanup interval for expired items
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, 60000); // Clean up every minute
   }
-  
-  private getKey(key: string): string {
-    return `${this.prefix}${key}`;
-  }
-  
-  private isExpired(item: { ttl?: number }): boolean {
-    return item.ttl !== undefined && Date.now() > item.ttl;
-  }
-  
+
   async get<T>(key: string): Promise<T | null> {
     try {
-      const item = this.storage.get(this.getKey(key));
-      
-      if (!item) {
-        return null;
-      }
-      
-      if (this.isExpired(item)) {
+      // Check if item has expired
+      const expiry = this.expirations.get(key);
+      if (expiry && Date.now() > expiry) {
         await this.delete(key);
         return null;
       }
       
-      return item.data;
+      const value = this.storage.get(key);
+      return value !== undefined ? value : null;
     } catch (error) {
-      console.error(`MemoryStorageProvider.get error for key ${key}:`, error);
+      console.error(`MemoryStorageProvider: Error getting key ${key}:`, error);
       return null;
     }
   }
-  
-  async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+
+  async set<T>(key: string, value: T, policy?: StoragePolicy): Promise<boolean> {
     try {
-      const item = {
-        data: value,
-        timestamp: Date.now(),
-        ttl: ttl ? Date.now() + ttl : undefined
-      };
+      // Validate policy constraints
+      if (policy?.forbiddenProviders?.includes('memory')) {
+        throw new Error(`Policy violation: ${key} cannot be stored in memory`);
+      }
+
+      this.storage.set(key, value);
       
-      this.storage.set(this.getKey(key), item);
+      // Apply TTL if specified
+      if (policy?.ttl) {
+        this.expirations.set(key, Date.now() + policy.ttl);
+      } else {
+        this.expirations.delete(key);
+      }
+
+      // Note: Memory storage doesn't support encryption
+      if (policy?.encryption) {
+        console.warn(`MemoryStorageProvider: Encryption requested for ${key} but not supported in memory storage`);
+      }
+      
+      // Notify subscribers
+      this.notifySubscribers(key, value);
+      
       return true;
     } catch (error) {
-      console.error(`MemoryStorageProvider.set error for key ${key}:`, error);
+      console.error(`MemoryStorageProvider: Error setting key ${key}:`, error);
       return false;
     }
   }
-  
+
   async delete(key: string): Promise<boolean> {
     try {
-      return this.storage.delete(this.getKey(key));
-    } catch (error) {
-      console.error(`MemoryStorageProvider.delete error for key ${key}:`, error);
-      return false;
-    }
-  }
-  
-  async clear(): Promise<boolean> {
-    try {
-      const keys = Array.from(this.storage.keys())
-        .filter(key => key.startsWith(this.prefix));
+      const existed = this.storage.has(key);
+      this.storage.delete(key);
+      this.expirations.delete(key);
       
-      for (const key of keys) {
-        this.storage.delete(key);
+      if (existed) {
+        this.notifySubscribers(key, null);
       }
       
       return true;
     } catch (error) {
-      console.error('MemoryStorageProvider.clear error:', error);
+      console.error(`MemoryStorageProvider: Error deleting key ${key}:`, error);
       return false;
     }
   }
-  
-  async keys(): Promise<string[]> {
+
+  async clear(): Promise<boolean> {
     try {
-      return Array.from(this.storage.keys())
-        .filter(key => key.startsWith(this.prefix))
-        .map(key => key.replace(this.prefix, ''));
+      // Notify all subscribers before clearing
+      this.storage.forEach((value, key) => {
+        this.notifySubscribers(key, null);
+      });
+      
+      this.storage.clear();
+      this.expirations.clear();
+      
+      return true;
     } catch (error) {
-      console.error('MemoryStorageProvider.keys error:', error);
-      return [];
-    }
-  }
-  
-  async has(key: string): Promise<boolean> {
-    try {
-      const item = this.storage.get(this.getKey(key));
-      return item !== undefined && !this.isExpired(item);
-    } catch (error) {
-      console.error(`MemoryStorageProvider.has error for key ${key}:`, error);
+      console.error('MemoryStorageProvider: Error clearing storage:', error);
       return false;
     }
   }
-  
-  async size(): Promise<number> {
-    try {
-      const keys = await this.keys();
-      return keys.length;
-    } catch (error) {
-      console.error('MemoryStorageProvider.size error:', error);
-      return 0;
-    }
-  }
-  
-  // Cleanup expired items
-  async cleanup(): Promise<number> {
-    let cleaned = 0;
+
+  subscribe(key: string, callback: (value: any) => void): string {
+    const subscriptionId = `memory_${this.subscriptionCounter++}`;
     
-    try {
-      for (const [key, item] of this.storage.entries()) {
-        if (this.isExpired(item)) {
-          this.storage.delete(key);
-          cleaned++;
-        }
-      }
-    } catch (error) {
-      console.error('MemoryStorageProvider.cleanup error:', error);
+    if (!this.subscriptions.has(key)) {
+      this.subscriptions.set(key, new Set());
     }
     
-    return cleaned;
+    this.subscriptions.get(key)!.add(callback);
+    
+    // Store subscription ID for cleanup
+    (callback as any).__subscriptionId = subscriptionId;
+    
+    return subscriptionId;
   }
-  
-  // Admin panel integration methods
-  async getProviderStatus(): Promise<{
-    name: string;
-    available: boolean;
-    healthy: boolean;
-    lastError?: string;
-    metrics: {
-      totalKeys: number;
-      storageUsed: number;
-      storageAvailable: number;
-    };
-  }> {
-    try {
-      const keys = await this.keys();
-      
-      // Estimate memory usage
-      let storageUsed = 0;
-      for (const [key, item] of this.storage.entries()) {
-        if (key.startsWith(this.prefix)) {
-          storageUsed += JSON.stringify(item).length + key.length;
+
+  unsubscribe(subscriptionId: string): void {
+    this.subscriptions.forEach((callbacks, key) => {
+      callbacks.forEach(callback => {
+        if ((callback as any).__subscriptionId === subscriptionId) {
+          callbacks.delete(callback);
         }
+      });
+      
+      // Clean up empty subscription sets
+      if (callbacks.size === 0) {
+        this.subscriptions.delete(key);
       }
-      
-      // Memory storage is virtually unlimited but let's set a reasonable limit
-      const storageLimit = 100 * 1024 * 1024; // 100MB
-      
-      return {
-        name: 'memory',
-        available: true,
-        healthy: true,
-        metrics: {
-          totalKeys: keys.length,
-          storageUsed,
-          storageAvailable: storageLimit - storageUsed
-        }
-      };
-    } catch (error) {
-      return {
-        name: 'memory',
-        available: false,
-        healthy: false,
-        lastError: error instanceof Error ? error.message : 'Unknown error',
-        metrics: {
-          totalKeys: 0,
-          storageUsed: 0,
-          storageAvailable: 0
-        }
-      };
-    }
+    });
   }
-  
-  async getNamespaceInfo(): Promise<Array<{
-    namespace: string;
-    keyCount: number;
-    estimatedSize: number;
-    lastAccessed?: number;
-  }>> {
-    try {
-      const keys = await this.keys();
-      const namespaces = new Map<string, {
-        keyCount: number;
-        estimatedSize: number;
-        lastAccessed?: number;
-      }>();
-      
-      for (const key of keys) {
-        const namespace = key.split('.')[0];
-        const item = this.storage.get(this.getKey(key));
-        
-        if (!item) continue;
-        
-        const size = JSON.stringify(item).length;
-        
-        if (!namespaces.has(namespace)) {
-          namespaces.set(namespace, {
-            keyCount: 0,
-            estimatedSize: 0
-          });
-        }
-        
-        const nsInfo = namespaces.get(namespace)!;
-        nsInfo.keyCount++;
-        nsInfo.estimatedSize += size;
-        nsInfo.lastAccessed = Math.max(nsInfo.lastAccessed || 0, item.timestamp);
-      }
-      
-      return Array.from(namespaces.entries()).map(([namespace, info]) => ({
-        namespace,
-        ...info
-      }));
-    } catch (error) {
-      console.error('MemoryStorageProvider.getNamespaceInfo error:', error);
-      return [];
-    }
-  }
-  
-  // Development/testing utilities
-  async dump(): Promise<Record<string, any>> {
+
+  async getNamespace(namespace: string): Promise<Record<string, any>> {
     const result: Record<string, any> = {};
+    const prefix = `${namespace}.`;
     
-    for (const [key, item] of this.storage.entries()) {
-      if (key.startsWith(this.prefix)) {
-        const cleanKey = key.replace(this.prefix, '');
-        result[cleanKey] = {
-          data: item.data,
-          timestamp: item.timestamp,
-          ttl: item.ttl,
-          expired: this.isExpired(item)
-        };
-      }
+    try {
+      this.storage.forEach((value, key) => {
+        if (key.startsWith(prefix)) {
+          // Check if item has expired
+          const expiry = this.expirations.get(key);
+          if (!expiry || Date.now() <= expiry) {
+            // Remove namespace prefix from key
+            const shortKey = key.substring(prefix.length);
+            result[shortKey] = value;
+          }
+        }
+      });
+    } catch (error) {
+      console.error(`MemoryStorageProvider: Error getting namespace ${namespace}:`, error);
     }
     
     return result;
   }
-  
-  async load(data: Record<string, any>): Promise<boolean> {
+
+  async clearNamespace(namespace: string): Promise<boolean> {
+    const prefix = `${namespace}.`;
+    const keysToDelete: string[] = [];
+    
     try {
-      for (const [key, value] of Object.entries(data)) {
-        if (value && typeof value === 'object' && 'data' in value) {
-          this.storage.set(this.getKey(key), {
-            data: value.data,
-            timestamp: value.timestamp || Date.now(),
-            ttl: value.ttl
-          });
-        } else {
-          await this.set(key, value);
+      // Collect keys to delete
+      this.storage.forEach((value, key) => {
+        if (key.startsWith(prefix)) {
+          keysToDelete.push(key);
         }
-      }
+      });
+      
+      // Delete collected keys
+      keysToDelete.forEach(key => {
+        this.storage.delete(key);
+        this.expirations.delete(key);
+        this.notifySubscribers(key, null);
+      });
+      
       return true;
     } catch (error) {
-      console.error('MemoryStorageProvider.load error:', error);
+      console.error(`MemoryStorageProvider: Error clearing namespace ${namespace}:`, error);
       return false;
     }
+  }
+
+  async getStorageInfo(): Promise<{
+    provider: string;
+    available: boolean;
+    usage?: number;
+    quota?: number;
+  }> {
+    try {
+      // Calculate approximate memory usage
+      let usage = 0;
+      this.storage.forEach((value, key) => {
+        // Rough estimation of memory usage
+        usage += key.length * 2; // UTF-16 characters
+        usage += JSON.stringify(value).length * 2;
+      });
+
+      return {
+        provider: 'memory',
+        available: true,
+        usage,
+        quota: undefined // No hard quota for memory storage
+      };
+    } catch (error) {
+      return {
+        provider: 'memory',
+        available: false
+      };
+    }
+  }
+
+  private notifySubscribers(key: string, value: any): void {
+    const callbacks = this.subscriptions.get(key);
+    if (callbacks) {
+      callbacks.forEach(callback => {
+        try {
+          callback(value);
+        } catch (error) {
+          console.error(`MemoryStorageProvider: Error in subscription callback for ${key}:`, error);
+        }
+      });
+    }
+  }
+
+  // Cleanup expired items
+  async cleanup(): Promise<void> {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+    
+    try {
+      this.expirations.forEach((expiry, key) => {
+        if (now > expiry) {
+          keysToDelete.push(key);
+        }
+      });
+      
+      keysToDelete.forEach(key => {
+        this.storage.delete(key);
+        this.expirations.delete(key);
+        this.notifySubscribers(key, null);
+      });
+      
+      if (keysToDelete.length > 0) {
+        console.log(`MemoryStorageProvider: Cleaned up ${keysToDelete.length} expired items`);
+      }
+    } catch (error) {
+      console.error('MemoryStorageProvider: Error during cleanup:', error);
+    }
+  }
+
+  // Get all keys (useful for debugging)
+  getAllKeys(): string[] {
+    return Array.from(this.storage.keys());
+  }
+
+  // Get storage size
+  getSize(): number {
+    return this.storage.size;
+  }
+
+  // Destroy the provider and clean up resources
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    
+    this.storage.clear();
+    this.expirations.clear();
+    this.subscriptions.clear();
   }
 }
 

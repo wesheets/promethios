@@ -1,227 +1,251 @@
-import { StorageProvider } from '../types/storage';
+import { StorageProvider, StoragePolicy } from './types';
 
 /**
- * LocalStorage implementation of the StorageProvider interface.
- * Provides synchronous localStorage access with async interface compatibility.
+ * LocalStorage implementation of the StorageProvider interface
+ * Provides browser localStorage persistence with policy enforcement
  */
 export class LocalStorageProvider implements StorageProvider {
-  private prefix: string;
-  
-  constructor(prefix: string = 'promethios_') {
-    this.prefix = prefix;
-  }
-  
-  private getKey(key: string): string {
-    return `${this.prefix}${key}`;
-  }
-  
+  private subscriptions = new Map<string, Set<(value: any) => void>>();
+  private subscriptionCounter = 0;
+
   async get<T>(key: string): Promise<T | null> {
     try {
-      const item = localStorage.getItem(this.getKey(key));
-      if (item === null) {
-        return null;
-      }
+      const item = localStorage.getItem(key);
+      if (item === null) return null;
       
       const parsed = JSON.parse(item);
       
-      // Check for TTL expiration
-      if (parsed._ttl && Date.now() > parsed._ttl) {
+      // Check if item has expired
+      if (parsed.expiry && Date.now() > parsed.expiry) {
         await this.delete(key);
         return null;
       }
       
-      return parsed._data !== undefined ? parsed._data : parsed;
+      return parsed.value;
     } catch (error) {
-      console.error(`LocalStorageProvider.get error for key ${key}:`, error);
+      console.error(`LocalStorageProvider: Error getting key ${key}:`, error);
       return null;
     }
   }
-  
-  async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+
+  async set<T>(key: string, value: T, policy?: StoragePolicy): Promise<boolean> {
     try {
-      const data = {
-        _data: value,
-        _timestamp: Date.now(),
-        _ttl: ttl ? Date.now() + ttl : undefined
-      };
+      // Validate policy constraints
+      if (policy?.forbiddenProviders?.includes('localStorage')) {
+        throw new Error(`Policy violation: ${key} cannot be stored in localStorage`);
+      }
+
+      // Prepare storage object
+      const storageObject: any = { value };
       
-      localStorage.setItem(this.getKey(key), JSON.stringify(data));
+      // Apply TTL if specified
+      if (policy?.ttl) {
+        storageObject.expiry = Date.now() + policy.ttl;
+      }
+
+      // Apply encryption if required (basic implementation)
+      if (policy?.encryption) {
+        console.warn(`LocalStorageProvider: Encryption requested for ${key} but not implemented`);
+        // TODO: Implement encryption for sensitive data
+      }
+
+      localStorage.setItem(key, JSON.stringify(storageObject));
+      
+      // Notify subscribers
+      this.notifySubscribers(key, value);
+      
       return true;
     } catch (error) {
-      console.error(`LocalStorageProvider.set error for key ${key}:`, error);
+      console.error(`LocalStorageProvider: Error setting key ${key}:`, error);
       return false;
     }
   }
-  
+
   async delete(key: string): Promise<boolean> {
     try {
-      localStorage.removeItem(this.getKey(key));
+      localStorage.removeItem(key);
+      this.notifySubscribers(key, null);
       return true;
     } catch (error) {
-      console.error(`LocalStorageProvider.delete error for key ${key}:`, error);
+      console.error(`LocalStorageProvider: Error deleting key ${key}:`, error);
       return false;
     }
   }
-  
+
   async clear(): Promise<boolean> {
     try {
-      const keys = await this.keys();
-      for (const key of keys) {
-        await this.delete(key.replace(this.prefix, ''));
-      }
+      localStorage.clear();
+      // Notify all subscribers
+      this.subscriptions.forEach((callbacks, key) => {
+        callbacks.forEach(callback => callback(null));
+      });
       return true;
     } catch (error) {
-      console.error('LocalStorageProvider.clear error:', error);
+      console.error('LocalStorageProvider: Error clearing storage:', error);
       return false;
     }
   }
-  
-  async keys(): Promise<string[]> {
-    try {
-      const allKeys = Object.keys(localStorage);
-      return allKeys
-        .filter(key => key.startsWith(this.prefix))
-        .map(key => key.replace(this.prefix, ''));
-    } catch (error) {
-      console.error('LocalStorageProvider.keys error:', error);
-      return [];
+
+  subscribe(key: string, callback: (value: any) => void): string {
+    const subscriptionId = `localStorage_${this.subscriptionCounter++}`;
+    
+    if (!this.subscriptions.has(key)) {
+      this.subscriptions.set(key, new Set());
     }
+    
+    this.subscriptions.get(key)!.add(callback);
+    
+    // Store subscription ID for cleanup
+    (callback as any).__subscriptionId = subscriptionId;
+    
+    return subscriptionId;
   }
-  
-  async has(key: string): Promise<boolean> {
-    try {
-      return localStorage.getItem(this.getKey(key)) !== null;
-    } catch (error) {
-      console.error(`LocalStorageProvider.has error for key ${key}:`, error);
-      return false;
-    }
-  }
-  
-  async size(): Promise<number> {
-    try {
-      const keys = await this.keys();
-      return keys.length;
-    } catch (error) {
-      console.error('LocalStorageProvider.size error:', error);
-      return 0;
-    }
-  }
-  
-  async getStorageInfo(): Promise<{
-    used: number;
-    available: number;
-    total: number;
-  }> {
-    try {
-      // Estimate localStorage usage
-      let used = 0;
-      for (let key in localStorage) {
-        if (key.startsWith(this.prefix)) {
-          used += localStorage[key].length + key.length;
+
+  unsubscribe(subscriptionId: string): void {
+    this.subscriptions.forEach((callbacks, key) => {
+      callbacks.forEach(callback => {
+        if ((callback as any).__subscriptionId === subscriptionId) {
+          callbacks.delete(callback);
         }
+      });
+      
+      // Clean up empty subscription sets
+      if (callbacks.size === 0) {
+        this.subscriptions.delete(key);
       }
-      
-      // localStorage typically has 5-10MB limit
-      const total = 10 * 1024 * 1024; // 10MB estimate
-      const available = total - used;
-      
-      return { used, available, total };
-    } catch (error) {
-      console.error('LocalStorageProvider.getStorageInfo error:', error);
-      return { used: 0, available: 0, total: 0 };
-    }
+    });
   }
-  
-  // Admin panel integration methods
-  async getProviderStatus(): Promise<{
-    name: string;
-    available: boolean;
-    healthy: boolean;
-    lastError?: string;
-    metrics: {
-      totalKeys: number;
-      storageUsed: number;
-      storageAvailable: number;
-    };
-  }> {
+
+  async getNamespace(namespace: string): Promise<Record<string, any>> {
+    const result: Record<string, any> = {};
+    const prefix = `${namespace}.`;
+    
     try {
-      const isAvailable = typeof Storage !== 'undefined' && localStorage;
-      const keys = await this.keys();
-      const storageInfo = await this.getStorageInfo();
-      
-      return {
-        name: 'localStorage',
-        available: isAvailable,
-        healthy: isAvailable && storageInfo.available > 0,
-        metrics: {
-          totalKeys: keys.length,
-          storageUsed: storageInfo.used,
-          storageAvailable: storageInfo.available
-        }
-      };
-    } catch (error) {
-      return {
-        name: 'localStorage',
-        available: false,
-        healthy: false,
-        lastError: error instanceof Error ? error.message : 'Unknown error',
-        metrics: {
-          totalKeys: 0,
-          storageUsed: 0,
-          storageAvailable: 0
-        }
-      };
-    }
-  }
-  
-  async getNamespaceInfo(): Promise<Array<{
-    namespace: string;
-    keyCount: number;
-    estimatedSize: number;
-    lastAccessed?: number;
-  }>> {
-    try {
-      const keys = await this.keys();
-      const namespaces = new Map<string, {
-        keyCount: number;
-        estimatedSize: number;
-        lastAccessed?: number;
-      }>();
-      
-      for (const key of keys) {
-        const namespace = key.split('.')[0];
-        const item = localStorage.getItem(this.getKey(key));
-        const size = item ? item.length : 0;
-        
-        if (!namespaces.has(namespace)) {
-          namespaces.set(namespace, {
-            keyCount: 0,
-            estimatedSize: 0
-          });
-        }
-        
-        const nsInfo = namespaces.get(namespace)!;
-        nsInfo.keyCount++;
-        nsInfo.estimatedSize += size;
-        
-        // Try to get timestamp from stored data
-        try {
-          const parsed = JSON.parse(item || '{}');
-          if (parsed._timestamp) {
-            nsInfo.lastAccessed = Math.max(nsInfo.lastAccessed || 0, parsed._timestamp);
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          const value = await this.get(key);
+          if (value !== null) {
+            // Remove namespace prefix from key
+            const shortKey = key.substring(prefix.length);
+            result[shortKey] = value;
           }
-        } catch {
-          // Ignore parsing errors
+        }
+      }
+    } catch (error) {
+      console.error(`LocalStorageProvider: Error getting namespace ${namespace}:`, error);
+    }
+    
+    return result;
+  }
+
+  async clearNamespace(namespace: string): Promise<boolean> {
+    const prefix = `${namespace}.`;
+    const keysToDelete: string[] = [];
+    
+    try {
+      // Collect keys to delete
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          keysToDelete.push(key);
         }
       }
       
-      return Array.from(namespaces.entries()).map(([namespace, info]) => ({
-        namespace,
-        ...info
-      }));
+      // Delete collected keys
+      keysToDelete.forEach(key => {
+        localStorage.removeItem(key);
+        this.notifySubscribers(key, null);
+      });
+      
+      return true;
     } catch (error) {
-      console.error('LocalStorageProvider.getNamespaceInfo error:', error);
-      return [];
+      console.error(`LocalStorageProvider: Error clearing namespace ${namespace}:`, error);
+      return false;
+    }
+  }
+
+  async getStorageInfo(): Promise<{
+    provider: string;
+    available: boolean;
+    usage?: number;
+    quota?: number;
+  }> {
+    try {
+      // Calculate storage usage
+      let usage = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            usage += key.length + value.length;
+          }
+        }
+      }
+
+      // Estimate quota (localStorage typically 5-10MB)
+      const quota = 5 * 1024 * 1024; // 5MB estimate
+
+      return {
+        provider: 'localStorage',
+        available: true,
+        usage,
+        quota
+      };
+    } catch (error) {
+      return {
+        provider: 'localStorage',
+        available: false
+      };
+    }
+  }
+
+  private notifySubscribers(key: string, value: any): void {
+    const callbacks = this.subscriptions.get(key);
+    if (callbacks) {
+      callbacks.forEach(callback => {
+        try {
+          callback(value);
+        } catch (error) {
+          console.error(`LocalStorageProvider: Error in subscription callback for ${key}:`, error);
+        }
+      });
+    }
+  }
+
+  // Cleanup expired items
+  async cleanup(): Promise<void> {
+    const keysToDelete: string[] = [];
+    
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const item = localStorage.getItem(key);
+          if (item) {
+            try {
+              const parsed = JSON.parse(item);
+              if (parsed.expiry && Date.now() > parsed.expiry) {
+                keysToDelete.push(key);
+              }
+            } catch {
+              // Skip non-JSON items
+            }
+          }
+        }
+      }
+      
+      keysToDelete.forEach(key => {
+        localStorage.removeItem(key);
+        this.notifySubscribers(key, null);
+      });
+      
+      if (keysToDelete.length > 0) {
+        console.log(`LocalStorageProvider: Cleaned up ${keysToDelete.length} expired items`);
+      }
+    } catch (error) {
+      console.error('LocalStorageProvider: Error during cleanup:', error);
     }
   }
 }

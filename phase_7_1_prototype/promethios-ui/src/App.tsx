@@ -1,126 +1,227 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/SimpleAuthContext';
+import { Toaster } from 'react-hot-toast';
+
+// Context Providers
+import { StorageProvider } from './context/StorageContext';
+import { SimpleAuthProvider } from './context/SimpleAuthContext';
+import { ObserverProvider } from './context/ObserverContextUnified';
+
+// Components
 import NewHeader from './components/navigation/NewHeader';
-import Footer from './components/layout/Footer';
-import NewLandingPage from './components/landing/NewLandingPage';
-import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
-import EmailVerification from './components/auth/EmailVerification';
-import OnboardingFlow from './components/auth/OnboardingFlow';
-import CMUBenchmarkDashboard from './components/benchmark/CMUBenchmarkDashboard';
-import FeedbackWidget from './components/common/FeedbackWidget';
-import AnalyticsProvider from './components/common/AnalyticsProvider';
-import InvestorDemoToggle from './components/common/InvestorDemoToggle';
-import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
-import AboutPage from './pages/AboutPage';
-import HowItWorksPage from './pages/HowItWorksPage';
+import HeaderNavigation from './components/HeaderNavigation';
+import LandingPage from './pages/LandingPage';
 import LearnPage from './pages/LearnPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import LiveDemoPage from './pages/LiveDemoPage';
-import MockDashboardPage from './pages/MockDashboardPage';
-import SolutionsPage from './pages/SolutionsPage';
 import ApiDocsPage from './pages/ApiDocsPage';
-import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
-import PrometheosGovernanceDashboard from './components/governance-demo/PrometheosGovernanceDashboard';
-import DashboardPage from './pages/DashboardPage';
-import GovernancePage from './pages/GovernancePage';
-import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
-import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
-import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
-import GovernanceReportsPage from './pages/GovernanceReportsPage';
-import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
-import DocumentationPage from './pages/DocumentationPage';
-import AtlasDemoPage from './pages/AtlasDemoPage';
-import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
-import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
-import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
-import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
-import UIIntegration from './UIIntegration';
+import SolutionsPage from './pages/SolutionsPage';
+import AboutPage from './pages/AboutPage';
 
-// Create a wrapper component to use the useLocation hook
-const AppContent: React.FC = () => {
+// Dashboard Components
+import PrometheosGovernanceDashboard from './components/PrometheosGovernanceDashboard';
+import { StorageAdminDashboard } from './components/admin/StorageAdminDashboard';
+
+// Notification System
+import { NotificationCenter } from './components/notifications/NotificationCenter';
+
+// Styles
+import './App.css';
+
+// Route wrapper to handle header switching
+const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const isUIRoute = location.pathname.startsWith('/ui/');
+  const isDashboard = location.pathname.startsWith('/dashboard');
   
   return (
-    <div className="min-h-screen flex flex-col dark:bg-gray-900">
-      {/* Only show NewHeader for non-UI routes */}
-      {!isUIRoute && <NewHeader />}
-      <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
-                <Routes>
-                  <Route path="/" element={<NewLandingPage />} />
-                  <Route path="/signup" element={<LoginWaitlistPage />} />
-                  <Route path="/waitlist" element={<LoginWaitlistPage />} />
-                  <Route path="/login" element={<LoginWaitlistPage />} />
-                  <Route path="/verify-email" element={<EmailVerification />} />
-                             {/* Redirect legacy routes */}
-                  <Route path="/onboarding" element={<Navigate to="/ui/onboarding" replace />} />
-                  
-                  {/* Main Navigation Pages */}
-                  <Route path="/learn" element={<LearnPage />} />
-                  <Route path="/templates" element={<TemplateLibraryPage />} />
-                  <Route path="/live-demo" element={<LiveDemoPage />} />
-                  <Route path="/dashboard" element={<MockDashboardPage />} />
-                  <Route path="/solutions" element={<SolutionsPage />} />
-                  <Route path="/api-docs" element={<ApiDocsPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/template-library" element={<TemplateLibraryPage />} />
-                  
-                  {/* Governance Routes */}
-                  <Route path="/governance" element={<GovernancePage />} />
-                  <Route path="/governance/overview" element={<GovernanceOverviewPage />} />
-                  <Route path="/governance/policies" element={<GovernancePoliciesPage />} />
-                  <Route path="/governance/violations" element={<GovernanceViolationsPage />} />
-                  <Route path="/governance/reports" element={<GovernanceReportsPage />} />
-                  <Route path="/governance/emotional-veritas" element={<EmotionalVeritasPage />} />
-                  
-                  <Route path="/documentation" element={<DocumentationPage />} />
-                  <Route path="/demo" element={
-                    <>
-                      <InvestorDemoToggle />
-                      <PrometheosGovernanceDashboard />
-                    </>
-                  } />
-                  <Route path="/governance-demo" element={<PrometheosGovernancePage />} />
-                  <Route path="/live-demo" element={<PrometheosGovernancePage />} />
-                  {/* Legacy redirects */}
-                  <Route path="/benchmark" element={<Navigate to="/demo" replace />} />
-                  <Route path="/cmu-benchmark" element={<Navigate to="/demo" replace />} />
-                  <Route path="/multi-agent-wrapping" element={<MultiAgentWrappingPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/how-it-works" element={<HowItWorksPage />} />
-                  <Route path="/atlas-demo" element={<AtlasDemoPage />} />
-                  <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
-                  <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
-                  <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
-                  
-                  {/* UI Integration Routes */}
-                  <Route path="/ui/*" element={<UIIntegration />} />
-                  
-                  {/* Catch-all route */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-      </div>
-      {/* Only show Footer for non-UI routes */}
-      {!isUIRoute && <Footer />}
-      <FeedbackWidget />
-    </div>
+    <>
+      {isDashboard ? <HeaderNavigation /> : <NewHeader />}
+      {children}
+      <NotificationCenter />
+    </>
   );
 };
 
-const App: React.FC = () => {
+// Loading component for storage hydration
+const StorageLoadingScreen: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <h2 className="text-xl font-semibold text-gray-900 mb-2">Initializing Promethios</h2>
+      <p className="text-gray-600">Setting up unified storage system...</p>
+    </div>
+  </div>
+);
+
+// Error boundary for storage errors
+class StorageErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Storage system error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto p-6">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Storage System Error</h2>
+            <p className="text-gray-600 mb-4">
+              There was an error initializing the storage system. The application will continue with limited functionality.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Main App component with storage integration
+const AppContent: React.FC = () => {
+  const [isStorageReady, setIsStorageReady] = useState(false);
+
   return (
-    <AnalyticsProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </AuthProvider>
-      </ThemeProvider>
-    </AnalyticsProvider>
+    <StorageErrorBoundary>
+      <StorageProvider>
+        <StorageReadyChecker onReady={() => setIsStorageReady(true)}>
+          {isStorageReady ? (
+            <SimpleAuthProvider>
+              <ObserverProvider>
+                <Router>
+                  <div className="App">
+                    <RouteWrapper>
+                      <Routes>
+                        {/* Public Routes */}
+                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/learn" element={<LearnPage />} />
+                        <Route path="/templates" element={<TemplateLibraryPage />} />
+                        <Route path="/demo" element={<LiveDemoPage />} />
+                        <Route path="/api" element={<ApiDocsPage />} />
+                        <Route path="/solutions" element={<SolutionsPage />} />
+                        <Route path="/about" element={<AboutPage />} />
+                        
+                        {/* Dashboard Routes */}
+                        <Route path="/dashboard" element={<PrometheosGovernanceDashboard />} />
+                        <Route path="/dashboard/storage" element={<StorageAdminDashboard />} />
+                        
+                        {/* Redirect unknown routes to home */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </RouteWrapper>
+                    
+                    {/* Global Toast Notifications */}
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          background: '#363636',
+                          color: '#fff',
+                        },
+                        success: {
+                          duration: 3000,
+                          iconTheme: {
+                            primary: '#4ade80',
+                            secondary: '#fff',
+                          },
+                        },
+                        error: {
+                          duration: 5000,
+                          iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#fff',
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </Router>
+              </ObserverProvider>
+            </SimpleAuthProvider>
+          ) : (
+            <StorageLoadingScreen />
+          )}
+        </StorageReadyChecker>
+      </StorageProvider>
+    </StorageErrorBoundary>
   );
+};
+
+// Component to check storage readiness
+const StorageReadyChecker: React.FC<{
+  children: React.ReactNode;
+  onReady: () => void;
+}> = ({ children, onReady }) => {
+  const [checkCount, setCheckCount] = useState(0);
+  const maxChecks = 30; // 3 seconds max wait time
+
+  useEffect(() => {
+    const checkStorage = () => {
+      // Check if storage context is available
+      try {
+        const storageContext = document.querySelector('[data-storage-ready]');
+        if (storageContext || checkCount >= maxChecks) {
+          onReady();
+          return;
+        }
+      } catch (error) {
+        console.warn('Storage readiness check failed:', error);
+      }
+
+      if (checkCount < maxChecks) {
+        setTimeout(() => setCheckCount(prev => prev + 1), 100);
+      } else {
+        // Proceed anyway after timeout
+        console.warn('Storage readiness timeout, proceeding with initialization');
+        onReady();
+      }
+    };
+
+    checkStorage();
+  }, [checkCount, onReady]);
+
+  // Add data attribute when storage is being checked
+  useEffect(() => {
+    const element = document.createElement('div');
+    element.setAttribute('data-storage-ready', 'true');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    return () => {
+      document.body.removeChild(element);
+    };
+  }, []);
+
+  return <>{children}</>;
+};
+
+// Main App component
+const App: React.FC = () => {
+  return <AppContent />;
 };
 
 export default App;

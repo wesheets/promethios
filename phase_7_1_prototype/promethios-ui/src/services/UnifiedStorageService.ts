@@ -1,534 +1,343 @@
-import { StorageProvider } from '../types/storage';
+import { StorageProvider, StoragePolicy, StorageConfig, NamespaceConfig } from './types';
 import { LocalStorageProvider } from './LocalStorageProvider';
 import { MemoryStorageProvider } from './MemoryStorageProvider';
 import { FirebaseStorageProvider } from './FirebaseStorageProvider';
 
-export interface StoragePolicy {
-  ttl?: number;
-  allowedProviders?: string[];
-  forbiddenProviders?: string[];
-  encryption?: string;
-  syncStrategy?: 'immediate' | 'batched' | 'never';
-  conflictResolution?: 'client-wins' | 'server-wins' | 'merge';
-  pii?: boolean;
-  gdprCategory?: string;
-  retentionPeriod?: number;
-}
-
-export interface StorageMetrics {
-  totalKeys: number;
-  storageUsed: number;
-  storageAvailable: number;
-  lastAccessed?: number;
-}
-
-export interface ProviderStatus {
-  name: string;
-  available: boolean;
-  healthy: boolean;
-  lastError?: string;
-  metrics: StorageMetrics;
-}
-
-export interface NamespaceInfo {
-  namespace: string;
-  keyCount: number;
-  estimatedSize: number;
-  lastAccessed?: number;
-}
-
 /**
- * Unified Storage Service for React applications.
- * Provides a single interface for all storage needs with automatic provider selection,
- * fallback handling, and admin monitoring capabilities.
+ * Unified Storage Service
+ * Central service that manages multiple storage providers and routes data
+ * based on namespace configurations and policies
  */
 export class UnifiedStorageService {
-  private providers: Map<string, StorageProvider> = new Map();
-  private policies: Map<string, StoragePolicy> = new Map();
-  private subscribers: Map<string, Set<(value: any) => void>> = new Map();
-  private isInitialized: boolean = false;
-  
-  constructor() {
-    this.initializeDefaultPolicies();
+  private providers = new Map<string, StorageProvider>();
+  private namespaceConfigs = new Map<string, NamespaceConfig>();
+  private defaultProvider: string = 'localStorage';
+  private hydrationState = new Map<string, 'pending' | 'complete' | 'error'>();
+  private hydrationPromises = new Map<string, Promise<void>>();
+
+  constructor(config: StorageConfig) {
+    this.initializeProviders(config);
+    this.setupNamespaceConfigs(config.namespaces || {});
+    this.defaultProvider = config.defaultProvider || 'localStorage';
   }
-  
-  private initializeDefaultPolicies(): void {
-    // Observer Agent data - Critical for session persistence
-    this.policies.set('observer.*', {
-      allowedProviders: ['localStorage', 'firebase'],
-      syncStrategy: 'immediate',
-      conflictResolution: 'server-wins', // Server has latest AI state
-      retentionPeriod: 90 * 24 * 60 * 60 * 1000 // 90 days
-    });
-    
-    // User authentication data - Firebase only, encrypted
-    this.policies.set('user.auth.*', {
-      allowedProviders: ['firebase'],
-      encryption: 'both',
-      syncStrategy: 'immediate',
-      gdprCategory: 'essential',
-      retentionPeriod: 365 * 24 * 60 * 60 * 1000 // 1 year
-    });
-    
-    // User preferences - Immediate sync, client wins
-    this.policies.set('user.preferences.*', {
-      allowedProviders: ['localStorage', 'firebase'],
-      syncStrategy: 'immediate',
-      conflictResolution: 'client-wins',
-      gdprCategory: 'functional'
-    });
-    
-    // UI state - Local only, no sync needed
-    this.policies.set('ui.*', {
-      allowedProviders: ['localStorage', 'memory'],
-      forbiddenProviders: ['firebase'],
-      syncStrategy: 'never'
-    });
-    
-    // Notifications - Batched sync, encrypted at rest
-    this.policies.set('notifications.*', {
-      allowedProviders: ['localStorage', 'firebase'],
-      ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
-      syncStrategy: 'batched',
-      encryption: 'at-rest'
-    });
-    
-    // Agent configurations - Immediate sync with merge
-    this.policies.set('agents.*', {
-      allowedProviders: ['localStorage', 'firebase'],
-      syncStrategy: 'immediate',
-      conflictResolution: 'merge',
-      retentionPeriod: 180 * 24 * 60 * 60 * 1000 // 6 months
-    });
-    
-    // Governance data - Firebase only, encrypted, long retention
-    this.policies.set('governance.*', {
-      allowedProviders: ['firebase'],
-      forbiddenProviders: ['localStorage'],
-      encryption: 'both',
-      syncStrategy: 'immediate',
-      retentionPeriod: 7 * 365 * 24 * 60 * 60 * 1000 // 7 years (compliance)
-    });
-    
-    // Trust metrics - Firebase preferred, encrypted
-    this.policies.set('trust.*', {
-      allowedProviders: ['firebase', 'localStorage'],
-      encryption: 'at-rest',
-      syncStrategy: 'immediate',
-      retentionPeriod: 365 * 24 * 60 * 60 * 1000 // 1 year
-    });
-    
-    // Cache data - Local only, short TTL
-    this.policies.set('cache.*', {
-      allowedProviders: ['memory', 'localStorage'],
-      forbiddenProviders: ['firebase'],
-      ttl: 60 * 60 * 1000, // 1 hour
-      syncStrategy: 'never'
+
+  private initializeProviders(config: StorageConfig): void {
+    // Always initialize localStorage and memory providers
+    this.providers.set('localStorage', new LocalStorageProvider());
+    this.providers.set('memory', new MemoryStorageProvider());
+
+    // Initialize Firebase provider with localStorage fallback
+    if (config.providers?.firebase?.enabled !== false) {
+      const fallbackProvider = this.providers.get('localStorage');
+      this.providers.set('firebase', new FirebaseStorageProvider(fallbackProvider));
+    }
+
+    console.log(`UnifiedStorageService: Initialized ${this.providers.size} storage providers`);
+  }
+
+  private setupNamespaceConfigs(namespaces: Record<string, NamespaceConfig>): void {
+    Object.entries(namespaces).forEach(([namespace, config]) => {
+      this.namespaceConfigs.set(namespace, config);
     });
   }
-  
-  async initialize(): Promise<boolean> {
-    try {
-      // Initialize default providers
-      this.providers.set('localStorage', new LocalStorageProvider());
-      this.providers.set('memory', new MemoryStorageProvider());
-      this.providers.set('firebase', new FirebaseStorageProvider());
-      
-      this.isInitialized = true;
-      return true;
-    } catch (error) {
-      console.error('UnifiedStorageService initialization error:', error);
-      return false;
-    }
-  }
-  
-  registerProvider(name: string, provider: StorageProvider): boolean {
-    try {
-      this.providers.set(name, provider);
-      return true;
-    } catch (error) {
-      console.error(`Error registering provider ${name}:`, error);
-      return false;
-    }
-  }
-  
-  private getPolicyForKey(key: string): StoragePolicy {
-    // Check for exact match first
-    if (this.policies.has(key)) {
-      return this.policies.get(key)!;
-    }
-    
-    // Check for wildcard matches
-    for (const [pattern, policy] of this.policies.entries()) {
-      if (pattern.endsWith('*')) {
-        const prefix = pattern.slice(0, -1);
-        if (key.startsWith(prefix)) {
-          return policy;
-        }
-      }
-    }
-    
-    // Return default policy
-    return {
-      allowedProviders: ['localStorage', 'memory'],
-      syncStrategy: 'immediate',
-      conflictResolution: 'client-wins'
-    };
-  }
-  
-  private selectProvider(policy: StoragePolicy): StorageProvider | null {
-    const allowed = policy.allowedProviders || ['localStorage', 'memory'];
-    const forbidden = policy.forbidden_providers || [];
-    
-    const candidates = allowed.filter(p => 
-      !forbidden.includes(p) && this.providers.has(p)
-    );
-    
-    if (candidates.length === 0) {
-      console.warn('No available providers for policy:', policy);
-      return null;
-    }
-    
-    // Smart provider selection based on policy
-    if (policy.encryption === 'at-rest' && candidates.includes('firebase')) {
-      return this.providers.get('firebase')!;
-    }
-    
-    if (policy.syncStrategy === 'never' && candidates.includes('localStorage')) {
-      return this.providers.get('localStorage')!;
-    }
-    
-    if (policy.syncStrategy === 'immediate' && candidates.includes('firebase')) {
-      return this.providers.get('firebase')!;
-    }
-    
-    // Default to first available
-    return this.providers.get(candidates[0])!;
-  }
-  
+
+  /**
+   * Get a value from storage
+   */
   async get<T>(key: string): Promise<T | null> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    const policy = this.getPolicyForKey(key);
-    const provider = this.selectProvider(policy);
-    
-    if (!provider) {
-      console.error(`No provider available for key: ${key}`);
-      return null;
-    }
-    
-    try {
-      return await provider.get<T>(key);
-    } catch (error) {
-      console.error(`Error getting key ${key}:`, error);
-      
-      // Try fallback providers
-      const allowed = policy.allowedProviders || [];
-      for (const providerName of allowed) {
-        if (this.providers.has(providerName)) {
-          const fallbackProvider = this.providers.get(providerName)!;
-          if (fallbackProvider !== provider) {
-            try {
-              return await fallbackProvider.get<T>(key);
-            } catch (fallbackError) {
-              console.warn(`Fallback provider ${providerName} also failed:`, fallbackError);
-            }
-          }
-        }
-      }
-      
-      return null;
-    }
+    const provider = this.getProviderForKey(key);
+    return provider.get<T>(key);
   }
-  
-  async set<T>(key: string, value: T): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    const policy = this.getPolicyForKey(key);
-    const provider = this.selectProvider(policy);
-    
-    if (!provider) {
-      console.error(`No provider available for key: ${key}`);
-      return false;
-    }
-    
-    try {
-      const result = await provider.set(key, value, policy.ttl);
-      
-      // Notify subscribers
-      this.notifySubscribers(key, value);
-      
-      return result;
-    } catch (error) {
-      console.error(`Error setting key ${key}:`, error);
-      return false;
-    }
+
+  /**
+   * Set a value in storage
+   */
+  async set<T>(key: string, value: T, policy?: StoragePolicy): Promise<boolean> {
+    const resolvedPolicy = this.resolvePolicyForKey(key, policy);
+    const provider = this.selectProviderForPolicy(key, resolvedPolicy);
+    return provider.set(key, value, resolvedPolicy);
   }
-  
+
+  /**
+   * Delete a value from storage
+   */
   async delete(key: string): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    const policy = this.getPolicyForKey(key);
-    const provider = this.selectProvider(policy);
-    
-    if (!provider) {
-      console.error(`No provider available for key: ${key}`);
-      return false;
-    }
-    
-    try {
-      const result = await provider.delete(key);
-      
-      // Notify subscribers
-      this.notifySubscribers(key, null);
-      
-      return result;
-    } catch (error) {
-      console.error(`Error deleting key ${key}:`, error);
-      return false;
-    }
+    const provider = this.getProviderForKey(key);
+    return provider.delete(key);
   }
-  
+
+  /**
+   * Clear all storage
+   */
+  async clear(): Promise<boolean> {
+    const results = await Promise.all(
+      Array.from(this.providers.values()).map(provider => provider.clear())
+    );
+    return results.every(result => result);
+  }
+
+  /**
+   * Subscribe to changes for a key
+   */
+  subscribe(key: string, callback: (value: any) => void): string {
+    const provider = this.getProviderForKey(key);
+    return provider.subscribe(key, callback);
+  }
+
+  /**
+   * Unsubscribe from changes
+   */
+  unsubscribe(subscriptionId: string): void {
+    // Try to unsubscribe from all providers since we don't know which one owns the subscription
+    this.providers.forEach(provider => {
+      try {
+        provider.unsubscribe(subscriptionId);
+      } catch (error) {
+        // Ignore errors - the subscription might not exist in this provider
+      }
+    });
+  }
+
+  /**
+   * Get all data for a namespace
+   */
   async getNamespace(namespace: string): Promise<Record<string, any>> {
-    if (!this.isInitialized) {
-      await this.initialize();
+    const provider = this.getProviderForNamespace(namespace);
+    if (provider.getNamespace) {
+      return provider.getNamespace(namespace);
     }
     
-    const policy = this.getPolicyForKey(`${namespace}.*`);
-    const provider = this.selectProvider(policy);
-    
-    if (!provider) {
-      console.error(`No provider available for namespace: ${namespace}`);
-      return {};
-    }
-    
-    try {
-      const keys = await provider.keys();
-      const namespaceKeys = keys.filter(key => key.startsWith(`${namespace}.`));
-      
-      const result: Record<string, any> = {};
-      for (const key of namespaceKeys) {
-        const value = await provider.get(key);
-        if (value !== null) {
-          result[key] = value;
-        }
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`Error getting namespace ${namespace}:`, error);
-      return {};
-    }
-  }
-  
-  async clearNamespace(namespace: string): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    const policy = this.getPolicyForKey(`${namespace}.*`);
-    const provider = this.selectProvider(policy);
-    
-    if (!provider) {
-      console.error(`No provider available for namespace: ${namespace}`);
-      return false;
-    }
-    
-    try {
-      const keys = await provider.keys();
-      const namespaceKeys = keys.filter(key => key.startsWith(`${namespace}.`));
-      
-      for (const key of namespaceKeys) {
-        await provider.delete(key);
-        this.notifySubscribers(key, null);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error(`Error clearing namespace ${namespace}:`, error);
-      return false;
-    }
-  }
-  
-  // Subscription management
-  subscribe(key: string, callback: (value: any) => void): () => void {
-    if (!this.subscribers.has(key)) {
-      this.subscribers.set(key, new Set());
-    }
-    
-    this.subscribers.get(key)!.add(callback);
-    
-    // Return unsubscribe function
-    return () => {
-      const keySubscribers = this.subscribers.get(key);
-      if (keySubscribers) {
-        keySubscribers.delete(callback);
-        if (keySubscribers.size === 0) {
-          this.subscribers.delete(key);
-        }
-      }
-    };
-  }
-  
-  private notifySubscribers(key: string, value: any): void {
-    const keySubscribers = this.subscribers.get(key);
-    if (keySubscribers) {
-      keySubscribers.forEach(callback => {
-        try {
-          callback(value);
-        } catch (error) {
-          console.error(`Error in subscriber callback for key ${key}:`, error);
-        }
-      });
-    }
-  }
-  
-  // Admin panel integration methods
-  async getProviderStatuses(): Promise<ProviderStatus[]> {
-    const statuses: ProviderStatus[] = [];
-    
-    for (const [name, provider] of this.providers.entries()) {
-      try {
-        if ('getProviderStatus' in provider && typeof provider.getProviderStatus === 'function') {
-          const status = await (provider as any).getProviderStatus();
-          statuses.push(status);
-        } else {
-          // Fallback status for providers without admin integration
-          statuses.push({
-            name,
-            available: true,
-            healthy: true,
-            metrics: {
-              totalKeys: 0,
-              storageUsed: 0,
-              storageAvailable: 0
-            }
-          });
-        }
-      } catch (error) {
-        statuses.push({
-          name,
-          available: false,
-          healthy: false,
-          lastError: error instanceof Error ? error.message : 'Unknown error',
-          metrics: {
-            totalKeys: 0,
-            storageUsed: 0,
-            storageAvailable: 0
-          }
-        });
-      }
-    }
-    
-    return statuses;
-  }
-  
-  async getNamespaceInfos(): Promise<NamespaceInfo[]> {
-    const allNamespaces = new Map<string, NamespaceInfo>();
-    
-    for (const [providerName, provider] of this.providers.entries()) {
-      try {
-        if ('getNamespaceInfo' in provider && typeof provider.getNamespaceInfo === 'function') {
-          const namespaces = await (provider as any).getNamespaceInfo();
-          
-          for (const ns of namespaces) {
-            const existing = allNamespaces.get(ns.namespace);
-            if (existing) {
-              // Merge namespace info from multiple providers
-              existing.keyCount += ns.keyCount;
-              existing.estimatedSize += ns.estimatedSize;
-              existing.lastAccessed = Math.max(
-                existing.lastAccessed || 0,
-                ns.lastAccessed || 0
-              );
-            } else {
-              allNamespaces.set(ns.namespace, { ...ns });
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`Error getting namespace info from ${providerName}:`, error);
-      }
-    }
-    
-    return Array.from(allNamespaces.values());
-  }
-  
-  async getIntegratedComponents(): Promise<Array<{
-    component: string;
-    namespace: string;
-    status: 'integrated' | 'legacy' | 'migrating';
-    provider: string;
-    lastAccessed?: number;
-  }>> {
-    // This would be populated as components are migrated
-    // For now, return the components we know about
-    const components = [
-      {
-        component: 'NotificationCenter',
-        namespace: 'notifications',
-        status: 'integrated' as const,
-        provider: 'localStorage',
-        lastAccessed: Date.now()
-      },
-      {
-        component: 'ObserverAgent',
-        namespace: 'observer',
-        status: 'migrating' as const,
-        provider: 'localStorage',
-        lastAccessed: Date.now()
-      },
-      {
-        component: 'AuthContext',
-        namespace: 'user.auth',
-        status: 'legacy' as const,
-        provider: 'firebase',
-        lastAccessed: Date.now()
-      },
-      {
-        component: 'ThemeContext',
-        namespace: 'ui.theme',
-        status: 'legacy' as const,
-        provider: 'localStorage'
-      }
-    ];
-    
-    return components;
-  }
-  
-  // Development utilities
-  async dumpAllData(): Promise<Record<string, any>> {
+    // Fallback: manually collect keys with namespace prefix
     const result: Record<string, any> = {};
-    
-    for (const [providerName, provider] of this.providers.entries()) {
-      try {
-        if ('dump' in provider && typeof provider.dump === 'function') {
-          result[providerName] = await (provider as any).dump();
-        } else {
-          const keys = await provider.keys();
-          const data: Record<string, any> = {};
-          
-          for (const key of keys) {
-            data[key] = await provider.get(key);
-          }
-          
-          result[providerName] = data;
-        }
-      } catch (error) {
-        result[providerName] = { error: error instanceof Error ? error.message : 'Unknown error' };
-      }
-    }
-    
+    // This would require iterating through all keys, which is provider-specific
+    console.warn(`UnifiedStorageService: getNamespace not fully supported for provider`);
     return result;
   }
-}
 
-// Singleton instance
-export const unifiedStorage = new UnifiedStorageService();
+  /**
+   * Clear all data for a namespace
+   */
+  async clearNamespace(namespace: string): Promise<boolean> {
+    const provider = this.getProviderForNamespace(namespace);
+    if (provider.clearNamespace) {
+      return provider.clearNamespace(namespace);
+    }
+    
+    console.warn(`UnifiedStorageService: clearNamespace not supported for provider`);
+    return false;
+  }
+
+  /**
+   * Hydrate storage (ensure data is loaded)
+   */
+  async hydrate(namespace?: string): Promise<void> {
+    if (namespace) {
+      return this.hydrateNamespace(namespace);
+    }
+    
+    // Hydrate all critical namespaces
+    const criticalNamespaces = ['user', 'notifications', 'preferences', 'observer'];
+    await Promise.all(
+      criticalNamespaces.map(ns => this.hydrateNamespace(ns))
+    );
+  }
+
+  /**
+   * Wait for a namespace to be hydrated
+   */
+  async waitForHydration(namespace: string): Promise<void> {
+    const existing = this.hydrationPromises.get(namespace);
+    if (existing) return existing;
+    
+    if (this.hydrationState.get(namespace) === 'complete') return;
+    
+    return this.hydrateNamespace(namespace);
+  }
+
+  /**
+   * Get storage information for all providers
+   */
+  async getStorageInfo(): Promise<Record<string, any>> {
+    const info: Record<string, any> = {};
+    
+    for (const [name, provider] of this.providers) {
+      try {
+        info[name] = await provider.getStorageInfo();
+      } catch (error) {
+        info[name] = {
+          provider: name,
+          available: false,
+          error: error.message
+        };
+      }
+    }
+    
+    return info;
+  }
+
+  /**
+   * Get provider health status
+   */
+  async getProviderHealth(): Promise<Record<string, boolean>> {
+    const health: Record<string, boolean> = {};
+    
+    for (const [name, provider] of this.providers) {
+      try {
+        const info = await provider.getStorageInfo();
+        health[name] = info.available;
+      } catch (error) {
+        health[name] = false;
+      }
+    }
+    
+    return health;
+  }
+
+  /**
+   * Migrate data between providers
+   */
+  async migrateData(fromProvider: string, toProvider: string, namespace?: string): Promise<boolean> {
+    const from = this.providers.get(fromProvider);
+    const to = this.providers.get(toProvider);
+    
+    if (!from || !to) {
+      console.error(`UnifiedStorageService: Invalid providers for migration: ${fromProvider} -> ${toProvider}`);
+      return false;
+    }
+
+    try {
+      if (namespace && from.getNamespace && to.set) {
+        // Migrate specific namespace
+        const data = await from.getNamespace(namespace);
+        const promises = Object.entries(data).map(([key, value]) => 
+          to.set(`${namespace}.${key}`, value)
+        );
+        await Promise.all(promises);
+        return true;
+      } else {
+        console.warn('UnifiedStorageService: Full migration not implemented yet');
+        return false;
+      }
+    } catch (error) {
+      console.error('UnifiedStorageService: Migration failed:', error);
+      return false;
+    }
+  }
+
+  private async hydrateNamespace(namespace: string): Promise<void> {
+    if (this.hydrationState.get(namespace) === 'complete') {
+      return;
+    }
+
+    if (this.hydrationState.get(namespace) === 'pending') {
+      const existing = this.hydrationPromises.get(namespace);
+      if (existing) return existing;
+    }
+
+    this.hydrationState.set(namespace, 'pending');
+    
+    const promise = this.doHydrateNamespace(namespace);
+    this.hydrationPromises.set(namespace, promise);
+    
+    try {
+      await promise;
+      this.hydrationState.set(namespace, 'complete');
+    } catch (error) {
+      this.hydrationState.set(namespace, 'error');
+      console.error(`UnifiedStorageService: Hydration failed for namespace ${namespace}:`, error);
+    } finally {
+      this.hydrationPromises.delete(namespace);
+    }
+  }
+
+  private async doHydrateNamespace(namespace: string): Promise<void> {
+    const provider = this.getProviderForNamespace(namespace);
+    
+    if (provider.getNamespace) {
+      // Pre-load namespace data
+      await provider.getNamespace(namespace);
+    }
+    
+    console.log(`UnifiedStorageService: Hydrated namespace ${namespace}`);
+  }
+
+  private getProviderForKey(key: string): StorageProvider {
+    const namespace = this.extractNamespace(key);
+    return this.getProviderForNamespace(namespace);
+  }
+
+  private getProviderForNamespace(namespace: string): StorageProvider {
+    const config = this.namespaceConfigs.get(namespace);
+    const providerName = config?.provider || this.defaultProvider;
+    
+    const provider = this.providers.get(providerName);
+    if (!provider) {
+      console.warn(`UnifiedStorageService: Provider ${providerName} not found, using default`);
+      return this.providers.get(this.defaultProvider)!;
+    }
+    
+    return provider;
+  }
+
+  private selectProviderForPolicy(key: string, policy: StoragePolicy): StorageProvider {
+    const namespace = this.extractNamespace(key);
+    const config = this.namespaceConfigs.get(namespace);
+    
+    // Start with namespace provider preference
+    let providerName = config?.provider || this.defaultProvider;
+    
+    // Apply policy constraints
+    if (policy.forbiddenProviders?.includes(providerName)) {
+      // Find alternative provider
+      const allowedProviders = policy.allowedProviders || ['localStorage', 'memory', 'firebase'];
+      const forbidden = policy.forbiddenProviders || [];
+      const candidates = allowedProviders.filter(p => !forbidden.includes(p));
+      
+      if (candidates.length > 0) {
+        providerName = candidates[0];
+      } else {
+        throw new Error(`No suitable storage provider found for key ${key}`);
+      }
+    }
+    
+    const provider = this.providers.get(providerName);
+    if (!provider) {
+      throw new Error(`Storage provider ${providerName} not available`);
+    }
+    
+    return provider;
+  }
+
+  private resolvePolicyForKey(key: string, policy?: StoragePolicy): StoragePolicy {
+    const namespace = this.extractNamespace(key);
+    const config = this.namespaceConfigs.get(namespace);
+    
+    // Merge namespace policy with provided policy
+    return {
+      ...config?.defaultPolicy,
+      ...policy
+    };
+  }
+
+  private extractNamespace(key: string): string {
+    const parts = key.split('.');
+    return parts.length > 1 ? parts[0] : 'default';
+  }
+
+  /**
+   * Cleanup resources
+   */
+  destroy(): void {
+    this.providers.forEach(provider => {
+      if (provider.destroy) {
+        provider.destroy();
+      }
+    });
+    
+    this.providers.clear();
+    this.namespaceConfigs.clear();
+    this.hydrationState.clear();
+    this.hydrationPromises.clear();
+  }
+}
 
