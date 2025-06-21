@@ -6,6 +6,7 @@ import os
 import uuid
 
 from src.main.runtime_executor import RuntimeExecutor, load_schema # Assuming runtime_executor.py is in the same directory or accessible
+from src.api.agents.routes import router as agents_router  # Import agent routes
 
 # --- FastAPI App Initialization --- #
 app = FastAPI(
@@ -13,6 +14,9 @@ app = FastAPI(
     version="2.1.0",
     description="HTTP API for executing the Promethios GovernanceCore loop."
 )
+
+# --- Include Agent Routes --- #
+app.include_router(agents_router)
 
 # --- Schema Loading for Request Validation --- #
 # These paths assume main.py is in the root of promethios_repo
