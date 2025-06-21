@@ -167,8 +167,8 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/benchmark" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Benchmarks
+                <Link to="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Promethios Demo
                 </Link>
               </li>
             </ul>

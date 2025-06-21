@@ -17,6 +17,7 @@ interface GovernanceDemoPlaygroundProps {
   selectedScenario: string;
   governanceEnabled: boolean;
   onGovernanceToggle: (enabled: boolean) => void;
+  isLoggedIn?: boolean; // New prop to determine demo mode
 }
 
 const demoAgents: Record<string, DemoAgent[]> = {
@@ -135,7 +136,8 @@ const demoAgents: Record<string, DemoAgent[]> = {
 export const GovernanceDemoPlayground: React.FC<GovernanceDemoPlaygroundProps> = ({
   selectedScenario,
   governanceEnabled,
-  onGovernanceToggle
+  onGovernanceToggle,
+  isLoggedIn = false // Default to public demo mode
 }) => {
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
@@ -319,6 +321,7 @@ export const GovernanceDemoPlayground: React.FC<GovernanceDemoPlaygroundProps> =
         selectedAgent={activeAgent}
         governanceEnabled={governanceEnabled}
         scenario={selectedScenario}
+        isLoggedIn={isLoggedIn}
       />
     </div>
   );

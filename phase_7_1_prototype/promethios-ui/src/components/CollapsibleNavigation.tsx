@@ -165,7 +165,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/chat' },
         { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
         { id: 'registry', label: 'Registry', icon: <RegistryIcon />, path: '/ui/agents/registry' },
-        { id: 'benchmarks', label: 'Benchmarks', icon: <BenchmarksIcon />, path: '/ui/agents/benchmark' },
+        { id: 'promethios-demo', label: 'Promethios Demo', icon: <BenchmarksIcon />, path: '/demo' },
       ],
     },
     {

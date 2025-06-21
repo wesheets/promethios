@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GovernanceDemoPlayground } from '../../modules/governance-demo/GovernanceDemoPlayground';
+import { useAuth } from '../../hooks/useAuth';
 
 const PrometheosGovernanceDashboard: React.FC = () => {
   const [activeDemo, setActiveDemo] = useState<string>('');
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
+  const { isLoggedIn, user } = useAuth();
 
   const demoScenarios = [
     {
@@ -225,6 +227,7 @@ const PrometheosGovernanceDashboard: React.FC = () => {
               selectedScenario={activeDemo}
               governanceEnabled={governanceEnabled}
               onGovernanceToggle={setGovernanceEnabled}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         </section>
