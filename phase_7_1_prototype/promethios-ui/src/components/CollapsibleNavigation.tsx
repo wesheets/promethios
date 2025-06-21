@@ -702,7 +702,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       <List sx={{ pt: 0 }}>
         {navigationItems.map(item => renderNavigationItem(item))}
       </List>
-    </DrawerComponent>
+    </Drawer>
   );
 };
 
