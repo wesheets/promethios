@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/SimpleAuthContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
@@ -20,7 +20,7 @@ import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import LiveDemoPage from './pages/LiveDemoPage';
 import MockDashboardPage from './pages/MockDashboardPage';
 import SolutionsPage from './pages/SolutionsPage';
-import AboutPage from './pages/AboutPage';
+import ApiDocsPage from './pages/ApiDocsPage';
 import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
