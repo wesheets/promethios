@@ -1,11 +1,12 @@
 /**
  * Observer Agent Service
  * 
- * Comprehensive service for the Promethios Observer Agent with OpenAI LLM integration.
- * Provides intelligent contextual assistance, governance insights, and real-time monitoring.
+ * Comprehensive service for the Promethios Observer Agent with OpenAI LLM integration
+ * and full governance wrapper integration.
  */
 
 import { observerService } from './observers';
+import { observerAgentGovernance } from './observerAgentGovernance';
 
 // OpenAI Integration Types
 interface OpenAIConfig {
@@ -411,7 +412,7 @@ class ObserverAgentService {
     // Initialize with real OpenAI config
     // Note: In production, API key should come from environment variables
     this.openAIService = new OpenAIService({
-      apiKey: process.env.REACT_APP_OPENAI_API_KEY || 'your-openai-api-key-here',
+      apiKey: process.env.OPENAI_API_KEY || 'your-openai-api-key-here',
       model: 'gpt-4',
       maxTokens: 500,
       temperature: 0.7
@@ -437,6 +438,12 @@ class ObserverAgentService {
         userRole,
         currentRoute: window.location.pathname
       };
+      
+      // Register with governance system
+      const governanceRegistered = await observerAgentGovernance.registerAgent();
+      if (!governanceRegistered) {
+        console.warn('Failed to register with governance system');
+      }
       
       // Load initial governance metrics
       await this.loadGovernanceMetrics();
@@ -560,6 +567,9 @@ class ObserverAgentService {
     this.state.isLoadingLLM = true;
     
     try {
+      // Log interaction with governance system
+      observerAgentGovernance.getGovernanceEvents(); // Trigger monitoring update
+      
       const response = await this.openAIService.generateResponse(message, this.state.observerContext);
       
       // Add suggestions from LLM response
@@ -567,10 +577,41 @@ class ObserverAgentService {
         this.state.suggestions = [...this.state.suggestions, ...response.suggestions];
       }
       
+      // Update governance metrics based on response quality
+      this.updateGovernanceMetrics(response);
+      
       return response;
     } finally {
       this.state.isLoadingLLM = false;
     }
+  }
+
+  private updateGovernanceMetrics(response: LLMResponse): void {
+    // In a real implementation, this would update trust scores based on:
+    // - Response quality and relevance
+    // - User feedback
+    // - Fact-checking results
+    // - Compliance with policies
+    
+    // For now, we'll just log the interaction
+    console.log('Observer Agent response logged for governance:', {
+      hasError: !!response.error,
+      confidence: response.confidence,
+      suggestionsCount: response.suggestions?.length || 0
+    });
+  }
+
+  // Governance integration methods
+  getGovernanceMetrics() {
+    return observerAgentGovernance.getGovernanceMetrics();
+  }
+
+  getTrustScore(dimension?: string) {
+    return observerAgentGovernance.getTrustScore(dimension as any);
+  }
+
+  getComplianceStatus() {
+    return observerAgentGovernance.getComplianceStatus();
   }
   
   getState(): ObserverState {

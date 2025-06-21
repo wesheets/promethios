@@ -15,6 +15,7 @@ import useContextAwareness from '../hooks/useContextAwareness';
 import { useObserverPreferences } from '../hooks/useObserverPreferences';
 import { observerAgentService } from '../services/observerAgentService';
 import ObserverSettings from './ObserverSettings';
+import ObserverTrustMetrics from './ObserverTrustMetrics';
 
 // Types for Observer Agent
 interface ObserverSuggestion {
@@ -83,6 +84,7 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
     timestamp: number;
   }>>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTrustMetrics, setShowTrustMetrics] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -338,6 +340,13 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
             </div>
             <div className="flex items-center space-x-1">
               <button
+                onClick={() => setShowTrustMetrics(true)}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+                title="Governance Status"
+              >
+                <ShieldCheckIcon className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => setShowSettings(true)}
                 className="p-1 text-gray-400 hover:text-white transition-colors"
                 title="Observer Settings"
@@ -459,6 +468,12 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
           />
         </div>
       )}
+
+      {/* Trust Metrics Overlay */}
+      <ObserverTrustMetrics 
+        isVisible={showTrustMetrics}
+        onToggle={() => setShowTrustMetrics(!showTrustMetrics)}
+      />
     </div>
   );
 };
