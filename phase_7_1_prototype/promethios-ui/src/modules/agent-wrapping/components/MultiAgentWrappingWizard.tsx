@@ -830,7 +830,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             )}
           </Box>
         );
-      case 3:
+      case 4:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -927,7 +927,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             </Grid>
           </Box>
         );
-      case 4:
+      case 5:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -1003,7 +1003,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             </Grid>
           </Box>
         );
-      case 5:
+      case 6:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -1029,7 +1029,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             </Grid>
           </Box>
         );
-      case 6:
+      case 7:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
