@@ -56,6 +56,7 @@ import {
   AccountTree,
   AdminPanelSettings,
 } from '@mui/icons-material';
+import ObserverAgentProxy from '../proxies/ObserverAgentProxy';
 
 interface DashboardMetrics {
   agents: {
@@ -559,48 +560,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Observer Agent */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={3}>
-                <Avatar sx={{ backgroundColor: '#10b981', mr: 2 }}>
-                  <Psychology />
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" sx={{ color: 'white' }}>Observer Agent</Typography>
-                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>AI Assistant</Typography>
-                </Box>
-              </Box>
-              <Alert 
-                severity="info" 
-                sx={{ 
-                  backgroundColor: '#1e40af20', 
-                  border: '1px solid #3b82f6',
-                  color: 'white',
-                  mb: 2
-                }}
-              >
-                <Typography variant="body2">
-                  Welcome to your Promethios dashboard! I'm here to help you navigate AI governance and provide guidance.
-                </Typography>
-              </Alert>
-              <Box sx={{ backgroundColor: '#1a202c', p: 2, borderRadius: 1, mb: 2 }}>
-                <Typography variant="body2" sx={{ color: '#3182ce', fontWeight: 'bold' }}>
-                  Governance Tip
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Regular compliance checks help maintain high governance scores.
-                </Typography>
-              </Box>
-              <Box sx={{ backgroundColor: '#1a202c', p: 2, borderRadius: 1 }}>
-                <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 'bold' }}>
-                  Suggested Action
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Review your agent policies to ensure they meet current standards.
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+          <ObserverAgentProxy />
         </Grid>
       </Grid>
     </Container>
