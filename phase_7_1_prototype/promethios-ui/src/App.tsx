@@ -17,6 +17,8 @@ import AboutPage from './pages/AboutPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import LearnPage from './pages/LearnPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
+import PrometheosGovernancePage from './pages/PrometheosGovernancePage';
+import PrometheosGovernanceDashboard from './components/governance-demo/PrometheosGovernanceDashboard';
 import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
@@ -67,13 +69,17 @@ const AppContent: React.FC = () => {
                   <Route path="/governance/emotional-veritas" element={<EmotionalVeritasPage />} />
                   
                   <Route path="/documentation" element={<DocumentationPage />} />
-                  <Route path="/benchmark" element={
+                  <Route path="/demo" element={
                     <>
                       <InvestorDemoToggle />
-                      <CMUBenchmarkDashboard />
+                      <PrometheosGovernanceDashboard />
                     </>
                   } />
-                  <Route path="/cmu-benchmark" element={<CMUBenchmarkPage />} />
+                  <Route path="/governance-demo" element={<PrometheosGovernancePage />} />
+                  <Route path="/live-demo" element={<PrometheosGovernancePage />} />
+                  {/* Legacy redirects */}
+                  <Route path="/benchmark" element={<Navigate to="/demo" replace />} />
+                  <Route path="/cmu-benchmark" element={<Navigate to="/demo" replace />} />
                   <Route path="/multi-agent-wrapping" element={<MultiAgentWrappingPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
