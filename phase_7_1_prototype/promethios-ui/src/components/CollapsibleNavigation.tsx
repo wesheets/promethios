@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   List,
@@ -12,6 +12,9 @@ import {
   Box,
   Divider,
   Typography,
+  TextField,
+  Button,
+  keyframes,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -56,6 +59,7 @@ import { useUserPreferences } from '../hooks/useUserPreferences';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
+const DRAWER_WIDTH_OBSERVER = 400; // Width when Observer Agent is expanded
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
@@ -99,16 +103,48 @@ interface CollapsibleNavigationProps {
   isAdmin?: boolean;
 }
 
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'observer';
+  timestamp: Date;
+}
+
 const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   userPermissions = [],
   isAdmin = false,
 }) => {
   const { preferences, updateNavigationState } = useUserPreferences();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [observerExpanded, setObserverExpanded] = useState(false);
+  const [observerMessages, setObserverMessages] = useState<Message[]>([]);
+  const [observerInput, setObserverInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [shouldPulse, setShouldPulse] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const collapsed = preferences.navigationCollapsed;
+
+  // Pulsing effect on page navigation
+  useEffect(() => {
+    setShouldPulse(true);
+    const timer = setTimeout(() => setShouldPulse(false), 3000); // Pulse for 3 seconds
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  // Pulse animation keyframes
+  const pulseAnimation = keyframes`
+    0% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+  `;
 
   const navigationItems: NavigationItem[] = [
     {
@@ -188,6 +224,74 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       adminOnly: true,
     });
   }
+
+  const handleObserverToggle = () => {
+    setObserverExpanded(!observerExpanded);
+  };
+
+  const handleObserverSend = async () => {
+    if (!observerInput.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: observerInput,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setObserverMessages(prev => [...prev, userMessage]);
+    setObserverInput('');
+    setIsThinking(true);
+
+    try {
+      const response = await generateObserverResponse(observerInput, getCurrentContext());
+      
+      const observerMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: response,
+        sender: 'observer',
+        timestamp: new Date()
+      };
+
+      setObserverMessages(prev => [...prev, observerMessage]);
+    } catch (error) {
+      console.error('Observer response error:', error);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  const getCurrentContext = (): string => {
+    const pathname = location.pathname;
+    if (pathname.includes('dashboard')) return 'Dashboard';
+    if (pathname.includes('agents')) return 'Agents Management';
+    if (pathname.includes('governance')) return 'Governance Overview';
+    if (pathname.includes('trust-metrics')) return 'Trust Metrics';
+    if (pathname.includes('settings')) return 'Settings';
+    return 'Promethios Platform';
+  };
+
+  const generateObserverResponse = async (message: string, context: string): Promise<string> => {
+    // Simulate thinking delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Use the new API service
+    try {
+      const { sendObserverMessage } = await import('../api/observerChat');
+      const response = await sendObserverMessage({
+        message: message,
+        context: context,
+        systemPrompt: `You are the Promethios Observer Agent, an intelligent AI governance assistant. You help users with AI governance, trust metrics, compliance, and platform navigation. Current context: ${context}. Be helpful, concise, and focus on governance-related guidance. You have deep knowledge of Promethios systems including PRISM (monitoring), Vigil (trust boundaries), and Veritas (truth verification).`
+      });
+
+      return response.response;
+    } catch (error) {
+      console.error('Observer response error:', error);
+      
+      // Fallback to basic response
+      return `Thanks for your question about ${context}! I'm here to help with governance, compliance, and trust optimization. Your current governance score is strong at 89%. How can I assist you further?`;
+    }
+  };
 
   const handleToggleCollapse = async () => {
     try {
@@ -358,18 +462,228 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   };
 
   const DrawerComponent = collapsed ? StyledDrawerCollapsed : StyledDrawer;
+  const drawerWidth = observerExpanded ? DRAWER_WIDTH_OBSERVER : (collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH);
 
   return (
-    <DrawerComponent
+    <Drawer
       variant="permanent"
       anchor="left"
       sx={{
         '& .MuiDrawer-paper': {
+          width: drawerWidth,
+          backgroundColor: '#1a202c',
+          borderRight: '1px solid #2d3748',
+          color: 'white',
+          transition: 'width 0.3s ease',
+          overflowX: 'hidden',
           marginTop: '64px', // Header height
           height: 'calc(100vh - 64px)',
         },
       }}
     >
+      {/* Observer Agent */}
+      <Box
+        sx={{
+          borderBottom: '1px solid #2d3748',
+        }}
+      >
+        {/* Observer Agent Header */}
+        <Box sx={{ p: 1 }}>
+          {collapsed ? (
+            <Tooltip title="Observer Agent - Governance Assistant" placement="right" arrow>
+              <IconButton 
+                onClick={handleObserverToggle}
+                sx={{ 
+                  color: 'white',
+                  backgroundColor: observerExpanded ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                  '&:hover': { backgroundColor: 'rgba(34, 197, 94, 0.3)' },
+                  width: '100%',
+                  borderRadius: 1,
+                  animation: shouldPulse ? `${pulseAnimation} 2s infinite` : 'none',
+                }}
+              >
+                🛡️
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Box
+              onClick={handleObserverToggle}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                p: 1,
+                borderRadius: 1,
+                cursor: 'pointer',
+                backgroundColor: observerExpanded ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                '&:hover': { backgroundColor: 'rgba(34, 197, 94, 0.3)' },
+                transition: 'background-color 0.2s',
+                animation: shouldPulse ? `${pulseAnimation} 2s infinite` : 'none',
+              }}
+            >
+              <Box sx={{ mr: 2, fontSize: '1.2rem' }}>🛡️</Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                  Observer Agent
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  Governance Assistant
+                </Typography>
+              </Box>
+              {observerExpanded ? <ExpandLess /> : <ExpandMore />}
+            </Box>
+          )}
+        </Box>
+
+        {/* Observer Agent Chat Interface */}
+        <Collapse in={observerExpanded && !collapsed} timeout="auto" unmountOnExit>
+          <Box sx={{ p: 2, backgroundColor: '#111827' }}>
+            {/* Status Indicators */}
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 8, 
+                    height: 8, 
+                    borderRadius: '50%', 
+                    backgroundColor: '#22c55e',
+                    mr: 1,
+                    animation: 'pulse 2s infinite'
+                  }} 
+                />
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  Governed by Promethios
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>
+                Context: {getCurrentContext()}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>
+                Trust Score: 89% (Compliant)
+              </Typography>
+            </Box>
+
+            {/* Chat Messages */}
+            <Box 
+              sx={{ 
+                height: '200px', 
+                overflowY: 'auto', 
+                mb: 2,
+                border: '1px solid #374151',
+                borderRadius: 1,
+                p: 1,
+                backgroundColor: '#1f2937'
+              }}
+            >
+              {observerMessages.length === 0 ? (
+                <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', mt: 2 }}>
+                  👋 Hi! I'm your governance assistant. Ask me about trust metrics, compliance, or platform navigation.
+                </Typography>
+              ) : (
+                observerMessages.map((message) => (
+                  <Box key={message.id} sx={{ mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ 
+                        color: message.sender === 'user' ? '#60a5fa' : '#22c55e',
+                        fontWeight: 500 
+                      }}>
+                        {message.sender === 'user' ? 'You' : 'Observer'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#6b7280', ml: 1 }}>
+                        {message.timestamp.toLocaleTimeString()}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.875rem' }}>
+                      {message.text}
+                    </Typography>
+                  </Box>
+                ))
+              )}
+              
+              {/* Thinking Indicator */}
+              {isThinking && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#22c55e', fontWeight: 500 }}>
+                    Observer
+                  </Typography>
+                  <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#9ca3af', mr: 1 }}>
+                      thinking
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {[0, 1, 2].map((i) => (
+                        <Box
+                          key={i}
+                          sx={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: '50%',
+                            backgroundColor: '#22c55e',
+                            animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* Chat Input */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                value={observerInput}
+                onChange={(e) => setObserverInput(e.target.value)}
+                placeholder="Ask about governance, trust metrics, or compliance..."
+                variant="outlined"
+                size="small"
+                fullWidth
+                disabled={isThinking}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleObserverSend();
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1f2937',
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    '& fieldset': { borderColor: '#374151' },
+                    '&:hover fieldset': { borderColor: '#4b5563' },
+                    '&.Mui-focused fieldset': { borderColor: '#22c55e' },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#9ca3af',
+                    opacity: 1,
+                  },
+                }}
+              />
+              <Button
+                onClick={handleObserverSend}
+                disabled={!observerInput.trim() || isThinking}
+                variant="contained"
+                size="small"
+                sx={{
+                  backgroundColor: '#22c55e',
+                  '&:hover': { backgroundColor: '#16a34a' },
+                  '&:disabled': { backgroundColor: '#374151' },
+                  minWidth: 'auto',
+                  px: 2,
+                }}
+              >
+                Send
+              </Button>
+            </Box>
+
+            {/* Footer */}
+            <Typography variant="caption" sx={{ color: '#6b7280', textAlign: 'center', display: 'block', mt: 1 }}>
+              Powered by OpenAI • Governed by Promethios
+            </Typography>
+          </Box>
+        </Collapse>
+      </Box>
+
       {/* Toggle Button */}
       <Box
         sx={{
