@@ -17,6 +17,9 @@ from src.main.runtime_executor import RuntimeExecutor, load_schema # Assuming ru
 # Import multi-agent routes
 from src.api.multi_agent import router as multi_agent_router
 
+# Import agent routes
+from src.api.agents.routes import router as agents_router
+
 # --- FastAPI App Initialization --- #
 app = FastAPI(
     title="Promethios Governance Core Runtime",
@@ -35,6 +38,9 @@ app.add_middleware(
 
 # Include multi-agent routes
 app.include_router(multi_agent_router, prefix="/api/multi_agent", tags=["Multi-Agent"])
+
+# Include agent routes
+app.include_router(agents_router)
 
 # --- Schema Loading for Request Validation --- #
 # These paths assume main.py is in the root of promethios_repo
