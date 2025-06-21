@@ -6,6 +6,7 @@ import FloatingObserver from './FloatingObserver';
 import InteractiveDemos from './InteractiveDemos';
 import TemplateLibraryPreview from './TemplateLibraryPreview';
 import PrometheusStackShowcase from './PrometheusStackShowcase';
+import TimedObserverBubble from './TimedObserverBubble';
 import '../../styles/hero-animations.css';
 
 const NewLandingPage: React.FC = () => {
@@ -55,13 +56,13 @@ const NewLandingPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                   <Link 
                     to="/demo" 
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg btn-ripple"
                   >
                     Try Governance Demo
                   </Link>
                   <Link 
                     to={user ? "/ui/dashboard" : "/ui/onboarding"} 
-                    className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
+                    className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 btn-blue-glow"
                   >
                     {user ? "Go to Dashboard" : "Wrap an Agent"}
                   </Link>
@@ -98,12 +99,28 @@ const NewLandingPage: React.FC = () => {
                       <span className="text-gray-300 text-sm">AI Governance Dashboard</span>
                     </div>
 
-                    {/* Trust Score */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-2">
+                    {/* Rotating Trust Metrics */}
+                    <div className="mb-6 relative h-16">
+                      <div className="absolute inset-0 flex items-center justify-between">
                         <span className="text-white font-semibold">Trust Score</span>
-                        <span className="text-2xl font-bold text-green-400 animate-pulse">85%</span>
+                        <div className="relative">
+                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute">85%</span>
+                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0">243</span>
+                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0">1.2M</span>
+                        </div>
                       </div>
+                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '4s'}}>
+                        <span className="text-white font-semibold">Violations Prevented</span>
+                        <span className="text-2xl font-bold text-blue-400">243</span>
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '8s'}}>
+                        <span className="text-white font-semibold">Governed Responses</span>
+                        <span className="text-2xl font-bold text-purple-400">1.2M</span>
+                      </div>
+                    </div>
+
+                    {/* Trust Score Bar */}
+                    <div className="mb-6">
                       <div className="w-full bg-gray-700 rounded-full h-3">
                         <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full trust-bar" style={{width: '85%'}}></div>
                       </div>
@@ -390,6 +407,14 @@ const NewLandingPage: React.FC = () => {
 
       {/* Floating Observer Agent */}
       <FloatingObserver />
+
+      {/* Timed Observer Agent Bubble */}
+      <TimedObserverBubble 
+        onDemoClick={() => {
+          // Navigate to demo or trigger guided tour
+          window.location.href = '/demo';
+        }}
+      />
     </div>
   );
 };
