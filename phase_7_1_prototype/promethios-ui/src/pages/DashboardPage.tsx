@@ -560,7 +560,10 @@ const DashboardPage: React.FC = () => {
 
         {/* Observer Agent */}
         <Grid item xs={12} md={4}>
-          <ObserverAgentProxy />
+          {/* Observer Agent removed - now using FloatingObserverAgent globally */}
+          <div style={{ display: 'none' }}>
+            Observer Agent moved to floating sidebar
+          </div>
         </Grid>
       </Grid>
     </Container>
