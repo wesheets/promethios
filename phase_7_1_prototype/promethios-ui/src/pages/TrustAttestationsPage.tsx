@@ -228,6 +228,7 @@ const TrustAttestationsPage: React.FC = () => {
     );
   }
 
+  const getAttestationIcon = (type: string) => {
     switch (type) {
       case 'identity': return <VerifiedUser />;
       case 'capability': return <Psychology />;
@@ -238,50 +239,12 @@ const TrustAttestationsPage: React.FC = () => {
     }
   };
 
-  const getAttestationTypeColor = (type: string) => {
-    switch (type) {
-      case 'identity': return '#3b82f6';
-      case 'capability': return '#10b981';
-      case 'integrity': return '#8b5cf6';
-      case 'compliance': return '#f59e0b';
-      case 'behavior': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'revoked': return 'error';
-      case 'expired': return 'warning';
-      default: return 'default';
-    }
-  };
-
   const getConfidenceColor = (score: number) => {
     if (score >= 0.9) return '#10b981';
     if (score >= 0.8) return '#f59e0b';
     if (score >= 0.7) return '#f97316';
     return '#ef4444';
   };
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const filteredAttestations = attestations.filter(attestation => {
-    const matchesSearch = attestation.subject_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         attestation.attester_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || attestation.attestation_type === filterType;
-    const matchesStatus = filterStatus === 'all' || attestation.status === filterStatus;
-    return matchesSearch && matchesType && matchesStatus;
-  });
-
-  // Calculate statistics
-  const totalAttestations = attestations.length;
-  const activeAttestations = attestations.filter(a => a.status === 'active').length;
-  const averageConfidence = attestations.reduce((sum, a) => sum + a.confidence_score, 0) / totalAttestations;
-  const totalTrustImpact = attestations.reduce((sum, a) => sum + a.trust_impact, 0);
 
   if (loading) {
     return (
@@ -757,4 +720,3 @@ const TrustAttestationsPage: React.FC = () => {
 };
 
 export default TrustAttestationsPage;
-
