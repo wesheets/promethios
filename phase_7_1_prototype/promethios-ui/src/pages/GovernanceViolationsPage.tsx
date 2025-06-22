@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useGovernanceDashboard } from '../hooks/useGovernanceDashboard';
 import {
   Box,
   Grid,
@@ -141,143 +142,77 @@ const GovernanceViolationsPage: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('7');
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
 
-  // Mock data - in real implementation, this would come from API
-  const [violations, setViolations] = useState<Violation[]>([
-    {
-      id: 'viol-001',
-      source: 'PRISM',
-      agent_id: 'financial_advisor_agent',
-      agent_name: 'Financial Advisor Agent',
-      agent_type: 'single',
-      type: 'Trust Threshold Breach',
-      severity: 'critical',
-      status: 'open',
-      description: 'Agent trust score dropped below required threshold for financial advice',
-      impact: 85,
-      created_at: '2024-01-15T14:30:00Z',
-      updated_at: '2024-01-15T14:30:00Z',
-      trust_impact: -15,
-      policy_violated: 'Financial Services Policy',
-      remediation_steps: [
-        'Suspend financial advice capabilities',
-        'Initiate trust score investigation',
-        'Review recent agent interactions',
-        'Implement additional oversight'
-      ]
-    },
-    {
-      id: 'viol-002',
-      source: 'VIGIL',
-      agent_id: 'customer_support_team',
-      agent_name: 'Customer Support Team',
-      agent_type: 'multi',
-      type: 'Cost Drift Detected',
-      severity: 'high',
-      status: 'investigating',
-      description: 'Multi-agent coordination costs exceeded budget threshold',
-      impact: 65,
-      created_at: '2024-01-15T12:15:00Z',
-      updated_at: '2024-01-15T13:45:00Z',
-      trust_impact: -8,
-      policy_violated: 'Cost Management Policy',
-      remediation_steps: [
-        'Analyze cost breakdown',
-        'Optimize agent coordination',
-        'Review resource allocation',
-        'Implement cost controls'
-      ]
-    },
-    {
-      id: 'viol-003',
-      source: 'GOVERNANCE',
-      agent_id: 'legal_advisor_agent',
-      agent_name: 'Legal Advisor Agent',
-      agent_type: 'single',
-      type: 'Policy Compliance Failure',
-      severity: 'medium',
-      status: 'resolved',
-      description: 'Agent failed to follow required legal disclaimer procedures',
-      impact: 45,
-      created_at: '2024-01-14T16:20:00Z',
-      updated_at: '2024-01-15T09:30:00Z',
-      resolved_at: '2024-01-15T09:30:00Z',
-      trust_impact: -5,
-      policy_violated: 'Legal Compliance Policy',
-      resolution_notes: 'Updated agent training and added automated disclaimer checks',
-      remediation_steps: [
-        'Review legal disclaimer requirements',
-        'Update agent training data',
-        'Implement automated checks',
-        'Monitor compliance'
-      ]
-    },
-    {
-      id: 'viol-004',
-      source: 'MULTI_AGENT',
-      agent_id: 'research_analysis_team',
-      agent_name: 'Research Analysis Team',
-      agent_type: 'multi',
-      type: 'Coordination Failure',
-      severity: 'medium',
-      status: 'investigating',
-      description: 'Agent coordination breakdown led to inconsistent research outputs',
-      impact: 55,
-      created_at: '2024-01-15T11:00:00Z',
-      updated_at: '2024-01-15T12:30:00Z',
-      trust_impact: -10,
-      policy_violated: 'Multi-Agent Coordination Policy',
-      remediation_steps: [
-        'Analyze coordination logs',
-        'Review agent communication',
-        'Test coordination protocols',
-        'Implement failsafe mechanisms'
-      ]
-    },
-    {
-      id: 'viol-005',
-      source: 'PRISM',
-      agent_id: 'customer_service_agent',
-      agent_name: 'Customer Service Agent',
-      agent_type: 'single',
-      type: 'Data Limit Exceeded',
-      severity: 'low',
-      status: 'resolved',
-      description: 'Agent exceeded daily data processing limits',
-      impact: 25,
-      created_at: '2024-01-14T08:45:00Z',
-      updated_at: '2024-01-14T10:15:00Z',
-      resolved_at: '2024-01-14T10:15:00Z',
-      trust_impact: -2,
-      policy_violated: 'Data Processing Policy',
-      resolution_notes: 'Adjusted data processing limits and optimized queries',
-      remediation_steps: [
-        'Review data usage patterns',
-        'Optimize data queries',
-        'Adjust processing limits',
-        'Monitor usage trends'
-      ]
-    }
-  ]);
+  // Use real backend data
+  const {
+    violations,
+    violationsLoading,
+    violationsError,
+    resolvingViolation,
+    operationError,
+    resolveViolation,
+    refreshAll,
+    clearErrors,
+    filterViolations
+  } = useGovernanceDashboard();
 
-  const [metrics, setMetrics] = useState<ViolationMetrics>({
-    total: 47,
-    critical: 3,
-    high: 8,
-    medium: 21,
-    low: 15,
-    resolved: 32,
-    open: 15,
-    trend: 'down'
+  const loading = violationsLoading;
+  // Filter violations based on current filters
+  const filteredViolations = filterViolations({
+    severity: severityFilter !== 'all' ? severityFilter : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    type: sourceFilter !== 'all' ? sourceFilter : undefined
   });
+
+  // Calculate metrics from real data
+  const metrics = {
+    total: violations.length,
+    critical: violations.filter(v => v.severity === 'critical').length,
+    high: violations.filter(v => v.severity === 'high').length,
+    medium: violations.filter(v => v.severity === 'medium').length,
+    low: violations.filter(v => v.severity === 'low').length,
+    resolved: violations.filter(v => v.status === 'resolved').length,
+    open: violations.filter(v => v.status === 'open').length,
+    trend: 'stable' as const
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
-  const handleResolveViolation = (violationId: string) => {
-    setViolations(prev => prev.map(v => 
+  const handleResolveViolation = async (violationId: string, resolutionNotes: string = 'Violation resolved') => {
+    try {
+      await resolveViolation(violationId, resolutionNotes);
+    } catch (error) {
+      console.error('Error resolving violation:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Governance Violations
+        </Typography>
+        <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
+
+  // Error handling
+  if (violationsError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Governance Violations
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <AlertTitle>Error Loading Violations</AlertTitle>
+          {violationsError}
+        </Alert>
+      </Box>
+    );
+  }
       v.id === violationId 
         ? { ...v, status: 'resolved', resolved_at: new Date().toISOString() }
         : v
