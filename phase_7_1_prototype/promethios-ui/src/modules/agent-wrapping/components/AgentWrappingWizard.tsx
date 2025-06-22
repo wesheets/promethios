@@ -28,11 +28,13 @@ import {
   Code as CodeIcon,
   Business as BusinessIcon,
   Science as ScienceIcon,
+  AutoAwesome as DiscoveryIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useAgentWrappers } from '../hooks/useAgentWrappers';
-import { AgentWrapper } from '../types';
+import { useEnhancedAgentWrappers } from '../hooks/useEnhancedAgentWrappers';
+import { ExtendedWizardFormData } from '../types/introspection';
 import ApiEndpointStep from './wizard-steps/ApiEndpointStep';
+import { AutoDiscoveryStep } from './wizard-steps/AutoDiscoveryStep';
 import SchemaStep from './wizard-steps/SchemaStep';
 import GovernanceStep from './wizard-steps/GovernanceStep';
 import ReviewStep from './wizard-steps/ReviewStep';
@@ -40,6 +42,7 @@ import SuccessStep from './wizard-steps/SuccessStep';
 
 const steps = [
   'API Endpoint',
+  'Auto-Discovery',
   'Schema Definition',
   'Governance Rules',
   'Review & Deploy'

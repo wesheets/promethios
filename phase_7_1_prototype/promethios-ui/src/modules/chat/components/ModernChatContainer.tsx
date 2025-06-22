@@ -23,16 +23,17 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
+import { agentWrapperRegistry } from '../../agent-wrapping/services/AgentWrapperRegistry';
+
 // Import our modern components
 import { GovernancePanel } from './GovernancePanel';
 import { ModernMessageInput } from './ModernMessageInput';
 import { AgentCoordinationVisualization } from './AgentCoordinationVisualization';
 import { SmartObserver } from './SmartObserver';
 import { EnhancedAgentSelector } from './EnhancedAgentSelector';
-
 // Import types and services
 import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig, MultiAgentSystem } from '../types';
-import { chatBackendService } from '../../../services/chatBackendService';
+import { chatBackendService } from '../../../services/chatBackendService';;
 
 // Dark theme colors matching the site
 const DARK_THEME = {
@@ -273,16 +274,66 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     }
   ]);
 
-  // Agent coordination state
-  const [agents] = useState<Agent[]>([
-    { id: 'baseline-agent', name: 'Baseline', type: 'baseline', avatar: '🤖', status: 'idle' },
-    { id: 'factual-agent', name: 'Factual', type: 'factual', avatar: '📊', status: 'idle' },
-    { id: 'creative-agent', name: 'Creative', type: 'creative', avatar: '🎨', status: 'idle' },
-    { id: 'data-analyst', name: 'Data Analyst', type: 'analyst', avatar: '📈', status: 'idle' },
-    { id: 'technical-writer', name: 'Technical Writer', type: 'writer', avatar: '✍️', status: 'idle' },
-    { id: 'technical-advisor', name: 'Technical Advisor', type: 'advisor', avatar: '🔧', status: 'idle' },
-    { id: 'observer', name: 'Observer', type: 'observer', avatar: '🛡️', status: 'idle' }
-  ]);
+  // Agent coordination state - now loaded from registry
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(true);
+
+  // Load agents from registry on component mount
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        // Set a demo user ID for now - in real app this would come from auth
+        const demoUserId = 'demo-user-123';
+        agentWrapperRegistry.setCurrentUser(demoUserId);
+        
+        // Load user's wrapped agents
+        await agentWrapperRegistry.loadUserWrappers();
+        
+        // Convert wrapped agents to Agent format for UI
+        const wrappedAgents = agentWrapperRegistry.getAllWrappers();
+        const agentList: Agent[] = wrappedAgents.map(wrapper => ({
+          id: wrapper.id,
+          name: wrapper.name,
+          type: wrapper.supportedProviders[0] || 'generic',
+          avatar: getAgentAvatar(wrapper.name),
+          status: agentWrapperRegistry.isWrapperEnabled(wrapper.id) ? 'idle' : 'disabled'
+        }));
+        
+        // Add observer agent (always present)
+        agentList.push({
+          id: 'observer',
+          name: 'Observer',
+          type: 'observer',
+          avatar: '🛡️',
+          status: 'idle'
+        });
+        
+        setAgents(agentList);
+        setIsLoadingAgents(false);
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        // Fallback to demo agents if loading fails
+        setAgents([
+          { id: 'baseline-agent', name: 'Baseline', type: 'baseline', avatar: '🤖', status: 'idle' },
+          { id: 'observer', name: 'Observer', type: 'observer', avatar: '🛡️', status: 'idle' }
+        ]);
+        setIsLoadingAgents(false);
+      }
+    };
+    
+    loadAgents();
+  }, []);
+
+  // Helper function to get avatar for agent
+  const getAgentAvatar = (agentName: string): string => {
+    const name = agentName.toLowerCase();
+    if (name.includes('creative')) return '🎨';
+    if (name.includes('data') || name.includes('analyst')) return '📈';
+    if (name.includes('factual') || name.includes('research')) return '📊';
+    if (name.includes('writer') || name.includes('technical')) return '✍️';
+    if (name.includes('advisor') || name.includes('expert')) return '🔧';
+    return '🤖'; // Default
+  };
 
   // Demo multi-agent systems
   const multiAgentSystems: MultiAgentSystem[] = [
@@ -815,6 +866,18 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                 borderColor: DARK_THEME.border
               }}
             />
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.preventDefault();
+                // Navigate to existing My Agents page
+                window.location.href = '/ui/agents/profiles';
+              }}
+              sx={{ color: DARK_THEME.text.secondary }}
+              title="My Agents"
+            >
+              <PersonIcon />
+            </IconButton>
             <IconButton 
               size="small" 
               onClick={(e) => {

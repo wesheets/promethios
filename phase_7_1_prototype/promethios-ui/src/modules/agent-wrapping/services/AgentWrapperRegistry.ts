@@ -1,37 +1,36 @@
+import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
 import { AgentWrapper, WrapperMetrics } from '../types';
-import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
-import { User } from 'firebase/auth';
 
 /**
  * Registry for managing agent wrappers with user-scoped data isolation
+ * Now uses UnifiedStorageService instead of Firebase directly
  */
 class AgentWrapperRegistry {
   private wrappers: Map<string, AgentWrapper> = new Map();
   private enabledWrappers: Set<string> = new Set();
   private metrics: Map<string, WrapperMetrics> = new Map();
+  private storageService: UnifiedStorageService;
+  private currentUserId: string | null = null;
   
-  // We will pass db and auth as arguments to methods that need them
-  // to avoid direct imports and ensure they are initialized after authentication.
+  constructor() {
+    this.storageService = new UnifiedStorageService();
+  }
 
   /**
-   * Get the current authenticated user
+   * Set the current user ID for scoped storage
    */
-  private getCurrentUser(auth: any): User | null {
-    return auth.currentUser;
+  setCurrentUser(userId: string): void {
+    this.currentUserId = userId;
   }
-  
+
   /**
-   * Get user-scoped collection reference
+   * Get user-scoped storage key
    */
-  private getUserWrappersCollection(db: any, userId: string) {
-    return collection(db, 'users', userId, 'agentWrappers');
-  }
-  
-  /**
-   * Get user-scoped document reference
-   */
-  private getUserWrapperDoc(db: any, userId: string, wrapperId: string) {
-    return doc(db, 'users', userId, 'agentWrappers', wrapperId);
+  private getUserScopedKey(key: string): string {
+    if (!this.currentUserId) {
+      throw new Error('User must be set before accessing agent wrappers');
+    }
+    return `user.${this.currentUserId}.${key}`;
   }
   
   /**
@@ -39,17 +38,16 @@ class AgentWrapperRegistry {
    * @param wrapper The wrapper to register
    * @returns Whether the registration was successful
    */
-  async registerWrapper(db: any, auth: any, wrapper: AgentWrapper): Promise<boolean> {
+  async registerWrapper(wrapper: AgentWrapper): Promise<boolean> {
     try {
-      const currentUser = this.getCurrentUser(auth);
-      if (!currentUser) {
-        console.error('User must be authenticated to register wrappers');
+      if (!this.currentUserId) {
+        console.error('User must be set to register wrappers');
         return false;
       }
       
       // Check if wrapper already exists for this user
       if (this.wrappers.has(wrapper.id)) {
-        console.warn(`Wrapper with ID ${wrapper.id} already exists for user ${currentUser.uid}`);
+        console.warn(`Wrapper with ID ${wrapper.id} already exists for user ${this.currentUserId}`);
         return false;
       }
       
@@ -63,10 +61,10 @@ class AgentWrapperRegistry {
         averageResponseTime: 0
       });
       
-      // Persist to Firebase under user's collection
-      await this.persistWrapper(db, currentUser.uid, wrapper);
+      // Persist to unified storage under agents namespace
+      await this.persistWrapper(wrapper);
       
-      console.log(`Registered wrapper: ${wrapper.name} (${wrapper.id}) for user ${currentUser.uid}`);
+      console.log(`Registered wrapper: ${wrapper.name} (${wrapper.id}) for user ${this.currentUserId}`);
       return true;
     } catch (error) {
       console.error('Error registering wrapper:', error);
@@ -79,7 +77,7 @@ class AgentWrapperRegistry {
    * @param wrapperId The ID of the wrapper to deregister
    * @returns Whether the deregistration was successful
    */
-  async deregisterWrapper(db: any, auth: any, wrapperId: string): Promise<boolean> {
+  async deregisterWrapper(wrapperId: string): Promise<boolean> {
     try {
       // Check if wrapper exists
       if (!this.wrappers.has(wrapperId)) {
@@ -92,8 +90,8 @@ class AgentWrapperRegistry {
       this.enabledWrappers.delete(wrapperId);
       this.metrics.delete(wrapperId);
       
-      // Remove from Firebase
-      await this.removeWrapper(db, auth, wrapperId);
+      // Remove from unified storage
+      await this.removeWrapper(wrapperId);
       
       console.log(`Deregistered wrapper: ${wrapperId}`);
       return true;
@@ -408,4 +406,154 @@ class AgentWrapperRegistry {
 export const agentWrapperRegistry = new AgentWrapperRegistry();
 export default AgentWrapperRegistry;
 
+
+
+  
+  /**
+   * Persist wrapper to unified storage
+   */
+  private async persistWrapper(wrapper: AgentWrapper): Promise<void> {
+    const key = this.getUserScopedKey(`wrappers.${wrapper.id}`);
+    await this.storageService.set('agents', key, wrapper);
+  }
+  
+  /**
+   * Remove wrapper from unified storage
+   */
+  private async removeWrapper(wrapperId: string): Promise<void> {
+    const key = this.getUserScopedKey(`wrappers.${wrapperId}`);
+    await this.storageService.delete('agents', key);
+  }
+  
+  /**
+   * Load all wrappers for current user from storage
+   */
+  async loadUserWrappers(): Promise<void> {
+    if (!this.currentUserId) {
+      throw new Error('User must be set before loading wrappers');
+    }
+    
+    try {
+      // Get all keys for this user's wrappers
+      const allKeys = await this.storageService.keys('agents');
+      const userWrapperPrefix = this.getUserScopedKey('wrappers.');
+      const userWrapperKeys = allKeys.filter(key => key.startsWith(userWrapperPrefix));
+      
+      // Load each wrapper
+      for (const key of userWrapperKeys) {
+        const wrapper = await this.storageService.get<AgentWrapper>('agents', key);
+        if (wrapper) {
+          this.wrappers.set(wrapper.id, wrapper);
+          this.enabledWrappers.add(wrapper.id);
+          
+          // Initialize metrics if not present
+          if (!this.metrics.has(wrapper.id)) {
+            this.metrics.set(wrapper.id, {
+              requestCount: 0,
+              successCount: 0,
+              errorCount: 0,
+              averageResponseTime: 0
+            });
+          }
+        }
+      }
+      
+      console.log(`Loaded ${userWrapperKeys.length} wrappers for user ${this.currentUserId}`);
+    } catch (error) {
+      console.error('Error loading user wrappers:', error);
+    }
+  }
+  
+  /**
+   * Enable a wrapper
+   * @param wrapperId The ID of the wrapper to enable
+   * @returns Whether the operation was successful
+   */
+  async enableWrapper(wrapperId: string): Promise<boolean> {
+    try {
+      // Check if wrapper exists
+      if (!this.wrappers.has(wrapperId)) {
+        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
+        return false;
+      }
+      
+      // Enable wrapper
+      this.enabledWrappers.add(wrapperId);
+      
+      // Update wrapper status in storage
+      const wrapper = this.wrappers.get(wrapperId)!;
+      wrapper.enabled = true;
+      await this.persistWrapper(wrapper);
+      
+      console.log(`Enabled wrapper: ${wrapperId}`);
+      return true;
+    } catch (error) {
+      console.error('Error enabling wrapper:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Disable a wrapper
+   * @param wrapperId The ID of the wrapper to disable
+   * @returns Whether the operation was successful
+   */
+  async disableWrapper(wrapperId: string): Promise<boolean> {
+    try {
+      // Check if wrapper exists
+      if (!this.wrappers.has(wrapperId)) {
+        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
+        return false;
+      }
+      
+      // Disable wrapper
+      this.enabledWrappers.delete(wrapperId);
+      
+      // Update wrapper status in storage
+      const wrapper = this.wrappers.get(wrapperId)!;
+      wrapper.enabled = false;
+      await this.persistWrapper(wrapper);
+      
+      console.log(`Disabled wrapper: ${wrapperId}`);
+      return true;
+    } catch (error) {
+      console.error('Error disabling wrapper:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Update metrics for a wrapper
+   * @param wrapperId The ID of the wrapper to update metrics for
+   * @param metrics The new metrics
+   */
+  async updateWrapperMetrics(wrapperId: string, metrics: Partial<WrapperMetrics>): Promise<boolean> {
+    try {
+      // Check if wrapper exists
+      if (!this.wrappers.has(wrapperId)) {
+        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
+        return false;
+      }
+      
+      // Update metrics
+      const currentMetrics = this.metrics.get(wrapperId)!;
+      const updatedMetrics = { ...currentMetrics, ...metrics };
+      this.metrics.set(wrapperId, updatedMetrics);
+      
+      // Persist metrics to storage
+      const metricsKey = this.getUserScopedKey(`metrics.${wrapperId}`);
+      await this.storageService.set('agents', metricsKey, updatedMetrics);
+      
+      console.log(`Updated metrics for wrapper: ${wrapperId}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating wrapper metrics:', error);
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const agentWrapperRegistry = new AgentWrapperRegistry();
+export default AgentWrapperRegistry;
 
