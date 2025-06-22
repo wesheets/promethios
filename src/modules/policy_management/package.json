@@ -1,0 +1,67 @@
+{
+  "name": "@promethios/policy-management",
+  "version": "1.0.0",
+  "description": "Policy Management Module for Promethios Framework - Governance policy creation, management, and enforcement",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "test:enforcement": "jest test/policy_enforcement.test.js",
+    "test:compatibility": "jest test/backwards_compatibility.test.js",
+    "test:integration": "jest test/integration.test.js",
+    "lint": "eslint *.js test/*.js",
+    "docs": "jsdoc -d docs *.js"
+  },
+  "keywords": [
+    "promethios",
+    "policy",
+    "governance",
+    "enforcement",
+    "compliance",
+    "agent",
+    "ai",
+    "framework"
+  ],
+  "author": "Promethios Team",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "jsdoc": "^4.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "*.js",
+      "!test/**/*.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "verbose": true
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wesheets/promethios.git",
+    "directory": "src/modules/policy_management"
+  },
+  "bugs": {
+    "url": "https://github.com/wesheets/promethios/issues"
+  },
+  "homepage": "https://github.com/wesheets/promethios#readme"
+}
+
