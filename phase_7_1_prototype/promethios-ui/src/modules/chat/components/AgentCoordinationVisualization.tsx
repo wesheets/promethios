@@ -99,7 +99,7 @@ const ThinkingIndicator = styled(Box)(() => ({
     left: '-100%',
     width: '100%',
     height: '100%',
-    background: 'linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent',
+    background: 'linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent)',
     animation: 'shimmer 2s ease-in-out infinite',
     '@keyframes shimmer': {
       '0%': { left: '-100%' },
