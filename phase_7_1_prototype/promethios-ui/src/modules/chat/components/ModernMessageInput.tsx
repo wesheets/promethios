@@ -130,7 +130,7 @@ const FilePreviewContainer = styled(Box)(() => ({
     backgroundColor: 'transparent'
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: alpha(DARK_THEME.text.secondary, 0.2),
+    backgroundColor: rgba(160, 174, 192, 0.2),
     borderRadius: '2px'
   }
 }));
@@ -140,8 +140,8 @@ const FilePreview = styled(Paper)(() => ({
   alignItems: 'center',
   gap: '8px',
   padding: '4px 8px',
-  backgroundColor: alpha(DARK_THEME.primary, 0.1),
-  border: `1px solid ${alpha(DARK_THEME.primary, 0.2)}`,
+  backgroundColor: rgba(49, 130, 206, 0.1),
+  border: `1px solid ${rgba(49, 130, 206, 0.2)}`,
   borderRadius: '4px',
   position: 'relative',
   maxWidth: '200px',
@@ -172,7 +172,7 @@ const DragOverlay = styled(Box)(() => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: alpha(DARK_THEME.primary, 0.1),
+  backgroundColor: rgba(49, 130, 206, 0.1),
   border: `2px dashed ${DARK_THEME.primary}`,
   borderRadius: '24px',
   display: 'flex',
@@ -199,7 +199,7 @@ const UploadProgress = styled(Box)(() => ({
   top: 0,
   left: 0,
   right: 0,
-  backgroundColor: alpha(DARK_THEME.surface, 0.9),
+  backgroundColor: rgba(45, 55, 72, 0.9),
   backdropFilter: 'blur(4px)',
   padding: '16px',
   display: 'flex',

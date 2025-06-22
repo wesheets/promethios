@@ -33,7 +33,23 @@ import {
   ArrowForward as ArrowIcon,
   Timeline as TimelineIcon
 } from '@mui/icons-material';
-import { styled, alpha, keyframes } from '@mui/material/styles';
+import { styled, keyframes } from '@mui/material/styles';
+
+// Dark theme colors matching the site
+const DARK_THEME = {
+  background: '#1a202c',
+  surface: '#2d3748',
+  border: '#4a5568',
+  text: {
+    primary: '#ffffff',
+    secondary: '#a0aec0'
+  },
+  primary: '#3182ce',
+  secondary: '#38a169',
+  success: '#38a169',
+  warning: '#d69e2e',
+  error: '#e53e3e'
+};
 
 // Animations
 const thinkingPulse = keyframes`
@@ -53,22 +69,22 @@ const coordinationRipple = keyframes`
 `;
 
 // Styled Components
-const CoordinationContainer = styled(Box)(({ theme }) => ({
+const CoordinationContainer = styled(Box)((() => ( => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(1),
-  padding: theme.spacing(1, 0),
+  gap: 8px,
+  padding: 8px 0,
   position: 'relative'
 }));
 
-const ThinkingIndicator = styled(Box)(({ theme }) => ({
+const ThinkingIndicator = styled(Box)((() => ( => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1.5),
-  padding: theme.spacing(1.5, 2),
-  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+  gap: 12px,
+  padding: 12px 16px,
+  backgroundColor: rgba(49, 130, 206, 0.08),
   borderRadius: '16px',
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  border: `1px solid ${rgba(49, 130, 206, 0.2)}`,
   position: 'relative',
   overflow: 'hidden',
   
@@ -83,7 +99,7 @@ const ThinkingIndicator = styled(Box)(({ theme }) => ({
     left: '-100%',
     width: '100%',
     height: '100%',
-    background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.primary.main, 0.1)}, transparent)`,
+    background: `linear-gradient(90deg, transparent, ${rgba(49, 130, 206, 0.1)}, transparent)`,
     animation: 'shimmer 2s ease-in-out infinite',
     '@keyframes shimmer': {
       '0%': { left: '-100%' },
@@ -92,15 +108,15 @@ const ThinkingIndicator = styled(Box)(({ theme }) => ({
   }
 }));
 
-const HandoffIndicator = styled(Box)(({ theme }) => ({
+const HandoffIndicator = styled(Box)((() => ( => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: theme.spacing(1),
-  padding: theme.spacing(1, 2),
-  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+  gap: 8px,
+  padding: 8px 16px,
+  backgroundColor: rgba(56, 161, 105, 0.1),
   borderRadius: '12px',
-  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+  border: `1px solid ${rgba(56, 161, 105, 0.3)}`,
   position: 'relative',
   
   '& .handoff-arrow': {
@@ -108,12 +124,12 @@ const HandoffIndicator = styled(Box)(({ theme }) => ({
   }
 }));
 
-const CoordinationMap = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+const CoordinationMap = styled(Paper)((() => ( => ({
+  padding: 16px,
+  backgroundColor: rgba(45, 55, 72, 0.8),
   backdropFilter: 'blur(8px)',
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius * 2,
+  border: `1px solid ${DARK_THEME.border}`,
+  borderRadius: 8px,
   position: 'relative',
   overflow: 'hidden'
 }));
@@ -124,9 +140,9 @@ const AgentNode = styled(Box, {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(1),
-  borderRadius: theme.shape.borderRadius,
+  gap: 4px,
+  padding: 8px,
+  borderRadius: 4px,
   transition: 'all 0.3s ease',
   position: 'relative',
   
@@ -139,7 +155,7 @@ const AgentNode = styled(Box, {
       width: '60px',
       height: '60px',
       borderRadius: '50%',
-      border: `2px solid ${theme.palette.primary.main}`,
+      border: `2px solid ${DARK_THEME.primary}`,
       transform: 'translate(-50%, -50%)',
       animation: `${coordinationRipple} 2s ease-out infinite`
     }
@@ -149,36 +165,36 @@ const AgentNode = styled(Box, {
     width: 40,
     height: 40,
     backgroundColor: agentType === 'observer' 
-      ? theme.palette.warning.main
+      ? DARK_THEME.warning
       : agentType === 'factual'
-        ? theme.palette.info.main
+        ? DARK_THEME.primary
         : agentType === 'creative'
-          ? theme.palette.secondary.main
-          : theme.palette.primary.main,
+          ? DARK_THEME.secondary
+          : DARK_THEME.primary,
     transition: 'all 0.3s ease',
     
     ...(isActive && {
       transform: 'scale(1.1)',
-      boxShadow: theme.shadows[4]
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
     })
   },
   
   '& .agent-label': {
     fontSize: '11px',
     fontWeight: 600,
-    color: theme.palette.text.secondary,
+    color: DARK_THEME.text.secondary,
     textAlign: 'center'
   }
 }));
 
-const ProcessingSteps = styled(Box)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.background.paper, 0.6),
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(1.5),
-  border: `1px solid ${theme.palette.divider}`
+const ProcessingSteps = styled(Box)((() => ( => ({
+  backgroundColor: rgba(45, 55, 72, 0.6),
+  borderRadius: 4px,
+  padding: 12px,
+  border: `1px solid ${DARK_THEME.border}`
 }));
 
-const ThinkingDots = styled(Box)(({ theme }) => ({
+const ThinkingDots = styled(Box)((() => ( => ({
   display: 'flex',
   gap: '4px',
   alignItems: 'center',
@@ -186,7 +202,7 @@ const ThinkingDots = styled(Box)(({ theme }) => ({
   '& span': {
     width: '6px',
     height: '6px',
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: DARK_THEME.primary,
     borderRadius: '50%',
     animation: 'thinking 1.4s ease-in-out infinite both',
     
@@ -481,7 +497,7 @@ export const MultiAgentCoordination: React.FC<MultiAgentCoordinationProps> = ({
 
         {/* Current Activity */}
         {currentStep && (
-          <Box sx={{ mt: 2, p: 1.5, bgcolor: alpha('primary.main', 0.05), borderRadius: 1 }}>
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: rgba(49, 130, 206, 0.05), borderRadius: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>
               Current: {currentStep.action}
             </Typography>
