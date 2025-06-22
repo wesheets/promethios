@@ -23,6 +23,7 @@ import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import ChatPage from './pages/ChatPage';
+import ModernChatPage from './pages/ModernChatPage';
 import DeployPage from './pages/DeployPage';
 import RegistryPage from './pages/RegistryPage';
 import BenchmarksPage from './pages/BenchmarksPage';
@@ -187,6 +188,13 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <ChatPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Modern Chat Page route - redesigned interface */}
+        <Route path="modern-chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <ModernChatPage />
           </ProtectedRoute>
         } />
         
