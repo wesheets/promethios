@@ -969,22 +969,17 @@ const AgentProfilesPage: React.FC = () => {
     isStorageReady: contextsStorageReady
   } = useMultiAgentSystemsUnified('user-1'); // TODO: Get real user ID from auth context
 
-  // System profiles from multi-agent contexts
-  const systemProfiles: SystemProfile[] = multiAgentContexts.map(context => ({
-    id: context.context_id,
-    name: context.name,
-    description: `Multi-agent system with ${context.agent_ids.length} agents`,
-    type: 'multi_agent_system',
-    agentIds: context.agent_ids,
-    collaborationModel: context.collaboration_model,
-    status: context.status as 'active' | 'inactive' | 'error',
-    createdAt: new Date(context.created_at),
-    lastActivity: new Date(context.lastActivity),
-    metrics: {
-      totalMessages: context.persistentData.conversationHistory.length,
-      activeAgents: context.agent_ids.length,
-      averageResponseTime: 0 // TODO: Calculate from metrics
-    }
+  // System profiles from multi-agent contexts with null safety
+  const systemProfiles: SystemProfile[] = (multiAgentContexts || []).map(context => ({
+    identity: {
+      id: context?.context_id || 'unknown',
+      name: context?.name || 'Unknown System',
+      description: `Multi-agent system with ${context?.agent_ids?.length || 0} agents`,
+      status: context?.status || 'inactive'
+    },
+    healthStatus: 'healthy' as const,
+    attestationCount: 0,
+    lastActivity: context?.lastActivity ? new Date(context.lastActivity) : null
   }));
 
   // Combine loading states
@@ -1014,41 +1009,48 @@ const AgentProfilesPage: React.FC = () => {
     setSelectedAgents([]); // Clear selections when toggling
   };
 
-  const wrappedAgents = agentProfiles.filter(agent => agent.isWrapped);
+  const wrappedAgents = agentProfiles.filter(agent => agent?.isWrapped);
   const canCreateMultiAgent = selectedAgents.length >= 2;
 
   useEffect(() => {
-    // Real data loading from backend API
+    // Real data loading from backend API with error handling
     const loadProfiles = async () => {
       setLoading(true);
       
       try {
+        // Check if agentBackendService is available
+        if (!agentBackendService || typeof agentBackendService.listAgents !== 'function') {
+          console.warn('agentBackendService not available, using empty array');
+          setAgentProfiles([]);
+          return;
+        }
+
         // Load real agents from backend
         const backendAgents = await agentBackendService.listAgents('user-1'); // TODO: Get real user ID from auth
         
-        // Transform backend agents to frontend format
-        const realAgentProfiles: AgentProfile[] = backendAgents.map(backendAgent => {
+        // Transform backend agents to frontend format with null safety
+        const realAgentProfiles: AgentProfile[] = (backendAgents || []).map(backendAgent => {
           const transformed = agentBackendService.transformAgentProfile(backendAgent);
           return {
             identity: {
-              id: transformed.id,
-              name: transformed.name,
-              version: transformed.version,
-              description: transformed.description,
-              ownerId: transformed.ownerId,
-              creationDate: new Date(transformed.createdAt),
-              lastModifiedDate: new Date(transformed.lastUpdated),
-              status: transformed.status
+              id: transformed?.id || 'unknown',
+              name: transformed?.name || 'Unknown Agent',
+              version: transformed?.version || '1.0.0',
+              description: transformed?.description || 'No description available',
+              ownerId: transformed?.ownerId || 'unknown',
+              creationDate: transformed?.createdAt ? new Date(transformed.createdAt) : new Date(),
+              lastModifiedDate: transformed?.lastUpdated ? new Date(transformed.lastUpdated) : new Date(),
+              status: transformed?.status || 'inactive'
             },
-            latestScorecard: transformed.trustScore ? { overallScore: transformed.trustScore } : null,
+            latestScorecard: transformed?.trustScore ? { overallScore: transformed.trustScore } : null,
             attestationCount: 0,
-            lastActivity: new Date(transformed.lastUpdated),
-            healthStatus: transformed.healthStatus as 'healthy' | 'warning' | 'critical',
-            trustLevel: transformed.trustScore >= 80 ? 'high' : 
-                       transformed.trustScore >= 60 ? 'medium' : 'low',
+            lastActivity: transformed?.lastUpdated ? new Date(transformed.lastUpdated) : new Date(),
+            healthStatus: (transformed?.healthStatus as 'healthy' | 'warning' | 'critical') || 'warning',
+            trustLevel: (transformed?.trustScore || 0) >= 80 ? 'high' : 
+                       (transformed?.trustScore || 0) >= 60 ? 'medium' : 'low',
             isWrapped: true, // All backend agents are considered wrapped
-            governancePolicy: transformed.governanceIdentity?.complianceLevel || null,
-            isDeployed: transformed.status === 'deployed',
+            governancePolicy: transformed?.governanceIdentity?.complianceLevel || null,
+            isDeployed: transformed?.status === 'deployed',
             apiDetails: {
               endpoint: 'configured',
               key: 'configured',
@@ -1071,21 +1073,21 @@ const AgentProfilesPage: React.FC = () => {
     loadProfiles();
   }, []);
 
-  // Filter agent profiles
+  // Filter agent profiles with null safety
   const filteredAgentProfiles = agentProfiles.filter(profile => {
-    const matchesSearch = profile.identity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         profile.identity.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || profile.identity.status === statusFilter;
-    const matchesHealth = healthFilter === 'all' || profile.healthStatus === healthFilter;
+    const matchesSearch = (profile?.identity?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (profile?.identity?.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || profile?.identity?.status === statusFilter;
+    const matchesHealth = healthFilter === 'all' || profile?.healthStatus === healthFilter;
     
     return matchesSearch && matchesStatus && matchesHealth;
   });
 
   const filteredSystemProfiles = systemProfiles.filter(profile => {
-    const matchesSearch = profile.identity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         profile.identity.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || profile.identity.status === statusFilter;
-    const matchesHealth = healthFilter === 'all' || profile.healthStatus === healthFilter;
+    const matchesSearch = (profile?.identity?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (profile?.identity?.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || profile?.identity?.status === statusFilter;
+    const matchesHealth = healthFilter === 'all' || profile?.healthStatus === healthFilter;
     
     return matchesSearch && matchesStatus && matchesHealth;
   });
