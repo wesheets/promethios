@@ -31,43 +31,64 @@ import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig, MultiAg
 import { messageService } from '../services/MessageService';
 import { AgentSelector } from './AgentSelector';
 
-// Styled Components
-const ChatContainer = styled(Box)(({ theme }) => ({
+// Dark theme colors matching the site
+const DARK_THEME = {
+  background: '#1a202c',
+  surface: '#2d3748',
+  border: '#4a5568',
+  text: {
+    primary: '#ffffff',
+    secondary: '#a0aec0'
+  },
+  primary: '#3182ce',
+  success: '#38a169',
+  warning: '#d69e2e',
+  error: '#e53e3e'
+};
+
+// Styled Components with dark theme
+const ChatContainer = styled(Box)(() => ({
   display: 'flex',
-  height: '100vh',
+  height: '100%',
   width: '100%',
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: DARK_THEME.background,
   overflow: 'hidden'
 }));
 
-const ChatArea = styled(Box)(({ theme }) => ({
+const ChatArea = styled(Box)(() => ({
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
-  backgroundColor: theme.palette.background.default,
-  position: 'relative'
+  backgroundColor: DARK_THEME.background,
+  position: 'relative',
+  alignItems: 'center' // Center the content horizontally
 }));
 
-const ChatHeader = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2, 3),
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  backgroundColor: theme.palette.background.paper,
+const ChatHeader = styled(Box)(() => ({
+  padding: '16px 24px',
+  borderBottom: `1px solid ${DARK_THEME.border}`,
+  backgroundColor: DARK_THEME.surface,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   minHeight: '72px',
-  zIndex: 10
+  zIndex: 10,
+  width: '100%',
+  maxWidth: '900px' // Constrain header width
 }));
 
-const MessagesContainer = styled(Box)(({ theme }) => ({
+const MessagesContainer = styled(Box)(() => ({
   flex: 1,
-  padding: theme.spacing(2, 3),
+  padding: '16px 24px',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(2),
+  gap: '16px',
   position: 'relative',
+  backgroundColor: DARK_THEME.background,
+  width: '100%',
+  maxWidth: '900px', // Constrain chat content width like Manus
   
   '&::-webkit-scrollbar': {
     width: '6px'
@@ -76,48 +97,54 @@ const MessagesContainer = styled(Box)(({ theme }) => ({
     backgroundColor: 'transparent'
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: DARK_THEME.border,
     borderRadius: '3px',
     '&:hover': {
-      backgroundColor: theme.palette.action.selected
+      backgroundColor: '#718096'
     }
   }
 }));
 
+const MessageInputContainer = styled(Box)(() => ({
+  width: '100%',
+  maxWidth: '900px', // Constrain input width to match messages
+  padding: '0 24px 24px 24px'
+}));
+
 const MessageBubble = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isUser' && prop !== 'agentType'
-})(({ theme, isUser, agentType }) => ({
+})(({ isUser, agentType }) => ({
   display: 'flex',
   alignItems: 'flex-start',
-  gap: theme.spacing(1.5),
+  gap: '12px',
   maxWidth: '85%',
   alignSelf: isUser ? 'flex-end' : 'flex-start',
   flexDirection: isUser ? 'row-reverse' : 'row',
-  marginBottom: theme.spacing(1),
+  marginBottom: '8px',
   
   '& .message-content': {
     backgroundColor: isUser 
-      ? theme.palette.primary.main 
+      ? DARK_THEME.primary
       : agentType === 'observer' 
-        ? theme.palette.warning.light
-        : theme.palette.background.paper,
+        ? DARK_THEME.warning + '20'
+        : DARK_THEME.surface,
     color: isUser 
-      ? theme.palette.primary.contrastText 
-      : theme.palette.text.primary,
-    padding: theme.spacing(1.5, 2),
+      ? '#ffffff'
+      : DARK_THEME.text.primary,
+    padding: '12px 16px',
     borderRadius: isUser 
       ? '20px 20px 4px 20px' 
       : '20px 20px 20px 4px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: theme.shadows[1],
+    border: `1px solid ${agentType === 'observer' ? DARK_THEME.warning : DARK_THEME.border}`,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
     position: 'relative',
     wordBreak: 'break-word',
     fontSize: '14px',
     lineHeight: 1.5,
     
     ...(agentType === 'observer' && {
-      border: `1px solid ${theme.palette.warning.main}`,
-      backgroundColor: theme.palette.warning.light + '20'
+      border: `1px solid ${DARK_THEME.warning}`,
+      backgroundColor: DARK_THEME.warning + '15'
     })
   },
   
@@ -126,22 +153,22 @@ const MessageBubble = styled(Box, {
     height: 32,
     fontSize: '14px',
     backgroundColor: agentType === 'observer' 
-      ? theme.palette.warning.main
+      ? DARK_THEME.warning
       : agentType === 'user'
-        ? theme.palette.primary.main
-        : theme.palette.secondary.main
+        ? DARK_THEME.primary
+        : DARK_THEME.success
   }
 }));
 
-const EmptyState = styled(Box)(({ theme }) => ({
+const EmptyState = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   flex: 1,
   textAlign: 'center',
-  color: theme.palette.text.secondary,
-  padding: theme.spacing(4)
+  color: DARK_THEME.text.secondary,
+  padding: '32px'
 }));
 
 interface ModernChatContainerProps {
@@ -152,7 +179,7 @@ interface ModernChatContainerProps {
 }
 
 export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
-  height = '100vh',
+  height = '100%',
   agentId,
   multiAgentSystemId,
   governanceEnabled = true
@@ -407,21 +434,25 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
             <IconButton 
               onClick={() => setIsGovernancePanelOpen(!isGovernancePanelOpen)}
               size="small"
-              color="primary"
+              sx={{ color: DARK_THEME.primary }}
             >
               {isGovernancePanelOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
             
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: DARK_THEME.text.primary }}>
               {isMultiAgentMode ? 'Multi-Agent Chat' : 'Agent Chat'}
             </Typography>
             
             {selectedAgent && !isMultiAgentMode && (
               <Chip 
                 label={selectedAgent.name}
-                avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{selectedAgent.avatar}</Avatar>}
+                avatar={<Avatar sx={{ bgcolor: DARK_THEME.primary }}>{selectedAgent.avatar}</Avatar>}
                 variant="outlined"
-                color="primary"
+                sx={{ 
+                  color: DARK_THEME.text.primary,
+                  borderColor: DARK_THEME.border,
+                  '& .MuiChip-avatar': { color: '#ffffff' }
+                }}
               />
             )}
           </Box>
@@ -432,14 +463,24 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
               color={governanceEnabled ? 'success' : 'default'}
               size="small"
               icon={governanceEnabled ? <ShieldIcon /> : undefined}
+              sx={{ 
+                color: DARK_THEME.text.primary,
+                backgroundColor: governanceEnabled ? DARK_THEME.success + '20' : DARK_THEME.surface,
+                borderColor: DARK_THEME.border
+              }}
             />
             <Chip 
               label={isMultiAgentMode ? 'Multi-Agent' : 'Single Agent'}
               color={isMultiAgentMode ? 'secondary' : 'primary'}
               size="small"
               icon={isMultiAgentMode ? <GroupIcon /> : <PersonIcon />}
+              sx={{ 
+                color: DARK_THEME.text.primary,
+                backgroundColor: isMultiAgentMode ? DARK_THEME.warning + '20' : DARK_THEME.primary + '20',
+                borderColor: DARK_THEME.border
+              }}
             />
-            <IconButton size="small">
+            <IconButton size="small" sx={{ color: DARK_THEME.text.secondary }}>
               <SettingsIcon />
             </IconButton>
           </Box>
@@ -449,13 +490,13 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         <MessagesContainer>
           {messages.length === 0 && (
             <EmptyState>
-              <Avatar sx={{ width: 64, height: 64, mb: 2, bgcolor: 'primary.main' }}>
+              <Avatar sx={{ width: 64, height: 64, mb: 2, bgcolor: DARK_THEME.primary }}>
                 {isMultiAgentMode ? '🤝' : '🤖'}
               </Avatar>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ color: DARK_THEME.text.primary }}>
                 Start a conversation
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
                 {isMultiAgentMode 
                   ? 'Multiple agents will collaborate to provide comprehensive responses'
                   : 'Chat with your selected agent and see governance in action'
@@ -486,7 +527,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                         sx={{ 
                           display: 'block', 
                           mb: 0.5, 
-                          color: 'text.secondary',
+                          color: DARK_THEME.text.secondary,
                           fontWeight: 500
                         }}
                       >
@@ -495,8 +536,13 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                           <Chip 
                             label="Observer" 
                             size="small" 
-                            color="warning" 
-                            sx={{ ml: 1, height: 16, fontSize: '10px' }}
+                            sx={{ 
+                              ml: 1, 
+                              height: 16, 
+                              fontSize: '10px',
+                              backgroundColor: DARK_THEME.warning + '20',
+                              color: DARK_THEME.warning
+                            }}
                           />
                         )}
                       </Typography>
@@ -516,7 +562,11 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                               label={attachment.name}
                               size="small"
                               variant="outlined"
-                              sx={{ fontSize: '10px' }}
+                              sx={{ 
+                                fontSize: '10px',
+                                color: DARK_THEME.text.secondary,
+                                borderColor: DARK_THEME.border
+                              }}
                             />
                           ))}
                         </Box>
@@ -528,7 +578,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                       sx={{ 
                         display: 'block', 
                         mt: 0.5, 
-                        color: 'text.secondary',
+                        color: DARK_THEME.text.secondary,
                         fontSize: '11px'
                       }}
                     >
@@ -540,8 +590,13 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                         <Chip 
                           label="✓ Governed" 
                           size="small" 
-                          color="success" 
-                          sx={{ ml: 1, height: 14, fontSize: '9px' }}
+                          sx={{ 
+                            ml: 1, 
+                            height: 14, 
+                            fontSize: '9px',
+                            backgroundColor: DARK_THEME.success + '20',
+                            color: DARK_THEME.success
+                          }}
                         />
                       )}
                     </Typography>
@@ -565,20 +620,22 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         </MessagesContainer>
 
         {/* Modern Message Input */}
-        <ModernMessageInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSendMessage}
-          disabled={isProcessing}
-          placeholder={
-            isMultiAgentMode 
-              ? "Ask multiple agents to collaborate on your question..."
-              : `Chat with ${selectedAgent?.name || 'agent'}...`
-          }
-          maxFiles={5}
-          maxFileSize={10}
-          acceptedFileTypes={['image/*', 'video/*', 'audio/*', '.pdf', '.doc', '.docx', '.txt']}
-        />
+        <MessageInputContainer>
+          <ModernMessageInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSendMessage}
+            disabled={isProcessing}
+            placeholder={
+              isMultiAgentMode 
+                ? "Ask multiple agents to collaborate on your question..."
+                : `Chat with ${selectedAgent?.name || 'agent'}...`
+            }
+            maxFiles={5}
+            maxFileSize={10}
+            acceptedFileTypes={['image/*', 'video/*', 'audio/*', '.pdf', '.doc', '.docx', '.txt']}
+          />
+        </MessageInputContainer>
       </ChatArea>
 
       {/* Error Snackbar */}

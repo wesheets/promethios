@@ -182,7 +182,8 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Chat Page route - for testing incremental build */}
+        {/* Chat Page route - DEPRECATED - Use modern-chat instead */}
+        {/* 
         <Route path="chat" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
@@ -190,11 +191,14 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
+        */}
         
         {/* Modern Chat Page route - redesigned interface */}
         <Route path="modern-chat" element={
           <ProtectedRoute requireOnboarding={false}>
-            <ModernChatPage />
+            <MainLayoutProxy>
+              <ModernChatPage />
+            </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
