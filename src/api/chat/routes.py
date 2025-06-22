@@ -192,7 +192,7 @@ def call_governance_orchestrator(method: str, *args) -> dict:
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-def call_agent_system(method: str, *args) -> dict:
+async def call_agent_system(method: str, *args) -> dict:
     """
     Call the Agent System for AI model interactions with real AI integration.
     
@@ -203,117 +203,114 @@ def call_agent_system(method: str, *args) -> dict:
         if method == "generate_response":
             agent_config, message_content, governance_config = args
             
-            # Use real AI model service for response generation
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Convert conversation history if available
+            conversation_history = []
             
-            try:
-                # Convert conversation history if available
-                conversation_history = []
-                
-                # Build governance context
-                governance_context = {
-                    "enabled": governance_config.enabled,
-                    "policy_enforcement_level": governance_config.policy_enforcement_level,
-                    "trust_threshold": governance_config.trust_threshold,
-                    "observer_monitoring": governance_config.observer_monitoring
-                }
-                
-                # Generate response using AI model service
-                response_data = loop.run_until_complete(
-                    ai_model_service.generate_response(
-                        agent_config.agent_id,
-                        message_content,
-                        conversation_history,
-                        governance_context
-                    )
-                )
-                
-                return {
-                    "status": response_data.get("status", "success"),
-                    "response": response_data.get("response", ""),
-                    "agent_id": agent_config.agent_id,
-                    "processing_time_ms": response_data.get("processing_time_ms", 0),
-                    "model": response_data.get("model", "unknown"),
-                    "provider": response_data.get("provider", "unknown")
-                }
-                
-            finally:
-                loop.close()
+            # Build governance context
+            governance_context = {
+                "enabled": governance_config.enabled,
+                "policy_enforcement_level": governance_config.policy_enforcement_level,
+                "trust_threshold": governance_config.trust_threshold,
+                "observer_monitoring": governance_config.observer_monitoring
+            }
+            
+            # Generate response using AI model service (properly async)
+            response_data = await ai_model_service.generate_response(
+                agent_config.agent_id,
+                message_content,
+                conversation_history,
+                governance_context
+            )
+            
+            # Log the response for debugging
+            print(f"AI Model Response: {response_data}")
+            
+            if response_data.get("status") == "error":
+                print(f"AI Model Error Details: {response_data.get('error_details', {})}")
+            
+            return {
+                "status": response_data.get("status", "success"),
+                "response": response_data.get("response", ""),
+                "agent_id": agent_config.agent_id,
+                "processing_time_ms": response_data.get("processing_time_ms", 0),
+                "model": response_data.get("model", "unknown"),
+                "provider": response_data.get("provider", "unknown"),
+                "error_details": response_data.get("error_details")
+            }
             
         elif method == "coordinate_multi_agent":
             multi_agent_config, message_content, governance_config = args
             
-            # Use multi-agent coordinator for complex conversations
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Convert agent configs to format expected by coordinator
+            agents = []
+            for agent_config in multi_agent_config.agents:
+                agents.append({
+                    "agent_id": agent_config.agent_id,
+                    "agent_type": agent_config.agent_type,
+                    "capabilities": agent_config.capabilities,
+                    "governance_policies": agent_config.governance_policies
+                })
             
-            try:
-                # Convert agent configs to format expected by coordinator
-                agents = []
-                for agent_config in multi_agent_config.agents:
-                    agents.append({
-                        "agent_id": agent_config.agent_id,
-                        "agent_type": agent_config.agent_type,
-                        "capabilities": agent_config.capabilities,
-                        "governance_policies": agent_config.governance_policies
-                    })
-                
-                # Build governance context
-                governance_context = {
-                    "enabled": governance_config.enabled,
-                    "policy_enforcement_level": governance_config.policy_enforcement_level,
-                    "trust_threshold": governance_config.trust_threshold,
-                    "observer_monitoring": governance_config.observer_monitoring
-                }
-                
-                # Coordination configuration
-                coordination_config = {
-                    "max_rounds": multi_agent_config.max_rounds,
-                    "consensus_threshold": multi_agent_config.consensus_threshold,
-                    "lead_agent_id": multi_agent_config.lead_agent_id
-                }
-                
-                # Coordinate agents
-                coordination_result = loop.run_until_complete(
-                    multi_agent_coordinator.coordinate_agents(
-                        agents,
-                        message_content,
-                        CoordinationPattern(multi_agent_config.coordination_pattern),
-                        [],  # conversation_history
-                        governance_context,
-                        coordination_config
-                    )
-                )
-                
-                return {
-                    "status": "success",
-                    "response": coordination_result.final_response,
-                    "coordination_pattern": coordination_result.coordination_pattern.value,
-                    "participating_agents": coordination_result.participating_agents,
-                    "consensus_score": coordination_result.consensus_score,
-                    "processing_time_ms": coordination_result.total_processing_time_ms,
-                    "individual_responses": [
-                        {
-                            "agent_id": r.agent_id,
-                            "content": r.content,
-                            "confidence": r.confidence,
-                            "trust_score": r.trust_score
-                        }
-                        for r in coordination_result.individual_responses
-                    ]
-                }
-                
-            finally:
-                loop.close()
+            # Build governance context
+            governance_context = {
+                "enabled": governance_config.enabled,
+                "policy_enforcement_level": governance_config.policy_enforcement_level,
+                "trust_threshold": governance_config.trust_threshold,
+                "observer_monitoring": governance_config.observer_monitoring
+            }
+            
+            # Coordination configuration
+            coordination_config = {
+                "max_rounds": multi_agent_config.max_rounds,
+                "consensus_threshold": multi_agent_config.consensus_threshold,
+                "lead_agent_id": multi_agent_config.lead_agent_id
+            }
+            
+            # Coordinate agents (properly async)
+            coordination_result = await multi_agent_coordinator.coordinate_agents(
+                agents,
+                message_content,
+                CoordinationPattern(multi_agent_config.coordination_pattern),
+                [],  # conversation_history
+                governance_context,
+                coordination_config
+            )
+            
+            return {
+                "status": "success",
+                "response": coordination_result.final_response,
+                "coordination_pattern": coordination_result.coordination_pattern.value,
+                "participating_agents": coordination_result.participating_agents,
+                "consensus_score": coordination_result.consensus_score,
+                "processing_time_ms": coordination_result.total_processing_time_ms,
+                "individual_responses": [
+                    {
+                        "agent_id": r.agent_id,
+                        "content": r.content,
+                        "confidence": r.confidence,
+                        "trust_score": r.trust_score
+                    }
+                    for r in coordination_result.individual_responses
+                ]
+            }
             
         else:
             return {"status": "error", "error": f"Unknown agent method: {method}"}
             
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        print(f"Agent System Exception: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"Agent System Traceback: {traceback.format_exc()}")
+        return {
+            "status": "error", 
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "error_details": {
+                "method": method,
+                "args_count": len(args),
+                "traceback": traceback.format_exc()
+            }
+        }
 
 def call_observer_agent(method: str, *args) -> dict:
     """
@@ -498,14 +495,14 @@ async def send_message(
         
         # Stage 4: Agent Routing and Response Generation
         if session.session_type == "single_agent" and session.agent_config:
-            agent_response = call_agent_system(
+            agent_response = await call_agent_system(
                 "generate_response",
                 session.agent_config,
                 message_request.content,
                 session.governance_config
             )
         elif session.session_type == "multi_agent" and session.multi_agent_config:
-            agent_response = call_agent_system(
+            agent_response = await call_agent_system(
                 "coordinate_multi_agent",
                 session.multi_agent_config,
                 message_request.content,
@@ -518,6 +515,27 @@ async def send_message(
                 "response": f"Echo: {message_request.content}",
                 "processing_time_ms": 500
             }
+        
+        # Log agent response for debugging
+        print(f"Agent Response in Route Handler: {agent_response}")
+        
+        # Check for agent system errors
+        if agent_response.get("status") == "error":
+            error_msg = agent_response.get("error", "Unknown agent system error")
+            print(f"Agent System Error in Route: {error_msg}")
+            print(f"Error Details: {agent_response.get('error_details', {})}")
+            
+            # Return error response instead of masking it
+            return MessageResponse(
+                message_id=message_id,
+                session_id=session_id,
+                response_content=f"Agent Error: {error_msg}",
+                governance_status="error",
+                trust_score=0.0,
+                policy_compliance=False,
+                observer_notes=f"Agent system error: {error_msg}",
+                processing_time_ms=int((datetime.now() - start_time).total_seconds() * 1000)
+            )
         
         # Ensure agent_response has required fields
         if "response" not in agent_response:
@@ -710,6 +728,50 @@ async def delete_chat_session(session_id: str = Path(..., description="Chat sess
 # ============================================================================
 # Health and Status Endpoints
 # ============================================================================
+
+@router.get("/debug/test-ai")
+async def debug_test_ai():
+    """Test AI model service directly."""
+    try:
+        response = await ai_model_service.generate_response(
+            "baseline-agent",
+            "Hello, this is a test message",
+            [],
+            {"enabled": True, "policy_enforcement_level": "moderate"}
+        )
+        return {"status": "success", "ai_response": response}
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+
+@router.get("/debug/env-check")
+async def debug_env_check():
+    """Debug endpoint to check environment variable access."""
+    import os
+    
+    env_status = {
+        "openai_key_present": bool(os.getenv("OPENAI_API_KEY")),
+        "anthropic_key_present": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "cohere_key_present": bool(os.getenv("COHERE_API_KEY")),
+        "huggingface_key_present": bool(os.getenv("HUGGINGFACE_API_KEY")),
+        "openai_key_length": len(os.getenv("OPENAI_API_KEY", "")),
+        "anthropic_key_length": len(os.getenv("ANTHROPIC_API_KEY", "")),
+    }
+    
+    return {
+        "status": "debug",
+        "environment_access": env_status,
+        "ai_model_service_config": {
+            "openai_configured": ai_model_service.config.openai_api_key is not None,
+            "anthropic_configured": ai_model_service.config.anthropic_api_key is not None,
+            "cohere_configured": ai_model_service.config.cohere_api_key is not None,
+        }
+    }
 
 @router.get("/health")
 async def chat_system_health():

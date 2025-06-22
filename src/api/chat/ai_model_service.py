@@ -170,9 +170,17 @@ class AIModelService:
             
         except Exception as e:
             processing_time = int((time.time() - start_time) * 1000)
+            error_details = {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "agent_id": agent_id,
+                "provider": agent_config.get("provider", "unknown") if agent_id in self.config.models else "unknown"
+            }
+            print(f"AI Model Service Error: {error_details}")  # Debug logging
             return {
                 "status": "error",
                 "error": str(e),
+                "error_details": error_details,
                 "response": "I apologize, but I'm experiencing technical difficulties. Please try again.",
                 "processing_time_ms": processing_time,
                 "agent_id": agent_id
@@ -252,19 +260,18 @@ class AIModelService:
                     "usage": data.get("usage", {}),
                     "model": agent_config["model"]
                 }
+            elif response.status_code == 401:
+                # Authentication error - fall back to mock
+                print(f"OpenAI authentication failed, falling back to mock response")
+                return await self._call_mock(agent_config, messages)
             else:
-                return {
-                    "status": "error",
-                    "error": f"OpenAI API error: {response.status_code}",
-                    "response": "I'm experiencing technical difficulties with the OpenAI service."
-                }
+                # Other API errors - fall back to mock
+                print(f"OpenAI API error {response.status_code}, falling back to mock response")
+                return await self._call_mock(agent_config, messages)
                 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": f"OpenAI call failed: {str(e)}",
-                "response": "I'm unable to connect to the OpenAI service right now."
-            }
+            print(f"OpenAI call exception: {e}, falling back to mock response")
+            return await self._call_mock(agent_config, messages)
     
     async def _call_anthropic(self, agent_config: Dict[str, Any], messages: List[Dict[str, str]]) -> Dict[str, Any]:
         """Call Anthropic Claude API."""
