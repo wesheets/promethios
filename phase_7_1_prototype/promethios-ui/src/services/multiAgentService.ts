@@ -76,7 +76,7 @@ export class MultiAgentService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${API_BASE_URL}/multi_agent`;
+    this.baseUrl = `${API_BASE_URL}/multi_agent_system`;
   }
 
   /**

@@ -51,7 +51,7 @@ import {
   Edit,
 } from '@mui/icons-material';
 import { useAgentWrappers } from '../hooks/useAgentWrappers';
-import { useMultiAgentSystems } from '../hooks/useMultiAgentSystems';
+import { useMultiAgentSystemsUnified } from '../hooks/useMultiAgentSystemsUnified';
 import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
 
 // Enhanced Success component with system scorecard and governance details
@@ -413,7 +413,7 @@ const DEMO_TEAM_TEMPLATES = [
 
 const MultiAgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
-  const { createSystem } = useMultiAgentSystems();
+  const { createContext, loading, error } = useMultiAgentSystemsUnified('user-123'); // TODO: Get real user ID
   
   // Check for ad hoc configuration from sessionStorage
   const [isFromAdHoc, setIsFromAdHoc] = useState(false);
@@ -447,6 +447,9 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [createdSystemId, setCreatedSystemId] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  
+  // Use backend loading and error states
+  const isLoading = loading || isCreating;
 
   const { agentWrappers, loading: loadingAgents } = useAgentWrappers();
 
@@ -508,8 +511,14 @@ const MultiAgentWrappingWizard: React.FC = () => {
         status: 'active'
       };
 
-      const systemId = await createSystem(systemData);
-      setCreatedSystemId(systemId);
+      // Create multi-agent context using backend API
+      const contextId = await createContext(
+        systemName,
+        selectedAgents,
+        systemType // collaboration model
+      );
+      
+      setCreatedSystemId(contextId);
       setIsComplete(true);
       setActiveStep(steps.length); // Move to success step
     } catch (error) {

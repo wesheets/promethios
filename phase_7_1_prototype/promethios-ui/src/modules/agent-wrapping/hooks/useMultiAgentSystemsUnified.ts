@@ -1,23 +1,17 @@
 /**
- * Enhanced Multi-Agent Systems Hook with Unified Storage Integration
+ * Enhanced Multi-Agent Systems Hook with Backend Integration
  * 
- * React hook that integrates multi-agent coordination with the unified storage system
+ * React hook that integrates multi-agent coordination with the real backend API
  * for persistent collaboration contexts and real-time synchronization.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { agentManagementServiceUnified } from '../../../services/agentManagementServiceUnified';
-import { MultiAgentContext, AgentMessage, CollaborationMetrics } from '../../../services/multiAgentService';
-import { storageExtension } from '../../../extensions/StorageExtension';
+import { useMultiAgentBackend, MultiAgentContextData, MessageData } from '../../../hooks/useMultiAgentBackend';
+import { CreateContextRequest, SendMessageRequest } from '../../../services/multiAgentBackendService';
 
 // Enhanced types for the hook
-interface StoredMultiAgentContext extends MultiAgentContext {
+interface StoredMultiAgentContext extends MultiAgentContextData {
   userId: string;
-  persistentData: {
-    sharedMemory: Record<string, any>;
-    conversationHistory: AgentMessage[];
-    collaborationMetrics: any;
-  };
   lastActivity: number;
 }
 
@@ -25,7 +19,7 @@ interface UseMultiAgentSystemsReturn {
   // Data
   contexts: StoredMultiAgentContext[];
   activeContexts: StoredMultiAgentContext[];
-  metrics: CollaborationMetrics | null;
+  messages: Map<string, MessageData[]>;
   
   // Loading states
   loading: boolean;
@@ -46,7 +40,7 @@ interface UseMultiAgentSystemsReturn {
   // Context management
   activateContext: (contextId: string) => Promise<void>;
   deactivateContext: (contextId: string) => Promise<void>;
-  getContextHistory: (contextId: string) => AgentMessage[];
+  getContextHistory: (contextId: string) => MessageData[];
   updateSharedMemory: (contextId: string, key: string, value: any) => Promise<void>;
   
   // Utilities
@@ -57,277 +51,178 @@ interface UseMultiAgentSystemsReturn {
 }
 
 export const useMultiAgentSystemsUnified = (userId?: string): UseMultiAgentSystemsReturn => {
-  // State
-  const [contexts, setContexts] = useState<StoredMultiAgentContext[]>([]);
-  const [metrics, setMetrics] = useState<CollaborationMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Use the backend hook
+  const {
+    contexts: backendContexts,
+    messages,
+    loading: backendLoading,
+    error: backendError,
+    createContext: backendCreateContext,
+    sendMessage: backendSendMessage,
+    getConversationHistory,
+    deleteContext: backendDeleteContext,
+    refreshContexts: backendRefreshContexts
+  } = useMultiAgentBackend(userId);
+
+  // Additional state for UI compatibility
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isStorageReady, setIsStorageReady] = useState(false);
+  const [activeContextIds, setActiveContextIds] = useState<Set<string>>(new Set());
 
-  // Initialize service with user ID
-  useEffect(() => {
-    const initializeService = async () => {
-      if (userId) {
-        try {
-          await agentManagementServiceUnified.setUserId(userId);
-          setIsStorageReady(agentManagementServiceUnified.isStorageIntegrationReady());
-          await refreshContexts();
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to initialize multi-agent service');
-        }
-      }
-    };
+  // Transform backend contexts to include userId and lastActivity
+  const contexts: StoredMultiAgentContext[] = backendContexts.map(ctx => ({
+    ...ctx,
+    userId: userId || 'unknown',
+    lastActivity: new Date(ctx.lastActivity).getTime()
+  }));
 
-    initializeService();
-  }, [userId]);
+  // Filter active contexts
+  const activeContexts = contexts.filter(ctx => activeContextIds.has(ctx.context_id));
 
-  // Refresh contexts from storage
-  const refreshContexts = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const storedContexts = await agentManagementServiceUnified.getStoredMultiAgentContexts();
-      setContexts(storedContexts);
-      
-      // Calculate collaboration metrics
-      if (storedContexts.length > 0) {
-        const totalMessages = storedContexts.reduce((sum, ctx) => 
-          sum + ctx.persistentData.conversationHistory.length, 0);
-        
-        const activeAgents = new Set();
-        storedContexts.forEach(ctx => {
-          ctx.agent_ids.forEach(agentId => activeAgents.add(agentId));
-        });
-
-        setMetrics({
-          context_id: 'aggregate',
-          collaboration_model: 'mixed',
-          total_messages: totalMessages,
-          active_agents: activeAgents.size,
-          average_participation: storedContexts.length > 0 
-            ? totalMessages / storedContexts.length 
-            : 0,
-          agent_metrics: [],
-          governance_metrics: {}
-        });
-      }
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load multi-agent contexts');
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  // Create new context
+  // Create context wrapper
   const createContext = useCallback(async (
     name: string, 
     agentIds: string[], 
     collaborationModel: string
   ): Promise<string> => {
-    if (!userId) throw new Error('User ID required');
-
     try {
       setCreating(true);
-      setError(null);
       
-      const contextId = await agentManagementServiceUnified.createMultiAgentContext(
-        name, 
-        agentIds, 
-        collaborationModel
-      );
+      const request: CreateContextRequest = {
+        name,
+        agent_ids: agentIds,
+        collaboration_model: collaborationModel,
+        governance_enabled: true,
+        metadata: { userId: userId || 'unknown' }
+      };
       
-      await refreshContexts();
+      const contextId = await backendCreateContext(request);
       return contextId;
       
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create multi-agent context';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setCreating(false);
     }
-  }, [userId, refreshContexts]);
+  }, [userId, backendCreateContext]);
 
-  // Update context
+  // Update context (placeholder - not implemented in backend yet)
   const updateContext = useCallback(async (
     contextId: string, 
     updates: Partial<StoredMultiAgentContext>
   ): Promise<void> => {
-    if (!userId) throw new Error('User ID required');
-
     try {
       setUpdating(true);
-      setError(null);
-      
-      const existingContext = await agentManagementServiceUnified.getMultiAgentContext(contextId);
-      if (!existingContext) {
-        throw new Error('Context not found');
-      }
-
-      const updatedContext = {
-        ...existingContext,
-        ...updates,
-        lastActivity: Date.now()
-      };
-
-      await storageExtension.set('agents', `context_${contextId}`, updatedContext);
-      await refreshContexts();
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update multi-agent context';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      // TODO: Implement context update in backend
+      console.log('Context update not yet implemented in backend:', contextId, updates);
     } finally {
       setUpdating(false);
     }
-  }, [userId, refreshContexts]);
+  }, []);
 
-  // Delete context
+  // Delete context wrapper
   const deleteContext = useCallback(async (contextId: string): Promise<void> => {
-    if (!userId) throw new Error('User ID required');
-
     try {
       setDeleting(true);
-      setError(null);
+      await backendDeleteContext(contextId);
       
-      await storageExtension.delete('agents', `context_${contextId}`);
-      await refreshContexts();
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete multi-agent context';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      // Remove from active contexts
+      setActiveContextIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(contextId);
+        return newSet;
+      });
     } finally {
       setDeleting(false);
     }
-  }, [userId, refreshContexts]);
+  }, [backendDeleteContext]);
 
-  // Send message
+  // Send message wrapper
   const sendMessage = useCallback(async (
-    contextId: string,
-    fromAgentId: string,
-    toAgentIds: string[],
+    contextId: string, 
+    fromAgentId: string, 
+    toAgentIds: string[], 
     message: any
   ): Promise<any> => {
-    if (!userId) throw new Error('User ID required');
-
-    try {
-      const result = await agentManagementServiceUnified.sendMultiAgentMessage(
-        contextId,
-        fromAgentId,
-        toAgentIds,
-        message
-      );
-      
-      // Refresh contexts to show updated conversation history
-      await refreshContexts();
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, [userId, refreshContexts]);
+    const request: SendMessageRequest = {
+      context_id: contextId,
+      from_agent_id: fromAgentId,
+      to_agent_ids: toAgentIds,
+      message,
+      require_response: false,
+      priority: 'normal'
+    };
+    
+    return await backendSendMessage(request);
+  }, [backendSendMessage]);
 
   // Activate context
   const activateContext = useCallback(async (contextId: string): Promise<void> => {
-    await updateContext(contextId, { 
-      status: 'active',
-      lastActivity: Date.now()
-    });
-  }, [updateContext]);
+    setActiveContextIds(prev => new Set(prev).add(contextId));
+    
+    // Load conversation history for the context
+    await getConversationHistory(contextId);
+  }, [getConversationHistory]);
 
   // Deactivate context
   const deactivateContext = useCallback(async (contextId: string): Promise<void> => {
-    await updateContext(contextId, { 
-      status: 'inactive'
+    setActiveContextIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(contextId);
+      return newSet;
     });
-  }, [updateContext]);
+  }, []);
 
   // Get context history
-  const getContextHistory = useCallback((contextId: string): AgentMessage[] => {
-    const context = contexts.find(ctx => ctx.context_id === contextId);
-    return context?.persistentData.conversationHistory || [];
-  }, [contexts]);
+  const getContextHistory = useCallback((contextId: string): MessageData[] => {
+    return messages.get(contextId) || [];
+  }, [messages]);
 
-  // Update shared memory
+  // Update shared memory (placeholder)
   const updateSharedMemory = useCallback(async (
     contextId: string, 
     key: string, 
     value: any
   ): Promise<void> => {
-    const context = await agentManagementServiceUnified.getMultiAgentContext(contextId);
-    if (!context) {
-      throw new Error('Context not found');
-    }
-
-    context.persistentData.sharedMemory[key] = value;
-    context.lastActivity = Date.now();
-
-    await storageExtension.set('agents', `context_${contextId}`, context);
-    await refreshContexts();
-  }, [refreshContexts]);
+    // TODO: Implement shared memory update in backend
+    console.log('Shared memory update not yet implemented:', contextId, key, value);
+  }, []);
 
   // Utility functions
   const getContextById = useCallback((contextId: string): StoredMultiAgentContext | undefined => {
-    return contexts.find(context => context.context_id === contextId);
+    return contexts.find(ctx => ctx.context_id === contextId);
   }, [contexts]);
 
   const getContextsByModel = useCallback((model: string): StoredMultiAgentContext[] => {
-    return contexts.filter(context => context.collaboration_model === model);
+    return contexts.filter(ctx => ctx.collaboration_model === model);
   }, [contexts]);
 
   const getContextsByAgent = useCallback((agentId: string): StoredMultiAgentContext[] => {
-    return contexts.filter(context => context.agent_ids.includes(agentId));
+    return contexts.filter(ctx => ctx.agent_ids.includes(agentId));
   }, [contexts]);
-
-  // Computed values
-  const activeContexts = contexts.filter(context => context.status === 'active');
-
-  // Set up storage event listeners for real-time updates
-  useEffect(() => {
-    if (!isStorageReady) return;
-
-    const handleStorageEvent = (event: any) => {
-      if (event.namespace === 'agents' && event.key.startsWith('context_')) {
-        // Refresh contexts when storage changes
-        refreshContexts();
-      }
-    };
-
-    const removeListener = storageExtension.addEventListener(handleStorageEvent);
-    return removeListener;
-  }, [isStorageReady, refreshContexts]);
 
   return {
     // Data
     contexts,
     activeContexts,
-    metrics,
+    messages,
     
     // Loading states
-    loading,
+    loading: backendLoading,
     creating,
     updating,
     deleting,
     
     // Error states
-    error,
+    error: backendError,
     
     // Actions
     createContext,
     updateContext,
     deleteContext,
     sendMessage,
-    refreshContexts,
+    refreshContexts: backendRefreshContexts,
     
     // Context management
     activateContext,
@@ -339,10 +234,7 @@ export const useMultiAgentSystemsUnified = (userId?: string): UseMultiAgentSyste
     getContextById,
     getContextsByModel,
     getContextsByAgent,
-    isStorageReady
+    isStorageReady: true // Backend is always ready
   };
 };
-
-// Backward compatibility - export the original hook name
-export const useMultiAgentSystems = useMultiAgentSystemsUnified;
 
