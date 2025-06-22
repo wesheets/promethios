@@ -30,10 +30,15 @@ from src.api.observers.routes import router as observers_router
 from src.api.policy.routes import router as policy_router
 
 # Import trust and audit routes from Phase 6.3
-import sys
-sys.path.append('/home/ubuntu/promethios/phase_6_3_new/src')
-from api.trust.routes import router as trust_router
-from api.audit.routes import router as audit_router
+# Temporarily commented out due to import issues - will fix in Phase 2
+# import sys
+# sys.path.append('/home/ubuntu/promethios/phase_6_3_new/src')
+# sys.path.append('/home/ubuntu/promethios/phase_6_3_new')
+# from phase_6_3_new.src.api.trust.routes import router as trust_router
+# from phase_6_3_new.src.api.audit.routes import router as audit_router
+
+# Import chat routes
+from src.api.chat.routes import router as chat_router
 
 # --- FastAPI App Initialization --- #
 app = FastAPI(
@@ -66,11 +71,14 @@ app.include_router(observers_router, prefix="/api/observers", tags=["Observer Ag
 # Include policy routes
 app.include_router(policy_router, prefix="/api/policy", tags=["Policy Management"])
 
-# Include trust routes
-app.include_router(trust_router, prefix="/api/trust", tags=["Trust Management"])
+# Include trust routes - temporarily commented out
+# app.include_router(trust_router, prefix="/api/trust", tags=["Trust Management"])
 
-# Include audit routes
-app.include_router(audit_router, prefix="/api/audit", tags=["Audit & Compliance"])
+# Include audit routes - temporarily commented out  
+# app.include_router(audit_router, prefix="/api/audit", tags=["Audit & Compliance"])
+
+# Include chat routes
+app.include_router(chat_router, prefix="/api", tags=["Chat System"])
 
 # --- Schema Loading for Request Validation --- #
 # These paths assume main.py is in the root of promethios_repo
@@ -110,4 +118,8 @@ def create_validation_error_response(errors, status_code=status.HTTP_400_BAD_REQ
             "execution_status": "REJECTED",
             "governance_core_output": None,
             "emotion_telemetry": None,
+            "justification_log": None,
+            "validation_errors": error_details_list
+        }
+    )
 
