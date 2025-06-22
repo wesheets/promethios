@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import useContextAwareness from '../hooks/useContextAwareness';
 import { useObserverPreferences } from '../hooks/useObserverPreferences';
-import { observerAgentServiceUnified } from '../services/observerAgentServiceUnified';
+import { useObserverBackend } from '../hooks/useObserverBackend';
 import ObserverSettings from './ObserverSettings';
 import ObserverTrustMetrics from './ObserverTrustMetrics';
 
@@ -63,6 +63,26 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
   // Use preferences hook
   const { preferences, updatePreference } = useObserverPreferences();
   
+  // Use backend hook for real observer integration
+  const {
+    currentObserver,
+    suggestions,
+    trustMetrics,
+    contextAwareness,
+    configuration,
+    loading,
+    generatingSuggestions,
+    loadingMetrics,
+    error,
+    registerObserver,
+    generateSuggestions,
+    getSuggestions,
+    getTrustMetrics,
+    getContextAwareness,
+    setCurrentObserver,
+    refreshData
+  } = useObserverBackend(true, `observer_${userId}`);
+
   const [state, setState] = useState<ObserverState>({
     isActive: true,
     isExpanded: false,
@@ -88,33 +108,65 @@ const ObserverAgent: React.FC<ObserverAgentProps> = ({
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize observer service with storage integration
+  // Initialize observer with backend registration
   useEffect(() => {
     const initializeObserver = async () => {
       try {
-        const sessionId = await observerAgentServiceUnified.startSession(userId, userRole);
-        console.log('Observer Agent session started:', sessionId);
-        
-        // Load chat history from storage
-        const chatHistory = await observerAgentServiceUnified.getChatHistory();
-        setChatHistory(chatHistory);
-        
-        // Load preferences from storage
-        const storedPreferences = await observerAgentServiceUnified.getPreferences();
-        if (storedPreferences) {
-          // Update local preferences state if needed
-          setState(prev => ({
-            ...prev,
-            pulsingEnabled: storedPreferences.pulsingEnabled
-          }));
+        // Check if observer already exists
+        if (!currentObserver) {
+          // Register new observer with backend
+          const observerId = `observer_${userId}`;
+          await registerObserver({
+            observer_id: observerId,
+            name: `Observer Agent for ${userId}`,
+            capabilities: ['context_awareness', 'ai_suggestions', 'trust_monitoring', 'governance_alerts'],
+            context_scope: 'session',
+            ai_model: 'gpt-4',
+            trust_threshold: 0.7,
+            metadata: { userId, userRole }
+          });
+          
+          // Set as current observer
+          await setCurrentObserver(observerId);
         }
+        
+        console.log('Observer Agent initialized with backend:', currentObserver?.observer_id);
       } catch (error) {
         console.error('Failed to initialize Observer Agent:', error);
+        setState(prev => ({ ...prev, lastError: 'Failed to initialize observer' }));
       }
     };
     
     initializeObserver();
-  }, [userId, userRole]);
+  }, [userId, userRole, currentObserver, registerObserver, setCurrentObserver]);
+
+  // Update suggestions from backend
+  useEffect(() => {
+    if (suggestions.length > 0) {
+      setState(prev => ({
+        ...prev,
+        suggestions: suggestions.map(s => ({
+          id: s.id,
+          text: s.text,
+          type: s.type as 'info' | 'warning' | 'action_recommendation' | 'governance_alert',
+          action: s.action,
+          source: s.source,
+          relevance: s.relevance,
+          timestamp: new Date(s.timestamp).getTime()
+        }))
+      }));
+    }
+  }, [suggestions]);
+
+  // Update context insights from backend
+  useEffect(() => {
+    if (contextAwareness?.insights) {
+      setState(prev => ({
+        ...prev,
+        contextInsights: contextAwareness.insights
+      }));
+    }
+  }, [contextAwareness]);
 
   // Update pulsing enabled state when preferences change
   useEffect(() => {

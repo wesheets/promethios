@@ -23,6 +23,9 @@ from src.api.agents.routes import router as agents_router
 # Import multi-agent system routes
 from src.api.multi_agent_system.routes import router as multi_agent_system_router
 
+# Import observer routes
+from src.api.observers.routes import router as observers_router
+
 # --- FastAPI App Initialization --- #
 app = FastAPI(
     title="Promethios Governance Core Runtime",
@@ -47,6 +50,9 @@ app.include_router(agents_router)
 
 # Include multi-agent system routes
 app.include_router(multi_agent_system_router, prefix="/api/multi_agent_system", tags=["Multi-Agent System"])
+
+# Include observer routes
+app.include_router(observers_router, prefix="/api/observers", tags=["Observer Agents"])
 
 # --- Schema Loading for Request Validation --- #
 # These paths assume main.py is in the root of promethios_repo
