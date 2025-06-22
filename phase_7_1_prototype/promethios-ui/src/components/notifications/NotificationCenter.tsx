@@ -1,16 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNotifications } from '../hooks/useNotifications';
-import { Notification } from '../types/notification';
+import { useNotificationBackend } from '../../hooks/useNotificationBackend';
+import { BackendNotification } from '../../services/notificationBackendService';
 
 interface NotificationCenterProps {
   className?: string;
 }
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ className = '' }) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, createTestNotification } = useNotifications();
+  const { 
+    notifications, 
+    metrics,
+    notificationsLoading,
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification, 
+    createNotification,
+    getUnreadNotifications,
+    refreshAll
+  } = useNotificationBackend();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = metrics?.unread_notifications || 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -25,32 +38,48 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
   }, []);
 
   const filteredNotifications = filter === 'unread' 
-    ? notifications.filter(n => !n.read)
+    ? getUnreadNotifications()
     : notifications;
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = async (notification: BackendNotification) => {
     if (!notification.read) {
-      await markAsRead(notification.id);
+      await markAsRead(notification.notification_id);
     }
     
-    if (notification.actionUrl) {
-      window.open(notification.actionUrl, '_blank');
+    if (notification.action_url) {
+      window.open(notification.action_url, '_blank');
     }
   };
 
-  const getNotificationIcon = (type: Notification['type']) => {
+  const getNotificationIcon = (type: BackendNotification['type']) => {
     switch (type) {
-      case 'governance': return '🛡️';
-      case 'agent': return '🤖';
+      case 'governance_alert': return '🛡️';
+      case 'policy_violation': return '📋';
+      case 'trust_alert': return '🔒';
       case 'success': return '✅';
       case 'warning': return '⚠️';
       case 'error': return '❌';
+      case 'info': return 'ℹ️';
       default: return 'ℹ️';
     }
   };
 
-  const getPriorityColor = (priority: Notification['priority']) => {
-    switch (priority) {
+  const createTestNotification = async () => {
+    try {
+      await createNotification({
+        type: 'info',
+        title: 'Test Notification',
+        message: 'This is a test notification from the notification center.',
+        source: 'system',
+        severity: 'low'
+      });
+    } catch (error) {
+      console.error('Error creating test notification:', error);
+    }
+  };
+
+  const getSeverityColor = (severity: BackendNotification['severity']) => {
+    switch (severity) {
       case 'critical': return 'border-l-red-500 bg-red-50';
       case 'high': return 'border-l-orange-500 bg-orange-50';
       case 'medium': return 'border-l-yellow-500 bg-yellow-50';
@@ -141,9 +170,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
             ) : (
               filteredNotifications.map((notification) => (
                 <div
-                  key={notification.id}
+                  key={notification.notification_id}
                   className={`border-l-4 p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    getPriorityColor(notification.priority)
+                    getSeverityColor(notification.severity)
                   } ${!notification.read ? 'bg-blue-50' : ''}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
@@ -161,10 +190,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                         </div>
                         <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">{formatTime(notification.timestamp)}</span>
-                          {notification.category && (
+                          <span className="text-xs text-gray-500">{formatTime(new Date(notification.created_at).getTime())}</span>
+                          {notification.source && (
                             <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                              {notification.category}
+                              {notification.source}
                             </span>
                           )}
                         </div>
@@ -175,7 +204,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteNotification(notification.id);
+                        deleteNotification(notification.notification_id);
                       }}
                       className="text-gray-400 hover:text-red-500 ml-2"
                       aria-label="Delete notification"
