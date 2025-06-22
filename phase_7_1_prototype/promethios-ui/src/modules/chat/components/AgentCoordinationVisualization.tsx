@@ -588,4 +588,5 @@ export const AgentCoordinationVisualization: React.FC<AgentCoordinationVisualiza
 };
 
 export default AgentCoordinationVisualization;
+export { AgentCoordinationVisualization };
 
