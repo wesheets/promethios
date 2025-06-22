@@ -64,8 +64,8 @@ const ChatArea = styled(Box)(() => ({
   flexDirection: 'column',
   height: '100%',
   backgroundColor: DARK_THEME.background,
-  position: 'relative',
-  alignItems: 'center' // Center the content horizontally
+  position: 'relative'
+  // Remove alignItems: 'center' to allow header to span full width
 }));
 
 const ChatHeader = styled(Box)(() => ({
@@ -77,8 +77,7 @@ const ChatHeader = styled(Box)(() => ({
   justifyContent: 'space-between',
   minHeight: '72px',
   zIndex: 10,
-  width: '100%',
-  maxWidth: '900px' // Constrain header width
+  width: '100%' // Remove maxWidth constraint to span full width
 }));
 
 const MessagesContainer = styled(Box)(() => ({
@@ -91,7 +90,8 @@ const MessagesContainer = styled(Box)(() => ({
   position: 'relative',
   backgroundColor: DARK_THEME.background,
   width: '100%',
-  maxWidth: '900px', // Constrain chat content width like Manus
+  maxWidth: '900px', // Constrain content width
+  margin: '0 auto', // Center the content
   
   '&::-webkit-scrollbar': {
     width: '6px'
@@ -111,6 +111,7 @@ const MessagesContainer = styled(Box)(() => ({
 const MessageInputContainer = styled(Box)(() => ({
   width: '100%',
   maxWidth: '900px', // Constrain input width to match messages
+  margin: '0 auto', // Center the input
   padding: '0 24px 24px 24px'
 }));
 
@@ -317,9 +318,14 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom only when new messages are added
+  const prevMessagesLength = useRef(messages.length);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only scroll if a new message was added
+    if (messages.length > prevMessagesLength.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessagesLength.current = messages.length;
   }, [messages]);
 
   // Initialize with demo agent and create session
