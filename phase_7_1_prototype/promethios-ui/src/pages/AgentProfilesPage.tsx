@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -62,6 +63,7 @@ import {
   CloudUpload,
   Policy,
   Visibility,
+  VisibilityOff,
   Edit,
   Delete,
   Launch,
@@ -82,7 +84,24 @@ import PublishToRegistryModal from '../components/PublishToRegistryModal';
 import { agentBackendService } from '../services/agentBackendService';
 
 // Extended AgentProfile interface for our UI needs
-interface AgentProfile extends BaseAgentProfile {
+interface AgentProfile {
+  identity: {
+    id: string;
+    name: string;
+    version: string;
+    description: string;
+    ownerId: string;
+    creationDate: Date;
+    lastModifiedDate: Date;
+    status: string;
+  };
+  latestScorecard: {
+    overallScore: number;
+  } | null;
+  attestationCount: number;
+  lastActivity: Date | null;
+  healthStatus: 'healthy' | 'warning' | 'critical';
+  trustLevel: 'high' | 'medium' | 'low';
   isWrapped: boolean;
   governancePolicy: string | null;
   isDeployed: boolean;
@@ -381,6 +400,7 @@ interface AddNewAgentButtonProps {
 }
 
 const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDialog }) => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showFoundryDialog, setShowFoundryDialog] = useState(false);
   const open = Boolean(anchorEl);
@@ -562,6 +582,101 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
     </>
   );
 };
+
+// SystemProfile interface for multi-agent systems
+interface SystemProfile {
+  identity: {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+  };
+  healthStatus: 'healthy' | 'warning' | 'critical';
+  attestationCount: number;
+  lastActivity: Date | null;
+}
+
+// SystemProfileCard component
+const SystemProfileCard: React.FC<{ profile: SystemProfile }> = ({ profile }) => {
+  return (
+    <Card 
+      sx={{ 
+        height: '100%', 
+        backgroundColor: '#2d3748', 
+        color: 'white',
+        border: '1px solid #4a5568',
+        '&:hover': { borderColor: '#718096' },
+      }}
+    >
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Avatar sx={{ bgcolor: '#8b5cf6', width: 48, height: 48 }}>
+              <Group />
+            </Avatar>
+            <Box>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                {profile.identity.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                Multi-Agent System
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+          {profile.identity.description}
+        </Typography>
+
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={6}>
+            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
+              <Typography variant="body2" color="text.secondary">
+                Health
+              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                {profile.healthStatus === 'healthy' && <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />}
+                {profile.healthStatus === 'warning' && <Warning sx={{ color: '#f59e0b', fontSize: 16 }} />}
+                {profile.healthStatus === 'critical' && <Error sx={{ color: '#ef4444', fontSize: 16 }} />}
+                <Typography variant="body2" sx={{ color: 'white', textTransform: 'capitalize' }}>
+                  {profile.healthStatus}
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
+          <Grid item xs={6}>
+            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
+              <Typography variant="body2" color="text.secondary">
+                Status
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#3182ce', textTransform: 'capitalize' }}>
+                {profile.identity.status}
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Chat />}
+            fullWidth
+            sx={{
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              '&:hover': { backgroundColor: '#7c3aed' },
+            }}
+          >
+            Manage System
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Agent Profile Card Component
 const AgentProfileCard: React.FC<{ 
   profile: AgentProfile; 
@@ -823,6 +938,11 @@ const AgentProfilesPage: React.FC = () => {
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Tab change handler
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   // Unified storage hooks for real data
   const {
     wrappers: agentWrappers,
@@ -910,12 +1030,9 @@ const AgentProfilesPage: React.FC = () => {
         const realAgentProfiles: AgentProfile[] = backendAgents.map(backendAgent => {
           const transformed = agentBackendService.transformAgentProfile(backendAgent);
           return {
-            id: transformed.id,
-            name: transformed.name,
-            description: transformed.description,
-            type: 'ai_agent',
-            capabilities: ['ai_assistant'], // TODO: Get from backend
-            metadata: {
+            identity: {
+              id: transformed.id,
+              name: transformed.name,
               version: transformed.version,
               description: transformed.description,
               ownerId: transformed.ownerId,
@@ -923,14 +1040,14 @@ const AgentProfilesPage: React.FC = () => {
               lastModifiedDate: new Date(transformed.lastUpdated),
               status: transformed.status
             },
-            latestScorecard: null, // Will be loaded separately
+            latestScorecard: transformed.trustScore ? { overallScore: transformed.trustScore } : null,
             attestationCount: 0,
             lastActivity: new Date(transformed.lastUpdated),
-            healthStatus: transformed.healthStatus as 'healthy' | 'warning' | 'error',
+            healthStatus: transformed.healthStatus as 'healthy' | 'warning' | 'critical',
             trustLevel: transformed.trustScore >= 80 ? 'high' : 
                        transformed.trustScore >= 60 ? 'medium' : 'low',
             isWrapped: true, // All backend agents are considered wrapped
-            governancePolicy: transformed.governanceIdentity.complianceLevel,
+            governancePolicy: transformed.governanceIdentity?.complianceLevel || null,
             isDeployed: transformed.status === 'deployed',
             apiDetails: {
               endpoint: 'configured',
@@ -956,9 +1073,9 @@ const AgentProfilesPage: React.FC = () => {
 
   // Filter agent profiles
   const filteredAgentProfiles = agentProfiles.filter(profile => {
-    const matchesSearch = profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         profile.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || profile.metadata.status === statusFilter;
+    const matchesSearch = profile.identity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         profile.identity.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || profile.identity.status === statusFilter;
     const matchesHealth = healthFilter === 'all' || profile.healthStatus === healthFilter;
     
     return matchesSearch && matchesStatus && matchesHealth;
