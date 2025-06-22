@@ -1,0 +1,20 @@
+{
+  "policy_id": "policy_6f6e0dcd",
+  "name": "Test Security Policy",
+  "description": "A test policy for sensitive data protection",
+  "policy_type": "SECURITY",
+  "status": "ACTIVE",
+  "rules": [
+    {
+      "condition": "contains_ssn",
+      "action": "redact",
+      "severity": "high"
+    }
+  ],
+  "enforcement_level": "STRICT",
+  "created_at": "2025-06-22T00:57:37.322Z",
+  "updated_at": "2025-06-22T00:57:37.322Z",
+  "created_by": "system",
+  "version": "1.0.0",
+  "metadata": {}
+}

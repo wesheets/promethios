@@ -6,11 +6,63 @@ enforcing governance policies, handling policy decisions, and managing policy
 configurations.
 """
 
+import json
+import subprocess
+import uuid
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from pydantic import BaseModel, Field
 
-from ..schema_validation.registry import SchemaRegistry
+def call_policy_management(method: str, *args) -> dict:
+    """
+    Call the Node.js Policy Management module.
+    
+    Args:
+        method: The method name to call
+        *args: Arguments to pass to the method
+    
+    Returns:
+        dict: The result from the Node.js module
+    """
+    try:
+        # Create a wrapper script to call the policy management module
+        script = f"""
+        const {{ PolicyManagement }} = require('./src/modules/policy_management/index.js');
+        
+        const policyManager = new PolicyManagement({{
+            config: {{
+                dataPath: './data/policy_management',
+                enablePolicyEnforcement: true,
+                defaultEnforcementLevel: 'MODERATE'
+            }}
+        }});
+        
+        const args = {json.dumps(list(args))};
+        const result = policyManager.{method}(...args);
+        console.log(JSON.stringify(result));
+        """
+        
+        # Execute the Node.js script
+        result = subprocess.run(
+            ['node', '-e', script],
+            cwd='/home/ubuntu/promethios',
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            return json.loads(result.stdout.strip())
+        else:
+            return {
+                "success": False,
+                "error": f"Node.js execution failed: {result.stderr}"
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to call policy management: {str(e)}"
+        }
 
 # Define API models
 class PolicyEnforceRequest(BaseModel):
@@ -163,21 +215,16 @@ class PolicyQueryResponse(BaseModel):
 
 # Create router
 router = APIRouter(
-    prefix="/policy",
+    prefix="",
     tags=["policy"],
     responses={404: {"description": "Not found"}},
 )
 
 # Dependency for schema registry
-def get_schema_registry():
-    """Dependency to get the schema registry."""
-    # In a real implementation, this would be a singleton or service
-    return SchemaRegistry()
 
 @router.post("/enforce", response_model=PolicyEnforceResponse)
 async def enforce_policy(
     request: PolicyEnforceRequest,
-    schema_registry: SchemaRegistry = Depends(get_schema_registry)
 ):
     """
     Enforce governance policies on an agent action.
@@ -189,29 +236,50 @@ async def enforce_policy(
     The policy evaluation considers the action type, details, and context to
     make appropriate governance decisions.
     """
-    # In a real implementation, this would evaluate policies and return a decision
-    # For now, we'll just return a mock response
-    
-    # Simple mock logic for demonstration
-    action = "allow"
-    reason = "Action complies with all policies"
-    modifications = None
-    
-    # Mock sensitive data detection
-    if request.action_type == "file_write" and "sensitive" in str(request.action_details.get("content", "")):
-        action = "modify"
-        reason = "Sensitive data detected, applying redaction"
-        modifications = {
-            "content": str(request.action_details.get("content", "")).replace("sensitive", "[REDACTED]")
+    try:
+        # Prepare action data for policy enforcement
+        action_data = {
+            "agent_id": request.agent_id,
+            "task_id": request.task_id,
+            "action_type": request.action_type,
+            "action_details": request.action_details,
+            "context": request.context,
+            "timestamp": request.timestamp
         }
-    
-    return {
-        "policy_decision_id": f"pd-{request.agent_id[-3:]}-{request.task_id[-3:]}",
-        "action": action,
-        "reason": reason,
-        "modifications": modifications,
-        "timestamp": request.timestamp or "2025-05-22T03:50:13Z"
-    }
+        
+        # Call the Node.js policy management module
+        enforcement_result = call_policy_management("enforcePolicy", action_data)
+        
+        if not enforcement_result.get("success", True):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Policy enforcement failed: {enforcement_result.get('error', 'Unknown error')}"
+            )
+        
+        # Generate unique policy decision ID
+        policy_decision_id = f"pd_{uuid.uuid4().hex[:8]}"
+        
+        # Extract decision from enforcement result
+        decision = enforcement_result.get("decision", {})
+        action = decision.get("action", "allow")
+        reason = decision.get("reason", "Policy evaluation completed")
+        modifications = decision.get("modifications")
+        
+        return {
+            "policy_decision_id": policy_decision_id,
+            "action": action,
+            "reason": reason,
+            "modifications": modifications,
+            "timestamp": request.timestamp or "2025-06-22T12:00:00Z"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during policy enforcement: {str(e)}"
+        )
 
 @router.get("/query", response_model=PolicyQueryResponse)
 async def query_policies(
@@ -221,7 +289,6 @@ async def query_policies(
     start_time: Optional[str] = Query(None, description="Optional start time filter (ISO format)"),
     end_time: Optional[str] = Query(None, description="Optional end time filter (ISO format)"),
     limit: int = Query(100, description="Maximum number of results to return"),
-    schema_registry: SchemaRegistry = Depends(get_schema_registry)
 ):
     """
     Query policy decisions.
@@ -261,10 +328,153 @@ async def query_policies(
         "total": 1
     }
 
+@router.get("/statistics")
+async def get_policy_statistics():
+    """Get policy system statistics."""
+    try:
+        stats = call_policy_management("getStatistics")
+        
+        return stats or {
+            "total_policies": 0,
+            "active_policies": 0,
+            "draft_policies": 0,
+            "total_exemptions": 0,
+            "pending_exemptions": 0,
+            "total_decisions": 0,
+            "recent_decisions": 0
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during statistics retrieval: {str(e)}"
+        )
+
+# Additional Policy Management Endpoints
+
+class PolicyCreateRequest(BaseModel):
+    """Request model for creating a new policy."""
+    name: str = Field(..., description="Human-readable name for the policy")
+    description: Optional[str] = Field(None, description="Detailed description of the policy")
+    policy_type: str = Field(..., description="Type of policy (SECURITY, COMPLIANCE, OPERATIONAL, ETHICAL, LEGAL)")
+    status: Optional[str] = Field("DRAFT", description="Policy status (DRAFT, ACTIVE, DEPRECATED, ARCHIVED)")
+    enforcement_level: Optional[str] = Field("MODERATE", description="Enforcement level (STRICT, MODERATE, ADVISORY)")
+    rules: List[Dict[str, Any]] = Field(..., description="List of policy rules")
+    version: Optional[str] = Field("1.0.0", description="Policy version")
+
+class PolicyResponse(BaseModel):
+    """Response model for policy operations."""
+    policy_id: str = Field(..., description="Unique identifier for the policy")
+    name: str = Field(..., description="Policy name")
+    description: Optional[str] = Field(None, description="Policy description")
+    policy_type: str = Field(..., description="Policy type")
+    status: str = Field(..., description="Policy status")
+    enforcement_level: str = Field(..., description="Enforcement level")
+    rules: List[Dict[str, Any]] = Field(..., description="Policy rules")
+    version: str = Field(..., description="Policy version")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+class PolicyListResponse(BaseModel):
+    """Response model for listing policies."""
+    policies: List[PolicyResponse] = Field(..., description="List of policies")
+    total: int = Field(..., description="Total number of policies")
+
+@router.post("/policies", response_model=PolicyResponse)
+async def create_policy(request: PolicyCreateRequest):
+    """Create a new governance policy."""
+    try:
+        policy_data = {
+            "name": request.name,
+            "description": request.description,
+            "policy_type": request.policy_type,
+            "status": request.status,
+            "enforcement_level": request.enforcement_level,
+            "rules": request.rules,
+            "version": request.version
+        }
+        
+        result = call_policy_management("createPolicy", policy_data)
+        
+        if not result.get("success", False):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Policy creation failed: {result.get('error', 'Unknown error')}"
+            )
+        
+        policy = result.get("policy", {})
+        
+        return PolicyResponse(
+            policy_id=result.get("policy_id"),
+            name=policy.get("name"),
+            description=policy.get("description"),
+            policy_type=policy.get("policy_type"),
+            status=policy.get("status"),
+            enforcement_level=policy.get("enforcement_level"),
+            rules=policy.get("rules", []),
+            version=policy.get("version"),
+            created_at=policy.get("created_at"),
+            updated_at=policy.get("updated_at")
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during policy creation: {str(e)}"
+        )
+
+@router.get("/policies", response_model=PolicyListResponse)
+async def list_policies(
+    policy_type: Optional[str] = Query(None, description="Filter by policy type"),
+    status: Optional[str] = Query(None, description="Filter by policy status"),
+    limit: int = Query(100, description="Maximum number of policies to return")
+):
+    """List governance policies."""
+    try:
+        filters = {}
+        if policy_type:
+            filters["policy_type"] = policy_type
+        if status:
+            filters["status"] = status
+        
+        policies = call_policy_management("listPolicies", filters)
+        
+        if not isinstance(policies, list):
+            policies = []
+        
+        policy_responses = []
+        for policy in policies[:limit]:
+            policy_responses.append(PolicyResponse(
+                policy_id=policy.get("policy_id"),
+                name=policy.get("name"),
+                description=policy.get("description"),
+                policy_type=policy.get("policy_type"),
+                status=policy.get("status"),
+                enforcement_level=policy.get("enforcement_level"),
+                rules=policy.get("rules", []),
+                version=policy.get("version"),
+                created_at=policy.get("created_at"),
+                updated_at=policy.get("updated_at")
+            ))
+        
+        return PolicyListResponse(
+            policies=policy_responses,
+            total=len(policies)
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during policy listing: {str(e)}"
+        )
+
+
+# Generic policy decision route - MUST be last to avoid conflicts
 @router.get("/{policy_decision_id}", response_model=PolicyDecision)
 async def get_policy_decision(
     policy_decision_id: str = Path(..., description="Unique identifier for the policy decision"),
-    schema_registry: SchemaRegistry = Depends(get_schema_registry)
 ):
     """
     Get a specific policy decision by ID.
@@ -295,3 +505,4 @@ async def get_policy_decision(
         },
         "timestamp": "2025-05-22T03:50:13Z"
     }
+

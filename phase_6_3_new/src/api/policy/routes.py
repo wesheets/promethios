@@ -6,11 +6,65 @@ enforcing governance policies, handling policy decisions, and managing policy
 configurations.
 """
 
+import json
+import subprocess
+import uuid
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from pydantic import BaseModel, Field
 
 from ..schema_validation.registry import SchemaRegistry
+
+def call_policy_management(method: str, *args) -> dict:
+    """
+    Call the Node.js Policy Management module.
+    
+    Args:
+        method: The method name to call
+        *args: Arguments to pass to the method
+    
+    Returns:
+        dict: The result from the Node.js module
+    """
+    try:
+        # Create a wrapper script to call the policy management module
+        script = f"""
+        const {{ PolicyManagement }} = require('./src/modules/policy_management/index.js');
+        
+        const policyManager = new PolicyManagement({{
+            config: {{
+                dataPath: './data/policy_management',
+                enablePolicyEnforcement: true,
+                defaultEnforcementLevel: 'MODERATE'
+            }}
+        }});
+        
+        const args = {json.dumps(list(args))};
+        const result = policyManager.{method}(...args);
+        console.log(JSON.stringify(result));
+        """
+        
+        # Execute the Node.js script
+        result = subprocess.run(
+            ['node', '-e', script],
+            cwd='/home/ubuntu/promethios',
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            return json.loads(result.stdout.strip())
+        else:
+            return {
+                "success": False,
+                "error": f"Node.js execution failed: {result.stderr}"
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to call policy management: {str(e)}"
+        }
 
 # Define API models
 class PolicyEnforceRequest(BaseModel):
@@ -189,29 +243,50 @@ async def enforce_policy(
     The policy evaluation considers the action type, details, and context to
     make appropriate governance decisions.
     """
-    # In a real implementation, this would evaluate policies and return a decision
-    # For now, we'll just return a mock response
-    
-    # Simple mock logic for demonstration
-    action = "allow"
-    reason = "Action complies with all policies"
-    modifications = None
-    
-    # Mock sensitive data detection
-    if request.action_type == "file_write" and "sensitive" in str(request.action_details.get("content", "")):
-        action = "modify"
-        reason = "Sensitive data detected, applying redaction"
-        modifications = {
-            "content": str(request.action_details.get("content", "")).replace("sensitive", "[REDACTED]")
+    try:
+        # Prepare action data for policy enforcement
+        action_data = {
+            "agent_id": request.agent_id,
+            "task_id": request.task_id,
+            "action_type": request.action_type,
+            "action_details": request.action_details,
+            "context": request.context,
+            "timestamp": request.timestamp
         }
-    
-    return {
-        "policy_decision_id": f"pd-{request.agent_id[-3:]}-{request.task_id[-3:]}",
-        "action": action,
-        "reason": reason,
-        "modifications": modifications,
-        "timestamp": request.timestamp or "2025-05-22T03:50:13Z"
-    }
+        
+        # Call the Node.js policy management module
+        enforcement_result = call_policy_management("enforcePolicy", action_data)
+        
+        if not enforcement_result.get("success", True):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Policy enforcement failed: {enforcement_result.get('error', 'Unknown error')}"
+            )
+        
+        # Generate unique policy decision ID
+        policy_decision_id = f"pd_{uuid.uuid4().hex[:8]}"
+        
+        # Extract decision from enforcement result
+        decision = enforcement_result.get("decision", {})
+        action = decision.get("action", "allow")
+        reason = decision.get("reason", "Policy evaluation completed")
+        modifications = decision.get("modifications")
+        
+        return {
+            "policy_decision_id": policy_decision_id,
+            "action": action,
+            "reason": reason,
+            "modifications": modifications,
+            "timestamp": request.timestamp or "2025-06-22T12:00:00Z"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during policy enforcement: {str(e)}"
+        )
 
 @router.get("/query", response_model=PolicyQueryResponse)
 async def query_policies(
@@ -295,3 +370,8 @@ async def get_policy_decision(
         },
         "timestamp": "2025-05-22T03:50:13Z"
     }
+
+
+# Import additional policy management endpoints
+from .additional_routes import *
+
