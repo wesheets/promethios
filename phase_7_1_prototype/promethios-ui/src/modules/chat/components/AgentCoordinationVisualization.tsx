@@ -69,7 +69,7 @@ const coordinationRipple = keyframes`
 `;
 
 // Styled Components
-const CoordinationContainer = styled(Box)((() => ( => ({
+const CoordinationContainer = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 8px,
@@ -77,7 +77,7 @@ const CoordinationContainer = styled(Box)((() => ( => ({
   position: 'relative'
 }));
 
-const ThinkingIndicator = styled(Box)((() => ( => ({
+const ThinkingIndicator = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
   gap: 12px,
@@ -108,7 +108,7 @@ const ThinkingIndicator = styled(Box)((() => ( => ({
   }
 }));
 
-const HandoffIndicator = styled(Box)((() => ( => ({
+const HandoffIndicator = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -124,7 +124,7 @@ const HandoffIndicator = styled(Box)((() => ( => ({
   }
 }));
 
-const CoordinationMap = styled(Paper)((() => ( => ({
+const CoordinationMap = styled(Paper)(() => ({
   padding: 16px,
   backgroundColor: rgba(45, 55, 72, 0.8),
   backdropFilter: 'blur(8px)',
@@ -187,14 +187,14 @@ const AgentNode = styled(Box, {
   }
 }));
 
-const ProcessingSteps = styled(Box)((() => ( => ({
+const ProcessingSteps = styled(Box)(() => ({
   backgroundColor: rgba(45, 55, 72, 0.6),
   borderRadius: 4px,
   padding: 12px,
   border: `1px solid ${DARK_THEME.border}`
 }));
 
-const ThinkingDots = styled(Box)((() => ( => ({
+const ThinkingDots = styled(Box)(() => ({
   display: 'flex',
   gap: '4px',
   alignItems: 'center',
