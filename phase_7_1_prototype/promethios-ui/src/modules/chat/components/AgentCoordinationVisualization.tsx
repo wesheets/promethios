@@ -77,6 +77,12 @@ const CoordinationContainer = styled(Box)(() => ({
   position: 'relative'
 }));
 
+// Shimmer animation for thinking indicator
+const shimmerAnimation = keyframes`
+  0% { left: -100%; }
+  100% { left: 100%; }
+`;
+
 const ThinkingIndicator = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
@@ -100,11 +106,7 @@ const ThinkingIndicator = styled(Box)(() => ({
     width: '100%',
     height: '100%',
     background: 'linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent)',
-    animation: 'shimmer 2s ease-in-out infinite',
-    '@keyframes shimmer': {
-      '0%': { left: '-100%' },
-      '100%': { left: '100%' }
-    }
+    animation: `${shimmerAnimation} 2s ease-in-out infinite`
   }
 }));
 
