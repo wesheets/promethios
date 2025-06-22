@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ModernChatContainer } from '../modules/chat/components/ModernChatContainer';
 
-const ChatPageContainer = styled(Box)(({ theme }) => ({
+const ChatPageContainer = styled(Box)(() => ({
   height: '100%',
   width: '100%',
   backgroundColor: '#1a202c', // Match the site's dark theme
