@@ -107,7 +107,7 @@ const InputField = styled('textarea')(() => ({
   }
 }));
 
-const InputActions = styled(Box)((() => ( => ({
+const InputActions = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -115,7 +115,7 @@ const InputActions = styled(Box)((() => ( => ({
   gap: '8px'
 }));
 
-const FilePreviewContainer = styled(Box)((() => ( => ({
+const FilePreviewContainer = styled(Box)(() => ({
   padding: '8px 16px 0 16px',
   display: 'flex',
   flexWrap: 'wrap',
@@ -135,7 +135,7 @@ const FilePreviewContainer = styled(Box)((() => ( => ({
   }
 }));
 
-const FilePreview = styled(Paper)((() => ( => ({
+const FilePreview = styled(Paper)(() => ({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
@@ -166,7 +166,7 @@ const FilePreview = styled(Paper)((() => ( => ({
   }
 }));
 
-const DragOverlay = styled(Box)((() => ( => ({
+const DragOverlay = styled(Box)(() => ({
   position: 'absolute',
   top: 0,
   left: 0,
@@ -194,7 +194,7 @@ const DragOverlay = styled(Box)((() => ( => ({
   }
 }));
 
-const UploadProgress = styled(Box)((() => ( => ({
+const UploadProgress = styled(Box)(() => ({
   position: 'absolute',
   top: 0,
   left: 0,

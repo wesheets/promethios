@@ -164,7 +164,7 @@ const StatusIndicator = styled(Box)(() => ({
   }
 }));
 
-const ActivityItem = styled(ListItem)((() => ( => ({
+const ActivityItem = styled(ListItem)(() => ({
   padding: '8px',
   borderRadius: '4px',
   marginBottom: '4px',
