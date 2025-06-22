@@ -82,9 +82,9 @@ const ThinkingIndicator = styled(Box)(() => ({
   alignItems: 'center',
   gap: 12px,
   padding: 12px 16px,
-  backgroundColor: rgba(49, 130, 206, 0.08),
+  backgroundColor: 'rgba(49, 130, 206, 0.08)',
   borderRadius: '16px',
-  border: `1px solid ${rgba(49, 130, 206, 0.2)}`,
+  border: '1px solid rgba(49, 130, 206, 0.2)',
   position: 'relative',
   overflow: 'hidden',
   
@@ -99,7 +99,7 @@ const ThinkingIndicator = styled(Box)(() => ({
     left: '-100%',
     width: '100%',
     height: '100%',
-    background: `linear-gradient(90deg, transparent, ${rgba(49, 130, 206, 0.1)}, transparent)`,
+    background: 'linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent',
     animation: 'shimmer 2s ease-in-out infinite',
     '@keyframes shimmer': {
       '0%': { left: '-100%' },
@@ -114,9 +114,9 @@ const HandoffIndicator = styled(Box)(() => ({
   justifyContent: 'center',
   gap: 8px,
   padding: 8px 16px,
-  backgroundColor: rgba(56, 161, 105, 0.1),
+  backgroundColor: 'rgba(56, 161, 105, 0.1)',
   borderRadius: '12px',
-  border: `1px solid ${rgba(56, 161, 105, 0.3)}`,
+  border: '1px solid rgba(56, 161, 105, 0.3)',
   position: 'relative',
   
   '& .handoff-arrow': {
@@ -126,7 +126,7 @@ const HandoffIndicator = styled(Box)(() => ({
 
 const CoordinationMap = styled(Paper)(() => ({
   padding: 16px,
-  backgroundColor: rgba(45, 55, 72, 0.8),
+  backgroundColor: 'rgba(45, 55, 72, 0.8)',
   backdropFilter: 'blur(8px)',
   border: `1px solid ${DARK_THEME.border}`,
   borderRadius: 8px,
@@ -188,7 +188,7 @@ const AgentNode = styled(Box, {
 }));
 
 const ProcessingSteps = styled(Box)(() => ({
-  backgroundColor: rgba(45, 55, 72, 0.6),
+  backgroundColor: 'rgba(45, 55, 72, 0.6)',
   borderRadius: 4px,
   padding: 12px,
   border: `1px solid ${DARK_THEME.border}`
@@ -497,7 +497,7 @@ export const MultiAgentCoordination: React.FC<MultiAgentCoordinationProps> = ({
 
         {/* Current Activity */}
         {currentStep && (
-          <Box sx={{ mt: 2, p: 1.5, bgcolor: rgba(49, 130, 206, 0.05), borderRadius: 1 }}>
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(49, 130, 206, 0.05)', borderRadius: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>
               Current: {currentStep.action}
             </Typography>
