@@ -145,6 +145,124 @@ const TrustAttestationsPage: React.FC = () => {
   } = useTrustAttestations();
 
   const loading = attestationsLoading || chainsLoading || metricsLoading;
+              timestamp: '2025-06-20T10:35:00Z',
+              verification_status: 'valid',
+              verifier_instance_id: 'verifier-001'
+            }
+          ],
+          metadata: { audit_id: 'AUD-2025-001' },
+          confidence_score: 0.95,
+          trust_impact: 0.12
+        },
+        {
+          attestation_id: 'att-002',
+          attestation_type: 'capability',
+          subject_instance_id: 'agent-002',
+          subject_name: 'Legal Compliance Bot',
+          attester_instance_id: 'authority-002',
+          attester_name: 'Legal Verification Service',
+          attestation_data: {
+            capabilities: ['contract_analysis', 'regulatory_compliance', 'risk_assessment'],
+            accuracy_score: 0.98,
+            domain_expertise: 'corporate_law'
+          },
+          created_at: '2025-06-19T14:20:00Z',
+          expires_at: '2025-12-19T14:20:00Z',
+          status: 'active',
+          signature: '0x2b3c4d5e6f7a...',
+          verification_history: [
+            {
+              timestamp: '2025-06-19T14:25:00Z',
+              verification_status: 'valid',
+              verifier_instance_id: 'verifier-002'
+            },
+            {
+              timestamp: '2025-06-20T09:15:00Z',
+              verification_status: 'valid',
+              verifier_instance_id: 'verifier-001'
+            }
+          ],
+          metadata: { certification_body: 'Legal Tech Consortium' },
+          confidence_score: 0.92,
+          trust_impact: 0.08
+        },
+        {
+          attestation_id: 'att-003',
+          attestation_type: 'behavior',
+          subject_instance_id: 'agent-003',
+          subject_name: 'Customer Support System',
+          attester_instance_id: 'monitor-001',
+          attester_name: 'Behavioral Monitoring Service',
+          attestation_data: {
+            behavior_pattern: 'consistent',
+            response_quality: 0.89,
+            escalation_rate: 0.05,
+            customer_satisfaction: 0.94
+          },
+          created_at: '2025-06-18T16:45:00Z',
+          status: 'active',
+          signature: '0x3c4d5e6f7a8b...',
+          verification_history: [
+            {
+              timestamp: '2025-06-18T16:50:00Z',
+              verification_status: 'valid',
+              verifier_instance_id: 'verifier-003'
+            }
+          ],
+          metadata: { monitoring_period: '30_days' },
+          confidence_score: 0.87,
+          trust_impact: 0.06
+        },
+        {
+          attestation_id: 'att-004',
+          attestation_type: 'integrity',
+          subject_instance_id: 'agent-004',
+          subject_name: 'Data Processing Agent',
+          attester_instance_id: 'integrity-service',
+          attester_name: 'Data Integrity Verification',
+          attestation_data: {
+            data_consistency: 0.96,
+            error_rate: 0.02,
+            processing_accuracy: 0.94,
+            audit_compliance: true
+          },
+          created_at: '2025-06-17T11:30:00Z',
+          expires_at: '2025-09-17T11:30:00Z',
+          status: 'active',
+          signature: '0x4d5e6f7a8b9c...',
+          verification_history: [
+            {
+              timestamp: '2025-06-17T11:35:00Z',
+              verification_status: 'valid',
+              verifier_instance_id: 'verifier-004'
+            }
+          ],
+          metadata: { data_volume: '1.2TB_processed' },
+          confidence_score: 0.91,
+          trust_impact: 0.09
+        },
+        {
+          attestation_id: 'att-005',
+          attestation_type: 'identity',
+          subject_instance_id: 'agent-005',
+          subject_name: 'Healthcare Assistant',
+          attester_instance_id: 'identity-provider',
+          attester_name: 'Healthcare Identity Authority',
+          attestation_data: {
+            identity_verified: true,
+            credentials: ['medical_assistant', 'hipaa_certified'],
+            background_check: 'passed',
+            license_status: 'active'
+          },
+          parent_attestation_id: 'att-002',
+          created_at: '2025-06-16T09:15:00Z',
+          expires_at: '2026-06-16T09:15:00Z',
+          status: 'active',
+          signature: '0x5e6f7a8b9c0d...',
+          verification_history: [
+            {
+              timestamp: '2025-06-16T09:20:00Z',
+  const loading = attestationsLoading || chainsLoading || metricsLoading;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -228,6 +346,7 @@ const TrustAttestationsPage: React.FC = () => {
     );
   }
 
+  const getAttestationTypeIcon = (type: string) => {
     switch (type) {
       case 'identity': return <VerifiedUser />;
       case 'capability': return <Psychology />;
