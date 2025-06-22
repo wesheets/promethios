@@ -3,9 +3,12 @@
  * 
  * Comprehensive policy management interface for both single agents and multi-agent systems.
  * Includes policy templates, configuration, validation, and agent-specific policy assignment.
+ * 
+ * Updated to use real backend APIs instead of mock data.
  */
 
 import React, { useState, useEffect } from 'react';
+import { usePolicyBackend } from '../hooks/usePolicyBackend';
 import {
   Box,
   Grid,
@@ -136,144 +139,20 @@ const GovernancePoliciesPage: React.FC = () => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyTemplate | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Mock data - in real implementation, this would come from API
-  const [policyTemplates, setPolicyTemplates] = useState<PolicyTemplate[]>([
-    {
-      id: 'financial-services',
-      name: 'Financial Services',
-      category: 'financial',
-      description: 'Comprehensive governance for financial AI agents with regulatory compliance',
-      compliance_level: 'strict',
-      icon: <Security />,
-      color: '#10B981',
-      rules: [
-        {
-          id: 'high-trust-threshold',
-          name: 'High Trust Threshold',
-          type: 'trust_threshold',
-          condition: 'trust_score >= 85',
-          action: 'allow',
-          parameters: { threshold: 85 },
-          enabled: true
-        },
-        {
-          id: 'complete-audit-trail',
-          name: 'Complete Audit Trail',
-          type: 'audit_requirement',
-          condition: 'all_actions',
-          action: 'escalate',
-          parameters: { log_level: 'detailed' },
-          enabled: true
-        },
-        {
-          id: 'financial-content-filter',
-          name: 'Financial Content Filter',
-          type: 'content_filter',
-          condition: 'contains_financial_advice',
-          action: 'warn',
-          parameters: { sensitivity: 'high' },
-          enabled: true
-        }
-      ]
-    },
-    {
-      id: 'healthcare-hipaa',
-      name: 'Healthcare & HIPAA',
-      category: 'healthcare',
-      description: 'HIPAA-compliant governance for healthcare AI agents',
-      compliance_level: 'strict',
-      icon: <Gavel />,
-      color: '#3B82F6',
-      rules: [
-        {
-          id: 'hipaa-trust-level',
-          name: 'HIPAA Trust Level',
-          type: 'trust_threshold',
-          condition: 'trust_score >= 90',
-          action: 'allow',
-          parameters: { threshold: 90 },
-          enabled: true
-        },
-        {
-          id: 'phi-data-protection',
-          name: 'PHI Data Protection',
-          type: 'data_retention',
-          condition: 'contains_phi',
-          action: 'escalate',
-          parameters: { encryption: 'required', retention: '7_years' },
-          enabled: true
-        },
-        {
-          id: 'hipaa-audit-requirements',
-          name: 'HIPAA Audit Requirements',
-          type: 'audit_requirement',
-          condition: 'all_actions',
-          action: 'escalate',
-          parameters: { compliance_standard: 'hipaa' },
-          enabled: true
-        }
-      ]
-    },
-    {
-      id: 'legal-compliance',
-      name: 'Legal & Compliance',
-      category: 'legal',
-      description: 'Legal compliance governance for attorney-client privilege and regulatory requirements',
-      compliance_level: 'strict',
-      icon: <Assignment />,
-      color: '#8B5CF6',
-      rules: [
-        {
-          id: 'legal-professional-trust',
-          name: 'Legal Professional Trust',
-          type: 'trust_threshold',
-          condition: 'trust_score >= 80',
-          action: 'allow',
-          parameters: { threshold: 80 },
-          enabled: true
-        },
-        {
-          id: 'legal-advice-filter',
-          name: 'Legal Advice Filter',
-          type: 'content_filter',
-          condition: 'contains_legal_advice',
-          action: 'warn',
-          parameters: { disclaimer_required: true },
-          enabled: true
-        }
-      ]
-    },
-    {
-      id: 'general-purpose',
-      name: 'General Purpose',
-      category: 'general',
-      description: 'Balanced governance for general-purpose AI agents',
-      compliance_level: 'standard',
-      icon: <Policy />,
-      color: '#F59E0B',
-      rules: [
-        {
-          id: 'standard-trust-level',
-          name: 'Standard Trust Level',
-          type: 'trust_threshold',
-          condition: 'trust_score >= 70',
-          action: 'allow',
-          parameters: { threshold: 70 },
-          enabled: true
-        },
-        {
-          id: 'rate-limiting',
-          name: 'Rate Limiting',
-          type: 'rate_limit',
-          condition: 'requests_per_minute > 100',
-          action: 'warn',
-          parameters: { limit: 100, window: '1_minute' },
-          enabled: true
-        }
-      ]
-    }
-  ]);
+  // Use real backend data instead of mock data
+  const {
+    policies: policyTemplates,
+    policiesLoading,
+    policiesError,
+    statistics,
+    statisticsLoading,
+    createPolicy,
+    updatePolicy,
+    deletePolicy,
+    refreshAll
+  } = usePolicyBackend();
 
+  // Mock agent policies for now - this would come from agent management API
   const [agentPolicies, setAgentPolicies] = useState<AgentPolicy[]>([
     {
       id: 'policy-1',
@@ -297,6 +176,19 @@ const GovernancePoliciesPage: React.FC = () => {
     }
   ]);
 
+  // Add default icons and colors for policies from backend
+  const enhancedPolicyTemplates = policyTemplates.map(policy => ({
+    ...policy,
+    icon: policy.category === 'financial' ? <Security /> :
+          policy.category === 'healthcare' ? <Gavel /> :
+          policy.category === 'legal' ? <Assignment /> :
+          <Policy />,
+    color: policy.category === 'financial' ? '#10B981' :
+           policy.category === 'healthcare' ? '#3B82F6' :
+           policy.category === 'legal' ? '#8B5CF6' :
+           '#F59E0B'
+  }));
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
@@ -310,21 +202,31 @@ const GovernancePoliciesPage: React.FC = () => {
     setEditPolicyOpen(true);
   };
 
-  const handleDeletePolicy = (policyId: string) => {
-    setPolicyTemplates(prev => prev.filter(p => p.id !== policyId));
+  const handleDeletePolicy = async (policyId: string) => {
+    try {
+      await deletePolicy(policyId);
+    } catch (error) {
+      console.error('Error deleting policy:', error);
+    }
   };
 
-  const handleClonePolicy = (policy: PolicyTemplate) => {
-    const clonedPolicy = {
-      ...policy,
-      id: `${policy.id}-copy`,
-      name: `${policy.name} (Copy)`
-    };
-    setPolicyTemplates(prev => [...prev, clonedPolicy]);
+  const handleClonePolicy = async (policy: PolicyTemplate) => {
+    try {
+      const clonedPolicy = {
+        name: `${policy.name} (Copy)`,
+        category: policy.category,
+        description: policy.description,
+        rules: policy.rules,
+        compliance_level: policy.compliance_level
+      };
+      await createPolicy(clonedPolicy);
+    } catch (error) {
+      console.error('Error cloning policy:', error);
+    }
   };
 
   const exportPolicies = () => {
-    const dataStr = JSON.stringify(policyTemplates, null, 2);
+    const dataStr = JSON.stringify(enhancedPolicyTemplates, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     const exportFileDefaultName = 'governance-policies.json';
     const linkElement = document.createElement('a');
@@ -514,7 +416,7 @@ const GovernancePoliciesPage: React.FC = () => {
         <TabPanel value={activeTab} index={0}>
           {/* Policy Templates */}
           <Grid container spacing={3}>
-            {policyTemplates.map((template) => (
+            {enhancedPolicyTemplates.map((template) => (
               <Grid item xs={12} sm={6} md={4} key={template.id}>
                 <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
                   <CardHeader
