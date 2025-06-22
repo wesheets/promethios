@@ -146,21 +146,21 @@ const StatusIndicator = styled(Box)(() => ({
   fontWeight: 500,
   
   '&.healthy': {
-    backgroundColor: ''rgba(56, 161, 105, 0.1)',
+    backgroundColor: 'rgba(56, 161, 105, 0.1)',
     color: DARK_THEME.success,
-    border: '1px solid rgba(56, 161, 105, 0.2)}`
+    border: '1px solid rgba(56, 161, 105, 0.2)'
   },
   
   '&.warning': {
-    backgroundColor: ''rgba(214, 158, 46, 0.1)',
+    backgroundColor: 'rgba(214, 158, 46, 0.1)',
     color: DARK_THEME.warning,
-    border: '1px solid rgba(214, 158, 46, 0.2)}`
+    border: '1px solid rgba(214, 158, 46, 0.2)'
   },
   
   '&.error': {
-    backgroundColor: ''rgba(229, 62, 62, 0.1)',
+    backgroundColor: 'rgba(229, 62, 62, 0.1)',
     color: DARK_THEME.error,
-    border: '1px solid rgba(229, 62, 62, 0.2)}`
+    border: '1px solid rgba(229, 62, 62, 0.2)'
   }
 }));
 
@@ -168,11 +168,11 @@ const ActivityItem = styled(ListItem)(() => ({
   padding: '8px',
   borderRadius: '4px',
   marginBottom: '4px',
-  backgroundColor: ''rgba(49, 130, 206, 0.02)',
-  border: '1px solid rgba(49, 130, 206, 0.1)}`,
+  backgroundColor: 'rgba(49, 130, 206, 0.02)',
+  border: '1px solid rgba(49, 130, 206, 0.1)',
   
   '&:hover': {
-    backgroundColor: 'rgba(49, 130, 206, 0.05)
+    backgroundColor: 'rgba(49, 130, 206, 0.05)'
   }
 }));
 
