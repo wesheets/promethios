@@ -23,6 +23,10 @@ import asyncio
 
 # Import other Promethios modules for integration
 from ..policy.routes import call_policy_management
+# Import AI model service and multi-agent coordinator
+from .ai_model_service import ai_model_service
+from .multi_agent_coordinator import MultiAgentCoordinator, CoordinationPattern
+
 # Temporarily use mock functions for trust and audit until Phase 2
 # from ..trust.routes import call_trust_system
 # from ..audit.routes import call_audit_system
@@ -36,6 +40,9 @@ def call_trust_system(method: str, *args) -> dict:
 def call_audit_system(method: str, *args) -> dict:
     """Mock audit system for Phase 1 - will be replaced with real integration in Phase 2"""
     return {"status": "success", "logged": True}
+
+# Initialize multi-agent coordinator
+multi_agent_coordinator = MultiAgentCoordinator(ai_model_service)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -187,67 +194,120 @@ def call_governance_orchestrator(method: str, *args) -> dict:
 
 def call_agent_system(method: str, *args) -> dict:
     """
-    Call the Agent System for AI model interactions.
+    Call the Agent System for AI model interactions with real AI integration.
     
-    This will integrate with the agent management system to route messages
+    This integrates with the AI model service to route messages
     to appropriate AI models with governance oversight.
     """
     try:
         if method == "generate_response":
             agent_config, message_content, governance_config = args
             
-            # For Phase 1, simulate AI response generation
-            # In Phase 2, this will integrate with real AI models
+            # Use real AI model service for response generation
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             
-            # Simulate different agent responses based on agent_id
-            agent_responses = {
-                "baseline-agent": f"Baseline response to: {message_content}",
-                "factual-agent": f"Factual analysis of: {message_content}",
-                "creative-agent": f"Creative interpretation of: {message_content}",
-                "governance-agent": f"Governance-compliant response to: {message_content}",
-                "multi-tool-agent": f"Multi-tool analysis of: {message_content}"
-            }
-            
-            response = agent_responses.get(
-                agent_config.agent_id, 
-                f"Agent {agent_config.agent_id} response: {message_content}"
-            )
-            
-            # Add governance context if enabled
-            if governance_config.enabled:
-                response = f"[Governed Response] {response}"
-            
-            return {
-                "status": "success",
-                "response": response,
-                "agent_id": agent_config.agent_id,
-                "processing_time_ms": 1500  # Simulate processing time
-            }
+            try:
+                # Convert conversation history if available
+                conversation_history = []
+                
+                # Build governance context
+                governance_context = {
+                    "enabled": governance_config.enabled,
+                    "policy_enforcement_level": governance_config.policy_enforcement_level,
+                    "trust_threshold": governance_config.trust_threshold,
+                    "observer_monitoring": governance_config.observer_monitoring
+                }
+                
+                # Generate response using AI model service
+                response_data = loop.run_until_complete(
+                    ai_model_service.generate_response(
+                        agent_config.agent_id,
+                        message_content,
+                        conversation_history,
+                        governance_context
+                    )
+                )
+                
+                return {
+                    "status": response_data.get("status", "success"),
+                    "response": response_data.get("response", ""),
+                    "agent_id": agent_config.agent_id,
+                    "processing_time_ms": response_data.get("processing_time_ms", 0),
+                    "model": response_data.get("model", "unknown"),
+                    "provider": response_data.get("provider", "unknown")
+                }
+                
+            finally:
+                loop.close()
             
         elif method == "coordinate_multi_agent":
             multi_agent_config, message_content, governance_config = args
             
-            # Simulate multi-agent coordination
-            responses = []
-            for agent in multi_agent_config.agents:
-                agent_response = call_agent_system("generate_response", agent, message_content, governance_config)
-                responses.append(agent_response)
+            # Use multi-agent coordinator for complex conversations
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             
-            # Synthesize responses based on coordination pattern
-            if multi_agent_config.coordination_pattern == "sequential":
-                final_response = " → ".join([r["response"] for r in responses])
-            elif multi_agent_config.coordination_pattern == "collaborative":
-                final_response = f"Collaborative synthesis: {'; '.join([r['response'] for r in responses])}"
-            else:
-                final_response = f"Multi-agent response: {responses[0]['response']}"
-            
-            return {
-                "status": "success",
-                "response": final_response,
-                "coordination_pattern": multi_agent_config.coordination_pattern,
-                "agent_responses": responses,
-                "processing_time_ms": 3000  # Multi-agent takes longer
-            }
+            try:
+                # Convert agent configs to format expected by coordinator
+                agents = []
+                for agent_config in multi_agent_config.agents:
+                    agents.append({
+                        "agent_id": agent_config.agent_id,
+                        "agent_type": agent_config.agent_type,
+                        "capabilities": agent_config.capabilities,
+                        "governance_policies": agent_config.governance_policies
+                    })
+                
+                # Build governance context
+                governance_context = {
+                    "enabled": governance_config.enabled,
+                    "policy_enforcement_level": governance_config.policy_enforcement_level,
+                    "trust_threshold": governance_config.trust_threshold,
+                    "observer_monitoring": governance_config.observer_monitoring
+                }
+                
+                # Coordination configuration
+                coordination_config = {
+                    "max_rounds": multi_agent_config.max_rounds,
+                    "consensus_threshold": multi_agent_config.consensus_threshold,
+                    "lead_agent_id": multi_agent_config.lead_agent_id
+                }
+                
+                # Coordinate agents
+                coordination_result = loop.run_until_complete(
+                    multi_agent_coordinator.coordinate_agents(
+                        agents,
+                        message_content,
+                        CoordinationPattern(multi_agent_config.coordination_pattern),
+                        [],  # conversation_history
+                        governance_context,
+                        coordination_config
+                    )
+                )
+                
+                return {
+                    "status": "success",
+                    "response": coordination_result.final_response,
+                    "coordination_pattern": coordination_result.coordination_pattern.value,
+                    "participating_agents": coordination_result.participating_agents,
+                    "consensus_score": coordination_result.consensus_score,
+                    "processing_time_ms": coordination_result.total_processing_time_ms,
+                    "individual_responses": [
+                        {
+                            "agent_id": r.agent_id,
+                            "content": r.content,
+                            "confidence": r.confidence,
+                            "trust_score": r.trust_score
+                        }
+                        for r in coordination_result.individual_responses
+                    ]
+                }
+                
+            finally:
+                loop.close()
             
         else:
             return {"status": "error", "error": f"Unknown agent method: {method}"}
@@ -458,6 +518,12 @@ async def send_message(
                 "response": f"Echo: {message_request.content}",
                 "processing_time_ms": 500
             }
+        
+        # Ensure agent_response has required fields
+        if "response" not in agent_response:
+            agent_response["response"] = "I apologize, but I encountered an issue generating a response."
+        if "processing_time_ms" not in agent_response:
+            agent_response["processing_time_ms"] = 1000
         
         # Stage 5: Response Governance Validation
         response_validation = {"valid": True, "governance_status": "approved"}
