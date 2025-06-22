@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTrustBackend } from '../hooks/useTrustBackend';
+import { useAgentBackend } from '../hooks/useAgentBackend';
 import {
   Box,
   Card,
@@ -101,77 +103,81 @@ function TabPanel(props: TabPanelProps) {
 const TrustMetricsOverviewPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [agentMetrics, setAgentMetrics] = useState<AgentTrustMetrics[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Use real backend data
+  const {
+    metrics: trustMetrics,
+    evaluations,
+    metricsLoading,
+    evaluationsLoading,
+    metricsError,
+    evaluationsError,
+    refreshAll
+  } = useTrustBackend();
+  
+  const {
+    agents,
+    agentsLoading,
+    loadAgents
+  } = useAgentBackend();
 
-  // Mock data based on backend schema
+  const loading = metricsLoading || evaluationsLoading || agentsLoading;
+
+  // Transform backend data into UI format
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setAgentMetrics([
-        {
-          agent_id: 'agent-001',
-          agent_name: 'Financial Analysis Agent',
-          agent_type: 'single',
-          trust_scores: { competence: 0.94, reliability: 0.91, honesty: 0.96, transparency: 0.88 },
-          aggregate_score: 0.92,
-          confidence: 0.89,
-          trend: 'up',
-          trend_change: 0.03,
-          last_evaluation: '2025-06-20T14:30:00Z',
-          total_attestations: 15,
-          active_boundaries: 3,
-          risk_level: 'low',
-          governance_compliance: 0.95
-        },
-        {
-          agent_id: 'agent-002',
-          agent_name: 'Customer Support System',
-          agent_type: 'multi_agent_system',
-          trust_scores: { competence: 0.87, reliability: 0.93, honesty: 0.89, transparency: 0.85 },
-          aggregate_score: 0.89,
-          confidence: 0.92,
-          trend: 'stable',
-          trend_change: 0.01,
-          last_evaluation: '2025-06-20T13:45:00Z',
-          total_attestations: 22,
-          active_boundaries: 5,
-          risk_level: 'low',
-          governance_compliance: 0.91
-        },
-        {
-          agent_id: 'agent-003',
-          agent_name: 'Data Processing Agent',
-          agent_type: 'single',
-          trust_scores: { competence: 0.82, reliability: 0.79, honesty: 0.91, transparency: 0.76 },
-          aggregate_score: 0.82,
-          confidence: 0.75,
-          trend: 'down',
-          trend_change: -0.05,
-          last_evaluation: '2025-06-20T12:15:00Z',
-          total_attestations: 8,
-          active_boundaries: 2,
-          risk_level: 'medium',
-          governance_compliance: 0.84
-        },
-        {
-          agent_id: 'agent-004',
-          agent_name: 'Legal Compliance Bot',
-          agent_type: 'single',
-          trust_scores: { competence: 0.96, reliability: 0.94, honesty: 0.98, transparency: 0.92 },
-          aggregate_score: 0.95,
-          confidence: 0.94,
-          trend: 'up',
-          trend_change: 0.02,
-          last_evaluation: '2025-06-20T15:00:00Z',
-          total_attestations: 28,
-          active_boundaries: 4,
-          risk_level: 'low',
-          governance_compliance: 0.98
-        }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (trustMetrics && evaluations && agents) {
+      const transformedMetrics: AgentTrustMetrics[] = agents.map(agent => {
+        // Find latest evaluation for this agent
+        const agentEvaluations = evaluations.filter(eval => 
+          eval.agent_id === agent.agent_id || eval.target_id === agent.agent_id
+        );
+        
+        const latestEvaluation = agentEvaluations.sort((a, b) => 
+          new Date(b.evaluation_timestamp).getTime() - new Date(a.evaluation_timestamp).getTime()
+        )[0];
+
+        // Calculate aggregate score and trust dimensions
+        const trustScores = latestEvaluation?.trust_dimensions || {
+          competence: 0.8,
+          reliability: 0.8,
+          honesty: 0.8,
+          transparency: 0.8
+        };
+
+        const aggregateScore = latestEvaluation?.trust_score || 
+          Object.values(trustScores).reduce((sum, score) => sum + score, 0) / Object.values(trustScores).length;
+
+        // Calculate trend (simplified - would need historical data for real trend)
+        const trend = aggregateScore >= 0.85 ? 'up' : aggregateScore >= 0.75 ? 'stable' : 'down';
+        const trendChange = aggregateScore >= 0.85 ? 0.02 : aggregateScore >= 0.75 ? 0.01 : -0.03;
+
+        return {
+          agent_id: agent.agent_id,
+          agent_name: agent.name || agent.agent_id,
+          agent_type: agent.type || 'single',
+          trust_scores: trustScores,
+          aggregate_score: aggregateScore,
+          confidence: latestEvaluation?.confidence_level || 0.8,
+          trend,
+          trend_change: trendChange,
+          last_evaluation: latestEvaluation?.evaluation_timestamp || new Date().toISOString(),
+          total_attestations: agentEvaluations.length,
+          active_boundaries: 3, // Would come from trust boundaries API
+          risk_level: aggregateScore >= 0.85 ? 'low' : aggregateScore >= 0.75 ? 'medium' : 'high',
+          governance_compliance: agent.governance_identity?.compliance_level === 'strict' ? 0.95 : 
+                                agent.governance_identity?.compliance_level === 'standard' ? 0.85 : 0.75
+        };
+      });
+
+      setAgentMetrics(transformedMetrics);
+    }
+  }, [trustMetrics, evaluations, agents]);
+
+  // Load initial data
+  useEffect(() => {
+    loadAgents();
+    refreshAll();
+  }, [loadAgents, refreshAll]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -211,6 +217,21 @@ const TrustMetricsOverviewPage: React.FC = () => {
           Trust Metrics Overview
         </Typography>
         <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
+
+  // Error handling
+  if (metricsError || evaluationsError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Trust Metrics Overview
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <AlertTitle>Error Loading Trust Data</AlertTitle>
+          {metricsError || evaluationsError}
+        </Alert>
       </Box>
     );
   }
