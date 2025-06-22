@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTrustBoundaries } from '../hooks/useTrustBoundaries';
 import {
   Box,
   Card,
@@ -116,119 +117,34 @@ function TabPanel(props: TabPanelProps) {
 
 const TrustBoundariesPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [boundaries, setBoundaries] = useState<TrustBoundary[]>([]);
-  const [thresholds, setThresholds] = useState<TrustThreshold[]>([]);
-  const [loading, setLoading] = useState(true);
   const [createBoundaryOpen, setCreateBoundaryOpen] = useState(false);
   const [createThresholdOpen, setCreateThresholdOpen] = useState(false);
 
-  // Mock data based on backend schema
-  useEffect(() => {
-    setTimeout(() => {
-      setBoundaries([
-        {
-          boundary_id: 'tb-001',
-          source_instance_id: 'instance-001',
-          target_instance_id: 'instance-002',
-          source_name: 'Financial Analysis Agent',
-          target_name: 'Data Processing System',
-          trust_level: 85,
-          boundary_type: 'direct',
-          status: 'active',
-          created_at: '2025-06-15T10:30:00Z',
-          expires_at: '2026-06-15T10:30:00Z',
-          policies: [
-            {
-              policy_id: 'pol-001',
-              policy_type: 'access',
-              policy_config: { allowed_operations: ['read', 'analyze'] }
-            }
-          ],
-          attestations: ['att-001', 'att-002'],
-          metadata: {}
-        },
-        {
-          boundary_id: 'tb-002',
-          source_instance_id: 'instance-003',
-          target_instance_id: 'instance-004',
-          source_name: 'Legal Compliance Bot',
-          target_name: 'Document Management',
-          trust_level: 95,
-          boundary_type: 'federated',
-          status: 'active',
-          created_at: '2025-06-10T14:20:00Z',
-          policies: [
-            {
-              policy_id: 'pol-002',
-              policy_type: 'data',
-              policy_config: { encryption_required: true, audit_trail: true }
-            }
-          ],
-          attestations: ['att-003', 'att-004', 'att-005'],
-          metadata: {}
-        },
-        {
-          boundary_id: 'tb-003',
-          source_instance_id: 'instance-005',
-          target_instance_id: 'instance-006',
-          source_name: 'Customer Support System',
-          target_name: 'CRM Integration',
-          trust_level: 72,
-          boundary_type: 'transitive',
-          status: 'suspended',
-          created_at: '2025-06-05T09:15:00Z',
-          policies: [],
-          attestations: ['att-006'],
-          metadata: { suspension_reason: 'Trust level below threshold' }
-        }
-      ]);
+  // Use real backend data
+  const {
+    boundaries,
+    thresholds,
+    metrics,
+    boundariesLoading,
+    thresholdsLoading,
+    metricsLoading,
+    boundariesError,
+    thresholdsError,
+    metricsError,
+    creatingBoundary,
+    creatingThreshold,
+    operationError,
+    createBoundary,
+    createThreshold,
+    updateBoundary,
+    deleteBoundary,
+    updateThreshold,
+    deleteThreshold,
+    refreshAll,
+    clearErrors
+  } = useTrustBoundaries();
 
-      setThresholds([
-        {
-          threshold_id: 'th-001',
-          name: 'Financial Operations',
-          description: 'Minimum trust requirements for financial data processing',
-          min_trust_level: 90,
-          max_trust_level: 100,
-          agent_types: ['financial_analysis', 'trading_bot', 'risk_assessment'],
-          actions: { alert: true, quarantine: false, disable: true, retrain: true },
-          industry_standard: true
-        },
-        {
-          threshold_id: 'th-002',
-          name: 'Healthcare Compliance',
-          description: 'HIPAA-compliant trust boundaries for healthcare agents',
-          min_trust_level: 95,
-          max_trust_level: 100,
-          agent_types: ['medical_diagnosis', 'patient_data', 'healthcare_bot'],
-          actions: { alert: true, quarantine: true, disable: true, retrain: false },
-          industry_standard: true
-        },
-        {
-          threshold_id: 'th-003',
-          name: 'General Operations',
-          description: 'Standard trust requirements for general-purpose agents',
-          min_trust_level: 75,
-          max_trust_level: 100,
-          agent_types: ['customer_support', 'data_processing', 'content_generation'],
-          actions: { alert: true, quarantine: false, disable: false, retrain: true },
-          industry_standard: false
-        },
-        {
-          threshold_id: 'th-004',
-          name: 'Development & Testing',
-          description: 'Relaxed boundaries for development and testing environments',
-          min_trust_level: 60,
-          max_trust_level: 100,
-          agent_types: ['test_agent', 'development_bot', 'prototype'],
-          actions: { alert: true, quarantine: false, disable: false, retrain: false },
-          industry_standard: false
-        }
-      ]);
-
-      setLoading(false);
-    }, 1000);
-  }, []);
+  const loading = boundariesLoading || thresholdsLoading || metricsLoading;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -267,7 +183,7 @@ const TrustBoundariesPage: React.FC = () => {
 
   // Calculate statistics
   const activeBoundaries = boundaries.filter(b => b.status === 'active').length;
-  const averageTrustLevel = boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length;
+  const averageTrustLevel = boundaries.length > 0 ? boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length : 0;
   const boundariesAtRisk = boundaries.filter(b => b.trust_level < 80).length;
   const totalPolicies = boundaries.reduce((sum, b) => sum + b.policies.length, 0);
 
@@ -278,6 +194,21 @@ const TrustBoundariesPage: React.FC = () => {
           Trust Boundaries
         </Typography>
         <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
+
+  // Error handling
+  if (boundariesError || thresholdsError || metricsError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Trust Boundaries
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <AlertTitle>Error Loading Trust Boundaries</AlertTitle>
+          {boundariesError || thresholdsError || metricsError}
+        </Alert>
       </Box>
     );
   }
