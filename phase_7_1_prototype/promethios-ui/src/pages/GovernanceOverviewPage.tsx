@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useGovernanceDashboard } from '../hooks/useGovernanceDashboard';
 import {
   Box,
   Grid,
@@ -138,68 +139,98 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const GovernanceOverviewPage: React.FC = () => {
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'single' | 'multi'>('all');
-  
-  // State for governance data
-  const [prismMetrics, setPrismMetrics] = useState<PrismMetrics | null>(null);
-  const [prismViolations, setPrismViolations] = useState<PrismViolation[]>([]);
-  const [vigilMetrics, setVigilMetrics] = useState<VigilMetrics | null>(null);
-  const [vigilViolations, setVigilViolations] = useState<VigilViolation[]>([]);
-  const [trustSnapshots, setTrustSnapshots] = useState<TrustSnapshot[]>([]);
-  const [governanceAwareness, setGovernanceAwareness] = useState<GovernanceAwareness | null>(null);
 
-  useEffect(() => {
-    const fetchGovernanceData = async () => {
-      setLoading(true);
-      try {
-        const [
-          prismMetricsData,
-          prismViolationsData,
-          vigilMetricsData,
-          vigilViolationsData,
-          trustSnapshotsData,
-          governanceAwarenessData
-        ] = await Promise.all([
-          observerService.getPRISMMetrics(),
-          observerService.getPRISMViolations(),
-          observerService.getVigilMetrics(),
-          observerService.getVigilViolations(),
-          observerService.getTrustSnapshots(),
-          observerService.getGovernanceAwareness()
-        ]);
+  // Use real backend data
+  const {
+    metrics,
+    violations,
+    overview,
+    metricsLoading,
+    violationsLoading,
+    overviewLoading,
+    metricsError,
+    violationsError,
+    overviewError,
+    refreshAll,
+    clearErrors,
+    filterViolations
+  } = useGovernanceDashboard();
 
-        setPrismMetrics(prismMetricsData);
-        setPrismViolations(prismViolationsData);
-        setVigilMetrics(vigilMetricsData);
-        setVigilViolations(vigilViolationsData);
-        setTrustSnapshots(trustSnapshotsData);
-        setGovernanceAwareness(governanceAwarenessData);
-      } catch (error) {
-        console.error('Error fetching governance data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGovernanceData();
-  }, []);
+  const loading = metricsLoading || violationsLoading || overviewLoading;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
+  const handleViewModeChange = (event: React.MouseEvent<HTMLElement>, newMode: 'all' | 'single' | 'multi') => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+    }
+  };
+
+  // Calculate derived metrics
+  const governanceHealth = overview?.governance_health || 'fair';
+  const complianceScore = metrics?.compliance_score || 0;
+  const trustScore = metrics?.trust_score || 0;
+  const totalViolations = violations.length;
+  const criticalViolations = violations.filter(v => v.severity === 'critical').length;
+  const recentViolations = violations.filter(v => {
+    const detectedAt = new Date(v.detected_at);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return detectedAt > weekAgo;
+  }).length;
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Governance Overview
+        </Typography>
+        <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
+
+  // Error handling
+  if (metricsError || violationsError || overviewError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Governance Overview
+        </Typography>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          <AlertTitle>Error Loading Governance Data</AlertTitle>
+          {metricsError || violationsError || overviewError}
+        </Alert>
+      </Box>
+    );
+  }
+
+  const getHealthColor = (health: string) => {
+    switch (health) {
+      case 'excellent': return '#10b981';
+      case 'good': return '#3b82f6';
+      case 'fair': return '#f59e0b';
+      case 'poor': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return '#10b981';
+    if (score >= 80) return '#3b82f6';
+    if (score >= 70) return '#f59e0b';
+    return '#ef4444';
+  };
+
   const calculateOverallGovernanceScore = () => {
-    if (!prismMetrics || !vigilMetrics || !governanceAwareness) return 0;
+    if (!metrics) return 0;
     
-    // Calculate based on various factors
-    const trustScore = Object.values(vigilMetrics.trustScores).reduce((a, b) => a + b, 0) / Object.values(vigilMetrics.trustScores).length;
-    const prismScore = (prismMetrics.passedChecks / prismMetrics.totalChecks) * 100;
-    const complianceScore = governanceAwareness.complianceRate;
-    
-    return Math.round((trustScore + prismScore + complianceScore) / 3);
+    // Calculate overall score from compliance and trust scores
+    return Math.round((metrics.compliance_score + metrics.trust_score) / 2);
   };
 
   const getGovernanceLevel = (score: number) => {
