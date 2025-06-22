@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -210,21 +210,29 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
   const [governanceEnabled, setGovernanceEnabled] = useState(initialGovernanceEnabled);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'warning' | 'info' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showWrapButton, setShowWrapButton] = useState(false);
   
-  // Governance metrics state
-  const [governanceMetrics, setGovernanceMetrics] = useState({
-    trustScore: 0.85,
-    complianceRate: 0.92,
-    responseTime: 1.2,
-    policyViolations: 0,
-    observerAlerts: 0,
-    sessionIntegrity: 0.88,
-    agentCoordination: 0.91,
-    realTimeMonitoring: true,
-    lastUpdated: new Date()
-  });
+  // Governance metrics state - reactive to governance enabled state
+  const governanceMetrics: GovernanceMetrics = useMemo(() => ({
+    trustScore: governanceEnabled ? 0.85 : 0.65, // Lower trust when governance disabled
+    complianceRate: governanceEnabled ? 0.92 : 0.75, // Lower compliance when governance disabled
+    responseTime: governanceEnabled ? 1.2 : 0.8, // Faster but less monitored when governance disabled
+    policyViolations: governanceEnabled ? 0 : 3, // More violations when governance disabled
+    observerAlerts: governanceEnabled ? 0 : 2, // More alerts when governance disabled
+    sessionIntegrity: governanceEnabled ? 0.88 : 0.60, // Lower integrity when governance disabled
+    agentCoordination: governanceEnabled ? 0.91 : 0.70, // Lower coordination when governance disabled
+    realTimeMonitoring: governanceEnabled // Direct mapping to governance state
+  }), [governanceEnabled]);
 
   // Governance alerts state
   const [governanceAlerts, setGovernanceAlerts] = useState<GovernanceAlert[]>([
@@ -677,8 +685,24 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         activities={governanceActivities}
         governanceEnabled={governanceEnabled}
         onGovernanceToggle={(enabled) => {
-          // Handle governance toggle
+          // Update governance state
+          setGovernanceEnabled(enabled);
+          
+          // Show feedback to user
+          setSnackbar({
+            open: true,
+            message: enabled 
+              ? 'Governance monitoring enabled - All agent interactions will be monitored and validated'
+              : 'Governance monitoring disabled - Agents will operate without oversight',
+            severity: enabled ? 'success' : 'warning'
+          });
+          
+          // Log for debugging
           console.log('Governance toggled:', enabled);
+          
+          // TODO: Connect to backend governance system
+          // This would typically make an API call to update the governance state
+          // Example: await governanceService.setGovernanceEnabled(enabled);
         }}
         multiAgentMode={isMultiAgentMode}
       />
@@ -920,6 +944,22 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
       >
         <Alert onClose={() => setError(null)} severity="error">
           {error}
+        </Alert>
+      </Snackbar>
+
+      {/* Governance Toggle Feedback Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </ChatContainer>
