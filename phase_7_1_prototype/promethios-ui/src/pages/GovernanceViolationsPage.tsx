@@ -213,11 +213,6 @@ const GovernanceViolationsPage: React.FC = () => {
       </Box>
     );
   }
-      v.id === violationId 
-        ? { ...v, status: 'resolved', resolved_at: new Date().toISOString() }
-        : v
-    ));
-  };
 
   const handleDeleteViolation = (violationId: string) => {
     setViolations(prev => prev.filter(v => v.id !== violationId));
@@ -232,14 +227,6 @@ const GovernanceViolationsPage: React.FC = () => {
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
   };
-
-  const filteredViolations = violations.filter(violation => {
-    if (severityFilter !== 'all' && violation.severity !== severityFilter) return false;
-    if (statusFilter !== 'all' && violation.status !== statusFilter) return false;
-    if (sourceFilter !== 'all' && violation.source !== sourceFilter) return false;
-    if (selectedAgents.length > 0 && !selectedAgents.includes(violation.agent_id)) return false;
-    return true;
-  });
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {

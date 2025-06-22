@@ -128,8 +128,8 @@ const TrustMetricsOverviewPage: React.FC = () => {
     if (trustMetrics && evaluations && agents) {
       const transformedMetrics: AgentTrustMetrics[] = agents.map(agent => {
         // Find latest evaluation for this agent
-        const agentEvaluations = evaluations.filter(eval => 
-          eval.agent_id === agent.agent_id || eval.target_id === agent.agent_id
+        const agentEvaluations = evaluations.filter(evaluation => 
+          evaluation.agent_id === agent.agent_id || evaluation.target_id === agent.agent_id
         );
         
         const latestEvaluation = agentEvaluations.sort((a, b) => 
