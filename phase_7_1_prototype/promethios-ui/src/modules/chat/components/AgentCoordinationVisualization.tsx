@@ -467,7 +467,7 @@ export const MultiAgentCoordination: React.FC<MultiAgentCoordinationProps> = ({
                         bgcolor: step.status === 'complete' ? 'success.main' : 
                                 step.status === 'active' ? 'primary.main' : 'grey.400'
                       }}>
-                        {agents.find(a => a.id === step.agentId)?.avatar || '🤖'}
+                        {agents.find(a => a.id === step.agentId)?.avatar || <PsychologyIcon sx={{ fontSize: '10px' }} />}
                       </Avatar>
                     )}
                   >
