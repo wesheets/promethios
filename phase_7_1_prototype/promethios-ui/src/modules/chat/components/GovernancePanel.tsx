@@ -298,8 +298,8 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
           onChange={() => handleSectionToggle('metrics')}
           sx={{ mb: 1 }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: DARK_THEME.text.primary }} />}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: DARK_THEME.text.primary }}>
               Core Metrics
             </Typography>
           </AccordionSummary>
@@ -406,8 +406,8 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
           onChange={() => handleSectionToggle('status')}
           sx={{ mb: 1 }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: DARK_THEME.text.primary }} />}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: DARK_THEME.text.primary }}>
               System Status
             </Typography>
           </AccordionSummary>
@@ -442,8 +442,8 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
           onChange={() => handleSectionToggle('activity')}
           sx={{ mb: 1 }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: DARK_THEME.text.primary }} />}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: DARK_THEME.text.primary }}>
               Recent Activity
             </Typography>
             <Badge 

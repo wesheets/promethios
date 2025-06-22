@@ -538,6 +538,7 @@ export const ModernMessageInput: React.FC<ModernMessageInputProps> = ({
                 size="small" 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled || isUploading}
+                sx={{ color: DARK_THEME.text.primary }}
               >
                 <AttachFileIcon />
               </IconButton>
@@ -554,6 +555,7 @@ export const ModernMessageInput: React.FC<ModernMessageInputProps> = ({
                   }
                 }}
                 disabled={disabled || isUploading}
+                sx={{ color: DARK_THEME.text.primary }}
               >
                 <CameraIcon />
               </IconButton>
@@ -562,7 +564,11 @@ export const ModernMessageInput: React.FC<ModernMessageInputProps> = ({
             {/* Paste Indicator */}
             {navigator.clipboard && (
               <Tooltip title="Paste from clipboard">
-                <IconButton size="small" disabled>
+                <IconButton 
+                  size="small" 
+                  disabled
+                  sx={{ color: DARK_THEME.text.secondary }}
+                >
                   <PasteIcon />
                 </IconButton>
               </Tooltip>

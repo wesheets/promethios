@@ -32,7 +32,7 @@ import { EnhancedAgentSelector } from './EnhancedAgentSelector';
 
 // Import types and services
 import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig, MultiAgentSystem } from '../types';
-import { messageService } from '../services/MessageService';
+import { chatBackendService } from '../../../services/chatBackendService';
 
 // Dark theme colors matching the site
 const DARK_THEME = {
@@ -222,17 +222,32 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showWrapButton, setShowWrapButton] = useState(false);
   
-  // Governance metrics state - reactive to governance enabled state
-  const governanceMetrics: GovernanceMetrics = useMemo(() => ({
-    trustScore: governanceEnabled ? 0.85 : 0.65, // Lower trust when governance disabled
-    complianceRate: governanceEnabled ? 0.92 : 0.75, // Lower compliance when governance disabled
-    responseTime: governanceEnabled ? 1.2 : 0.8, // Faster but less monitored when governance disabled
-    policyViolations: governanceEnabled ? 0 : 3, // More violations when governance disabled
-    observerAlerts: governanceEnabled ? 0 : 2, // More alerts when governance disabled
-    sessionIntegrity: governanceEnabled ? 0.88 : 0.60, // Lower integrity when governance disabled
-    agentCoordination: governanceEnabled ? 0.91 : 0.70, // Lower coordination when governance disabled
-    realTimeMonitoring: governanceEnabled // Direct mapping to governance state
-  }), [governanceEnabled]);
+  // Governance metrics state - now as state variable to allow updates from backend
+  const [governanceMetrics, setGovernanceMetrics] = useState<GovernanceMetrics>({
+    trustScore: 0.85,
+    complianceRate: 0.92,
+    responseTime: 1.2,
+    policyViolations: 0,
+    observerAlerts: 0,
+    sessionIntegrity: 0.88,
+    agentCoordination: 0.91,
+    realTimeMonitoring: true
+  });
+
+  // Update metrics when governance is toggled
+  useEffect(() => {
+    setGovernanceMetrics(prev => ({
+      ...prev,
+      trustScore: governanceEnabled ? 0.85 : 0.65,
+      complianceRate: governanceEnabled ? 0.92 : 0.75,
+      responseTime: governanceEnabled ? 1.2 : 0.8,
+      policyViolations: governanceEnabled ? 0 : 3,
+      observerAlerts: governanceEnabled ? 0 : 2,
+      sessionIntegrity: governanceEnabled ? 0.88 : 0.60,
+      agentCoordination: governanceEnabled ? 0.91 : 0.70,
+      realTimeMonitoring: governanceEnabled
+    }));
+  }, [governanceEnabled]);
 
   // Governance alerts state
   const [governanceAlerts, setGovernanceAlerts] = useState<GovernanceAlert[]>([
@@ -349,16 +364,18 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
       try {
         if (selectedAgent || isMultiAgentMode) {
           const sessionType = isMultiAgentMode ? 'multi_agent' : 'single_agent';
-          const agentIdParam = isMultiAgentMode ? undefined : selectedAgent?.id;
           
-          const response = await messageService.createSession(
+          const response = await chatBackendService.createSession(
             'demo-user',
-            agentIdParam,
             sessionType,
-            governanceEnabled
+            {
+              governanceEnabled,
+              agentId: isMultiAgentMode ? undefined : selectedAgent?.id,
+              coordinationPattern: isMultiAgentMode ? 'sequential' : undefined
+            }
           );
           
-          if (response.success && response.session_id) {
+          if (response.session_id) {
             setSessionId(response.session_id);
             console.log(`Created ${sessionType} session:`, response.session_id);
           }
@@ -591,10 +608,44 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
             setMessages(prev => [...prev, agentMessage]);
           }
         }
-      } else if (selectedAgent) {
-        // Single agent processing
+      } else if (selectedAgent && sessionId) {
+        // Single agent processing using proper backend service
+        const response = await chatBackendService.sendMessage(sessionId, {
+          content: message,
+          attachments: attachments?.map(att => ({
+            name: att.file.name,
+            type: att.type,
+            size: att.file.size
+          }))
+        });
+        
+        if (response.response_content) {
+          const agentMessage: MessageType = {
+            id: response.message_id,
+            content: response.response_content,
+            sender: 'agent',
+            agentId: selectedAgent.id,
+            timestamp: new Date(),
+            governanceStatus: response.governance_status || 'unmonitored'
+          };
+          setMessages(prev => [...prev, agentMessage]);
+          
+          // Update governance metrics from real backend data
+          if (governanceEnabled && response.trust_score !== undefined) {
+            setGovernanceMetrics(prev => ({
+              ...prev,
+              trustScore: response.trust_score,
+              complianceRate: response.policy_compliance ? 0.95 : 0.75,
+              responseTime: response.processing_time_ms / 1000,
+              policyViolations: response.policy_compliance ? 0 : prev.policyViolations + 1,
+              lastUpdated: new Date()
+            }));
+          }
+        }
+      } else {
+        // Fallback to old service if no session
         result = await messageService.sendMessageToAgent(
-          selectedAgent.id,
+          selectedAgent?.id || 'baseline-agent',
           message,
           governanceEnabled
         );
@@ -713,7 +764,10 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         <ChatHeader>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <IconButton 
-              onClick={() => setIsGovernancePanelOpen(!isGovernancePanelOpen)}
+              onClick={(e) => {
+                e.preventDefault();
+                setIsGovernancePanelOpen(!isGovernancePanelOpen);
+              }}
               size="small"
               sx={{ color: DARK_THEME.primary }}
             >
@@ -761,7 +815,14 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
                 borderColor: DARK_THEME.border
               }}
             />
-            <IconButton size="small" sx={{ color: DARK_THEME.text.secondary }}>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.preventDefault();
+                // Settings functionality would go here
+              }}
+              sx={{ color: DARK_THEME.text.secondary }}
+            >
               <SettingsIcon />
             </IconButton>
           </Box>

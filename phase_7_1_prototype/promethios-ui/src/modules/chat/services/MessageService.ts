@@ -80,6 +80,59 @@ export class MessageService {
       };
     }
   }
+
+  async sendMessageToMultiAgent(
+    message: string,
+    agentIds: string[],
+    coordinationPattern: string = 'sequential',
+    governanceEnabled: boolean = false
+  ): Promise<{
+    success: boolean;
+    responses?: Array<{
+      agent_id: string;
+      response: string;
+    }>;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/benchmark/multi-agent-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agent_ids: agentIds,
+          message: message,
+          coordination_pattern: coordinationPattern,
+          governance_enabled: governanceEnabled
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        return {
+          success: true,
+          responses: data.responses
+        };
+      } else {
+        return {
+          success: false,
+          error: data.error || 'Unknown error occurred'
+        };
+      }
+    } catch (error) {
+      console.error('Error sending message to multi-agent:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred'
+      };
+    }
+  }
 }
 
 export const messageService = new MessageService();
