@@ -42,7 +42,7 @@ import {
   Psychology as PsychologyIcon,
   Group as GroupIcon
 } from '@mui/icons-material';
-import { styled, alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -139,40 +139,40 @@ const MetricLabel = styled(Typography)(() => ({
 const StatusIndicator = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(0.5, 1),
-  borderRadius: theme.shape.borderRadius,
+  gap: '4px',
+  padding: '4px 8px',
+  borderRadius: '4px',
   fontSize: '12px',
   fontWeight: 500,
   
   '&.healthy': {
-    backgroundColor: alpha(theme.palette.success.main, 0.1),
-    color: theme.palette.success.main,
-    border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`
+    backgroundColor: alpha(DARK_THEME.success, 0.1),
+    color: DARK_THEME.success,
+    border: `1px solid ${alpha(DARK_THEME.success, 0.2)}`
   },
   
   '&.warning': {
-    backgroundColor: alpha(theme.palette.warning.main, 0.1),
-    color: theme.palette.warning.main,
-    border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`
+    backgroundColor: alpha(DARK_THEME.warning, 0.1),
+    color: DARK_THEME.warning,
+    border: `1px solid ${alpha(DARK_THEME.warning, 0.2)}`
   },
   
   '&.error': {
-    backgroundColor: alpha(theme.palette.error.main, 0.1),
-    color: theme.palette.error.main,
-    border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
+    backgroundColor: alpha(DARK_THEME.error, 0.1),
+    color: DARK_THEME.error,
+    border: `1px solid ${alpha(DARK_THEME.error, 0.2)}`
   }
 }));
 
-const ActivityItem = styled(ListItem)(({ theme }) => ({
-  padding: theme.spacing(1),
-  borderRadius: theme.shape.borderRadius,
-  marginBottom: theme.spacing(0.5),
-  backgroundColor: alpha(theme.palette.primary.main, 0.02),
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+const ActivityItem = styled(ListItem)((() => ( => ({
+  padding: '8px',
+  borderRadius: '4px',
+  marginBottom: '4px',
+  backgroundColor: alpha(DARK_THEME.primary, 0.02),
+  border: `1px solid ${alpha(DARK_THEME.primary, 0.1)}`,
   
   '&:hover': {
-    backgroundColor: alpha(theme.palette.primary.main, 0.05)
+    backgroundColor: alpha(DARK_THEME.primary, 0.05)
   }
 }));
 

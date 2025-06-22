@@ -25,7 +25,7 @@ import {
   CameraAlt as CameraIcon,
   Folder as FolderIcon
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
 
 // Dark theme colors matching the site
 const DARK_THEME = {
@@ -51,48 +51,48 @@ const InputContainer = styled(Box)(() => ({
 
 const ModernInputBox = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isDragOver' && prop !== 'hasFiles'
-})(({ isDragOver, hasFiles }) => ({
+})(({ theme, isDragOver, hasFiles }) => ({
   display: 'flex',
   flexDirection: 'column',
-  backgroundColor: DARK_THEME.background,
+  backgroundColor: theme.palette.background.default,
   border: `2px solid ${
     isDragOver 
-      ? DARK_THEME.primary 
+      ? theme.palette.primary.main 
       : hasFiles 
-        ? DARK_THEME.success
-        : DARK_THEME.border
+        ? theme.palette.secondary.main
+        : theme.palette.divider
   }`,
   borderRadius: '24px',
   transition: 'all 0.2s ease',
   overflow: 'hidden',
   
   '&:focus-within': {
-    borderColor: DARK_THEME.primary,
-    boxShadow: `0 0 0 3px rgba(49, 130, 206, 0.1)`
+    borderColor: theme.palette.primary.main,
+    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
   },
   
   ...(isDragOver && {
-    backgroundColor: 'rgba(49, 130, 206, 0.05)',
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
     transform: 'scale(1.02)'
   })
 }));
 
-const InputField = styled('textarea')(() => ({
+const InputField = styled('textarea')(({ theme }) => ({
   flex: 1,
   border: 'none',
   outline: 'none',
   backgroundColor: 'transparent',
   fontSize: '14px',
   lineHeight: 1.5,
-  padding: '16px 16px 8px 16px',
+  padding: theme.spacing(2, 2, 1, 2),
   resize: 'none',
-  fontFamily: 'inherit',
-  color: DARK_THEME.text.primary,
+  fontFamily: theme.typography.fontFamily,
+  color: theme.palette.text.primary,
   minHeight: '20px',
   maxHeight: '120px',
   
   '&::placeholder': {
-    color: DARK_THEME.text.secondary
+    color: theme.palette.text.secondary
   },
   
   '&::-webkit-scrollbar': {
@@ -102,24 +102,24 @@ const InputField = styled('textarea')(() => ({
     backgroundColor: 'transparent'
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'rgba(160, 174, 192, 0.2)',
+    backgroundColor: alpha(theme.palette.text.secondary, 0.2),
     borderRadius: '2px'
   }
 }));
 
-const InputActions = styled(Box)((() => ( => ({
+const InputActions = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '0 16px 8px 16px',
-  gap: '8px'
+  padding: theme.spacing(0, 2, 1, 2),
+  gap: theme.spacing(1)
 }));
 
-const FilePreviewContainer = styled(Box)((() => ( => ({
-  padding: '8px 16px 0 16px',
+const FilePreviewContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1, 2, 0, 2),
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '8px',
+  gap: theme.spacing(1),
   maxHeight: '120px',
   overflowY: 'auto',
   
@@ -130,19 +130,19 @@ const FilePreviewContainer = styled(Box)((() => ( => ({
     backgroundColor: 'transparent'
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: alpha(DARK_THEME.text.secondary, 0.2),
+    backgroundColor: alpha(theme.palette.text.secondary, 0.2),
     borderRadius: '2px'
   }
 }));
 
-const FilePreview = styled(Paper)((() => ( => ({
+const FilePreview = styled(Paper)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
-  padding: '4px 8px',
-  backgroundColor: alpha(DARK_THEME.primary, 0.1),
-  border: `1px solid ${alpha(DARK_THEME.primary, 0.2)}`,
-  borderRadius: '4px',
+  gap: theme.spacing(1),
+  padding: theme.spacing(0.5, 1),
+  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  borderRadius: theme.shape.borderRadius,
   position: 'relative',
   maxWidth: '200px',
   
@@ -154,7 +154,7 @@ const FilePreview = styled(Paper)((() => ( => ({
   '& .file-name': {
     fontSize: '12px',
     fontWeight: 500,
-    color: DARK_THEME.text.primary,
+    color: theme.palette.text.primary,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap'
@@ -162,50 +162,50 @@ const FilePreview = styled(Paper)((() => ( => ({
   
   '& .file-size': {
     fontSize: '10px',
-    color: DARK_THEME.text.secondary
+    color: theme.palette.text.secondary
   }
 }));
 
-const DragOverlay = styled(Box)((() => ( => ({
+const DragOverlay = styled(Box)(({ theme }) => ({
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: alpha(DARK_THEME.primary, 0.1),
-  border: `2px dashed ${DARK_THEME.primary}`,
+  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  border: `2px dashed ${theme.palette.primary.main}`,
   borderRadius: '24px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '8px',
+  gap: theme.spacing(1),
   zIndex: 10,
   
   '& .drag-text': {
-    color: DARK_THEME.primary,
+    color: theme.palette.primary.main,
     fontWeight: 600,
     fontSize: '16px'
   },
   
   '& .drag-subtext': {
-    color: DARK_THEME.text.secondary,
+    color: theme.palette.text.secondary,
     fontSize: '12px'
   }
 }));
 
-const UploadProgress = styled(Box)((() => ( => ({
+const UploadProgress = styled(Box)(({ theme }) => ({
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
-  backgroundColor: alpha(DARK_THEME.surface, 0.9),
+  backgroundColor: alpha(theme.palette.background.paper, 0.9),
   backdropFilter: 'blur(4px)',
-  padding: '16px',
+  padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '8px',
+  gap: theme.spacing(1),
   zIndex: 20
 }));
 
