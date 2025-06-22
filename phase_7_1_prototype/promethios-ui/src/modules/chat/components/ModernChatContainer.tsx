@@ -9,7 +9,9 @@ import {
   Tooltip,
   Fade,
   Alert,
-  Snackbar
+  Snackbar,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -25,11 +27,12 @@ import { styled } from '@mui/material/styles';
 import { GovernancePanel } from './GovernancePanel';
 import { ModernMessageInput } from './ModernMessageInput';
 import { AgentCoordinationVisualization } from './AgentCoordinationVisualization';
+import { SmartObserver } from './SmartObserver';
+import { EnhancedAgentSelector } from './EnhancedAgentSelector';
 
 // Import types and services
 import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig, MultiAgentSystem } from '../types';
 import { messageService } from '../services/MessageService';
-import { AgentSelector } from './AgentSelector';
 
 // Dark theme colors matching the site
 const DARK_THEME = {
@@ -178,23 +181,36 @@ interface ModernChatContainerProps {
   governanceEnabled?: boolean;
 }
 
+interface GovernanceAlert {
+  id: string;
+  type: 'policy_violation' | 'trust_drop' | 'compliance_issue' | 'performance_warning';
+  message: string;
+  severity: 'info' | 'warning' | 'error';
+  timestamp: Date;
+  agentId?: string;
+}
+
 export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
   height = '100%',
   agentId,
   multiAgentSystemId,
-  governanceEnabled = true
+  governanceEnabled: initialGovernanceEnabled = true
 }) => {
   // State management
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isGovernancePanelOpen, setIsGovernancePanelOpen] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
+  const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
   const [selectedMultiAgentSystem, setSelectedMultiAgentSystem] = useState<MultiAgentSystem | null>(null);
+  const [multiAgentConfig, setMultiAgentConfig] = useState<AdHocMultiAgentConfig | null>(null);
   const [chatMode, setChatMode] = useState<ChatMode>('standard');
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
+  const [governanceEnabled, setGovernanceEnabled] = useState(initialGovernanceEnabled);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showWrapButton, setShowWrapButton] = useState(false);
   
   // Governance metrics state
   const [governanceMetrics, setGovernanceMetrics] = useState({
@@ -205,8 +221,21 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     observerAlerts: 0,
     sessionIntegrity: 0.88,
     agentCoordination: 0.91,
-    realTimeMonitoring: true
+    realTimeMonitoring: true,
+    lastUpdated: new Date()
   });
+
+  // Governance alerts state
+  const [governanceAlerts, setGovernanceAlerts] = useState<GovernanceAlert[]>([
+    {
+      id: 'alert_1',
+      type: 'policy_violation',
+      message: 'Content policy validation completed',
+      severity: 'info',
+      timestamp: new Date(),
+      agentId: 'baseline-agent'
+    }
+  ]);
 
   // Governance activities state
   const [governanceActivities, setGovernanceActivities] = useState([
@@ -225,8 +254,61 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     { id: 'baseline-agent', name: 'Baseline', type: 'baseline', avatar: '🤖', status: 'idle' },
     { id: 'factual-agent', name: 'Factual', type: 'factual', avatar: '📊', status: 'idle' },
     { id: 'creative-agent', name: 'Creative', type: 'creative', avatar: '🎨', status: 'idle' },
+    { id: 'data-analyst', name: 'Data Analyst', type: 'analyst', avatar: '📈', status: 'idle' },
+    { id: 'technical-writer', name: 'Technical Writer', type: 'writer', avatar: '✍️', status: 'idle' },
+    { id: 'technical-advisor', name: 'Technical Advisor', type: 'advisor', avatar: '🔧', status: 'idle' },
     { id: 'observer', name: 'Observer', type: 'observer', avatar: '🛡️', status: 'idle' }
   ]);
+
+  // Demo multi-agent systems
+  const multiAgentSystems: MultiAgentSystem[] = [
+    {
+      id: 'research-team',
+      name: 'Research & Analysis Team',
+      description: 'Factual Agent and Data Analyst working together for comprehensive research',
+      agents: [
+        { id: 'factual-agent', role: 'primary' },
+        { id: 'data-analyst', role: 'secondary' }
+      ],
+      coordinationPattern: 'sequential',
+      createdAt: new Date('2024-01-15'),
+      createdBy: 'demo-user',
+      isActive: true,
+      tags: ['research', 'analysis', 'data'],
+      trustScore: 0.92
+    },
+    {
+      id: 'creative-content-team',
+      name: 'Creative Content Team',
+      description: 'Creative Agent and Technical Writer for engaging content creation',
+      agents: [
+        { id: 'creative-agent', role: 'primary' },
+        { id: 'technical-writer', role: 'secondary' }
+      ],
+      coordinationPattern: 'parallel',
+      createdAt: new Date('2024-01-20'),
+      createdBy: 'demo-user',
+      isActive: true,
+      tags: ['creative', 'content', 'writing'],
+      trustScore: 0.88
+    },
+    {
+      id: 'problem-solving-team',
+      name: 'Problem Solving Team',
+      description: 'Multi-agent team for complex problem analysis and solution development',
+      agents: [
+        { id: 'factual-agent', role: 'primary' },
+        { id: 'creative-agent', role: 'secondary' },
+        { id: 'technical-advisor', role: 'secondary' }
+      ],
+      coordinationPattern: 'hierarchical',
+      createdAt: new Date('2024-01-25'),
+      createdBy: 'demo-user',
+      isActive: true,
+      tags: ['problem-solving', 'analysis', 'innovation'],
+      trustScore: 0.95
+    }
+  ];
 
   const [currentActivity, setCurrentActivity] = useState<{
     type: 'thinking' | 'handoff' | 'coordination';
@@ -240,12 +322,176 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize with demo agent
+  // Initialize with demo agent and create session
   useEffect(() => {
     if (!selectedAgent) {
       setSelectedAgent(agents[0]);
     }
   }, [agents, selectedAgent]);
+
+  // Create new session when governance or multi-agent mode changes
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        if (selectedAgent || isMultiAgentMode) {
+          const sessionType = isMultiAgentMode ? 'multi_agent' : 'single_agent';
+          const agentIdParam = isMultiAgentMode ? undefined : selectedAgent?.id;
+          
+          const response = await messageService.createSession(
+            'demo-user',
+            agentIdParam,
+            sessionType,
+            governanceEnabled
+          );
+          
+          if (response.success && response.session_id) {
+            setSessionId(response.session_id);
+            console.log(`Created ${sessionType} session:`, response.session_id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to create session:', error);
+      }
+    };
+
+    initializeSession();
+  }, [selectedAgent, isMultiAgentMode, governanceEnabled]);
+
+  // Handle governance toggle
+  const handleGovernanceToggle = (enabled: boolean) => {
+    setGovernanceEnabled(enabled);
+    
+    // Add governance status message
+    const statusMessage: MessageType = {
+      id: `msg_${Date.now()}_governance`,
+      content: `🛡️ Governance ${enabled ? 'enabled' : 'disabled'}. ${enabled ? 'All interactions will be monitored and scored.' : 'Operating in standard mode.'}`,
+      sender: 'system',
+      timestamp: new Date(),
+      governanceStatus: enabled ? 'monitored' : 'unmonitored'
+    };
+    setMessages(prev => [...prev, statusMessage]);
+
+    // Reset metrics when governance is disabled
+    if (!enabled) {
+      setGovernanceMetrics(prev => ({
+        ...prev,
+        trustScore: 0,
+        complianceRate: 0,
+        policyViolations: 0,
+        observerAlerts: 0,
+        realTimeMonitoring: false,
+        lastUpdated: new Date()
+      }));
+      setGovernanceAlerts([]);
+    }
+  };
+
+  // Handle multi-agent mode toggle
+  const handleMultiAgentToggle = (enabled: boolean) => {
+    setIsMultiAgentMode(enabled);
+    
+    if (enabled) {
+      // Clear single agent selection
+      setSelectedAgent(null);
+      // Set up default multi-agent configuration if no system selected
+      if (!selectedMultiAgentSystem && selectedAgents.length === 0) {
+        setSelectedAgents([agents[1], agents[2]]); // Default to factual and creative
+      }
+    } else {
+      // Clear multi-agent selections
+      setSelectedAgents([]);
+      setSelectedMultiAgentSystem(null);
+      setMultiAgentConfig(null);
+      setShowWrapButton(false);
+      // Set default single agent
+      if (!selectedAgent) {
+        setSelectedAgent(agents[0]);
+      }
+    }
+
+    // Add mode change message
+    const modeMessage: MessageType = {
+      id: `msg_${Date.now()}_mode`,
+      content: `🤝 Switched to ${enabled ? 'multi-agent' : 'single agent'} mode. ${enabled ? 'Multiple agents will collaborate on responses.' : 'Single agent will handle all interactions.'}`,
+      sender: 'system',
+      timestamp: new Date(),
+      governanceStatus: governanceEnabled ? 'monitored' : 'unmonitored'
+    };
+    setMessages(prev => [...prev, modeMessage]);
+  };
+
+  // Handle agent selection (single mode)
+  const handleAgentSelect = (agent: Agent | null) => {
+    setSelectedAgent(agent);
+  };
+
+  // Handle multi-agent selection (multi mode)
+  const handleMultiAgentSelect = (agents: Agent[]) => {
+    setSelectedAgents(agents);
+    setSelectedMultiAgentSystem(null); // Clear system selection when manually selecting agents
+    
+    // Update multi-agent config
+    if (agents.length >= 2) {
+      setMultiAgentConfig({
+        agents: agents.map((agent, index) => ({
+          id: agent.id,
+          role: index === 0 ? 'primary' : 'secondary'
+        })),
+        coordinationPattern: 'sequential'
+      });
+    } else {
+      setMultiAgentConfig(null);
+      setShowWrapButton(false);
+    }
+  };
+
+  // Handle multi-agent system selection
+  const handleMultiAgentSystemSelect = (system: MultiAgentSystem | null) => {
+    setSelectedMultiAgentSystem(system);
+    
+    if (system) {
+      // Set agents from system
+      const systemAgents = agents.filter(a => 
+        system.agents.some(sa => sa.id === a.id)
+      );
+      setSelectedAgents(systemAgents);
+      
+      // Set multi-agent config from system
+      setMultiAgentConfig({
+        agents: system.agents,
+        coordinationPattern: system.coordinationPattern,
+        name: system.name,
+        description: system.description
+      });
+    } else {
+      // Clear when no system selected
+      setSelectedAgents([]);
+      setMultiAgentConfig(null);
+    }
+    setShowWrapButton(false); // Don't show wrap button for existing systems
+  };
+
+  // Handle wrap as system
+  const handleWrapAsSystem = (config: AdHocMultiAgentConfig) => {
+    console.log('Wrapping as system:', config);
+    
+    // In a real app, this would navigate to the multi-agent wrapping page
+    // For now, we'll show a success message
+    const wrapMessage: MessageType = {
+      id: `msg_${Date.now()}_wrap`,
+      content: `✅ Successfully created "${config.name}" multi-agent system! This configuration is now available for future use.`,
+      sender: 'system',
+      timestamp: new Date(),
+      governanceStatus: governanceEnabled ? 'monitored' : 'unmonitored'
+    };
+    setMessages(prev => [...prev, wrapMessage]);
+    
+    // Hide wrap button after successful wrapping
+    setShowWrapButton(false);
+    
+    // TODO: Navigate to multi-agent wrapping page with pre-filled config
+    // navigate('/ui/multi-agent-wrapping', { state: { config } });
+  };
 
   // Handle message sending
   const handleSendMessage = async (message: string, attachments?: any[]) => {
@@ -383,6 +629,11 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         }, ...prev.slice(0, 4)]);
       }
 
+      // Show wrap button after successful multi-agent conversation
+      if (isMultiAgentMode && selectedAgents.length >= 2 && !selectedMultiAgentSystem && messages.length >= 3) {
+        setShowWrapButton(true);
+      }
+
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
@@ -440,7 +691,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
             </IconButton>
             
             <Typography variant="h6" sx={{ fontWeight: 600, color: DARK_THEME.text.primary }}>
-              {isMultiAgentMode ? 'Multi-Agent Chat' : 'Agent Chat'}
+              Chat with Your Agents
             </Typography>
             
             {selectedAgent && !isMultiAgentMode && (
@@ -485,6 +736,22 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
             </IconButton>
           </Box>
         </ChatHeader>
+
+        {/* Enhanced Agent Selector */}
+        <EnhancedAgentSelector
+          selectedAgent={selectedAgent}
+          selectedAgents={selectedAgents}
+          selectedMultiAgentSystem={selectedMultiAgentSystem}
+          isMultiAgentMode={isMultiAgentMode}
+          onAgentSelect={handleAgentSelect}
+          onMultiAgentSelect={handleMultiAgentSelect}
+          onMultiAgentSystemSelect={handleMultiAgentSystemSelect}
+          onModeChange={handleMultiAgentToggle}
+          onWrapAsSystem={handleWrapAsSystem}
+          showWrapButton={showWrapButton}
+          agents={agents}
+          multiAgentSystems={multiAgentSystems}
+        />
 
         {/* Messages Container */}
         <MessagesContainer>
