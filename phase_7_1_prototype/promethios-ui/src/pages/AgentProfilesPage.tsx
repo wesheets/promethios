@@ -77,6 +77,8 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
 import EnhancedAgentRegistration from '../components/EnhancedAgentRegistration';
+import { useAuth } from '../context/AuthContext';
+import { useDemoAuth } from '../hooks/useDemoAuth';
 // Temporarily disabled to avoid backend dependency errors
 // import { useAgentWrappersUnified } from '../modules/agent-wrapping/hooks/useAgentWrappersUnified';
 // import { useMultiAgentSystemsUnified } from '../modules/agent-wrapping/hooks/useMultiAgentSystemsUnified';
@@ -148,6 +150,9 @@ interface AddAgentDialogProps {
 const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentAdded }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [agentData, setAgentData] = useState<any>({});
+  const { currentUser } = useAuth();
+  const { currentUser: demoUser } = useDemoAuth();
+  const effectiveUser = currentUser || demoUser;
 
   const handleSubmit = async () => {
     if (!agentData.agentName?.trim() || !agentData.apiEndpoint?.trim() || !agentData.apiKey?.trim()) {
@@ -155,20 +160,28 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
       return;
     }
 
+    if (!effectiveUser?.uid) {
+      alert('You must be logged in to add agents');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // Simulate API call to add agent
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Import the storage service
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
       
-      // Create new agent profile as unwrapped
+      // Set current user for storage service
+      userAgentStorage.setCurrentUser(effectiveUser.uid);
+      
+      // Create new agent profile
       const newAgent: AgentProfile = {
         identity: {
           id: `agent-${Date.now()}`,
           name: agentData.agentName.trim(),
           version: '1.0.0',
           description: agentData.description?.trim() || `AI agent: ${agentData.agentName}`,
-          ownerId: 'user-1',
+          ownerId: effectiveUser.uid,
           creationDate: new Date(),
           lastModifiedDate: new Date(),
           status: 'active'
@@ -193,6 +206,18 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         }
       };
 
+      // Save to unified storage with user scoping
+      await userAgentStorage.saveAgent(newAgent);
+      
+      // Load the scorecard that was automatically created
+      const scorecard = await userAgentStorage.loadScorecard(newAgent.identity.id);
+      if (scorecard) {
+        newAgent.latestScorecard = scorecard;
+      }
+
+      console.log('Agent saved to unified storage:', newAgent.identity.name);
+      
+      // Notify parent component
       onAgentAdded(newAgent);
       
       // Reset form
@@ -718,7 +743,7 @@ const AgentProfileCard: React.FC<{
                 Trust Score
               </Typography>
               <Typography variant="h6" sx={{ color: '#3182ce' }}>
-                {profile.latestScorecard?.overallScore || 0}/100
+                {profile.latestScorecard?.score || 0}/100
               </Typography>
             </Box>
           </Grid>
@@ -803,6 +828,12 @@ const AgentProfilesPage: React.FC = () => {
   // Agent profiles state for real backend data
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  
+  // Fallback to demo auth for testing if no Firebase user
+  const { currentUser: demoUser, loading: demoLoading } = useDemoAuth();
+  const effectiveUser = currentUser || demoUser;
+  const effectiveLoading = loading || demoLoading;
 
   // Tab change handler
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -874,27 +905,60 @@ const AgentProfilesPage: React.FC = () => {
   const wrappedAgents = agentProfiles.filter(agent => agent?.isWrapped);
   const canCreateMultiAgent = selectedAgents.length >= 2;
 
-  useEffect(() => {
-    // Simplified data loading without backend dependencies
-    const loadProfiles = async () => {
+  // Load agents from unified storage
+  const loadAgentsFromStorage = async () => {
+    if (!effectiveUser?.uid) {
+      console.log('No user logged in, skipping agent loading');
+      setAgentProfiles([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
       setLoading(true);
       
-      try {
-        // For now, just set empty profiles to avoid backend errors
-        // TODO: Re-enable backend integration when services are properly configured
-        console.log('AgentProfilesPage: Using fallback empty data (backend services not configured)');
-        setAgentProfiles([]);
-        
-      } catch (error) {
-        console.error('Error loading agent profiles:', error);
-        setAgentProfiles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Import and initialize storage service
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(effectiveUser.uid);
+      
+      // Load user's agents
+      const userAgents = await userAgentStorage.loadUserAgents();
+      
+      // Load scorecards for each agent
+      const agentsWithScorecards = await Promise.all(
+        userAgents.map(async (agent) => {
+          try {
+            const scorecard = await userAgentStorage.loadScorecard(agent.identity.id);
+            return {
+              ...agent,
+              latestScorecard: scorecard,
+            };
+          } catch (error) {
+            console.error(`Error loading scorecard for agent ${agent.identity.id}:`, error);
+            return agent;
+          }
+        })
+      );
+      
+      setAgentProfiles(agentsWithScorecards);
+      console.log(`Loaded ${agentsWithScorecards.length} agents from unified storage for user ${effectiveUser.uid}`);
+      
+    } catch (error) {
+      console.error('Error loading agents from storage:', error);
+      setAgentProfiles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadProfiles();
-  }, []);
+  useEffect(() => {
+    loadAgentsFromStorage();
+  }, [effectiveUser?.uid]);
+
+  // Refresh function for manual reload
+  const handleRefreshAgents = () => {
+    loadAgentsFromStorage();
+  };
 
   // Filter agent profiles with null safety
   const filteredAgentProfiles = agentProfiles.filter(profile => {
@@ -1088,7 +1152,7 @@ const AgentProfilesPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={() => window.location.reload()}
+                  onClick={handleRefreshAgents}
                   sx={{
                     borderColor: '#4a5568',
                     color: '#a0aec0',
@@ -1316,11 +1380,11 @@ const AgentProfilesPage: React.FC = () => {
           onClose={() => setShowAddAgentDialog(false)}
           onAgentAdded={async (newAgent) => {
             try {
-              // Add the new agent to the UI state so it appears in the list
-              setAgentProfiles(prev => [...prev, newAgent]);
-              
               console.log('Agent added successfully:', newAgent.identity.name);
               setShowAddAgentDialog(false);
+              
+              // Refresh agents from storage to get the latest data
+              await handleRefreshAgents();
               
               // Show publish to registry modal after successful creation
               setWrappedAgentData({
