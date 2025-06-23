@@ -344,6 +344,8 @@ const AgentWrappingWizard: React.FC = () => {
           ...agentData.identity,
           id: agentId,
           name: agentName,
+          // Preserve the original description
+          description: agentData.identity?.description || agentData.description || 'AI Agent with governance controls',
           creationDate: agentData.identity?.creationDate || new Date(),
           lastModifiedDate: new Date(),
         },

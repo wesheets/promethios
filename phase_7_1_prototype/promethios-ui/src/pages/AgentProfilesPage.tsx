@@ -109,7 +109,7 @@ interface AgentProfile {
   healthStatus: 'healthy' | 'warning' | 'critical';
   trustLevel: 'high' | 'medium' | 'low';
   isWrapped: boolean;
-  governancePolicy: string | null;
+  governancePolicy: string | object | null;
   isDeployed: boolean;
   apiDetails?: {
     endpoint: string;
@@ -697,7 +697,9 @@ const AgentProfileCard: React.FC<{
           />
           {profile.governancePolicy && (
             <Chip
-              label={`Policy: ${profile.governancePolicy}`}
+              label={`Policy: ${typeof profile.governancePolicy === 'object' 
+                ? `${profile.governancePolicy.complianceFramework || 'General'} - ${profile.governancePolicy.securityLevel || 'Standard'}`
+                : profile.governancePolicy}`}
               size="small"
               variant="outlined"
               sx={{
