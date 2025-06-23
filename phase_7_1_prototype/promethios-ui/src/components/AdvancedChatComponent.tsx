@@ -114,6 +114,8 @@ const MessagesContainer = styled(Box)(() => ({
   flexDirection: 'column',
   gap: '16px',
   backgroundColor: DARK_THEME.background,
+  minHeight: 0, // Important for flex child to be scrollable
+  maxHeight: 'calc(100vh - 200px)', // Fixed height to prevent expansion
   
   '&::-webkit-scrollbar': {
     width: '6px'
@@ -184,7 +186,10 @@ const InputContainer = styled(Box)(() => ({
   backgroundColor: DARK_THEME.surface,
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px'
+  gap: '12px',
+  position: 'sticky', // Make input container stick to bottom
+  bottom: 0,
+  zIndex: 10 // Ensure it stays above messages
 }));
 
 const InputRow = styled(Box)(() => ({
@@ -618,6 +623,11 @@ const AdvancedChatComponent: React.FC = () => {
     setIsTyping(true);
     setError(null);
 
+    // Scroll to bottom after user message
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+
     try {
       // Add governance message if enabled
       if (governanceEnabled) {
@@ -646,6 +656,11 @@ const AdvancedChatComponent: React.FC = () => {
             };
             
             setMessages(prev => [...prev, agentMessage]);
+            
+            // Scroll to bottom after agent response
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
           } catch (error) {
             const errorMessage: Message = {
               id: `msg_${Date.now()}_error_${agent.identity.id}`,
@@ -670,6 +685,11 @@ const AdvancedChatComponent: React.FC = () => {
         };
         
         setMessages(prev => [...prev, agentMessage]);
+        
+        // Scroll to bottom after agent response
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
 
       // Add governance completion message if enabled
