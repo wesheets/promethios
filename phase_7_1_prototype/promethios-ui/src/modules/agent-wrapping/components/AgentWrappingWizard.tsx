@@ -37,9 +37,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnhancedAgentRegistration from '../../../components/EnhancedAgentRegistration';
-import { UserAgentStorageService, AgentProfile, GovernancePolicy } from '../../../services/UserAgentStorageService';
+import { UserAgentStorageService, AgentProfile, GovernancePolicy, ComplianceControl, PolicyRule } from '../../../services/UserAgentStorageService';
 import { useDemoAuth } from '../../../hooks/useDemoAuth';
-import policyBackendService, { PolicyTemplate, PolicyRule } from '../../../services/policyBackendService';
 
 const steps = [
   'Agent Configuration',
@@ -175,158 +174,120 @@ const AgentWrappingWizard: React.FC = () => {
         lastUpdated: new Date(),
       };
 
-      // Step 1: Create compliance monitoring configuration
-      console.log('📋 Setting up compliance monitoring configuration...');
-      let policyCreated = false;
+      // Step 1: Create local compliance monitoring configuration
+      console.log('📋 Setting up local compliance monitoring configuration...');
       
-      try {
-        const complianceControls: ComplianceControl[] = [];
-        
-        // Add framework-specific controls based on selection
-        if (governancePolicy.complianceFramework === 'healthcare') {
-          complianceControls.push(
-            {
-              id: 'hipaa-164-308',
-              frameworkId: 'hipaa',
-              controlId: '164.308',
-              name: 'Administrative Safeguards',
-              description: 'Security management process and access authorization',
-              requirements: [
-                'Implement security management process',
-                'Implement access authorization procedures',
-                'Implement workforce training procedures'
-              ],
-              monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
-              enabled: true
-            },
-            {
-              id: 'hipaa-164-312',
-              frameworkId: 'hipaa',
-              controlId: '164.312',
-              name: 'Technical Safeguards',
-              description: 'Access control and audit controls',
-              requirements: [
-                'Implement access control procedures',
-                'Implement audit controls',
-                'Implement integrity controls'
-              ],
-              monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
-              enabled: true
-            }
-          );
-        } else if (governancePolicy.complianceFramework === 'soc2') {
-          complianceControls.push(
-            {
-              id: 'soc2-cc6-1',
-              frameworkId: 'soc2',
-              controlId: 'CC6.1',
-              name: 'Logical and Physical Access Controls',
-              description: 'Controls to restrict logical and physical access',
-              requirements: [
-                'Implement logical access security measures',
-                'Implement physical access security measures',
-                'Monitor access activities'
-              ],
-              monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
-              enabled: true
-            }
-          );
-        } else if (governancePolicy.complianceFramework === 'gdpr') {
-          complianceControls.push(
-            {
-              id: 'gdpr-art-32',
-              frameworkId: 'gdpr',
-              controlId: 'Article 32',
-              name: 'Security of Processing',
-              description: 'Technical and organizational measures for data security',
-              requirements: [
-                'Implement appropriate technical measures',
-                'Implement appropriate organizational measures',
-                'Ensure confidentiality, integrity, availability'
-              ],
-              monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
-              enabled: true
-            }
-          );
-        }
-        
-        // Update governance policy with compliance controls
-        governancePolicy.complianceControls = complianceControls;
-
-        // Try to create policy template for monitoring (graceful fallback if backend unavailable)
-        try {
-          const policyTemplate: Omit<PolicyTemplate, 'id' | 'created_at' | 'updated_at'> = {
-            name: `${agentData.identity?.name || agentData.agentName || 'Agent'} Compliance Monitoring Policy`,
-            category: agentData.complianceFramework === 'financial' ? 'financial' :
-                     agentData.complianceFramework === 'healthcare' ? 'healthcare' :
-                     agentData.complianceFramework === 'legal' ? 'legal' : 'general',
-            description: `Compliance monitoring policy for ${agentData.identity?.name || agentData.agentName} with ${governancePolicy.enforcementLevel} monitoring level`,
-            rules: [
-              {
-                id: `trust-monitoring-${Date.now()}`,
-                name: 'Trust Score Monitoring',
-                type: 'trust_threshold',
-                condition: `trust_score >= ${governancePolicy.trustThreshold}`,
-                action: 'log',
-                parameters: { threshold: governancePolicy.trustThreshold },
-                enabled: true
-              },
-              ...(governancePolicy.enableAuditLogging ? [{
-                id: `audit-logging-${Date.now()}`,
-                name: 'Comprehensive Audit Logging',
-                type: 'audit_requirement' as const,
-                condition: 'all_actions',
-                action: 'log' as const,
-                parameters: { 
-                  log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
-                  compliance_framework: governancePolicy.complianceFramework
-                },
-                enabled: true
-              }] : []),
-              ...(governancePolicy.enableRealTimeMonitoring ? [{
-                id: `realtime-monitoring-${Date.now()}`,
-                name: 'Real-time Compliance Monitoring',
-                type: 'audit_requirement' as const,
-                condition: 'compliance_relevant_actions',
-                action: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' as const : 'log' as const,
-                parameters: { 
-                  monitoring_level: governancePolicy.enforcementLevel,
-                  alert_threshold: 'medium'
-                },
-                enabled: true
-              }] : [])
+      const complianceControls: ComplianceControl[] = [];
+      
+      // Add framework-specific controls based on selection
+      if (governancePolicy.complianceFramework === 'healthcare') {
+        complianceControls.push(
+          {
+            id: 'hipaa-164-308',
+            frameworkId: 'hipaa',
+            controlId: '164.308',
+            name: 'Administrative Safeguards',
+            description: 'Security management process and access authorization',
+            requirements: [
+              'Implement security management process',
+              'Implement access authorization procedures',
+              'Implement workforce training procedures'
             ],
-            compliance_level: governancePolicy.enforcementLevel
-          };
-
-          const createdPolicy = await policyBackendService.createPolicy(policyTemplate);
-          console.log('✅ Compliance monitoring policy created:', createdPolicy.id);
-          
-          // Update governance policy with backend policy ID
-          governancePolicy.policyRules = createdPolicy.rules;
-          policyCreated = true;
-          
-        } catch (backendError) {
-          console.warn('⚠️ Policy backend not available, using local compliance monitoring:', backendError);
-          
-          // Create local policy rules as fallback
-          governancePolicy.policyRules = [
-            {
-              id: `local-trust-monitoring-${Date.now()}`,
-              name: 'Local Trust Score Monitoring',
-              type: 'trust_threshold',
-              condition: `trust_score >= ${governancePolicy.trustThreshold}`,
-              action: 'log',
-              parameters: { threshold: governancePolicy.trustThreshold },
-              enabled: true
-            }
-          ];
-        }
-        
-      } catch (configError) {
-        console.error('❌ Error setting up compliance configuration:', configError);
-        // Continue with basic governance even if compliance setup fails
+            monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
+            enabled: true
+          },
+          {
+            id: 'hipaa-164-312',
+            frameworkId: 'hipaa',
+            controlId: '164.312',
+            name: 'Technical Safeguards',
+            description: 'Access control and audit controls',
+            requirements: [
+              'Implement access control procedures',
+              'Implement audit controls',
+              'Implement integrity controls'
+            ],
+            monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
+            enabled: true
+          }
+        );
+      } else if (governancePolicy.complianceFramework === 'soc2') {
+        complianceControls.push(
+          {
+            id: 'soc2-cc6-1',
+            frameworkId: 'soc2',
+            controlId: 'CC6.1',
+            name: 'Logical and Physical Access Controls',
+            description: 'Controls to restrict logical and physical access',
+            requirements: [
+              'Implement logical access security measures',
+              'Implement physical access security measures',
+              'Monitor access activities'
+            ],
+            monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
+            enabled: true
+          }
+        );
+      } else if (governancePolicy.complianceFramework === 'gdpr') {
+        complianceControls.push(
+          {
+            id: 'gdpr-art-32',
+            frameworkId: 'gdpr',
+            controlId: 'Article 32',
+            name: 'Security of Processing',
+            description: 'Technical and organizational measures for data security',
+            requirements: [
+              'Implement appropriate technical measures',
+              'Implement appropriate organizational measures',
+              'Ensure confidentiality, integrity, availability'
+            ],
+            monitoringLevel: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' : 'alert',
+            enabled: true
+          }
+        );
       }
+      
+      // Update governance policy with compliance controls
+      governancePolicy.complianceControls = complianceControls;
+
+      // Create local policy rules for governance monitoring
+      governancePolicy.policyRules = [
+        {
+          id: `trust-monitoring-${Date.now()}`,
+          name: 'Trust Score Monitoring',
+          type: 'trust_threshold',
+          condition: `trust_score >= ${governancePolicy.trustThreshold}`,
+          action: 'log',
+          parameters: { threshold: governancePolicy.trustThreshold },
+          enabled: true
+        },
+        ...(governancePolicy.enableAuditLogging ? [{
+          id: `audit-logging-${Date.now()}`,
+          name: 'Comprehensive Audit Logging',
+          type: 'audit_requirement' as const,
+          condition: 'all_actions',
+          action: 'log' as const,
+          parameters: { 
+            log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
+            compliance_framework: governancePolicy.complianceFramework
+          },
+          enabled: true
+        }] : []),
+        ...(governancePolicy.enableRealTimeMonitoring ? [{
+          id: `realtime-monitoring-${Date.now()}`,
+          name: 'Real-time Compliance Monitoring',
+          type: 'audit_requirement' as const,
+          condition: 'compliance_relevant_actions',
+          action: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' as const : 'log' as const,
+          parameters: { 
+            monitoring_level: governancePolicy.enforcementLevel,
+            alert_threshold: 'medium'
+          },
+          enabled: true
+        }] : [])
+      ];
+
+      console.log('✅ Local compliance monitoring configuration created with', complianceControls.length, 'controls');
 
       // Step 2: Update the existing agent with governance policy
       console.log('💾 Updating agent with governance policy...');
@@ -350,35 +311,6 @@ const AgentWrappingWizard: React.FC = () => {
       const storageService = new UserAgentStorageService();
       storageService.setCurrentUser(demoUser.uid);
       await storageService.saveAgent(updatedAgent);
-
-      // Step 4: Register agent with governance backend (if available)
-      console.log('🔗 Registering agent with governance backend...');
-      try {
-        // Only attempt backend registration if policy was created successfully
-        if (policyCreated) {
-          const testEnforcement = await policyBackendService.enforcePolicy({
-            agent_id: updatedAgent.identity.id,
-            task_id: 'agent-registration',
-            action_type: 'agent_deployment',
-            action_details: {
-              agent_name: updatedAgent.identity.name,
-              governance_policy: governancePolicy
-            },
-            context: {
-              user_id: demoUser.uid,
-              deployment_time: new Date().toISOString()
-            }
-          });
-          
-          console.log('✅ Agent registered with governance backend:', testEnforcement.policy_decision_id);
-        } else {
-          console.log('ℹ️ Skipping backend registration - policy backend not available');
-        }
-        
-      } catch (enforcementError) {
-        console.warn('⚠️ Governance backend enforcement not available, agent wrapped locally:', enforcementError);
-        // This is expected if backend policy endpoints don't exist yet
-      }
 
       console.log('🎉 Agent successfully wrapped and deployed with governance policy:', updatedAgent);
       setShowSuccessDialog(true);
