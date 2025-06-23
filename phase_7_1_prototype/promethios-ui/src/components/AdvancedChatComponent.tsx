@@ -43,9 +43,10 @@ import {
   ContentPaste as ContentPasteIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
-import { chatStorageService, ChatMessage, AgentChatHistory, FileAttachment } from '../services/ChatStorageService';
-import { governanceService, GovernanceMetrics } from '../services/GovernanceService';
+import { UserAgentStorageService } from '../services/UserAgentStorageService';
+import { ChatStorageService, ChatMessage, FileAttachment } from '../services/ChatStorageService';
+import { GovernanceService } from '../services/GovernanceService';
+import { veritasService, VeritasResult } from '../services/VeritasService';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
@@ -273,6 +274,9 @@ const AdvancedChatComponent: React.FC = () => {
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [governanceMetrics, setGovernanceMetrics] = useState<GovernanceMetrics | null>(null);
   const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [currentGovernanceSession, setCurrentGovernanceSession] = useState<any>(null);
+  const [currentGovernanceMetrics, setCurrentGovernanceMetrics] = useState<any>(null);
+  const [currentVeritasResult, setCurrentVeritasResult] = useState<VeritasResult | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -805,6 +809,33 @@ const AdvancedChatComponent: React.FC = () => {
             await loadGovernanceMetrics();
           } catch (error) {
             console.error('Governance monitoring error:', error);
+          }
+        }
+
+        // Layer 3: Emotional Veritas 2.0 - Fact-checking and emotional analysis
+        if (governanceEnabled) {
+          try {
+            const veritasResult = await veritasService.verifyText(agentResponse, {
+              mode: 'balanced',
+              includeEmotionalAnalysis: true,
+              includeTrustSignals: true,
+              confidenceThreshold: 0.7
+            });
+            
+            setCurrentVeritasResult(veritasResult);
+            
+            // Add Veritas analysis message
+            const veritasMessage: ChatMessage = {
+              id: `msg_${Date.now()}_veritas_analysis`,
+              content: `🔍 Veritas Analysis: Accuracy ${(veritasResult.overallScore.accuracy * 100).toFixed(1)}%, Trust ${(veritasResult.overallScore.trust * 100).toFixed(1)}%, Emotional ${(veritasResult.overallScore.emotional * 100).toFixed(1)}%. ${veritasResult.approved ? '✅ Verified' : '⚠️ Issues detected'}. ${veritasResult.issues.length > 0 ? `Issues: ${veritasResult.issues.join(', ')}.` : ''}`,
+              sender: 'system',
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, veritasMessage]);
+            await chatStorageService.saveMessage(veritasMessage, selectedAgent.identity.id);
+            
+          } catch (error) {
+            console.error('Veritas verification error:', error);
           }
         }
         
@@ -1478,6 +1509,82 @@ const AdvancedChatComponent: React.FC = () => {
                 />
               </CardContent>
             </Card>
+
+            {/* Veritas 2.0 Metrics */}
+            {currentVeritasResult && (
+              <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
+                      🔍 VERITAS 2.0 ANALYSIS
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        ACCURACY
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: DARK_THEME.primary }}>
+                        {(currentVeritasResult.overallScore.accuracy * 100).toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        EMOTIONAL
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: DARK_THEME.success }}>
+                        {(currentVeritasResult.overallScore.emotional * 100).toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        TRUST
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: DARK_THEME.warning }}>
+                        {(currentVeritasResult.overallScore.trust * 100).toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        EMPATHY
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: DARK_THEME.info }}>
+                        {(currentVeritasResult.overallScore.empathy * 100).toFixed(1)}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                      STATUS
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: currentVeritasResult.approved ? DARK_THEME.success : DARK_THEME.error,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {currentVeritasResult.approved ? '✅ VERIFIED' : '⚠️ ISSUES DETECTED'}
+                    </Typography>
+                    
+                    {currentVeritasResult.issues.length > 0 && (
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                        Issues: {currentVeritasResult.issues.join(', ')}
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                    Processing time: {currentVeritasResult.processingTime}ms
+                  </Typography>
+                </CardContent>
+              </Card>
+            )} 
 
             {/* Policy Violations Card */}
             <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>

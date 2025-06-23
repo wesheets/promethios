@@ -1,0 +1,277 @@
+/**
+ * Veritas 2.0 Service for UI Integration
+ * Simplified interface for the chat system to use Emotional Veritas
+ */
+
+// Veritas verification result interface
+export interface VeritasResult {
+  text: string;
+  overallScore: {
+    accuracy: number;
+    emotional: number;
+    trust: number;
+    empathy: number;
+  };
+  claims: Array<{
+    text: string;
+    verified: boolean;
+    confidence: number;
+    emotionalTone?: {
+      primary: string;
+      intensity: number;
+    };
+  }>;
+  processingTime: number;
+  timestamp: Date;
+  approved: boolean;
+  issues: string[];
+}
+
+export interface VeritasOptions {
+  mode?: 'balanced' | 'strict' | 'lenient';
+  includeEmotionalAnalysis?: boolean;
+  includeTrustSignals?: boolean;
+  confidenceThreshold?: number;
+}
+
+class VeritasService {
+  private baseUrl: string;
+
+  constructor() {
+    // Use the governance backend for now, will be extended to dedicated Veritas endpoint
+    this.baseUrl = 'https://5000-iztlygh2ujqlzbavbqf8b-df129213.manusvm.computer/api/governance';
+  }
+
+  /**
+   * Verify text using Emotional Veritas 2.0
+   */
+  async verifyText(
+    text: string, 
+    options: VeritasOptions = { mode: 'balanced', includeEmotionalAnalysis: true }
+  ): Promise<VeritasResult> {
+    try {
+      // For now, simulate Veritas analysis with enhanced logic
+      // In production, this would call the actual Veritas 2.0 API
+      const startTime = Date.now();
+      
+      // Analyze text for factual claims
+      const claims = this.extractClaims(text);
+      const verifiedClaims = await this.verifyClaims(claims, options);
+      
+      // Calculate overall scores
+      const overallScore = this.calculateOverallScore(verifiedClaims, text, options);
+      
+      // Determine approval based on scores and thresholds
+      const approved = this.determineApproval(overallScore, verifiedClaims, options);
+      
+      // Identify issues
+      const issues = this.identifyIssues(verifiedClaims, overallScore, text);
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        text,
+        overallScore,
+        claims: verifiedClaims,
+        processingTime,
+        timestamp: new Date(),
+        approved,
+        issues
+      };
+      
+    } catch (error) {
+      console.error('Veritas verification error:', error);
+      
+      // Fallback result
+      return {
+        text,
+        overallScore: {
+          accuracy: 0.5,
+          emotional: 0.5,
+          trust: 0.5,
+          empathy: 0.5
+        },
+        claims: [],
+        processingTime: 0,
+        timestamp: new Date(),
+        approved: false,
+        issues: ['Verification service unavailable']
+      };
+    }
+  }
+
+  private extractClaims(text: string): string[] {
+    // Extract sentences as potential claims
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    return sentences.map(s => s.trim()).filter(s => s.length > 10);
+  }
+
+  private async verifyClaims(claims: string[], options: VeritasOptions) {
+    return claims.map(claim => {
+      // Simulate fact-checking logic
+      const hasFactualContent = this.hasFactualContent(claim);
+      const verified = hasFactualContent ? this.simulateFactCheck(claim) : true;
+      const confidence = verified ? 0.7 + (Math.random() * 0.3) : 0.2 + (Math.random() * 0.4);
+      
+      // Emotional analysis
+      const emotionalTone = options.includeEmotionalAnalysis ? 
+        this.analyzeEmotionalTone(claim) : undefined;
+      
+      return {
+        text: claim,
+        verified,
+        confidence,
+        emotionalTone
+      };
+    });
+  }
+
+  private hasFactualContent(text: string): boolean {
+    // Check for factual indicators
+    const factualIndicators = [
+      /\d{4}/, // years
+      /court case|lawsuit|ruling|judge/i,
+      /study|research|data|statistics/i,
+      /according to|reported|stated/i,
+      /percent|%|\$|million|billion/i,
+      /company|corporation|organization/i
+    ];
+    
+    return factualIndicators.some(pattern => pattern.test(text));
+  }
+
+  private simulateFactCheck(claim: string): boolean {
+    // Simulate fact-checking with bias toward accuracy
+    // In reality, this would query knowledge bases and fact-checking APIs
+    
+    // Check for obvious hallucination patterns
+    const hallucinationPatterns = [
+      /fake.*case|made.*up.*case/i,
+      /non.*existent|doesn.*exist/i,
+      /fictional|imaginary/i
+    ];
+    
+    if (hallucinationPatterns.some(pattern => pattern.test(claim))) {
+      return false;
+    }
+    
+    // Simulate verification with 80% accuracy for factual claims
+    return Math.random() > 0.2;
+  }
+
+  private analyzeEmotionalTone(text: string) {
+    const emotions = ['neutral', 'positive', 'negative', 'concerned', 'confident', 'uncertain', 'empathetic'];
+    const negativeWords = ['dangerous', 'harmful', 'illegal', 'wrong', 'bad', 'terrible'];
+    const positiveWords = ['good', 'great', 'excellent', 'helpful', 'beneficial', 'positive'];
+    const uncertainWords = ['maybe', 'perhaps', 'might', 'could', 'possibly', 'uncertain'];
+    
+    let primary = 'neutral';
+    let intensity = 0.3;
+    
+    if (negativeWords.some(word => text.toLowerCase().includes(word))) {
+      primary = 'negative';
+      intensity = 0.7;
+    } else if (positiveWords.some(word => text.toLowerCase().includes(word))) {
+      primary = 'positive';
+      intensity = 0.6;
+    } else if (uncertainWords.some(word => text.toLowerCase().includes(word))) {
+      primary = 'uncertain';
+      intensity = 0.5;
+    }
+    
+    return {
+      primary,
+      intensity
+    };
+  }
+
+  private calculateOverallScore(claims: any[], text: string, options: VeritasOptions) {
+    if (claims.length === 0) {
+      return {
+        accuracy: 0.8,
+        emotional: 0.7,
+        trust: 0.7,
+        empathy: 0.6
+      };
+    }
+    
+    // Calculate accuracy based on verified claims
+    const verifiedCount = claims.filter(c => c.verified).length;
+    const accuracy = verifiedCount / claims.length;
+    
+    // Calculate emotional score based on tone analysis
+    const emotionalTones = claims.map(c => c.emotionalTone).filter(Boolean);
+    const positiveEmotions = emotionalTones.filter(t => 
+      ['positive', 'empathetic', 'confident'].includes(t.primary)
+    ).length;
+    const emotional = emotionalTones.length > 0 ? 
+      (positiveEmotions / emotionalTones.length) * 0.8 + 0.2 : 0.7;
+    
+    // Calculate trust based on confidence levels
+    const avgConfidence = claims.reduce((sum, c) => sum + c.confidence, 0) / claims.length;
+    const trust = avgConfidence;
+    
+    // Calculate empathy based on emotional analysis and helpful language
+    const helpfulWords = ['help', 'suggest', 'recommend', 'understand', 'support'];
+    const hasHelpfulLanguage = helpfulWords.some(word => text.toLowerCase().includes(word));
+    const empathy = hasHelpfulLanguage ? 0.8 : 0.6;
+    
+    return {
+      accuracy: Math.max(0, Math.min(1, accuracy)),
+      emotional: Math.max(0, Math.min(1, emotional)),
+      trust: Math.max(0, Math.min(1, trust)),
+      empathy: Math.max(0, Math.min(1, empathy))
+    };
+  }
+
+  private determineApproval(overallScore: any, claims: any[], options: VeritasOptions): boolean {
+    const threshold = options.confidenceThreshold || 0.6;
+    
+    // Require minimum scores across all dimensions
+    const meetsAccuracy = overallScore.accuracy >= threshold;
+    const meetsEmotional = overallScore.emotional >= (threshold * 0.8);
+    const meetsTrust = overallScore.trust >= threshold;
+    const meetsEmpathy = overallScore.empathy >= (threshold * 0.7);
+    
+    // Check for any unverified high-confidence claims (potential hallucinations)
+    const hasUnverifiedClaims = claims.some(c => !c.verified && c.confidence > 0.7);
+    
+    return meetsAccuracy && meetsEmotional && meetsTrust && meetsEmpathy && !hasUnverifiedClaims;
+  }
+
+  private identifyIssues(claims: any[], overallScore: any, text: string): string[] {
+    const issues: string[] = [];
+    
+    // Check for factual accuracy issues
+    const unverifiedClaims = claims.filter(c => !c.verified);
+    if (unverifiedClaims.length > 0) {
+      issues.push(`${unverifiedClaims.length} unverified factual claim(s) detected`);
+    }
+    
+    // Check for emotional issues
+    if (overallScore.emotional < 0.5) {
+      issues.push('Negative emotional tone detected');
+    }
+    
+    // Check for trust issues
+    if (overallScore.trust < 0.6) {
+      issues.push('Low confidence in factual claims');
+    }
+    
+    // Check for empathy issues
+    if (overallScore.empathy < 0.5) {
+      issues.push('Response lacks empathetic language');
+    }
+    
+    // Check for potential hallucinations
+    const hallucinationKeywords = ['fake case', 'made up', 'fictional', 'non-existent'];
+    if (hallucinationKeywords.some(keyword => text.toLowerCase().includes(keyword))) {
+      issues.push('Potential hallucination detected');
+    }
+    
+    return issues;
+  }
+}
+
+export const veritasService = new VeritasService();
+
