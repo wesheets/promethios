@@ -25,6 +25,7 @@ import { styled } from '@mui/material/styles';
 
 import { useEnhancedAgentWrappers } from '../../agent-wrapping/hooks/useEnhancedAgentWrappers';
 import { useEnhancedMultiAgentSystems } from '../../agent-wrapping/hooks/useEnhancedMultiAgentSystems';
+import { governanceMiddleware } from '../services/GovernanceMiddleware';
 
 // Import our modern components
 import { GovernancePanel } from './GovernancePanel';
@@ -595,9 +596,14 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     // navigate('/ui/multi-agent-wrapping', { state: { config } });
   };
 
-  // Handle message sending
+  // Handle message sending with governance validation
   const handleSendMessage = async (message: string, attachments?: any[]) => {
     if (!message.trim() && (!attachments || attachments.length === 0)) return;
+
+    // Set current user for governance middleware
+    if (governanceEnabled) {
+      governanceMiddleware.setCurrentUser('demo-user-123'); // In real app, get from auth
+    }
 
     const userMessage: MessageType = {
       id: `msg_${Date.now()}`,
@@ -617,6 +623,48 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsProcessing(true);
+
+    // Governance validation for incoming message
+    let incomingValidation = null;
+    if (governanceEnabled && selectedAgent) {
+      try {
+        incomingValidation = await governanceMiddleware.validateIncomingMessage(
+          message,
+          selectedAgent.id,
+          attachments
+        );
+
+        // Update governance metrics from validation
+        setGovernanceMetrics(prev => ({
+          ...prev,
+          trustScore: incomingValidation.trustScore,
+          policyViolations: prev.policyViolations + incomingValidation.policyViolations.length,
+          lastUpdated: new Date()
+        }));
+
+        // Show governance alerts if violations found
+        if (incomingValidation.policyViolations.length > 0) {
+          const alertMessage: MessageType = {
+            id: `msg_${Date.now()}_alert`,
+            content: `🚨 Governance Alert: ${incomingValidation.policyViolations.join(', ')}`,
+            sender: 'system',
+            agentId: 'observer',
+            timestamp: new Date(),
+            governanceStatus: 'violation'
+          };
+          setMessages(prev => [...prev, alertMessage]);
+        }
+
+        // Block message if non-compliant in strict mode
+        if (!incomingValidation.isCompliant && governanceMiddleware.config?.strictMode) {
+          setIsProcessing(false);
+          setCurrentActivity(null);
+          return;
+        }
+      } catch (error) {
+        console.error('Governance validation error:', error);
+      }
+    }
 
     // Show thinking animation
     setCurrentActivity({
@@ -691,13 +739,57 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         });
         
         if (response.response_content) {
+          // Governance validation for outgoing response
+          let outgoingValidation = null;
+          if (governanceEnabled) {
+            try {
+              outgoingValidation = await governanceMiddleware.validateOutgoingMessage(
+                response.response_content,
+                selectedAgent.id,
+                message
+              );
+
+              // Update governance metrics from response validation
+              setGovernanceMetrics(prev => ({
+                ...prev,
+                trustScore: Math.min(prev.trustScore, outgoingValidation.trustScore),
+                complianceRate: outgoingValidation.isCompliant ? 0.95 : 0.75,
+                responseTime: (response.processing_time_ms || 1000) / 1000,
+                policyViolations: prev.policyViolations + outgoingValidation.policyViolations.length,
+                lastUpdated: new Date()
+              }));
+
+              // Show governance alerts for response violations
+              if (outgoingValidation.policyViolations.length > 0) {
+                const responseAlertMessage: MessageType = {
+                  id: `msg_${Date.now()}_response_alert`,
+                  content: `🛡️ Observer: Response flagged - ${outgoingValidation.policyViolations.join(', ')}`,
+                  sender: 'system',
+                  agentId: 'observer',
+                  timestamp: new Date(),
+                  governanceStatus: 'violation'
+                };
+                setMessages(prev => [...prev, responseAlertMessage]);
+              }
+            } catch (error) {
+              console.error('Response governance validation error:', error);
+            }
+          }
+
           const agentMessage: MessageType = {
             id: response.message_id,
             content: response.response_content,
             sender: 'agent',
             agentId: selectedAgent.id,
             timestamp: new Date(),
-            governanceStatus: response.governance_status || 'unmonitored'
+            governanceStatus: outgoingValidation?.isCompliant === false ? 'violation' : 
+                             (response.governance_status || 'unmonitored'),
+            governanceData: outgoingValidation ? {
+              trustScore: outgoingValidation.trustScore,
+              violations: outgoingValidation.policyViolations,
+              warnings: outgoingValidation.warnings,
+              governanceId: outgoingValidation.governanceId
+            } : undefined
           };
           setMessages(prev => [...prev, agentMessage]);
           

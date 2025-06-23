@@ -10,7 +10,20 @@ export interface Message {
   sender: 'user' | 'agent' | 'system';
   timestamp: Date;
   agentId?: string;
-  governanceStatus?: 'compliant' | 'warning' | 'violation';
+  governanceStatus?: 'compliant' | 'warning' | 'violation' | 'monitored' | 'unmonitored';
+  governanceData?: {
+    trustScore: number;
+    violations: string[];
+    warnings: string[];
+    governanceId?: string;
+  };
+  attachments?: {
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    url: string;
+  }[];
 }
 
 export interface Agent {
