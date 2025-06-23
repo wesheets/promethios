@@ -43,8 +43,8 @@ export class GovernanceService {
   private currentSession: GovernanceSession | null = null;
 
   constructor() {
-    // Use the backend governance API endpoint
-    this.baseUrl = process.env.NEXT_PUBLIC_GOVERNANCE_API_URL || '/api/governance';
+    // Use the real governance backend API endpoint
+    this.baseUrl = process.env.NEXT_PUBLIC_GOVERNANCE_API_URL || 'https://5000-iztlygh2ujqlzbavbqf8b-df129213.manusvm.computer/api/governance';
   }
 
   // Initialize governance session for an agent
