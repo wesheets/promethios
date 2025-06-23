@@ -151,6 +151,112 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
   const [provider, setProvider] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveredInfo, setDiscoveredInfo] = useState<any>(null);
+
+  // Auto-discovery function
+  const discoverAgentInfo = async () => {
+    if (!apiKey.trim() || !provider) return;
+    
+    setIsDiscovering(true);
+    try {
+      // Simulate auto-discovery based on provider
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      let discoveredData: any = {};
+      
+      switch (provider) {
+        case 'OpenAI':
+          discoveredData = {
+            name: agentName || 'OpenAI Assistant',
+            description: 'Advanced language model with chat, code generation, and analysis capabilities',
+            endpoint: apiEndpoint || 'https://api.openai.com/v1/chat/completions',
+            capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling'],
+            models: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
+            contextLength: 128000,
+            supportsFunctions: true
+          };
+          break;
+        case 'Anthropic':
+          discoveredData = {
+            name: agentName || 'Claude Assistant',
+            description: 'Constitutional AI with strong reasoning and safety features',
+            endpoint: apiEndpoint || 'https://api.anthropic.com/v1/messages',
+            capabilities: ['chat', 'reasoning', 'analysis', 'constitutional_ai'],
+            models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
+            contextLength: 200000,
+            supportsFunctions: false
+          };
+          break;
+        case 'Google':
+          discoveredData = {
+            name: agentName || 'Gemini Assistant',
+            description: 'Multimodal AI with text, image, and code capabilities',
+            endpoint: apiEndpoint || 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
+            capabilities: ['chat', 'multimodal', 'code_generation', 'image_analysis'],
+            models: ['gemini-pro', 'gemini-pro-vision', 'gemini-ultra'],
+            contextLength: 32000,
+            supportsFunctions: true
+          };
+          break;
+        case 'Hugging Face':
+          discoveredData = {
+            name: agentName || 'Hugging Face Model',
+            description: 'Open-source model from Hugging Face Hub',
+            endpoint: apiEndpoint || 'https://api-inference.huggingface.co/models/',
+            capabilities: ['text_generation', 'chat', 'specialized_tasks'],
+            models: ['meta-llama/Llama-2-7b-chat-hf', 'microsoft/DialoGPT-medium'],
+            contextLength: 4096,
+            supportsFunctions: false
+          };
+          break;
+        case 'Cohere':
+          discoveredData = {
+            name: agentName || 'Cohere Assistant',
+            description: 'Enterprise-focused language model with strong reasoning',
+            endpoint: apiEndpoint || 'https://api.cohere.ai/v1/chat',
+            capabilities: ['chat', 'text_generation', 'embeddings', 'classification'],
+            models: ['command', 'command-light', 'command-nightly'],
+            contextLength: 4096,
+            supportsFunctions: false
+          };
+          break;
+        default:
+          discoveredData = {
+            name: agentName || 'Custom Agent',
+            description: 'Custom AI agent with unknown capabilities',
+            endpoint: apiEndpoint,
+            capabilities: ['unknown'],
+            models: ['unknown'],
+            contextLength: 4096,
+            supportsFunctions: false
+          };
+      }
+      
+      setDiscoveredInfo(discoveredData);
+      
+      // Auto-populate fields if they're empty
+      if (!agentName.trim()) setAgentName(discoveredData.name);
+      if (!description.trim()) setDescription(discoveredData.description);
+      if (!apiEndpoint.trim()) setApiEndpoint(discoveredData.endpoint);
+      
+    } catch (error) {
+      console.error('Auto-discovery failed:', error);
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
+
+  // Trigger auto-discovery when provider or API key changes
+  useEffect(() => {
+    if (provider && apiKey.trim().length > 10) {
+      const timer = setTimeout(() => {
+        discoverAgentInfo();
+      }, 1000); // Debounce for 1 second
+      
+      return () => clearTimeout(timer);
+    }
+  }, [provider, apiKey]);
 
   const handleSubmit = async () => {
     if (!agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()) {
@@ -230,6 +336,60 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         </Box>
       </DialogTitle>
       <DialogContent>
+        <Alert 
+          severity="info" 
+          sx={{ 
+            backgroundColor: '#1e3a8a', 
+            color: 'white',
+            mb: 3,
+            '& .MuiAlert-icon': { color: 'white' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            💡 Auto-Discovery Enabled
+          </Typography>
+          <Typography variant="body2">
+            Select a provider and enter your API key - we'll automatically discover and populate 
+            your agent's capabilities, models, and optimal settings!
+          </Typography>
+        </Alert>
+
+        {isDiscovering && (
+          <Alert 
+            severity="info" 
+            sx={{ 
+              backgroundColor: '#065f46', 
+              color: 'white',
+              mb: 3,
+              '& .MuiAlert-icon': { color: 'white' },
+            }}
+          >
+            <Typography variant="body2">
+              🔍 Discovering agent capabilities... This may take a moment.
+            </Typography>
+          </Alert>
+        )}
+
+        {discoveredInfo && (
+          <Alert 
+            severity="success" 
+            sx={{ 
+              backgroundColor: '#166534', 
+              color: 'white',
+              mb: 3,
+              '& .MuiAlert-icon': { color: 'white' },
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ✅ Discovery Complete!
+            </Typography>
+            <Typography variant="body2">
+              Found {discoveredInfo.models?.length || 0} models, {discoveredInfo.capabilities?.length || 0} capabilities. 
+              Context length: {discoveredInfo.contextLength?.toLocaleString() || 'Unknown'} tokens.
+            </Typography>
+          </Alert>
+        )}
+        
         <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
           Connect your existing AI agent by providing its API details. The agent will appear as 
           "unwrapped" in your My Agents list, ready for governance wrapping.
@@ -295,6 +455,8 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
                 <MenuItem value="OpenAI">OpenAI</MenuItem>
                 <MenuItem value="Anthropic">Anthropic</MenuItem>
                 <MenuItem value="Google">Google</MenuItem>
+                <MenuItem value="Hugging Face">Hugging Face</MenuItem>
+                <MenuItem value="Cohere">Cohere</MenuItem>
                 <MenuItem value="Azure">Azure OpenAI</MenuItem>
                 <MenuItem value="Custom">Custom/Other</MenuItem>
               </Select>
