@@ -177,6 +177,8 @@ const AgentWrappingWizard: React.FC = () => {
 
       // Step 1: Create compliance monitoring configuration
       console.log('📋 Setting up compliance monitoring configuration...');
+      let policyCreated = false;
+      
       try {
         const complianceControls: ComplianceControl[] = [];
         
@@ -251,60 +253,79 @@ const AgentWrappingWizard: React.FC = () => {
         // Update governance policy with compliance controls
         governancePolicy.complianceControls = complianceControls;
 
-        // Create policy template for monitoring (not enforcement)
-        const policyTemplate: Omit<PolicyTemplate, 'id' | 'created_at' | 'updated_at'> = {
-          name: `${agentData.identity?.name || agentData.agentName || 'Agent'} Compliance Monitoring Policy`,
-          category: agentData.complianceFramework === 'financial' ? 'financial' :
-                   agentData.complianceFramework === 'healthcare' ? 'healthcare' :
-                   agentData.complianceFramework === 'legal' ? 'legal' : 'general',
-          description: `Compliance monitoring policy for ${agentData.identity?.name || agentData.agentName} with ${governancePolicy.enforcementLevel} monitoring level`,
-          rules: [
+        // Try to create policy template for monitoring (graceful fallback if backend unavailable)
+        try {
+          const policyTemplate: Omit<PolicyTemplate, 'id' | 'created_at' | 'updated_at'> = {
+            name: `${agentData.identity?.name || agentData.agentName || 'Agent'} Compliance Monitoring Policy`,
+            category: agentData.complianceFramework === 'financial' ? 'financial' :
+                     agentData.complianceFramework === 'healthcare' ? 'healthcare' :
+                     agentData.complianceFramework === 'legal' ? 'legal' : 'general',
+            description: `Compliance monitoring policy for ${agentData.identity?.name || agentData.agentName} with ${governancePolicy.enforcementLevel} monitoring level`,
+            rules: [
+              {
+                id: `trust-monitoring-${Date.now()}`,
+                name: 'Trust Score Monitoring',
+                type: 'trust_threshold',
+                condition: `trust_score >= ${governancePolicy.trustThreshold}`,
+                action: 'log',
+                parameters: { threshold: governancePolicy.trustThreshold },
+                enabled: true
+              },
+              ...(governancePolicy.enableAuditLogging ? [{
+                id: `audit-logging-${Date.now()}`,
+                name: 'Comprehensive Audit Logging',
+                type: 'audit_requirement' as const,
+                condition: 'all_actions',
+                action: 'log' as const,
+                parameters: { 
+                  log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
+                  compliance_framework: governancePolicy.complianceFramework
+                },
+                enabled: true
+              }] : []),
+              ...(governancePolicy.enableRealTimeMonitoring ? [{
+                id: `realtime-monitoring-${Date.now()}`,
+                name: 'Real-time Compliance Monitoring',
+                type: 'audit_requirement' as const,
+                condition: 'compliance_relevant_actions',
+                action: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' as const : 'log' as const,
+                parameters: { 
+                  monitoring_level: governancePolicy.enforcementLevel,
+                  alert_threshold: 'medium'
+                },
+                enabled: true
+              }] : [])
+            ],
+            compliance_level: governancePolicy.enforcementLevel
+          };
+
+          const createdPolicy = await policyBackendService.createPolicy(policyTemplate);
+          console.log('✅ Compliance monitoring policy created:', createdPolicy.id);
+          
+          // Update governance policy with backend policy ID
+          governancePolicy.policyRules = createdPolicy.rules;
+          policyCreated = true;
+          
+        } catch (backendError) {
+          console.warn('⚠️ Policy backend not available, using local compliance monitoring:', backendError);
+          
+          // Create local policy rules as fallback
+          governancePolicy.policyRules = [
             {
-              id: `trust-monitoring-${Date.now()}`,
-              name: 'Trust Score Monitoring',
+              id: `local-trust-monitoring-${Date.now()}`,
+              name: 'Local Trust Score Monitoring',
               type: 'trust_threshold',
               condition: `trust_score >= ${governancePolicy.trustThreshold}`,
               action: 'log',
               parameters: { threshold: governancePolicy.trustThreshold },
               enabled: true
-            },
-            ...(governancePolicy.enableAuditLogging ? [{
-              id: `audit-logging-${Date.now()}`,
-              name: 'Comprehensive Audit Logging',
-              type: 'audit_requirement' as const,
-              condition: 'all_actions',
-              action: 'log' as const,
-              parameters: { 
-                log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
-                compliance_framework: governancePolicy.complianceFramework
-              },
-              enabled: true
-            }] : []),
-            ...(governancePolicy.enableRealTimeMonitoring ? [{
-              id: `realtime-monitoring-${Date.now()}`,
-              name: 'Real-time Compliance Monitoring',
-              type: 'audit_requirement' as const,
-              condition: 'compliance_relevant_actions',
-              action: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' as const : 'log' as const,
-              parameters: { 
-                monitoring_level: governancePolicy.enforcementLevel,
-                alert_threshold: 'medium'
-              },
-              enabled: true
-            }] : [])
-          ],
-          compliance_level: governancePolicy.enforcementLevel
-        };
-
-        const createdPolicy = await policyBackendService.createPolicy(policyTemplate);
-        console.log('✅ Compliance monitoring policy created:', createdPolicy.id);
+            }
+          ];
+        }
         
-        // Update governance policy with backend policy ID
-        governancePolicy.policyRules = createdPolicy.rules;
-        
-      } catch (policyError) {
-        console.warn('⚠️ Policy backend not available, proceeding with local compliance monitoring:', policyError);
-        // Continue with local governance if backend is not available
+      } catch (configError) {
+        console.error('❌ Error setting up compliance configuration:', configError);
+        // Continue with basic governance even if compliance setup fails
       }
 
       // Step 2: Update the existing agent with governance policy
@@ -333,26 +354,30 @@ const AgentWrappingWizard: React.FC = () => {
       // Step 4: Register agent with governance backend (if available)
       console.log('🔗 Registering agent with governance backend...');
       try {
-        // This would be a call to register the agent with the governance system
-        // For now, we'll simulate this with a policy enforcement test
-        const testEnforcement = await policyBackendService.enforcePolicy({
-          agent_id: updatedAgent.identity.id,
-          task_id: 'agent-registration',
-          action_type: 'agent_deployment',
-          action_details: {
-            agent_name: updatedAgent.identity.name,
-            governance_policy: governancePolicy
-          },
-          context: {
-            user_id: demoUser.uid,
-            deployment_time: new Date().toISOString()
-          }
-        });
-        
-        console.log('✅ Agent registered with governance backend:', testEnforcement.policy_decision_id);
+        // Only attempt backend registration if policy was created successfully
+        if (policyCreated) {
+          const testEnforcement = await policyBackendService.enforcePolicy({
+            agent_id: updatedAgent.identity.id,
+            task_id: 'agent-registration',
+            action_type: 'agent_deployment',
+            action_details: {
+              agent_name: updatedAgent.identity.name,
+              governance_policy: governancePolicy
+            },
+            context: {
+              user_id: demoUser.uid,
+              deployment_time: new Date().toISOString()
+            }
+          });
+          
+          console.log('✅ Agent registered with governance backend:', testEnforcement.policy_decision_id);
+        } else {
+          console.log('ℹ️ Skipping backend registration - policy backend not available');
+        }
         
       } catch (enforcementError) {
         console.warn('⚠️ Governance backend enforcement not available, agent wrapped locally:', enforcementError);
+        // This is expected if backend policy endpoints don't exist yet
       }
 
       console.log('🎉 Agent successfully wrapped and deployed with governance policy:', updatedAgent);
