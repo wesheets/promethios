@@ -414,18 +414,19 @@ const AdvancedChatComponent: React.FC = () => {
   const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
       console.log('Agent object:', agent);
-      console.log('Agent API details:', agent.apiDetails);
-      console.log('Agent structure keys:', Object.keys(agent));
       
-      // Check different possible locations for API details
-      const apiDetails = agent.apiDetails || agent.api || agent.apiConfiguration || agent.llmProvider;
+      // Extract API configuration from individual agent fields
+      const apiKey = agent.apiKey;
+      const provider = agent.provider;
+      const selectedModel = agent.selectedModel;
+      const apiEndpoint = agent.apiEndpoint;
       
-      if (!apiDetails) {
-        console.error('No API configuration found in agent:', agent);
-        throw new Error(`Agent API configuration not found. Available keys: ${Object.keys(agent).join(', ')}`);
+      if (!apiKey || !provider) {
+        console.error('Missing API configuration in agent:', { apiKey: !!apiKey, provider, selectedModel });
+        throw new Error(`Agent API configuration incomplete. Missing: ${!apiKey ? 'apiKey ' : ''}${!provider ? 'provider' : ''}`);
       }
 
-      console.log('Using API details:', apiDetails);
+      console.log('Using API configuration:', { provider, selectedModel, hasApiKey: !!apiKey, apiEndpoint });
 
       // Prepare message with attachments
       let messageContent = message;
@@ -442,11 +443,11 @@ const AdvancedChatComponent: React.FC = () => {
       // Use the agent's own API configuration
       let response;
       
-      if (apiDetails.provider === 'openai') {
+      if (provider === 'openai') {
         const messages = [
           {
             role: 'system',
-            content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.`
+            content: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`
           },
           {
             role: 'user',
@@ -458,10 +459,10 @@ const AdvancedChatComponent: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: apiDetails.selectedModel || 'gpt-3.5-turbo',
+            model: selectedModel || 'gpt-3.5-turbo',
             messages: messages,
             max_tokens: 1000,
             temperature: 0.7
@@ -475,21 +476,21 @@ const AdvancedChatComponent: React.FC = () => {
         const data = await response.json();
         return data.choices[0]?.message?.content || 'No response received';
         
-      } else if (apiDetails.provider === 'anthropic') {
+      } else if (provider === 'anthropic') {
         response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiDetails.key,
+            'x-api-key': apiKey,
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: apiDetails.selectedModel || 'claude-3-sonnet-20240229',
+            model: selectedModel || 'claude-3-sonnet-20240229',
             max_tokens: 1000,
             messages: [
               {
                 role: 'user',
-                content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
+                content: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
               }
             ]
           })
@@ -502,16 +503,16 @@ const AdvancedChatComponent: React.FC = () => {
         const data = await response.json();
         return data.content[0]?.text || 'No response received';
         
-      } else if (apiDetails.provider === 'cohere') {
+      } else if (provider === 'cohere') {
         response = await fetch('https://api.cohere.ai/v1/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: apiDetails.selectedModel || 'command',
-            prompt: `You are ${agent.identity.name}. ${agent.identity.description}.\n\nUser: ${messageContent}\nAssistant:`,
+            model: selectedModel || 'command',
+            prompt: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\nUser: ${messageContent}\nAssistant:`,
             max_tokens: 1000,
             temperature: 0.7
           })
@@ -524,16 +525,16 @@ const AdvancedChatComponent: React.FC = () => {
         const data = await response.json();
         return data.generations[0]?.text || 'No response received';
         
-      } else if (apiDetails.provider === 'huggingface') {
-        const hfModel = apiDetails.selectedModel || 'microsoft/DialoGPT-medium';
+      } else if (provider === 'huggingface') {
+        const hfModel = selectedModel || 'microsoft/DialoGPT-medium';
         response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            inputs: `You are ${agent.identity.name}. ${agent.identity.description}.\n\nUser: ${messageContent}\nAssistant:`
+            inputs: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\nUser: ${messageContent}\nAssistant:`
           })
         });
 
@@ -544,19 +545,19 @@ const AdvancedChatComponent: React.FC = () => {
         const data = await response.json();
         return data[0]?.generated_text || data.generated_text || 'No response received';
         
-      } else if (apiDetails.endpoint) {
+      } else if (apiEndpoint) {
         // Custom API endpoint
-        response = await fetch(apiDetails.endpoint, {
+        response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
             message: messageContent,
-            agent_name: agent.identity.name,
-            agent_description: agent.identity.description,
-            model: apiDetails.selectedModel,
+            agent_name: agent.agentName || agent.identity?.name,
+            agent_description: agent.description || agent.identity?.description,
+            model: selectedModel,
             attachments: attachments.map(att => ({
               name: att.name,
               type: att.type,
@@ -572,7 +573,7 @@ const AdvancedChatComponent: React.FC = () => {
         const data = await response.json();
         return data.response || data.message || data.text || 'No response received';
       } else {
-        throw new Error(`Unsupported provider: ${apiDetails.provider}`);
+        throw new Error(`Unsupported provider: ${provider}`);
       }
     } catch (error) {
       console.error('API call error:', error);
