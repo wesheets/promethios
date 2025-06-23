@@ -338,15 +338,13 @@ const AgentWrappingWizard: React.FC = () => {
               '&:hover': { backgroundColor: '#2563eb' },
             }}
           >
-            View My Agents
-          </Button>
-        </DialogActions>
-      </Dialog>
+             <Box>
+          {renderStepContent(activeStep)}
+        </Box>
+      </Paper>
     </Container>
   );
 };
-
-export default AgentWrappingWizard;
 
 export interface WizardFormData {
   // Step 1: API Endpoint
@@ -357,7 +355,6 @@ export interface WizardFormData {
   authMethod: string;
   apiKey: string;
   model: string;
-  
   // Step 2: Schema
   inputSchema: any;
   outputSchema: any;
