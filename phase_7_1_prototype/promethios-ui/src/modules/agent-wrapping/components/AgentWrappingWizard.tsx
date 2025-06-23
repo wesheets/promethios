@@ -39,6 +39,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnhancedAgentRegistration from '../../../components/EnhancedAgentRegistration';
 import { UserAgentStorageService, AgentProfile, GovernancePolicy, ComplianceControl, PolicyRule } from '../../../services/UserAgentStorageService';
 import { useDemoAuth } from '../../../hooks/useDemoAuth';
+import { useAuth } from '../../../context/AuthContext';
 
 const steps = [
   'Agent Configuration',
@@ -74,7 +75,11 @@ export interface WizardFormData {
 const AgentWrappingWizard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { currentUser } = useAuth();
   const { currentUser: demoUser } = useDemoAuth();
+  
+  // Use the same effective user pattern as AgentProfilesPage
+  const effectiveUser = currentUser || demoUser;
   
   // Check if we're wrapping an existing agent
   const agentId = searchParams.get('agentId');
@@ -90,23 +95,23 @@ const AgentWrappingWizard: React.FC = () => {
   // Load existing agent data if wrapping an existing agent
   useEffect(() => {
     const loadExistingAgent = async () => {
-      console.log('Loading agent - agentId:', agentId, 'demoUser:', demoUser);
+      console.log('Loading agent - agentId:', agentId, 'effectiveUser:', effectiveUser);
       
       if (!agentId) {
         console.log('No agentId provided, staying on new agent flow');
         return;
       }
       
-      if (!demoUser) {
-        console.log('No demoUser available, waiting...');
+      if (!effectiveUser) {
+        console.log('No effectiveUser available, waiting...');
         return;
       }
       
       setIsLoading(true);
       try {
         const storageService = new UserAgentStorageService();
-        storageService.setCurrentUser(demoUser.uid);
-        console.log('Created storage service for user:', demoUser.uid);
+        storageService.setCurrentUser(effectiveUser.uid);
+        console.log('Created storage service for user:', effectiveUser.uid);
         
         const existingAgent = await storageService.getAgent(agentId);
         console.log('Storage service returned:', existingAgent);
@@ -131,7 +136,7 @@ const AgentWrappingWizard: React.FC = () => {
     };
 
     loadExistingAgent();
-  }, [agentId, demoUser, navigate]);
+  }, [agentId, effectiveUser, navigate]);
 
   const handleNext = () => {
     if (activeStep === 0) {
@@ -171,11 +176,12 @@ const AgentWrappingWizard: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      if (!demoUser) {
+      if (!effectiveUser) {
         throw new Error('No user authenticated');
       }
 
       console.log('🚀 Starting agent wrapping with governance integration...');
+      console.log('Using effectiveUser:', effectiveUser.uid);
 
       // Create governance policy from wizard data
       const governancePolicy: GovernancePolicy = {
@@ -352,9 +358,10 @@ const AgentWrappingWizard: React.FC = () => {
 
       // Step 3: Save to local storage
       const storageService = new UserAgentStorageService();
-      storageService.setCurrentUser(demoUser.uid);
+      storageService.setCurrentUser(effectiveUser.uid);
       
       console.log('Saving agent with ID:', updatedAgent.identity.id);
+      console.log('Using user ID:', effectiveUser.uid);
       await storageService.saveAgent(updatedAgent);
 
       console.log('🎉 Agent successfully wrapped and deployed with governance policy');
