@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { ModernChatContainer } from '../modules/chat/components/ModernChatContainer';
+import SimpleChatComponent from '../components/SimpleChatComponent';
 
 const ChatPageContainer = styled(Box)(() => ({
   height: '100%',
@@ -15,9 +15,7 @@ const ChatPageContainer = styled(Box)(() => ({
 const ModernChatPage: React.FC = () => {
   return (
     <ChatPageContainer>
-      <ModernChatContainer 
-        governanceEnabled={true}
-      />
+      <SimpleChatComponent />
     </ChatPageContainer>
   );
 };
