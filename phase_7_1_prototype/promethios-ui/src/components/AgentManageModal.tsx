@@ -145,6 +145,10 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
           dataRetentionDays: governanceFormData.dataRetentionDays,
           alertThreshold: governanceFormData.alertThreshold,
           lastUpdated: new Date(),
+          // Ensure all date fields in governance policy are proper Date objects
+          createdAt: agent.governancePolicy.createdAt instanceof Date 
+            ? agent.governancePolicy.createdAt 
+            : new Date(agent.governancePolicy.createdAt || Date.now()),
         };
       }
       
