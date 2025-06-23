@@ -94,6 +94,51 @@ export class UserAgentStorageService {
   }
 
   /**
+   * Get a specific agent by ID
+   */
+  async getAgent(agentId: string): Promise<AgentProfile | null> {
+    try {
+      if (!this.currentUserId) {
+        console.warn('No user set, cannot get agent');
+        return null;
+      }
+
+      const userKey = this.getUserKey(agentId);
+      console.log(`Looking for agent with key: ${userKey}`);
+      
+      const agentData = await unifiedStorage.get<any>('agents', userKey);
+      
+      if (!agentData) {
+        console.log(`No agent found with key: ${userKey}`);
+        return null;
+      }
+
+      console.log('Raw agent data from storage:', agentData);
+
+      // Safely deserialize dates with fallbacks
+      const agent: AgentProfile = {
+        ...agentData,
+        identity: {
+          ...agentData.identity,
+          creationDate: agentData.identity?.creationDate 
+            ? new Date(agentData.identity.creationDate) 
+            : new Date(),
+          lastModifiedDate: agentData.identity?.lastModifiedDate 
+            ? new Date(agentData.identity.lastModifiedDate) 
+            : new Date(),
+        },
+        lastActivity: agentData.lastActivity ? new Date(agentData.lastActivity) : null,
+      };
+
+      console.log('Processed agent data:', agent);
+      return agent;
+    } catch (error) {
+      console.error(`Error getting agent ${agentId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Load all agents for the current user
    */
   async loadUserAgents(): Promise<AgentProfile[]> {
@@ -105,7 +150,7 @@ export class UserAgentStorageService {
 
       const allKeys = await unifiedStorage.keys('agents');
       const userPrefix = `${this.currentUserId}.`;
-      const userKeys = allKeys.filter(key => key.startsWith(userPrefix));
+      const userKeys = allKeys.filter(key => key.startsWith(userPrefix) && !key.includes('scorecard.'));
 
       const agents: AgentProfile[] = [];
 
@@ -113,13 +158,17 @@ export class UserAgentStorageService {
         try {
           const agentData = await unifiedStorage.get<any>('agents', key);
           if (agentData) {
-            // Deserialize dates
+            // Safely deserialize dates with fallbacks
             const agent: AgentProfile = {
               ...agentData,
               identity: {
                 ...agentData.identity,
-                creationDate: new Date(agentData.identity.creationDate),
-                lastModifiedDate: new Date(agentData.identity.lastModifiedDate),
+                creationDate: agentData.identity?.creationDate 
+                  ? new Date(agentData.identity.creationDate) 
+                  : new Date(),
+                lastModifiedDate: agentData.identity?.lastModifiedDate 
+                  ? new Date(agentData.identity.lastModifiedDate) 
+                  : new Date(),
               },
               lastActivity: agentData.lastActivity ? new Date(agentData.lastActivity) : null,
             };

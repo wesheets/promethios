@@ -82,23 +82,38 @@ const AgentWrappingWizard: React.FC = () => {
   // Load existing agent data if wrapping an existing agent
   useEffect(() => {
     const loadExistingAgent = async () => {
-      if (!agentId || !demoUser) return;
+      console.log('Loading agent - agentId:', agentId, 'demoUser:', demoUser);
+      
+      if (!agentId) {
+        console.log('No agentId provided, staying on new agent flow');
+        return;
+      }
+      
+      if (!demoUser) {
+        console.log('No demoUser available, waiting...');
+        return;
+      }
       
       setIsLoading(true);
       try {
         const storageService = new UserAgentStorageService(demoUser.uid);
+        console.log('Created storage service for user:', demoUser.uid);
+        
         const existingAgent = await storageService.getAgent(agentId);
+        console.log('Storage service returned:', existingAgent);
         
         if (existingAgent) {
           setAgentData(existingAgent);
-          console.log('Loaded existing agent for wrapping:', existingAgent);
+          console.log('Successfully loaded existing agent for wrapping:', existingAgent);
         } else {
-          console.warn('Agent not found, redirecting to profiles');
-          navigate('/ui/agents/profiles');
+          console.warn('Agent not found in storage, redirecting to profiles');
+          // Add a small delay to see the error
+          setTimeout(() => navigate('/ui/agents/profiles'), 2000);
         }
       } catch (error) {
         console.error('Error loading existing agent:', error);
-        navigate('/ui/agents/profiles');
+        // Add a small delay to see the error
+        setTimeout(() => navigate('/ui/agents/profiles'), 2000);
       } finally {
         setIsLoading(false);
       }
