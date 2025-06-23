@@ -417,7 +417,7 @@ const AgentWrappingWizard: React.FC = () => {
         );
       case 1:
         return (
-          <SchemaStep
+          <AutoDiscoveryStep
             formData={formData}
             updateFormData={updateFormData}
             onNext={handleNext}
@@ -426,7 +426,7 @@ const AgentWrappingWizard: React.FC = () => {
         );
       case 2:
         return (
-          <GovernanceStep
+          <SchemaStep
             formData={formData}
             updateFormData={updateFormData}
             onNext={handleNext}
@@ -434,6 +434,15 @@ const AgentWrappingWizard: React.FC = () => {
           />
         );
       case 3:
+        return (
+          <GovernanceStep
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={handleNext}
+            onBack={handleBack}
+          />
+        );
+      case 4:
         return (
           <ReviewStep
             formData={formData}
@@ -596,9 +605,13 @@ const AgentWrappingWizard: React.FC = () => {
           <Typography variant="h4" component="h1" gutterBottom>
             Wrap New Agent
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
             Connect your AI agent API with governance controls
           </Typography>
+          <Alert severity="info" sx={{ mb: 3 }}>
+            💡 <strong>Pro Tip:</strong> Enter your API key and we'll automatically discover your agent's capabilities, 
+            populate the form fields, and detect available tools and models!
+          </Alert>
         </Box>
 
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
