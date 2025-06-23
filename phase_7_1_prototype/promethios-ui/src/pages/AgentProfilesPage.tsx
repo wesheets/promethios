@@ -600,14 +600,8 @@ const AgentProfileCard: React.FC<{
           label: 'Wrap Agent',
           icon: <Settings />,
           action: () => {
-            // Pass agent data to wrapping wizard via URL params
-            const agentData = encodeURIComponent(JSON.stringify({
-              id: profile.identity.id,
-              name: profile.identity.name,
-              description: profile.identity.description,
-              apiDetails: profile.apiDetails
-            }));
-            window.location.href = `/ui/agents/wrapping?agentData=${agentData}`;
+            // Pass agent ID to wrapping wizard
+            window.location.href = `/ui/agents/wrapping?agentId=${profile.identity.id}`;
           },
           color: '#3182ce'
         };
@@ -722,7 +716,7 @@ const AgentProfileCard: React.FC<{
 
         {/* Health and Trust Metrics */}
         <Grid container spacing={2} mb={2}>
-          <Grid item xs={6}>
+          <Grid item xs={4}>
             <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
               <Typography variant="body2" color="text.secondary">
                 Health
@@ -737,13 +731,23 @@ const AgentProfileCard: React.FC<{
               </Box>
             </Box>
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={4}>
             <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
               <Typography variant="body2" color="text.secondary">
                 Trust Score
               </Typography>
               <Typography variant="h6" sx={{ color: '#3182ce' }}>
                 {profile.latestScorecard?.score || 0}/100
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={4}>
+            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
+              <Typography variant="body2" color="text.secondary">
+                Gov ID
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#10b981', fontFamily: 'monospace' }}>
+                {profile.governanceId || 'GV-' + profile.identity.id.slice(-6).toUpperCase()}
               </Typography>
             </Box>
           </Grid>
