@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnhancedAgentRegistration from '../../../components/EnhancedAgentRegistration';
-import { UserAgentStorageService } from '../../../services/UserAgentStorageService';
+import { UserAgentStorageService, AgentProfile, GovernancePolicy } from '../../../services/UserAgentStorageService';
 import { useDemoAuth } from '../../../hooks/useDemoAuth';
 
 const steps = [
@@ -151,12 +151,61 @@ const AgentWrappingWizard: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!demoUser) {
+        throw new Error('No user authenticated');
+      }
+
+      // Create governance policy from wizard data
+      const governancePolicy: GovernancePolicy = {
+        trustThreshold: agentData.trustThreshold || 85,
+        securityLevel: agentData.securityLevel || 'standard',
+        complianceFramework: agentData.complianceFramework || 'general',
+        enableAuditLogging: agentData.enableAuditLogging !== false,
+        enableDataRetention: agentData.enableDataRetention !== false,
+        enableRateLimiting: agentData.enableRateLimiting || false,
+        enableContentFiltering: agentData.enableContentFiltering || false,
+        enableRealTimeMonitoring: agentData.enableRealTimeMonitoring !== false,
+        enableEscalationPolicies: agentData.enableEscalationPolicies || false,
+        maxRequestsPerMinute: agentData.maxRequestsPerMinute || 100,
+        policyRules: [], // Will be populated by backend policy engine
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      };
+
+      // Update agent with governance policy
+      const updatedAgent: AgentProfile = {
+        ...agentData,
+        identity: agentData.identity || {
+          id: agentData.agentId || `agent-${Date.now()}`,
+          name: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
+          version: '1.0.0',
+          description: agentData.description || agentData.identity?.description || 'Agent wrapped with governance controls',
+          ownerId: demoUser.uid,
+          creationDate: new Date(),
+          lastModifiedDate: new Date(),
+          status: 'active',
+        },
+        governancePolicy,
+        isWrapped: true,
+        isDeployed: true,
+        healthStatus: 'healthy' as const,
+        trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
+                   governancePolicy.trustThreshold >= 75 ? 'medium' : 'low',
+        attestationCount: 0,
+        lastActivity: new Date(),
+        latestScorecard: null,
+      };
+
+      // Save to storage
+      const storageService = new UserAgentStorageService();
+      storageService.setCurrentUser(demoUser.uid);
+      await storageService.saveAgent(updatedAgent);
+
+      console.log('Agent wrapped and deployed with governance policy:', updatedAgent);
       setShowSuccessDialog(true);
     } catch (error) {
-      console.error('Error submitting agent:', error);
-      alert('Error creating agent. Please try again.');
+      console.error('Error deploying agent:', error);
+      alert('Error deploying agent. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

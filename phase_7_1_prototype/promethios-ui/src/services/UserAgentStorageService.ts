@@ -18,7 +18,7 @@ export interface AgentProfile {
   healthStatus: 'healthy' | 'warning' | 'critical';
   trustLevel: 'low' | 'medium' | 'high';
   isWrapped: boolean;
-  governancePolicy: any | null;
+  governancePolicy: GovernancePolicy | null;
   isDeployed: boolean;
   apiDetails?: {
     endpoint: string;
@@ -31,6 +31,32 @@ export interface AgentProfile {
   };
 }
 
+export interface GovernancePolicy {
+  trustThreshold: number;
+  securityLevel: 'lenient' | 'standard' | 'strict';
+  complianceFramework: 'general' | 'financial' | 'healthcare' | 'legal' | 'gdpr';
+  enableAuditLogging: boolean;
+  enableDataRetention: boolean;
+  enableRateLimiting: boolean;
+  enableContentFiltering: boolean;
+  enableRealTimeMonitoring: boolean;
+  enableEscalationPolicies: boolean;
+  maxRequestsPerMinute?: number;
+  policyRules: PolicyRule[];
+  createdAt: Date;
+  lastUpdated: Date;
+}
+
+export interface PolicyRule {
+  id: string;
+  name: string;
+  type: 'trust_threshold' | 'content_filter' | 'rate_limit' | 'data_retention' | 'audit_requirement';
+  condition: string;
+  action: 'allow' | 'deny' | 'warn' | 'escalate';
+  parameters: Record<string, any>;
+  enabled: boolean;
+}
+
 export interface AgentScorecard {
   agentId: string;
   userId: string;
@@ -40,10 +66,33 @@ export interface AgentScorecard {
     performance: number;
     security: number;
     compliance: number;
+    governance: number;
+    trustScore: number;
+  };
+  governanceMetrics: {
+    policyCompliance: number;
+    securityScore: number;
+    auditScore: number;
+    riskLevel: 'low' | 'medium' | 'high';
+    violationCount: number;
+    lastPolicyCheck: Date;
   };
   lastUpdated: Date;
-  violations: any[];
+  violations: PolicyViolation[];
   recommendations: string[];
+}
+
+export interface PolicyViolation {
+  id: string;
+  agentId: string;
+  policyRuleId: string;
+  violationType: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  timestamp: Date;
+  resolved: boolean;
+  resolvedAt?: Date;
+  resolvedBy?: string;
 }
 
 /**
@@ -210,23 +259,33 @@ export class UserAgentStorageService {
    */
   private async createInitialScorecard(agent: AgentProfile): Promise<void> {
     try {
+      // Calculate initial governance metrics based on agent's governance policy
+      const governancePolicy = agent.governancePolicy;
+      const hasGovernancePolicy = !!governancePolicy;
+      
       const scorecard: AgentScorecard = {
         agentId: agent.identity.id,
         userId: this.currentUserId!,
-        score: 85, // Initial score
+        score: hasGovernancePolicy ? 90 : 75, // Higher score if governance is configured
         metrics: {
           reliability: 90,
           performance: 85,
-          security: 80,
-          compliance: 85,
+          security: hasGovernancePolicy ? this.calculateSecurityScore(governancePolicy) : 70,
+          compliance: hasGovernancePolicy ? this.calculateComplianceScore(governancePolicy) : 60,
+          governance: hasGovernancePolicy ? 95 : 50,
+          trustScore: governancePolicy?.trustThreshold || 85,
+        },
+        governanceMetrics: {
+          policyCompliance: hasGovernancePolicy ? 95 : 50,
+          securityScore: hasGovernancePolicy ? this.calculateSecurityScore(governancePolicy) : 70,
+          auditScore: governancePolicy?.enableAuditLogging ? 100 : 0,
+          riskLevel: this.calculateRiskLevel(governancePolicy),
+          violationCount: 0,
+          lastPolicyCheck: new Date(),
         },
         lastUpdated: new Date(),
         violations: [],
-        recommendations: [
-          'Complete governance policy setup',
-          'Enable monitoring and alerting',
-          'Review security configurations',
-        ],
+        recommendations: this.generateRecommendations(agent),
       };
 
       const scorecardKey = this.getUserKey(`scorecard.${agent.identity.id}`);
@@ -235,13 +294,131 @@ export class UserAgentStorageService {
       const serializedScorecard = {
         ...scorecard,
         lastUpdated: scorecard.lastUpdated.toISOString(),
+        governanceMetrics: {
+          ...scorecard.governanceMetrics,
+          lastPolicyCheck: scorecard.governanceMetrics.lastPolicyCheck.toISOString(),
+        },
       };
 
       await unifiedStorage.set('agents', scorecardKey, serializedScorecard);
-      console.log(`Initial scorecard created for agent ${agent.identity.name}`);
+      console.log(`Initial scorecard created for agent ${agent.identity.name} with governance metrics`);
     } catch (error) {
       console.error('Error creating initial scorecard:', error);
     }
+  }
+
+  /**
+   * Calculate security score based on governance policy
+   */
+  private calculateSecurityScore(policy: GovernancePolicy | null): number {
+    if (!policy) return 70;
+    
+    let score = 70; // Base score
+    
+    // Security level bonus
+    if (policy.securityLevel === 'strict') score += 20;
+    else if (policy.securityLevel === 'standard') score += 10;
+    
+    // Feature bonuses
+    if (policy.enableAuditLogging) score += 5;
+    if (policy.enableRealTimeMonitoring) score += 5;
+    if (policy.enableContentFiltering) score += 3;
+    if (policy.enableRateLimiting) score += 2;
+    
+    return Math.min(score, 100);
+  }
+
+  /**
+   * Calculate compliance score based on governance policy
+   */
+  private calculateComplianceScore(policy: GovernancePolicy | null): number {
+    if (!policy) return 60;
+    
+    let score = 60; // Base score
+    
+    // Compliance framework bonus
+    switch (policy.complianceFramework) {
+      case 'financial': score += 25; break;
+      case 'healthcare': score += 25; break;
+      case 'legal': score += 20; break;
+      case 'gdpr': score += 30; break;
+      case 'general': score += 15; break;
+    }
+    
+    // Feature bonuses
+    if (policy.enableAuditLogging) score += 10;
+    if (policy.enableDataRetention) score += 5;
+    
+    return Math.min(score, 100);
+  }
+
+  /**
+   * Calculate risk level based on governance policy
+   */
+  private calculateRiskLevel(policy: GovernancePolicy | null): 'low' | 'medium' | 'high' {
+    if (!policy) return 'high';
+    
+    let riskScore = 0;
+    
+    // Lower risk for stricter security
+    if (policy.securityLevel === 'strict') riskScore += 3;
+    else if (policy.securityLevel === 'standard') riskScore += 2;
+    else riskScore += 1;
+    
+    // Lower risk for compliance frameworks
+    if (['financial', 'healthcare', 'gdpr'].includes(policy.complianceFramework)) riskScore += 2;
+    else if (policy.complianceFramework === 'legal') riskScore += 1;
+    
+    // Lower risk for monitoring features
+    if (policy.enableAuditLogging) riskScore += 1;
+    if (policy.enableRealTimeMonitoring) riskScore += 1;
+    if (policy.enableContentFiltering) riskScore += 1;
+    
+    if (riskScore >= 6) return 'low';
+    if (riskScore >= 4) return 'medium';
+    return 'high';
+  }
+
+  /**
+   * Generate recommendations based on agent configuration
+   */
+  private generateRecommendations(agent: AgentProfile): string[] {
+    const recommendations: string[] = [];
+    const policy = agent.governancePolicy;
+    
+    if (!policy) {
+      recommendations.push('Configure governance policy for enhanced security');
+      recommendations.push('Enable audit logging for compliance tracking');
+      recommendations.push('Set up real-time monitoring for better oversight');
+      return recommendations;
+    }
+    
+    if (!policy.enableAuditLogging) {
+      recommendations.push('Enable audit logging for compliance requirements');
+    }
+    
+    if (!policy.enableRealTimeMonitoring) {
+      recommendations.push('Enable real-time monitoring for proactive issue detection');
+    }
+    
+    if (policy.securityLevel === 'lenient') {
+      recommendations.push('Consider upgrading to standard or strict security level');
+    }
+    
+    if (!policy.enableContentFiltering) {
+      recommendations.push('Enable content filtering for additional safety measures');
+    }
+    
+    if (policy.trustThreshold < 80) {
+      recommendations.push('Consider raising trust threshold for enhanced security');
+    }
+    
+    if (recommendations.length === 0) {
+      recommendations.push('Governance configuration is optimal');
+      recommendations.push('Monitor agent performance and adjust policies as needed');
+    }
+    
+    return recommendations;
   }
 
   /**
