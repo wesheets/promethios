@@ -95,7 +95,11 @@ const AgentWrappingWizard: React.FC = () => {
   // Load existing agent data if wrapping an existing agent
   useEffect(() => {
     const loadExistingAgent = async () => {
-      console.log('Loading agent - agentId:', agentId, 'effectiveUser:', effectiveUser);
+      console.log('Loading agent - agentId:', agentId);
+      console.log('currentUser (Firebase):', currentUser);
+      console.log('demoUser:', demoUser);
+      console.log('effectiveUser:', effectiveUser);
+      console.log('effectiveUser.uid:', effectiveUser?.uid);
       
       if (!agentId) {
         console.log('No agentId provided, staying on new agent flow');
@@ -136,7 +140,7 @@ const AgentWrappingWizard: React.FC = () => {
     };
 
     loadExistingAgent();
-  }, [agentId, effectiveUser, navigate]);
+  }, [agentId, effectiveUser, currentUser, demoUser, navigate]);
 
   const handleNext = () => {
     if (activeStep === 0) {
