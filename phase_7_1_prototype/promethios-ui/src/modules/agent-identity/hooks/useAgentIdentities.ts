@@ -32,10 +32,13 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
       }
       
       const agentList = await agentIdentityRegistry.listAgents(db, effectiveFilters);
-      setAgents(agentList);
+      // Ensure we always have an array, even if the service returns null/undefined
+      setAgents(Array.isArray(agentList) ? agentList : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agents');
       console.error('Error loading agents:', err);
+      // Set empty array on error to prevent undefined access
+      setAgents([]);
     } finally {
       setLoading(false);
     }

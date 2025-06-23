@@ -168,9 +168,9 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
       switch (provider) {
         case 'OpenAI':
           discoveredData = {
-            name: agentName || 'OpenAI Assistant',
+            name: 'OpenAI Assistant',
             description: 'Advanced language model with chat, code generation, and analysis capabilities',
-            endpoint: apiEndpoint || 'https://api.openai.com/v1/chat/completions',
+            endpoint: 'https://api.openai.com/v1/chat/completions',
             capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling'],
             models: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
             contextLength: 128000,
@@ -179,9 +179,9 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
           break;
         case 'Anthropic':
           discoveredData = {
-            name: agentName || 'Claude Assistant',
+            name: 'Claude Assistant',
             description: 'Constitutional AI with strong reasoning and safety features',
-            endpoint: apiEndpoint || 'https://api.anthropic.com/v1/messages',
+            endpoint: 'https://api.anthropic.com/v1/messages',
             capabilities: ['chat', 'reasoning', 'analysis', 'constitutional_ai'],
             models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
             contextLength: 200000,
@@ -190,9 +190,9 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
           break;
         case 'Google':
           discoveredData = {
-            name: agentName || 'Gemini Assistant',
+            name: 'Gemini Assistant',
             description: 'Multimodal AI with text, image, and code capabilities',
-            endpoint: apiEndpoint || 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
+            endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
             capabilities: ['chat', 'multimodal', 'code_generation', 'image_analysis'],
             models: ['gemini-pro', 'gemini-pro-vision', 'gemini-ultra'],
             contextLength: 32000,
@@ -201,9 +201,9 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
           break;
         case 'Hugging Face':
           discoveredData = {
-            name: agentName || 'Hugging Face Model',
+            name: 'Hugging Face Model',
             description: 'Open-source model from Hugging Face Hub',
-            endpoint: apiEndpoint || 'https://api-inference.huggingface.co/models/',
+            endpoint: 'https://api-inference.huggingface.co/models/',
             capabilities: ['text_generation', 'chat', 'specialized_tasks'],
             models: ['meta-llama/Llama-2-7b-chat-hf', 'microsoft/DialoGPT-medium'],
             contextLength: 4096,
@@ -212,20 +212,31 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
           break;
         case 'Cohere':
           discoveredData = {
-            name: agentName || 'Cohere Assistant',
+            name: 'Cohere Assistant',
             description: 'Enterprise-focused language model with strong reasoning',
-            endpoint: apiEndpoint || 'https://api.cohere.ai/v1/chat',
+            endpoint: 'https://api.cohere.ai/v1/chat',
             capabilities: ['chat', 'text_generation', 'embeddings', 'classification'],
             models: ['command', 'command-light', 'command-nightly'],
             contextLength: 4096,
             supportsFunctions: false
           };
           break;
+        case 'Azure':
+          discoveredData = {
+            name: 'Azure OpenAI Assistant',
+            description: 'Enterprise OpenAI models hosted on Azure',
+            endpoint: 'https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2023-12-01-preview',
+            capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling'],
+            models: ['gpt-35-turbo', 'gpt-4', 'gpt-4-32k'],
+            contextLength: 32000,
+            supportsFunctions: true
+          };
+          break;
         default:
           discoveredData = {
-            name: agentName || 'Custom Agent',
+            name: 'Custom Agent',
             description: 'Custom AI agent with unknown capabilities',
-            endpoint: apiEndpoint,
+            endpoint: '',
             capabilities: ['unknown'],
             models: ['unknown'],
             contextLength: 4096,
@@ -256,7 +267,7 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
       
       return () => clearTimeout(timer);
     }
-  }, [provider, apiKey]);
+  }, [provider, apiKey]); // Only depend on provider and apiKey
 
   const handleSubmit = async () => {
     if (!agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()) {

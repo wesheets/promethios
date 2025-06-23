@@ -41,11 +41,14 @@ export const useEnhancedAgentWrappers = () => {
       try {
         setLoading(true);
         const allWrappers = await agentWrapperRegistry.loadUserWrappers();
-        setWrappers(allWrappers);
+        // Ensure we always have an array, even if the service returns null/undefined
+        setWrappers(Array.isArray(allWrappers) ? allWrappers : []);
         setError(null);
       } catch (err) {
         console.error('Error loading enhanced wrappers:', err);
         setError(err instanceof Error ? err : new Error('Failed to load wrappers'));
+        // Set empty array on error to prevent undefined access
+        setWrappers([]);
       } finally {
         setLoading(false);
       }
@@ -53,6 +56,10 @@ export const useEnhancedAgentWrappers = () => {
 
     if (user?.uid) {
       loadWrappers();
+    } else {
+      // If no user, set empty array and stop loading
+      setWrappers([]);
+      setLoading(false);
     }
   }, [user]);
 
