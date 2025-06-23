@@ -16,9 +16,14 @@ export interface Message {
 export interface Agent {
   id: string;
   name: string;
-  description: string;
-  status: 'online' | 'offline' | 'busy';
+  description?: string;
+  type?: string;
+  avatar?: string;
+  status: 'online' | 'offline' | 'busy' | 'idle' | 'disabled';
   governanceScore?: number;
+  governanceId?: string;
+  capabilities?: any;
+  lastUsed?: Date;
 }
 
 export interface ChatSession {

@@ -23,7 +23,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-import { agentWrapperRegistry } from '../../agent-wrapping/services/AgentWrapperRegistry';
+import { useEnhancedAgentWrappers } from '../../agent-wrapping/hooks/useEnhancedAgentWrappers';
+import { useEnhancedMultiAgentSystems } from '../../agent-wrapping/hooks/useEnhancedMultiAgentSystems';
 
 // Import our modern components
 import { GovernancePanel } from './GovernancePanel';
@@ -33,7 +34,7 @@ import { SmartObserver } from './SmartObserver';
 import { EnhancedAgentSelector } from './EnhancedAgentSelector';
 // Import types and services
 import { Message as MessageType, ChatMode, Agent, AdHocMultiAgentConfig, MultiAgentSystem } from '../types';
-import { chatBackendService } from '../../../services/chatBackendService';;
+import { chatBackendService } from '../../../services/chatBackendService';
 
 // Dark theme colors matching the site
 const DARK_THEME = {
@@ -278,26 +279,43 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
 
-  // Load agents from registry on component mount
+  // Enhanced hooks for agent management
+  const { 
+    wrappers: enhancedWrappers, 
+    loading: wrappersLoading, 
+    error: wrappersError,
+    getGovernanceIdentityNumber 
+  } = useEnhancedAgentWrappers();
+  
+  const { 
+    systems: enhancedSystems, 
+    loading: systemsLoading 
+  } = useEnhancedMultiAgentSystems();
+
+  // Load agents from enhanced registry on component mount
   useEffect(() => {
-    const loadAgents = async () => {
+    const loadEnhancedAgents = async () => {
       try {
-        // Set a demo user ID for now - in real app this would come from auth
-        const demoUserId = 'demo-user-123';
-        agentWrapperRegistry.setCurrentUser(demoUserId);
+        setIsLoadingAgents(true);
         
-        // Load user's wrapped agents
-        await agentWrapperRegistry.loadUserWrappers();
+        // Convert enhanced wrapped agents to Agent format for UI
+        const agentList: Agent[] = [];
         
-        // Convert wrapped agents to Agent format for UI
-        const wrappedAgents = agentWrapperRegistry.getAllWrappers();
-        const agentList: Agent[] = wrappedAgents.map(wrapper => ({
-          id: wrapper.id,
-          name: wrapper.name,
-          type: wrapper.supportedProviders[0] || 'generic',
-          avatar: getAgentAvatar(wrapper.name),
-          status: agentWrapperRegistry.isWrapperEnabled(wrapper.id) ? 'idle' : 'disabled'
-        }));
+        for (const wrapper of enhancedWrappers) {
+          // Get governance identity number for display
+          const governanceId = await getGovernanceIdentityNumber(wrapper.id);
+          
+          agentList.push({
+            id: wrapper.id,
+            name: wrapper.name,
+            type: wrapper.apiConfiguration?.provider || 'generic',
+            avatar: getAgentAvatar(wrapper.name),
+            status: wrapper.enabled ? 'idle' : 'disabled',
+            governanceId: governanceId || undefined,
+            capabilities: wrapper.introspectionData?.capabilities,
+            lastUsed: wrapper.lastUsed
+          });
+        }
         
         // Add observer agent (always present)
         agentList.push({
@@ -311,7 +329,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         setAgents(agentList);
         setIsLoadingAgents(false);
       } catch (error) {
-        console.error('Error loading agents:', error);
+        console.error('Error loading enhanced agents:', error);
         // Fallback to demo agents if loading fails
         setAgents([
           { id: 'baseline-agent', name: 'Baseline', type: 'baseline', avatar: '🤖', status: 'idle' },
@@ -321,8 +339,10 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
       }
     };
     
-    loadAgents();
-  }, []);
+    if (!wrappersLoading && enhancedWrappers.length >= 0) {
+      loadEnhancedAgents();
+    }
+  }, [enhancedWrappers, wrappersLoading, getGovernanceIdentityNumber]);
 
   // Helper function to get avatar for agent
   const getAgentAvatar = (agentName: string): string => {
@@ -1034,6 +1054,25 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
               coordinationPattern={multiAgentConfig?.coordinationPattern || 'sequential'}
               isMultiAgent={isMultiAgentMode}
               currentActivity={currentActivity}
+            />
+          )}
+
+          {/* Smart Observer - only show when governance is enabled */}
+          {governanceEnabled && (
+            <SmartObserver
+              messages={messages}
+              governanceEnabled={governanceEnabled}
+              currentAgent={selectedAgent}
+              isMultiAgentMode={isMultiAgentMode}
+              onAlert={(alert) => {
+                // Handle observer alerts
+                console.log('Observer alert:', alert);
+                setSnackbar({
+                  open: true,
+                  message: `Observer Alert: ${alert.message}`,
+                  severity: alert.severity || 'warning'
+                });
+              }}
             />
           )}
 
