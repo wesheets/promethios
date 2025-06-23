@@ -107,14 +107,16 @@ const AgentWrappingWizard: React.FC = () => {
           setAgentData(existingAgent);
           console.log('Successfully loaded existing agent for wrapping:', existingAgent);
         } else {
-          console.warn('Agent not found in storage, redirecting to profiles');
-          // Add a small delay to see the error
-          setTimeout(() => navigate('/ui/agents/profiles'), 2000);
+          console.warn('Agent not found in storage');
+          // Don't redirect automatically - let user stay and see the error
+          setIsLoading(false);
+          return;
         }
       } catch (error) {
         console.error('Error loading existing agent:', error);
-        // Add a small delay to see the error
-        setTimeout(() => navigate('/ui/agents/profiles'), 2000);
+        // Don't redirect automatically - let user stay and see the error
+        setIsLoading(false);
+        return;
       } finally {
         setIsLoading(false);
       }
