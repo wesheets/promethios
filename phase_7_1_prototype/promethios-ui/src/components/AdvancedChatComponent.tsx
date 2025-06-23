@@ -44,6 +44,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
+import { chatStorageService, ChatMessage, AgentChatHistory, FileAttachment } from '../services/ChatStorageService';
+import { governanceService, GovernanceMetrics } from '../services/GovernanceService';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
 
