@@ -24,6 +24,8 @@ import {
   CheckCircle,
   ArrowBack,
   ArrowForward,
+  Code as CodeIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import EnhancedAgentRegistration from '../../../components/EnhancedAgentRegistration';
