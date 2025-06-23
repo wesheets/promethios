@@ -5,8 +5,10 @@
  * Handles observer registration, AI suggestions, trust metrics, and context awareness.
  */
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8000';
+import { API_BASE_URL as CONFIG_API_BASE_URL } from '../config/api';
+
+// API Configuration - now uses environment variables
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || CONFIG_API_BASE_URL;
 
 // Types for Observer Backend Integration
 export interface ObserverRegistration {

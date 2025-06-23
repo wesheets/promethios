@@ -5,8 +5,10 @@
  * Replaces mock data with real API calls to the FastAPI backend.
  */
 
-// Backend API configuration
-const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
+
+// Backend API configuration - now uses environment variables
+const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || API_BASE_URL;
 
 // Types for backend API responses
 export interface BackendAgentProfile {

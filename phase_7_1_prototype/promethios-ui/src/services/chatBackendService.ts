@@ -115,7 +115,8 @@ class ChatBackendService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${API_BASE_URL}/api/chat`;
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || API_BASE_URL;
+    this.baseUrl = `${backendUrl}/api/chat`;
   }
 
   /**
