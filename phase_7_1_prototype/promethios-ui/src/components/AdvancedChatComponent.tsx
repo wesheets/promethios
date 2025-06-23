@@ -343,11 +343,6 @@ const AdvancedChatComponent: React.FC = () => {
     loadAgents();
   }, [effectiveUser]);
 
-  // Auto-scroll to bottom only for user messages and responses
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -413,7 +408,7 @@ const AdvancedChatComponent: React.FC = () => {
     setAttachments(prev => prev.filter(a => a.id !== attachmentId));
   };
 
-  // Call actual agent API with file support
+  // Call actual agent API with environment variables
   const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
       const apiDetails = agent.apiDetails;
@@ -433,96 +428,32 @@ const AdvancedChatComponent: React.FC = () => {
         });
       }
 
-      // Prepare the API request based on provider
-      let response;
-      
-      if (apiDetails.provider === 'openai') {
-        const messages = [
-          {
-            role: 'system',
-            content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.`
-          },
-          {
-            role: 'user',
-            content: messageContent
-          }
-        ];
+      // Use backend API that handles environment variables
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          provider: apiDetails.provider,
+          model: apiDetails.selectedModel,
+          message: messageContent,
+          agentName: agent.identity.name,
+          agentDescription: agent.identity.description,
+          attachments: attachments.map(att => ({
+            name: att.name,
+            type: att.type,
+            data: att.data
+          }))
+        })
+      });
 
-        response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
-          },
-          body: JSON.stringify({
-            model: apiDetails.selectedModel || 'gpt-3.5-turbo',
-            messages: messages,
-            max_tokens: 1000,
-            temperature: 0.7
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data.choices[0]?.message?.content || 'No response received';
-        
-      } else if (apiDetails.provider === 'anthropic') {
-        response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiDetails.key,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: apiDetails.selectedModel || 'claude-3-sonnet-20240229',
-            max_tokens: 1000,
-            messages: [
-              {
-                role: 'user',
-                content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
-              }
-            ]
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data.content[0]?.text || 'No response received';
-        
-      } else {
-        // Generic API call for other providers
-        response = await fetch(apiDetails.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiDetails.key}`
-          },
-          body: JSON.stringify({
-            message: messageContent,
-            agent_name: agent.identity.name,
-            agent_description: agent.identity.description,
-            attachments: attachments.map(att => ({
-              name: att.name,
-              type: att.type,
-              data: att.data
-            }))
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data.response || data.message || 'No response received';
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
+
+      const data = await response.json();
+      return data.response || data.message || 'No response received';
     } catch (error) {
       console.error('API call error:', error);
       throw error;
@@ -557,9 +488,6 @@ const AdvancedChatComponent: React.FC = () => {
     setIsTyping(true);
     setError(null);
 
-    // Scroll after user message
-    setTimeout(scrollToBottom, 100);
-
     try {
       // Add governance message if enabled
       if (governanceEnabled) {
@@ -588,9 +516,6 @@ const AdvancedChatComponent: React.FC = () => {
             };
             
             setMessages(prev => [...prev, agentMessage]);
-            
-            // Scroll after agent response
-            setTimeout(scrollToBottom, 100);
           } catch (error) {
             const errorMessage: Message = {
               id: `msg_${Date.now()}_error_${agent.identity.id}`,
@@ -615,9 +540,6 @@ const AdvancedChatComponent: React.FC = () => {
         };
         
         setMessages(prev => [...prev, agentMessage]);
-        
-        // Scroll after agent response
-        setTimeout(scrollToBottom, 100);
       }
 
       // Add governance completion message if enabled
