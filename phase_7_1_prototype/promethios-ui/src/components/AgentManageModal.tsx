@@ -108,6 +108,10 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
           description: formData.description,
           version: formData.version,
           lastModifiedDate: new Date(),
+          // Ensure creationDate is a proper Date object
+          creationDate: agent.identity.creationDate instanceof Date 
+            ? agent.identity.creationDate 
+            : new Date(agent.identity.creationDate || Date.now()),
         },
         apiDetails: {
           ...agent.apiDetails,
@@ -118,6 +122,22 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
           selectedCapabilities: formData.selectedCapabilities,
           selectedContextLength: formData.selectedContextLength,
         },
+        // Ensure lastActivity is a proper Date object if it exists
+        lastActivity: agent.lastActivity 
+          ? (agent.lastActivity instanceof Date 
+              ? agent.lastActivity 
+              : new Date(agent.lastActivity))
+          : undefined,
+        // Ensure governance policy dates are proper Date objects if they exist
+        governancePolicy: agent.governancePolicy ? {
+          ...agent.governancePolicy,
+          createdAt: agent.governancePolicy.createdAt instanceof Date
+            ? agent.governancePolicy.createdAt
+            : new Date(agent.governancePolicy.createdAt || Date.now()),
+          lastUpdated: agent.governancePolicy.lastUpdated instanceof Date
+            ? agent.governancePolicy.lastUpdated
+            : new Date(agent.governancePolicy.lastUpdated || Date.now()),
+        } : undefined,
       };
       
       await storageService.saveAgent(updatedAgent);
