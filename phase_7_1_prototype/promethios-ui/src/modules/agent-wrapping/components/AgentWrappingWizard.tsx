@@ -96,7 +96,8 @@ const AgentWrappingWizard: React.FC = () => {
       
       setIsLoading(true);
       try {
-        const storageService = new UserAgentStorageService(demoUser.uid);
+        const storageService = new UserAgentStorageService();
+        storageService.setCurrentUser(demoUser.uid);
         console.log('Created storage service for user:', demoUser.uid);
         
         const existingAgent = await storageService.getAgent(agentId);
