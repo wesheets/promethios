@@ -321,11 +321,14 @@ const AdvancedChatComponent: React.FC = () => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
+        console.log('Loading agents for user:', user?.uid);
+        
         if (user?.uid) {
           agentStorageService.setCurrentUser(user.uid);
           const userAgents = await agentStorageService.loadUserAgents();
           
-          console.log('Loaded agents:', userAgents);
+          console.log('Loaded user agents:', userAgents);
+          console.log('Number of agents loaded:', userAgents?.length || 0);
           
           // Combine user agents with observer agent
           const allAgents = [
@@ -333,10 +336,12 @@ const AdvancedChatComponent: React.FC = () => {
             observerAgent
           ];
           
+          console.log('All agents (including observer):', allAgents);
           setAgents(allAgents);
           
           // Set first user agent as selected if available, otherwise observer
           if (userAgents && userAgents.length > 0 && !selectedAgent) {
+            console.log('Setting first agent as selected:', userAgents[0]);
             setSelectedAgent(userAgents[0]);
             
             // Add welcome message
@@ -350,6 +355,7 @@ const AdvancedChatComponent: React.FC = () => {
             };
             setMessages([welcomeMessage]);
           } else if (!userAgents || userAgents.length === 0) {
+            console.log('No user agents found, using observer only');
             // Only observer available
             setSelectedAgent(observerAgent);
             const noAgentsMessage: Message = {
@@ -361,11 +367,16 @@ const AdvancedChatComponent: React.FC = () => {
             };
             setMessages([noAgentsMessage]);
           }
+        } else {
+          console.log('No user found, cannot load agents');
+          setAgents([observerAgent]); // Fallback to observer only
+          setSelectedAgent(observerAgent);
         }
       } catch (error) {
         console.error('Error loading agents:', error);
         setError('Failed to load agents. Please try refreshing the page.');
         setAgents([observerAgent]); // Fallback to observer only
+        setSelectedAgent(observerAgent);
       } finally {
         setIsLoading(false);
       }
@@ -784,34 +795,27 @@ const AdvancedChatComponent: React.FC = () => {
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={governanceEnabled}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleGovernanceToggle(e.target.checked);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: DARK_THEME.success
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: DARK_THEME.success
-                    }
-                  }}
-                />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ShieldIcon sx={{ fontSize: 16 }} />
-                  <Typography variant="caption">Governed</Typography>
-                </Box>
-              }
-              sx={{ color: DARK_THEME.text.secondary }}
-              onClick={(e) => e.stopPropagation()}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Switch
+                checked={governanceEnabled}
+                onChange={(e) => {
+                  handleGovernanceToggle(e.target.checked);
+                }}
+                size="small"
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: DARK_THEME.success
+                  },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                    backgroundColor: DARK_THEME.success
+                  }
+                }}
+              />
+              <ShieldIcon sx={{ fontSize: 16, color: DARK_THEME.text.secondary }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                Governed
+              </Typography>
+            </Box>
           </Box>
         </ChatHeader>
 
