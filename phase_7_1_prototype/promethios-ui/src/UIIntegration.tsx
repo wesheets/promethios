@@ -165,6 +165,15 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* Agent Management Page route */}
+        <Route path="agents/manage" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentManagePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Deploy Page route */}
         <Route path="agents/deploy" element={
           <ProtectedRoute requireOnboarding={false}>
