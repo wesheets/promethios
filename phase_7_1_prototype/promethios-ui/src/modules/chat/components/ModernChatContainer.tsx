@@ -565,7 +565,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     
     if (system) {
       // Set agents from system
-      const systemAgents = agents.filter(a => 
+      const systemAgents = (agents || []).filter(a => 
         system.agents.some(sa => sa.id === a.id)
       );
       setSelectedAgents(systemAgents);
@@ -695,7 +695,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
           type: 'coordination',
           data: {
             pattern: multiAgentConfig.coordinationPattern || 'sequential',
-            agents: agents.filter(a => multiAgentConfig.agents?.some(ma => ma.id === a.id))
+            agents: (agents || []).filter(a => multiAgentConfig.agents?.some(ma => ma.id === a.id))
           }
         });
 
@@ -1153,7 +1153,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
           {/* Agent Coordination Visualization */}
           {(isProcessing || currentActivity) && (
             <AgentCoordinationVisualization
-              agents={isMultiAgentMode ? agents.filter(a => a.type !== 'observer') : [selectedAgent!]}
+              agents={isMultiAgentMode ? (agents || []).filter(a => a.type !== 'observer') : [selectedAgent!]}
               coordinationPattern={multiAgentConfig?.coordinationPattern || 'sequential'}
               isMultiAgent={isMultiAgentMode}
               currentActivity={currentActivity}

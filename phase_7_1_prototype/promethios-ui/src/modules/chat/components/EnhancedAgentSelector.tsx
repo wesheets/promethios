@@ -148,7 +148,8 @@ export const EnhancedAgentSelector: React.FC<EnhancedAgentSelectorProps> = ({
 
   const handleMultiAgentChange = (event: any) => {
     const agentIds = event.target.value as string[];
-    const selectedAgentsList = agents.filter(a => agentIds.includes(a.id));
+    // Ensure agents is an array before filtering
+    const selectedAgentsList = (agents || []).filter(a => agentIds.includes(a.id));
     onMultiAgentSelect(selectedAgentsList);
   };
 
@@ -369,7 +370,7 @@ export const EnhancedAgentSelector: React.FC<EnhancedAgentSelectorProps> = ({
                 size="small"
                 clickable
                 onClick={() => {
-                  const comboAgents = agents.filter(a => combo.agents.includes(a.id));
+                  const comboAgents = (agents || []).filter(a => combo.agents.includes(a.id));
                   onMultiAgentSelect(comboAgents);
                 }}
                 sx={{
