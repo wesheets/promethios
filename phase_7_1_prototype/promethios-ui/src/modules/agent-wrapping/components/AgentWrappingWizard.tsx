@@ -338,10 +338,10 @@ const AgentWrappingWizard: React.FC = () => {
               '&:hover': { backgroundColor: '#2563eb' },
             }}
           >
-             <Box>
-          {renderStepContent(activeStep)}
-        </Box>
-      </Paper>
+            View My Agents
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
