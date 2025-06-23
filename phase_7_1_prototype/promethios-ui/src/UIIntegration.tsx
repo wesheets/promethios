@@ -18,6 +18,7 @@ import OnboardingMetrics from './components/onboarding/OnboardingMetrics';
 import OnboardingObserver from './components/onboarding/OnboardingObserver';
 import DashboardPage from './pages/DashboardPage';
 import AgentProfilesPage from './pages/AgentProfilesPage';
+import AgentManagePage from './pages/AgentManagePage';
 import AgentTemplatesPage from './pages/AgentTemplatesPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import AgentWrappingPage from './pages/AgentWrappingPage';

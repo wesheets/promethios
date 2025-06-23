@@ -187,8 +187,8 @@ const AgentWrappingWizard: React.FC = () => {
       console.log('🚀 Starting agent wrapping with governance integration...');
       console.log('Using effectiveUser:', effectiveUser.uid);
 
-      // Create governance policy from wizard data
-      const governancePolicy: GovernancePolicy = {
+      // Create governance policy from wizard data (or null for no policy)
+      const governancePolicy: GovernancePolicy | null = agentData.complianceFramework === 'none' ? null : {
         trustThreshold: agentData.trustThreshold || 85,
         securityLevel: agentData.securityLevel || 'standard',
         complianceFramework: agentData.complianceFramework || 'general',
@@ -344,6 +344,8 @@ const AgentWrappingWizard: React.FC = () => {
           ...agentData.identity,
           id: agentId,
           name: agentName,
+          // Preserve the original version or set default
+          version: agentData.identity?.version || agentData.version || '1.0.0',
           // Preserve the original description
           description: agentData.identity?.description || agentData.description || 'AI Agent with governance controls',
           creationDate: agentData.identity?.creationDate || new Date(),
@@ -353,7 +355,7 @@ const AgentWrappingWizard: React.FC = () => {
         agentName: agentName,
         governancePolicy,
         isWrapped: true,
-        isDeployed: true,
+        isDeployed: false, // Agents are "Governed" not "Deployed" until actually deployed to production
         healthStatus: 'healthy' as const,
         trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
                    governancePolicy.trustThreshold >= 75 ? 'medium' : 'low',
@@ -503,6 +505,7 @@ const AgentWrappingWizard: React.FC = () => {
                         onChange={(e) => setAgentData(prev => ({ ...prev, complianceFramework: e.target.value }))}
                         label="Compliance Framework"
                       >
+                        <MenuItem value="none">No Policy - No governance controls (Testing/Development)</MenuItem>
                         <MenuItem value="general">General - Basic governance (Soft Controls)</MenuItem>
                         <MenuItem value="financial">Financial - SOX, PCI DSS (STRICT ENFORCEMENT)</MenuItem>
                         <MenuItem value="healthcare">Healthcare - HIPAA (STRICT ENFORCEMENT)</MenuItem>

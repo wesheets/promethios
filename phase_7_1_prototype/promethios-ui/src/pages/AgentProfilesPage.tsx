@@ -587,9 +587,11 @@ const AgentProfileCard: React.FC<{
   const getLifecycleStatus = (profile: AgentProfile) => {
     // Determine lifecycle status based on agent state
     if (!profile.isWrapped) return { status: 'unwrapped', label: '🔴 Unwrapped', color: '#ef4444' };
-    if (!profile.governancePolicy) return { status: 'wrapped', label: '🟡 Wrapped - No Policy', color: '#f59e0b' };
-    if (!profile.isDeployed) return { status: 'governed', label: '🟢 Governed', color: '#10b981' };
-    return { status: 'deployed', label: '🚀 Deployed', color: '#3182ce' };
+    // Any wrapped agent is considered "Governed" regardless of policy choice
+    // Even "No Policy" is a governance decision made through the wrapping process
+    if (profile.isWrapped && !profile.isDeployed) return { status: 'governed', label: '🟢 Governed', color: '#10b981' };
+    // "Deployed" status for agents actually deployed to external systems
+    return { status: 'deployed', label: '🚀 Deployed to Production', color: '#3182ce' };
   };
 
   const getNextAction = (profile: AgentProfile) => {
@@ -604,13 +606,6 @@ const AgentProfileCard: React.FC<{
             window.location.href = `/ui/agents/wrapping?agentId=${profile.identity.id}`;
           },
           color: '#3182ce'
-        };
-      case 'wrapped':
-        return {
-          label: 'Apply Policy',
-          icon: <Policy />,
-          action: () => window.location.href = `/ui/governance/policies?agentId=${profile.identity.id}`,
-          color: '#10b981'
         };
       case 'governed':
         return {
@@ -695,11 +690,22 @@ const AgentProfileCard: React.FC<{
               mb: 1,
             }}
           />
-          {profile.governancePolicy && (
+          {profile.governancePolicy ? (
             <Chip
               label={`Policy: ${typeof profile.governancePolicy === 'object' 
                 ? `${profile.governancePolicy.complianceFramework || 'General'} - ${profile.governancePolicy.securityLevel || 'Standard'}`
                 : profile.governancePolicy}`}
+              size="small"
+              variant="outlined"
+              sx={{
+                borderColor: '#4a5568',
+                color: '#a0aec0',
+                ml: 1,
+              }}
+            />
+          ) : (
+            <Chip
+              label="Policy: No Policy"
               size="small"
               variant="outlined"
               sx={{
@@ -715,6 +721,70 @@ const AgentProfileCard: React.FC<{
         <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
           {profile.identity.description}
         </Typography>
+
+        {/* Agent Tools & Capabilities */}
+        {profile.apiDetails && (
+          <Box mb={2}>
+            <Typography variant="body2" sx={{ color: '#718096', mb: 1, fontWeight: 600 }}>
+              Tools & Capabilities
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+              {/* Provider */}
+              <Chip
+                label={profile.apiDetails.provider || 'Custom'}
+                size="small"
+                icon={<Api />}
+                sx={{
+                  backgroundColor: '#1a202c',
+                  color: '#a0aec0',
+                  fontSize: '0.75rem',
+                }}
+              />
+              
+              {/* Model */}
+              {profile.apiDetails.selectedModel && (
+                <Chip
+                  label={profile.apiDetails.selectedModel}
+                  size="small"
+                  icon={<SmartToy />}
+                  sx={{
+                    backgroundColor: '#1a202c',
+                    color: '#a0aec0',
+                    fontSize: '0.75rem',
+                  }}
+                />
+              )}
+              
+              {/* Capabilities */}
+              {profile.apiDetails.selectedCapabilities && profile.apiDetails.selectedCapabilities.length > 0 && (
+                <Chip
+                  label={`${profile.apiDetails.selectedCapabilities.length} capabilities`}
+                  size="small"
+                  icon={<AutoAwesome />}
+                  sx={{
+                    backgroundColor: '#1a202c',
+                    color: '#a0aec0',
+                    fontSize: '0.75rem',
+                  }}
+                />
+              )}
+              
+              {/* Context Length */}
+              {profile.apiDetails.selectedContextLength && (
+                <Chip
+                  label={`${profile.apiDetails.selectedContextLength}k context`}
+                  size="small"
+                  icon={<Psychology />}
+                  sx={{
+                    backgroundColor: '#1a202c',
+                    color: '#a0aec0',
+                    fontSize: '0.75rem',
+                  }}
+                />
+              )}
+            </Stack>
+          </Box>
+        )}
 
         {/* Health and Trust Metrics */}
         <Grid container spacing={2} mb={2}>
