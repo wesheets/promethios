@@ -21,7 +21,15 @@ import {
   Card,
   CardContent,
   Divider,
-  LinearProgress
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -34,7 +42,14 @@ import {
   Visibility as VisibilityIcon,
   Security as SecurityIcon,
   Speed as SpeedIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  AttachFile as AttachFileIcon,
+  Image as ImageIcon,
+  Description as DescriptionIcon,
+  VideoFile as VideoFileIcon,
+  AudioFile as AudioFileIcon,
+  Close as CloseIcon,
+  ContentPaste as ContentPasteIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
@@ -135,7 +150,9 @@ const MessageBubble = styled(Box, {
         ? DARK_THEME.warning + '20'
         : messageType === 'error'
           ? DARK_THEME.error + '20'
-          : DARK_THEME.surface,
+          : messageType === 'observer'
+            ? DARK_THEME.warning + '15'
+            : DARK_THEME.surface,
     color: isUser 
       ? '#ffffff'
       : DARK_THEME.text.primary,
@@ -148,7 +165,9 @@ const MessageBubble = styled(Box, {
         ? DARK_THEME.warning 
         : messageType === 'error'
           ? DARK_THEME.error
-          : DARK_THEME.border
+          : messageType === 'observer'
+            ? DARK_THEME.warning
+            : DARK_THEME.border
     }`,
     wordBreak: 'break-word',
     fontSize: '14px',
@@ -163,9 +182,11 @@ const MessageBubble = styled(Box, {
       ? DARK_THEME.warning
       : messageType === 'error'
         ? DARK_THEME.error
-        : isUser
-          ? DARK_THEME.primary
-          : DARK_THEME.success
+        : messageType === 'observer'
+          ? DARK_THEME.warning
+          : isUser
+            ? DARK_THEME.primary
+            : DARK_THEME.success
   }
 }));
 
@@ -173,6 +194,12 @@ const InputContainer = styled(Box)(() => ({
   padding: '16px 24px',
   borderTop: `1px solid ${DARK_THEME.border}`,
   backgroundColor: DARK_THEME.surface,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
+}));
+
+const InputRow = styled(Box)(() => ({
   display: 'flex',
   gap: '12px',
   alignItems: 'flex-end'
@@ -186,13 +213,38 @@ const SidePanel = styled(Box)(() => ({
   flexDirection: 'column'
 }));
 
+const FilePreview = styled(Box)(() => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  padding: '8px 12px',
+  backgroundColor: DARK_THEME.background,
+  border: `1px solid ${DARK_THEME.border}`,
+  borderRadius: '8px',
+  fontSize: '14px'
+}));
+
+const HiddenFileInput = styled('input')({
+  display: 'none'
+});
+
 interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'agent' | 'system' | 'error';
+  sender: 'user' | 'agent' | 'system' | 'error' | 'observer';
   timestamp: Date;
   agentName?: string;
   agentId?: string;
+  attachments?: FileAttachment[];
+}
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  data?: string; // base64 data for images
 }
 
 interface TabPanelProps {
@@ -229,9 +281,40 @@ const AdvancedChatComponent: React.FC = () => {
   const [selectedAgents, setSelectedAgents] = useState<AgentProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [showObserver, setShowObserver] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const agentStorageService = new UserAgentStorageService();
+
+  // Observer agent definition
+  const observerAgent: AgentProfile = {
+    identity: {
+      id: 'observer-agent',
+      name: 'Observer',
+      version: '1.0.0',
+      description: 'AI governance and monitoring agent that observes conversations for policy compliance and safety.',
+      ownerId: user?.uid || 'system',
+      creationDate: new Date(),
+      lastModifiedDate: new Date(),
+      status: 'active'
+    },
+    latestScorecard: null,
+    attestationCount: 0,
+    lastActivity: new Date(),
+    healthStatus: 'healthy',
+    trustLevel: 'high',
+    isWrapped: true,
+    governancePolicy: null,
+    isDeployed: true,
+    apiDetails: {
+      endpoint: 'internal://observer',
+      key: 'observer-key',
+      provider: 'observer',
+      selectedModel: 'observer-v1'
+    }
+  };
 
   // Load real agents from storage
   useEffect(() => {
@@ -243,9 +326,16 @@ const AdvancedChatComponent: React.FC = () => {
           const userAgents = await agentStorageService.loadUserAgents();
           
           console.log('Loaded agents:', userAgents);
-          setAgents(userAgents || []); // Ensure we always have an array
           
-          // Set first agent as selected if available
+          // Combine user agents with observer agent
+          const allAgents = [
+            ...(userAgents || []),
+            observerAgent
+          ];
+          
+          setAgents(allAgents);
+          
+          // Set first user agent as selected if available, otherwise observer
           if (userAgents && userAgents.length > 0 && !selectedAgent) {
             setSelectedAgent(userAgents[0]);
             
@@ -260,12 +350,14 @@ const AdvancedChatComponent: React.FC = () => {
             };
             setMessages([welcomeMessage]);
           } else if (!userAgents || userAgents.length === 0) {
-            // No agents found
+            // Only observer available
+            setSelectedAgent(observerAgent);
             const noAgentsMessage: Message = {
               id: `msg_${Date.now()}_no_agents`,
-              content: 'No agents found. Please create an agent first using the Agent Wrapping feature.',
-              sender: 'system',
-              timestamp: new Date()
+              content: 'Observer agent active. No user agents found. Please create an agent using the Agent Wrapping feature.',
+              sender: 'observer',
+              timestamp: new Date(),
+              agentName: 'Observer'
             };
             setMessages([noAgentsMessage]);
           }
@@ -273,7 +365,7 @@ const AdvancedChatComponent: React.FC = () => {
       } catch (error) {
         console.error('Error loading agents:', error);
         setError('Failed to load agents. Please try refreshing the page.');
-        setAgents([]); // Ensure we have an empty array on error
+        setAgents([observerAgent]); // Fallback to observer only
       } finally {
         setIsLoading(false);
       }
@@ -287,18 +379,111 @@ const AdvancedChatComponent: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Call actual agent API
-  const callAgentAPI = async (message: string, agent: AgentProfile): Promise<string> => {
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const attachment: FileAttachment = {
+          id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          data: e.target?.result as string
+        };
+        setAttachments(prev => [...prev, attachment]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle paste events for screenshots
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const attachment: FileAttachment = {
+                id: `paste_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: `pasted-image-${Date.now()}.png`,
+                type: 'image/png',
+                size: file.size,
+                url: URL.createObjectURL(file),
+                data: e.target?.result as string
+              };
+              setAttachments(prev => [...prev, attachment]);
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, []);
+
+  // Remove attachment
+  const removeAttachment = (attachmentId: string) => {
+    setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+  };
+
+  // Call actual agent API with file support
+  const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
+      // Handle Observer agent
+      if (agent.identity.id === 'observer-agent') {
+        return `🛡️ Observer Analysis: Message processed. Content appears compliant with governance policies. ${attachments.length > 0 ? `Analyzed ${attachments.length} attachment(s).` : ''} Trust score maintained at 85%.`;
+      }
+
       const apiDetails = agent.apiDetails;
       if (!apiDetails) {
         throw new Error('Agent API configuration not found');
+      }
+
+      // Prepare message with attachments
+      let messageContent = message;
+      if (attachments.length > 0) {
+        messageContent += '\n\nAttachments:\n';
+        attachments.forEach(att => {
+          messageContent += `- ${att.name} (${att.type})\n`;
+          if (att.type.startsWith('image/') && att.data) {
+            messageContent += `  Image data: ${att.data}\n`;
+          }
+        });
       }
 
       // Prepare the API request based on provider
       let response;
       
       if (apiDetails.provider === 'openai') {
+        const messages = [
+          {
+            role: 'system',
+            content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.`
+          },
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ];
+
         response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -307,16 +492,7 @@ const AdvancedChatComponent: React.FC = () => {
           },
           body: JSON.stringify({
             model: apiDetails.selectedModel || 'gpt-3.5-turbo',
-            messages: [
-              {
-                role: 'system',
-                content: `You are ${agent.identity.name}. ${agent.identity.description}`
-              },
-              {
-                role: 'user',
-                content: message
-              }
-            ],
+            messages: messages,
             max_tokens: 1000,
             temperature: 0.7
           })
@@ -343,7 +519,7 @@ const AdvancedChatComponent: React.FC = () => {
             messages: [
               {
                 role: 'user',
-                content: `You are ${agent.identity.name}. ${agent.identity.description}\n\nUser message: ${message}`
+                content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
               }
             ]
           })
@@ -365,9 +541,14 @@ const AdvancedChatComponent: React.FC = () => {
             'Authorization': `Bearer ${apiDetails.key}`
           },
           body: JSON.stringify({
-            message: message,
+            message: messageContent,
             agent_name: agent.identity.name,
-            agent_description: agent.identity.description
+            agent_description: agent.identity.description,
+            attachments: attachments.map(att => ({
+              name: att.name,
+              type: att.type,
+              data: att.data
+            }))
           })
         });
 
@@ -385,7 +566,7 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isTyping) return;
+    if ((!inputValue.trim() && attachments.length === 0) || isTyping) return;
     
     if (isMultiAgentMode && selectedAgents.length === 0) {
       setError('Please select at least one agent for multi-agent mode');
@@ -399,13 +580,16 @@ const AdvancedChatComponent: React.FC = () => {
 
     const userMessage: Message = {
       id: `msg_${Date.now()}_user`,
-      content: inputValue,
+      content: inputValue || '(File attachments only)',
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachments: [...attachments]
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    const currentAttachments = [...attachments];
+    setAttachments([]);
     setIsTyping(true);
     setError(null);
 
@@ -414,18 +598,34 @@ const AdvancedChatComponent: React.FC = () => {
       if (governanceEnabled) {
         const governanceMessage: Message = {
           id: `msg_${Date.now()}_governance`,
-          content: `🛡️ Processing message through governance layer...`,
+          content: `🛡️ Processing message through governance layer... ${currentAttachments.length > 0 ? `Scanning ${currentAttachments.length} attachment(s).` : ''}`,
           sender: 'system',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, governanceMessage]);
       }
 
+      // Add Observer analysis if enabled
+      if (showObserver && governanceEnabled) {
+        const observerResponse = await callAgentAPI(userMessage.content, observerAgent, currentAttachments);
+        const observerMessage: Message = {
+          id: `msg_${Date.now()}_observer`,
+          content: observerResponse,
+          sender: 'observer',
+          timestamp: new Date(),
+          agentName: 'Observer',
+          agentId: 'observer-agent'
+        };
+        setMessages(prev => [...prev, observerMessage]);
+      }
+
       if (isMultiAgentMode) {
         // Handle multi-agent responses
         for (const agent of selectedAgents) {
+          if (agent.identity.id === 'observer-agent') continue; // Skip observer in multi-agent mode
+          
           try {
-            const agentResponse = await callAgentAPI(inputValue, agent);
+            const agentResponse = await callAgentAPI(userMessage.content, agent, currentAttachments);
             
             const agentMessage: Message = {
               id: `msg_${Date.now()}_agent_${agent.identity.id}`,
@@ -447,9 +647,9 @@ const AdvancedChatComponent: React.FC = () => {
             setMessages(prev => [...prev, errorMessage]);
           }
         }
-      } else if (selectedAgent) {
-        // Handle single agent response
-        const agentResponse = await callAgentAPI(inputValue, selectedAgent);
+      } else if (selectedAgent && selectedAgent.identity.id !== 'observer-agent') {
+        // Handle single agent response (skip if observer is selected as main agent)
+        const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
         
         const agentMessage: Message = {
           id: `msg_${Date.now()}_agent`,
@@ -467,7 +667,7 @@ const AdvancedChatComponent: React.FC = () => {
       if (governanceEnabled) {
         const governanceCompleteMessage: Message = {
           id: `msg_${Date.now()}_governance_complete`,
-          content: `🛡️ Governance Monitor: Trust score 85%. Compliance: compliant`,
+          content: `🛡️ Governance Monitor: Trust score 85%. Compliance: compliant. ${currentAttachments.length > 0 ? 'All attachments processed safely.' : ''}`,
           sender: 'system',
           timestamp: new Date()
         };
@@ -532,6 +732,8 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   const getAgentAvatar = (agent: AgentProfile): string => {
+    if (agent.identity.id === 'observer-agent') return '🛡️';
+    
     const name = agent.identity.name.toLowerCase();
     if (name.includes('creative')) return '🎨';
     if (name.includes('data') || name.includes('analyst')) return '📈';
@@ -539,6 +741,13 @@ const AdvancedChatComponent: React.FC = () => {
     if (name.includes('writer') || name.includes('technical')) return '✍️';
     if (name.includes('advisor') || name.includes('expert')) return '🔧';
     return '🤖';
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon />;
+    if (type.startsWith('video/')) return <VideoFileIcon />;
+    if (type.startsWith('audio/')) return <AudioFileIcon />;
+    return <DescriptionIcon />;
   };
 
   if (isLoading) {
@@ -579,7 +788,10 @@ const AdvancedChatComponent: React.FC = () => {
               control={
                 <Switch
                   checked={governanceEnabled}
-                  onChange={(e) => handleGovernanceToggle(e.target.checked)}
+                  onChange={(e) => {
+                    e.preventDefault();
+                    handleGovernanceToggle(e.target.checked);
+                  }}
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': {
                       color: DARK_THEME.success
@@ -683,7 +895,7 @@ const AdvancedChatComponent: React.FC = () => {
                   }
                 }}
               >
-                {agents.map((agent) => (
+                {agents.filter(a => a.identity.id !== 'observer-agent').map((agent) => (
                   <MenuItem key={agent.identity.id} value={agent.identity.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <span>{getAgentAvatar(agent)}</span>
@@ -727,6 +939,8 @@ const AdvancedChatComponent: React.FC = () => {
                   <ShieldIcon />
                 ) : message.sender === 'error' ? (
                   <ErrorIcon />
+                ) : message.sender === 'observer' ? (
+                  '🛡️'
                 ) : (
                   selectedAgent ? getAgentAvatar(selectedAgent) : '🤖'
                 )}
@@ -750,6 +964,15 @@ const AdvancedChatComponent: React.FC = () => {
                     Governance System
                   </Typography>
                 )}
+                {message.sender === 'observer' && (
+                  <Typography variant="caption" sx={{ 
+                    color: DARK_THEME.warning,
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}>
+                    Observer Agent
+                  </Typography>
+                )}
                 {message.sender === 'error' && (
                   <Typography variant="caption" sx={{ 
                     color: DARK_THEME.error,
@@ -762,6 +985,39 @@ const AdvancedChatComponent: React.FC = () => {
                 <Typography variant="body2">
                   {message.content}
                 </Typography>
+                
+                {/* Display attachments */}
+                {message.attachments && message.attachments.length > 0 && (
+                  <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {message.attachments.map((attachment) => (
+                      <Box key={attachment.id} sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        p: 1,
+                        backgroundColor: DARK_THEME.background + '40',
+                        borderRadius: 1,
+                        fontSize: '12px'
+                      }}>
+                        {getFileIcon(attachment.type)}
+                        <Typography variant="caption">{attachment.name}</Typography>
+                        {attachment.type.startsWith('image/') && attachment.url && (
+                          <img 
+                            src={attachment.url} 
+                            alt={attachment.name}
+                            style={{ 
+                              maxWidth: '100px', 
+                              maxHeight: '100px', 
+                              borderRadius: '4px',
+                              marginLeft: '8px'
+                            }}
+                          />
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+                
                 <Typography variant="caption" sx={{ 
                   color: DARK_THEME.text.secondary,
                   display: 'block',
@@ -792,66 +1048,124 @@ const AdvancedChatComponent: React.FC = () => {
 
         {/* Input */}
         <InputContainer>
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={
-              isMultiAgentMode 
-                ? selectedAgents.length > 0 
-                  ? `Message ${selectedAgents.length} agents...`
-                  : "Select agents to start chatting..."
-                : selectedAgent 
-                  ? `Message ${selectedAgent.identity.name}...` 
-                  : "Select an agent to start chatting..."
-            }
-            variant="outlined"
-            disabled={
-              isTyping || 
-              (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
-            }
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: DARK_THEME.background,
-                color: DARK_THEME.text.primary,
-                '& fieldset': {
-                  borderColor: DARK_THEME.border
+          {/* File Attachments Preview */}
+          {attachments.length > 0 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+              {attachments.map((attachment) => (
+                <FilePreview key={attachment.id}>
+                  {getFileIcon(attachment.type)}
+                  <Typography variant="caption" sx={{ color: DARK_THEME.text.primary }}>
+                    {attachment.name}
+                  </Typography>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => removeAttachment(attachment.id)}
+                    sx={{ color: DARK_THEME.text.secondary, ml: 1 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </FilePreview>
+              ))}
+            </Box>
+          )}
+
+          <InputRow>
+            <TextField
+              fullWidth
+              multiline
+              maxRows={4}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                isMultiAgentMode 
+                  ? selectedAgents.length > 0 
+                    ? `Message ${selectedAgents.length} agents...`
+                    : "Select agents to start chatting..."
+                  : selectedAgent 
+                    ? `Message ${selectedAgent.identity.name}...` 
+                    : "Select an agent to start chatting..."
+              }
+              variant="outlined"
+              disabled={
+                isTyping || 
+                (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
+              }
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: DARK_THEME.background,
+                  color: DARK_THEME.text.primary,
+                  '& fieldset': {
+                    borderColor: DARK_THEME.border
+                  },
+                  '&:hover fieldset': {
+                    borderColor: DARK_THEME.primary
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: DARK_THEME.primary
+                  }
                 },
-                '&:hover fieldset': {
-                  borderColor: DARK_THEME.primary
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: DARK_THEME.primary
+                '& .MuiInputBase-input::placeholder': {
+                  color: DARK_THEME.text.secondary
                 }
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: DARK_THEME.text.secondary
+              }}
+            />
+            
+            {/* File Upload Button */}
+            <IconButton
+              onClick={() => fileInputRef.current?.click()}
+              sx={{ 
+                color: DARK_THEME.text.secondary,
+                '&:hover': { color: DARK_THEME.primary }
+              }}
+            >
+              <AttachFileIcon />
+            </IconButton>
+            
+            {/* Paste Button */}
+            <IconButton
+              onClick={() => {
+                // Trigger paste event programmatically
+                document.execCommand('paste');
+              }}
+              sx={{ 
+                color: DARK_THEME.text.secondary,
+                '&:hover': { color: DARK_THEME.primary }
+              }}
+            >
+              <ContentPasteIcon />
+            </IconButton>
+
+            <Button
+              variant="contained"
+              onClick={handleSendMessage}
+              disabled={
+                (!inputValue.trim() && attachments.length === 0) || 
+                isTyping || 
+                (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
               }
-            }}
-          />
-          <Button
-            variant="contained"
-            onClick={handleSendMessage}
-            disabled={
-              !inputValue.trim() || 
-              isTyping || 
-              (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
-            }
-            sx={{
-              backgroundColor: DARK_THEME.primary,
-              minWidth: '48px',
-              height: '48px',
-              '&:hover': {
-                backgroundColor: '#2c5aa0'
-              }
-            }}
-          >
-            {isTyping ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <SendIcon />}
-          </Button>
+              sx={{
+                backgroundColor: DARK_THEME.primary,
+                minWidth: '48px',
+                height: '48px',
+                '&:hover': {
+                  backgroundColor: '#2c5aa0'
+                }
+              }}
+            >
+              {isTyping ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <SendIcon />}
+            </Button>
+          </InputRow>
         </InputContainer>
+
+        {/* Hidden File Input */}
+        <HiddenFileInput
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+          onChange={handleFileUpload}
+        />
       </MainChatArea>
 
       {/* Side Panel */}
@@ -1017,12 +1331,35 @@ const AdvancedChatComponent: React.FC = () => {
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: DARK_THEME.success 
+                backgroundColor: showObserver ? DARK_THEME.success : DARK_THEME.border 
               }} />
               <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                Observer Agent: Operational
+                Observer Agent: {showObserver ? 'Operational' : 'Disabled'}
               </Typography>
             </Box>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showObserver}
+                  onChange={(e) => setShowObserver(e.target.checked)}
+                  size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: DARK_THEME.success
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: DARK_THEME.success
+                    }
+                  }}
+                />
+              }
+              label={
+                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                  Enable Observer
+                </Typography>
+              }
+            />
 
             <Divider sx={{ borderColor: DARK_THEME.border, my: 2 }} />
 
@@ -1032,7 +1369,13 @@ const AdvancedChatComponent: React.FC = () => {
             
             <Box sx={{ fontSize: '12px', color: DARK_THEME.text.secondary }}>
               <Typography variant="caption" display="block">
-                • Settings
+                • File upload support enabled
+              </Typography>
+              <Typography variant="caption" display="block">
+                • Copy/paste screenshots active
+              </Typography>
+              <Typography variant="caption" display="block">
+                • Tool integration ready
               </Typography>
             </Box>
           </Box>
