@@ -466,6 +466,55 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
       certifications: ['ISO 27001', 'SOC 2 Type II']
     };
   }
+
+  // Helper methods for Google AI specs
+  private getGoogleContextLength(model: string): number {
+    const contextLengths: Record<string, number> = {
+      'gemini-pro': 32768,
+      'gemini-pro-vision': 16384,
+      'gemini-ultra': 32768,
+      'gemini-1.5-pro': 1000000, // 1M context window
+      'gemini-1.5-flash': 1000000
+    };
+    return contextLengths[model] || 32768;
+  }
+
+  private getGoogleMaxOutput(model: string): number {
+    const maxOutputs: Record<string, number> = {
+      'gemini-pro': 8192,
+      'gemini-pro-vision': 4096,
+      'gemini-ultra': 8192,
+      'gemini-1.5-pro': 8192,
+      'gemini-1.5-flash': 8192
+    };
+    return maxOutputs[model] || 8192;
+  }
+
+  private getGoogleInputCost(model: string): number {
+    const costs: Record<string, number> = {
+      'gemini-pro': 0.0005,
+      'gemini-pro-vision': 0.00025,
+      'gemini-ultra': 0.0125,
+      'gemini-1.5-pro': 0.0035,
+      'gemini-1.5-flash': 0.00035
+    };
+    return costs[model] || 0.0005;
+  }
+
+  private getGoogleOutputCost(model: string): number {
+    const costs: Record<string, number> = {
+      'gemini-pro': 0.0015,
+      'gemini-pro-vision': 0.00025,
+      'gemini-ultra': 0.0375,
+      'gemini-1.5-pro': 0.0105,
+      'gemini-1.5-flash': 0.00105
+    };
+    return costs[model] || 0.0015;
+  }
+
+  /**
+   * Discover Anthropic agent capabilities
+   */
   private async discoverAnthropic(apiEndpoint: string, apiKey: string): Promise<Partial<AgentIntrospectionData>> {
     const capabilities: AgentCapabilities = {
       canChat: true,
@@ -792,54 +841,4 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
 
 // Export singleton instance
 export const agentDiscoveryService = AgentDiscoveryServiceImpl.getInstance();
-
-
-  // Helper methods for Google AI specs
-  private getGoogleContextLength(model: string): number {
-    const contextLengths: Record<string, number> = {
-      'gemini-pro': 32768,
-      'gemini-pro-vision': 16384,
-      'gemini-ultra': 32768,
-      'gemini-1.5-pro': 1000000, // 1M context window
-      'gemini-1.5-flash': 1000000
-    };
-    return contextLengths[model] || 32768;
-  }
-
-  private getGoogleMaxOutput(model: string): number {
-    const maxOutputs: Record<string, number> = {
-      'gemini-pro': 8192,
-      'gemini-pro-vision': 4096,
-      'gemini-ultra': 8192,
-      'gemini-1.5-pro': 8192,
-      'gemini-1.5-flash': 8192
-    };
-    return maxOutputs[model] || 8192;
-  }
-
-  private getGoogleInputCost(model: string): number {
-    const costs: Record<string, number> = {
-      'gemini-pro': 0.0005,
-      'gemini-pro-vision': 0.00025,
-      'gemini-ultra': 0.0125,
-      'gemini-1.5-pro': 0.0035,
-      'gemini-1.5-flash': 0.00035
-    };
-    return costs[model] || 0.0005;
-  }
-
-  private getGoogleOutputCost(model: string): number {
-    const costs: Record<string, number> = {
-      'gemini-pro': 0.0015,
-      'gemini-pro-vision': 0.00025,
-      'gemini-ultra': 0.0375,
-      'gemini-1.5-pro': 0.0105,
-      'gemini-1.5-flash': 0.00105
-    };
-    return costs[model] || 0.0015;
-  }
-
-  /**
-   * Discover Anthropic agent capabilities
-   */
 
