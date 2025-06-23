@@ -789,9 +789,10 @@ const AdvancedChatComponent: React.FC = () => {
                 <Switch
                   checked={governanceEnabled}
                   onChange={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     handleGovernanceToggle(e.target.checked);
                   }}
+                  onClick={(e) => e.stopPropagation()}
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': {
                       color: DARK_THEME.success
@@ -809,6 +810,7 @@ const AdvancedChatComponent: React.FC = () => {
                 </Box>
               }
               sx={{ color: DARK_THEME.text.secondary }}
+              onClick={(e) => e.stopPropagation()}
             />
           </Box>
         </ChatHeader>
@@ -832,13 +834,28 @@ const AdvancedChatComponent: React.FC = () => {
         </ModeToggleContainer>
 
         {/* Agent Selection */}
-        <Box sx={{ p: 2, backgroundColor: DARK_THEME.surface, borderBottom: `1px solid ${DARK_THEME.border}` }}>
+        <Box sx={{ p: 2, backgroundColor: DARK_THEME.surface, borderBottom: `1px solid ${DARK_THEME.border}`, position: 'relative', zIndex: 1000 }}>
           {!isMultiAgentMode ? (
-            <FormControl size="small" sx={{ minWidth: 300 }}>
+            <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
               <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Agent</InputLabel>
               <Select
                 value={selectedAgent?.identity.id || ''}
                 onChange={(e) => handleAgentChange(e.target.value)}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      zIndex: 1002,
+                      backgroundColor: DARK_THEME.surface,
+                      border: `1px solid ${DARK_THEME.border}`,
+                      '& .MuiMenuItem-root': {
+                        color: DARK_THEME.text.primary,
+                        '&:hover': {
+                          backgroundColor: DARK_THEME.primary + '20'
+                        }
+                      }
+                    }
+                  }
+                }}
                 sx={{
                   color: DARK_THEME.text.primary,
                   '& .MuiOutlinedInput-notchedOutline': {
@@ -865,12 +882,27 @@ const AdvancedChatComponent: React.FC = () => {
               </Select>
             </FormControl>
           ) : (
-            <FormControl size="small" sx={{ minWidth: 300 }}>
+            <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
               <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Agents</InputLabel>
               <Select
                 multiple
                 value={selectedAgents.map(a => a.identity.id)}
                 onChange={(e) => handleMultiAgentChange(e.target.value as string[])}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      zIndex: 1002,
+                      backgroundColor: DARK_THEME.surface,
+                      border: `1px solid ${DARK_THEME.border}`,
+                      '& .MuiMenuItem-root': {
+                        color: DARK_THEME.text.primary,
+                        '&:hover': {
+                          backgroundColor: DARK_THEME.primary + '20'
+                        }
+                      }
+                    }
+                  }
+                }}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {(selected as string[]).map((value) => {
