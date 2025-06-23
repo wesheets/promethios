@@ -132,15 +132,21 @@ export class UserAgentStorageService {
     try {
       const userKey = this.getUserKey(agent.identity.id);
       
-      // Serialize dates for storage
+      // Serialize dates for storage with safe null checks
       const serializedAgent = {
         ...agent,
         identity: {
           ...agent.identity,
-          creationDate: agent.identity.creationDate.toISOString(),
-          lastModifiedDate: agent.identity.lastModifiedDate.toISOString(),
+          creationDate: agent.identity?.creationDate?.toISOString() || new Date().toISOString(),
+          lastModifiedDate: agent.identity?.lastModifiedDate?.toISOString() || new Date().toISOString(),
         },
         lastActivity: agent.lastActivity?.toISOString() || null,
+        // Safely serialize governance policy dates if they exist
+        governancePolicy: agent.governancePolicy ? {
+          ...agent.governancePolicy,
+          createdAt: agent.governancePolicy.createdAt?.toISOString() || new Date().toISOString(),
+          lastUpdated: agent.governancePolicy.lastUpdated?.toISOString() || new Date().toISOString(),
+        } : undefined,
       };
 
       await unifiedStorage.set('agents', userKey, serializedAgent);
