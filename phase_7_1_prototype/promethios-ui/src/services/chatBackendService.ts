@@ -6,7 +6,7 @@
  * governed AI interactions.
  */
 
-import { apiConfig } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 export interface ChatSession {
   session_id: string;
@@ -115,7 +115,7 @@ class ChatBackendService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${apiConfig.baseUrl}/api/chat`;
+    this.baseUrl = `${API_BASE_URL}/api/chat`;
   }
 
   /**
