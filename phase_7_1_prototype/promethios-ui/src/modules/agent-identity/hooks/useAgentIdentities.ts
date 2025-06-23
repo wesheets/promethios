@@ -76,7 +76,7 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
       if (success) {
         // Update the local state
         setAgents(prevAgents => 
-          prevAgents.map(agent => 
+          (prevAgents || []).map(agent => 
             agent.id === agentId 
               ? { ...agent, ...updates, lastModifiedDate: new Date() }
               : agent
@@ -102,10 +102,10 @@ export const useAgentIdentities = (filters?: AgentFilter) => {
       if (success) {
         // Remove from local state or update status based on current filters
         if (filters?.status === 'active') {
-          setAgents(prevAgents => prevAgents.filter(agent => agent.id !== agentId));
+          setAgents(prevAgents => (prevAgents || []).filter(agent => agent.id !== agentId));
         } else {
           setAgents(prevAgents => 
-            prevAgents.map(agent => 
+            (prevAgents || []).map(agent => 
               agent.id === agentId 
                 ? { ...agent, status: 'inactive' as const, lastModifiedDate: new Date() }
                 : agent

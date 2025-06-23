@@ -1625,8 +1625,10 @@ const AgentProfilesPage: React.FC = () => {
           onClose={() => setShowAddAgentDialog(false)}
           onAgentAdded={async (newAgent) => {
             try {
-              // Simplified agent creation without backend dependencies
-              console.log('Agent added (fallback mode):', newAgent.identity.name);
+              // Add the new agent to the UI state so it appears in the list
+              setAgentProfiles(prev => [...prev, newAgent]);
+              
+              console.log('Agent added successfully:', newAgent.identity.name);
               setShowAddAgentDialog(false);
               
               // Show publish to registry modal after successful creation
