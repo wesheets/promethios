@@ -417,7 +417,7 @@ const AdvancedChatComponent: React.FC = () => {
       
       // Extract API configuration from individual agent fields
       const apiKey = agent.apiKey;
-      const provider = agent.provider;
+      const provider = agent.provider?.toLowerCase(); // Convert to lowercase for comparison
       const selectedModel = agent.selectedModel;
       const apiEndpoint = agent.apiEndpoint;
       
