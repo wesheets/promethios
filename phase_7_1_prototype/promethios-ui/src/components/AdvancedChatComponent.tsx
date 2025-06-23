@@ -427,6 +427,13 @@ const AdvancedChatComponent: React.FC = () => {
       }
 
       console.log('Using API configuration:', { provider, selectedModel, hasApiKey: !!apiKey, apiEndpoint });
+      console.log('Provider type:', typeof provider, 'Provider value:', JSON.stringify(provider));
+      console.log('Checking provider conditions...');
+      console.log('provider === "openai":', provider === 'openai');
+      console.log('provider === "anthropic":', provider === 'anthropic');
+      console.log('provider === "cohere":', provider === 'cohere');
+      console.log('provider === "huggingface":', provider === 'huggingface');
+      console.log('apiEndpoint exists:', !!apiEndpoint);
 
       // Prepare message with attachments
       let messageContent = message;
@@ -444,6 +451,7 @@ const AdvancedChatComponent: React.FC = () => {
       let response;
       
       if (provider === 'openai') {
+        console.log('Taking OpenAI path...');
         const messages = [
           {
             role: 'system',
@@ -547,6 +555,7 @@ const AdvancedChatComponent: React.FC = () => {
         
       } else if (apiEndpoint) {
         // Custom API endpoint
+        console.log('Taking custom API endpoint path...');
         response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
