@@ -135,8 +135,15 @@ const AgentWrappingWizard: React.FC = () => {
 
   const handleNext = () => {
     if (activeStep === 0) {
-      // Validate agent configuration
-      if (!agentData.agentName?.trim() || !agentData.apiEndpoint?.trim() || !agentData.apiKey?.trim()) {
+      // Validate agent configuration - check the actual fields from EnhancedAgentRegistration
+      console.log('Validating agent data:', agentData);
+      
+      const hasName = agentData.agentName?.trim() || agentData.identity?.name?.trim();
+      const hasEndpoint = agentData.apiEndpoint?.trim() || agentData.endpoint?.trim();
+      const hasKey = agentData.apiKey?.trim() || agentData.key?.trim();
+      
+      if (!hasName || !hasEndpoint || !hasKey) {
+        console.log('Validation failed:', { hasName, hasEndpoint, hasKey });
         alert('Please complete the agent configuration before proceeding');
         return;
       }
@@ -291,13 +298,20 @@ const AgentWrappingWizard: React.FC = () => {
 
       // Step 2: Update the existing agent with governance policy
       console.log('💾 Updating agent with governance policy...');
+      console.log('Original agent data:', agentData);
+      console.log('Governance policy to apply:', governancePolicy);
+      
       const updatedAgent: AgentProfile = {
         ...agentData,
+        // Preserve the original agent identity and ID
         identity: {
           ...agentData.identity!,
+          id: agentData.identity?.id || agentData.id || `agent-${Date.now()}`,
           name: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
           lastModifiedDate: new Date(),
         },
+        // Ensure we have the agent name in the root level too
+        agentName: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
         governancePolicy,
         isWrapped: true,
         isDeployed: true,
@@ -307,12 +321,15 @@ const AgentWrappingWizard: React.FC = () => {
         lastActivity: new Date(),
       };
 
+      console.log('Updated agent to save:', updatedAgent);
+
       // Step 3: Save to local storage
       const storageService = new UserAgentStorageService();
       storageService.setCurrentUser(demoUser.uid);
       await storageService.saveAgent(updatedAgent);
 
-      console.log('🎉 Agent successfully wrapped and deployed with governance policy:', updatedAgent);
+      console.log('🎉 Agent successfully wrapped and deployed with governance policy');
+      console.log('Final agent state:', updatedAgent);
       setShowSuccessDialog(true);
       
     } catch (error) {
