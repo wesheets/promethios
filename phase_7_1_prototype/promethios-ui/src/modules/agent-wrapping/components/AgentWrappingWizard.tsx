@@ -172,18 +172,13 @@ const AgentWrappingWizard: React.FC = () => {
         lastUpdated: new Date(),
       };
 
-      // Update agent with governance policy
+      // Update the existing agent with governance policy
       const updatedAgent: AgentProfile = {
         ...agentData,
-        identity: agentData.identity || {
-          id: agentData.agentId || `agent-${Date.now()}`,
+        identity: {
+          ...agentData.identity!,
           name: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
-          version: '1.0.0',
-          description: agentData.description || agentData.identity?.description || 'Agent wrapped with governance controls',
-          ownerId: demoUser.uid,
-          creationDate: new Date(),
           lastModifiedDate: new Date(),
-          status: 'active',
         },
         governancePolicy,
         isWrapped: true,
@@ -191,17 +186,15 @@ const AgentWrappingWizard: React.FC = () => {
         healthStatus: 'healthy' as const,
         trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
                    governancePolicy.trustThreshold >= 75 ? 'medium' : 'low',
-        attestationCount: 0,
         lastActivity: new Date(),
-        latestScorecard: null,
       };
 
-      // Save to storage
+      // Save to storage - this will update the existing agent
       const storageService = new UserAgentStorageService();
       storageService.setCurrentUser(demoUser.uid);
       await storageService.saveAgent(updatedAgent);
 
-      console.log('Agent wrapped and deployed with governance policy:', updatedAgent);
+      console.log('Agent successfully wrapped and updated with governance policy:', updatedAgent);
       setShowSuccessDialog(true);
     } catch (error) {
       console.error('Error deploying agent:', error);
@@ -433,14 +426,42 @@ const AgentWrappingWizard: React.FC = () => {
             </Alert>
             
             <Grid container spacing={3}>
-              {/* Agent Summary */}
+              {/* Agent Summary - Editable */}
               <Grid item xs={12} md={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       Agent Summary
                     </Typography>
-                    <Typography><strong>Name:</strong> {agentData.identity?.name || agentData.agentName || 'My Agent'}</Typography>
+                    
+                    {/* Editable Agent Name */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Agent Name
+                      </Typography>
+                      <input
+                        type="text"
+                        value={agentData.identity?.name || agentData.agentName || 'My Agent'}
+                        onChange={(e) => {
+                          const newName = e.target.value;
+                          setAgentData(prev => ({
+                            ...prev,
+                            agentName: newName,
+                            identity: prev.identity ? { ...prev.identity, name: newName } : undefined
+                          }));
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid #444',
+                          borderRadius: '4px',
+                          backgroundColor: '#2a2a2a',
+                          color: '#fff',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </Box>
+                    
                     <Typography><strong>Provider:</strong> {agentData.apiDetails?.provider || agentData.provider || 'OpenAI'}</Typography>
                     <Typography><strong>Model:</strong> {agentData.apiDetails?.selectedModel || agentData.model || 'GPT-4'}</Typography>
                     <Typography><strong>Status:</strong> Ready for Deployment</Typography>
@@ -448,14 +469,30 @@ const AgentWrappingWizard: React.FC = () => {
                 </Card>
               </Grid>
               
-              {/* Governance Configuration Summary */}
+              {/* Governance Configuration Summary - Editable */}
               <Grid item xs={12} md={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       Governance Configuration
                     </Typography>
-                    <Typography><strong>Trust Threshold:</strong> {agentData.trustThreshold || 85}%</Typography>
+                    
+                    {/* Editable Trust Threshold */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Trust Threshold: {agentData.trustThreshold || 85}%
+                      </Typography>
+                      <Slider
+                        value={agentData.trustThreshold || 85}
+                        onChange={(e, value) => setAgentData(prev => ({ ...prev, trustThreshold: value }))}
+                        min={50}
+                        max={100}
+                        step={5}
+                        size="small"
+                        valueLabelDisplay="auto"
+                      />
+                    </Box>
+                    
                     <Typography><strong>Security Level:</strong> {(agentData.securityLevel || 'standard').charAt(0).toUpperCase() + (agentData.securityLevel || 'standard').slice(1)}</Typography>
                     <Typography><strong>Compliance Framework:</strong> {(agentData.complianceFramework || 'general').toUpperCase()}</Typography>
                     <Typography><strong>Audit Logging:</strong> {agentData.enableAuditLogging !== false ? 'Enabled' : 'Disabled'}</Typography>
