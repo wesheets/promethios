@@ -408,7 +408,7 @@ const AdvancedChatComponent: React.FC = () => {
     setAttachments(prev => prev.filter(a => a.id !== attachmentId));
   };
 
-  // Call actual agent API with environment variables
+  // Call actual agent API using the agent's own configuration
   const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
       const apiDetails = agent.apiDetails;
@@ -428,32 +428,141 @@ const AdvancedChatComponent: React.FC = () => {
         });
       }
 
-      // Use backend API that handles environment variables
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          provider: apiDetails.provider,
-          model: apiDetails.selectedModel,
-          message: messageContent,
-          agentName: agent.identity.name,
-          agentDescription: agent.identity.description,
-          attachments: attachments.map(att => ({
-            name: att.name,
-            type: att.type,
-            data: att.data
-          }))
-        })
-      });
+      // Use the agent's own API configuration
+      let response;
+      
+      if (apiDetails.provider === 'openai') {
+        const messages = [
+          {
+            role: 'system',
+            content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.`
+          },
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ];
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiDetails.key}`
+          },
+          body: JSON.stringify({
+            model: apiDetails.selectedModel || 'gpt-3.5-turbo',
+            messages: messages,
+            max_tokens: 1000,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || 'No response received';
+        
+      } else if (apiDetails.provider === 'anthropic') {
+        response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiDetails.key,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: apiDetails.selectedModel || 'claude-3-sonnet-20240229',
+            max_tokens: 1000,
+            messages: [
+              {
+                role: 'user',
+                content: `You are ${agent.identity.name}. ${agent.identity.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
+              }
+            ]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.content[0]?.text || 'No response received';
+        
+      } else if (apiDetails.provider === 'cohere') {
+        response = await fetch('https://api.cohere.ai/v1/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiDetails.key}`
+          },
+          body: JSON.stringify({
+            model: apiDetails.selectedModel || 'command',
+            prompt: `You are ${agent.identity.name}. ${agent.identity.description}.\n\nUser: ${messageContent}\nAssistant:`,
+            max_tokens: 1000,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Cohere API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.generations[0]?.text || 'No response received';
+        
+      } else if (apiDetails.provider === 'huggingface') {
+        const hfModel = apiDetails.selectedModel || 'microsoft/DialoGPT-medium';
+        response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiDetails.key}`
+          },
+          body: JSON.stringify({
+            inputs: `You are ${agent.identity.name}. ${agent.identity.description}.\n\nUser: ${messageContent}\nAssistant:`
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data[0]?.generated_text || data.generated_text || 'No response received';
+        
+      } else if (apiDetails.endpoint) {
+        // Custom API endpoint
+        response = await fetch(apiDetails.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiDetails.key}`
+          },
+          body: JSON.stringify({
+            message: messageContent,
+            agent_name: agent.identity.name,
+            agent_description: agent.identity.description,
+            model: apiDetails.selectedModel,
+            attachments: attachments.map(att => ({
+              name: att.name,
+              type: att.type,
+              data: att.data
+            }))
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Custom API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.response || data.message || data.text || 'No response received';
+      } else {
+        throw new Error(`Unsupported provider: ${apiDetails.provider}`);
       }
-
-      const data = await response.json();
-      return data.response || data.message || 'No response received';
     } catch (error) {
       console.error('API call error:', error);
       throw error;
