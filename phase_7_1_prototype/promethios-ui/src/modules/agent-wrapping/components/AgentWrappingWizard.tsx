@@ -209,8 +209,10 @@ const AgentWrappingWizard: React.FC = () => {
       
       const complianceControls: ComplianceControl[] = [];
       
-      // Add framework-specific controls based on selection
-      if (governancePolicy.complianceFramework === 'healthcare') {
+      // Only add controls if we have a governance policy (not "No Policy")
+      if (governancePolicy) {
+        // Add framework-specific controls based on selection
+        if (governancePolicy.complianceFramework === 'healthcare') {
         complianceControls.push(
           {
             id: 'hipaa-164-308',
@@ -277,25 +279,26 @@ const AgentWrappingWizard: React.FC = () => {
         );
       }
       
-      // Update governance policy with compliance controls
-      governancePolicy.complianceControls = complianceControls;
+      // Update governance policy with compliance controls (only if policy exists)
+      if (governancePolicy) {
+        governancePolicy.complianceControls = complianceControls;
 
-      // Create local policy rules for governance monitoring
-      governancePolicy.policyRules = [
-        {
-          id: `trust-monitoring-${Date.now()}`,
-          name: 'Trust Score Monitoring',
-          type: 'trust_threshold',
-          condition: `trust_score >= ${governancePolicy.trustThreshold}`,
-          action: 'log',
-          parameters: { threshold: governancePolicy.trustThreshold },
-          enabled: true
-        },
-        ...(governancePolicy.enableAuditLogging ? [{
-          id: `audit-logging-${Date.now()}`,
-          name: 'Comprehensive Audit Logging',
-          type: 'audit_requirement' as const,
-          condition: 'all_actions',
+        // Create local policy rules for governance monitoring
+        governancePolicy.policyRules = [
+          {
+            id: `trust-monitoring-${Date.now()}`,
+            name: 'Trust Score Monitoring',
+            type: 'trust_threshold',
+            condition: `trust_score >= ${governancePolicy.trustThreshold}`,
+            action: 'log',
+            parameters: { threshold: governancePolicy.trustThreshold },
+            enabled: true
+          },
+          ...(governancePolicy.enableAuditLogging ? [{
+            id: `audit-logging-${Date.now()}`,
+            name: 'Comprehensive Audit Logging',
+            type: 'audit_requirement' as const,
+            condition: 'all_actions',
           action: 'log' as const,
           parameters: { 
             log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
@@ -316,6 +319,7 @@ const AgentWrappingWizard: React.FC = () => {
           enabled: true
         }] : [])
       ];
+      }
 
       console.log('✅ Local compliance monitoring configuration created with', complianceControls.length, 'controls');
 
@@ -357,8 +361,9 @@ const AgentWrappingWizard: React.FC = () => {
         isWrapped: true,
         isDeployed: false, // Agents are "Governed" not "Deployed" until actually deployed to production
         healthStatus: 'healthy' as const,
-        trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
-                   governancePolicy.trustThreshold >= 75 ? 'medium' : 'low',
+        trustLevel: governancePolicy?.trustThreshold ? 
+                   (governancePolicy.trustThreshold >= 90 ? 'high' : 
+                    governancePolicy.trustThreshold >= 75 ? 'medium' : 'low') : 'medium',
         lastActivity: new Date(),
       };
 
