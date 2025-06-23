@@ -575,7 +575,8 @@ const AgentProfileCard: React.FC<{
   selectionMode: boolean;
   isSelected: boolean;
   onSelectionChange: (agentId: string, selected: boolean) => void;
-}> = ({ profile, selectionMode, isSelected, onSelectionChange }) => {
+  onManageAgent: (agentId: string) => void;
+}> = ({ profile, selectionMode, isSelected, onSelectionChange, onManageAgent }) => {
   const getHealthStatusColor = (status: string) => {
     switch (status) {
       case 'healthy': return 'success';
@@ -619,10 +620,7 @@ const AgentProfileCard: React.FC<{
         return {
           label: 'Manage',
           icon: <Visibility />,
-          action: () => {
-            setSelectedAgentId(profile.identity.id);
-            setManageModalOpen(true);
-          },
+          action: () => onManageAgent(profile.identity.id),
           color: '#6b7280'
         };
     }
@@ -991,6 +989,11 @@ const AgentProfilesPage: React.FC = () => {
     } else {
       setSelectedAgents(prev => prev.filter(id => id !== agentId));
     }
+  };
+
+  const handleManageAgent = (agentId: string) => {
+    setSelectedAgentId(agentId);
+    setManageModalOpen(true);
   };
 
   const handleCreateMultiAgentSystem = () => {
@@ -1417,6 +1420,7 @@ const AgentProfilesPage: React.FC = () => {
                         selectionMode={false}
                         isSelected={false}
                         onSelectionChange={() => {}}
+                        onManageAgent={handleManageAgent}
                       />
                     )}
                   </Grid>
@@ -1449,6 +1453,7 @@ const AgentProfilesPage: React.FC = () => {
                     selectionMode={selectionMode}
                     isSelected={selectedAgents.includes(profile.identity.id)}
                     onSelectionChange={handleAgentSelection}
+                    onManageAgent={handleManageAgent}
                   />
                 </Grid>
               ))}
