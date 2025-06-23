@@ -413,10 +413,19 @@ const AdvancedChatComponent: React.FC = () => {
   // Call actual agent API using the agent's own configuration
   const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
-      const apiDetails = agent.apiDetails;
+      console.log('Agent object:', agent);
+      console.log('Agent API details:', agent.apiDetails);
+      console.log('Agent structure keys:', Object.keys(agent));
+      
+      // Check different possible locations for API details
+      const apiDetails = agent.apiDetails || agent.api || agent.apiConfiguration || agent.llmProvider;
+      
       if (!apiDetails) {
-        throw new Error('Agent API configuration not found');
+        console.error('No API configuration found in agent:', agent);
+        throw new Error(`Agent API configuration not found. Available keys: ${Object.keys(agent).join(', ')}`);
       }
+
+      console.log('Using API details:', apiDetails);
 
       // Prepare message with attachments
       let messageContent = message;
