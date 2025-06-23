@@ -317,10 +317,15 @@ const AgentWrappingWizard: React.FC = () => {
       // For existing agents, preserve the original ID and data
       // For new agents, create a new ID
       const agentId = agentData.identity?.id || agentData.id || `agent-${Date.now()}`;
-      const agentName = agentData.agentName || agentData.identity?.name || 'Wrapped Agent';
+      // Preserve the original agent name from the loaded agent data
+      const agentName = agentData.identity?.name || agentData.agentName || 'Wrapped Agent';
       
       console.log('Agent ID to use:', agentId);
-      console.log('Agent name to use:', agentName);
+      console.log('Agent name to use (preserving original):', agentName);
+      console.log('Original agent data name fields:', {
+        'identity.name': agentData.identity?.name,
+        'agentName': agentData.agentName
+      });
       
       const updatedAgent: AgentProfile = {
         ...agentData,
@@ -399,10 +404,10 @@ const AgentWrappingWizard: React.FC = () => {
             </Alert>
             
             {/* Show agent being wrapped */}
-            {isWrappingExisting && agentData.identity?.name && (
+            {isWrappingExisting && (agentData.identity?.name || agentData.agentName) && (
               <Alert severity="success" sx={{ mb: 3 }}>
                 <Typography variant="body2">
-                  <strong>Wrapping existing agent:</strong> {agentData.identity.name}
+                  <strong>Wrapping existing agent:</strong> {agentData.identity?.name || agentData.agentName}
                 </Typography>
               </Alert>
             )}
@@ -742,10 +747,10 @@ const AgentWrappingWizard: React.FC = () => {
         Agent Wrapping Wizard
       </Typography>
       
-      {isWrappingExisting && agentData.agentName && (
+      {isWrappingExisting && (agentData.identity?.name || agentData.agentName) && (
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="body1">
-            <strong>Wrapping existing agent:</strong> {agentData.agentName}
+            <strong>Wrapping existing agent:</strong> {agentData.identity?.name || agentData.agentName}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Skipping configuration step since agent details are already available.
