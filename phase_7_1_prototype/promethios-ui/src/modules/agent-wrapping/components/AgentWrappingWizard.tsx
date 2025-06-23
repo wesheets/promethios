@@ -138,13 +138,26 @@ const AgentWrappingWizard: React.FC = () => {
       // Validate agent configuration - check the actual fields from EnhancedAgentRegistration
       console.log('Validating agent data:', agentData);
       
+      // Check multiple possible field names from EnhancedAgentRegistration
       const hasName = agentData.agentName?.trim() || agentData.identity?.name?.trim();
       const hasEndpoint = agentData.apiEndpoint?.trim() || agentData.endpoint?.trim();
       const hasKey = agentData.apiKey?.trim() || agentData.key?.trim();
+      const hasProvider = agentData.provider?.trim();
       
-      if (!hasName || !hasEndpoint || !hasKey) {
-        console.log('Validation failed:', { hasName, hasEndpoint, hasKey });
-        alert('Please complete the agent configuration before proceeding');
+      console.log('Validation check:', { 
+        hasName, 
+        hasEndpoint, 
+        hasKey, 
+        hasProvider,
+        agentName: agentData.agentName,
+        apiEndpoint: agentData.apiEndpoint,
+        apiKey: agentData.apiKey ? '[HIDDEN]' : undefined,
+        provider: agentData.provider
+      });
+      
+      if (!hasName || !hasEndpoint || !hasKey || !hasProvider) {
+        console.log('Validation failed - missing required fields');
+        alert('Please complete all required fields: Agent Name, API Endpoint, API Key, and Provider');
         return;
       }
     }
@@ -301,17 +314,26 @@ const AgentWrappingWizard: React.FC = () => {
       console.log('Original agent data:', agentData);
       console.log('Governance policy to apply:', governancePolicy);
       
+      // For existing agents, preserve the original ID and data
+      // For new agents, create a new ID
+      const agentId = agentData.identity?.id || agentData.id || `agent-${Date.now()}`;
+      const agentName = agentData.agentName || agentData.identity?.name || 'Wrapped Agent';
+      
+      console.log('Agent ID to use:', agentId);
+      console.log('Agent name to use:', agentName);
+      
       const updatedAgent: AgentProfile = {
         ...agentData,
         // Preserve the original agent identity and ID
         identity: {
-          ...agentData.identity!,
-          id: agentData.identity?.id || agentData.id || `agent-${Date.now()}`,
-          name: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
+          ...agentData.identity,
+          id: agentId,
+          name: agentName,
+          creationDate: agentData.identity?.creationDate || new Date(),
           lastModifiedDate: new Date(),
         },
         // Ensure we have the agent name in the root level too
-        agentName: agentData.agentName || agentData.identity?.name || 'Wrapped Agent',
+        agentName: agentName,
         governancePolicy,
         isWrapped: true,
         isDeployed: true,
@@ -326,10 +348,17 @@ const AgentWrappingWizard: React.FC = () => {
       // Step 3: Save to local storage
       const storageService = new UserAgentStorageService();
       storageService.setCurrentUser(demoUser.uid);
+      
+      console.log('Saving agent with ID:', updatedAgent.identity.id);
       await storageService.saveAgent(updatedAgent);
 
       console.log('🎉 Agent successfully wrapped and deployed with governance policy');
       console.log('Final agent state:', updatedAgent);
+      
+      // Verify the agent was saved by trying to load it
+      const savedAgent = await storageService.getAgent(updatedAgent.identity.id);
+      console.log('Verification - loaded saved agent:', savedAgent);
+      
       setShowSuccessDialog(true);
       
     } catch (error) {
@@ -351,9 +380,9 @@ const AgentWrappingWizard: React.FC = () => {
         return (
           <Box>
             <EnhancedAgentRegistration
-              onAgentAdded={(agent) => {
-                setAgentData(agent);
-                console.log('Agent configured:', agent);
+              onDataChange={(data) => {
+                console.log('Agent data changed:', data);
+                setAgentData(data);
               }}
               isDialog={false}
             />
