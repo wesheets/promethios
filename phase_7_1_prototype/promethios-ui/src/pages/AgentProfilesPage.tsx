@@ -36,6 +36,7 @@ import {
   Fab,
   Checkbox,
   FormControlLabel,
+  FormGroup,
   Slide,
 } from '@mui/material';
 import {
@@ -75,6 +76,7 @@ import {
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
+import EnhancedAgentRegistration from '../components/EnhancedAgentRegistration';
 // Temporarily disabled to avoid backend dependency errors
 // import { useAgentWrappersUnified } from '../modules/agent-wrapping/hooks/useAgentWrappersUnified';
 // import { useMultiAgentSystemsUnified } from '../modules/agent-wrapping/hooks/useMultiAgentSystemsUnified';
@@ -144,133 +146,11 @@ interface AddAgentDialogProps {
 }
 
 const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentAdded }) => {
-  const [agentName, setAgentName] = useState('');
-  const [description, setDescription] = useState('');
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [provider, setProvider] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDiscovering, setIsDiscovering] = useState(false);
-  const [discoveredInfo, setDiscoveredInfo] = useState<any>(null);
-
-  // Auto-discovery function
-  const discoverAgentInfo = async () => {
-    if (!apiKey.trim() || !provider) return;
-    
-    setIsDiscovering(true);
-    try {
-      // Simulate auto-discovery based on provider
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      let discoveredData: any = {};
-      
-      switch (provider) {
-        case 'OpenAI':
-          discoveredData = {
-            name: 'OpenAI Assistant',
-            description: 'Advanced language model with chat, code generation, and analysis capabilities',
-            endpoint: 'https://api.openai.com/v1/chat/completions',
-            capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling'],
-            models: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
-            contextLength: 128000,
-            supportsFunctions: true
-          };
-          break;
-        case 'Anthropic':
-          discoveredData = {
-            name: 'Claude Assistant',
-            description: 'Constitutional AI with strong reasoning and safety features',
-            endpoint: 'https://api.anthropic.com/v1/messages',
-            capabilities: ['chat', 'reasoning', 'analysis', 'constitutional_ai'],
-            models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
-            contextLength: 200000,
-            supportsFunctions: false
-          };
-          break;
-        case 'Google':
-          discoveredData = {
-            name: 'Gemini Assistant',
-            description: 'Multimodal AI with text, image, and code capabilities',
-            endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
-            capabilities: ['chat', 'multimodal', 'code_generation', 'image_analysis'],
-            models: ['gemini-pro', 'gemini-pro-vision', 'gemini-ultra'],
-            contextLength: 32000,
-            supportsFunctions: true
-          };
-          break;
-        case 'Hugging Face':
-          discoveredData = {
-            name: 'Hugging Face Model',
-            description: 'Open-source model from Hugging Face Hub',
-            endpoint: 'https://api-inference.huggingface.co/models/',
-            capabilities: ['text_generation', 'chat', 'specialized_tasks'],
-            models: ['meta-llama/Llama-2-7b-chat-hf', 'microsoft/DialoGPT-medium'],
-            contextLength: 4096,
-            supportsFunctions: false
-          };
-          break;
-        case 'Cohere':
-          discoveredData = {
-            name: 'Cohere Assistant',
-            description: 'Enterprise-focused language model with strong reasoning',
-            endpoint: 'https://api.cohere.ai/v1/chat',
-            capabilities: ['chat', 'text_generation', 'embeddings', 'classification'],
-            models: ['command', 'command-light', 'command-nightly'],
-            contextLength: 4096,
-            supportsFunctions: false
-          };
-          break;
-        case 'Azure':
-          discoveredData = {
-            name: 'Azure OpenAI Assistant',
-            description: 'Enterprise OpenAI models hosted on Azure',
-            endpoint: 'https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2023-12-01-preview',
-            capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling'],
-            models: ['gpt-35-turbo', 'gpt-4', 'gpt-4-32k'],
-            contextLength: 32000,
-            supportsFunctions: true
-          };
-          break;
-        default:
-          discoveredData = {
-            name: 'Custom Agent',
-            description: 'Custom AI agent with unknown capabilities',
-            endpoint: '',
-            capabilities: ['unknown'],
-            models: ['unknown'],
-            contextLength: 4096,
-            supportsFunctions: false
-          };
-      }
-      
-      setDiscoveredInfo(discoveredData);
-      
-      // Auto-populate fields if they're empty
-      if (!agentName.trim()) setAgentName(discoveredData.name);
-      if (!description.trim()) setDescription(discoveredData.description);
-      if (!apiEndpoint.trim()) setApiEndpoint(discoveredData.endpoint);
-      
-    } catch (error) {
-      console.error('Auto-discovery failed:', error);
-    } finally {
-      setIsDiscovering(false);
-    }
-  };
-
-  // Trigger auto-discovery when provider or API key changes
-  useEffect(() => {
-    if (provider && apiKey.trim().length > 10) {
-      const timer = setTimeout(() => {
-        discoverAgentInfo();
-      }, 1000); // Debounce for 1 second
-      
-      return () => clearTimeout(timer);
-    }
-  }, [provider, apiKey]); // Only depend on provider and apiKey
+  const [agentData, setAgentData] = useState<any>({});
 
   const handleSubmit = async () => {
-    if (!agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()) {
+    if (!agentData.agentName?.trim() || !agentData.apiEndpoint?.trim() || !agentData.apiKey?.trim()) {
       alert('Please fill in all required fields');
       return;
     }
@@ -285,9 +165,9 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
       const newAgent: AgentProfile = {
         identity: {
           id: `agent-${Date.now()}`,
-          name: agentName.trim(),
+          name: agentData.agentName.trim(),
           version: '1.0.0',
-          description: description.trim() || `AI agent: ${agentName}`,
+          description: agentData.description?.trim() || `AI agent: ${agentData.agentName}`,
           ownerId: 'user-1',
           creationDate: new Date(),
           lastModifiedDate: new Date(),
@@ -301,22 +181,22 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         isWrapped: false,
         governancePolicy: null,
         isDeployed: false,
-        // Store API details for later use in wrapping wizard
+        // Store enhanced API details for later use in wrapping wizard
         apiDetails: {
-          endpoint: apiEndpoint.trim(),
-          key: apiKey.trim(),
-          provider: provider.trim() || 'Custom'
+          endpoint: agentData.apiEndpoint.trim(),
+          key: agentData.apiKey.trim(),
+          provider: agentData.provider?.trim() || 'Custom',
+          selectedModel: agentData.selectedModel,
+          selectedCapabilities: agentData.selectedCapabilities,
+          selectedContextLength: agentData.selectedContextLength,
+          discoveredInfo: agentData.discoveredInfo
         }
       };
 
       onAgentAdded(newAgent);
       
       // Reset form
-      setAgentName('');
-      setDescription('');
-      setApiEndpoint('');
-      setApiKey('');
-      setProvider('');
+      setAgentData({});
       
     } catch (error) {
       console.error('Error adding agent:', error);
@@ -330,13 +210,14 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
     <Dialog 
       open={open} 
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
           backgroundColor: '#2d3748',
           color: 'white',
           border: '1px solid #4a5568',
+          maxHeight: '90vh',
         },
       }}
     >
@@ -346,202 +227,12 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
           Add New Agent
         </Box>
       </DialogTitle>
-      <DialogContent>
-        <Alert 
-          severity="info" 
-          sx={{ 
-            backgroundColor: '#1e3a8a', 
-            color: 'white',
-            mb: 3,
-            '& .MuiAlert-icon': { color: 'white' },
-          }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            💡 Auto-Discovery Enabled
-          </Typography>
-          <Typography variant="body2">
-            Select a provider and enter your API key - we'll automatically discover and populate 
-            your agent's capabilities, models, and optimal settings!
-          </Typography>
-        </Alert>
-
-        {isDiscovering && (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              backgroundColor: '#065f46', 
-              color: 'white',
-              mb: 3,
-              '& .MuiAlert-icon': { color: 'white' },
-            }}
-          >
-            <Typography variant="body2">
-              🔍 Discovering agent capabilities... This may take a moment.
-            </Typography>
-          </Alert>
-        )}
-
-        {discoveredInfo && (
-          <Alert 
-            severity="success" 
-            sx={{ 
-              backgroundColor: '#166534', 
-              color: 'white',
-              mb: 3,
-              '& .MuiAlert-icon': { color: 'white' },
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-              ✅ Discovery Complete!
-            </Typography>
-            <Typography variant="body2">
-              Found {discoveredInfo.models?.length || 0} models, {discoveredInfo.capabilities?.length || 0} capabilities. 
-              Context length: {discoveredInfo.contextLength?.toLocaleString() || 'Unknown'} tokens.
-            </Typography>
-          </Alert>
-        )}
-        
-        <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-          Connect your existing AI agent by providing its API details. The agent will appear as 
-          "unwrapped" in your My Agents list, ready for governance wrapping.
-        </Typography>
-        
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Agent Name *"
-              value={agentName}
-              onChange={(e) => setAgentName(e.target.value)}
-              placeholder="e.g., Customer Support Bot"
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& fieldset': { borderColor: '#4a5568' },
-                  '&:hover fieldset': { borderColor: '#718096' },
-                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                },
-                '& .MuiInputLabel-root': { color: '#a0aec0' },
-              }}
-            />
-            
-            <TextField
-              fullWidth
-              label="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of your agent's capabilities"
-              multiline
-              rows={3}
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& fieldset': { borderColor: '#4a5568' },
-                  '&:hover fieldset': { borderColor: '#718096' },
-                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                },
-                '& .MuiInputLabel-root': { color: '#a0aec0' },
-              }}
-            />
-            
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel sx={{ color: '#a0aec0' }}>Provider</InputLabel>
-              <Select
-                value={provider}
-                label="Provider"
-                onChange={(e) => setProvider(e.target.value)}
-                sx={{
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#718096' },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
-                }}
-              >
-                <MenuItem value="">Select Provider</MenuItem>
-                <MenuItem value="OpenAI">OpenAI</MenuItem>
-                <MenuItem value="Anthropic">Anthropic</MenuItem>
-                <MenuItem value="Google">Google</MenuItem>
-                <MenuItem value="Hugging Face">Hugging Face</MenuItem>
-                <MenuItem value="Cohere">Cohere</MenuItem>
-                <MenuItem value="Azure">Azure OpenAI</MenuItem>
-                <MenuItem value="Custom">Custom/Other</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="API Endpoint *"
-              value={apiEndpoint}
-              onChange={(e) => setApiEndpoint(e.target.value)}
-              placeholder="https://api.openai.com/v1/chat/completions"
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& fieldset': { borderColor: '#4a5568' },
-                  '&:hover fieldset': { borderColor: '#718096' },
-                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                },
-                '& .MuiInputLabel-root': { color: '#a0aec0' },
-              }}
-            />
-            
-            <TextField
-              fullWidth
-              label="API Key *"
-              type={showApiKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Your API key from the provider"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      edge="end"
-                      sx={{ color: '#a0aec0' }}
-                    >
-                      {showApiKey ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#1a202c',
-                  color: 'white',
-                  '& fieldset': { borderColor: '#4a5568' },
-                  '&:hover fieldset': { borderColor: '#718096' },
-                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
-                },
-                '& .MuiInputLabel-root': { color: '#a0aec0' },
-              }}
-            />
-            
-            <Alert 
-              severity="info" 
-              sx={{ 
-                backgroundColor: '#1e3a8a', 
-                color: 'white',
-                '& .MuiAlert-icon': { color: 'white' },
-              }}
-            >
-              <Typography variant="body2">
-                Your API credentials are stored securely and will be used to connect 
-                to your agent during the wrapping process.
-              </Typography>
-            </Alert>
-          </Grid>
-        </Grid>
+      <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        <EnhancedAgentRegistration
+          onDataChange={setAgentData}
+          title="Connect Your AI Agent"
+          subtitle="Connect your existing AI agent by providing its API details. The agent will appear as 'unwrapped' in your My Agents list, ready for governance wrapping."
+        />
       </DialogContent>
       <DialogActions>
         <Button 
@@ -554,7 +245,7 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         <Button 
           variant="contained"
           onClick={handleSubmit}
-          disabled={isSubmitting || !agentName.trim() || !apiEndpoint.trim() || !apiKey.trim()}
+          disabled={isSubmitting || !agentData.agentName?.trim() || !agentData.apiEndpoint?.trim() || !agentData.apiKey?.trim()}
           sx={{
             backgroundColor: '#3182ce',
             color: 'white',
