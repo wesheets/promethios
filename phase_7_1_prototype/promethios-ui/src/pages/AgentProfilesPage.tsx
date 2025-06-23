@@ -79,6 +79,7 @@ import { darkTheme } from '../theme/darkTheme';
 import EnhancedAgentRegistration from '../components/EnhancedAgentRegistration';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
+import AgentManageModal from '../components/AgentManageModal';
 // Temporarily disabled to avoid backend dependency errors
 // import { useAgentWrappersUnified } from '../modules/agent-wrapping/hooks/useAgentWrappersUnified';
 // import { useMultiAgentSystemsUnified } from '../modules/agent-wrapping/hooks/useMultiAgentSystemsUnified';
@@ -618,7 +619,10 @@ const AgentProfileCard: React.FC<{
         return {
           label: 'Manage',
           icon: <Visibility />,
-          action: () => window.location.href = `/ui/agents/manage?agentId=${profile.identity.id}`,
+          action: () => {
+            setSelectedAgentId(profile.identity.id);
+            setManageModalOpen(true);
+          },
           color: '#6b7280'
         };
     }
@@ -926,6 +930,11 @@ const AgentProfilesPage: React.FC = () => {
   // Agent profiles state for real backend data
   const [agentProfiles, setAgentProfiles] = useState<AgentProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal state for agent management
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  
   const { currentUser } = useAuth();
   
   // Fallback to demo auth for testing if no Firebase user
@@ -1518,6 +1527,20 @@ const AgentProfilesPage: React.FC = () => {
             }}
           />
         )}
+
+        {/* Agent Management Modal */}
+        <AgentManageModal
+          open={manageModalOpen}
+          onClose={() => {
+            setManageModalOpen(false);
+            setSelectedAgentId(null);
+          }}
+          agentId={selectedAgentId}
+          onAgentUpdated={async (updatedAgent) => {
+            // Refresh the agents list to show updated data
+            await handleRefreshAgents();
+          }}
+        />
       </Container>
     </ThemeProvider>
   );
