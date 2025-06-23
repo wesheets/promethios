@@ -400,15 +400,7 @@ class AgentWrapperRegistry {
       throw error;
     }
   }
-}
 
-// Export singleton instance
-export const agentWrapperRegistry = new AgentWrapperRegistry();
-export default AgentWrapperRegistry;
-
-
-
-  
   /**
    * Persist wrapper to unified storage
    */
@@ -463,97 +455,8 @@ export default AgentWrapperRegistry;
       console.error('Error loading user wrappers:', error);
     }
   }
-  
-  /**
-   * Enable a wrapper
-   * @param wrapperId The ID of the wrapper to enable
-   * @returns Whether the operation was successful
-   */
-  async enableWrapper(wrapperId: string): Promise<boolean> {
-    try {
-      // Check if wrapper exists
-      if (!this.wrappers.has(wrapperId)) {
-        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
-        return false;
-      }
-      
-      // Enable wrapper
-      this.enabledWrappers.add(wrapperId);
-      
-      // Update wrapper status in storage
-      const wrapper = this.wrappers.get(wrapperId)!;
-      wrapper.enabled = true;
-      await this.persistWrapper(wrapper);
-      
-      console.log(`Enabled wrapper: ${wrapperId}`);
-      return true;
-    } catch (error) {
-      console.error('Error enabling wrapper:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Disable a wrapper
-   * @param wrapperId The ID of the wrapper to disable
-   * @returns Whether the operation was successful
-   */
-  async disableWrapper(wrapperId: string): Promise<boolean> {
-    try {
-      // Check if wrapper exists
-      if (!this.wrappers.has(wrapperId)) {
-        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
-        return false;
-      }
-      
-      // Disable wrapper
-      this.enabledWrappers.delete(wrapperId);
-      
-      // Update wrapper status in storage
-      const wrapper = this.wrappers.get(wrapperId)!;
-      wrapper.enabled = false;
-      await this.persistWrapper(wrapper);
-      
-      console.log(`Disabled wrapper: ${wrapperId}`);
-      return true;
-    } catch (error) {
-      console.error('Error disabling wrapper:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Update metrics for a wrapper
-   * @param wrapperId The ID of the wrapper to update metrics for
-   * @param metrics The new metrics
-   */
-  async updateWrapperMetrics(wrapperId: string, metrics: Partial<WrapperMetrics>): Promise<boolean> {
-    try {
-      // Check if wrapper exists
-      if (!this.wrappers.has(wrapperId)) {
-        console.warn(`Wrapper with ID ${wrapperId} does not exist`);
-        return false;
-      }
-      
-      // Update metrics
-      const currentMetrics = this.metrics.get(wrapperId)!;
-      const updatedMetrics = { ...currentMetrics, ...metrics };
-      this.metrics.set(wrapperId, updatedMetrics);
-      
-      // Persist metrics to storage
-      const metricsKey = this.getUserScopedKey(`metrics.${wrapperId}`);
-      await this.storageService.set('agents', metricsKey, updatedMetrics);
-      
-      console.log(`Updated metrics for wrapper: ${wrapperId}`);
-      return true;
-    } catch (error) {
-      console.error('Error updating wrapper metrics:', error);
-      return false;
-    }
-  }
 }
 
 // Export singleton instance
 export const agentWrapperRegistry = new AgentWrapperRegistry();
 export default AgentWrapperRegistry;
-
