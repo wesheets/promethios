@@ -229,24 +229,8 @@ const GovernanceToggleContainer = styled(Box)(() => ({
   userSelect: 'none'
 }));
 
-interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'agent' | 'system' | 'error';
-  timestamp: Date;
-  agentName?: string;
-  agentId?: string;
-  attachments?: FileAttachment[];
-}
-
-interface FileAttachment {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  data?: string; // base64 data for images
-}
+// Message interface - using ChatMessage from storage service
+interface Message extends ChatMessage {}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -291,7 +275,14 @@ const AdvancedChatComponent: React.FC = () => {
 
   const agentStorageService = new UserAgentStorageService();
 
-  // Load real agents from unified storage
+  // Initialize chat storage service
+  useEffect(() => {
+    if (effectiveUser?.uid) {
+      chatStorageService.setCurrentUser(effectiveUser.uid);
+    }
+  }, [effectiveUser]);
+
+  // Load real agents from unified storage and their chat history
   useEffect(() => {
     const loadAgents = async () => {
       try {
@@ -309,24 +300,39 @@ const AdvancedChatComponent: React.FC = () => {
           const realAgents = userAgents || [];
           setAgents(realAgents);
           
-          // Set first agent as selected if available
+          // Set first agent as selected if available and load its chat history
           if (realAgents.length > 0 && !selectedAgent) {
             console.log('Setting first agent as selected:', realAgents[0]);
             setSelectedAgent(realAgents[0]);
             
-            // Add welcome message
-            const welcomeMessage: Message = {
-              id: `msg_${Date.now()}_welcome`,
-              content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
-              sender: 'agent',
-              timestamp: new Date(),
-              agentName: realAgents[0].identity.name,
-              agentId: realAgents[0].identity.id
-            };
-            setMessages([welcomeMessage]);
+            // Load existing chat history for this agent
+            const chatHistory = await chatStorageService.loadAgentChatHistory(realAgents[0].identity.id);
+            
+            if (chatHistory && chatHistory.messages.length > 0) {
+              // Load existing conversation
+              console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
+              setMessages(chatHistory.messages);
+            } else {
+              // Add welcome message for new conversation
+              const welcomeMessage: ChatMessage = {
+                id: `msg_${Date.now()}_welcome`,
+                content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
+                sender: 'agent',
+                timestamp: new Date(),
+                agentName: realAgents[0].identity.name,
+                agentId: realAgents[0].identity.id
+              };
+              setMessages([welcomeMessage]);
+              
+              // Save welcome message to storage
+              await chatStorageService.saveMessage(welcomeMessage, realAgents[0].identity.id);
+            }
+            
+            // Initialize chat session
+            await chatStorageService.initializeChatSession(realAgents[0], governanceEnabled);
           } else if (realAgents.length === 0) {
             console.log('No user agents found');
-            const noAgentsMessage: Message = {
+            const noAgentsMessage: ChatMessage = {
               id: `msg_${Date.now()}_no_agents`,
               content: 'No agents found. Please create an agent using the Agent Wrapping feature.',
               sender: 'system',
@@ -608,7 +614,7 @@ const AdvancedChatComponent: React.FC = () => {
       return;
     }
 
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: `msg_${Date.now()}_user`,
       content: inputValue || '(File attachments only)',
       sender: 'user',
@@ -623,6 +629,11 @@ const AdvancedChatComponent: React.FC = () => {
     setIsTyping(true);
     setError(null);
 
+    // Save user message to persistent storage
+    if (selectedAgent) {
+      await chatStorageService.saveMessage(userMessage, selectedAgent.identity.id);
+    }
+
     // Scroll to bottom after user message
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -631,13 +642,18 @@ const AdvancedChatComponent: React.FC = () => {
     try {
       // Add governance message if enabled
       if (governanceEnabled) {
-        const governanceMessage: Message = {
+        const governanceMessage: ChatMessage = {
           id: `msg_${Date.now()}_governance`,
           content: `🛡️ Processing message through governance layer... ${currentAttachments.length > 0 ? `Scanning ${currentAttachments.length} attachment(s).` : ''}`,
           sender: 'system',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, governanceMessage]);
+        
+        // Save governance message to storage
+        if (selectedAgent) {
+          await chatStorageService.saveMessage(governanceMessage, selectedAgent.identity.id);
+        }
       }
 
       if (isMultiAgentMode) {
@@ -646,7 +662,7 @@ const AdvancedChatComponent: React.FC = () => {
           try {
             const agentResponse = await callAgentAPI(userMessage.content, agent, currentAttachments);
             
-            const agentMessage: Message = {
+            const agentMessage: ChatMessage = {
               id: `msg_${Date.now()}_agent_${agent.identity.id}`,
               content: agentResponse,
               sender: 'agent',
@@ -657,25 +673,31 @@ const AdvancedChatComponent: React.FC = () => {
             
             setMessages(prev => [...prev, agentMessage]);
             
+            // Save agent message to storage
+            await chatStorageService.saveMessage(agentMessage, agent.identity.id);
+            
             // Scroll to bottom after agent response
             setTimeout(() => {
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
           } catch (error) {
-            const errorMessage: Message = {
+            const errorMessage: ChatMessage = {
               id: `msg_${Date.now()}_error_${agent.identity.id}`,
               content: `❌ Error from ${agent.identity.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
               sender: 'error',
               timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
+            
+            // Save error message to storage
+            await chatStorageService.saveMessage(errorMessage, agent.identity.id);
           }
         }
       } else if (selectedAgent) {
         // Handle single agent response
         const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
         
-        const agentMessage: Message = {
+        const agentMessage: ChatMessage = {
           id: `msg_${Date.now()}_agent`,
           content: agentResponse,
           sender: 'agent',
@@ -686,6 +708,9 @@ const AdvancedChatComponent: React.FC = () => {
         
         setMessages(prev => [...prev, agentMessage]);
         
+        // Save agent message to storage
+        await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
+        
         // Scroll to bottom after agent response
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -694,19 +719,24 @@ const AdvancedChatComponent: React.FC = () => {
 
       // Add governance completion message if enabled
       if (governanceEnabled) {
-        const governanceCompleteMessage: Message = {
+        const governanceCompleteMessage: ChatMessage = {
           id: `msg_${Date.now()}_governance_complete`,
           content: `🛡️ Governance Monitor: Trust score 85%. Compliance: compliant. ${currentAttachments.length > 0 ? 'All attachments processed safely.' : ''}`,
           sender: 'system',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, governanceCompleteMessage]);
+        
+        // Save governance completion message to storage
+        if (selectedAgent) {
+          await chatStorageService.saveMessage(governanceCompleteMessage, selectedAgent.identity.id);
+        }
       }
 
     } catch (error) {
       console.error('Error sending message:', error);
       
-      const errorMessage: Message = {
+      const errorMessage: ChatMessage = {
         id: `msg_${Date.now()}_error`,
         content: `❌ Error: Failed to send message. ${error instanceof Error ? error.message : 'Please try again.'}`,
         sender: 'error',
@@ -715,6 +745,11 @@ const AdvancedChatComponent: React.FC = () => {
       
       setMessages(prev => [...prev, errorMessage]);
       setError(error instanceof Error ? error.message : 'Failed to send message');
+      
+      // Save error message to storage
+      if (selectedAgent) {
+        await chatStorageService.saveMessage(errorMessage, selectedAgent.identity.id);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -727,19 +762,34 @@ const AdvancedChatComponent: React.FC = () => {
     }
   };
 
-  const handleAgentChange = (agentId: string) => {
+  const handleAgentChange = async (agentId: string) => {
     const agent = agents.find(a => a.identity.id === agentId);
     if (agent) {
       setSelectedAgent(agent);
       
-      // Add agent switch message
-      const switchMessage: Message = {
-        id: `msg_${Date.now()}_switch`,
-        content: `Switched to ${agent.identity.name}. ${agent.identity.description}`,
-        sender: 'system',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, switchMessage]);
+      // Load existing chat history for this agent
+      const chatHistory = await chatStorageService.loadAgentChatHistory(agent.identity.id);
+      
+      if (chatHistory && chatHistory.messages.length > 0) {
+        // Load existing conversation
+        console.log('Loading chat history for agent:', agent.identity.name, chatHistory.messages.length, 'messages');
+        setMessages(chatHistory.messages);
+      } else {
+        // Add agent switch message for new conversation
+        const switchMessage: ChatMessage = {
+          id: `msg_${Date.now()}_switch`,
+          content: `Switched to ${agent.identity.name}. ${agent.identity.description}`,
+          sender: 'system',
+          timestamp: new Date()
+        };
+        setMessages([switchMessage]);
+        
+        // Save switch message to storage
+        await chatStorageService.saveMessage(switchMessage, agent.identity.id);
+      }
+      
+      // Initialize new chat session
+      await chatStorageService.initializeChatSession(agent, governanceEnabled);
     }
   };
 
@@ -748,17 +798,23 @@ const AdvancedChatComponent: React.FC = () => {
     setSelectedAgents(selectedAgentsList);
   };
 
-  const handleGovernanceToggle = () => {
+  const handleGovernanceToggle = async () => {
     const newValue = !governanceEnabled;
     setGovernanceEnabled(newValue);
     
-    const statusMessage: Message = {
+    const statusMessage: ChatMessage = {
       id: `msg_${Date.now()}_status`,
       content: `🛡️ Governance ${newValue ? 'enabled' : 'disabled'}. ${newValue ? 'All interactions will be monitored and scored.' : 'Operating in standard mode.'}`,
       sender: 'system',
       timestamp: new Date()
     };
     setMessages(prev => [...prev, statusMessage]);
+    
+    // Save governance toggle message to storage
+    if (selectedAgent) {
+      await chatStorageService.saveMessage(statusMessage, selectedAgent.identity.id);
+    }
+    
     // Note: No auto-scroll for system messages to prevent jumping
   };
 
