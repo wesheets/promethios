@@ -13,7 +13,6 @@ import {
   InputLabel,
   Chip,
   Switch,
-  FormControlLabel,
   Alert,
   CircularProgress,
   Tabs,
@@ -21,15 +20,7 @@ import {
   Card,
   CardContent,
   Divider,
-  LinearProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText
+  LinearProgress
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -54,6 +45,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { useAuth } from '../context/AuthContext';
+import { useDemoAuth } from '../hooks/useDemoAuth';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -150,9 +142,7 @@ const MessageBubble = styled(Box, {
         ? DARK_THEME.warning + '20'
         : messageType === 'error'
           ? DARK_THEME.error + '20'
-          : messageType === 'observer'
-            ? DARK_THEME.warning + '15'
-            : DARK_THEME.surface,
+          : DARK_THEME.surface,
     color: isUser 
       ? '#ffffff'
       : DARK_THEME.text.primary,
@@ -165,9 +155,7 @@ const MessageBubble = styled(Box, {
         ? DARK_THEME.warning 
         : messageType === 'error'
           ? DARK_THEME.error
-          : messageType === 'observer'
-            ? DARK_THEME.warning
-            : DARK_THEME.border
+          : DARK_THEME.border
     }`,
     wordBreak: 'break-word',
     fontSize: '14px',
@@ -182,11 +170,9 @@ const MessageBubble = styled(Box, {
       ? DARK_THEME.warning
       : messageType === 'error'
         ? DARK_THEME.error
-        : messageType === 'observer'
-          ? DARK_THEME.warning
-          : isUser
-            ? DARK_THEME.primary
-            : DARK_THEME.success
+        : isUser
+          ? DARK_THEME.primary
+          : DARK_THEME.success
   }
 }));
 
@@ -228,10 +214,18 @@ const HiddenFileInput = styled('input')({
   display: 'none'
 });
 
+const GovernanceToggleContainer = styled(Box)(() => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1,
+  cursor: 'pointer',
+  userSelect: 'none'
+}));
+
 interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'agent' | 'system' | 'error' | 'observer';
+  sender: 'user' | 'agent' | 'system' | 'error';
   timestamp: Date;
   agentName?: string;
   agentId?: string;
@@ -269,7 +263,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AdvancedChatComponent: React.FC = () => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
+  const { currentUser: demoUser } = useDemoAuth();
+  const effectiveUser = currentUser || demoUser;
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<AgentProfile | null>(null);
@@ -282,108 +279,69 @@ const AdvancedChatComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
-  const [showObserver, setShowObserver] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const agentStorageService = new UserAgentStorageService();
 
-  // Observer agent definition
-  const observerAgent: AgentProfile = {
-    identity: {
-      id: 'observer-agent',
-      name: 'Observer',
-      version: '1.0.0',
-      description: 'AI governance and monitoring agent that observes conversations for policy compliance and safety.',
-      ownerId: user?.uid || 'system',
-      creationDate: new Date(),
-      lastModifiedDate: new Date(),
-      status: 'active'
-    },
-    latestScorecard: null,
-    attestationCount: 0,
-    lastActivity: new Date(),
-    healthStatus: 'healthy',
-    trustLevel: 'high',
-    isWrapped: true,
-    governancePolicy: null,
-    isDeployed: true,
-    apiDetails: {
-      endpoint: 'internal://observer',
-      key: 'observer-key',
-      provider: 'observer',
-      selectedModel: 'observer-v1'
-    }
-  };
-
-  // Load real agents from storage
+  // Load real agents from unified storage
   useEffect(() => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
-        console.log('Loading agents for user:', user?.uid);
+        console.log('Loading agents for user:', effectiveUser?.uid);
         
-        if (user?.uid) {
-          agentStorageService.setCurrentUser(user.uid);
+        if (effectiveUser?.uid) {
+          agentStorageService.setCurrentUser(effectiveUser.uid);
           const userAgents = await agentStorageService.loadUserAgents();
           
           console.log('Loaded user agents:', userAgents);
           console.log('Number of agents loaded:', userAgents?.length || 0);
           
-          // Combine user agents with observer agent
-          const allAgents = [
-            ...(userAgents || []),
-            observerAgent
-          ];
+          // Use only real user agents (no Observer agent)
+          const realAgents = userAgents || [];
+          setAgents(realAgents);
           
-          console.log('All agents (including observer):', allAgents);
-          setAgents(allAgents);
-          
-          // Set first user agent as selected if available, otherwise observer
-          if (userAgents && userAgents.length > 0 && !selectedAgent) {
-            console.log('Setting first agent as selected:', userAgents[0]);
-            setSelectedAgent(userAgents[0]);
+          // Set first agent as selected if available
+          if (realAgents.length > 0 && !selectedAgent) {
+            console.log('Setting first agent as selected:', realAgents[0]);
+            setSelectedAgent(realAgents[0]);
             
             // Add welcome message
             const welcomeMessage: Message = {
               id: `msg_${Date.now()}_welcome`,
-              content: `Hello! I'm ${userAgents[0].identity.name}. How can I help you today?`,
+              content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
               sender: 'agent',
               timestamp: new Date(),
-              agentName: userAgents[0].identity.name,
-              agentId: userAgents[0].identity.id
+              agentName: realAgents[0].identity.name,
+              agentId: realAgents[0].identity.id
             };
             setMessages([welcomeMessage]);
-          } else if (!userAgents || userAgents.length === 0) {
-            console.log('No user agents found, using observer only');
-            // Only observer available
-            setSelectedAgent(observerAgent);
+          } else if (realAgents.length === 0) {
+            console.log('No user agents found');
             const noAgentsMessage: Message = {
               id: `msg_${Date.now()}_no_agents`,
-              content: 'Observer agent active. No user agents found. Please create an agent using the Agent Wrapping feature.',
-              sender: 'observer',
-              timestamp: new Date(),
-              agentName: 'Observer'
+              content: 'No agents found. Please create an agent using the Agent Wrapping feature.',
+              sender: 'system',
+              timestamp: new Date()
             };
             setMessages([noAgentsMessage]);
           }
         } else {
           console.log('No user found, cannot load agents');
-          setAgents([observerAgent]); // Fallback to observer only
-          setSelectedAgent(observerAgent);
+          setAgents([]);
         }
       } catch (error) {
         console.error('Error loading agents:', error);
         setError('Failed to load agents. Please try refreshing the page.');
-        setAgents([observerAgent]); // Fallback to observer only
-        setSelectedAgent(observerAgent);
+        setAgents([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadAgents();
-  }, [user]);
+  }, [effectiveUser]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -458,11 +416,6 @@ const AdvancedChatComponent: React.FC = () => {
   // Call actual agent API with file support
   const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
     try {
-      // Handle Observer agent
-      if (agent.identity.id === 'observer-agent') {
-        return `🛡️ Observer Analysis: Message processed. Content appears compliant with governance policies. ${attachments.length > 0 ? `Analyzed ${attachments.length} attachment(s).` : ''} Trust score maintained at 85%.`;
-      }
-
       const apiDetails = agent.apiDetails;
       if (!apiDetails) {
         throw new Error('Agent API configuration not found');
@@ -616,25 +569,9 @@ const AdvancedChatComponent: React.FC = () => {
         setMessages(prev => [...prev, governanceMessage]);
       }
 
-      // Add Observer analysis if enabled
-      if (showObserver && governanceEnabled) {
-        const observerResponse = await callAgentAPI(userMessage.content, observerAgent, currentAttachments);
-        const observerMessage: Message = {
-          id: `msg_${Date.now()}_observer`,
-          content: observerResponse,
-          sender: 'observer',
-          timestamp: new Date(),
-          agentName: 'Observer',
-          agentId: 'observer-agent'
-        };
-        setMessages(prev => [...prev, observerMessage]);
-      }
-
       if (isMultiAgentMode) {
         // Handle multi-agent responses
         for (const agent of selectedAgents) {
-          if (agent.identity.id === 'observer-agent') continue; // Skip observer in multi-agent mode
-          
           try {
             const agentResponse = await callAgentAPI(userMessage.content, agent, currentAttachments);
             
@@ -658,8 +595,8 @@ const AdvancedChatComponent: React.FC = () => {
             setMessages(prev => [...prev, errorMessage]);
           }
         }
-      } else if (selectedAgent && selectedAgent.identity.id !== 'observer-agent') {
-        // Handle single agent response (skip if observer is selected as main agent)
+      } else if (selectedAgent) {
+        // Handle single agent response
         const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
         
         const agentMessage: Message = {
@@ -730,12 +667,13 @@ const AdvancedChatComponent: React.FC = () => {
     setSelectedAgents(selectedAgentsList);
   };
 
-  const handleGovernanceToggle = (enabled: boolean) => {
-    setGovernanceEnabled(enabled);
+  const handleGovernanceToggle = () => {
+    const newValue = !governanceEnabled;
+    setGovernanceEnabled(newValue);
     
     const statusMessage: Message = {
       id: `msg_${Date.now()}_status`,
-      content: `🛡️ Governance ${enabled ? 'enabled' : 'disabled'}. ${enabled ? 'All interactions will be monitored and scored.' : 'Operating in standard mode.'}`,
+      content: `🛡️ Governance ${newValue ? 'enabled' : 'disabled'}. ${newValue ? 'All interactions will be monitored and scored.' : 'Operating in standard mode.'}`,
       sender: 'system',
       timestamp: new Date()
     };
@@ -743,8 +681,6 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   const getAgentAvatar = (agent: AgentProfile): string => {
-    if (agent.identity.id === 'observer-agent') return '🛡️';
-    
     const name = agent.identity.name.toLowerCase();
     if (name.includes('creative')) return '🎨';
     if (name.includes('data') || name.includes('analyst')) return '📈';
@@ -795,12 +731,9 @@ const AdvancedChatComponent: React.FC = () => {
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GovernanceToggleContainer onClick={handleGovernanceToggle}>
               <Switch
                 checked={governanceEnabled}
-                onChange={(e) => {
-                  handleGovernanceToggle(e.target.checked);
-                }}
                 size="small"
                 sx={{
                   '& .MuiSwitch-switchBase.Mui-checked': {
@@ -815,7 +748,7 @@ const AdvancedChatComponent: React.FC = () => {
               <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
                 Governed
               </Typography>
-            </Box>
+            </GovernanceToggleContainer>
           </Box>
         </ChatHeader>
 
@@ -931,7 +864,7 @@ const AdvancedChatComponent: React.FC = () => {
                   }
                 }}
               >
-                {agents.filter(a => a.identity.id !== 'observer-agent').map((agent) => (
+                {agents.map((agent) => (
                   <MenuItem key={agent.identity.id} value={agent.identity.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <span>{getAgentAvatar(agent)}</span>
@@ -975,8 +908,6 @@ const AdvancedChatComponent: React.FC = () => {
                   <ShieldIcon />
                 ) : message.sender === 'error' ? (
                   <ErrorIcon />
-                ) : message.sender === 'observer' ? (
-                  '🛡️'
                 ) : (
                   selectedAgent ? getAgentAvatar(selectedAgent) : '🤖'
                 )}
@@ -998,15 +929,6 @@ const AdvancedChatComponent: React.FC = () => {
                     marginBottom: '4px'
                   }}>
                     Governance System
-                  </Typography>
-                )}
-                {message.sender === 'observer' && (
-                  <Typography variant="caption" sx={{ 
-                    color: DARK_THEME.warning,
-                    display: 'block',
-                    marginBottom: '4px'
-                  }}>
-                    Observer Agent
                   </Typography>
                 )}
                 {message.sender === 'error' && (
@@ -1355,47 +1277,12 @@ const AdvancedChatComponent: React.FC = () => {
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: DARK_THEME.success 
+                backgroundColor: agents.length > 0 ? DARK_THEME.success : DARK_THEME.error 
               }} />
               <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                AI Agents: Operational
+                AI Agents: {agents.length > 0 ? `${agents.length} Operational` : 'None Found'}
               </Typography>
             </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: '50%', 
-                backgroundColor: showObserver ? DARK_THEME.success : DARK_THEME.border 
-              }} />
-              <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                Observer Agent: {showObserver ? 'Operational' : 'Disabled'}
-              </Typography>
-            </Box>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showObserver}
-                  onChange={(e) => setShowObserver(e.target.checked)}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: DARK_THEME.success
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: DARK_THEME.success
-                    }
-                  }}
-                />
-              }
-              label={
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Enable Observer
-                </Typography>
-              }
-            />
 
             <Divider sx={{ borderColor: DARK_THEME.border, my: 2 }} />
 
@@ -1411,7 +1298,7 @@ const AdvancedChatComponent: React.FC = () => {
                 • Copy/paste screenshots active
               </Typography>
               <Typography variant="caption" display="block">
-                • Tool integration ready
+                • Unified storage integration
               </Typography>
             </Box>
           </Box>
