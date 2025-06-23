@@ -285,20 +285,20 @@ const AgentWrappingWizard: React.FC = () => {
 
         // Create local policy rules for governance monitoring
         governancePolicy.policyRules = [
-          {
-            id: `trust-monitoring-${Date.now()}`,
-            name: 'Trust Score Monitoring',
-            type: 'trust_threshold',
-            condition: `trust_score >= ${governancePolicy.trustThreshold}`,
-            action: 'log',
-            parameters: { threshold: governancePolicy.trustThreshold },
-            enabled: true
-          },
-          ...(governancePolicy.enableAuditLogging ? [{
-            id: `audit-logging-${Date.now()}`,
-            name: 'Comprehensive Audit Logging',
-            type: 'audit_requirement' as const,
-            condition: 'all_actions',
+        {
+          id: `trust-monitoring-${Date.now()}`,
+          name: 'Trust Score Monitoring',
+          type: 'trust_threshold',
+          condition: `trust_score >= ${governancePolicy.trustThreshold}`,
+          action: 'log',
+          parameters: { threshold: governancePolicy.trustThreshold },
+          enabled: true
+        },
+        ...(governancePolicy.enableAuditLogging ? [{
+          id: `audit-logging-${Date.now()}`,
+          name: 'Comprehensive Audit Logging',
+          type: 'audit_requirement' as const,
+          condition: 'all_actions',
           action: 'log' as const,
           parameters: { 
             log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
