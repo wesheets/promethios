@@ -34,7 +34,8 @@ export interface AgentProfile {
 export interface GovernancePolicy {
   trustThreshold: number;
   securityLevel: 'lenient' | 'standard' | 'strict';
-  complianceFramework: 'general' | 'financial' | 'healthcare' | 'legal' | 'gdpr';
+  complianceFramework: 'general' | 'financial' | 'healthcare' | 'legal' | 'gdpr' | 'soc2';
+  enforcementLevel: 'governance' | 'monitoring' | 'strict_compliance';
   enableAuditLogging: boolean;
   enableDataRetention: boolean;
   enableRateLimiting: boolean;
@@ -43,8 +44,20 @@ export interface GovernancePolicy {
   enableEscalationPolicies: boolean;
   maxRequestsPerMinute?: number;
   policyRules: PolicyRule[];
+  complianceControls?: ComplianceControl[];
   createdAt: Date;
   lastUpdated: Date;
+}
+
+export interface ComplianceControl {
+  id: string;
+  frameworkId: string;
+  controlId: string;
+  name: string;
+  description: string;
+  requirements: string[];
+  monitoringLevel: 'log' | 'alert' | 'escalate';
+  enabled: boolean;
 }
 
 export interface PolicyRule {
