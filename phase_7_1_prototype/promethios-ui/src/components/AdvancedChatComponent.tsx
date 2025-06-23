@@ -776,6 +776,37 @@ const AdvancedChatComponent: React.FC = () => {
         
         // Save agent message to storage
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
+
+        // Layer 2: Policy Enforcement - Monitor agent response if governance enabled
+        if (governanceEnabled && currentGovernanceSession) {
+          try {
+            const monitoringResult = await governanceService.monitorMessage(
+              currentGovernanceSession.sessionId,
+              selectedAgent.identity.id,
+              agentMessage.id,
+              agentResponse,
+              currentAttachments
+            );
+            
+            // Update governance metrics based on monitoring result
+            if (monitoringResult.violations && monitoringResult.violations.length > 0) {
+              // Add violation notification message
+              const violationMessage: ChatMessage = {
+                id: `msg_${Date.now()}_governance_violation`,
+                content: `⚠️ Governance Alert: ${monitoringResult.violations.length} policy violation(s) detected. Trust score updated to ${monitoringResult.trustScore.toFixed(1)}%.`,
+                sender: 'system',
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, violationMessage]);
+              await chatStorageService.saveMessage(violationMessage, selectedAgent.identity.id);
+            }
+            
+            // Refresh governance metrics
+            await loadGovernanceMetrics();
+          } catch (error) {
+            console.error('Governance monitoring error:', error);
+          }
+        }
         
         // Scroll to bottom after agent response
         setTimeout(() => {
@@ -784,10 +815,10 @@ const AdvancedChatComponent: React.FC = () => {
       }
 
       // Add governance completion message if enabled
-      if (governanceEnabled) {
+      if (governanceEnabled && currentGovernanceMetrics) {
         const governanceCompleteMessage: ChatMessage = {
           id: `msg_${Date.now()}_governance_complete`,
-          content: `🛡️ Governance Monitor: Trust score 85%. Compliance: compliant. ${currentAttachments.length > 0 ? 'All attachments processed safely.' : ''}`,
+          content: `🛡️ Governance Monitor: Trust score ${currentGovernanceMetrics.trustScore.toFixed(1)}%. Compliance: ${currentGovernanceMetrics.complianceRate.toFixed(1)}%. ${currentGovernanceMetrics.policyViolations > 0 ? `${currentGovernanceMetrics.policyViolations} violation(s) detected.` : 'All checks passed.'} ${currentAttachments.length > 0 ? 'All attachments processed safely.' : ''}`,
           sender: 'system',
           timestamp: new Date()
         };
