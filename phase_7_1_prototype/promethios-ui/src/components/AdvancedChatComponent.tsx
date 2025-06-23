@@ -343,10 +343,10 @@ const AdvancedChatComponent: React.FC = () => {
     loadAgents();
   }, [effectiveUser]);
 
-  // Auto-scroll to bottom
-  useEffect(() => {
+  // Auto-scroll to bottom only for user messages and responses
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  };
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -557,6 +557,9 @@ const AdvancedChatComponent: React.FC = () => {
     setIsTyping(true);
     setError(null);
 
+    // Scroll after user message
+    setTimeout(scrollToBottom, 100);
+
     try {
       // Add governance message if enabled
       if (governanceEnabled) {
@@ -585,6 +588,9 @@ const AdvancedChatComponent: React.FC = () => {
             };
             
             setMessages(prev => [...prev, agentMessage]);
+            
+            // Scroll after agent response
+            setTimeout(scrollToBottom, 100);
           } catch (error) {
             const errorMessage: Message = {
               id: `msg_${Date.now()}_error_${agent.identity.id}`,
@@ -609,6 +615,9 @@ const AdvancedChatComponent: React.FC = () => {
         };
         
         setMessages(prev => [...prev, agentMessage]);
+        
+        // Scroll after agent response
+        setTimeout(scrollToBottom, 100);
       }
 
       // Add governance completion message if enabled
@@ -678,6 +687,7 @@ const AdvancedChatComponent: React.FC = () => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, statusMessage]);
+    // Note: No auto-scroll for system messages to prevent jumping
   };
 
   const getAgentAvatar = (agent: AgentProfile): string => {
