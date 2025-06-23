@@ -303,7 +303,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         const agentList: Agent[] = [];
         
         // Ensure enhancedWrappers is an array before iterating
-        if (enhancedWrappers && Array.isArray(enhancedWrappers)) {
+        if (enhancedWrappers && Array.isArray(enhancedWrappers) && enhancedWrappers.length > 0) {
           for (const wrapper of enhancedWrappers) {
             // Get governance identity number for display
             const governanceId = await getGovernanceIdentityNumber(wrapper.id);
@@ -330,6 +330,13 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
           status: 'idle'
         });
         
+        // Add demo agents if no real agents are loaded
+        if (agentList.length === 1) { // Only observer
+          agentList.unshift(
+            { id: 'baseline-agent', name: 'Baseline', type: 'baseline', avatar: '🤖', status: 'idle' }
+          );
+        }
+        
         setAgents(agentList);
         setIsLoadingAgents(false);
       } catch (error) {
@@ -343,6 +350,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
       }
     };
     
+    // Only load if we're not loading wrappers and wrappers is defined (even if empty array)
     if (!wrappersLoading && enhancedWrappers !== undefined) {
       loadEnhancedAgents();
     }
