@@ -17,11 +17,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Slider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   SmartToy as AgentIcon,
   Security as GovernanceIcon,
   CheckCircle,
+  CheckCircle as CheckCircleIcon,
   ArrowBack,
   ArrowForward,
   Code as CodeIcon,
@@ -182,34 +190,183 @@ const AgentWrappingWizard: React.FC = () => {
             <Alert severity="info" sx={{ mb: 3 }}>
               Configure governance and compliance settings for your agent.
             </Alert>
+            
+            {/* Show agent being wrapped */}
+            {isWrappingExisting && agentData.identity?.name && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>Wrapping existing agent:</strong> {agentData.identity.name}
+                </Typography>
+              </Alert>
+            )}
+            
             <Grid container spacing={3}>
+              {/* Trust & Security Configuration */}
               <Grid item xs={12} md={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       Trust & Security
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       Configure trust thresholds and security policies
                     </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <Chip label="Trust Score: 85%" color="success" />
+                    
+                    {/* Trust Threshold Slider */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography gutterBottom>Trust Threshold: {agentData.trustThreshold || 85}%</Typography>
+                      <Slider
+                        value={agentData.trustThreshold || 85}
+                        onChange={(e, value) => setAgentData(prev => ({ ...prev, trustThreshold: value }))}
+                        min={50}
+                        max={100}
+                        step={5}
+                        marks={[
+                          { value: 50, label: '50%' },
+                          { value: 75, label: '75%' },
+                          { value: 90, label: '90%' },
+                          { value: 100, label: '100%' }
+                        ]}
+                        valueLabelDisplay="auto"
+                      />
                     </Box>
+                    
+                    {/* Security Level Selection */}
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Security Level</InputLabel>
+                      <Select
+                        value={agentData.securityLevel || 'standard'}
+                        onChange={(e) => setAgentData(prev => ({ ...prev, securityLevel: e.target.value }))}
+                        label="Security Level"
+                      >
+                        <MenuItem value="lenient">Lenient - Basic security checks</MenuItem>
+                        <MenuItem value="standard">Standard - Balanced security</MenuItem>
+                        <MenuItem value="strict">Strict - Maximum security</MenuItem>
+                      </Select>
+                    </FormControl>
+                    
+                    {/* Rate Limiting */}
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={agentData.enableRateLimiting || false}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, enableRateLimiting: e.target.checked }))}
+                        />
+                      }
+                      label="Enable Rate Limiting"
+                    />
                   </CardContent>
                 </Card>
               </Grid>
+              
+              {/* Compliance Configuration */}
               <Grid item xs={12} md={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       Compliance
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       Ensure regulatory compliance and audit logging
                     </Typography>
+                    
+                    {/* Compliance Framework Selection */}
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Compliance Framework</InputLabel>
+                      <Select
+                        value={agentData.complianceFramework || 'general'}
+                        onChange={(e) => setAgentData(prev => ({ ...prev, complianceFramework: e.target.value }))}
+                        label="Compliance Framework"
+                      >
+                        <MenuItem value="general">General - Basic compliance</MenuItem>
+                        <MenuItem value="financial">Financial - SOX, PCI DSS</MenuItem>
+                        <MenuItem value="healthcare">Healthcare - HIPAA</MenuItem>
+                        <MenuItem value="legal">Legal - Attorney-client privilege</MenuItem>
+                        <MenuItem value="gdpr">GDPR - EU data protection</MenuItem>
+                      </Select>
+                    </FormControl>
+                    
+                    {/* Audit Logging */}
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={agentData.enableAuditLogging !== false}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, enableAuditLogging: e.target.checked }))}
+                        />
+                      }
+                      label="Enable Audit Logging"
+                      sx={{ mb: 1 }}
+                    />
+                    
+                    {/* Data Retention */}
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={agentData.enableDataRetention !== false}
+                          onChange={(e) => setAgentData(prev => ({ ...prev, enableDataRetention: e.target.checked }))}
+                        />
+                      }
+                      label="Enable Data Retention Policies"
+                      sx={{ mb: 2 }}
+                    />
+                    
+                    {/* Compliance Status Indicator */}
                     <Box sx={{ mt: 2 }}>
-                      <Chip label="GDPR Compliant" color="primary" />
+                      <Chip 
+                        label={`${agentData.complianceFramework?.toUpperCase() || 'GENERAL'} Compliant`} 
+                        color="primary" 
+                        icon={<CheckCircleIcon />}
+                      />
                     </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              {/* Advanced Governance Options */}
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Advanced Governance Options
+                    </Typography>
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={agentData.enableContentFiltering || false}
+                              onChange={(e) => setAgentData(prev => ({ ...prev, enableContentFiltering: e.target.checked }))}
+                            />
+                          }
+                          label="Content Filtering"
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={4}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={agentData.enableRealTimeMonitoring !== false}
+                              onChange={(e) => setAgentData(prev => ({ ...prev, enableRealTimeMonitoring: e.target.checked }))}
+                            />
+                          }
+                          label="Real-time Monitoring"
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={4}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={agentData.enableEscalationPolicies || false}
+                              onChange={(e) => setAgentData(prev => ({ ...prev, enableEscalationPolicies: e.target.checked }))}
+                            />
+                          }
+                          label="Escalation Policies"
+                        />
+                      </Grid>
+                    </Grid>
                   </CardContent>
                 </Card>
               </Grid>
@@ -223,20 +380,78 @@ const AgentWrappingWizard: React.FC = () => {
               Review & Deploy
             </Typography>
             <Alert severity="success" sx={{ mb: 3 }}>
-              Your agent is ready for deployment!
+              Your agent is ready for deployment with governance controls!
             </Alert>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Agent Summary
-                </Typography>
-                <Typography><strong>Name:</strong> {agentData.agentName || 'My Agent'}</Typography>
-                <Typography><strong>Provider:</strong> {agentData.provider || 'OpenAI'}</Typography>
-                <Typography><strong>Model:</strong> {agentData.model || 'GPT-4'}</Typography>
-                <Typography><strong>Governance:</strong> Enabled</Typography>
-                <Typography><strong>Trust Score:</strong> 85%</Typography>
-              </CardContent>
-            </Card>
+            
+            <Grid container spacing={3}>
+              {/* Agent Summary */}
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Agent Summary
+                    </Typography>
+                    <Typography><strong>Name:</strong> {agentData.identity?.name || agentData.agentName || 'My Agent'}</Typography>
+                    <Typography><strong>Provider:</strong> {agentData.apiDetails?.provider || agentData.provider || 'OpenAI'}</Typography>
+                    <Typography><strong>Model:</strong> {agentData.apiDetails?.selectedModel || agentData.model || 'GPT-4'}</Typography>
+                    <Typography><strong>Status:</strong> Ready for Deployment</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              {/* Governance Configuration Summary */}
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Governance Configuration
+                    </Typography>
+                    <Typography><strong>Trust Threshold:</strong> {agentData.trustThreshold || 85}%</Typography>
+                    <Typography><strong>Security Level:</strong> {(agentData.securityLevel || 'standard').charAt(0).toUpperCase() + (agentData.securityLevel || 'standard').slice(1)}</Typography>
+                    <Typography><strong>Compliance Framework:</strong> {(agentData.complianceFramework || 'general').toUpperCase()}</Typography>
+                    <Typography><strong>Audit Logging:</strong> {agentData.enableAuditLogging !== false ? 'Enabled' : 'Disabled'}</Typography>
+                    <Typography><strong>Rate Limiting:</strong> {agentData.enableRateLimiting ? 'Enabled' : 'Disabled'}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              {/* Compliance Status */}
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Compliance & Security Status
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                      <Chip 
+                        label={`${(agentData.complianceFramework || 'general').toUpperCase()} Compliant`} 
+                        color="primary" 
+                        icon={<CheckCircleIcon />}
+                      />
+                      <Chip 
+                        label={`Trust Score: ${agentData.trustThreshold || 85}%`} 
+                        color="success" 
+                        icon={<CheckCircleIcon />}
+                      />
+                      {agentData.enableAuditLogging !== false && (
+                        <Chip label="Audit Logging Enabled" color="info" icon={<CheckCircleIcon />} />
+                      )}
+                      {agentData.enableRateLimiting && (
+                        <Chip label="Rate Limiting Enabled" color="warning" icon={<CheckCircleIcon />} />
+                      )}
+                      {agentData.enableRealTimeMonitoring !== false && (
+                        <Chip label="Real-time Monitoring" color="secondary" icon={<CheckCircleIcon />} />
+                      )}
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary">
+                      Your agent will be deployed with the selected governance controls and compliance framework. 
+                      All interactions will be monitored and logged according to your configuration.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
           </Box>
         );
       default:
