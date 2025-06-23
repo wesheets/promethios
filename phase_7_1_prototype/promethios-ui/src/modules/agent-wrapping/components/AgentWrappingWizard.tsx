@@ -351,14 +351,24 @@ const AgentWrappingWizard: React.FC = () => {
           creationDate: agentData.identity?.creationDate || new Date(),
           lastModifiedDate: new Date(),
         },
+        // Preserve or construct apiDetails properly
+        apiDetails: {
+          ...agentData.apiDetails,
+          provider: agentData.provider || agentData.apiDetails?.provider || 'OpenAI',
+          endpoint: agentData.apiEndpoint || agentData.endpoint || agentData.apiDetails?.endpoint || '',
+          key: agentData.apiKey || agentData.key || agentData.apiDetails?.key || '',
+          selectedModel: agentData.selectedModel || agentData.apiDetails?.selectedModel || 'gpt-4',
+          selectedCapabilities: agentData.selectedCapabilities || agentData.apiDetails?.selectedCapabilities || [],
+          selectedContextLength: agentData.selectedContextLength || agentData.apiDetails?.selectedContextLength || 128000,
+        },
         // Ensure we have the agent name in the root level too
         agentName: agentName,
         governancePolicy,
         isWrapped: true,
         isDeployed: false, // Agents are "Governed" not "Deployed" until actually deployed to production
         healthStatus: 'healthy' as const,
-        trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
-                   governancePolicy.trustThreshold >= 75 ? 'medium' : 'low',
+        trustLevel: governancePolicy?.trustThreshold >= 90 ? 'high' : 
+                   governancePolicy?.trustThreshold >= 75 ? 'medium' : 'low',
         lastActivity: new Date(),
       };
 
