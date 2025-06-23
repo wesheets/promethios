@@ -46,6 +46,7 @@ import { styled } from '@mui/material/styles';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { chatStorageService, ChatMessage, AgentChatHistory, FileAttachment } from '../services/ChatStorageService';
 import { governanceService, GovernanceMetrics } from '../services/GovernanceService';
+import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
 
@@ -518,10 +519,20 @@ const AdvancedChatComponent: React.FC = () => {
       
       if (provider === 'openai') {
         console.log('Taking OpenAI path...');
+        // Create system message based on governance setting
+        let systemMessage;
+        if (governanceEnabled) {
+          // Use Promethios governance kernel for governed agents
+          systemMessage = createPromethiosSystemMessage();
+        } else {
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+        }
+
         const messages = [
           {
             role: 'system',
-            content: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`
+            content: systemMessage
           },
           {
             role: 'user',
