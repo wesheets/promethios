@@ -678,43 +678,65 @@ const AgentProfileCard: React.FC<{
           )}
         </Box>
 
-        {/* Lifecycle Status */}
+        {/* Governance Status Badges */}
         <Box mb={2}>
-          <Chip
-            label={lifecycle.label}
-            size="small"
-            sx={{
-              backgroundColor: lifecycle.color,
-              color: 'white',
-              fontWeight: 600,
-              mb: 1,
-            }}
-          />
-          {profile.governancePolicy ? (
-            <Chip
-              label={`Policy: ${typeof profile.governancePolicy === 'object' 
-                ? `${profile.governancePolicy.complianceFramework || 'General'} - ${profile.governancePolicy.securityLevel || 'Standard'}`
-                : profile.governancePolicy}`}
-              size="small"
-              variant="outlined"
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                ml: 1,
-              }}
-            />
-          ) : (
-            <Chip
-              label="Policy: No Policy"
-              size="small"
-              variant="outlined"
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                ml: 1,
-              }}
-            />
-          )}
+          <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+            {/* Governed Badge - shows when agent is wrapped */}
+            {profile.isWrapped && (
+              <Chip
+                label="Governed"
+                size="small"
+                sx={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+            )}
+            
+            {/* Policy Badge - shows policy type or "No Policy" */}
+            {profile.isWrapped && (
+              <Chip
+                label={profile.governancePolicy 
+                  ? (typeof profile.governancePolicy === 'object' 
+                    ? `${profile.governancePolicy.complianceFramework || 'General'} - ${profile.governancePolicy.securityLevel || 'Standard'}`
+                    : profile.governancePolicy)
+                  : 'No Policy'}
+                size="small"
+                sx={{
+                  backgroundColor: profile.governancePolicy ? '#f59e0b' : '#6b7280',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+            )}
+            
+            {/* Deployed Badge - shows when deployed to production */}
+            {profile.isDeployed && (
+              <Chip
+                label="Deployed"
+                size="small"
+                sx={{
+                  backgroundColor: '#3182ce',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+            )}
+            
+            {/* Unwrapped indicator - only shows when not wrapped */}
+            {!profile.isWrapped && (
+              <Chip
+                label="Unwrapped"
+                size="small"
+                sx={{
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+            )}
+          </Stack>
         </Box>
 
         {/* Description */}
