@@ -302,20 +302,23 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
         // Convert enhanced wrapped agents to Agent format for UI
         const agentList: Agent[] = [];
         
-        for (const wrapper of enhancedWrappers) {
-          // Get governance identity number for display
-          const governanceId = await getGovernanceIdentityNumber(wrapper.id);
-          
-          agentList.push({
-            id: wrapper.id,
-            name: wrapper.name,
-            type: wrapper.apiConfiguration?.provider || 'generic',
-            avatar: getAgentAvatar(wrapper.name),
-            status: wrapper.enabled ? 'idle' : 'disabled',
-            governanceId: governanceId || undefined,
-            capabilities: wrapper.introspectionData?.capabilities,
-            lastUsed: wrapper.lastUsed
-          });
+        // Ensure enhancedWrappers is an array before iterating
+        if (enhancedWrappers && Array.isArray(enhancedWrappers)) {
+          for (const wrapper of enhancedWrappers) {
+            // Get governance identity number for display
+            const governanceId = await getGovernanceIdentityNumber(wrapper.id);
+            
+            agentList.push({
+              id: wrapper.id,
+              name: wrapper.name,
+              type: wrapper.apiConfiguration?.provider || 'generic',
+              avatar: getAgentAvatar(wrapper.name),
+              status: wrapper.enabled ? 'idle' : 'disabled',
+              governanceId: governanceId || undefined,
+              capabilities: wrapper.introspectionData?.capabilities,
+              lastUsed: wrapper.lastUsed
+            });
+          }
         }
         
         // Add observer agent (always present)
@@ -340,7 +343,7 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
       }
     };
     
-    if (!wrappersLoading && enhancedWrappers.length >= 0) {
+    if (!wrappersLoading && enhancedWrappers !== undefined) {
       loadEnhancedAgents();
     }
   }, [enhancedWrappers, wrappersLoading, getGovernanceIdentityNumber]);
