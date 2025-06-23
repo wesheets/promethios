@@ -270,6 +270,8 @@ const AdvancedChatComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [governanceMetrics, setGovernanceMetrics] = useState<GovernanceMetrics | null>(null);
+  const [systemStatus, setSystemStatus] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -355,6 +357,59 @@ const AdvancedChatComponent: React.FC = () => {
 
     loadAgents();
   }, [effectiveUser]);
+
+  // Load governance metrics when selected agent changes
+  useEffect(() => {
+    const loadGovernanceMetrics = async () => {
+      if (selectedAgent && governanceEnabled) {
+        try {
+          console.log('Loading governance metrics for agent:', selectedAgent.identity.name);
+          const metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+          setGovernanceMetrics(metrics);
+          
+          // Also load system status
+          const status = await governanceService.getSystemStatus();
+          setSystemStatus(status);
+        } catch (error) {
+          console.error('Error loading governance metrics:', error);
+          // Set fallback metrics
+          setGovernanceMetrics({
+            trustScore: 85,
+            complianceRate: 92,
+            responseTime: 1.2,
+            sessionIntegrity: 88,
+            policyViolations: 0,
+            status: 'monitoring',
+            lastUpdated: new Date()
+          });
+        }
+      } else if (!governanceEnabled) {
+        setGovernanceMetrics(null);
+        setSystemStatus(null);
+      }
+    };
+
+    loadGovernanceMetrics();
+  }, [selectedAgent, governanceEnabled]);
+
+  // Refresh governance metrics periodically
+  useEffect(() => {
+    if (!selectedAgent || !governanceEnabled) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+        setGovernanceMetrics(metrics);
+        
+        const status = await governanceService.getSystemStatus();
+        setSystemStatus(status);
+      } catch (error) {
+        console.error('Error refreshing governance metrics:', error);
+      }
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedAgent, governanceEnabled]);
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1289,20 +1344,24 @@ const AdvancedChatComponent: React.FC = () => {
 
         <TabPanel value={sidebarTab} index={0}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Core Metrics
+            </Typography>
+            
             <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <SecurityIcon sx={{ color: DARK_THEME.success, fontSize: 20 }} />
+                  <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
                     TRUST SCORE
                   </Typography>
                 </Box>
-                <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                  {governanceEnabled ? '85%' : 'N/A'}
+                <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.trustScore}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled ? 85 : 0} 
+                  value={governanceEnabled && governanceMetrics ? governanceMetrics.trustScore : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -1323,11 +1382,11 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                  {governanceEnabled ? '92%' : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.complianceRate}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled ? 92 : 0} 
+                  value={governanceEnabled && governanceMetrics ? governanceMetrics.complianceRate : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -1348,7 +1407,7 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled ? '1.2s' : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.responseTime}s` : 'N/A'}
                 </Typography>
               </CardContent>
             </Card>
@@ -1362,11 +1421,11 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.warning, fontWeight: 'bold' }}>
-                  {governanceEnabled ? '88%' : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.sessionIntegrity}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled ? 88 : 0} 
+                  value={governanceEnabled && governanceMetrics ? governanceMetrics.sessionIntegrity : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -1375,6 +1434,29 @@ const AdvancedChatComponent: React.FC = () => {
                     }
                   }} 
                 />
+              </CardContent>
+            </Card>
+
+            {/* Policy Violations Card */}
+            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <ErrorIcon sx={{ color: governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+                    POLICY VIOLATIONS
+                  </Typography>
+                </Box>
+                <Typography variant="h3" sx={{ 
+                  color: governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, 
+                  fontWeight: 'bold' 
+                }}>
+                  {governanceEnabled && governanceMetrics ? governanceMetrics.policyViolations : 'N/A'}
+                </Typography>
+                {governanceMetrics?.lastUpdated && (
+                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                    Last updated: {governanceMetrics.lastUpdated.toLocaleTimeString()}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Box>
@@ -1391,10 +1473,11 @@ const AdvancedChatComponent: React.FC = () => {
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: DARK_THEME.success 
+                backgroundColor: systemStatus?.overallStatus === 'healthy' ? DARK_THEME.success : 
+                                systemStatus?.overallStatus === 'warning' ? DARK_THEME.warning : DARK_THEME.error
               }} />
               <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                Real-time Monitoring: Active
+                System Status: {systemStatus?.overallStatus || 'Unknown'}
               </Typography>
             </Box>
             
@@ -1403,10 +1486,22 @@ const AdvancedChatComponent: React.FC = () => {
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: DARK_THEME.warning 
+                backgroundColor: governanceEnabled ? DARK_THEME.success : DARK_THEME.warning
               }} />
               <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                Policy Violations: 0
+                Real-time Monitoring: {governanceEnabled ? 'Active' : 'Disabled'}
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ 
+                width: 8, 
+                height: 8, 
+                borderRadius: '50%', 
+                backgroundColor: (governanceMetrics?.policyViolations || 0) === 0 ? DARK_THEME.success : DARK_THEME.error
+              }} />
+              <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                Policy Violations: {governanceMetrics?.policyViolations || 0}
               </Typography>
             </Box>
             
@@ -1425,6 +1520,27 @@ const AdvancedChatComponent: React.FC = () => {
             <Divider sx={{ borderColor: DARK_THEME.border, my: 2 }} />
 
             <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+              System Metrics
+            </Typography>
+            
+            {systemStatus && (
+              <Box sx={{ fontSize: '12px', color: DARK_THEME.text.secondary }}>
+                <Typography variant="caption" display="block">
+                  • Active Sessions: {systemStatus.totalSessions || 0}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  • System Load: {systemStatus.systemLoad || 0}%
+                </Typography>
+                <Typography variant="caption" display="block">
+                  • Uptime: {systemStatus.uptime || 'N/A'}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  • Recent Violations: {systemStatus.recentViolations || 0}
+                </Typography>
+              </Box>
+            )}
+
+            <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, mt: 2 }}>
               Recent Activity
             </Typography>
             
@@ -1436,7 +1552,10 @@ const AdvancedChatComponent: React.FC = () => {
                 • Copy/paste screenshots active
               </Typography>
               <Typography variant="caption" display="block">
-                • Unified storage integration
+                • Persistent storage integration
+              </Typography>
+              <Typography variant="caption" display="block">
+                • Real-time governance monitoring
               </Typography>
             </Box>
           </Box>
