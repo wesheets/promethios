@@ -209,10 +209,8 @@ const AgentWrappingWizard: React.FC = () => {
       
       const complianceControls: ComplianceControl[] = [];
       
-      // Only add controls if we have a governance policy (not "No Policy")
-      if (governancePolicy) {
-        // Add framework-specific controls based on selection
-        if (governancePolicy.complianceFramework === 'healthcare') {
+      // Add framework-specific controls based on selection
+      if (governancePolicy && governancePolicy.complianceFramework === 'healthcare') {
         complianceControls.push(
           {
             id: 'hipaa-164-308',
@@ -243,7 +241,7 @@ const AgentWrappingWizard: React.FC = () => {
             enabled: true
           }
         );
-      } else if (governancePolicy.complianceFramework === 'soc2') {
+      } else if (governancePolicy && governancePolicy.complianceFramework === 'soc2') {
         complianceControls.push(
           {
             id: 'soc2-cc6-1',
@@ -260,7 +258,7 @@ const AgentWrappingWizard: React.FC = () => {
             enabled: true
           }
         );
-      } else if (governancePolicy.complianceFramework === 'gdpr') {
+      } else if (governancePolicy && governancePolicy.complianceFramework === 'gdpr') {
         complianceControls.push(
           {
             id: 'gdpr-art-32',
