@@ -36,6 +36,31 @@ const steps = [
   'Review & Deploy'
 ];
 
+export interface WizardFormData {
+  // Step 1: API Endpoint
+  agentName: string;
+  description: string;
+  provider: string;
+  apiEndpoint: string;
+  authMethod: string;
+  apiKey: string;
+  model: string;
+  // Step 2: Schema
+  inputSchema: any;
+  outputSchema: any;
+  
+  // Step 3: Governance
+  trustThreshold: number;
+  complianceLevel: string;
+  enableLogging: boolean;
+  enableRateLimiting: boolean;
+  maxRequestsPerMinute: number;
+  
+  // Step 4: Review (computed)
+  estimatedCost: string;
+  securityScore: number;
+}
+
 const AgentWrappingWizard: React.FC = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
@@ -58,16 +83,15 @@ const AgentWrappingWizard: React.FC = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleDeploy = async () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    
     try {
-      // Simulate deployment process
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
       setShowSuccessDialog(true);
     } catch (error) {
-      alert('Deployment failed. Please try again.');
+      console.error('Error submitting agent:', error);
+      alert('Error creating agent. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -78,86 +102,59 @@ const AgentWrappingWizard: React.FC = () => {
     navigate('/ui/agents/profiles');
   };
 
-  const getStepContent = (step: number) => {
+  const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
         return (
-          <EnhancedAgentRegistration
-            onDataChange={setAgentData}
-            title="Configure Your Agent"
-            subtitle="Set up your AI agent with auto-discovery and enhanced settings for governance wrapping."
-          />
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Agent Configuration
+            </Typography>
+            <EnhancedAgentRegistration
+              onAgentAdded={(agent) => {
+                setAgentData(agent);
+                console.log('Agent configured:', agent);
+              }}
+              isDialog={false}
+            />
+          </Box>
         );
       case 1:
         return (
           <Box>
-            <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
-              🛡️ Governance Configuration
+            <Typography variant="h6" gutterBottom>
+              Governance Setup
             </Typography>
-            
-            <Alert severity="info" sx={{ mb: 3, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-              <Typography variant="body2">
-                <strong>Governance Setup:</strong> Configure how Promethios will monitor and govern your agent's behavior.
-              </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Configure governance and compliance settings for your agent.
             </Alert>
-
             <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <Card sx={{ backgroundColor: '#374151', border: '2px solid #3b82f6' }}>
+              <Grid item xs={12} md={6}>
+                <Card>
                   <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <GovernanceIcon sx={{ color: '#10b981', mr: 2 }} />
-                      <Typography variant="h6" sx={{ color: 'white' }}>
-                        Basic Governance
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
-                      Trust scoring, audit logging, basic violation alerts
+                    <Typography variant="h6" gutterBottom>
+                      Trust & Security
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="Trust Scoring" size="small" sx={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }} />
-                      <Chip label="Audit Logs" size="small" sx={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }} />
-                      <Chip label="Basic Alerts" size="small" sx={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Configure trust thresholds and security policies
+                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Chip label="Trust Score: 85%" color="success" />
                     </Box>
                   </CardContent>
                 </Card>
               </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4b5563' }}>
+              <Grid item xs={12} md={6}>
+                <Card>
                   <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <GovernanceIcon sx={{ color: '#ef4444', mr: 2 }} />
-                      <Typography variant="h6" sx={{ color: 'white' }}>
-                        Strict Governance
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
-                      HIPAA/SOC2 compliance, enhanced monitoring, detailed audit trails
+                    <Typography variant="h6" gutterBottom>
+                      Compliance
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="HIPAA Compliance" size="small" sx={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} />
-                      <Chip label="Enhanced Monitoring" size="small" sx={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4b5563' }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <GovernanceIcon sx={{ color: '#8b5cf6', mr: 2 }} />
-                      <Typography variant="h6" sx={{ color: 'white' }}>
-                        Custom Governance
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
-                      Advanced configuration for power users
+                    <Typography variant="body2" color="text.secondary">
+                      Ensure regulatory compliance and audit logging
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="Custom Policies" size="small" sx={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }} />
-                      <Chip label="Advanced Rules" size="small" sx={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }} />
+                    <Box sx={{ mt: 2 }}>
+                      <Chip label="GDPR Compliant" color="primary" />
                     </Box>
                   </CardContent>
                 </Card>
@@ -168,103 +165,55 @@ const AgentWrappingWizard: React.FC = () => {
       case 2:
         return (
           <Box>
-            <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
-              📋 Review & Deploy
+            <Typography variant="h6" gutterBottom>
+              Review & Deploy
             </Typography>
-            
-            <Alert severity="success" sx={{ mb: 3, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-              <Typography variant="body2">
-                <strong>Ready to Deploy:</strong> Your agent configuration is complete and ready for governance wrapping.
-              </Typography>
+            <Alert severity="success" sx={{ mb: 3 }}>
+              Your agent is ready for deployment!
             </Alert>
-
-            <Card sx={{ backgroundColor: '#374151', border: '1px solid #4b5563', mb: 3 }}>
+            <Card>
               <CardContent>
-                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                  Agent Configuration Summary
+                <Typography variant="h6" gutterBottom>
+                  Agent Summary
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Name:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                      {agentData.agentName || 'Not specified'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Provider:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                      {agentData.provider || 'Not specified'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Model:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                      {agentData.selectedModel || 'Not specified'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Capabilities:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                      {agentData.selectedCapabilities?.length || 0} selected
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ backgroundColor: '#374151', border: '1px solid #4b5563' }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                  Governance Configuration
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Basic Governance will be applied with trust scoring, audit logging, and violation alerts.
-                </Typography>
+                <Typography><strong>Name:</strong> {agentData.agentName || 'My Agent'}</Typography>
+                <Typography><strong>Provider:</strong> {agentData.provider || 'OpenAI'}</Typography>
+                <Typography><strong>Model:</strong> {agentData.model || 'GPT-4'}</Typography>
+                <Typography><strong>Governance:</strong> Enabled</Typography>
+                <Typography><strong>Trust Score:</strong> 85%</Typography>
               </CardContent>
             </Card>
           </Box>
         );
       default:
-        return 'Unknown step';
+        return <Typography>Unknown step</Typography>;
     }
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper sx={{ backgroundColor: '#2d3748', color: 'white', p: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'white' }}>
-            Agent Wrapping Wizard
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-            Wrap your AI agent with Promethios governance controls and monitoring
-          </Typography>
-        </Box>
-
+      <Typography variant="h4" component="h1" gutterBottom align="center">
+        Agent Wrapping Wizard
+      </Typography>
+      
+      <Paper sx={{ p: 4, mt: 4 }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
-              <StepLabel sx={{ 
-                '& .MuiStepLabel-label': { color: '#a0aec0' },
-                '& .MuiStepLabel-label.Mui-active': { color: '#3b82f6' },
-                '& .MuiStepLabel-label.Mui-completed': { color: '#10b981' },
-              }}>
-                {label}
-              </StepLabel>
+              <StepLabel>{label}</StepLabel>
             </Step>
           ))}
         </Stepper>
 
-        <Box sx={{ mb: 4 }}>
-          {getStepContent(activeStep)}
+        <Box sx={{ minHeight: 400 }}>
+          {renderStepContent(activeStep)}
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
           <Button
             disabled={activeStep === 0}
             onClick={handleBack}
             startIcon={<ArrowBack />}
-            sx={{ color: '#a0aec0' }}
           >
             Back
           </Button>
@@ -272,26 +221,17 @@ const AgentWrappingWizard: React.FC = () => {
           {activeStep === steps.length - 1 ? (
             <Button
               variant="contained"
-              onClick={handleDeploy}
+              onClick={handleSubmit}
               disabled={isSubmitting}
-              sx={{
-                backgroundColor: '#10b981',
-                color: 'white',
-                '&:hover': { backgroundColor: '#059669' },
-              }}
+              endIcon={<CheckCircle />}
             >
-              {isSubmitting ? 'Deploying...' : 'Deploy Agent'}
+              {isSubmitting ? 'Creating Agent...' : 'Deploy Agent'}
             </Button>
           ) : (
             <Button
               variant="contained"
               onClick={handleNext}
               endIcon={<ArrowForward />}
-              sx={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                '&:hover': { backgroundColor: '#2563eb' },
-              }}
             >
               Next
             </Button>
@@ -300,26 +240,16 @@ const AgentWrappingWizard: React.FC = () => {
       </Paper>
 
       {/* Success Dialog */}
-      <Dialog
-        open={showSuccessDialog}
-        onClose={handleSuccessClose}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: '#2d3748',
-            color: 'white',
-            border: '1px solid #4a5568',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: 'white', textAlign: 'center' }}>
-          <CheckCircle sx={{ color: '#10b981', fontSize: 48, mb: 2 }} />
-          <Typography variant="h5">Agent Successfully Wrapped!</Typography>
+      <Dialog open={showSuccessDialog} onClose={handleSuccessClose}>
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <CheckCircle color="success" />
+            Agent Successfully Created!
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body1" sx={{ color: '#a0aec0', textAlign: 'center', mb: 2 }}>
-            Your agent <strong>{agentData.agentName}</strong> has been successfully wrapped with Promethios governance.
+          <Typography variant="body1" gutterBottom>
+            Your agent has been successfully wrapped and deployed with governance controls.
           </Typography>
           <Alert severity="success" sx={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
             <Typography variant="body2">
@@ -348,69 +278,5 @@ const AgentWrappingWizard: React.FC = () => {
   );
 };
 
-export interface WizardFormData {
-  // Step 1: API Endpoint
-  agentName: string;
-  description: string;
-  provider: string;
-  apiEndpoint: string;
-  authMethod: string;
-  apiKey: string;
-  model: string;
-  // Step 2: Schema
-  inputSchema: any;
-  outputSchema: any;
-  
-  // Step 3: Governance
-  trustThreshold: number;
-  complianceLevel: string;
-  enableLogging: boolean;
-  enableRateLimiting: boolean;
-  maxRequestsPerMinute: number;
-  
-  // Step 4: Review (computed)
-  estimatedCost: string;
-  securityScore: number;
-}
-
-// Demo agents for quick wrapping demonstration
-const DEMO_AGENTS = [
-  {
-    id: 'helpful-assistant-demo',
-    name: 'Helpful Assistant',
-    description: 'A general-purpose AI assistant that provides helpful, harmless, and honest responses.',
-    type: 'assistant',
-    provider: 'OpenAI',
-    model: 'gpt-3.5-turbo',
-    capabilities: ['general-assistance', 'question-answering', 'conversation'],
-    governance_enabled: true,
-    icon: <PsychologyIcon />,
-    color: '#2196f3'
-  },
-  {
-    id: 'code-specialist-demo',
-    name: 'Code Specialist',
-    description: 'A specialized coding assistant for programming tasks, debugging, and code review.',
-    type: 'specialist',
-    provider: 'OpenAI',
-    model: 'gpt-4',
-    capabilities: ['code-generation', 'debugging', 'code-review'],
-    governance_enabled: true,
-    icon: <CodeIcon />,
-    color: '#9c27b0'
-  },
-  {
-    id: 'business-analyst-demo',
-    name: 'Business Analyst',
-    description: 'A business-focused AI for strategy, analysis, and market research.',
-    type: 'specialist',
-    provider: 'Anthropic',
-    model: 'claude-3-sonnet',
-    capabilities: ['business-analysis', 'strategy-planning', 'market-research'],
-    governance_enabled: true,
-    icon: <BusinessIcon />,
-    color: '#ff9800'
-  }
-];
-
 export default AgentWrappingWizard;
+
