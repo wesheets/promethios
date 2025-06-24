@@ -201,11 +201,31 @@ class VeritasService {
     
     // Calculate emotional score based on tone analysis
     const emotionalTones = claims.map(c => c.emotionalTone).filter(Boolean);
-    const positiveEmotions = emotionalTones.filter(t => 
-      ['positive', 'empathetic', 'confident'].includes(t.primary)
-    ).length;
-    const emotional = emotionalTones.length > 0 ? 
-      (positiveEmotions / emotionalTones.length) * 0.8 + 0.2 : 0.7;
+    
+    // Improved emotional analysis with better positive detection
+    const positiveWords = ['help', 'sure', 'happy', 'great', 'excellent', 'wonderful', 'please', 'thank', 'welcome', 'glad', 'feel free', 'questions', 'assist'];
+    const negativeWords = ['hate', 'terrible', 'awful', 'angry', 'frustrated', 'disappointed', 'upset', 'annoyed'];
+    
+    const textLower = text.toLowerCase();
+    const positiveCount = positiveWords.filter(word => textLower.includes(word)).length;
+    const negativeCount = negativeWords.filter(word => textLower.includes(word)).length;
+    
+    let emotional;
+    if (emotionalTones.length > 0) {
+      const positiveEmotions = emotionalTones.filter(t => 
+        ['positive', 'empathetic', 'confident', 'helpful', 'supportive'].includes(t.primary)
+      ).length;
+      emotional = (positiveEmotions / emotionalTones.length) * 0.8 + 0.2;
+    } else {
+      // Fallback analysis based on word sentiment
+      if (positiveCount > negativeCount) {
+        emotional = Math.min(0.9, 0.6 + (positiveCount * 0.1)); // Boost for positive words
+      } else if (negativeCount > positiveCount) {
+        emotional = Math.max(0.3, 0.6 - (negativeCount * 0.1)); // Reduce for negative words
+      } else {
+        emotional = 0.7; // Neutral default
+      }
+    }
     
     // Calculate trust based on confidence levels
     const avgConfidence = claims.reduce((sum, c) => sum + c.confidence, 0) / claims.length;
@@ -248,8 +268,8 @@ class VeritasService {
       issues.push(`${unverifiedClaims.length} unverified factual claim(s) detected`);
     }
     
-    // Check for emotional issues
-    if (overallScore.emotional < 0.5) {
+    // Check for emotional issues (lowered threshold to reduce false positives)
+    if (overallScore.emotional < 0.3) {
       issues.push('Negative emotional tone detected');
     }
     
