@@ -399,13 +399,14 @@ const AdvancedChatComponent: React.FC = () => {
     const isExpanded = expandedGovernance.has(message.id);
     const isGovernanceActive = governanceService.isGovernanceActive();
     
-    // Detect hallucination prevention - agent refusing to provide unverifiable information
-    const hallucinationPrevented = message.content.toLowerCase().includes('cannot verify') ||
-                                   message.content.toLowerCase().includes('not familiar with') ||
-                                   message.content.toLowerCase().includes('cannot confirm') ||
-                                   message.content.toLowerCase().includes('cannot provide information about');
+    // Use behavior-based transparency from governance data instead of hardcoded patterns
+    const transparencyMessage = message.governanceData?.transparencyMessage;
+    const behaviorTags = message.governanceData?.behaviorTags || [];
+    const hasSpecialBehavior = behaviorTags.includes('veritas_prevention_successful') || 
+                              behaviorTags.includes('self-questioning_engaged') ||
+                              behaviorTags.includes('uncertainty_detected');
     
-    console.log('Rendering shield with:', { hasIssues, isExpanded, isGovernanceActive, hallucinationPrevented });
+    console.log('Rendering shield with:', { hasIssues, isExpanded, isGovernanceActive, transparencyMessage, behaviorTags });
     
     return (
       <>
@@ -414,11 +415,11 @@ const AdvancedChatComponent: React.FC = () => {
           isExpanded={isExpanded}
           onClick={() => toggleGovernanceExpansion(message.id)}
           title={hasIssues ? "Governance issues detected - click to view" : 
-                 hallucinationPrevented ? "Governance passed - Hallucination prevention successful" :
+                 transparencyMessage ? transparencyMessage :
                  "Governance passed - click to view details"}
         >
           <ShieldIcon className="shield-icon" />
-          {hallucinationPrevented && (
+          {hasSpecialBehavior && (
             <Box sx={{ 
               position: 'absolute', 
               top: '-2px', 
@@ -443,13 +444,18 @@ const AdvancedChatComponent: React.FC = () => {
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
               🛡️ Governance Analysis
             </Typography>
-            {hallucinationPrevented && (
+            {transparencyMessage && (
               <Typography variant="caption" sx={{ display: 'block', color: '#4CAF50', mb: 1, fontWeight: 'bold' }}>
-                ✅ Hallucination Prevention Successful
+                {transparencyMessage}
                 <br />
                 <span style={{ color: DARK_THEME.text.secondary, fontWeight: 'normal' }}>
-                  Agent correctly refused to provide unverifiable information
+                  Agent demonstrated good governance through self-questioning behavior
                 </span>
+              </Typography>
+            )}
+            {behaviorTags.length > 0 && (
+              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, mb: 1 }}>
+                Behavior Tags: {behaviorTags.join(', ')}
               </Typography>
             )}
             {message.governanceData.governanceDisabled ? (
@@ -1020,7 +1026,7 @@ const AdvancedChatComponent: React.FC = () => {
             const isGovernanceActive = governanceService.isGovernanceActive();
             
             if (isGovernanceActive) {
-              // Real governance monitoring (demo mode)
+              // BEHAVIOR-BASED governance monitoring (demo mode)
               const monitoringResult = await governanceService.monitorMessage(
                 agentResponse,
                 selectedAgent.identity.id,
@@ -1028,11 +1034,23 @@ const AdvancedChatComponent: React.FC = () => {
                 currentAttachments
               );
               
+              // Create behavior-based transparency message
+              let transparencyMessage = '';
+              if (monitoringResult.behaviorTags?.includes('veritas_prevention_successful')) {
+                transparencyMessage = '✅ Hallucination Prevention Successful - Agent correctly refused to provide unverifiable information';
+              } else if (monitoringResult.behaviorTags?.includes('self-questioning_engaged')) {
+                transparencyMessage = '🧠 Veritas Self-Questioning Engaged - Agent demonstrated appropriate caution';
+              } else if (monitoringResult.behaviorTags?.includes('uncertainty_detected')) {
+                transparencyMessage = '⚠️ Appropriate Uncertainty Detected - Agent expressed proper caution';
+              }
+              
               governanceData = {
                 trustScore: monitoringResult.trustScore,
                 violations: monitoringResult.violations || [],
                 approved: monitoringResult.approved,
-                governanceDisabled: false
+                governanceDisabled: false,
+                behaviorTags: monitoringResult.behaviorTags || [],
+                transparencyMessage
               };
             } else {
               // Fallback governance data when API is not available

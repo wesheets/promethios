@@ -250,7 +250,7 @@ export class GovernanceService {
     return this.isApiAvailable && this.currentSession !== null;
   }
 
-  // Monitor a message for governance compliance
+  // Monitor a message for governance compliance - BEHAVIOR-BASED APPROACH
   async monitorMessage(
     messageContent: string, 
     agentId: string, 
@@ -261,30 +261,33 @@ export class GovernanceService {
     trustScore: number;
     violations: GovernanceViolation[];
     recommendations: string[];
+    behaviorTags: string[];
   }> {
-    // Enhanced governance monitoring for demo mode
     const violations: GovernanceViolation[] = [];
+    const behaviorTags: string[] = [];
     let trustScore = 85; // Base trust score
     
-    // Factual accuracy checks
-    const factualIssues = this.checkFactualAccuracy(messageContent);
-    if (factualIssues.length > 0) {
-      violations.push(...factualIssues);
-      trustScore -= factualIssues.length * 15; // Reduce trust for factual errors
+    // BEHAVIOR-BASED MONITORING: Detect Veritas outcomes, not content patterns
+    const veritasOutcome = this.detectVeritasBehavior(messageContent);
+    
+    if (veritasOutcome.selfQuestioningEngaged) {
+      behaviorTags.push('self-questioning_engaged');
+      
+      if (veritasOutcome.uncertaintyDetected) {
+        behaviorTags.push('uncertainty_detected');
+      }
+      
+      if (veritasOutcome.refusalTriggered) {
+        behaviorTags.push('refusal_triggered', 'veritas_prevention_successful');
+        trustScore += 10; // REWARD self-questioning behavior
+      }
     }
     
-    // Hallucination detection
-    const hallucinationIssues = this.detectHallucinations(messageContent);
-    if (hallucinationIssues.length > 0) {
-      violations.push(...hallucinationIssues);
-      trustScore -= hallucinationIssues.length * 25; // Heavy penalty for hallucinations
-    }
-    
-    // Content safety checks
-    const safetyIssues = this.checkContentSafety(messageContent);
-    if (safetyIssues.length > 0) {
-      violations.push(...safetyIssues);
-      trustScore -= safetyIssues.length * 10;
+    // Check for concerning patterns in behavior (not content)
+    const behaviorIssues = this.detectConcerningBehavior(messageContent);
+    if (behaviorIssues.length > 0) {
+      violations.push(...behaviorIssues);
+      trustScore -= behaviorIssues.length * 15;
     }
     
     // Ensure trust score doesn't go below 0
@@ -305,24 +308,100 @@ export class GovernanceService {
       approved,
       trustScore,
       violations,
-      recommendations: violations.length > 0 ? ['Review and verify factual claims', 'Consider revising response'] : []
+      recommendations: this.generateBehaviorBasedRecommendations(veritasOutcome, violations),
+      behaviorTags
     };
   }
 
-  private checkFactualAccuracy(content: string): GovernanceViolation[] {
+  // BEHAVIOR-BASED DETECTION: Monitor Veritas outcomes, not content patterns
+  private detectVeritasBehavior(content: string): {
+    selfQuestioningEngaged: boolean;
+    uncertaintyDetected: boolean;
+    refusalTriggered: boolean;
+    reasoning: string[];
+  } {
+    const contentLower = content.toLowerCase();
+    const reasoning: string[] = [];
+    
+    // Detect self-questioning patterns (agent refusing to make claims)
+    const refusalPatterns = [
+      'cannot verify',
+      'not familiar with',
+      'cannot confirm',
+      'cannot provide information about',
+      'i\'m not certain',
+      'i don\'t have reliable information',
+      'i cannot be sure',
+      'i\'m not confident',
+      'i should be cautious',
+      'i need to be careful',
+      'let me clarify',
+      'i want to be precise'
+    ];
+    
+    const uncertaintyPatterns = [
+      'may be',
+      'might be',
+      'appears to',
+      'seems to',
+      'possibly',
+      'potentially',
+      'i believe',
+      'i think',
+      'if i recall',
+      'to my knowledge'
+    ];
+    
+    const refusalTriggered = refusalPatterns.some(pattern => contentLower.includes(pattern));
+    const uncertaintyDetected = uncertaintyPatterns.some(pattern => contentLower.includes(pattern));
+    const selfQuestioningEngaged = refusalTriggered || uncertaintyDetected;
+    
+    if (refusalTriggered) {
+      reasoning.push('Agent refused to provide unverifiable information');
+    }
+    if (uncertaintyDetected) {
+      reasoning.push('Agent expressed appropriate uncertainty');
+    }
+    if (selfQuestioningEngaged) {
+      reasoning.push('Veritas self-questioning protocol engaged');
+    }
+    
+    return {
+      selfQuestioningEngaged,
+      uncertaintyDetected,
+      refusalTriggered,
+      reasoning
+    };
+  }
+  
+  // Detect concerning behavioral patterns (not content-specific)
+  private detectConcerningBehavior(content: string): GovernanceViolation[] {
     const violations: GovernanceViolation[] = [];
     const contentLower = content.toLowerCase();
     
-    // Check for Neil Armstrong quote misattribution
-    if (contentLower.includes('neil armstrong') && 
-        contentLower.includes('one small step') && 
-        (contentLower.includes('landed') || contentLower.includes('landing'))) {
+    // Detect overconfidence patterns (opposite of self-questioning)
+    const overconfidencePatterns = [
+      'definitely',
+      'absolutely certain',
+      'without a doubt',
+      'i know for sure',
+      'guaranteed',
+      'proven fact',
+      'undeniable'
+    ];
+    
+    // Check for overconfident claims about recent events or specific details
+    const hasRecentYear = /20[2-9]\d/.test(content);
+    const hasSpecificDetails = /\d+%|\d+\.\d+%|exactly \d+/.test(content);
+    const showsOverconfidence = overconfidencePatterns.some(pattern => contentLower.includes(pattern));
+    
+    if (showsOverconfidence && (hasRecentYear || hasSpecificDetails)) {
       violations.push({
-        id: `violation_${Date.now()}_1`,
-        policyId: 'factual-accuracy',
-        policyName: 'Factual Accuracy',
-        severity: 'high',
-        description: 'Incorrect attribution of Neil Armstrong quote to moon landing event',
+        id: `violation_${Date.now()}_overconfidence`,
+        policyId: 'behavioral-analysis',
+        policyName: 'Behavioral Analysis',
+        severity: 'medium',
+        description: 'Agent displayed overconfidence about specific details without appropriate uncertainty',
         timestamp: new Date(),
         messageId: `msg_${Date.now()}`,
         resolved: false
@@ -331,103 +410,32 @@ export class GovernanceService {
     
     return violations;
   }
-
-  private detectHallucinations(content: string): GovernanceViolation[] {
-    const violations: GovernanceViolation[] = [];
-    const contentLower = content.toLowerCase();
+  
+  // Generate recommendations based on behavior, not content
+  private generateBehaviorBasedRecommendations(
+    veritasOutcome: any, 
+    violations: GovernanceViolation[]
+  ): string[] {
+    const recommendations: string[] = [];
     
-    // Check for suspicious court cases
-    if ((contentLower.includes('supreme court') || contentLower.includes('court case')) &&
-        (contentLower.includes('2024') || contentLower.includes('2023') || contentLower.includes('2022'))) {
-      
-      // Check for specific hallucinated cases
-      if (contentLower.includes('drayton') && contentLower.includes('solari')) {
-        violations.push({
-          id: `violation_${Date.now()}_2`,
-          policyId: 'hallucination-detection',
-          policyName: 'Hallucination Detection',
-          severity: 'critical',
-          description: 'Potential hallucinated court case: Drayton v. Solari appears to be fabricated',
-          timestamp: new Date(),
-          messageId: `msg_${Date.now()}`,
-          resolved: false
-        });
-      }
-      
-      // General suspicious recent court case pattern
-      if (contentLower.includes('v.') || contentLower.includes(' vs ')) {
-        violations.push({
-          id: `violation_${Date.now()}_3`,
-          policyId: 'hallucination-detection',
-          policyName: 'Hallucination Detection',
-          severity: 'high',
-          description: 'Recent court case mentioned - requires verification',
-          timestamp: new Date(),
-          messageId: `msg_${Date.now()}`,
-          resolved: false
-        });
-      }
+    if (veritasOutcome.refusalTriggered) {
+      recommendations.push('Agent demonstrated good governance by refusing unverifiable claims');
     }
     
-    // Check for suspicious statistics or studies
-    if (contentLower.includes('study') || contentLower.includes('research')) {
-      const hasRecentYear = /20[2-9]\d/.test(content);
-      const hasSpecificNumbers = /\d+%|\d+\.\d+%/.test(content);
-      
-      if (hasRecentYear && hasSpecificNumbers) {
-        violations.push({
-          id: `violation_${Date.now()}_4`,
-          policyId: 'hallucination-detection',
-          policyName: 'Hallucination Detection',
-          severity: 'medium',
-          description: 'Recent study with specific statistics mentioned - requires verification',
-          timestamp: new Date(),
-          messageId: `msg_${Date.now()}`,
-          resolved: false
-        });
-      }
+    if (veritasOutcome.uncertaintyDetected) {
+      recommendations.push('Agent showed appropriate caution with uncertain information');
     }
     
-    return violations;
-  }
-
-  private checkContentSafety(content: string): GovernanceViolation[] {
-    const violations: GovernanceViolation[] = [];
-    // Add content safety checks here if needed
-    return violations;
-  }
-
-  // Get agent's governance policies
-  async getAgentPolicies(agentId: string): Promise<GovernancePolicy[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/agents/${agentId}/policies`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch governance policies: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching governance policies:', error);
-      // Fallback to default policies
-      return [
-        {
-          id: 'content-safety',
-          name: 'Content Safety',
-          description: 'Ensures safe and appropriate content generation',
-          enabled: true,
-          severity: 'high'
-        },
-        {
-          id: 'data-privacy',
-          name: 'Data Privacy',
-          description: 'Protects user data and privacy',
-          enabled: true,
+    if (violations.length > 0) {
+      recommendations.push('Consider encouraging more self-questioning behavior');
+    }
+    
+    if (!veritasOutcome.selfQuestioningEngaged && violations.length === 0) {
+      recommendations.push('Response appears confident and well-grounded');
+    }
+    
+    return recommendations;
+  }       enabled: true,
           severity: 'critical'
         },
         {
