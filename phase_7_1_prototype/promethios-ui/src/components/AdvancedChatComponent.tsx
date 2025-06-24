@@ -202,6 +202,50 @@ const InputRow = styled(Box)(() => ({
   alignItems: 'flex-end'
 }));
 
+// Governance Shield Icon Component
+const GovernanceShield = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'hasIssues' && prop !== 'isExpanded'
+})<{ hasIssues: boolean; isExpanded: boolean }>(({ hasIssues, isExpanded }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '24px',
+  height: '24px',
+  borderRadius: '50%',
+  cursor: 'pointer',
+  marginLeft: '8px',
+  transition: 'all 0.3s ease',
+  backgroundColor: hasIssues ? DARK_THEME.error + '20' : DARK_THEME.success + '20',
+  border: `2px solid ${hasIssues ? DARK_THEME.error : DARK_THEME.success}`,
+  
+  '& .shield-icon': {
+    fontSize: '14px',
+    color: hasIssues ? DARK_THEME.error : DARK_THEME.success,
+    animation: hasIssues ? 'pulse 2s infinite' : 'none'
+  },
+  
+  '&:hover': {
+    transform: 'scale(1.1)',
+    backgroundColor: hasIssues ? DARK_THEME.error + '30' : DARK_THEME.success + '30'
+  },
+  
+  '@keyframes pulse': {
+    '0%': { opacity: 1 },
+    '50%': { opacity: 0.5 },
+    '100%': { opacity: 1 }
+  }
+}));
+
+const GovernanceDetails = styled(Box)(() => ({
+  marginTop: '8px',
+  padding: '12px',
+  backgroundColor: DARK_THEME.surface,
+  borderRadius: '8px',
+  border: `1px solid ${DARK_THEME.border}`,
+  fontSize: '12px',
+  color: DARK_THEME.text.secondary
+}));
+
 const SidePanel = styled(Box)(() => ({
   width: '350px',
   backgroundColor: DARK_THEME.surface,
@@ -274,6 +318,7 @@ const AdvancedChatComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [expandedGovernance, setExpandedGovernance] = useState<Set<string>>(new Set());
   const [governanceMetrics, setGovernanceMetrics] = useState<GovernanceMetrics | null>(null);
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [currentGovernanceSession, setCurrentGovernanceSession] = useState<any>(null);
@@ -291,6 +336,64 @@ const AdvancedChatComponent: React.FC = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
+  };
+
+  // Toggle governance details expansion
+  const toggleGovernanceExpansion = (messageId: string) => {
+    setExpandedGovernance(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  // Render governance shield icon
+  const renderGovernanceShield = (message: Message) => {
+    if (!message.governanceData || message.sender !== 'agent') return null;
+    
+    const hasIssues = !message.governanceData.approved || (message.governanceData.violations && message.governanceData.violations.length > 0);
+    const isExpanded = expandedGovernance.has(message.id);
+    
+    return (
+      <>
+        <GovernanceShield 
+          hasIssues={hasIssues} 
+          isExpanded={isExpanded}
+          onClick={() => toggleGovernanceExpansion(message.id)}
+          title={hasIssues ? "Governance issues detected - click to view" : "Governance passed - click to view details"}
+        >
+          <ShieldIcon className="shield-icon" />
+        </GovernanceShield>
+        {isExpanded && (
+          <GovernanceDetails>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
+              🛡️ Governance Analysis
+            </Typography>
+            {message.governanceData.trustScore && (
+              <Typography variant="caption" sx={{ display: 'block' }}>
+                Trust Score: {message.governanceData.trustScore.toFixed(1)}%
+              </Typography>
+            )}
+            {message.governanceData.violations && message.governanceData.violations.length > 0 ? (
+              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
+                Issues: {message.governanceData.violations.join(', ')}
+              </Typography>
+            ) : (
+              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
+                ✅ All governance checks passed
+              </Typography>
+            )}
+            <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
+              Status: {message.governanceData.approved ? 'Approved' : 'Flagged'}
+            </Typography>
+          </GovernanceDetails>
+        )}
+      </>
+    );
   };
 
   // Initialize services with user immediately when available
@@ -756,21 +859,6 @@ const AdvancedChatComponent: React.FC = () => {
     }, 100);
 
     try {
-      // Add governance message if enabled
-      if (governanceEnabled) {
-        const governanceMessage: ChatMessage = {
-          id: `msg_${Date.now()}_governance`,
-          content: `🛡️ Processing message through governance layer... ${currentAttachments.length > 0 ? `Scanning ${currentAttachments.length} attachment(s).` : ''}`,
-          sender: 'system',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, governanceMessage]);
-        
-        // Save governance message to storage
-        if (selectedAgent) {
-          await chatStorageService.saveMessage(governanceMessage, selectedAgent.identity.id);
-        }
-      }
 
       if (isMultiAgentMode) {
         // Handle multi-agent responses
@@ -813,13 +901,48 @@ const AdvancedChatComponent: React.FC = () => {
         // Handle single agent response
         const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
         
+        // Initialize governance data
+        let governanceData = undefined;
+        
+        // Layer 2: Policy Enforcement - Monitor agent response if governance enabled
+        if (governanceEnabled && currentGovernanceSession) {
+          try {
+            const monitoringResult = await governanceService.monitorMessage(
+              currentGovernanceSession.sessionId,
+              selectedAgent.identity.id,
+              `msg_${Date.now()}_agent`,
+              agentResponse,
+              currentAttachments
+            );
+            
+            // Prepare governance data for the message
+            governanceData = {
+              trustScore: monitoringResult.trustScore,
+              violations: monitoringResult.violations || [],
+              approved: !monitoringResult.violations || monitoringResult.violations.length === 0
+            };
+            
+            // Update current governance metrics
+            setCurrentGovernanceMetrics(monitoringResult);
+            
+          } catch (error) {
+            console.error('Governance monitoring error:', error);
+            governanceData = {
+              trustScore: 0,
+              violations: ['Governance monitoring failed'],
+              approved: false
+            };
+          }
+        }
+        
         const agentMessage: ChatMessage = {
           id: `msg_${Date.now()}_agent`,
           content: agentResponse,
           sender: 'agent',
           timestamp: new Date(),
           agentName: selectedAgent.identity.name,
-          agentId: selectedAgent.identity.id
+          agentId: selectedAgent.identity.id,
+          governanceData
         };
         
         setMessages(prev => [...prev, agentMessage]);
@@ -828,39 +951,8 @@ const AdvancedChatComponent: React.FC = () => {
         ensureUserSet();
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
 
-        // Layer 2: Policy Enforcement - Monitor agent response if governance enabled
-        if (governanceEnabled && currentGovernanceSession) {
-          try {
-            const monitoringResult = await governanceService.monitorMessage(
-              currentGovernanceSession.sessionId,
-              selectedAgent.identity.id,
-              agentMessage.id,
-              agentResponse,
-              currentAttachments
-            );
-            
-            // Update governance metrics based on monitoring result
-            if (monitoringResult.violations && monitoringResult.violations.length > 0) {
-              // Add violation notification message
-              const violationMessage: ChatMessage = {
-                id: `msg_${Date.now()}_governance_violation`,
-                content: `⚠️ Governance Alert: ${monitoringResult.violations.length} policy violation(s) detected. Trust score updated to ${monitoringResult.trustScore.toFixed(1)}%.`,
-                sender: 'system',
-                timestamp: new Date()
-              };
-              setMessages(prev => [...prev, violationMessage]);
-              await chatStorageService.saveMessage(violationMessage, selectedAgent.identity.id);
-            }
-            
-            // Refresh governance metrics
-            await loadGovernanceMetrics();
-          } catch (error) {
-            console.error('Governance monitoring error:', error);
-          }
-        }
-
-        // Layer 3: Emotional Veritas 2.0 - Fact-checking and emotional analysis
-        if (governanceEnabled) {
+        // Layer 3: Emotional Veritas 2.0 - Fact-checking and emotional analysis (integrated into governance data)
+        if (governanceEnabled && governanceData) {
           try {
             const veritasResult = await veritasService.verifyText(agentResponse, {
               mode: 'balanced',
@@ -871,15 +963,13 @@ const AdvancedChatComponent: React.FC = () => {
             
             setCurrentVeritasResult(veritasResult);
             
-            // Add Veritas analysis message
-            const veritasMessage: ChatMessage = {
-              id: `msg_${Date.now()}_veritas_analysis`,
-              content: `🔍 Veritas Analysis: Accuracy ${(veritasResult.overallScore.accuracy * 100).toFixed(1)}%, Trust ${(veritasResult.overallScore.trust * 100).toFixed(1)}%, Emotional ${(veritasResult.overallScore.emotional * 100).toFixed(1)}%. ${veritasResult.approved ? '✅ Verified' : '⚠️ Issues detected'}. ${veritasResult.issues.length > 0 ? `Issues: ${veritasResult.issues.join(', ')}.` : ''}`,
-              sender: 'system',
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, veritasMessage]);
-            await chatStorageService.saveMessage(veritasMessage, selectedAgent.identity.id);
+            // Update governance data with Veritas results
+            governanceData.veritasScore = veritasResult.overallScore;
+            governanceData.veritasIssues = veritasResult.issues;
+            if (!veritasResult.approved) {
+              governanceData.approved = false;
+              governanceData.violations = [...(governanceData.violations || []), ...veritasResult.issues];
+            }
             
           } catch (error) {
             console.error('Veritas verification error:', error);
@@ -890,22 +980,6 @@ const AdvancedChatComponent: React.FC = () => {
         setTimeout(() => {
           scrollToBottom();
         }, 100);
-      }
-
-      // Add governance completion message if enabled
-      if (governanceEnabled && currentGovernanceMetrics) {
-        const governanceCompleteMessage: ChatMessage = {
-          id: `msg_${Date.now()}_governance_complete`,
-          content: `🛡️ Governance Monitor: Trust score ${currentGovernanceMetrics.trustScore.toFixed(1)}%. Compliance: ${currentGovernanceMetrics.complianceRate.toFixed(1)}%. ${currentGovernanceMetrics.policyViolations > 0 ? `${currentGovernanceMetrics.policyViolations} violation(s) detected.` : 'All checks passed.'} ${currentAttachments.length > 0 ? 'All attachments processed safely.' : ''}`,
-          sender: 'system',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, governanceCompleteMessage]);
-        
-        // Save governance completion message to storage
-        if (selectedAgent) {
-          await chatStorageService.saveMessage(governanceCompleteMessage, selectedAgent.identity.id);
-        }
       }
 
     } catch (error) {
@@ -1261,9 +1335,10 @@ const AdvancedChatComponent: React.FC = () => {
                     System Error
                   </Typography>
                 )}
-                <Typography variant="body2">
+                <Typography variant="body2" sx={{ display: 'inline' }}>
                   {message.content}
                 </Typography>
+                {renderGovernanceShield(message)}
                 
                 {/* Display attachments */}
                 {message.attachments && message.attachments.length > 0 && (
