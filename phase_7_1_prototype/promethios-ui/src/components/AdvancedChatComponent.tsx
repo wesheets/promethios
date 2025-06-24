@@ -71,7 +71,8 @@ const ChatContainer = styled(Box)(() => ({
   height: 'calc(100vh - 64px)', // Full viewport height minus header
   backgroundColor: DARK_THEME.background,
   color: DARK_THEME.text.primary,
-  position: 'relative' // For proper positioning of child elements
+  position: 'relative', // For proper positioning of child elements
+  overflow: 'hidden' // Prevent any scrolling outside the container
 }));
 
 const MainChatArea = styled(Box)(() => ({
@@ -279,10 +280,18 @@ const AdvancedChatComponent: React.FC = () => {
   const [currentGovernanceMetrics, setCurrentGovernanceMetrics] = useState<any>(null);
   const [currentVeritasResult, setCurrentVeritasResult] = useState<VeritasResult | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
+
+  // Custom scroll function that only scrolls within messages container
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
 
   // Initialize services with user immediately when available
   useEffect(() => {
@@ -720,7 +729,7 @@ const AdvancedChatComponent: React.FC = () => {
 
     // Scroll to bottom after user message
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollToBottom();
     }, 100);
 
     try {
@@ -762,7 +771,7 @@ const AdvancedChatComponent: React.FC = () => {
             
             // Scroll to bottom after agent response
             setTimeout(() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              scrollToBottom();
             }, 100);
           } catch (error) {
             const errorMessage: ChatMessage = {
@@ -856,7 +865,7 @@ const AdvancedChatComponent: React.FC = () => {
         
         // Scroll to bottom after agent response
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          scrollToBottom();
         }, 100);
       }
 
@@ -1178,7 +1187,7 @@ const AdvancedChatComponent: React.FC = () => {
         )}
 
         {/* Messages */}
-        <MessagesContainer>
+        <MessagesContainer ref={messagesContainerRef}>
           {messages.map((message) => (
             <MessageBubble 
               key={message.id} 
