@@ -377,10 +377,22 @@ const AdvancedChatComponent: React.FC = () => {
 
   // Render governance shield icon
   const renderGovernanceShield = (message: Message) => {
-    if (!message.governanceData || message.sender !== 'agent') return null;
+    console.log('renderGovernanceShield called for message:', {
+      id: message.id,
+      sender: message.sender,
+      hasGovernanceData: !!message.governanceData,
+      governanceData: message.governanceData
+    });
+    
+    if (!message.governanceData || message.sender !== 'agent') {
+      console.log('No shield rendered - missing governance data or not agent message');
+      return null;
+    }
     
     const hasIssues = !message.governanceData.approved || (message.governanceData.violations && message.governanceData.violations.length > 0);
     const isExpanded = expandedGovernance.has(message.id);
+    
+    console.log('Rendering shield with:', { hasIssues, isExpanded });
     
     return (
       <>
@@ -397,19 +409,27 @@ const AdvancedChatComponent: React.FC = () => {
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
               🛡️ Governance Analysis
             </Typography>
-            {message.governanceData.trustScore && (
-              <Typography variant="caption" sx={{ display: 'block' }}>
-                Trust Score: {message.governanceData.trustScore.toFixed(1)}%
-              </Typography>
-            )}
-            {message.governanceData.violations && message.governanceData.violations.length > 0 ? (
-              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
-                Issues: {message.governanceData.violations.join(', ')}
+            {message.governanceData.governanceDisabled ? (
+              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                ℹ️ Governance monitoring is currently disabled
               </Typography>
             ) : (
-              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
-                ✅ All governance checks passed
-              </Typography>
+              <>
+                {message.governanceData.trustScore && (
+                  <Typography variant="caption" sx={{ display: 'block' }}>
+                    Trust Score: {message.governanceData.trustScore.toFixed(1)}%
+                  </Typography>
+                )}
+                {message.governanceData.violations && message.governanceData.violations.length > 0 ? (
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
+                    Issues: {message.governanceData.violations.join(', ')}
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
+                    ✅ All governance checks passed
+                  </Typography>
+                )}
+              </>
             )}
             <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
               Status: {message.governanceData.approved ? 'Approved' : 'Flagged'}
@@ -957,6 +977,14 @@ const AdvancedChatComponent: React.FC = () => {
               approved: false
             };
           }
+        } else {
+          // Create basic governance data even when governance is disabled
+          governanceData = {
+            trustScore: 100,
+            violations: [],
+            approved: true,
+            governanceDisabled: true
+          };
         }
         
         const agentMessage: ChatMessage = {
@@ -968,6 +996,12 @@ const AdvancedChatComponent: React.FC = () => {
           agentId: selectedAgent.identity.id,
           governanceData
         };
+        
+        console.log('Created agent message with governance data:', {
+          messageId: agentMessage.id,
+          hasGovernanceData: !!governanceData,
+          governanceData: governanceData
+        });
         
         setMessages(prev => [...prev, agentMessage]);
         
