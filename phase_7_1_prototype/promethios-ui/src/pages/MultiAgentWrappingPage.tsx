@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -85,6 +85,18 @@ const MultiAgentWrappingPage: React.FC = () => {
       successRate: 0,
     },
   ]);
+
+  // Check URL parameters and automatically show wizard if coming from My Agents workflow
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAgentIds = urlParams.has('agentId');
+    const hasSystemData = urlParams.has('systemData');
+    
+    // If URL contains agent IDs or system data, show the wizard automatically
+    if (hasAgentIds || hasSystemData) {
+      setShowWizard(true);
+    }
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
