@@ -281,6 +281,7 @@ const AdvancedChatComponent: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const agentStorageService = new UserAgentStorageService();
+  const chatStorageService = new ChatStorageService();
 
   // Initialize chat storage service
   useEffect(() => {
