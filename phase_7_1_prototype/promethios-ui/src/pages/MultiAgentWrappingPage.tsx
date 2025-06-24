@@ -158,7 +158,7 @@ const MultiAgentWrappingPage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>Total Systems</Typography>
-                <Typography variant="h3" color="primary">{systems.length}</Typography>
+                <Typography variant="h3" color="primary">{multiAgentSystems.length}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Multi-agent systems created
                 </Typography>
@@ -171,10 +171,10 @@ const MultiAgentWrappingPage: React.FC = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>Active Systems</Typography>
                 <Typography variant="h3" color="primary">
-                  {systems.filter(s => s.status === 'active').length}
+                  {multiAgentSystems.filter(s => s.status === 'active').length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {systems.length > 0 ? Math.round((systems.filter(s => s.status === 'active').length / systems.length) * 100) : 0}% of total
+                  {multiAgentSystems.length > 0 ? Math.round((multiAgentSystems.filter(s => s.status === 'active').length / multiAgentSystems.length) * 100) : 0}% of total
                 </Typography>
               </CardContent>
             </Card>
@@ -185,10 +185,10 @@ const MultiAgentWrappingPage: React.FC = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>Governance Issues</Typography>
                 <Typography variant="h3" color="error">
-                  {systems.filter(s => s.status === 'error').length}
+                  {multiAgentSystems.filter(s => s.status === 'error').length}
                 </Typography>
-                <Typography variant="body2" color={systems.filter(s => s.status === 'error').length > 0 ? "error.main" : "text.secondary"}>
-                  {systems.filter(s => s.status === 'error').length > 0 ? (
+                <Typography variant="body2" color={multiAgentSystems.filter(s => s.status === 'error').length > 0 ? "error.main" : "text.secondary"}>
+                  {multiAgentSystems.filter(s => s.status === 'error').length > 0 ? (
                     <>
                       <Warning sx={{ fontSize: 16, mr: 0.5 }} />
                       Needs attention
