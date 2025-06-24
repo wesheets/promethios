@@ -75,7 +75,8 @@ export class GovernanceService {
 
   // Create a session (simplified for demo)
   async createSession(userId: string): Promise<GovernanceSession> {
-      // Return a mock session when API is not available
+    if (this.baseUrl === 'demo') {
+      // Return a mock session when in demo mode
       this.currentSession = {
         sessionId: `session_${Date.now()}`,
         agentId: 'demo_agent',

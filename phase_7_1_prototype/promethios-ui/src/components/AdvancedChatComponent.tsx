@@ -972,7 +972,7 @@ const AdvancedChatComponent: React.FC = () => {
         }
       } else if (selectedAgent) {
         // Handle single agent response
-        const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
+        let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
         
         // Initialize governance data
         let governanceData = undefined;
