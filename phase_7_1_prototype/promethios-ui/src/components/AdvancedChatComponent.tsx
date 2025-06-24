@@ -113,7 +113,8 @@ const MessagesContainer = styled(Box)(() => ({
   padding: '16px 24px',
   overflowY: 'auto',
   display: 'flex',
-  flexDirection: 'column',
+  flexDirection: 'column-reverse', // Reverse to show newest at bottom
+  justifyContent: 'flex-end', // Align messages to bottom
   gap: '16px',
   backgroundColor: DARK_THEME.background,
   minHeight: 0, // Important for flex child to be scrollable
