@@ -113,8 +113,7 @@ const MessagesContainer = styled(Box)(() => ({
   padding: '16px 24px',
   overflowY: 'auto',
   display: 'flex',
-  flexDirection: 'column-reverse', // Reverse to show newest at bottom
-  justifyContent: 'flex-end', // Align messages to bottom
+  flexDirection: 'column', // Normal column direction
   gap: '16px',
   backgroundColor: DARK_THEME.background,
   minHeight: 0, // Important for flex child to be scrollable
@@ -326,9 +325,12 @@ const AdvancedChatComponent: React.FC = () => {
             const chatHistory = await chatStorageService.loadAgentChatHistory(realAgents[0].identity.id);
             
             if (chatHistory && chatHistory.messages.length > 0) {
-              // Load existing conversation
+              // Load existing conversation and sort by timestamp (oldest first)
               console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
-              setMessages(chatHistory.messages);
+              const sortedMessages = [...chatHistory.messages].sort((a, b) => 
+                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+              setMessages(sortedMessages);
             } else {
               // Add welcome message for new conversation
               const welcomeMessage: ChatMessage = {

@@ -161,20 +161,38 @@ class VeritasService {
 
   private analyzeEmotionalTone(text: string) {
     const emotions = ['neutral', 'positive', 'negative', 'concerned', 'confident', 'uncertain', 'empathetic'];
-    const negativeWords = ['dangerous', 'harmful', 'illegal', 'wrong', 'bad', 'terrible'];
-    const positiveWords = ['good', 'great', 'excellent', 'helpful', 'beneficial', 'positive'];
+    const negativeWords = ['dangerous', 'harmful', 'illegal', 'wrong', 'bad', 'terrible', 'awful', 'horrible', 'hate', 'angry', 'frustrated'];
+    const positiveWords = [
+      'good', 'great', 'excellent', 'helpful', 'beneficial', 'positive', 
+      'sure', 'feel free', 'welcome', 'happy', 'glad', 'pleased', 'assist', 
+      'help', 'support', 'questions', 'learn', 'explore', 'discover', 'enjoy',
+      'wonderful', 'amazing', 'fantastic', 'perfect', 'love', 'like'
+    ];
     const uncertainWords = ['maybe', 'perhaps', 'might', 'could', 'possibly', 'uncertain'];
     
     let primary = 'neutral';
-    let intensity = 0.3;
+    let intensity = 0.5; // Default to neutral 50% instead of 30%
     
+    // Check for negative indicators
     if (negativeWords.some(word => text.toLowerCase().includes(word))) {
       primary = 'negative';
       intensity = 0.7;
-    } else if (positiveWords.some(word => text.toLowerCase().includes(word))) {
+    } 
+    // Check for positive indicators (expanded detection)
+    else if (positiveWords.some(word => text.toLowerCase().includes(word))) {
       primary = 'positive';
-      intensity = 0.6;
-    } else if (uncertainWords.some(word => text.toLowerCase().includes(word))) {
+      intensity = 0.8; // Higher score for positive content
+    } 
+    // Check for helpful/supportive phrases
+    else if (text.toLowerCase().includes('how can i help') || 
+             text.toLowerCase().includes('what would you like') ||
+             text.toLowerCase().includes('feel free to ask') ||
+             text.toLowerCase().includes('any questions')) {
+      primary = 'positive';
+      intensity = 0.8; // Helpful phrases are positive
+    }
+    // Check for uncertainty
+    else if (uncertainWords.some(word => text.toLowerCase().includes(word))) {
       primary = 'uncertain';
       intensity = 0.5;
     }
@@ -269,7 +287,7 @@ class VeritasService {
     }
     
     // Check for emotional issues (lowered threshold to reduce false positives)
-    if (overallScore.emotional < 0.3) {
+    if (overallScore.emotional < 0.2) { // Lowered from 0.3 to 0.2 (20%)
       issues.push('Negative emotional tone detected');
     }
     
