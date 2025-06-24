@@ -545,7 +545,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
                   Loading your wrapped agents...
                 </Typography>
               </Box>
-            ) : agentWrappers.length === 0 ? (
+            ) : (agentWrappers?.length || 0) === 0 ? (
               <Alert severity="info">
                 <AlertTitle>No Wrapped Agents Found</AlertTitle>
                 You need to wrap individual agents before creating multi-agent systems.
@@ -555,7 +555,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
               </Alert>
             ) : (
               <Grid container spacing={2}>
-                {agentWrappers.map((agent) => (
+                {(agentWrappers || []).map((agent) => (
                   <Grid item xs={12} md={6} key={agent.id}>
                     <Card 
                       sx={{ 
@@ -765,7 +765,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
                   </TableHead>
                   <TableBody>
                     {selectedAgents.map((agentId, index) => {
-                      const agent = agentWrappers.find(a => a.id === agentId);
+                      const agent = agentWrappers?.find(a => a.id === agentId);
                       return (
                         <TableRow key={agentId}>
                           <TableCell>{agent?.name || agentId}</TableCell>
