@@ -64,6 +64,10 @@ export class ChatStorageService {
     this.userAgentService.setCurrentUser(userId);
   }
 
+  getCurrentUserId(): string | null {
+    return this.currentUserId;
+  }
+
   // Initialize chat session with an agent
   async initializeChatSession(agent: AgentProfile, governanceEnabled: boolean = false): Promise<ChatSession> {
     if (!this.currentUserId) {

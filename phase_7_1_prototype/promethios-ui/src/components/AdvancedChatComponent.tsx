@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -281,14 +281,22 @@ const AdvancedChatComponent: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const agentStorageService = new UserAgentStorageService();
-  const chatStorageService = new ChatStorageService();
+  const chatStorageService = useMemo(() => new ChatStorageService(), []);
 
-  // Initialize chat storage service
+  // Initialize services with user immediately when available
   useEffect(() => {
     if (effectiveUser?.uid) {
+      agentStorageService.setCurrentUser(effectiveUser.uid);
       chatStorageService.setCurrentUser(effectiveUser.uid);
     }
-  }, [effectiveUser]);
+  }, [effectiveUser, agentStorageService, chatStorageService]);
+
+  // Helper function to ensure user is set before chat operations
+  const ensureUserSet = () => {
+    if (effectiveUser?.uid && !chatStorageService.getCurrentUserId()) {
+      chatStorageService.setCurrentUser(effectiveUser.uid);
+    }
+  };
 
   // Load real agents from unified storage and their chat history
   useEffect(() => {
@@ -702,6 +710,7 @@ const AdvancedChatComponent: React.FC = () => {
 
     // Save user message to persistent storage
     if (selectedAgent) {
+      ensureUserSet();
       await chatStorageService.saveMessage(userMessage, selectedAgent.identity.id);
     }
 
@@ -780,6 +789,7 @@ const AdvancedChatComponent: React.FC = () => {
         setMessages(prev => [...prev, agentMessage]);
         
         // Save agent message to storage
+        ensureUserSet();
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
 
         // Layer 2: Policy Enforcement - Monitor agent response if governance enabled
@@ -900,9 +910,12 @@ const AdvancedChatComponent: React.FC = () => {
       const chatHistory = await chatStorageService.loadAgentChatHistory(agent.identity.id);
       
       if (chatHistory && chatHistory.messages.length > 0) {
-        // Load existing conversation
+        // Load existing conversation and sort by timestamp (oldest to newest)
         console.log('Loading chat history for agent:', agent.identity.name, chatHistory.messages.length, 'messages');
-        setMessages(chatHistory.messages);
+        const sortedMessages = [...chatHistory.messages].sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+        setMessages(sortedMessages);
       } else {
         // Add agent switch message for new conversation
         const switchMessage: ChatMessage = {
