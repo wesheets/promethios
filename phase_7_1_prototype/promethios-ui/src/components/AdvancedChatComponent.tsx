@@ -251,7 +251,9 @@ const SidePanel = styled(Box)(() => ({
   backgroundColor: DARK_THEME.surface,
   borderLeft: `1px solid ${DARK_THEME.border}`,
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  height: '100%', // Use full available height
+  overflow: 'hidden' // Prevent overflow outside panel
 }));
 
 const FilePreview = styled(Box)(() => ({
@@ -294,9 +296,31 @@ function TabPanel(props: TabPanelProps) {
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
+      style={{ 
+        height: value === index ? 'calc(100% - 48px)' : 'auto', // Full height minus tabs
+        overflow: 'hidden'
+      }}
       {...other}
     >
-      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ 
+          p: 2, 
+          height: '100%', 
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '6px'
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: DARK_THEME.border,
+            borderRadius: '3px'
+          }
+        }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
