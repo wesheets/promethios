@@ -111,7 +111,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         </Box>
       </Box>
       
-      <Footer />
+      {/* No Footer for logged-in users to prevent chat input positioning issues */}
     </Box>
   );
 };

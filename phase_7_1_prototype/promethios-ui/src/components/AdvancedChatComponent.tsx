@@ -68,9 +68,10 @@ const DARK_THEME = {
 
 const ChatContainer = styled(Box)(() => ({
   display: 'flex',
-  height: '100%',
+  height: 'calc(100vh - 64px)', // Full viewport height minus header
   backgroundColor: DARK_THEME.background,
-  color: DARK_THEME.text.primary
+  color: DARK_THEME.text.primary,
+  position: 'relative' // For proper positioning of child elements
 }));
 
 const MainChatArea = styled(Box)(() => ({
@@ -117,7 +118,7 @@ const MessagesContainer = styled(Box)(() => ({
   gap: '16px',
   backgroundColor: DARK_THEME.background,
   minHeight: 0, // Important for flex child to be scrollable
-  maxHeight: 'calc(100vh - 200px)', // Fixed height to prevent expansion
+  // Removed maxHeight to allow proper flex sizing
   
   '&::-webkit-scrollbar': {
     width: '6px'
