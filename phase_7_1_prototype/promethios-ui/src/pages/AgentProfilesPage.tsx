@@ -141,6 +141,226 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// Create Multi-Agent System Dialog Component
+interface CreateMultiAgentDialogProps {
+  open: boolean;
+  onClose: () => void;
+  selectedAgents: string[];
+  agentProfiles: AgentProfile[];
+  onSystemCreated: (systemData: {
+    systemName: string;
+    systemDescription: string;
+    systemType: string;
+    selectedAgents: string[];
+  }) => void;
+}
+
+const CreateMultiAgentDialog: React.FC<CreateMultiAgentDialogProps> = ({ 
+  open, 
+  onClose, 
+  selectedAgents, 
+  agentProfiles,
+  onSystemCreated 
+}) => {
+  const [systemName, setSystemName] = useState('');
+  const [systemDescription, setSystemDescription] = useState('');
+  const [systemType, setSystemType] = useState('sequential');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedAgentNames = selectedAgents
+    .map(id => agentProfiles.find(agent => agent.identity.id === id)?.identity.name)
+    .filter(Boolean)
+    .join(', ');
+
+  const handleSubmit = async () => {
+    if (!systemName.trim() || !systemDescription.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const systemData = {
+        systemName: systemName.trim(),
+        systemDescription: systemDescription.trim(),
+        systemType,
+        selectedAgents
+      };
+
+      onSystemCreated(systemData);
+      
+      // Reset form
+      setSystemName('');
+      setSystemDescription('');
+      setSystemType('sequential');
+      
+    } catch (error) {
+      console.error('Error creating multi-agent system:', error);
+      alert('Failed to create multi-agent system. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: '#2d3748',
+          color: 'white',
+          border: '1px solid #4a5568',
+          maxHeight: '90vh',
+        },
+      }}
+    >
+      <DialogTitle sx={{ color: 'white' }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Group sx={{ color: '#3182ce' }} />
+          Create Multi-Agent System
+        </Box>
+      </DialogTitle>
+      <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto', pt: 3 }}>
+        <Box>
+          <Typography variant="body2" color="#a0aec0" mb={3}>
+            Create a governed multi-agent system from your selected agents. This will start the 7-step wrapping process.
+          </Typography>
+
+          {/* Selected Agents Display */}
+          <Box mb={3}>
+            <Typography variant="subtitle2" color="white" mb={1}>
+              Selected Agents ({selectedAgents.length})
+            </Typography>
+            <Box 
+              sx={{ 
+                backgroundColor: '#1a202c', 
+                border: '1px solid #4a5568', 
+                borderRadius: 1, 
+                p: 2 
+              }}
+            >
+              <Typography variant="body2" color="#a0aec0">
+                {selectedAgentNames}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* System Name */}
+          <Box mb={3}>
+            <Typography variant="subtitle2" color="white" mb={1}>
+              System Name *
+            </Typography>
+            <TextField
+              fullWidth
+              value={systemName}
+              onChange={(e) => setSystemName(e.target.value)}
+              placeholder="e.g., Customer Support Pipeline"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#3182ce' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputBase-input::placeholder': { color: '#a0aec0' },
+              }}
+            />
+          </Box>
+
+          {/* System Description */}
+          <Box mb={3}>
+            <Typography variant="subtitle2" color="white" mb={1}>
+              Description *
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              value={systemDescription}
+              onChange={(e) => setSystemDescription(e.target.value)}
+              placeholder="Describe what this multi-agent system will do and how the agents will work together..."
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#4a5568' },
+                  '&:hover fieldset': { borderColor: '#3182ce' },
+                  '&.Mui-focused fieldset': { borderColor: '#3182ce' },
+                },
+                '& .MuiInputBase-input::placeholder': { color: '#a0aec0' },
+              }}
+            />
+          </Box>
+
+          {/* System Type */}
+          <Box mb={3}>
+            <Typography variant="subtitle2" color="white" mb={1}>
+              System Type
+            </Typography>
+            <FormControl fullWidth>
+              <Select
+                value={systemType}
+                onChange={(e) => setSystemType(e.target.value)}
+                sx={{
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                  '& .MuiSvgIcon-root': { color: 'white' },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: '#2d3748',
+                      color: 'white',
+                      border: '1px solid #4a5568',
+                    },
+                  },
+                }}
+              >
+                <MenuItem value="sequential">Sequential - Agents work in order</MenuItem>
+                <MenuItem value="parallel">Parallel - Agents work simultaneously</MenuItem>
+                <MenuItem value="conditional">Conditional - Agents work based on conditions</MenuItem>
+                <MenuItem value="custom">Custom - Define your own workflow</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button 
+          onClick={onClose}
+          disabled={isSubmitting}
+          sx={{ color: '#a0aec0' }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={isSubmitting || !systemName.trim() || !systemDescription.trim()}
+          sx={{
+            backgroundColor: '#3182ce',
+            color: 'white',
+            '&:hover': { backgroundColor: '#2c5aa0' },
+            '&:disabled': { backgroundColor: '#6b7280' },
+          }}
+        >
+          {isSubmitting ? 'Creating System...' : 'Continue to Wizard'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 // Add Agent Dialog Component
 interface AddAgentDialogProps {
   open: boolean;
@@ -917,6 +1137,9 @@ const AgentProfilesPage: React.FC = () => {
   // Add Agent dialog state
   const [showAddAgentDialog, setShowAddAgentDialog] = useState(false);
   
+  // Create Multi-Agent System dialog state
+  const [showCreateMultiAgentDialog, setShowCreateMultiAgentDialog] = useState(false);
+  
   // Publish to Registry modal state
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [wrappedAgentData, setWrappedAgentData] = useState<{
@@ -1002,9 +1225,33 @@ const AgentProfilesPage: React.FC = () => {
       return;
     }
     
-    // Navigate to multi-agent wrapping wizard with selected agents
-    const agentParams = selectedAgents.map(id => `agentId=${id}`).join('&');
-    window.location.href = `/ui/agents/multi-wrapping?${agentParams}`;
+    // Show the create multi-agent system dialog
+    setShowCreateMultiAgentDialog(true);
+  };
+
+  const handleSystemCreated = (systemData: {
+    systemName: string;
+    systemDescription: string;
+    systemType: string;
+    selectedAgents: string[];
+  }) => {
+    // Close the dialog
+    setShowCreateMultiAgentDialog(false);
+    
+    // Reset selection mode
+    setSelectionMode(false);
+    setSelectedAgents([]);
+    
+    // Navigate to multi-agent wrapping wizard with system data and selected agents
+    const agentParams = systemData.selectedAgents.map(id => `agentId=${id}`).join('&');
+    const systemParams = new URLSearchParams({
+      systemName: systemData.systemName,
+      systemDescription: systemData.systemDescription,
+      systemType: systemData.systemType,
+      step: '2' // Start at step 2 since we've completed step 1
+    }).toString();
+    
+    window.location.href = `/ui/agents/multi-wrapping?${agentParams}&${systemParams}`;
   };
 
   const handleToggleSelectionMode = () => {
@@ -1511,6 +1758,15 @@ const AgentProfilesPage: React.FC = () => {
               alert('Failed to create agent. Please try again.');
             }
           }}
+        />
+
+        {/* Create Multi-Agent System Dialog */}
+        <CreateMultiAgentDialog
+          open={showCreateMultiAgentDialog}
+          onClose={() => setShowCreateMultiAgentDialog(false)}
+          selectedAgents={selectedAgents}
+          agentProfiles={agentProfiles}
+          onSystemCreated={handleSystemCreated}
         />
 
         {/* Publish to Registry Modal */}

@@ -152,86 +152,15 @@ const MultiAgentWrappingPage: React.FC = () => {
             Create Multi-Agent System
           </Button>
         </Box>
-
-        {/* Demo Team Section */}
-        <Paper sx={{ p: 3, mb: 4, background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white' }}>
-          <Box display="flex" alignItems="center" mb={2}>
-            <Typography variant="h5" sx={{ mr: 2 }}>🚀 Try a Demo Team First!</Typography>
-          </Box>
-          <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-            Click any demo team below to auto-populate the wizard and see how multi-agent collaboration works!
-          </Typography>
-          
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}
-                    onClick={() => setShowWizard(true)}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Typography variant="h6">🛠️ Customer Support Pipeline</Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ mb: 2, opacity: 0.8 }}>
-                    A complete workflow for handling customer inquiries with sentiment analysis and response generation.
-                  </Typography>
-                  <Box display="flex" flexWrap="wrap" gap={0.5}>
-                    <Chip label="sentiment" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="reasoning" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="3 agents" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={4}>
-              <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}
-                    onClick={() => setShowWizard(true)}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Typography variant="h6">🔍 Code Review Team</Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ mb: 2, opacity: 0.8 }}>
-                    A collaborative team for code review, review, and documentation with governance oversight.
-                  </Typography>
-                  <Box display="flex" flexWrap="wrap" gap={0.5}>
-                    <Chip label="python" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="typescript" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="3 agents" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} md={4}>
-              <Card sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}
-                    onClick={() => setShowWizard(true)}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Typography variant="h6">📊 Business Analysis Consensus</Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ mb: 2, opacity: 0.8 }}>
-                    A consensus-driven team for strategic business analysis and decision making.
-                  </Typography>
-                  <Box display="flex" flexWrap="wrap" gap={0.5}>
-                    <Chip label="analysis" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="consensus" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                    <Chip label="4 agents" size="small" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Paper>
-
         {/* Stats Cards */}
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>Total Systems</Typography>
-                <Typography variant="h3" color="primary">4</Typography>
-                <Typography variant="body2" color="success.main">
-                  <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
-                  +1 this week
+                <Typography variant="h3" color="primary">{systems.length}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Multi-agent systems created
                 </Typography>
               </CardContent>
             </Card>
@@ -241,8 +170,12 @@ const MultiAgentWrappingPage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>Active Systems</Typography>
-                <Typography variant="h3" color="primary">2</Typography>
-                <Typography variant="body2" color="text.secondary">50% of total</Typography>
+                <Typography variant="h3" color="primary">
+                  {systems.filter(s => s.status === 'active').length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {systems.length > 0 ? Math.round((systems.filter(s => s.status === 'active').length / systems.length) * 100) : 0}% of total
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -250,11 +183,19 @@ const MultiAgentWrappingPage: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Governance Violations</Typography>
-                <Typography variant="h3" color="error">1</Typography>
-                <Typography variant="body2" color="error.main">
-                  <Warning sx={{ fontSize: 16, mr: 0.5 }} />
-                  Needs attention
+                <Typography variant="h6" gutterBottom>Governance Issues</Typography>
+                <Typography variant="h3" color="error">
+                  {systems.filter(s => s.status === 'error').length}
+                </Typography>
+                <Typography variant="body2" color={systems.filter(s => s.status === 'error').length > 0 ? "error.main" : "text.secondary"}>
+                  {systems.filter(s => s.status === 'error').length > 0 ? (
+                    <>
+                      <Warning sx={{ fontSize: 16, mr: 0.5 }} />
+                      Needs attention
+                    </>
+                  ) : (
+                    'All systems healthy'
+                  )}
                 </Typography>
               </CardContent>
             </Card>
