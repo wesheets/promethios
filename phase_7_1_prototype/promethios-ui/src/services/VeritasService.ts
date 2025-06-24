@@ -155,6 +155,15 @@ class VeritasService {
                                claimLower.includes('famous') ||
                                claimLower.includes('statement');
     
+    // ENHANCED: Much higher questioning for temporal quote contexts
+    const hasTemporalQuoteContext = (claimLower.includes('when') && hasQuoteAttribution) ||
+                                   (claimLower.includes('during') && hasQuoteAttribution) ||
+                                   (claimLower.includes('as') && hasQuoteAttribution) ||
+                                   (claimLower.includes('after') && hasQuoteAttribution) ||
+                                   (claimLower.includes('before') && hasQuoteAttribution) ||
+                                   (claimLower.includes('landed') && hasQuoteAttribution) ||
+                                   (claimLower.includes('stepped') && hasQuoteAttribution);
+    
     // Higher questioning for specific dates, names, or events
     const hasSpecificDetails = /\d{4}/.test(claim) || // years
                               claimLower.includes('when') ||
@@ -171,16 +180,26 @@ class VeritasService {
                              claimLower.includes('study') ||
                              claimLower.includes('research');
     
+    // ENHANCED: Detect historical events with multiple moments/quotes
+    const hasHistoricalEventContext = claimLower.includes('moon') ||
+                                     claimLower.includes('apollo') ||
+                                     claimLower.includes('landing') ||
+                                     claimLower.includes('mission') ||
+                                     claimLower.includes('speech') ||
+                                     claimLower.includes('address');
+    
     // Calculate uncertainty threshold based on claim characteristics
     let threshold = 0.2; // Base threshold
     
     if (hasQuoteAttribution) threshold += 0.3; // Much more questioning for quotes
+    if (hasTemporalQuoteContext) threshold += 0.4; // CRITICAL: Extra questioning for temporal quote contexts
     if (hasSpecificDetails) threshold += 0.2; // More questioning for specific details
     if (hasRecentYear) threshold += 0.2; // More questioning for recent events
     if (hasLegalTechnical) threshold += 0.3; // Much more questioning for legal/technical claims
+    if (hasHistoricalEventContext && hasQuoteAttribution) threshold += 0.3; // Extra questioning for historical quotes
     
-    // Cap the threshold at 0.8 to still allow some confident responses
-    threshold = Math.min(0.8, threshold);
+    // Cap the threshold at 0.9 to still allow some confident responses (increased from 0.8)
+    threshold = Math.min(0.9, threshold);
     
     const uncertaintyLevel = Math.random();
     
