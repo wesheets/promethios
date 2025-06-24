@@ -352,6 +352,39 @@ export class GovernanceService {
           resolved: false
         });
       }
+      
+      // General suspicious recent court case pattern
+      if (contentLower.includes('v.') || contentLower.includes(' vs ')) {
+        violations.push({
+          id: `violation_${Date.now()}_3`,
+          policyId: 'hallucination-detection',
+          policyName: 'Hallucination Detection',
+          severity: 'high',
+          description: 'Recent court case mentioned - requires verification',
+          timestamp: new Date(),
+          messageId: `msg_${Date.now()}`,
+          resolved: false
+        });
+      }
+    }
+    
+    // Check for suspicious statistics or studies
+    if (contentLower.includes('study') || contentLower.includes('research')) {
+      const hasRecentYear = /20[2-9]\d/.test(content);
+      const hasSpecificNumbers = /\d+%|\d+\.\d+%/.test(content);
+      
+      if (hasRecentYear && hasSpecificNumbers) {
+        violations.push({
+          id: `violation_${Date.now()}_4`,
+          policyId: 'hallucination-detection',
+          policyName: 'Hallucination Detection',
+          severity: 'medium',
+          description: 'Recent study with specific statistics mentioned - requires verification',
+          timestamp: new Date(),
+          messageId: `msg_${Date.now()}`,
+          resolved: false
+        });
+      }
     }
     
     return violations;
