@@ -415,11 +415,7 @@ const AdvancedChatComponent: React.FC = () => {
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
               🛡️ Governance Analysis
             </Typography>
-            {!isGovernanceActive ? (
-              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
-                ℹ️ Governance API not available - using fallback mode
-              </Typography>
-            ) : message.governanceData.governanceDisabled ? (
+            {message.governanceData.governanceDisabled ? (
               <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
                 ℹ️ Governance monitoring is currently disabled
               </Typography>
@@ -986,8 +982,8 @@ const AdvancedChatComponent: React.FC = () => {
           try {
             const isGovernanceActive = governanceService.isGovernanceActive();
             
-            if (isGovernanceActive && currentGovernanceSession) {
-              // Real governance monitoring
+            if (isGovernanceActive) {
+              // Real governance monitoring (demo mode)
               const monitoringResult = await governanceService.monitorMessage(
                 agentResponse,
                 selectedAgent.identity.id,
@@ -1670,7 +1666,7 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.trustScore}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
@@ -1695,7 +1691,7 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.complianceRate}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.complianceRate.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
@@ -1720,7 +1716,7 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.responseTime}s` : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.responseTime.toFixed(1)}s` : 'N/A'}
                 </Typography>
               </CardContent>
             </Card>
@@ -1734,7 +1730,7 @@ const AdvancedChatComponent: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.warning, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.sessionIntegrity}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.sessionIntegrity.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
