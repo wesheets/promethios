@@ -214,6 +214,7 @@ const GovernanceShield = styled(Box, {
   borderRadius: '50%',
   cursor: 'pointer',
   marginLeft: '8px',
+  position: 'relative', // Added for exclamation mark positioning
   transition: 'all 0.3s ease',
   backgroundColor: hasIssues ? DARK_THEME.error + '20' : DARK_THEME.success + '20',
   border: `2px solid ${hasIssues ? DARK_THEME.error : DARK_THEME.success}`,
@@ -398,7 +399,13 @@ const AdvancedChatComponent: React.FC = () => {
     const isExpanded = expandedGovernance.has(message.id);
     const isGovernanceActive = governanceService.isGovernanceActive();
     
-    console.log('Rendering shield with:', { hasIssues, isExpanded, isGovernanceActive });
+    // Detect hallucination prevention - agent refusing to provide unverifiable information
+    const hallucinationPrevented = message.content.toLowerCase().includes('cannot verify') ||
+                                   message.content.toLowerCase().includes('not familiar with') ||
+                                   message.content.toLowerCase().includes('cannot confirm') ||
+                                   message.content.toLowerCase().includes('cannot provide information about');
+    
+    console.log('Rendering shield with:', { hasIssues, isExpanded, isGovernanceActive, hallucinationPrevented });
     
     return (
       <>
@@ -406,15 +413,45 @@ const AdvancedChatComponent: React.FC = () => {
           hasIssues={hasIssues} 
           isExpanded={isExpanded}
           onClick={() => toggleGovernanceExpansion(message.id)}
-          title={hasIssues ? "Governance issues detected - click to view" : "Governance passed - click to view details"}
+          title={hasIssues ? "Governance issues detected - click to view" : 
+                 hallucinationPrevented ? "Governance passed - Hallucination prevention successful" :
+                 "Governance passed - click to view details"}
         >
           <ShieldIcon className="shield-icon" />
+          {hallucinationPrevented && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: '-2px', 
+              right: '-2px', 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              backgroundColor: '#FFA500',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '6px',
+              fontWeight: 'bold',
+              color: 'white'
+            }}>
+              !
+            </Box>
+          )}
         </GovernanceShield>
         {isExpanded && (
           <GovernanceDetails>
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
               🛡️ Governance Analysis
             </Typography>
+            {hallucinationPrevented && (
+              <Typography variant="caption" sx={{ display: 'block', color: '#4CAF50', mb: 1, fontWeight: 'bold' }}>
+                ✅ Hallucination Prevention Successful
+                <br />
+                <span style={{ color: DARK_THEME.text.secondary, fontWeight: 'normal' }}>
+                  Agent correctly refused to provide unverifiable information
+                </span>
+              </Typography>
+            )}
             {message.governanceData.governanceDisabled ? (
               <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
                 ℹ️ Governance monitoring is currently disabled
