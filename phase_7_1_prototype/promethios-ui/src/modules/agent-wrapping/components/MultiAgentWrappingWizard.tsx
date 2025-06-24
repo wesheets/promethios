@@ -338,9 +338,9 @@ const SuccessStep: React.FC<{ systemId: string | null }> = ({ systemId }) => {
 
 // Steps for the wizard
 const steps = [
-  'Basic Info',
+  'Agent Selection',
+  'Basic Info', 
   'Collaboration Model',
-  'Agent Selection', 
   'System Type & Flow',
   'Governance Configuration',
   'Testing & Validation',
@@ -434,8 +434,8 @@ const MultiAgentWrappingWizard: React.FC = () => {
           setSystemDescription(parsedSystemData.description || '');
           setSystemType(parsedSystemData.systemType || 'sequential');
           
-          // Start at step 2 since basic info is already filled
-          setActiveStep(1);
+          // Start at step 2 (Collaboration Model) since agents are selected and basic info is filled
+          setActiveStep(2);
         } catch (error) {
           console.error('Failed to parse system data:', error);
         }
@@ -491,11 +491,11 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const canProceed = () => {
     switch (activeStep) {
       case 0:
-        return systemName.trim() && systemDescription.trim() && systemType;
-      case 1:
-        return collaborationModel.trim();
-      case 2:
         return selectedAgents.length > 0;
+      case 1:
+        return systemName.trim() && systemDescription.trim() && systemType;
+      case 2:
+        return collaborationModel.trim();
       case 3:
         return true; // Flow configuration is optional
       case 4:
@@ -533,6 +533,64 @@ const MultiAgentWrappingWizard: React.FC = () => {
 
     switch (step) {
       case 0:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Select Agents
+            </Typography>
+            {loadingAgents ? (
+              <Box textAlign="center" py={4}>
+                <CircularProgress />
+                <Typography variant="body2" color="text.secondary" mt={2}>
+                  Loading your wrapped agents...
+                </Typography>
+              </Box>
+            ) : agentWrappers.length === 0 ? (
+              <Alert severity="info">
+                <AlertTitle>No Wrapped Agents Found</AlertTitle>
+                You need to wrap individual agents before creating multi-agent systems.
+                <Button variant="contained" sx={{ mt: 2 }}>
+                  Wrap Your First Agent
+                </Button>
+              </Alert>
+            ) : (
+              <Grid container spacing={2}>
+                {agentWrappers.map((agent) => (
+                  <Grid item xs={12} md={6} key={agent.id}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        border: selectedAgents.includes(agent.id) ? 2 : 1,
+                        borderColor: selectedAgents.includes(agent.id) ? 'primary.main' : 'divider'
+                      }}
+                      onClick={() => {
+                        setSelectedAgents(prev => 
+                          prev.includes(agent.id) 
+                            ? prev.filter(id => id !== agent.id)
+                            : [...prev, agent.id]
+                        );
+                      }}
+                    >
+                      <CardContent>
+                        <Typography variant="h6">{agent.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {agent.description}
+                        </Typography>
+                        <Chip 
+                          label={selectedAgents.includes(agent.id) ? 'Selected' : 'Click to select'}
+                          color={selectedAgents.includes(agent.id) ? 'primary' : 'default'}
+                          size="small"
+                          sx={{ mt: 1 }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        );
+      case 1:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -579,7 +637,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             </Grid>
           </Box>
         );
-      case 1:
+      case 2:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -681,64 +739,6 @@ const MultiAgentWrappingWizard: React.FC = () => {
                 <AlertTitle>Selected: {collaborationModel.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</AlertTitle>
                 This collaboration model will determine how your agents communicate and coordinate their work.
               </Alert>
-            )}
-          </Box>
-        );
-      case 2:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Select Agents
-            </Typography>
-            {loadingAgents ? (
-              <Box textAlign="center" py={4}>
-                <CircularProgress />
-                <Typography variant="body2" color="text.secondary" mt={2}>
-                  Loading your wrapped agents...
-                </Typography>
-              </Box>
-            ) : agentWrappers.length === 0 ? (
-              <Alert severity="info">
-                <AlertTitle>No Wrapped Agents Found</AlertTitle>
-                You need to wrap individual agents before creating multi-agent systems.
-                <Button variant="contained" sx={{ mt: 2 }}>
-                  Wrap Your First Agent
-                </Button>
-              </Alert>
-            ) : (
-              <Grid container spacing={2}>
-                {agentWrappers.map((agent) => (
-                  <Grid item xs={12} md={6} key={agent.id}>
-                    <Card 
-                      sx={{ 
-                        cursor: 'pointer',
-                        border: selectedAgents.includes(agent.id) ? 2 : 1,
-                        borderColor: selectedAgents.includes(agent.id) ? 'primary.main' : 'divider'
-                      }}
-                      onClick={() => {
-                        setSelectedAgents(prev => 
-                          prev.includes(agent.id) 
-                            ? prev.filter(id => id !== agent.id)
-                            : [...prev, agent.id]
-                        );
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6">{agent.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {agent.description}
-                        </Typography>
-                        <Chip 
-                          label={selectedAgents.includes(agent.id) ? 'Selected' : 'Click to select'}
-                          color={selectedAgents.includes(agent.id) ? 'primary' : 'default'}
-                          size="small"
-                          sx={{ mt: 1 }}
-                        />
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
             )}
           </Box>
         );
