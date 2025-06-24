@@ -10,11 +10,8 @@ const ChatPageContainer = styled(Box)(() => ({
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  position: 'absolute', // Position absolutely to avoid parent padding
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0
+  // Remove absolute positioning to respect parent margins
+  // The MainLayoutProxy will handle the sidebar margins
 }));
 
 const ModernChatPage: React.FC = () => {

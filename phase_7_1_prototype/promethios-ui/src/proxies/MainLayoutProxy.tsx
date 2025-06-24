@@ -101,7 +101,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
-            p: 3,
+            // Remove padding for chat page to allow full height usage
+            p: location.pathname.includes('/modern-chat') ? 0 : 3,
             backgroundColor: '#1a202c', // Dark background to match the theme
             minHeight: 'calc(100vh - 64px)', // Full height minus header
             color: 'white', // Light text for dark background
