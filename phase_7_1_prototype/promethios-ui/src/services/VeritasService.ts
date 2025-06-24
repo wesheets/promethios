@@ -144,98 +144,48 @@ class VeritasService {
     // Pure self-questioning approach - agent asking itself "Do I actually know this?"
     // This simulates the agent's internal reflection and self-doubt
     
-    // General uncertainty for any factual claim
-    const uncertaintyLevel = Math.random();
+    const claimLower = claim.toLowerCase();
     
-    // Slightly higher questioning for recent claims (they're often less reliable)
+    // Enhanced sensitivity for factual claims
+    // The agent should question itself more deeply about specific details
+    
+    // Higher questioning for specific quotes or attributions
+    const hasQuoteAttribution = claimLower.includes('said') || 
+                               claimLower.includes('quote') || 
+                               claimLower.includes('famous') ||
+                               claimLower.includes('statement');
+    
+    // Higher questioning for specific dates, names, or events
+    const hasSpecificDetails = /\d{4}/.test(claim) || // years
+                              claimLower.includes('when') ||
+                              claimLower.includes('during') ||
+                              /[A-Z][a-z]+ [A-Z][a-z]+/.test(claim); // proper names
+    
+    // Higher questioning for recent events (they're often less reliable)
     const hasRecentYear = /20[2-9]\d/.test(claim);
-    const threshold = hasRecentYear ? 0.3 : 0.2;
+    
+    // Higher questioning for legal or technical claims
+    const hasLegalTechnical = claimLower.includes('court') ||
+                             claimLower.includes('case') ||
+                             claimLower.includes('ruling') ||
+                             claimLower.includes('study') ||
+                             claimLower.includes('research');
+    
+    // Calculate uncertainty threshold based on claim characteristics
+    let threshold = 0.2; // Base threshold
+    
+    if (hasQuoteAttribution) threshold += 0.3; // Much more questioning for quotes
+    if (hasSpecificDetails) threshold += 0.2; // More questioning for specific details
+    if (hasRecentYear) threshold += 0.2; // More questioning for recent events
+    if (hasLegalTechnical) threshold += 0.3; // Much more questioning for legal/technical claims
+    
+    // Cap the threshold at 0.8 to still allow some confident responses
+    threshold = Math.min(0.8, threshold);
+    
+    const uncertaintyLevel = Math.random();
     
     // Return false if the agent should question itself about this claim
     return uncertaintyLevel > threshold;
-  }
-
-  private validateHistoricalFacts(claim: string): boolean | null {
-    const claimLower = claim.toLowerCase();
-    
-    // Neil Armstrong quotes validation
-    if (claimLower.includes('neil armstrong') || claimLower.includes('moon landing')) {
-      // Check for incorrect quotes
-      if (claimLower.includes('one small step for man') && 
-          (claimLower.includes('landed') || claimLower.includes('landing'))) {
-        // This quote was said when stepping onto the moon, not when landing
-        return false;
-      }
-      
-      // Check for correct landing quotes
-      if (claimLower.includes('tranquility base') || 
-          claimLower.includes('eagle has landed')) {
-        return true;
-      }
-    }
-    
-    // Add more historical fact validations here
-    // Return null if no specific validation applies
-    return null;
-  }
-
-  private validateCourtCases(claim: string): boolean | null {
-    const claimLower = claim.toLowerCase();
-    
-    // Check for court case mentions
-    if (claimLower.includes('supreme court') || 
-        claimLower.includes('court case') || 
-        claimLower.includes('ruling') ||
-        claimLower.includes('v.') ||
-        claimLower.includes(' vs ')) {
-      
-      // Check for suspicious recent cases (2020+) - general pattern detection
-      const yearMatch = claim.match(/\(?(20[2-9]\d)\)?/);
-      if (yearMatch) {
-        const year = parseInt(yearMatch[1]);
-        if (year >= 2020) {
-          // Be very suspicious of recent court cases - likely hallucinations
-          // Check for AI/technology related cases which are often fabricated
-          if (claimLower.includes('autonomous ai') ||
-              claimLower.includes('artificial intelligence') ||
-              claimLower.includes('section 230') ||
-              claimLower.includes('healthcare') ||
-              claimLower.includes('municipality')) {
-            return false; // Likely hallucination
-          }
-          
-          // General suspicion for recent cases
-          return Math.random() > 0.8; // 80% failure rate for recent unverified cases
-        }
-      }
-      
-      // For other court cases, require verification
-      return Math.random() > 0.7; // 70% failure rate for unverified court cases
-    }
-    
-    return null;
-  }
-
-  private validateRecentEvents(claim: string): boolean | null {
-    const claimLower = claim.toLowerCase();
-    
-    // Check for recent years (2020+)
-    const yearMatch = claim.match(/\(?(20[2-9]\d)\)?/);
-    if (yearMatch) {
-      const year = parseInt(yearMatch[1]);
-      if (year >= 2020) {
-        // Be more skeptical of recent events that might be fabricated
-        if (claimLower.includes('study') || 
-            claimLower.includes('research') ||
-            claimLower.includes('report') ||
-            claimLower.includes('ruling') ||
-            claimLower.includes('case')) {
-          return Math.random() > 0.6; // 60% failure rate for recent claims
-        }
-      }
-    }
-    
-    return null;
   }
 
   private analyzeEmotionalTone(text: string) {
