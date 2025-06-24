@@ -341,6 +341,11 @@ const AdvancedChatComponent: React.FC = () => {
                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
               );
               setMessages(sortedMessages);
+              
+              // Auto-scroll to bottom to show newest messages when loading existing chat
+              setTimeout(() => {
+                scrollToBottom();
+              }, 200);
             } else {
               // Add welcome message for new conversation
               const welcomeMessage: ChatMessage = {
@@ -929,6 +934,11 @@ const AdvancedChatComponent: React.FC = () => {
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
         setMessages(sortedMessages);
+        
+        // Auto-scroll to bottom to show newest messages when switching agents
+        setTimeout(() => {
+          scrollToBottom();
+        }, 200);
       } else {
         // Add agent switch message for new conversation
         const switchMessage: ChatMessage = {
