@@ -1244,14 +1244,13 @@ const AgentProfilesPage: React.FC = () => {
     
     // Navigate to multi-agent wrapping wizard with system data and selected agents
     const agentParams = systemData.selectedAgents.map(id => `agentId=${id}`).join('&');
-    const systemParams = new URLSearchParams({
-      systemName: systemData.systemName,
-      systemDescription: systemData.systemDescription,
-      systemType: systemData.systemType,
-      step: '2' // Start at step 2 since we've completed step 1
-    }).toString();
+    const systemDataParam = encodeURIComponent(JSON.stringify({
+      name: systemData.systemName,
+      description: systemData.systemDescription,
+      systemType: systemData.systemType
+    }));
     
-    window.location.href = `/ui/agents/multi-wrapping?${agentParams}&${systemParams}`;
+    window.location.href = `/ui/agents/multi-wrapping?${agentParams}&systemData=${systemDataParam}`;
   };
 
   const handleToggleSelectionMode = () => {

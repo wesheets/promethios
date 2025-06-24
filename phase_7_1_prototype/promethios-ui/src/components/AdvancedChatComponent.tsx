@@ -1469,14 +1469,15 @@ const AdvancedChatComponent: React.FC = () => {
                     .filter(agent => !selectedAgents.find(selected => selected.identity.id === agent.identity.id))
                     .map((agent) => (
                       <MenuItem key={agent.identity.id} value={agent.identity.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{getAgentAvatar(agent)}</span>
-                      <Typography>{agent.identity.name}</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <span>{getAgentAvatar(agent)}</span>
+                          <Typography>{agent.identity.name}</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
               </Select>
             </FormControl>
+            </Box>
           )}
         </Box>
 

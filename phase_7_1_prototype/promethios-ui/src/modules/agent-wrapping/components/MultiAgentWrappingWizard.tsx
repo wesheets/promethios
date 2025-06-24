@@ -347,70 +347,6 @@ const steps = [
   'Review & Deploy'
 ];
 
-// Demo multi-agent team templates for quick setup
-const DEMO_TEAM_TEMPLATES = [
-  {
-    id: 'customer-support-pipeline',
-    name: 'Customer Support Pipeline',
-    description: 'A sequential workflow for handling customer inquiries with sentiment analysis and response generation.',
-    systemType: 'sequential' as FlowType,
-    agentIds: ['helpful-assistant-demo', 'business-analyst-demo'],
-    agentRoles: {
-      'helpful-assistant-demo': 'coordinator' as AgentRole,
-      'business-analyst-demo': 'specialist' as AgentRole
-    },
-    governanceRules: {
-      crossAgentValidation: true,
-      errorHandling: 'fallback' as const,
-      loggingLevel: 'standard' as const,
-      governancePolicy: 'standard' as const,
-      maxExecutionTime: 300,
-      rateLimiting: { requestsPerMinute: 60, burstLimit: 10 }
-    },
-    color: '#2196f3'
-  },
-  {
-    id: 'code-review-team',
-    name: 'Code Review Team',
-    description: 'A collaborative team for code generation, review, and documentation with parallel processing.',
-    systemType: 'parallel' as FlowType,
-    agentIds: ['code-specialist-demo', 'helpful-assistant-demo'],
-    agentRoles: {
-      'code-specialist-demo': 'specialist' as AgentRole,
-      'helpful-assistant-demo': 'validator' as AgentRole
-    },
-    governanceRules: {
-      crossAgentValidation: true,
-      errorHandling: 'retry' as const,
-      loggingLevel: 'detailed' as const,
-      governancePolicy: 'strict' as const,
-      maxExecutionTime: 600,
-      rateLimiting: { requestsPerMinute: 30, burstLimit: 5 }
-    },
-    color: '#9c27b0'
-  },
-  {
-    id: 'business-analysis-consensus',
-    name: 'Business Analysis Consensus',
-    description: 'A consensus-driven team for strategic business analysis and decision making.',
-    systemType: 'consensus' as FlowType,
-    agentIds: ['business-analyst-demo', 'helpful-assistant-demo'],
-    agentRoles: {
-      'business-analyst-demo': 'specialist' as AgentRole,
-      'helpful-assistant-demo': 'coordinator' as AgentRole
-    },
-    governanceRules: {
-      crossAgentValidation: true,
-      errorHandling: 'fallback' as const,
-      loggingLevel: 'standard' as const,
-      governancePolicy: 'standard' as const,
-      maxExecutionTime: 450,
-      rateLimiting: { requestsPerMinute: 45, burstLimit: 8 }
-    },
-    color: '#ff9800'
-  }
-];
-
 const MultiAgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const { createContext, loading, error } = useMultiAgentSystemsUnified('user-123'); // TODO: Get real user ID
@@ -453,11 +389,12 @@ const MultiAgentWrappingWizard: React.FC = () => {
 
   const { agentWrappers, loading: loadingAgents } = useAgentWrappers();
 
-  // Load ad hoc configuration if coming from chat
+  // Load ad hoc configuration if coming from chat, or agent IDs from My Agents workflow
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const fromAdHoc = urlParams.get('fromAdHoc') === 'true';
     
+    // Handle ad hoc configuration
     if (fromAdHoc) {
       const storedConfig = sessionStorage.getItem('adHocSystemConfig');
       if (storedConfig) {
@@ -478,6 +415,29 @@ const MultiAgentWrappingWizard: React.FC = () => {
           sessionStorage.removeItem('adHocSystemConfig');
         } catch (error) {
           console.error('Failed to load ad hoc configuration:', error);
+        }
+      }
+    }
+    
+    // Handle My Agents workflow - check for agent IDs and system data
+    const agentIds = urlParams.getAll('agentId');
+    const systemData = urlParams.get('systemData');
+    
+    if (agentIds.length > 0) {
+      setSelectedAgents(agentIds);
+      
+      // If system data is provided (from CreateMultiAgentDialog), parse and apply it
+      if (systemData) {
+        try {
+          const parsedSystemData = JSON.parse(decodeURIComponent(systemData));
+          setSystemName(parsedSystemData.name || '');
+          setSystemDescription(parsedSystemData.description || '');
+          setSystemType(parsedSystemData.systemType || 'sequential');
+          
+          // Start at step 2 since basic info is already filled
+          setActiveStep(1);
+        } catch (error) {
+          console.error('Failed to parse system data:', error);
         }
       }
     }
@@ -1081,82 +1041,6 @@ const MultiAgentWrappingWizard: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Demo Team Templates Section */}
-      <Paper elevation={1} sx={{ p: 3, mb: 4, backgroundColor: 'rgba(76, 175, 80, 0.05)', border: '1px solid rgba(76, 175, 80, 0.2)' }}>
-        <Box mb={2}>
-          <Typography variant="h6" gutterBottom sx={{ color: '#4caf50', fontWeight: 600 }}>
-            🚀 Try a Demo Team First
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Click any demo team below to auto-populate the wizard and see how multi-agent collaboration works!
-          </Typography>
-        </Box>
-        
-        <Grid container spacing={2}>
-          {DEMO_TEAM_TEMPLATES.map((template) => (
-            <Grid item xs={12} md={4} key={template.id}>
-              <Card 
-                sx={{ 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: 3,
-                    borderColor: template.color
-                  }
-                }}
-                onClick={() => {
-                  // Pre-populate wizard with demo team data
-                  setSystemName(template.name);
-                  setSystemDescription(template.description);
-                  setSystemType(template.systemType);
-                  setSelectedAgents(template.agentIds);
-                  setAgentRoles(template.agentRoles);
-                  setGovernanceRules(template.governanceRules);
-                }}
-              >
-                <CardContent sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ color: template.color, mr: 1 }}>
-                      <Assessment />
-                    </Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {template.name}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                    {template.description}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                    <Chip 
-                      label={template.systemType} 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: template.color, 
-                        color: 'white',
-                        fontSize: '0.7rem',
-                        height: 20
-                      }}
-                    />
-                    <Chip 
-                      label={`${template.agentIds.length} agents`} 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: 'rgba(255,255,255,0.1)', 
-                        color: 'white',
-                        fontSize: '0.7rem',
-                        height: 20
-                      }}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
       {/* Ad Hoc Configuration Banner */}
       {isFromAdHoc && adHocConfig && (
         <Alert severity="success" sx={{ mb: 4 }}>
