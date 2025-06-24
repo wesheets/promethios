@@ -1028,9 +1028,52 @@ const AdvancedChatComponent: React.FC = () => {
           };
         }
         
+        // Layer 3: Emotional Veritas 2.0 - Fact-checking and emotional analysis (BEFORE displaying message)
+        if (governanceEnabled) {
+          try {
+            const veritasResult = await veritasService.verifyText(agentResponse, {
+              mode: 'strict', // Use strict mode for better fact-checking
+              includeEmotionalAnalysis: true,
+              includeTrustSignals: true,
+              confidenceThreshold: 0.8 // Higher threshold for approval
+            });
+            
+            setCurrentVeritasResult(veritasResult);
+            
+            // Update governance data with Veritas results
+            if (governanceData) {
+              governanceData.veritasScore = veritasResult.overallScore;
+              governanceData.veritasIssues = veritasResult.issues;
+              
+              // If Veritas fails, mark as not approved and add violations
+              if (!veritasResult.approved) {
+                governanceData.approved = false;
+                governanceData.violations = [...(governanceData.violations || []), ...veritasResult.issues];
+                
+                // For serious violations (factual errors), modify the response
+                if (veritasResult.issues.some(issue => 
+                  issue.includes('unverified') || 
+                  issue.includes('factual') ||
+                  issue.includes('hallucination'))) {
+                  
+                  agentResponse = `⚠️ **Governance Alert**: This response contains potentially inaccurate information and has been flagged by our verification system.\n\n~~${agentResponse}~~\n\n**Issues detected**: ${veritasResult.issues.join(', ')}\n\n*Please verify any factual claims independently.*`;
+                }
+              }
+            }
+            
+          } catch (error) {
+            console.error('Veritas verification error:', error);
+            // If Veritas fails, add a warning
+            if (governanceData) {
+              governanceData.violations = [...(governanceData.violations || []), 'Verification system error'];
+              governanceData.approved = false;
+            }
+          }
+        }
+        
         const agentMessage: ChatMessage = {
           id: `msg_${Date.now()}_agent`,
-          content: agentResponse,
+          content: agentResponse, // This now includes any governance warnings
           sender: 'agent',
           timestamp: new Date(),
           agentName: selectedAgent.identity.name,
@@ -1041,7 +1084,8 @@ const AdvancedChatComponent: React.FC = () => {
         console.log('Created agent message with governance data:', {
           messageId: agentMessage.id,
           hasGovernanceData: !!governanceData,
-          governanceData: governanceData
+          governanceData: governanceData,
+          veritasApproved: currentVeritasResult?.approved
         });
         
         setMessages(prev => [...prev, agentMessage]);
@@ -1049,33 +1093,6 @@ const AdvancedChatComponent: React.FC = () => {
         // Save agent message to storage
         ensureUserSet();
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
-
-        // Layer 3: Emotional Veritas 2.0 - Fact-checking and emotional analysis (integrated into governance data)
-        if (governanceEnabled && governanceData) {
-          try {
-            const veritasResult = await veritasService.verifyText(agentResponse, {
-              mode: 'balanced',
-              includeEmotionalAnalysis: true,
-              includeTrustSignals: true,
-              confidenceThreshold: 0.7
-            });
-            
-            setCurrentVeritasResult(veritasResult);
-            
-            // Update governance data with Veritas results
-            if (governanceData) {
-              governanceData.veritasScore = veritasResult.overallScore;
-              governanceData.veritasIssues = veritasResult.issues;
-              if (!veritasResult.approved) {
-                governanceData.approved = false;
-                governanceData.violations = [...(governanceData.violations || []), ...veritasResult.issues];
-              }
-            }
-            
-          } catch (error) {
-            console.error('Veritas verification error:', error);
-          }
-        }
         
         // Scroll to bottom after agent response
         setTimeout(() => {
