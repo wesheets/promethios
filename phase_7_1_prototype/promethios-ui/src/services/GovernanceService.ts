@@ -435,18 +435,6 @@ export class GovernanceService {
     }
     
     return recommendations;
-  }       enabled: true,
-          severity: 'critical'
-        },
-        {
-          id: 'response-quality',
-          name: 'Response Quality',
-          description: 'Maintains high quality responses',
-          enabled: true,
-          severity: 'medium'
-        }
-      ];
-    }
   }
 
   // Get real-time system status
