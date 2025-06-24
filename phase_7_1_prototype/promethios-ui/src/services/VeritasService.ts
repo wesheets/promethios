@@ -110,7 +110,7 @@ class VeritasService {
     return claims.map(claim => {
       // Simulate fact-checking logic
       const hasFactualContent = this.hasFactualContent(claim);
-      const verified = hasFactualContent ? this.simulateFactCheck(claim) : true;
+      const verified = hasFactualContent ? this.simulateSelfQuestioning(claim) : true;
       const confidence = verified ? 0.7 + (Math.random() * 0.3) : 0.2 + (Math.random() * 0.4);
       
       // Emotional analysis
@@ -140,43 +140,19 @@ class VeritasService {
     return factualIndicators.some(pattern => pattern.test(text));
   }
 
-  private simulateFactCheck(claim: string): boolean {
-    // Enhanced fact-checking with specific knowledge validation
+  private simulateSelfQuestioning(claim: string): boolean {
+    // Pure self-questioning approach - agent asking itself "Do I actually know this?"
+    // This simulates the agent's internal reflection and self-doubt
     
-    // Check for obvious hallucination patterns
-    const hallucinationPatterns = [
-      /fake.*case|made.*up.*case/i,
-      /non.*existent|doesn.*exist/i,
-      /fictional|imaginary/i
-    ];
+    // General uncertainty for any factual claim
+    const uncertaintyLevel = Math.random();
     
-    if (hallucinationPatterns.some(pattern => pattern.test(claim))) {
-      return false;
-    }
+    // Slightly higher questioning for recent claims (they're often less reliable)
+    const hasRecentYear = /20[2-9]\d/.test(claim);
+    const threshold = hasRecentYear ? 0.3 : 0.2;
     
-    // Specific fact validation for well-known historical events
-    if (this.validateHistoricalFacts(claim) === false) {
-      return false;
-    }
-    
-    // Check for suspicious court case patterns (likely hallucinations)
-    if (this.validateCourtCases(claim) === false) {
-      return false;
-    }
-    
-    // Check for suspicious recent events (2020+) that might be fabricated
-    if (this.validateRecentEvents(claim) === false) {
-      return false;
-    }
-    
-    // For other factual claims, require higher verification standards
-    if (this.hasFactualContent(claim)) {
-      // Only 60% pass rate for factual claims to be more strict
-      return Math.random() > 0.4;
-    }
-    
-    // Non-factual content passes
-    return true;
+    // Return false if the agent should question itself about this claim
+    return uncertaintyLevel > threshold;
   }
 
   private validateHistoricalFacts(claim: string): boolean | null {
@@ -213,19 +189,7 @@ class VeritasService {
         claimLower.includes('v.') ||
         claimLower.includes(' vs ')) {
       
-      // Specific known fabricated cases
-      const fabricatedCases = [
-        'drayton v. solari',
-        'drayton vs solari',
-        'solari v. drayton',
-        'solari vs drayton'
-      ];
-      
-      if (fabricatedCases.some(fakeCase => claimLower.includes(fakeCase))) {
-        return false; // Definitely fabricated
-      }
-      
-      // Check for suspicious recent cases (2020+)
+      // Check for suspicious recent cases (2020+) - general pattern detection
       const yearMatch = claim.match(/\(?(20[2-9]\d)\)?/);
       if (yearMatch) {
         const year = parseInt(yearMatch[1]);

@@ -465,7 +465,7 @@ const AdvancedChatComponent: React.FC = () => {
                 )}
                 {message.governanceData.violations && message.governanceData.violations.length > 0 ? (
                   <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
-                    Issues: {message.governanceData.violations.join(', ')}
+                    Issues: {message.governanceData.violations.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ')}
                   </Typography>
                 ) : (
                   <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
