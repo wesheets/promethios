@@ -750,14 +750,20 @@ const AdvancedChatComponent: React.FC = () => {
     try {
       console.log('Agent object:', agent);
       
-      // Extract API configuration from individual agent fields
-      const apiKey = agent.apiKey;
-      const provider = agent.provider?.toLowerCase(); // Convert to lowercase for comparison
-      const selectedModel = agent.selectedModel;
-      const apiEndpoint = agent.apiEndpoint;
+      // Extract API configuration from agent's apiDetails
+      const apiDetails = agent.apiDetails;
+      if (!apiDetails) {
+        console.error('Missing apiDetails in agent:', agent);
+        throw new Error(`Agent API configuration incomplete. Missing: apiDetails`);
+      }
+      
+      const apiKey = apiDetails.key;
+      const provider = apiDetails.provider?.toLowerCase(); // Convert to lowercase for comparison
+      const selectedModel = apiDetails.selectedModel;
+      const apiEndpoint = apiDetails.endpoint;
       
       if (!apiKey || !provider) {
-        console.error('Missing API configuration in agent:', { apiKey: !!apiKey, provider, selectedModel });
+        console.error('Missing API configuration in agent apiDetails:', { apiKey: !!apiKey, provider, selectedModel });
         throw new Error(`Agent API configuration incomplete. Missing: ${!apiKey ? 'apiKey ' : ''}${!provider ? 'provider' : ''}`);
       }
 
@@ -1351,53 +1357,118 @@ const AdvancedChatComponent: React.FC = () => {
               </Select>
             </FormControl>
           ) : (
-            <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
-              <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Agents</InputLabel>
-              <Select
-                multiple
-                value={selectedAgents.map(a => a.identity.id)}
-                onChange={(e) => handleMultiAgentChange(e.target.value as string[])}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      zIndex: 1002,
-                      backgroundColor: DARK_THEME.surface,
-                      border: `1px solid ${DARK_THEME.border}`,
-                      '& .MuiMenuItem-root': {
-                        color: DARK_THEME.text.primary,
-                        '&:hover': {
-                          backgroundColor: DARK_THEME.primary + '20'
+            <Box>
+              {/* Selected Agents Display */}
+              {selectedAgents.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary, mb: 1 }}>
+                    Selected Agents ({selectedAgents.length})
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedAgents.map((agent) => (
+                      <Card 
+                        key={agent.identity.id} 
+                        sx={{ 
+                          backgroundColor: DARK_THEME.background,
+                          border: `1px solid ${DARK_THEME.border}`,
+                          borderRadius: 2,
+                          minWidth: 200
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar 
+                                sx={{ 
+                                  width: 24, 
+                                  height: 24, 
+                                  fontSize: '12px',
+                                  backgroundColor: DARK_THEME.success 
+                                }}
+                              >
+                                {agent.identity.name.charAt(0)}
+                              </Avatar>
+                              <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                                {agent.identity.name}
+                              </Typography>
+                            </Box>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const newSelected = selectedAgents.filter(a => a.identity.id !== agent.identity.id);
+                                setSelectedAgents(newSelected);
+                              }}
+                              sx={{ color: DARK_THEME.text.secondary }}
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                          {/* Show API configuration status */}
+                          <Box sx={{ mt: 1 }}>
+                            {agent.apiDetails?.key && agent.apiDetails?.provider ? (
+                              <Chip 
+                                label="Configured" 
+                                size="small" 
+                                color="success"
+                                sx={{ fontSize: '10px', height: 20 }}
+                              />
+                            ) : (
+                              <Chip 
+                                label="Config Missing" 
+                                size="small" 
+                                color="error"
+                                sx={{ fontSize: '10px', height: 20 }}
+                              />
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+              
+              {/* Add Agent Button */}
+              <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
+                <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Add Agent to Conversation</InputLabel>
+                <Select
+                  value=""
+                  onChange={(e) => {
+                    const agentId = e.target.value as string;
+                    const agent = agents.find(a => a.identity.id === agentId);
+                    if (agent && !selectedAgents.find(a => a.identity.id === agentId)) {
+                      setSelectedAgents([...selectedAgents, agent]);
+                    }
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        zIndex: 1002,
+                        backgroundColor: DARK_THEME.surface,
+                        border: `1px solid ${DARK_THEME.border}`,
+                        '& .MuiMenuItem-root': {
+                          color: DARK_THEME.text.primary,
+                          '&:hover': {
+                            backgroundColor: DARK_THEME.primary + '20'
+                          }
                         }
                       }
                     }
-                  }
-                }}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {(selected as string[]).map((value) => {
-                      const agent = agents.find(a => a.identity.id === value);
-                      return (
-                        <Chip 
-                          key={value} 
-                          label={agent?.identity.name || value} 
-                          size="small" 
-                        />
-                      );
-                    })}
-                  </Box>
-                )}
-                sx={{
-                  color: DARK_THEME.text.primary,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: DARK_THEME.border
-                  },
-                  '& .MuiSvgIcon-root': {
-                    color: DARK_THEME.text.secondary
-                  }
-                }}
-              >
-                {agents.map((agent) => (
-                  <MenuItem key={agent.identity.id} value={agent.identity.id}>
+                  }}
+                  sx={{
+                    color: DARK_THEME.text.primary,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: DARK_THEME.border
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: DARK_THEME.text.secondary
+                    }
+                  }}
+                >
+                  {agents
+                    .filter(agent => !selectedAgents.find(selected => selected.identity.id === agent.identity.id))
+                    .map((agent) => (
+                      <MenuItem key={agent.identity.id} value={agent.identity.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <span>{getAgentAvatar(agent)}</span>
                       <Typography>{agent.identity.name}</Typography>
