@@ -172,13 +172,13 @@ export class GovernanceService {
 
   // Get real-time governance metrics for an agent
   async getAgentMetrics(agentId: string): Promise<GovernanceMetrics> {
-    // Always provide governance metrics in demo mode
+    // Static demo metrics that don't change randomly
     const baseMetrics = {
-      trustScore: 85 + Math.random() * 10, // 85-95 range
-      complianceRate: 92 + Math.random() * 5, // 92-97 range
-      responseTime: 1.2 + Math.random() * 0.5, // 1.2-1.7 range
-      sessionIntegrity: 88 + Math.random() * 8, // 88-96 range
-      policyViolations: Math.floor(Math.random() * 3), // 0-2 violations
+      trustScore: 89.2, // Static value
+      complianceRate: 94.8, // Static value
+      responseTime: 1.4, // Static value
+      sessionIntegrity: 91.6, // Static value
+      policyViolations: 0, // Static value
       status: 'monitoring' as const,
       lastUpdated: new Date()
     };
@@ -205,7 +205,7 @@ export class GovernanceService {
       }
     }
 
-    // Return demo metrics (formatted properly)
+    // Return static demo metrics (no random changes)
     return baseMetrics;
   }
 
