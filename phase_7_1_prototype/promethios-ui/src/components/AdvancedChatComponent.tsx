@@ -354,6 +354,7 @@ const AdvancedChatComponent: React.FC = () => {
 
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
+  const governanceService = useMemo(() => new GovernanceService(), []);
 
   // Custom scroll function that only scrolls within messages container
   const scrollToBottom = () => {
@@ -508,9 +509,14 @@ const AdvancedChatComponent: React.FC = () => {
               setMessages(sortedMessages);
               
               // Auto-scroll to bottom to show newest messages when loading existing chat
+              // Use longer timeout to ensure messages are fully rendered
               setTimeout(() => {
                 scrollToBottom();
-              }, 200);
+                // Double-check scroll after additional time for complex rendering
+                setTimeout(() => {
+                  scrollToBottom();
+                }, 100);
+              }, 500);
             } else {
               // Add welcome message for new conversation
               const welcomeMessage: ChatMessage = {
@@ -588,6 +594,24 @@ const AdvancedChatComponent: React.FC = () => {
 
     loadGovernanceMetrics();
   }, [selectedAgent, governanceEnabled]);
+
+  // Initialize governance session when governance is enabled
+  useEffect(() => {
+    const initializeGovernanceSession = async () => {
+      if (governanceEnabled && effectiveUser?.uid && !currentGovernanceSession) {
+        try {
+          console.log('Initializing governance session...');
+          const session = await governanceService.createSession(effectiveUser.uid);
+          setCurrentGovernanceSession(session);
+          console.log('Governance session initialized:', session);
+        } catch (error) {
+          console.error('Error initializing governance session:', error);
+        }
+      }
+    };
+
+    initializeGovernanceSession();
+  }, [governanceEnabled, effectiveUser?.uid, currentGovernanceSession]);
 
   // Refresh governance metrics periodically
   useEffect(() => {
@@ -1086,9 +1110,14 @@ const AdvancedChatComponent: React.FC = () => {
         setMessages(sortedMessages);
         
         // Auto-scroll to bottom to show newest messages when switching agents
+        // Use longer timeout to ensure messages are fully rendered
         setTimeout(() => {
           scrollToBottom();
-        }, 200);
+          // Double-check scroll after additional time for complex rendering
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+        }, 500);
       } else {
         // Add agent switch message for new conversation
         const switchMessage: ChatMessage = {
