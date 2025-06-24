@@ -337,9 +337,27 @@ const AdvancedChatComponent: React.FC = () => {
             if (chatHistory && chatHistory.messages.length > 0) {
               // Load existing conversation and sort by timestamp (oldest first)
               console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
+              
+              // Debug: Log timestamps before sorting
+              console.log('Messages before sorting:', chatHistory.messages.map(m => ({
+                id: m.id,
+                content: m.content.substring(0, 50),
+                timestamp: m.timestamp,
+                timestampString: m.timestamp.toString()
+              })));
+              
               const sortedMessages = [...chatHistory.messages].sort((a, b) => 
                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
               );
+              
+              // Debug: Log timestamps after sorting
+              console.log('Messages after sorting:', sortedMessages.map(m => ({
+                id: m.id,
+                content: m.content.substring(0, 50),
+                timestamp: m.timestamp,
+                timestampString: m.timestamp.toString()
+              })));
+              
               setMessages(sortedMessages);
               
               // Auto-scroll to bottom to show newest messages when loading existing chat
