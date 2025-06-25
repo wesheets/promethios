@@ -47,6 +47,7 @@ import { UserAgentStorageService } from '../services/UserAgentStorageService';
 import { ChatStorageService, ChatMessage, FileAttachment } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
 import { veritasService, VeritasResult } from '../services/VeritasService';
+import { multiAgentChatIntegration, ChatSystemInfo, MultiAgentChatSession } from '../services/MultiAgentChatIntegrationService';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
@@ -342,8 +343,12 @@ const AdvancedChatComponent: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
+  const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems'>('single');
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<AgentProfile[]>([]);
+  const [availableSystems, setAvailableSystems] = useState<ChatSystemInfo[]>([]);
+  const [selectedSystem, setSelectedSystem] = useState<ChatSystemInfo | null>(null);
+  const [currentChatSession, setCurrentChatSession] = useState<MultiAgentChatSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -944,13 +949,18 @@ const AdvancedChatComponent: React.FC = () => {
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && attachments.length === 0) || isTyping) return;
     
-    if (isMultiAgentMode && selectedAgents.length === 0) {
+    if (chatMode === 'multi-agent' && selectedAgents.length === 0) {
       setError('Please select at least one agent for multi-agent mode');
       return;
     }
     
-    if (!isMultiAgentMode && !selectedAgent) {
+    if (chatMode === 'single' && !selectedAgent) {
       setError('Please select an agent');
+      return;
+    }
+
+    if (chatMode === 'saved-systems' && !selectedSystem) {
+      setError('Please select a multi-agent system');
       return;
     }
 
@@ -973,6 +983,9 @@ const AdvancedChatComponent: React.FC = () => {
     if (selectedAgent) {
       ensureUserSet();
       await chatStorageService.saveMessage(userMessage, selectedAgent.identity.id);
+    } else if (chatMode === 'saved-systems' && selectedSystem) {
+      ensureUserSet();
+      await chatStorageService.saveMessage(userMessage, selectedSystem.id);
     }
 
     // Scroll to bottom after user message
@@ -1118,6 +1131,58 @@ const AdvancedChatComponent: React.FC = () => {
         setTimeout(() => {
           scrollToBottom();
         }, 100);
+      } else if (chatMode === 'saved-systems' && selectedSystem && currentChatSession) {
+        // Handle saved multi-agent system response
+        try {
+          console.log('Sending message to multi-agent system:', selectedSystem.name);
+          
+          // Save user message to storage for the system
+          ensureUserSet();
+          await chatStorageService.saveMessage(userMessage, selectedSystem.id);
+          
+          // Send message through multi-agent chat integration
+          const response = await multiAgentChatIntegration.sendMessage(
+            currentChatSession.id,
+            userMessage.content,
+            currentAttachments
+          );
+          
+          console.log('Received response from multi-agent system:', response);
+          
+          // Create system response message with governance data
+          const systemMessage: ChatMessage = {
+            id: `msg_${Date.now()}_system`,
+            content: response.content,
+            sender: 'agent',
+            timestamp: new Date(),
+            agentName: selectedSystem.name,
+            agentId: selectedSystem.id,
+            governanceData: response.governanceData
+          };
+          
+          setMessages(prev => [...prev, systemMessage]);
+          
+          // Save system response to storage
+          await chatStorageService.saveMessage(systemMessage, selectedSystem.id);
+          
+          // Scroll to bottom after system response
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+          
+        } catch (error) {
+          console.error('Error communicating with multi-agent system:', error);
+          const errorMessage: ChatMessage = {
+            id: `msg_${Date.now()}_system_error`,
+            content: `❌ Error from multi-agent system "${selectedSystem.name}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+            sender: 'error',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          
+          // Save error message to storage
+          await chatStorageService.saveMessage(errorMessage, selectedSystem.id);
+        }
       }
 
     } catch (error) {
@@ -1196,6 +1261,63 @@ const AdvancedChatComponent: React.FC = () => {
   const handleMultiAgentChange = (agentIds: string[]) => {
     const selectedAgentsList = agents.filter(a => agentIds.includes(a.identity.id));
     setSelectedAgents(selectedAgentsList);
+  };
+
+  // Load available multi-agent systems from unified storage
+  const loadAvailableSystems = async () => {
+    try {
+      if (!effectiveUser?.uid) {
+        console.log('No user available for loading systems');
+        return;
+      }
+
+      console.log('Loading available multi-agent systems for user:', effectiveUser.uid);
+      const systems = await multiAgentChatIntegration.getAvailableSystems(effectiveUser.uid);
+      console.log('Loaded systems:', systems);
+      setAvailableSystems(systems);
+    } catch (error) {
+      console.error('Error loading available systems:', error);
+      setError('Failed to load multi-agent systems');
+      setAvailableSystems([]);
+    }
+  };
+
+  // Handle system selection for saved systems mode
+  const handleSystemChange = async (systemId: string) => {
+    try {
+      const system = availableSystems.find(s => s.id === systemId);
+      if (!system) {
+        console.error('System not found:', systemId);
+        return;
+      }
+
+      console.log('Selecting system:', system);
+      setSelectedSystem(system);
+      setError(null);
+
+      // Start a new chat session with the selected system
+      if (effectiveUser?.uid) {
+        const session = await multiAgentChatIntegration.startChatSession(effectiveUser.uid, systemId);
+        setCurrentChatSession(session);
+        console.log('Started chat session:', session);
+
+        // Clear existing messages and add welcome message
+        const welcomeMessage: ChatMessage = {
+          id: `msg_${Date.now()}_system_welcome`,
+          content: `Connected to multi-agent system "${system.name}". This system includes ${system.agentCount} agents using ${system.collaborationModel} collaboration. How can we help you today?`,
+          sender: 'system',
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+
+        // Save welcome message to storage
+        ensureUserSet();
+        await chatStorageService.saveMessage(welcomeMessage, systemId);
+      }
+    } catch (error) {
+      console.error('Error selecting system:', error);
+      setError('Failed to connect to multi-agent system');
+    }
   };
 
   const handleGovernanceToggle = async () => {
@@ -1293,24 +1415,47 @@ const AdvancedChatComponent: React.FC = () => {
         {/* Mode Toggle */}
         <ModeToggleContainer>
           <ModeButton
-            active={!isMultiAgentMode}
-            onClick={() => setIsMultiAgentMode(false)}
+            active={chatMode === 'single'}
+            onClick={() => {
+              setChatMode('single');
+              setIsMultiAgentMode(false);
+              setSelectedSystem(null);
+              setCurrentChatSession(null);
+            }}
             startIcon={<PersonIcon />}
           >
             Single Agent
           </ModeButton>
           <ModeButton
-            active={isMultiAgentMode}
-            onClick={() => setIsMultiAgentMode(true)}
+            active={chatMode === 'multi-agent'}
+            onClick={() => {
+              setChatMode('multi-agent');
+              setIsMultiAgentMode(true);
+              setSelectedSystem(null);
+              setCurrentChatSession(null);
+            }}
             startIcon={<GroupIcon />}
           >
             Multi-Agent
           </ModeButton>
+          <ModeButton
+            active={chatMode === 'saved-systems'}
+            onClick={() => {
+              setChatMode('saved-systems');
+              setIsMultiAgentMode(false);
+              setSelectedAgent(null);
+              setSelectedAgents([]);
+              loadAvailableSystems();
+            }}
+            startIcon={<ShieldIcon />}
+          >
+            Saved Systems
+          </ModeButton>
         </ModeToggleContainer>
 
-        {/* Agent Selection */}
+                {/* Agent/System Selection */}
         <Box sx={{ p: 2, backgroundColor: DARK_THEME.surface, borderBottom: `1px solid ${DARK_THEME.border}`, position: 'relative', zIndex: 1000 }}>
-          {!isMultiAgentMode ? (
+          {chatMode === 'single' ? (
             <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
               <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Agent</InputLabel>
               <Select
@@ -1346,11 +1491,64 @@ const AdvancedChatComponent: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <span>{getAgentAvatar(agent)}</span>
                       <Box>
-                        <Typography variant="body2">{agent.identity.name}</Typography>
-                        <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                          {agent.apiDetails?.provider || 'Unknown'} • {agent.isWrapped ? 'Governed' : 'Standard'}
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {agent.identity.name}
                         </Typography>
                       </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : chatMode === 'saved-systems' ? (
+            <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
+              <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Multi-Agent System</InputLabel>
+              <Select
+                value={selectedSystem?.id || ''}
+                onChange={(e) => handleSystemChange(e.target.value)}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      zIndex: 1002,
+                      backgroundColor: DARK_THEME.surface,
+                      border: `1px solid ${DARK_THEME.border}`,
+                      '& .MuiMenuItem-root': {
+                        color: DARK_THEME.text.primary,
+                        '&:hover': {
+                          backgroundColor: DARK_THEME.primary + '20'
+                        }
+                      }
+                    }
+                  }
+                }}
+                sx={{
+                  color: DARK_THEME.text.primary,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: DARK_THEME.border
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: DARK_THEME.text.secondary
+                  }
+                }}
+              >
+                {availableSystems.map((system) => (
+                  <MenuItem key={system.id} value={system.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <ShieldIcon sx={{ color: DARK_THEME.primary }} />
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {system.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                          {system.agentCount} agents • {system.collaborationModel}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : (              </Box>
                     </Box>
                   </MenuItem>
                 ))}
