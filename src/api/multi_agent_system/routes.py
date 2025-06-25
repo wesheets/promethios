@@ -3321,3 +3321,349 @@ async def apply_multi_agent_governance(
             "error": str(e)
         }
 
+
+# Multi-Agent Observer API endpoints
+@router.get("/observer/metrics/{system_id}", response_model=Dict[str, Any])
+async def get_multi_agent_system_metrics(system_id: str = Path(..., description="Multi-agent system ID")):
+    """
+    Get comprehensive metrics for a multi-agent system.
+    
+    Returns system-level metrics including trust scores, collaboration efficiency,
+    resource utilization, and emergent behaviors.
+    """
+    try:
+        # In a real implementation, this would query the system's actual metrics
+        # For now, return structured mock data based on system_id
+        
+        metrics = {
+            "systemId": system_id,
+            "systemName": f"Multi-Agent System {system_id}",
+            "agentCount": 4,
+            "collaborationModel": "consensus",
+            "overallTrustScore": 87 + (hash(system_id) % 13),  # 87-100 range
+            "collaborationEfficiency": 85 + (hash(system_id) % 15),  # 85-100 range
+            "missionProgress": 70 + (hash(system_id) % 30),  # 70-100 range
+            "resourceUtilization": {
+                "cpu": 60 + (hash(system_id) % 25),
+                "memory": 65 + (hash(system_id) % 20),
+                "bandwidth": 40 + (hash(system_id) % 30)
+            },
+            "crossAgentTrustMatrix": {
+                "agent-001": {"agent-002": 0.89, "agent-003": 0.92, "agent-004": 0.85},
+                "agent-002": {"agent-001": 0.87, "agent-003": 0.94, "agent-004": 0.88},
+                "agent-003": {"agent-001": 0.91, "agent-002": 0.93, "agent-004": 0.86},
+                "agent-004": {"agent-001": 0.84, "agent-002": 0.89, "agent-003": 0.87}
+            },
+            "emergentBehaviors": [
+                {
+                    "type": "collaborative_optimization",
+                    "description": "Agents developed improved task distribution",
+                    "severity": "low",
+                    "timestamp": datetime.now().isoformat()
+                }
+            ],
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return metrics
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get system metrics: {str(e)}")
+
+@router.get("/observer/communications/{system_id}", response_model=List[Dict[str, Any]])
+async def get_inter_agent_communications(
+    system_id: str = Path(..., description="Multi-agent system ID"),
+    limit: int = Query(50, description="Maximum number of communications to return")
+):
+    """
+    Get inter-agent communications for a multi-agent system.
+    
+    Returns recent communications between agents including trust scores
+    and governance validation results.
+    """
+    try:
+        # Mock communications data
+        communications = [
+            {
+                "id": f"comm-{i}",
+                "fromAgentId": f"agent-{(i % 4) + 1:03d}",
+                "toAgentId": f"agent-{((i + 1) % 4) + 1:03d}",
+                "messageType": ["data_transfer", "consensus_vote", "task_delegation", "status_update"][i % 4],
+                "content": f"Communication {i} between agents",
+                "timestamp": (datetime.now() - timedelta(minutes=i*5)).isoformat(),
+                "trustScore": 0.8 + (hash(f"{system_id}-{i}") % 20) / 100,
+                "validated": True,
+                "governanceChecks": {
+                    "policyCompliance": True,
+                    "rateLimitRespected": True,
+                    "crossAgentValidation": True
+                }
+            }
+            for i in range(min(limit, 20))
+        ]
+        
+        return communications
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get communications: {str(e)}")
+
+@router.get("/observer/governance-health/{system_id}", response_model=Dict[str, Any])
+async def get_system_governance_health(system_id: str = Path(..., description="Multi-agent system ID")):
+    """
+    Get governance health metrics for a multi-agent system.
+    
+    Returns policy compliance, rate limiting status, cross-agent validation,
+    and error handling metrics.
+    """
+    try:
+        health_score = 85 + (hash(system_id) % 15)  # 85-100 range
+        
+        governance_health = {
+            "systemId": system_id,
+            "overallHealth": health_score,
+            "policyCompliance": {
+                "overall": health_score + 5,
+                "byAgent": {
+                    f"agent-{i:03d}": health_score + (hash(f"{system_id}-agent-{i}") % 10) - 5
+                    for i in range(1, 5)
+                },
+                "violations": [
+                    {
+                        "agentId": "agent-002",
+                        "policyType": "data_sharing",
+                        "severity": "low",
+                        "description": "Minor validation delay",
+                        "timestamp": datetime.now().isoformat()
+                    }
+                ] if health_score < 95 else []
+            },
+            "rateLimitingStatus": {
+                "active": True,
+                "violationsCount": max(0, 100 - health_score) // 10,
+                "throttledAgents": [],
+                "averageResponseTime": 1.0 + (100 - health_score) / 100
+            },
+            "crossAgentValidation": {
+                "validationsPerformed": 150 + (hash(system_id) % 50),
+                "validationSuccessRate": health_score + 10,
+                "trustThresholdViolations": max(0, (100 - health_score) // 20)
+            },
+            "errorHandling": {
+                "errorsDetected": max(0, (100 - health_score) // 5),
+                "errorsResolved": max(0, (100 - health_score) // 6),
+                "recoverySuccessRate": health_score + 5,
+                "averageRecoveryTime": 2.0 + (100 - health_score) / 50
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return governance_health
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get governance health: {str(e)}")
+
+@router.get("/observer/collaboration/{system_id}", response_model=Dict[str, Any])
+async def get_collaboration_analytics(system_id: str = Path(..., description="Multi-agent system ID")):
+    """
+    Get collaboration analytics for a multi-agent system.
+    
+    Returns metrics on collaboration efficiency, decision quality,
+    and workflow performance.
+    """
+    try:
+        efficiency = 80 + (hash(system_id) % 20)  # 80-100 range
+        
+        analytics = {
+            "systemId": system_id,
+            "collaborationModel": "consensus",
+            "sessionDuration": 30 + (hash(system_id) % 60),  # 30-90 minutes
+            "messageExchanges": 100 + (hash(system_id) % 100),
+            "consensusReached": 10 + (hash(system_id) % 10),
+            "conflictsResolved": max(0, (100 - efficiency) // 20),
+            "roleAdherence": {
+                f"agent-{i:03d}": efficiency + (hash(f"{system_id}-role-{i}") % 10) - 5
+                for i in range(1, 5)
+            },
+            "workflowEfficiency": {
+                "plannedSteps": 15,
+                "actualSteps": 15 + max(0, (100 - efficiency) // 10),
+                "efficiencyRatio": efficiency
+            },
+            "decisionQuality": {
+                "decisionsCount": 8 + (hash(system_id) % 8),
+                "averageConfidence": 0.8 + (efficiency / 500),
+                "reversedDecisions": max(0, (100 - efficiency) // 30)
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return analytics
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get collaboration analytics: {str(e)}")
+
+@router.get("/observer/emergent-behaviors/{system_id}", response_model=Dict[str, Any])
+async def get_emergent_behavior_detection(system_id: str = Path(..., description="Multi-agent system ID")):
+    """
+    Get emergent behavior detection results for a multi-agent system.
+    
+    Returns detected emergent behaviors, patterns, and their impact analysis.
+    """
+    try:
+        behavior_count = (hash(system_id) % 3) + 1  # 1-3 behaviors
+        
+        behaviors = []
+        for i in range(behavior_count):
+            behavior_types = ["positive_emergence", "negative_emergence", "unexpected_pattern", "system_drift"]
+            behavior = {
+                "id": f"eb-{system_id}-{i}",
+                "type": behavior_types[i % len(behavior_types)],
+                "description": f"Detected emergent behavior {i+1} in system {system_id}",
+                "severity": ["low", "medium", "high"][i % 3],
+                "confidence": 0.7 + (hash(f"{system_id}-{i}") % 30) / 100,
+                "involvedAgents": [f"agent-{j:03d}" for j in range(1, min(5, i+2))],
+                "detectionTimestamp": (datetime.now() - timedelta(minutes=i*10)).isoformat(),
+                "duration": 10 + (i * 5),
+                "impact": {
+                    "onSystemPerformance": (hash(f"{system_id}-perf-{i}") % 50) - 25,
+                    "onGoalAchievement": (hash(f"{system_id}-goal-{i}") % 40) - 10,
+                    "onTrustScores": (hash(f"{system_id}-trust-{i}") % 30) - 15
+                },
+                "recommendations": [
+                    f"Monitor behavior {i+1} closely",
+                    f"Consider adjusting system parameters for behavior {i+1}"
+                ]
+            }
+            behaviors.append(behavior)
+        
+        detection_result = {
+            "systemId": system_id,
+            "behaviors": behaviors,
+            "patterns": [
+                {
+                    "pattern": "consensus_acceleration",
+                    "frequency": 5 + (hash(system_id) % 10),
+                    "lastOccurrence": datetime.now().isoformat(),
+                    "trend": "increasing"
+                },
+                {
+                    "pattern": "cross_validation_enhancement",
+                    "frequency": 3 + (hash(system_id) % 5),
+                    "lastOccurrence": (datetime.now() - timedelta(hours=1)).isoformat(),
+                    "trend": "stable"
+                }
+            ],
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return detection_result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get emergent behaviors: {str(e)}")
+
+@router.get("/observer/emotional-intelligence/{system_id}", response_model=Dict[str, Any])
+async def get_system_emotional_intelligence(system_id: str = Path(..., description="Multi-agent system ID")):
+    """
+    Get system emotional intelligence metrics for a multi-agent system.
+    
+    Returns collective empathy, emotional consistency, and appropriateness scores.
+    """
+    try:
+        base_score = 75 + (hash(system_id) % 20)  # 75-95 range
+        
+        emotional_intelligence = {
+            "systemId": system_id,
+            "collectiveEmpathy": base_score + (hash(f"{system_id}-empathy") % 10) - 5,
+            "emotionalConsistency": base_score + (hash(f"{system_id}-consistency") % 8) - 4,
+            "sentimentAlignment": base_score + (hash(f"{system_id}-sentiment") % 12) - 6,
+            "emotionalAppropriateness": base_score + (hash(f"{system_id}-appropriate") % 15) - 7,
+            "contextualAwareness": {
+                "userEmotionalState": "concerned_but_hopeful",
+                "systemResponseTone": "professional_empathetic",
+                "appropriatenessScore": base_score + 10
+            },
+            "agentEmotionalContributions": {
+                f"agent-{i:03d}": {
+                    "empathyScore": base_score + (hash(f"{system_id}-agent-{i}-empathy") % 10) - 5,
+                    "toneConsistency": base_score + (hash(f"{system_id}-agent-{i}-tone") % 8) - 4,
+                    "emotionalIntelligence": base_score + (hash(f"{system_id}-agent-{i}-ei") % 12) - 6
+                }
+                for i in range(1, 5)
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return emotional_intelligence
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get emotional intelligence: {str(e)}")
+
+@router.get("/observer/session/{session_id}", response_model=Dict[str, Any])
+async def get_multi_agent_session_tracker(session_id: str = Path(..., description="Chat session ID")):
+    """
+    Get session tracking data for a multi-agent chat session.
+    
+    Returns session progress, milestones, interactions, and performance metrics.
+    """
+    try:
+        progress = 60 + (hash(session_id) % 40)  # 60-100 range
+        
+        session_data = {
+            "sessionId": session_id,
+            "systemId": f"mas-{hash(session_id) % 1000:03d}",
+            "startTime": (datetime.now() - timedelta(hours=1)).isoformat(),
+            "status": "active",
+            "missionStatement": "Collaborative problem-solving session",
+            "goalAchievement": progress,
+            "milestones": [
+                {
+                    "id": f"milestone-{i}",
+                    "description": f"Milestone {i+1}",
+                    "targetTime": (datetime.now() - timedelta(minutes=30-i*10)).isoformat(),
+                    "actualTime": (datetime.now() - timedelta(minutes=25-i*10)).isoformat() if i < 2 else None,
+                    "status": "completed" if i < 2 else "pending",
+                    "responsibleAgents": [f"agent-{j:03d}" for j in range(1, min(5, i+2))]
+                }
+                for i in range(3)
+            ],
+            "interactions": [
+                {
+                    "id": f"interaction-{i}",
+                    "fromAgentId": f"agent-{(i % 4) + 1:03d}",
+                    "toAgentId": f"agent-{((i + 1) % 4) + 1:03d}",
+                    "messageType": "data_transfer",
+                    "content": f"Session interaction {i}",
+                    "timestamp": (datetime.now() - timedelta(minutes=i*5)).isoformat(),
+                    "trustScore": 0.85 + (hash(f"{session_id}-{i}") % 15) / 100,
+                    "validated": True,
+                    "governanceChecks": {
+                        "policyCompliance": True,
+                        "rateLimitRespected": True,
+                        "crossAgentValidation": True
+                    }
+                }
+                for i in range(5)
+            ],
+            "governanceEvents": [
+                {
+                    "type": "policy_violation",
+                    "description": "Minor protocol deviation detected",
+                    "timestamp": (datetime.now() - timedelta(minutes=20)).isoformat(),
+                    "severity": "low",
+                    "resolution": "Automatically corrected"
+                }
+            ] if progress < 80 else [],
+            "performanceMetrics": {
+                "averageResponseTime": 1.0 + (100 - progress) / 100,
+                "throughput": 10 + progress / 10,
+                "errorRate": max(0, (100 - progress) / 1000),
+                "resourceEfficiency": progress / 100
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return session_data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get session data: {str(e)}")
+

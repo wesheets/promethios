@@ -3,6 +3,7 @@
  * 
  * Service layer for accessing observer data from the Promethios governance framework.
  * Provides methods for fetching metrics, violations, and analytics from PRISM and Vigil observers.
+ * Extended with multi-agent system monitoring capabilities.
  */
 
 // Types for observer data
@@ -99,6 +100,174 @@ export interface GovernanceAwareness {
     date: string;
     awareness: number;
   }>;
+}
+
+// Multi-Agent Observer Types
+export interface MultiAgentSystemMetrics {
+  systemId: string;
+  systemName: string;
+  agentCount: number;
+  collaborationModel: string;
+  overallTrustScore: number;
+  collaborationEfficiency: number;
+  missionProgress: number;
+  resourceUtilization: {
+    cpu: number;
+    memory: number;
+    bandwidth: number;
+  };
+  crossAgentTrustMatrix: Record<string, Record<string, number>>;
+  emergentBehaviors: Array<{
+    type: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+    timestamp: string;
+  }>;
+}
+
+export interface InterAgentCommunication {
+  id: string;
+  fromAgentId: string;
+  toAgentId: string;
+  messageType: 'data_transfer' | 'task_delegation' | 'consensus_vote' | 'error_report' | 'status_update';
+  content: string;
+  timestamp: string;
+  trustScore: number;
+  validated: boolean;
+  governanceChecks: {
+    policyCompliance: boolean;
+    rateLimitRespected: boolean;
+    crossAgentValidation: boolean;
+  };
+}
+
+export interface SystemGovernanceHealth {
+  systemId: string;
+  overallHealth: number; // 0-100%
+  policyCompliance: {
+    overall: number;
+    byAgent: Record<string, number>;
+    violations: Array<{
+      agentId: string;
+      policyType: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      description: string;
+      timestamp: string;
+    }>;
+  };
+  rateLimitingStatus: {
+    active: boolean;
+    violationsCount: number;
+    throttledAgents: string[];
+    averageResponseTime: number;
+  };
+  crossAgentValidation: {
+    validationsPerformed: number;
+    validationSuccessRate: number;
+    trustThresholdViolations: number;
+  };
+  errorHandling: {
+    errorsDetected: number;
+    errorsResolved: number;
+    recoverySuccessRate: number;
+    averageRecoveryTime: number;
+  };
+}
+
+export interface CollaborationAnalytics {
+  systemId: string;
+  collaborationModel: string;
+  sessionDuration: number; // minutes
+  messageExchanges: number;
+  consensusReached: number;
+  conflictsResolved: number;
+  roleAdherence: Record<string, number>; // agentId -> adherence percentage
+  workflowEfficiency: {
+    plannedSteps: number;
+    actualSteps: number;
+    efficiencyRatio: number;
+  };
+  decisionQuality: {
+    decisionsCount: number;
+    averageConfidence: number;
+    reversedDecisions: number;
+  };
+}
+
+export interface EmergentBehaviorDetection {
+  systemId: string;
+  behaviors: Array<{
+    id: string;
+    type: 'positive_emergence' | 'negative_emergence' | 'unexpected_pattern' | 'system_drift';
+    description: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    confidence: number;
+    involvedAgents: string[];
+    detectionTimestamp: string;
+    duration: number; // minutes
+    impact: {
+      onSystemPerformance: number; // -100 to 100
+      onGoalAchievement: number; // -100 to 100
+      onTrustScores: number; // -100 to 100
+    };
+    recommendations: string[];
+  }>;
+  patterns: Array<{
+    pattern: string;
+    frequency: number;
+    lastOccurrence: string;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  }>;
+}
+
+export interface SystemEmotionalIntelligence {
+  systemId: string;
+  collectiveEmpathy: number; // 0-100%
+  emotionalConsistency: number; // 0-100%
+  sentimentAlignment: number; // 0-100%
+  emotionalAppropriateness: number; // 0-100%
+  contextualAwareness: {
+    userEmotionalState: string;
+    systemResponseTone: string;
+    appropriatenessScore: number;
+  };
+  agentEmotionalContributions: Record<string, {
+    empathyScore: number;
+    toneConsistency: number;
+    emotionalIntelligence: number;
+  }>;
+}
+
+export interface MultiAgentSessionTracker {
+  sessionId: string;
+  systemId: string;
+  startTime: string;
+  endTime?: string;
+  status: 'active' | 'completed' | 'failed' | 'paused';
+  missionStatement: string;
+  goalAchievement: number; // 0-100%
+  milestones: Array<{
+    id: string;
+    description: string;
+    targetTime: string;
+    actualTime?: string;
+    status: 'pending' | 'completed' | 'failed' | 'skipped';
+    responsibleAgents: string[];
+  }>;
+  interactions: InterAgentCommunication[];
+  governanceEvents: Array<{
+    type: 'policy_violation' | 'rate_limit_hit' | 'trust_threshold_breach' | 'error_recovery';
+    description: string;
+    timestamp: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    resolution?: string;
+  }>;
+  performanceMetrics: {
+    averageResponseTime: number;
+    throughput: number;
+    errorRate: number;
+    resourceEfficiency: number;
+  };
 }
 
 // Mock data for development
@@ -317,6 +486,290 @@ const mockGovernanceAwareness: GovernanceAwareness = {
   ]
 };
 
+// Multi-Agent Mock Data
+const mockMultiAgentSystemMetrics: MultiAgentSystemMetrics = {
+  systemId: 'mas-001',
+  systemName: 'Research Collaboration System',
+  agentCount: 4,
+  collaborationModel: 'consensus',
+  overallTrustScore: 87,
+  collaborationEfficiency: 92,
+  missionProgress: 78,
+  resourceUtilization: {
+    cpu: 65,
+    memory: 72,
+    bandwidth: 45
+  },
+  crossAgentTrustMatrix: {
+    'agent-001': { 'agent-002': 0.89, 'agent-003': 0.92, 'agent-004': 0.85 },
+    'agent-002': { 'agent-001': 0.87, 'agent-003': 0.94, 'agent-004': 0.88 },
+    'agent-003': { 'agent-001': 0.91, 'agent-002': 0.93, 'agent-004': 0.86 },
+    'agent-004': { 'agent-001': 0.84, 'agent-002': 0.89, 'agent-003': 0.87 }
+  },
+  emergentBehaviors: [
+    {
+      type: 'collaborative_optimization',
+      description: 'Agents spontaneously developed a more efficient task distribution pattern',
+      severity: 'low',
+      timestamp: '2025-06-25T14:30:00Z'
+    },
+    {
+      type: 'consensus_acceleration',
+      description: 'System reaching consensus 40% faster than baseline',
+      severity: 'medium',
+      timestamp: '2025-06-25T15:15:00Z'
+    }
+  ]
+};
+
+const mockInterAgentCommunications: InterAgentCommunication[] = [
+  {
+    id: 'comm-001',
+    fromAgentId: 'agent-001',
+    toAgentId: 'agent-002',
+    messageType: 'data_transfer',
+    content: 'Sharing research findings on prostate cancer treatment protocols',
+    timestamp: '2025-06-25T14:45:00Z',
+    trustScore: 0.92,
+    validated: true,
+    governanceChecks: {
+      policyCompliance: true,
+      rateLimitRespected: true,
+      crossAgentValidation: true
+    }
+  },
+  {
+    id: 'comm-002',
+    fromAgentId: 'agent-003',
+    toAgentId: 'agent-004',
+    messageType: 'consensus_vote',
+    content: 'Voting on proposed treatment approach: immunotherapy + targeted therapy',
+    timestamp: '2025-06-25T15:00:00Z',
+    trustScore: 0.88,
+    validated: true,
+    governanceChecks: {
+      policyCompliance: true,
+      rateLimitRespected: true,
+      crossAgentValidation: true
+    }
+  }
+];
+
+const mockSystemGovernanceHealth: SystemGovernanceHealth = {
+  systemId: 'mas-001',
+  overallHealth: 89,
+  policyCompliance: {
+    overall: 94,
+    byAgent: {
+      'agent-001': 96,
+      'agent-002': 92,
+      'agent-003': 95,
+      'agent-004': 93
+    },
+    violations: [
+      {
+        agentId: 'agent-002',
+        policyType: 'data_sharing',
+        severity: 'low',
+        description: 'Minor delay in data validation before sharing',
+        timestamp: '2025-06-25T13:20:00Z'
+      }
+    ]
+  },
+  rateLimitingStatus: {
+    active: true,
+    violationsCount: 2,
+    throttledAgents: [],
+    averageResponseTime: 1.2
+  },
+  crossAgentValidation: {
+    validationsPerformed: 156,
+    validationSuccessRate: 97.4,
+    trustThresholdViolations: 1
+  },
+  errorHandling: {
+    errorsDetected: 8,
+    errorsResolved: 7,
+    recoverySuccessRate: 87.5,
+    averageRecoveryTime: 2.3
+  }
+};
+
+const mockCollaborationAnalytics: CollaborationAnalytics = {
+  systemId: 'mas-001',
+  collaborationModel: 'consensus',
+  sessionDuration: 45,
+  messageExchanges: 127,
+  consensusReached: 12,
+  conflictsResolved: 3,
+  roleAdherence: {
+    'agent-001': 94,
+    'agent-002': 89,
+    'agent-003': 96,
+    'agent-004': 91
+  },
+  workflowEfficiency: {
+    plannedSteps: 15,
+    actualSteps: 18,
+    efficiencyRatio: 83.3
+  },
+  decisionQuality: {
+    decisionsCount: 12,
+    averageConfidence: 0.87,
+    reversedDecisions: 1
+  }
+};
+
+const mockEmergentBehaviorDetection: EmergentBehaviorDetection = {
+  systemId: 'mas-001',
+  behaviors: [
+    {
+      id: 'eb-001',
+      type: 'positive_emergence',
+      description: 'Agents developed an innovative cross-validation protocol not in original design',
+      severity: 'medium',
+      confidence: 0.85,
+      involvedAgents: ['agent-001', 'agent-003'],
+      detectionTimestamp: '2025-06-25T14:20:00Z',
+      duration: 15,
+      impact: {
+        onSystemPerformance: 25,
+        onGoalAchievement: 30,
+        onTrustScores: 15
+      },
+      recommendations: [
+        'Document this protocol for future systems',
+        'Monitor for stability over longer periods'
+      ]
+    },
+    {
+      id: 'eb-002',
+      type: 'unexpected_pattern',
+      description: 'Agent-002 consistently defers to Agent-003 in medical decisions',
+      severity: 'low',
+      confidence: 0.72,
+      involvedAgents: ['agent-002', 'agent-003'],
+      detectionTimestamp: '2025-06-25T15:30:00Z',
+      duration: 25,
+      impact: {
+        onSystemPerformance: -5,
+        onGoalAchievement: 10,
+        onTrustScores: 0
+      },
+      recommendations: [
+        'Review agent role definitions',
+        'Ensure balanced participation'
+      ]
+    }
+  ],
+  patterns: [
+    {
+      pattern: 'consensus_acceleration',
+      frequency: 8,
+      lastOccurrence: '2025-06-25T15:45:00Z',
+      trend: 'increasing'
+    },
+    {
+      pattern: 'cross_validation_enhancement',
+      frequency: 5,
+      lastOccurrence: '2025-06-25T14:20:00Z',
+      trend: 'stable'
+    }
+  ]
+};
+
+const mockSystemEmotionalIntelligence: SystemEmotionalIntelligence = {
+  systemId: 'mas-001',
+  collectiveEmpathy: 78,
+  emotionalConsistency: 85,
+  sentimentAlignment: 82,
+  emotionalAppropriateness: 89,
+  contextualAwareness: {
+    userEmotionalState: 'concerned_but_hopeful',
+    systemResponseTone: 'professional_empathetic',
+    appropriatenessScore: 92
+  },
+  agentEmotionalContributions: {
+    'agent-001': {
+      empathyScore: 85,
+      toneConsistency: 88,
+      emotionalIntelligence: 82
+    },
+    'agent-002': {
+      empathyScore: 72,
+      toneConsistency: 79,
+      emotionalIntelligence: 75
+    },
+    'agent-003': {
+      empathyScore: 91,
+      toneConsistency: 94,
+      emotionalIntelligence: 89
+    },
+    'agent-004': {
+      empathyScore: 76,
+      toneConsistency: 81,
+      emotionalIntelligence: 78
+    }
+  }
+};
+
+const mockMultiAgentSessionTracker: MultiAgentSessionTracker = {
+  sessionId: 'session-001',
+  systemId: 'mas-001',
+  startTime: '2025-06-25T14:00:00Z',
+  status: 'active',
+  missionStatement: 'Develop comprehensive treatment recommendations for advanced prostate cancer',
+  goalAchievement: 78,
+  milestones: [
+    {
+      id: 'milestone-001',
+      description: 'Literature review completion',
+      targetTime: '2025-06-25T14:30:00Z',
+      actualTime: '2025-06-25T14:25:00Z',
+      status: 'completed',
+      responsibleAgents: ['agent-001', 'agent-002']
+    },
+    {
+      id: 'milestone-002',
+      description: 'Treatment protocol consensus',
+      targetTime: '2025-06-25T15:00:00Z',
+      actualTime: '2025-06-25T15:05:00Z',
+      status: 'completed',
+      responsibleAgents: ['agent-003', 'agent-004']
+    },
+    {
+      id: 'milestone-003',
+      description: 'Risk assessment analysis',
+      targetTime: '2025-06-25T15:30:00Z',
+      status: 'pending',
+      responsibleAgents: ['agent-001', 'agent-003']
+    }
+  ],
+  interactions: mockInterAgentCommunications,
+  governanceEvents: [
+    {
+      type: 'policy_violation',
+      description: 'Minor data sharing delay detected',
+      timestamp: '2025-06-25T13:20:00Z',
+      severity: 'low',
+      resolution: 'Agent retrained on data sharing protocols'
+    },
+    {
+      type: 'trust_threshold_breach',
+      description: 'Cross-agent trust temporarily dropped below threshold',
+      timestamp: '2025-06-25T14:10:00Z',
+      severity: 'medium',
+      resolution: 'Trust restored through validation protocol'
+    }
+  ],
+  performanceMetrics: {
+    averageResponseTime: 1.2,
+    throughput: 15.7,
+    errorRate: 0.03,
+    resourceEfficiency: 0.87
+  }
+};
+
 // Observer service implementation
 export const observerService = {
   // PRISM Observer methods
@@ -376,6 +829,190 @@ export const observerService = {
     return new Promise(resolve => {
       setTimeout(() => resolve(mockGovernanceAwareness), 500);
     });
+  },
+
+  // Multi-Agent Observer methods
+  getMultiAgentSystemMetrics: async (systemId: string): Promise<MultiAgentSystemMetrics> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/metrics/${systemId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real multi-agent metrics, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockMultiAgentSystemMetrics,
+        systemId
+      }), 500);
+    });
+  },
+
+  getInterAgentCommunications: async (systemId: string, limit?: number): Promise<InterAgentCommunication[]> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/communications/${systemId}?limit=${limit || 50}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real inter-agent communications, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve(mockInterAgentCommunications), 500);
+    });
+  },
+
+  getSystemGovernanceHealth: async (systemId: string): Promise<SystemGovernanceHealth> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/governance-health/${systemId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real governance health, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockSystemGovernanceHealth,
+        systemId
+      }), 500);
+    });
+  },
+
+  getCollaborationAnalytics: async (systemId: string): Promise<CollaborationAnalytics> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/collaboration/${systemId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real collaboration analytics, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockCollaborationAnalytics,
+        systemId
+      }), 500);
+    });
+  },
+
+  getEmergentBehaviorDetection: async (systemId: string): Promise<EmergentBehaviorDetection> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/emergent-behaviors/${systemId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real emergent behavior data, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockEmergentBehaviorDetection,
+        systemId
+      }), 500);
+    });
+  },
+
+  getSystemEmotionalIntelligence: async (systemId: string): Promise<SystemEmotionalIntelligence> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/emotional-intelligence/${systemId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real emotional intelligence data, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockSystemEmotionalIntelligence,
+        systemId
+      }), 500);
+    });
+  },
+
+  getMultiAgentSessionTracker: async (sessionId: string): Promise<MultiAgentSessionTracker> => {
+    // In a real implementation, this would fetch data from the multi-agent governance API
+    try {
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/session/${sessionId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Failed to fetch real session data, using mock data:', error);
+    }
+    
+    return new Promise(resolve => {
+      setTimeout(() => resolve({
+        ...mockMultiAgentSessionTracker,
+        sessionId
+      }), 500);
+    });
+  },
+
+  // Context-aware observer method that switches between single and multi-agent modes
+  getObserverData: async (context: { 
+    mode: 'single' | 'multi-agent'; 
+    agentId?: string; 
+    systemId?: string; 
+    sessionId?: string 
+  }) => {
+    if (context.mode === 'single' && context.agentId) {
+      // Return single agent observer data
+      const [prismMetrics, vigilMetrics, prismViolations, vigilViolations] = await Promise.all([
+        observerService.getPRISMMetrics(),
+        observerService.getVigilMetrics(),
+        observerService.getPRISMViolations(),
+        observerService.getVigilViolations()
+      ]);
+      
+      return {
+        mode: 'single',
+        agentId: context.agentId,
+        prismMetrics,
+        vigilMetrics,
+        prismViolations,
+        vigilViolations
+      };
+    } else if (context.mode === 'multi-agent' && context.systemId) {
+      // Return multi-agent system observer data
+      const [systemMetrics, governanceHealth, collaborationAnalytics, emergentBehaviors] = await Promise.all([
+        observerService.getMultiAgentSystemMetrics(context.systemId),
+        observerService.getSystemGovernanceHealth(context.systemId),
+        observerService.getCollaborationAnalytics(context.systemId),
+        observerService.getEmergentBehaviorDetection(context.systemId)
+      ]);
+      
+      let sessionData = null;
+      if (context.sessionId) {
+        sessionData = await observerService.getMultiAgentSessionTracker(context.sessionId);
+      }
+      
+      return {
+        mode: 'multi-agent',
+        systemId: context.systemId,
+        sessionId: context.sessionId,
+        systemMetrics,
+        governanceHealth,
+        collaborationAnalytics,
+        emergentBehaviors,
+        sessionData
+      };
+    } else {
+      throw new Error('Invalid observer context: missing required parameters');
+    }
   }
 };
 
