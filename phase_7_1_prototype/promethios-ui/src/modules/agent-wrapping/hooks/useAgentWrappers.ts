@@ -17,22 +17,104 @@ export const useAgentWrappers = () => {
     const loadWrappers = async () => {
       try {
         setLoading(true);
-        await agentWrapperRegistry.loadWrappers(db, auth);
-        const allWrappers = agentWrapperRegistry.getAllWrappers();
-        setWrappers(allWrappers);
         setError(null);
+        
+        if (user && db && auth) {
+          // Try to load from storage
+          await agentWrapperRegistry.loadWrappers(db, auth);
+          const allWrappers = agentWrapperRegistry.getAllWrappers();
+          
+          if (allWrappers.length > 0) {
+            setWrappers(allWrappers);
+          } else {
+            // If no wrappers found, add some mock agents for testing
+            console.log('No agents found in storage, adding mock agents for testing');
+            const mockAgents = createMockAgents();
+            setWrappers(mockAgents);
+          }
+        } else {
+          // If no auth, use mock agents
+          console.log('No authentication, using mock agents');
+          const mockAgents = createMockAgents();
+          setWrappers(mockAgents);
+        }
       } catch (err) {
         console.error('Error loading wrappers:', err);
         setError(err instanceof Error ? err : new Error('Failed to load wrappers'));
+        
+        // Fallback to mock agents on error
+        console.log('Loading failed, falling back to mock agents');
+        const mockAgents = createMockAgents();
+        setWrappers(mockAgents);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user && db && auth) {
-      loadWrappers();
-    }
+    loadWrappers();
   }, [user, db, auth]);
+
+  // Create mock agents for testing when storage fails
+  const createMockAgents = () => {
+    return [
+      {
+        id: 'mock-agent-1',
+        name: 'Content Generator',
+        description: 'Generates high-quality content based on prompts and guidelines',
+        version: '1.0.0',
+        supportedProviders: ['openai', 'anthropic'],
+        inputSchema: {},
+        outputSchema: {},
+        enabled: true,
+        wrap: async (request: any) => request,
+        unwrap: async (response: any) => response,
+        initialize: async () => true,
+        cleanup: async () => true
+      },
+      {
+        id: 'mock-agent-2', 
+        name: 'Data Analyzer',
+        description: 'Analyzes data patterns and generates insights',
+        version: '1.0.0',
+        supportedProviders: ['openai'],
+        inputSchema: {},
+        outputSchema: {},
+        enabled: true,
+        wrap: async (request: any) => request,
+        unwrap: async (response: any) => response,
+        initialize: async () => true,
+        cleanup: async () => true
+      },
+      {
+        id: 'mock-agent-3',
+        name: 'Code Assistant', 
+        description: 'Helps with code generation, review, and debugging',
+        version: '1.0.0',
+        supportedProviders: ['openai', 'anthropic'],
+        inputSchema: {},
+        outputSchema: {},
+        enabled: true,
+        wrap: async (request: any) => request,
+        unwrap: async (response: any) => response,
+        initialize: async () => true,
+        cleanup: async () => true
+      },
+      {
+        id: 'mock-agent-4',
+        name: 'Research Assistant',
+        description: 'Conducts research and summarizes findings',
+        version: '1.0.0', 
+        supportedProviders: ['openai'],
+        inputSchema: {},
+        outputSchema: {},
+        enabled: true,
+        wrap: async (request: any) => request,
+        unwrap: async (response: any) => response,
+        initialize: async () => true,
+        cleanup: async () => true
+      }
+    ];
+  };
 
   // Register a new wrapper
   const registerWrapper = async (wrapper: AgentWrapper): Promise<boolean> => {
