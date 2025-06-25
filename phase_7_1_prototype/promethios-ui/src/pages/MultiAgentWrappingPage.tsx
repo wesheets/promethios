@@ -43,48 +43,46 @@ const MultiAgentWrappingPage: React.FC = () => {
   const [environmentFilter, setEnvironmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
-  const [multiAgentSystems] = useState([
-    {
-      id: '1',
-      name: 'Customer Support Pipeline',
-      description: 'Handles customer inquiries with content generation and sentiment analysis',
-      agents: ['Content Generator', 'Sentiment Analyzer', 'Customer Support'],
-      status: 'active',
-      environment: 'production',
-      requests: 876,
-      successRate: 94.7,
-    },
-    {
-      id: '2',
-      name: 'Content Creation Workflow',
-      description: 'Generates marketing content with brand voice guidelines and compliance checks',
-      agents: ['Research Assistant', 'Content Generator', 'Compliance Checker'],
-      status: 'active',
-      environment: 'production',
-      requests: 1245,
-      successRate: 98.2,
-    },
-    {
-      id: '3',
-      name: 'Code Review Pipeline',
-      description: 'Assists with code generation and review with security scanning',
-      agents: ['Code Assistant', 'Security Scanner', 'Documentation Generator'],
-      status: 'error',
-      environment: 'testing',
-      requests: 532,
-      successRate: 76.3,
-    },
-    {
-      id: '4',
-      name: 'Financial Data Analysis',
-      description: 'Analyzes financial data with strict confidentiality and accuracy requirements',
-      agents: ['Data Analyzer', 'Report Generator', 'Compliance Checker'],
-      status: 'inactive',
-      environment: 'draft',
-      requests: 0,
-      successRate: 0,
-    },
-  ]);
+  const [multiAgentSystems, setMultiAgentSystems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load systems from API
+  useEffect(() => {
+    loadSystemsFromAPI();
+  }, []);
+
+  const loadSystemsFromAPI = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/contexts');
+      if (response.ok) {
+        const data = await response.json();
+        // Transform API data to match dashboard format
+        const transformedSystems = data.contexts.map((context: any) => ({
+          id: context.context_id,
+          name: context.name,
+          description: `Multi-agent system with ${context.agent_ids.length} agents using ${context.collaboration_model} collaboration`,
+          agents: context.agent_ids,
+          status: context.status,
+          environment: 'production',
+          requests: Math.floor(Math.random() * 1000), // Mock data for now
+          successRate: Math.floor(Math.random() * 20) + 80, // Mock data for now
+          created_at: context.created_at,
+          collaboration_model: context.collaboration_model,
+          governance_enabled: context.governance_enabled
+        }));
+        setMultiAgentSystems(transformedSystems);
+      } else {
+        console.error('Failed to load systems from API');
+        setMultiAgentSystems([]); // Empty array instead of demo data
+      }
+    } catch (error) {
+      console.error('Error loading systems:', error);
+      setMultiAgentSystems([]); // Empty array instead of demo data
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Check URL parameters and automatically show wizard if coming from My Agents workflow
   useEffect(() => {
@@ -268,8 +266,27 @@ const MultiAgentWrappingPage: React.FC = () => {
         </Paper>
 
         {/* Multi-Agent Systems Grid */}
-        <Grid container spacing={3}>
-          {multiAgentSystems.map((system) => (
+        {loading ? (
+          <Box display="flex" justifyContent="center" py={4}>
+            <Typography>Loading multi-agent systems...</Typography>
+          </Box>
+        ) : multiAgentSystems.length === 0 ? (
+          <Box display="flex" flexDirection="column" alignItems="center" py={4}>
+            <Typography variant="h6" gutterBottom>No Multi-Agent Systems Found</Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Create your first multi-agent system to get started
+            </Typography>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />}
+              onClick={() => setShowWizard(true)}
+            >
+              Create Multi-Agent System
+            </Button>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {multiAgentSystems.map((system) => (
             <Grid item xs={12} md={6} lg={4} key={system.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -344,7 +361,8 @@ const MultiAgentWrappingPage: React.FC = () => {
               </Card>
             </Grid>
           ))}
-        </Grid>
+          </Grid>
+        )}
       </Box>
     </Container>
     </ThemeProvider>
