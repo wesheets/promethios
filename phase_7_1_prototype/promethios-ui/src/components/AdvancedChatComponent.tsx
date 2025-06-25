@@ -1886,12 +1886,6 @@ const AdvancedChatComponent: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-          ) : (              </Box>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           ) : (
             <Box>
               {/* Selected Agents Display */}
