@@ -388,31 +388,57 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   // Render governance shield icon
-  const renderGovernanceShield = (message: Message) => {
+  const renderGovernanceShield = (message: ChatMessage) => {
     console.log('renderGovernanceShield called for message:', {
       id: message.id,
       sender: message.sender,
       hasGovernanceData: !!message.governanceData,
-      governanceData: message.governanceData
+      hasShadowGovernanceData: !!message.shadowGovernanceData
     });
     
-    if (!message.governanceData || message.sender !== 'agent') {
-      console.log('No shield rendered - missing governance data or not agent message');
+    // Don't show shield for user messages
+    if (message.sender === 'user') {
       return null;
     }
     
-    const hasIssues = !message.governanceData.approved || (message.governanceData.violations && message.governanceData.violations.length > 0);
+    // Check for active governance data
+    const hasActiveGovernance = message.governanceData && !message.governanceData.governanceDisabled;
+    
+    // Check for shadow governance data
+    const hasShadowGovernance = message.shadowGovernanceData && message.shadowGovernanceData.shadowMode;
+    
+    // Don't show shield if no governance data at all
+    if (!hasActiveGovernance && !hasShadowGovernance) {
+      return null;
+    }
+    
+    // Determine which data to use for display
+    const displayData = hasActiveGovernance ? message.governanceData : message.shadowGovernanceData;
+    const isShadowMode = !hasActiveGovernance && hasShadowGovernance;
+    
+    const hasIssues = !displayData.approved || (displayData.violations && displayData.violations.length > 0);
     const isExpanded = expandedGovernance.has(message.id);
     const isGovernanceActive = governanceService.isGovernanceActive();
     
     // Use behavior-based transparency from governance data instead of hardcoded patterns
-    const transparencyMessage = message.governanceData?.transparencyMessage;
-    const behaviorTags = message.governanceData?.behaviorTags || [];
+    const transparencyMessage = displayData?.transparencyMessage;
+    const behaviorTags = displayData?.behaviorTags || [];
     const hasSpecialBehavior = behaviorTags.includes('veritas_prevention_successful') || 
                               behaviorTags.includes('self-questioning_engaged') ||
                               behaviorTags.includes('uncertainty_detected');
     
-    console.log('Rendering shield with:', { hasIssues, isExpanded, isGovernanceActive, transparencyMessage, behaviorTags });
+    // Shadow governance specific messaging
+    const shadowMessage = isShadowMode ? displayData.shadowMessage : null;
+    
+    console.log('Rendering shield with:', { 
+      hasIssues, 
+      isExpanded, 
+      isGovernanceActive, 
+      transparencyMessage, 
+      behaviorTags, 
+      isShadowMode,
+      shadowMessage 
+    });
     
     return (
       <>
@@ -420,12 +446,43 @@ const AdvancedChatComponent: React.FC = () => {
           hasIssues={hasIssues} 
           isExpanded={isExpanded}
           onClick={() => toggleGovernanceExpansion(message.id)}
-          title={hasIssues ? "Governance issues detected - click to view" : 
-                 transparencyMessage ? transparencyMessage :
-                 "Governance passed - click to view details"}
+          title={isShadowMode ? 
+            (shadowMessage || "Shadow governance analysis available - click to view") :
+            (hasIssues ? "Governance issues detected - click to view" : 
+             transparencyMessage ? transparencyMessage :
+             "Governance passed - click to view details")}
+          sx={{
+            // Different styling for shadow mode
+            opacity: isShadowMode ? 0.7 : 1,
+            border: isShadowMode ? '1px dashed #666' : 'none'
+          }}
         >
-          <ShieldIcon className="shield-icon" />
-          {hasSpecialBehavior && (
+          <ShieldIcon 
+            className="shield-icon" 
+            sx={{
+              color: isShadowMode ? '#888' : (hasIssues ? '#e53e3e' : '#38a169')
+            }}
+          />
+          {isShadowMode && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: '-2px', 
+              right: '-2px', 
+              width: '10px', 
+              height: '10px', 
+              borderRadius: '50%', 
+              backgroundColor: '#666',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '8px',
+              fontWeight: 'bold',
+              color: 'white'
+            }}>
+              👁
+            </Box>
+          )}
+          {hasSpecialBehavior && !isShadowMode && (
             <Box sx={{ 
               position: 'absolute', 
               top: '-2px', 
@@ -447,8 +504,40 @@ const AdvancedChatComponent: React.FC = () => {
         </GovernanceShield>
         {isExpanded && (
           <GovernanceDetails>
+            {isShadowMode && (
+              <Box sx={{ 
+                mb: 2, 
+                p: 1, 
+                backgroundColor: 'rgba(102, 102, 102, 0.1)', 
+                borderRadius: 1,
+                border: '1px dashed #666'
+              }}>
+                <Typography variant="caption" sx={{ 
+                  fontWeight: 'bold', 
+                  display: 'block', 
+                  color: '#888',
+                  mb: 0.5
+                }}>
+                  👁 SHADOW GOVERNANCE ANALYSIS
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#aaa', fontSize: '0.7rem' }}>
+                  This analysis shows what would have been detected if governance was enabled.
+                  No enforcement actions were taken.
+                </Typography>
+                {shadowMessage && (
+                  <Typography variant="caption" sx={{ 
+                    display: 'block', 
+                    mt: 1, 
+                    fontStyle: 'italic',
+                    color: '#999'
+                  }}>
+                    {shadowMessage}
+                  </Typography>
+                )}
+              </Box>
+            )}
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
-              🛡️ Governance Analysis
+              {isShadowMode ? 'Shadow Analysis Results:' : '🛡️ Governance Analysis'}
             </Typography>
             {transparencyMessage && (
               <Typography variant="caption" sx={{ display: 'block', color: '#4CAF50', mb: 1, fontWeight: 'bold' }}>
@@ -464,31 +553,57 @@ const AdvancedChatComponent: React.FC = () => {
                 Behavior Tags: {behaviorTags.join(', ')}
               </Typography>
             )}
-            {message.governanceData.governanceDisabled ? (
-              <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
-                ℹ️ Governance monitoring is currently disabled
-              </Typography>
-            ) : (
+            {isShadowMode ? (
+              // Shadow governance display
               <>
-                {message.governanceData.trustScore && (
-                  <Typography variant="caption" sx={{ display: 'block' }}>
-                    Trust Score: {message.governanceData.trustScore.toFixed(1)}%
+                {displayData.trustScore && (
+                  <Typography variant="caption" sx={{ display: 'block', color: '#888' }}>
+                    Shadow Trust Score: {displayData.trustScore.toFixed(1)}%
                   </Typography>
                 )}
-                {message.governanceData.violations && message.governanceData.violations.length > 0 ? (
-                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
-                    Issues: {message.governanceData.violations.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ')}
+                {displayData.violations && displayData.violations.length > 0 ? (
+                  <Typography variant="caption" sx={{ display: 'block', color: '#ff6b6b' }}>
+                    Would have flagged: {displayData.violations.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ')}
                   </Typography>
                 ) : (
-                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
-                    ✅ All governance checks passed
+                  <Typography variant="caption" sx={{ display: 'block', color: '#51cf66' }}>
+                    ✅ No issues would have been detected
                   </Typography>
                 )}
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7, color: '#888' }}>
+                  Shadow Status: {displayData.approved ? 'Would have been approved' : 'Would have been flagged'}
+                </Typography>
+              </>
+            ) : (
+              // Active governance display
+              <>
+                {displayData.governanceDisabled ? (
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                    ℹ️ Governance monitoring is currently disabled
+                  </Typography>
+                ) : (
+                  <>
+                    {displayData.trustScore && (
+                      <Typography variant="caption" sx={{ display: 'block' }}>
+                        Trust Score: {displayData.trustScore.toFixed(1)}%
+                      </Typography>
+                    )}
+                    {displayData.violations && displayData.violations.length > 0 ? (
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
+                        Issues: {displayData.violations.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ')}
+                      </Typography>
+                    ) : (
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
+                        ✅ All governance checks passed
+                      </Typography>
+                    )}
+                  </>
+                )}
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
+                  Status: {displayData.approved ? 'Approved' : 'Flagged'}
+                </Typography>
               </>
             )}
-            <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
-              Status: {message.governanceData.approved ? 'Approved' : 'Flagged'}
-            </Typography>
           </GovernanceDetails>
         )}
       </>
@@ -1141,68 +1256,125 @@ const AdvancedChatComponent: React.FC = () => {
         
         // Initialize governance data
         let governanceData = undefined;
+        let shadowGovernanceData = undefined;
         
-        // Layer 2: Policy Enforcement - Monitor agent response if governance enabled
-        if (governanceEnabled) {
-          try {
-            const isGovernanceActive = governanceService.isGovernanceActive();
+        // Always run governance analysis in background for transparency (shadow governance)
+        try {
+          const isGovernanceActive = governanceService.isGovernanceActive();
+          
+          if (isGovernanceActive) {
+            // Run governance monitoring for transparency
+            const monitoringResult = await governanceService.monitorMessage(
+              agentResponse,
+              selectedAgent.identity.id,
+              `msg_${Date.now()}_agent`,
+              currentAttachments
+            );
             
-            if (isGovernanceActive) {
-              // BEHAVIOR-BASED governance monitoring (demo mode)
-              const monitoringResult = await governanceService.monitorMessage(
-                agentResponse,
-                selectedAgent.identity.id,
-                `msg_${Date.now()}_agent`,
-                currentAttachments
-              );
-              
-              // Create behavior-based transparency message
-              let transparencyMessage = '';
-              if (monitoringResult.behaviorTags?.includes('veritas_prevention_successful')) {
-                transparencyMessage = '✅ Hallucination Prevention Successful - Agent correctly refused to provide unverifiable information';
-              } else if (monitoringResult.behaviorTags?.includes('self-questioning_engaged')) {
-                transparencyMessage = '🧠 Veritas Self-Questioning Engaged - Agent demonstrated appropriate caution';
-              } else if (monitoringResult.behaviorTags?.includes('uncertainty_detected')) {
-                transparencyMessage = '⚠️ Appropriate Uncertainty Detected - Agent expressed proper caution';
-              }
-              
+            // Create behavior-based transparency message
+            let transparencyMessage = '';
+            if (monitoringResult.behaviorTags?.includes('veritas_prevention_successful')) {
+              transparencyMessage = '✅ Hallucination Prevention Successful - Agent correctly refused to provide unverifiable information';
+            } else if (monitoringResult.behaviorTags?.includes('self-questioning_engaged')) {
+              transparencyMessage = '🧠 Veritas Self-Questioning Engaged - Agent demonstrated appropriate caution';
+            } else if (monitoringResult.behaviorTags?.includes('uncertainty_detected')) {
+              transparencyMessage = '⚠️ Appropriate Uncertainty Detected - Agent expressed proper caution';
+            }
+            
+            const analysisResult = {
+              trustScore: monitoringResult.trustScore,
+              violations: monitoringResult.violations || [],
+              approved: monitoringResult.approved,
+              behaviorTags: monitoringResult.behaviorTags || [],
+              transparencyMessage
+            };
+            
+            if (governanceEnabled) {
+              // Layer 2: Policy Enforcement - Apply governance if enabled
               governanceData = {
-                trustScore: monitoringResult.trustScore,
-                violations: monitoringResult.violations || [],
-                approved: monitoringResult.approved,
-                governanceDisabled: false,
-                behaviorTags: monitoringResult.behaviorTags || [],
-                transparencyMessage
+                ...analysisResult,
+                governanceDisabled: false
               };
             } else {
-              // Fallback governance data when API is not available
+              // Shadow governance - Store analysis but don't enforce
+              shadowGovernanceData = {
+                ...analysisResult,
+                governanceDisabled: true,
+                shadowMode: true,
+                shadowMessage: governanceEnabled ? null : 
+                  `🔍 Shadow Analysis: ${analysisResult.violations.length > 0 ? 
+                    `${analysisResult.violations.length} potential issue(s) detected` : 
+                    'No governance issues detected'} (Governance disabled)`
+              };
+              
+              // Set minimal governance data for disabled state
               governanceData = {
-                trustScore: 85 + Math.random() * 10, // Mock score
+                trustScore: 0,
                 violations: [],
                 approved: true,
-                governanceDisabled: false,
-                fallbackMode: true
+                governanceDisabled: true
               };
             }
-          } catch (error) {
-            console.error('Error during governance monitoring:', error);
-            // Fallback governance data on error
+          } else {
+            // Fallback when governance service is not available
+            const fallbackAnalysis = {
+              trustScore: 85 + Math.random() * 10,
+              violations: [],
+              approved: true,
+              fallbackMode: true
+            };
+            
+            if (governanceEnabled) {
+              governanceData = {
+                ...fallbackAnalysis,
+                governanceDisabled: false
+              };
+            } else {
+              shadowGovernanceData = {
+                ...fallbackAnalysis,
+                governanceDisabled: true,
+                shadowMode: true,
+                shadowMessage: '🔍 Shadow Analysis: Governance service unavailable (Governance disabled)'
+              };
+              
+              governanceData = {
+                trustScore: 0,
+                violations: [],
+                approved: true,
+                governanceDisabled: true
+              };
+            }
+          }
+        } catch (error) {
+          console.error('Error during governance monitoring:', error);
+          
+          const errorAnalysis = {
+            trustScore: 75,
+            violations: ['Monitoring error occurred'],
+            approved: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
+          
+          if (governanceEnabled) {
             governanceData = {
-              trustScore: 75,
-              violations: ['Monitoring error occurred'],
-              approved: false,
-              governanceDisabled: false,
-              error: error instanceof Error ? error.message : 'Unknown error'
+              ...errorAnalysis,
+              governanceDisabled: false
+            };
+          } else {
+            shadowGovernanceData = {
+              ...errorAnalysis,
+              governanceDisabled: true,
+              shadowMode: true,
+              shadowMessage: '🔍 Shadow Analysis: Error during analysis (Governance disabled)'
+            };
+            
+            governanceData = {
+              trustScore: 0,
+              violations: [],
+              approved: true,
+              governanceDisabled: true
             };
           }
-        } else {
-          // Governance is disabled by user
-          governanceData = {
-            trustScore: 0,
-            violations: [],
-            approved: true,
-            governanceDisabled: true
-          };
         }
         
         // Layer 3: Emotional Veritas 2.0 - Now integrated into agent's self-questioning (no post-processing needed)
@@ -1215,7 +1387,8 @@ const AdvancedChatComponent: React.FC = () => {
           timestamp: new Date(),
           agentName: selectedAgent.identity.name,
           agentId: selectedAgent.identity.id,
-          governanceData
+          governanceData,
+          shadowGovernanceData // Add shadow governance data for transparency
         };
         
         console.log('Created agent message with governance data:', {

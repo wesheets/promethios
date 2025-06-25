@@ -14,6 +14,18 @@ export interface ChatMessage {
     violations?: any[];
     approved?: boolean;
   };
+  shadowGovernanceData?: {
+    trustScore?: number;
+    violations?: any[];
+    approved?: boolean;
+    shadowMode?: boolean;
+    shadowMessage?: string;
+    behaviorTags?: string[];
+    transparencyMessage?: string;
+    governanceDisabled?: boolean;
+    fallbackMode?: boolean;
+    error?: string;
+  };
 }
 
 export interface FileAttachment {
