@@ -513,6 +513,43 @@ const MultiAgentWrappingWizard: React.FC = () => {
         systemType // collaboration model
       );
       
+      // Save the complete multi-agent system to unified storage
+      const { UnifiedStorageService } = await import('../../../services/UnifiedStorageService');
+      const storageService = new UnifiedStorageService();
+      
+      const completeSystemData = {
+        ...systemData,
+        id: contextId,
+        contextId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: 'current-user', // TODO: Get from auth context
+        collaborationModel,
+        governanceConfiguration: {
+          rateLimiting: rateLimitingEnabled,
+          crossAgentValidation: crossAgentValidationEnabled,
+          errorHandlingStrategy: errorHandlingStrategy,
+          complianceStandards: governanceRules.complianceStandards || [],
+          trustThreshold: governanceRules.trustThreshold || 80
+        },
+        chatEnabled: true, // Enable chat interface by default
+        dashboardEnabled: true // Enable dashboard by default
+      };
+      
+      // Store in the 'agents' namespace for multi-agent systems
+      await storageService.set('agents', `multi-agent-system-${contextId}`, completeSystemData);
+      
+      // Also store a reference in user's system list
+      const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
+      userSystems.push({
+        id: contextId,
+        name: systemName,
+        description: systemDescription,
+        createdAt: new Date().toISOString(),
+        type: 'multi-agent-system'
+      });
+      await storageService.set('user', 'multi-agent-systems', userSystems);
+      
       setCreatedSystemId(contextId);
       setIsComplete(true);
       setActiveStep(steps.length); // Move to success step
