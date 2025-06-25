@@ -52,6 +52,8 @@ import {
 } from '@mui/icons-material';
 import { useAgentWrappers } from '../hooks/useAgentWrappers';
 import { useMultiAgentSystemsUnified } from '../hooks/useMultiAgentSystemsUnified';
+import { usePolicyBackend } from '../../../hooks/usePolicyBackend';
+import { PolicyTemplate } from '../../../services/policyBackendService';
 import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
 
 // Enhanced Success component with system scorecard and governance details
@@ -368,6 +370,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
     errorHandling: 'fallback',
     loggingLevel: 'standard',
     governancePolicy: 'standard',
+    selectedPolicyTemplate: null as PolicyTemplate | null,
     maxExecutionTime: 300,
     trustThreshold: 0.7,
     requireConsensus: false,
@@ -388,6 +391,19 @@ const MultiAgentWrappingWizard: React.FC = () => {
   const isLoading = loading || isCreating;
 
   const { agentWrappers, loading: loadingAgents } = useAgentWrappers();
+  
+  // Policy backend integration
+  const { 
+    policies, 
+    policiesLoading, 
+    policiesError, 
+    loadPolicies 
+  } = usePolicyBackend();
+  
+  // Load policies on component mount
+  useEffect(() => {
+    loadPolicies();
+  }, [loadPolicies]);
 
   // Load ad hoc configuration if coming from chat, or agent IDs from My Agents workflow
   useEffect(() => {
@@ -812,17 +828,46 @@ const MultiAgentWrappingWizard: React.FC = () => {
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Governance Policy</InputLabel>
+                  <InputLabel>Policy Template</InputLabel>
                   <Select
-                    value={governanceRules.governancePolicy}
-                    label="Governance Policy"
-                    onChange={(e) => updateRule('governancePolicy', e.target.value)}
+                    value={governanceRules.selectedPolicyTemplate?.id || ''}
+                    label="Policy Template"
+                    onChange={(e) => {
+                      const selectedPolicy = policies.find(p => p.id === e.target.value);
+                      setGovernanceRules(prev => ({
+                        ...prev,
+                        selectedPolicyTemplate: selectedPolicy || null,
+                        governancePolicy: selectedPolicy?.compliance_level || 'standard'
+                      }));
+                    }}
+                    disabled={policiesLoading}
                   >
-                    <MenuItem value="minimal">Minimal</MenuItem>
-                    <MenuItem value="standard">Standard</MenuItem>
-                    <MenuItem value="strict">Strict</MenuItem>
-                    <MenuItem value="custom">Custom</MenuItem>
+                    {policiesLoading ? (
+                      <MenuItem disabled>Loading policies...</MenuItem>
+                    ) : policiesError ? (
+                      <MenuItem disabled>Error loading policies</MenuItem>
+                    ) : policies.length === 0 ? (
+                      <MenuItem disabled>No policies available</MenuItem>
+                    ) : (
+                      policies.map((policy) => (
+                        <MenuItem key={policy.id} value={policy.id}>
+                          <Box>
+                            <Typography variant="body2" fontWeight="bold">
+                              {policy.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {policy.category} • {policy.compliance_level}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      ))
+                    )}
                   </Select>
+                  {governanceRules.selectedPolicyTemplate && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      {governanceRules.selectedPolicyTemplate.description}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
               
