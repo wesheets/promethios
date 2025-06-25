@@ -18,6 +18,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/benchmark', require('./routes/benchmark'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/multi_agent_system', require('./routes/multiAgentSystem'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
