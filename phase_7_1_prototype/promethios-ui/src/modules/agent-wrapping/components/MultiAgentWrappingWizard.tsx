@@ -53,6 +53,7 @@ import {
 import { useAgentWrappers } from '../hooks/useAgentWrappers';
 import { useMultiAgentSystemsUnified } from '../hooks/useMultiAgentSystemsUnified';
 import { usePolicyBackend } from '../../../hooks/usePolicyBackend';
+import { useNavigate } from 'react-router-dom';
 import { PolicyTemplate } from '../../../services/policyBackendService';
 import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
 
@@ -371,6 +372,7 @@ const steps = [
 const MultiAgentWrappingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const { createContext, loading, error } = useMultiAgentSystemsUnified('user-123'); // TODO: Get real user ID
+  const navigate = useNavigate();
   
   // Check for ad hoc configuration from sessionStorage
   const [isFromAdHoc, setIsFromAdHoc] = useState(false);
@@ -409,7 +411,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
   // Use backend loading and error states
   const isLoading = loading || isCreating;
 
-  const { agentWrappers, loading: loadingAgents } = useAgentWrappers();
+  const { wrappers: agentWrappers, loading: loadingAgents } = useAgentWrappers();
   
   // Policy backend integration
   const { 
@@ -621,7 +623,11 @@ const MultiAgentWrappingWizard: React.FC = () => {
               <Alert severity="info">
                 <AlertTitle>No Wrapped Agents Found</AlertTitle>
                 You need to wrap individual agents before creating multi-agent systems.
-                <Button variant="contained" sx={{ mt: 2 }}>
+                <Button 
+                  variant="contained" 
+                  sx={{ mt: 2 }}
+                  onClick={() => navigate('/agents/my-agents')}
+                >
                   Wrap Your First Agent
                 </Button>
               </Alert>
@@ -1001,82 +1007,6 @@ const MultiAgentWrappingWizard: React.FC = () => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
-              Governance Configuration
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Configure governance rules and policies for your multi-agent system
-            </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>Trust Management</Typography>
-                    <Box mb={2}>
-                      <Typography variant="body2" gutterBottom>Trust Threshold</Typography>
-                      <Slider
-                        value={governanceRules.trustThreshold}
-                        onChange={(_, value) => updateRule('trustThreshold', value)}
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        marks={[
-                          { value: 0.5, label: 'Lenient' },
-                          { value: 0.7, label: 'Standard' },
-                          { value: 0.9, label: 'Strict' }
-                        ]}
-                        valueLabelDisplay="auto"
-                      />
-                    </Box>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={governanceRules.requireConsensus}
-                          onChange={(e) => updateRule('requireConsensus', e.target.checked)}
-                        />
-                      }
-                      label="Require Consensus for Decisions"
-                    />
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>Policy Compliance</Typography>
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel>Audit Level</InputLabel>
-                      <Select
-                        value={governanceRules.auditLevel}
-                        onChange={(e) => updateRule('auditLevel', e.target.value)}
-                      >
-                        <MenuItem value="low">Low - Basic logging</MenuItem>
-                        <MenuItem value="standard">Standard - Detailed logs</MenuItem>
-                        <MenuItem value="high">High - Complete audit trail</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel>Policy Enforcement</InputLabel>
-                      <Select
-                        value={governanceRules.policyEnforcement}
-                        onChange={(e) => updateRule('policyEnforcement', e.target.value)}
-                      >
-                        <MenuItem value="lenient">Lenient - Warnings only</MenuItem>
-                        <MenuItem value="standard">Standard - Block violations</MenuItem>
-                        <MenuItem value="strict">Strict - Zero tolerance</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
-        );
-      case 6:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
               Testing & Validation
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
@@ -1099,7 +1029,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
             </Grid>
           </Box>
         );
-      case 7:
+      case 6:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -1127,7 +1057,6 @@ const MultiAgentWrappingWizard: React.FC = () => {
                     <Typography variant="h6" gutterBottom>Governance</Typography>
                     <Typography><strong>Policy:</strong> {governanceRules.governancePolicy}</Typography>
                     <Typography><strong>Error Handling:</strong> {governanceRules.errorHandling}</Typography>
-                    <Typography><strong>Logging:</strong> {governanceRules.loggingLevel}</Typography>
                     <Typography><strong>Max Time:</strong> {governanceRules.maxExecutionTime}s</Typography>
                   </CardContent>
                 </Card>
