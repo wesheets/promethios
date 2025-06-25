@@ -526,9 +526,9 @@ const MultiAgentWrappingWizard: React.FC = () => {
         userId: 'current-user', // TODO: Get from auth context
         collaborationModel,
         governanceConfiguration: {
-          rateLimiting: rateLimitingEnabled,
-          crossAgentValidation: crossAgentValidationEnabled,
-          errorHandlingStrategy: errorHandlingStrategy,
+          rateLimiting: governanceRules.rateLimiting,
+          crossAgentValidation: governanceRules.crossAgentValidation,
+          errorHandlingStrategy: governanceRules.errorHandling,
           complianceStandards: governanceRules.complianceStandards || [],
           trustThreshold: governanceRules.trustThreshold || 80
         },
