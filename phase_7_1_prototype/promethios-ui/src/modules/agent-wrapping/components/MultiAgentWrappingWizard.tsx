@@ -343,7 +343,7 @@ const steps = [
   'Agent Selection',
   'Basic Info', 
   'Collaboration Model',
-  'System Type & Flow',
+  'Agent Role Selection',
   'Governance Configuration',
   'Testing & Validation',
   'Review & Deploy'
@@ -762,7 +762,7 @@ const MultiAgentWrappingWizard: React.FC = () => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
-              System Type & Flow Configuration
+              Agent Role Selection
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
               Define how your selected agents will work together
