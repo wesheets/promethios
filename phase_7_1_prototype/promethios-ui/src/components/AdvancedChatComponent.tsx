@@ -1144,7 +1144,8 @@ const AdvancedChatComponent: React.FC = () => {
           const response = await multiAgentChatIntegration.sendMessage(
             currentChatSession.id,
             userMessage.content,
-            currentAttachments
+            currentAttachments,
+            governanceEnabled // Pass governance setting to backend
           );
           
           console.log('Received response from multi-agent system:', response);

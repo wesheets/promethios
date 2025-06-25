@@ -282,6 +282,80 @@ export class MultiAgentChatIntegrationService {
       return null;
     }
   }
+
+  /**
+   * Send message to multi-agent system with governance control
+   */
+  async sendMessage(
+    sessionId: string, 
+    message: string, 
+    attachments: any[] = [],
+    governanceEnabled: boolean = true
+  ): Promise<{ content: string; governanceData?: any }> {
+    try {
+      const session = await this.getChatSession(sessionId);
+      if (!session) {
+        throw new Error(`Chat session ${sessionId} not found`);
+      }
+
+      // Get system configuration
+      const config = await this.getChatConfiguration(session.systemId);
+      
+      // Prepare request payload
+      const requestPayload = {
+        message,
+        attachments,
+        sessionId,
+        systemId: session.systemId,
+        systemConfiguration: config,
+        governanceEnabled, // Pass governance setting to backend
+        userId: session.userId
+      };
+
+      console.log('Sending message to multi-agent system:', {
+        systemId: session.systemId,
+        systemName: session.systemName,
+        governanceEnabled,
+        messageLength: message.length,
+        attachmentCount: attachments.length
+      });
+
+      // Call the backend multi-agent system API
+      const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Multi-agent system API error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Update session activity
+      await this.updateSessionActivity(sessionId, session.messageCount + 1);
+
+      // Return response with governance data
+      return {
+        content: result.response || result.content || 'No response received',
+        governanceData: governanceEnabled ? result.governanceData : undefined
+      };
+
+    } catch (error) {
+      console.error('Failed to send message to multi-agent system:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get available systems (alias for backward compatibility)
+   */
+  async getAvailableSystems(userId: string): Promise<ChatSystemInfo[]> {
+    return this.getAvailableChatSystems(userId);
+  }
 }
 
 // Export singleton instance

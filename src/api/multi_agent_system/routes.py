@@ -3045,3 +3045,279 @@ async def get_available_action_types():
         ]
     }
 
+
+
+# Chat-related models
+class ChatMessageRequest(BaseModel):
+    message: str = Field(..., description="User message content")
+    attachments: List[Dict[str, Any]] = Field(default=[], description="File attachments")
+    sessionId: str = Field(..., description="Chat session ID")
+    systemId: str = Field(..., description="Multi-agent system ID")
+    systemConfiguration: Dict[str, Any] = Field(..., description="System configuration")
+    governanceEnabled: bool = Field(default=True, description="Whether governance is enabled")
+    userId: str = Field(..., description="User ID")
+
+class ChatMessageResponse(BaseModel):
+    response: str = Field(..., description="System response content")
+    content: str = Field(..., description="Response content (alias)")
+    governanceData: Optional[Dict[str, Any]] = Field(None, description="Governance analysis data")
+    sessionId: str = Field(..., description="Chat session ID")
+    systemId: str = Field(..., description="Multi-agent system ID")
+    timestamp: datetime = Field(default_factory=datetime.now, description="Response timestamp")
+    agentResponses: List[Dict[str, Any]] = Field(default=[], description="Individual agent responses")
+
+# Chat endpoints
+@router.post("/chat/send-message", response_model=ChatMessageResponse)
+async def send_message_to_multi_agent_system(request: ChatMessageRequest):
+    """
+    Send message to multi-agent system with governance control.
+    
+    This endpoint routes messages through the appropriate collaboration model
+    and applies governance based on the governanceEnabled flag.
+    """
+    try:
+        print(f"Received chat message for system {request.systemId}")
+        print(f"Governance enabled: {request.governanceEnabled}")
+        print(f"Message: {request.message[:100]}...")
+        
+        # Get system configuration
+        config = request.systemConfiguration
+        collaboration_model = config.get('collaborationModel', 'sequential')
+        agent_roles = config.get('agentRoles', [])
+        governance_config = config.get('governanceConfiguration', {})
+        
+        # Prepare response data
+        response_content = ""
+        governance_data = None
+        agent_responses = []
+        
+        # Route through appropriate collaboration model
+        if collaboration_model == 'sequential':
+            # Sequential processing through agents
+            response_content = await process_sequential_collaboration(
+                request.message, 
+                agent_roles, 
+                request.governanceEnabled,
+                governance_config
+            )
+        elif collaboration_model == 'parallel':
+            # Parallel processing with aggregation
+            response_content = await process_parallel_collaboration(
+                request.message, 
+                agent_roles, 
+                request.governanceEnabled,
+                governance_config
+            )
+        elif collaboration_model == 'consensus':
+            # Consensus-based decision making
+            response_content = await process_consensus_collaboration(
+                request.message, 
+                agent_roles, 
+                request.governanceEnabled,
+                governance_config
+            )
+        else:
+            # Default to sequential
+            response_content = await process_sequential_collaboration(
+                request.message, 
+                agent_roles, 
+                request.governanceEnabled,
+                governance_config
+            )
+        
+        # Apply governance if enabled
+        if request.governanceEnabled:
+            governance_data = await apply_multi_agent_governance(
+                response_content,
+                request.systemId,
+                governance_config,
+                agent_responses
+            )
+        
+        # Create response
+        response = ChatMessageResponse(
+            response=response_content,
+            content=response_content,
+            governanceData=governance_data,
+            sessionId=request.sessionId,
+            systemId=request.systemId,
+            agentResponses=agent_responses
+        )
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error processing chat message: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")
+
+# Helper functions for collaboration processing
+async def process_sequential_collaboration(
+    message: str, 
+    agent_roles: List[Dict], 
+    governance_enabled: bool,
+    governance_config: Dict
+) -> str:
+    """Process message through agents sequentially."""
+    try:
+        if not agent_roles:
+            return "No agents configured for this system."
+        
+        current_message = message
+        final_response = ""
+        
+        for i, role_assignment in enumerate(agent_roles):
+            agent_id = role_assignment.get('agentId', f'agent_{i}')
+            role = role_assignment.get('role', 'processor')
+            
+            # Simulate agent processing
+            if role == 'coordinator':
+                response = f"[Coordinator] Analyzing request and delegating tasks: {current_message[:100]}..."
+            elif role == 'processor':
+                response = f"[Processor] Processing task: {current_message[:100]}..."
+            elif role == 'validator':
+                response = f"[Validator] Validating results: {current_message[:100]}..."
+            elif role == 'aggregator':
+                response = f"[Aggregator] Combining results: {current_message[:100]}..."
+            else:
+                response = f"[{role.title()}] Handling: {current_message[:100]}..."
+            
+            # Apply rate limiting if governance enabled
+            if governance_enabled:
+                rate_check = await rate_limiting_service.check_rate_limit(agent_id, "default_context")
+                if not rate_check.allowed:
+                    response += f" [Rate limited: {rate_check.reason}]"
+            
+            current_message = response
+            final_response = response
+        
+        return final_response or "Multi-agent system processed your request successfully."
+        
+    except Exception as e:
+        return f"Error in sequential collaboration: {str(e)}"
+
+async def process_parallel_collaboration(
+    message: str, 
+    agent_roles: List[Dict], 
+    governance_enabled: bool,
+    governance_config: Dict
+) -> str:
+    """Process message through agents in parallel."""
+    try:
+        if not agent_roles:
+            return "No agents configured for this system."
+        
+        responses = []
+        
+        for i, role_assignment in enumerate(agent_roles):
+            agent_id = role_assignment.get('agentId', f'agent_{i}')
+            role = role_assignment.get('role', 'processor')
+            
+            # Simulate parallel processing
+            if role == 'data_analyst':
+                response = f"[Data Analyst] Analyzed data patterns in your request."
+            elif role == 'content_creator':
+                response = f"[Content Creator] Generated content based on your input."
+            elif role == 'researcher':
+                response = f"[Researcher] Researched relevant information."
+            else:
+                response = f"[{role.title()}] Processed your request in parallel."
+            
+            # Apply governance if enabled
+            if governance_enabled:
+                rate_check = await rate_limiting_service.check_rate_limit(agent_id, "default_context")
+                if not rate_check.allowed:
+                    response += f" [Rate limited]"
+            
+            responses.append(response)
+        
+        # Aggregate responses
+        aggregated = "Multi-agent parallel processing results:\n" + "\n".join(responses)
+        return aggregated
+        
+    except Exception as e:
+        return f"Error in parallel collaboration: {str(e)}"
+
+async def process_consensus_collaboration(
+    message: str, 
+    agent_roles: List[Dict], 
+    governance_enabled: bool,
+    governance_config: Dict
+) -> str:
+    """Process message through consensus decision making."""
+    try:
+        if not agent_roles:
+            return "No agents configured for this system."
+        
+        # Simulate consensus process
+        votes = []
+        
+        for i, role_assignment in enumerate(agent_roles):
+            agent_id = role_assignment.get('agentId', f'agent_{i}')
+            role = role_assignment.get('role', 'processor')
+            
+            # Simulate voting
+            if role == 'decision_maker':
+                vote = f"[Decision Maker] Recommends approach A for optimal results."
+            elif role == 'validator':
+                vote = f"[Validator] Agrees with approach A after validation."
+            else:
+                vote = f"[{role.title()}] Supports the consensus decision."
+            
+            # Apply governance if enabled
+            if governance_enabled:
+                rate_check = await rate_limiting_service.check_rate_limit(agent_id, "default_context")
+                if not rate_check.allowed:
+                    vote += f" [Rate limited]"
+            
+            votes.append(vote)
+        
+        # Determine consensus
+        consensus = "Consensus reached: " + "; ".join(votes)
+        return consensus
+        
+    except Exception as e:
+        return f"Error in consensus collaboration: {str(e)}"
+
+async def apply_multi_agent_governance(
+    response_content: str,
+    system_id: str,
+    governance_config: Dict,
+    agent_responses: List[Dict]
+) -> Dict[str, Any]:
+    """Apply governance analysis to multi-agent response."""
+    try:
+        # Simulate governance analysis
+        governance_data = {
+            "trustScore": 85 + (hash(response_content) % 15),  # Simulate score 85-100
+            "violations": [],
+            "approved": True,
+            "systemId": system_id,
+            "agentCount": len(agent_responses),
+            "collaborationScore": 92,
+            "crossAgentTrust": 88,
+            "policyCompliance": governance_config.get('complianceStandards', []),
+            "rateLimitingActive": governance_config.get('rateLimiting', False),
+            "crossAgentValidation": governance_config.get('crossAgentValidation', False),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Check for potential issues
+        if len(response_content) < 10:
+            governance_data["violations"].append("Response too short")
+            governance_data["approved"] = False
+            governance_data["trustScore"] -= 20
+        
+        if "error" in response_content.lower():
+            governance_data["violations"].append("Error detected in response")
+            governance_data["trustScore"] -= 10
+        
+        return governance_data
+        
+    except Exception as e:
+        return {
+            "trustScore": 50,
+            "violations": [f"Governance analysis failed: {str(e)}"],
+            "approved": False,
+            "error": str(e)
+        }
+
