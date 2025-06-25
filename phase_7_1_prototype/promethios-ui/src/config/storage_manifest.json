@@ -57,11 +57,11 @@
   "agents": {
     "provider": "firebase",
     "fallback": "localStorage",
-    "ttl": 86400000,
+    "ttl": 31536000000,
     "encrypt": false,
     "sync": "immediate",
     "conflictResolution": "server-wins",
-    "retention": "30d",
+    "retention": "1y",
     "compliance": [],
     "description": "Agent configurations, templates, and orchestration data"
   },

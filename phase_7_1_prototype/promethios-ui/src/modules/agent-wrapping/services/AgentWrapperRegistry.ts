@@ -230,76 +230,25 @@ class AgentWrapperRegistry {
   }
   
   /**
-   * Load all wrappers from Firebase for the current user
+   * Load all wrappers from storage for the current user
    */
   async loadWrappers(db: any, auth: any): Promise<void> {
     try {
+      // Set current user from auth
       const currentUser = this.getCurrentUser(auth);
       if (!currentUser) {
         console.warn('User must be authenticated to load wrappers');
         return;
       }
       
-      const wrappersCollection = this.getUserWrappersCollection(db, currentUser.uid);
-      const snapshot = await getDocs(wrappersCollection);
+      this.setCurrentUser(currentUser.uid);
       
-      // Clear existing data
-      this.wrappers.clear();
-      this.enabledWrappers.clear();
-      this.metrics.clear();
+      // Use the unified storage method instead of Firebase directly
+      await this.loadUserWrappers();
       
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        
-        // Create wrapper instance
-        const wrapper: AgentWrapper = {
-          id: doc.id,
-          name: data.name,
-          description: data.description,
-          version: data.version,
-          supportedProviders: data.supportedProviders,
-          inputSchema: data.inputSchema,
-          outputSchema: data.outputSchema,
-          wrap: async (request, context) => {
-            // This is a stub - in a real implementation, this would call the actual wrapper function
-            console.log(`Wrapping request for ${doc.id}`, request, context);
-            return request;
-          },
-          unwrap: async (response, context) => {
-            // This is a stub - in a real implementation, this would call the actual unwrapper function
-            console.log(`Unwrapping response for ${doc.id}`, response, context);
-            return response;
-          },
-          initialize: async () => {
-            console.log(`Initializing wrapper ${doc.id}`);
-            return true;
-          },
-          cleanup: async () => {
-            console.log(`Cleaning up wrapper ${doc.id}`);
-            return true;
-          }
-        };
-        
-        // Add to registry
-        this.wrappers.set(doc.id, wrapper);
-        
-        // Set enabled status
-        if (data.enabled) {
-          this.enabledWrappers.add(doc.id);
-        }
-        
-        // Set metrics
-        this.metrics.set(doc.id, data.metrics || {
-          requestCount: 0,
-          successCount: 0,
-          errorCount: 0,
-          averageResponseTime: 0
-        });
-      });
-      
-      console.log(`Loaded ${this.wrappers.size} wrappers from Firebase for user ${currentUser.uid}`);
+      console.log(`Loaded ${this.wrappers.size} wrappers for user ${currentUser.uid}`);
     } catch (error) {
-      console.error('Error loading wrappers from Firebase:', error);
+      console.error('Error loading wrappers from storage:', error);
     }
   }
   
