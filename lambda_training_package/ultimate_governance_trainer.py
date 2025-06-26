@@ -28,7 +28,7 @@ from emotional_veritas_integration import EmotionalVeritasIntegrator, generate_e
 from emergent_behavior_management import EmergentBehaviorManager, generate_emergent_behavior_training_data
 from meta_policy_learning import MetaPolicyLearner, generate_meta_policy_training_data
 from governance_memory_system import GovernanceIntegrationSystem
-from comprehensive_governance_dataset import ComprehensiveGovernanceDatasetGenerator
+from comprehensive_governance_dataset import GovernanceDatasetGenerator
 
 @dataclass
 class UltimateGovernanceConfig:
@@ -83,7 +83,7 @@ class UltimateGovernanceDatasetGenerator:
         self.emergent_behavior = EmergentBehaviorManager()
         self.meta_policy = MetaPolicyLearner()
         self.memory_system = GovernanceIntegrationSystem()
-        self.base_generator = ComprehensiveGovernanceDatasetGenerator()
+        self.base_generator = GovernanceDatasetGenerator()
         
         # Training data categories
         self.governance_categories = {
