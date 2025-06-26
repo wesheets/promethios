@@ -22,7 +22,6 @@ from datasets import Dataset
 import deepspeed
 from torch.utils.data import DataLoader
 import wandb
-import bitsandbytes as bnb  # For 8-bit quantization
 
 # Import our governance modules
 from emotional_veritas_integration import EmotionalVeritasIntegrator, generate_emotional_veritas_training_data
@@ -481,14 +480,13 @@ class UltimateGovernanceTrainer:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # Load model with memory optimizations
+        # Load model with memory optimizations (without quantization for fine-tuning)
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
             torch_dtype=torch.float16 if self.config.use_mixed_precision else torch.float32,
             trust_remote_code=True,
             device_map="auto",  # Automatically distribute model across GPUs
             low_cpu_mem_usage=True,  # Reduce CPU memory usage during loading
-            load_in_8bit=True,  # Use 8-bit quantization to reduce memory usage
             max_memory={i: "70GiB" for i in range(8)}  # Limit memory per GPU to 70GB
         )
         
