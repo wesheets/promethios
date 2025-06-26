@@ -1,0 +1,31 @@
+{
+  "model": {
+    "base_model": "mistralai/Mistral-7B-v0.1",
+    "max_length": 2048,
+    "governance_layers": ["constitutional", "operational", "emergent", "trust", "veritas", "policy"]
+  },
+  "training": {
+    "batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "learning_rate": 2e-5,
+    "num_epochs": 3,
+    "warmup_steps": 100,
+    "save_steps": 500,
+    "eval_steps": 250,
+    "logging_steps": 50
+  },
+  "governance": {
+    "trust_weight": 0.3,
+    "compliance_weight": 0.3,
+    "veritas_weight": 0.2,
+    "policy_weight": 0.2
+  },
+  "hardware": {
+    "gpus": 8,
+    "gpu_type": "H100_SXM5",
+    "memory_per_gpu": "80GB",
+    "use_deepspeed": true,
+    "use_gradient_checkpointing": true
+  }
+}
+
