@@ -1,9 +1,28 @@
 """
-Workflow Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive workflow management within the Promethios
-governance system. It enables multi-agent workflows to be defined, orchestrated,
-tracked, and optimized with full governance integration.
+This Workflow Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING WORKFLOW MANAGEMENT:
+- Flow Configuration Service: src/api/multi_agent_system/services/flow_configuration_service.py
+- Collaboration Service: src/api/multi_agent_system/services/collaboration_service.py
+- Multi-Agent Coordinator: src/api/chat/multi_agent_coordinator.py
+
+EXISTING WORKFLOW TYPES SUPPORTED:
+- Sequential, Parallel, Conditional, Pipeline
+- Scatter-Gather, Round-Robin, Priority Queue
+- Event-Driven, Hybrid workflows
+
+EXISTING APIs TO USE:
+- Multi-Agent System: /api/multi-agent/
+- Flow configuration and validation already implemented
+- Workflow orchestration through existing collaboration models
+
+This registry was built in error - the system already has comprehensive
+workflow management through the Flow Configuration Service.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
 """
 
 import os

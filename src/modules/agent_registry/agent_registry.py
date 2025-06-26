@@ -1,9 +1,24 @@
 """
-Agent Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive agent lifecycle management within the Promethios
-governance system. It enables agents to register themselves, track capabilities,
-monitor health, and coordinate with the governance framework.
+This Agent Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING APIs TO USE:
+- Agent Management: /api/multi-agent/communications
+- Agent Coordination: /api/multi-agent/trust-relationships  
+- Agent Registration: src/api/multi_agent_system/routes.py
+- Agent Services: src/api/multi_agent_system/services/
+
+EXISTING BACKEND SERVICES:
+- Multi-Agent Coordinator: src/api/chat/multi_agent_coordinator.py
+- Collaboration Service: src/api/multi_agent_system/services/collaboration_service.py
+- Role Service: src/api/multi_agent_system/services/role_service.py
+
+This registry was built in error - the system already has comprehensive
+agent management through the existing multi-agent APIs and services.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
 """
 
 import os

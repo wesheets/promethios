@@ -1,9 +1,24 @@
 """
-Tool Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive tool management within the Promethios
-governance system. It enables tools to be registered, validated, secured,
-and tracked for usage across the multi-agent ecosystem.
+This Tool Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING TOOL MANAGEMENT:
+- Tool execution and management is handled by existing agent systems
+- Tool coordination through multi-agent APIs
+- Tool governance through existing Policy Enforcement Engine
+
+EXISTING APIs TO USE:
+- Multi-Agent System: /api/multi-agent/
+- Agent Services: src/api/multi_agent_system/services/
+- Existing tool management in agent coordination systems
+
+This registry was built in error - the system already has tool management
+integrated into the multi-agent coordination framework.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
+""" usage across the multi-agent ecosystem.
 """
 
 import os

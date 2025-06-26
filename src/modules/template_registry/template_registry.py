@@ -1,9 +1,30 @@
 """
-Template Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive template management within the Promethios
-governance system. It enables templates to be defined, versioned, instantiated,
-and optimized across the multi-agent ecosystem.
+This Template Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING TEMPLATE MANAGEMENT:
+- Flow Configuration Service: Handles workflow templates
+- Business Simulator: Environment templates (src/business_simulator/environment_templates.py)
+- Multi-Agent System: Configuration templates
+- Existing template systems in flow configuration
+
+EXISTING SYSTEMS TO USE:
+- Flow templates: src/api/multi_agent_system/services/flow_configuration_service.py
+- Environment templates: src/business_simulator/environment_templates.py
+- Configuration management through existing services
+- Template validation in flow configuration
+
+EXISTING APIs TO USE:
+- Multi-Agent System: /api/multi-agent/
+- Flow configuration templates already implemented
+- Business environment templates available
+
+This registry was built in error - the system already has template
+management through Flow Configuration and Business Simulator systems.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
 """
 
 import os

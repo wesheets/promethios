@@ -1,9 +1,25 @@
 """
-Capability Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive capability management within the Promethios
-governance system. It enables capabilities to be defined, discovered, composed,
-and tracked across the multi-agent ecosystem.
+This Capability Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING CAPABILITY MANAGEMENT:
+- Trust Calculation Engine: Handles capability assessment
+- Collective Intelligence Assessor: /api/holistic-governance/collective-intelligence
+- Agent capability validation in collaboration services
+- Performance metrics in existing multi-agent systems
+
+EXISTING APIs TO USE:
+- Trust relationships: /api/multi-agent/trust-relationships
+- Agent capabilities through collaboration service
+- Intelligence assessment through existing governance APIs
+- Capability matching in Trust Calculation Engine
+
+This registry was built in error - the system already has capability
+management integrated into the trust and intelligence systems.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
 """
 
 import os

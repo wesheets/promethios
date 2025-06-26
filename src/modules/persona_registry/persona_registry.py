@@ -1,9 +1,30 @@
 """
-Persona Registry for Promethios.
+⚠️  DUPLICATE REGISTRY - DO NOT USE ⚠️
 
-This module provides comprehensive persona management within the Promethios
-governance system. It enables personas to be defined, configured, adapted,
-and tracked across the multi-agent ecosystem.
+This Persona Registry is a DUPLICATE of existing functionality.
+USE THE EXISTING SYSTEM INSTEAD:
+
+EXISTING PERSONA/EMOTIONAL MANAGEMENT:
+- Veritas Emotional Intelligence System: Handles agent emotional states
+- Consciousness State Monitor: /api/holistic-governance/system-consciousness
+- Agent role management in existing services
+- Emotional telemetry in Governance Core
+
+EXISTING SYSTEMS TO USE:
+- Veritas system for emotional intelligence
+- Role Service: src/api/multi_agent_system/services/role_service.py
+- Agent personality through existing governance framework
+- Emotional state tracking in governance core
+
+EXISTING APIs TO USE:
+- System consciousness: /api/holistic-governance/system-consciousness
+- Agent roles through multi-agent services
+- Emotional intelligence through Veritas system
+
+This registry was built in error - the system already has comprehensive
+persona and emotional management through Veritas and governance systems.
+
+DO NOT EXTEND THIS CODE - USE EXISTING SYSTEM INSTEAD
 """
 
 import os
