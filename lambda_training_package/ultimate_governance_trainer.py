@@ -24,10 +24,10 @@ from torch.utils.data import DataLoader
 import wandb
 
 # Import our governance modules
-from emotional_veritas_integration import EmotionalVeritasEngine, generate_emotional_veritas_training_data
+from emotional_veritas_integration import EmotionalVeritasIntegrator, generate_emotional_veritas_training_data
 from emergent_behavior_management import EmergentBehaviorManager, generate_emergent_behavior_training_data
 from meta_policy_learning import MetaPolicyLearner, generate_meta_policy_training_data
-from governance_memory_system import GovernanceMemorySystem
+from governance_memory_system import GovernanceIntegrationSystem
 from comprehensive_governance_dataset import ComprehensiveGovernanceDatasetGenerator
 
 @dataclass
@@ -78,11 +78,11 @@ class UltimateGovernanceDatasetGenerator:
     def __init__(self, config: UltimateGovernanceConfig):
         self.config = config
         
-        # Initialize governance engines
-        self.emotional_veritas = EmotionalVeritasEngine()
+        # Initialize governance systems
+        self.emotional_veritas = EmotionalVeritasIntegrator()
         self.emergent_behavior = EmergentBehaviorManager()
-        self.meta_policy_learner = MetaPolicyLearner()
-        self.memory_system = GovernanceMemorySystem()
+        self.meta_policy = MetaPolicyLearner()
+        self.memory_system = GovernanceIntegrationSystem()
         self.base_generator = ComprehensiveGovernanceDatasetGenerator()
         
         # Training data categories
