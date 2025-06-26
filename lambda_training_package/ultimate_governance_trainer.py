@@ -480,14 +480,12 @@ class UltimateGovernanceTrainer:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # Load model with memory optimizations (without quantization for fine-tuning)
+        # Load model with memory optimizations (compatible with distributed training)
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
             torch_dtype=torch.float16 if self.config.use_mixed_precision else torch.float32,
             trust_remote_code=True,
-            device_map="auto",  # Automatically distribute model across GPUs
             low_cpu_mem_usage=True,  # Reduce CPU memory usage during loading
-            max_memory={i: "70GiB" for i in range(8)}  # Limit memory per GPU to 70GB
         )
         
         # Resize token embeddings for new special tokens
