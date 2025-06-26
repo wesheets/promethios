@@ -721,7 +721,7 @@ def main():
     
     # Configuration
     config = UltimateGovernanceConfig(
-        base_model="codellama/CodeLlama-34b-Instruct-hf",
+        base_model="codellama/CodeLlama-13b-Instruct-hf",
         num_train_epochs=3,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
