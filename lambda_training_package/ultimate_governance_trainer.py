@@ -35,14 +35,14 @@ class UltimateGovernanceConfig:
     """Configuration for ultimate governance training"""
     
     # Model configuration
-    base_model: str = "codellama/CodeLlama-34b-Instruct-hf"
-    model_max_length: int = 2048  # Reduced from 4096 to 2048 to save memory
+    base_model: str = "codellama/CodeLlama-13b-Instruct-hf"  # Switched from 34B to 13B for memory efficiency
+    model_max_length: int = 4096  # Restored to 4096 since 13B model uses less memory
     
     # Training configuration
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
     per_device_eval_batch_size: int = 1
-    gradient_accumulation_steps: int = 4  # Reduced from 8 to 4 to save memory
+    gradient_accumulation_steps: int = 8  # Restored to 8 since 13B model uses less memory
     learning_rate: float = 2e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
