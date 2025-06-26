@@ -35,12 +35,12 @@ class GovernanceTrainingConfig:
     """Configuration for governance LLM training"""
     # Model configuration
     base_model: str = "codellama/CodeLlama-7b-Instruct-hf"  # Large model for comprehensive capabilities
-    max_length: int = 4096  # Longer context for complex governance scenarios
+    max_length: int = 1024  # Reduced from 4096 to 1024 for memory efficiency
     
     # Training configuration
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1  # Large model requires smaller batch size
-    gradient_accumulation_steps: int = 8  # Effective batch size = 8 per device
+    gradient_accumulation_steps: int = 2  # Reduced from 8 to 2 for memory efficiency
     learning_rate: float = 2e-5
     warmup_ratio: float = 0.1
     weight_decay: float = 0.01

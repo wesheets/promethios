@@ -48,13 +48,13 @@ class ProductionGovernanceConfig:
     """Production governance training configuration"""
     # Model configuration
     base_model: str = "codellama/CodeLlama-7b-Instruct-hf"
-    max_length: int = 4096
+    max_length: int = 1024  # Reduced from 4096 to 1024 for memory efficiency
     trust_remote_code: bool = True
     
     # Training configuration
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
-    gradient_accumulation_steps: int = 8
+    gradient_accumulation_steps: int = 2  # Reduced from 8 to 2 for memory efficiency
     learning_rate: float = 2e-5
     warmup_ratio: float = 0.1
     weight_decay: float = 0.01

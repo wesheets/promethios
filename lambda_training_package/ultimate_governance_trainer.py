@@ -36,13 +36,13 @@ class UltimateGovernanceConfig:
     
     # Model configuration
     base_model: str = "codellama/CodeLlama-7b-Instruct-hf"  # Switched from 34B to 13B for memory efficiency
-    model_max_length: int = 4096  # Restored to 4096 since 13B model uses less memory
+    model_max_length: int = 1024  # Reduced from 4096 to 1024 for memory efficiency
     
     # Training configuration
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
     per_device_eval_batch_size: int = 1
-    gradient_accumulation_steps: int = 8  # Restored to 8 since 13B model uses less memory
+    gradient_accumulation_steps: int = 2  # Reduced from 8 to 2 for memory efficiency
     learning_rate: float = 2e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
@@ -97,7 +97,7 @@ class UltimateGovernanceDatasetGenerator:
             "multi_layer_integration": []
         }
     
-    def generate_ultimate_dataset(self, total_examples: int = 75000) -> List[Dict[str, Any]]:
+    def generate_ultimate_dataset(self, total_examples: int = 10000) -> List[Dict[str, Any]]:
         """Generate ultimate governance training dataset"""
         
         print(f"🚀 Generating ultimate governance dataset with {total_examples} examples...")
@@ -514,12 +514,12 @@ class UltimateGovernanceTrainer:
         # Create dataset
         dataset = Dataset.from_list(formatted_data)
         
-        # Tokenize dataset
+        # Tokenize dataset with dynamic padding for memory efficiency
         def tokenize_function(examples):
             return self.tokenizer(
                 examples["text"],
                 truncation=True,
-                padding=True,
+                padding=False,  # Use dynamic padding instead of fixed padding
                 max_length=self.config.model_max_length,
                 return_tensors="pt"
             )
@@ -544,7 +544,7 @@ class UltimateGovernanceTrainer:
         """Setup training configuration"""
         self.logger.info("⚙️ Setting up training configuration...")
         
-        # Training arguments
+        # Training arguments with memory optimizations
         training_args = TrainingArguments(
             output_dir=self.config.output_dir,
             num_train_epochs=self.config.num_train_epochs,
@@ -564,19 +564,22 @@ class UltimateGovernanceTrainer:
             greater_is_better=False,
             save_total_limit=self.config.save_total_limit,
             remove_unused_columns=False,
-            dataloader_pin_memory=False,
+            dataloader_pin_memory=False,  # Reduce memory usage
             gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
             fp16=self.config.use_mixed_precision,
+            dataloader_num_workers=0,  # Reduce memory overhead from multiprocessing
+            max_grad_norm=1.0,  # Gradient clipping for stability
             deepspeed="./config/deepspeed_production_config.json" if self.config.use_deepspeed else None,
             report_to="wandb" if self.config.use_wandb_logging else None,
             run_name=f"ultimate-governance-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         )
         
-        # Data collator
+        # Data collator with dynamic padding for memory efficiency
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer,
             mlm=False,
-            pad_to_multiple_of=8
+            pad_to_multiple_of=8,
+            return_tensors="pt"
         )
         
         # Callbacks
