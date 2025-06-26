@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class GovernanceTrainingConfig:
     """Configuration for governance LLM training"""
     # Model configuration
-    base_model: str = "codellama/CodeLlama-13b-Instruct-hf"  # Large model for comprehensive capabilities
+    base_model: str = "codellama/CodeLlama-7b-Instruct-hf"  # Large model for comprehensive capabilities
     max_length: int = 4096  # Longer context for complex governance scenarios
     
     # Training configuration

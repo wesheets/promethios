@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 class ProductionGovernanceConfig:
     """Production governance training configuration"""
     # Model configuration
-    base_model: str = "codellama/CodeLlama-13b-Instruct-hf"
+    base_model: str = "codellama/CodeLlama-7b-Instruct-hf"
     max_length: int = 4096
     trust_remote_code: bool = True
     
