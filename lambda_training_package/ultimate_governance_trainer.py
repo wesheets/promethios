@@ -22,6 +22,7 @@ from datasets import Dataset
 import deepspeed
 from torch.utils.data import DataLoader
 import wandb
+import bitsandbytes as bnb  # For 8-bit quantization
 
 # Import our governance modules
 from emotional_veritas_integration import EmotionalVeritasIntegrator, generate_emotional_veritas_training_data
@@ -36,13 +37,13 @@ class UltimateGovernanceConfig:
     
     # Model configuration
     base_model: str = "codellama/CodeLlama-34b-Instruct-hf"
-    model_max_length: int = 4096
+    model_max_length: int = 2048  # Reduced from 4096 to 2048 to save memory
     
     # Training configuration
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
     per_device_eval_batch_size: int = 1
-    gradient_accumulation_steps: int = 8
+    gradient_accumulation_steps: int = 4  # Reduced from 8 to 4 to save memory
     learning_rate: float = 2e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
@@ -480,11 +481,15 @@ class UltimateGovernanceTrainer:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # Load model
+        # Load model with memory optimizations
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
             torch_dtype=torch.float16 if self.config.use_mixed_precision else torch.float32,
-            trust_remote_code=True
+            trust_remote_code=True,
+            device_map="auto",  # Automatically distribute model across GPUs
+            low_cpu_mem_usage=True,  # Reduce CPU memory usage during loading
+            load_in_8bit=True,  # Use 8-bit quantization to reduce memory usage
+            max_memory={i: "70GiB" for i in range(8)}  # Limit memory per GPU to 70GB
         )
         
         # Resize token embeddings for new special tokens
@@ -564,6 +569,7 @@ class UltimateGovernanceTrainer:
             save_total_limit=self.config.save_total_limit,
             remove_unused_columns=False,
             dataloader_pin_memory=False,
+            gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
             fp16=self.config.use_mixed_precision,
             deepspeed="./config/deepspeed_production_config.json" if self.config.use_deepspeed else None,
             report_to="wandb" if self.config.use_wandb_logging else None,
