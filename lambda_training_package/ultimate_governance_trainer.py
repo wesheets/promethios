@@ -484,7 +484,6 @@ class UltimateGovernanceTrainer:
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
             torch_dtype=torch.float16 if self.config.use_mixed_precision else torch.float32,
-            device_map="auto",
             trust_remote_code=True
         )
         
