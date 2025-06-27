@@ -22,6 +22,7 @@ from datasets import Dataset
 import deepspeed
 from torch.utils.data import DataLoader
 import wandb
+from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training
 
 # Import our governance modules
 from emotional_veritas_integration import EmotionalVeritasIntegrator, generate_emotional_veritas_training_data
@@ -490,6 +491,25 @@ class UltimateGovernanceTrainer:
             device_map="auto",  # Automatically distribute model across available devices
             offload_folder="./offload",  # CPU offloading directory
         )
+        
+        # Prepare model for k-bit training (required for quantized models)
+        self.model = prepare_model_for_kbit_training(self.model)
+        
+        # Configure LoRA for parameter-efficient fine-tuning
+        lora_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            r=16,  # LoRA rank (higher = more parameters, better quality)
+            lora_alpha=32,  # LoRA scaling parameter
+            lora_dropout=0.1,  # LoRA dropout
+            target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],  # Target modules for CodeLlama
+            bias="none",
+        )
+        
+        # Apply LoRA to the quantized model
+        self.model = get_peft_model(self.model, lora_config)
+        
+        # Print trainable parameters
+        self.model.print_trainable_parameters()
         
         # Resize token embeddings for new special tokens
         self.model.resize_token_embeddings(len(self.tokenizer))
