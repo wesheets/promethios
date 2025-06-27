@@ -153,7 +153,7 @@ Please provide a comprehensive constitutional governance analysis following thes
         # Tokenize
         model_inputs = tokenizer(
             inputs,
-            max_length=self.training_config["max_length"],
+            max_length=1024,
             truncation=True,
             padding=False,
             return_tensors=None
