@@ -432,7 +432,6 @@ const AdvancedChatComponent: React.FC = () => {
     
     const hasIssues = !displayData.approved || (displayData.violations && displayData.violations.length > 0);
     const isExpanded = expandedGovernance.has(message.id);
-    const isGovernanceActive = governanceService.isGovernanceActive();
     
     // Use behavior-based transparency from governance data instead of hardcoded patterns
     const transparencyMessage = displayData?.transparencyMessage;
@@ -612,7 +611,7 @@ const AdvancedChatComponent: React.FC = () => {
         )}
       </>
     );
-  }, [expandedGovernance, toggleGovernanceExpansion]); // Memoize with stable dependencies
+  }, [expandedGovernance]); // Only depend on expandedGovernance, not the toggle function
 
   // Initialize services with user immediately when available
   useEffect(() => {
