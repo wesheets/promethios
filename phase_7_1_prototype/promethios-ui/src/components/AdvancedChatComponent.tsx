@@ -359,9 +359,20 @@ const AdvancedChatComponent: React.FC = () => {
   const [currentGovernanceSession, setCurrentGovernanceSession] = useState<any>(null);
   const [currentGovernanceMetrics, setCurrentGovernanceMetrics] = useState<any>(null);
   const [currentVeritasResult, setCurrentVeritasResult] = useState<VeritasResult | null>(null);
+  
+  // Safety Controls
+  const [emergencyStop, setEmergencyStop] = useState(false);
+  const [sessionTimeLimit, setSessionTimeLimit] = useState(30); // minutes
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [messageCount, setMessageCount] = useState(0);
+  const [maxMessages, setMaxMessages] = useState(50);
+  const [autoStopEnabled, setAutoStopEnabled] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
@@ -1228,6 +1239,24 @@ const AdvancedChatComponent: React.FC = () => {
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && attachments.length === 0) || isTyping) return;
     
+    // Safety checks
+    if (emergencyStop) {
+      setError('Chat session is stopped. Use the emergency reset button to continue.');
+      return;
+    }
+    
+    if (messageCount >= maxMessages && autoStopEnabled) {
+      setError(`Message limit reached (${maxMessages}). Session automatically stopped for safety.`);
+      setEmergencyStop(true);
+      return;
+    }
+    
+    if (timeRemaining !== null && timeRemaining <= 0) {
+      setError('Session time limit reached. Session automatically stopped for safety.');
+      setEmergencyStop(true);
+      return;
+    }
+    
     if (chatMode === 'multi-agent' && selectedAgents.length === 0) {
       setError('Please select at least one agent for multi-agent mode');
       return;
@@ -1252,6 +1281,7 @@ const AdvancedChatComponent: React.FC = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setMessageCount(prev => prev + 1); // Increment message count for safety tracking
     setInputValue('');
     const currentAttachments = [...attachments];
     setAttachments([]);
@@ -1290,6 +1320,7 @@ const AdvancedChatComponent: React.FC = () => {
             };
             
             setMessages(prev => [...prev, agentMessage]);
+            setMessageCount(prev => prev + 1); // Increment for agent response
             
             // Save agent message to storage
             await chatStorageService.saveMessage(agentMessage, agent.identity.id);
@@ -1658,6 +1689,88 @@ const AdvancedChatComponent: React.FC = () => {
     }
   };
 
+  // Safety Control Functions
+  const handleEmergencyStop = () => {
+    setEmergencyStop(true);
+    setIsTyping(false);
+    
+    // Clear any ongoing timers
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current);
+    }
+    
+    const stopMessage: ChatMessage = {
+      id: `msg_${Date.now()}_emergency_stop`,
+      content: '🚨 EMERGENCY STOP ACTIVATED - Chat session has been stopped for safety.',
+      sender: 'system',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, stopMessage]);
+    
+    // End current chat session if exists
+    if (currentChatSession) {
+      multiAgentChatIntegration.endChatSession(currentChatSession.id);
+    }
+  };
+
+  const handleEmergencyReset = () => {
+    setEmergencyStop(false);
+    setMessageCount(0);
+    setSessionStartTime(new Date());
+    setTimeRemaining(sessionTimeLimit * 60); // Convert minutes to seconds
+    setError(null);
+    
+    // Restart timer
+    startSessionTimer();
+    
+    const resetMessage: ChatMessage = {
+      id: `msg_${Date.now()}_emergency_reset`,
+      content: '✅ Session reset. Safety controls reactivated. You can now continue chatting.',
+      sender: 'system',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, resetMessage]);
+  };
+
+  const startSessionTimer = () => {
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current);
+    }
+    
+    sessionTimerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 0) {
+          if (sessionTimerRef.current) {
+            clearInterval(sessionTimerRef.current);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Initialize session timer when system is selected
+  useEffect(() => {
+    if (selectedSystem && !sessionStartTime) {
+      setSessionStartTime(new Date());
+      setTimeRemaining(sessionTimeLimit * 60);
+      startSessionTimer();
+    }
+    
+    return () => {
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current);
+      }
+    };
+  }, [selectedSystem, sessionTimeLimit]);
+
   const handleGovernanceToggle = async () => {
     const newValue = !governanceEnabled;
     setGovernanceEnabled(newValue);
@@ -1726,9 +1839,74 @@ const AdvancedChatComponent: React.FC = () => {
               color={isMultiAgentMode ? 'warning' : 'primary'}
               size="small"
             />
+            
+            {/* Safety Controls Display */}
+            {(selectedSystem || isMultiAgentMode) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                {timeRemaining !== null && (
+                  <Chip
+                    label={`⏱️ ${formatTime(timeRemaining)}`}
+                    size="small"
+                    color={timeRemaining < 300 ? 'error' : timeRemaining < 600 ? 'warning' : 'default'}
+                    sx={{ fontSize: '0.75rem' }}
+                  />
+                )}
+                <Chip
+                  label={`💬 ${messageCount}/${maxMessages}`}
+                  size="small"
+                  color={messageCount > maxMessages * 0.8 ? 'warning' : 'default'}
+                  sx={{ fontSize: '0.75rem' }}
+                />
+                {emergencyStop && (
+                  <Chip
+                    label="🚨 STOPPED"
+                    size="small"
+                    color="error"
+                    sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}
+                  />
+                )}
+              </Box>
+            )}
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Emergency Controls */}
+            {(selectedSystem || isMultiAgentMode) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {!emergencyStop ? (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    onClick={handleEmergencyStop}
+                    startIcon={<ErrorIcon />}
+                    sx={{ 
+                      fontSize: '0.75rem',
+                      borderColor: DARK_THEME.error,
+                      color: DARK_THEME.error,
+                      '&:hover': {
+                        backgroundColor: DARK_THEME.error + '20',
+                        borderColor: DARK_THEME.error
+                      }
+                    }}
+                  >
+                    Emergency Stop
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="success"
+                    onClick={handleEmergencyReset}
+                    startIcon={<CheckCircleIcon />}
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    Reset Session
+                  </Button>
+                )}
+              </Box>
+            )}
+            
             <GovernanceToggleContainer onClick={handleGovernanceToggle}>
               <Switch
                 checked={governanceEnabled}
@@ -2308,6 +2486,7 @@ const AdvancedChatComponent: React.FC = () => {
           >
             <Tab label="Core Metrics" />
             <Tab label="System Status" />
+            <Tab label="Safety Settings" />
           </Tabs>
         </Box>
 
@@ -2815,6 +2994,160 @@ const AdvancedChatComponent: React.FC = () => {
                 • Real-time governance monitoring
               </Typography>
             </Box>
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={sidebarTab} index={2}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Safety Settings
+            </Typography>
+            
+            {/* Session Time Limit */}
+            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <ErrorIcon sx={{ color: DARK_THEME.warning, fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+                    SESSION TIME LIMIT
+                  </Typography>
+                </Box>
+                
+                <TextField
+                  type="number"
+                  label="Minutes"
+                  value={sessionTimeLimit}
+                  onChange={(e) => setSessionTimeLimit(Math.max(1, parseInt(e.target.value) || 1))}
+                  size="small"
+                  inputProps={{ min: 1, max: 120 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: DARK_THEME.text.primary,
+                      '& fieldset': {
+                        borderColor: DARK_THEME.border
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: DARK_THEME.text.secondary
+                    }
+                  }}
+                />
+                
+                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                  Session will auto-stop after this time limit
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Message Limit */}
+            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <ErrorIcon sx={{ color: DARK_THEME.warning, fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+                    MESSAGE LIMIT
+                  </Typography>
+                </Box>
+                
+                <TextField
+                  type="number"
+                  label="Max Messages"
+                  value={maxMessages}
+                  onChange={(e) => setMaxMessages(Math.max(1, parseInt(e.target.value) || 1))}
+                  size="small"
+                  inputProps={{ min: 1, max: 200 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: DARK_THEME.text.primary,
+                      '& fieldset': {
+                        borderColor: DARK_THEME.border
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: DARK_THEME.text.secondary
+                    }
+                  }}
+                />
+                
+                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                  Session will auto-stop after this many messages
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Auto-Stop Toggle */}
+            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+                      AUTO-STOP ENABLED
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                      Automatically stop when limits are reached
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={autoStopEnabled}
+                    onChange={(e) => setAutoStopEnabled(e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: DARK_THEME.success
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: DARK_THEME.success
+                      }
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Current Session Status */}
+            {(selectedSystem || isMultiAgentMode) && (
+              <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, mb: 2 }}>
+                    CURRENT SESSION STATUS
+                  </Typography>
+                  
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        TIME REMAINING
+                      </Typography>
+                      <Typography variant="h6" sx={{ 
+                        color: timeRemaining !== null && timeRemaining < 300 ? DARK_THEME.error : DARK_THEME.text.primary 
+                      }}>
+                        {timeRemaining !== null ? formatTime(timeRemaining) : 'N/A'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        MESSAGES USED
+                      </Typography>
+                      <Typography variant="h6" sx={{ 
+                        color: messageCount > maxMessages * 0.8 ? DARK_THEME.warning : DARK_THEME.text.primary 
+                      }}>
+                        {messageCount}/{maxMessages}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ gridColumn: '1 / -1' }}>
+                      <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                        SESSION STATUS
+                      </Typography>
+                      <Typography variant="h6" sx={{ 
+                        color: emergencyStop ? DARK_THEME.error : DARK_THEME.success 
+                      }}>
+                        {emergencyStop ? '🚨 STOPPED' : '✅ ACTIVE'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
           </Box>
         </TabPanel>
       </SidePanel>
