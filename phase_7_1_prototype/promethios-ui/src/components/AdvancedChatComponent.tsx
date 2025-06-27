@@ -1580,6 +1580,42 @@ const AdvancedChatComponent: React.FC = () => {
           console.log('🚀 MULTI-AGENT DEBUG: Response received after', responseTime, 'ms');
           console.log('🚀 MULTI-AGENT DEBUG: Response content:', response);
           
+          // Apply pacing controls for natural conversation flow
+          const applyPacingDelay = (content: string, mode: string) => {
+            const baseDelay = 1000; // 1 second minimum
+            const wordsPerMinute = mode === 'realtime' ? 300 : mode === 'natural' ? 150 : 80;
+            const wordCount = content.split(' ').length;
+            const typingTime = (wordCount / wordsPerMinute) * 60 * 1000; // Convert to milliseconds
+            
+            // Add thinking time based on complexity
+            const thinkingTime = mode === 'thoughtful' ? Math.min(wordCount * 50, 3000) : 
+                                mode === 'natural' ? Math.min(wordCount * 20, 2000) : 0;
+            
+            return Math.max(baseDelay, Math.min(typingTime + thinkingTime, 8000)); // Cap at 8 seconds
+          };
+
+          const delay = applyPacingDelay(response.content, pacingMode);
+          console.log('🚀 MULTI-AGENT DEBUG: Applying pacing delay of', delay, 'ms for', pacingMode, 'mode');
+          
+          // Show typing indicator with progress
+          setIsSimulatingTyping(true);
+          setTypingProgress(0);
+          
+          const progressInterval = setInterval(() => {
+            setTypingProgress(prev => {
+              const newProgress = prev + (100 / (delay / 100));
+              return newProgress >= 100 ? 100 : newProgress;
+            });
+          }, 100);
+          
+          // Apply the pacing delay
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          // Clear typing simulation
+          clearInterval(progressInterval);
+          setIsSimulatingTyping(false);
+          setTypingProgress(0);
+          
           // Create system response message with governance data
           const systemMessage: ChatMessage = {
             id: `msg_${Date.now()}_system`,
@@ -1785,21 +1821,14 @@ This error has been logged to the console for debugging.`,
     setPendingResponses([]);
     
     // Send backend stop signal for multi-agent systems
-    if (chatMode === 'saved' && currentChatSession) {
+    if (chatMode === 'saved-systems' && currentChatSession && selectedSystem) {
       try {
-        console.log('🚨 EMERGENCY STOP: Sending backend stop signal for session:', currentChatSession.sessionId);
-        await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/emergency-stop', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sessionId: currentChatSession.sessionId,
-            systemId: currentChatSession.systemId,
-            userId: effectiveUser?.uid,
-            reason: 'user_emergency_stop'
-          })
-        });
+        console.log('🚨 EMERGENCY STOP: Sending backend stop signal for session:', currentChatSession.id);
+        await multiAgentChatIntegration.sendEmergencyStop(
+          currentChatSession.id,
+          selectedSystem.id,
+          effectiveUser?.uid || 'anonymous'
+        );
         console.log('🚨 EMERGENCY STOP: Backend stop signal sent successfully');
       } catch (error) {
         console.error('🚨 EMERGENCY STOP: Failed to send backend stop signal:', error);
@@ -1822,14 +1851,36 @@ This error has been logged to the console for debugging.`,
   };
 
   const handleEmergencyReset = () => {
+    console.log('✅ EMERGENCY RESET: Resetting session and restoring chat functionality');
+    
+    // Reset all emergency states
     setEmergencyStop(false);
     setMessageCount(0);
     setSessionStartTime(new Date());
     setTimeRemaining(sessionTimeLimit * 60); // Convert minutes to seconds
     setError(null);
     
+    // Reset typing and loading states
+    setIsTyping(false);
+    setIsSimulatingTyping(false);
+    setIsLoading(false);
+    
+    // Clear any pending responses or timers
+    setPendingResponses([]);
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current);
+    }
+    
     // Restart timer
     startSessionTimer();
+    
+    // Clear any existing chat session errors
+    if (currentChatSession) {
+      setCurrentChatSession({
+        ...currentChatSession,
+        error: null
+      });
+    }
     
     const resetMessage: ChatMessage = {
       id: `msg_${Date.now()}_emergency_reset`,
@@ -1838,6 +1889,8 @@ This error has been logged to the console for debugging.`,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, resetMessage]);
+    
+    console.log('✅ EMERGENCY RESET: Chat functionality restored');
   };
 
   const startSessionTimer = () => {
@@ -2409,15 +2462,44 @@ This error has been logged to the console for debugging.`,
             </MessageBubble>
           ))}
           
-          {isTyping && (
+          {(isTyping || isSimulatingTyping) && (
             <MessageBubble isUser={false}>
               <Avatar className="message-avatar">
                 <BotIcon />
               </Avatar>
               <Box className="message-content">
-                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                  {isMultiAgentMode ? 'Agents are thinking...' : `${selectedAgent?.identity.name || 'Agent'} is thinking...`}
+                <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1 }}>
+                  {isMultiAgentMode 
+                    ? `Agents are ${isSimulatingTyping ? 'collaborating' : 'thinking'}...` 
+                    : `${selectedAgent?.identity.name || selectedSystem?.name || 'Agent'} is ${isSimulatingTyping ? 'formulating response' : 'thinking'}...`}
                 </Typography>
+                
+                {isSimulatingTyping && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" sx={{ 
+                      color: DARK_THEME.text.secondary, 
+                      display: 'block',
+                      mb: 0.5
+                    }}>
+                      {pacingMode === 'realtime' ? '⚡ Real-time mode' : 
+                       pacingMode === 'natural' ? '💬 Natural pacing' : 
+                       '🤔 Thoughtful mode'} • {Math.round(typingProgress)}% complete
+                    </Typography>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={typingProgress} 
+                      sx={{
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: DARK_THEME.border,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: DARK_THEME.primary,
+                          borderRadius: 2
+                        }
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
             </MessageBubble>
           )}
@@ -3236,6 +3318,61 @@ This error has been logged to the console for debugging.`,
                     }}
                   />
                 </Box>
+              </CardContent>
+            </Card>
+
+            {/* Conversation Pacing Controls */}
+            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <SpeedIcon sx={{ color: DARK_THEME.primary, fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
+                    CONVERSATION PACING
+                  </Typography>
+                </Box>
+                
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Pacing Mode</InputLabel>
+                  <Select
+                    value={pacingMode}
+                    onChange={(e) => setPacingMode(e.target.value as 'realtime' | 'natural' | 'thoughtful')}
+                    sx={{
+                      color: DARK_THEME.text.primary,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: DARK_THEME.border
+                      },
+                      '& .MuiSvgIcon-root': {
+                        color: DARK_THEME.text.secondary
+                      }
+                    }}
+                  >
+                    <MenuItem value="realtime">⚡ Real-time (Fast responses)</MenuItem>
+                    <MenuItem value="natural">💬 Natural (Human-like timing)</MenuItem>
+                    <MenuItem value="thoughtful">🤔 Thoughtful (Slower, deliberate)</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+                  Controls how quickly agents respond to create natural conversation flow
+                </Typography>
+                
+                {isSimulatingTyping && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mb: 1, display: 'block' }}>
+                      Agent is thinking... ({Math.round(typingProgress)}%)
+                    </Typography>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={typingProgress} 
+                      sx={{
+                        backgroundColor: DARK_THEME.border,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: DARK_THEME.primary
+                        }
+                      }}
+                    />
+                  </Box>
+                )}
               </CardContent>
             </Card>
 

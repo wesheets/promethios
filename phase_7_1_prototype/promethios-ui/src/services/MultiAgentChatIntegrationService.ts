@@ -310,6 +310,39 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
+   * Send emergency stop signal to backend
+   */
+  async sendEmergencyStop(sessionId: string, systemId: string, userId: string): Promise<void> {
+    try {
+      console.log('🚨 MULTI-AGENT SERVICE: Sending emergency stop signal', { sessionId, systemId, userId });
+      
+      const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/emergency-stop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          systemId,
+          userId,
+          reason: 'user_emergency_stop',
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        console.warn('🚨 MULTI-AGENT SERVICE: Emergency stop API returned error:', response.status, response.statusText);
+        // Don't throw error - frontend stop should work even if backend fails
+      } else {
+        console.log('🚨 MULTI-AGENT SERVICE: Emergency stop signal sent successfully');
+      }
+    } catch (error) {
+      console.warn('🚨 MULTI-AGENT SERVICE: Failed to send emergency stop signal:', error);
+      // Don't throw error - frontend stop should work even if backend fails
+    }
+  }
+
+  /**
    * Send message to multi-agent system with governance control
    */
   async sendMessage(
