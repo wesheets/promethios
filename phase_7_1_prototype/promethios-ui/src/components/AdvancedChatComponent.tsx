@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -385,8 +385,8 @@ const AdvancedChatComponent: React.FC = () => {
     }
   };
 
-  // Toggle governance details expansion
-  const toggleGovernanceExpansion = (messageId: string) => {
+  // Toggle governance details expansion - MEMOIZED to prevent re-renders
+  const toggleGovernanceExpansion = useCallback((messageId: string) => {
     setExpandedGovernance(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
@@ -396,17 +396,10 @@ const AdvancedChatComponent: React.FC = () => {
       }
       return newSet;
     });
-  };
+  }, []); // No dependencies needed since it only uses the setter function
 
-  // Render governance shield icon
-  const renderGovernanceShield = (message: ChatMessage) => {
-    console.log('renderGovernanceShield called for message:', {
-      id: message.id,
-      sender: message.sender,
-      hasGovernanceData: !!message.governanceData,
-      hasShadowGovernanceData: !!message.shadowGovernanceData
-    });
-    
+  // Render governance shield icon - MEMOIZED to prevent infinite re-renders
+  const renderGovernanceShield = useCallback((message: ChatMessage) => {
     // Don't show shield for user messages
     if (message.sender === 'user') {
       return null;
@@ -440,16 +433,6 @@ const AdvancedChatComponent: React.FC = () => {
     
     // Shadow governance specific messaging
     const shadowMessage = isShadowMode ? displayData.shadowMessage : null;
-    
-    console.log('Rendering shield with:', { 
-      hasIssues, 
-      isExpanded, 
-      isGovernanceActive, 
-      transparencyMessage, 
-      behaviorTags, 
-      isShadowMode,
-      shadowMessage 
-    });
     
     return (
       <>
@@ -619,7 +602,7 @@ const AdvancedChatComponent: React.FC = () => {
         )}
       </>
     );
-  };
+  }, [expandedGovernance, toggleGovernanceExpansion]); // Memoize with stable dependencies
 
   // Initialize services with user immediately when available
   useEffect(() => {
