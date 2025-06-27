@@ -1,22 +1,22 @@
 {
   "user": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 31536000000,
     "encrypt": true,
     "sync": "immediate",
-    "conflictResolution": "client-wins",
+    "conflictResolution": "server-wins",
     "retention": "1y",
     "compliance": ["GDPR"],
     "description": "User profile data, preferences, and settings"
   },
   "observer": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 86400000,
     "encrypt": false,
     "sync": "immediate",
-    "conflictResolution": "client-wins",
+    "conflictResolution": "server-wins",
     "retention": "30d",
     "compliance": [],
     "description": "Observer agent conversations and insights"
@@ -33,12 +33,12 @@
     "description": "User notifications and alerts"
   },
   "governance": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 220752000000,
     "encrypt": true,
     "sync": "immediate",
-    "conflictResolution": "client-wins",
+    "conflictResolution": "server-wins",
     "retention": "7y",
     "compliance": ["GDPR", "HIPAA", "SOX"],
     "description": "Governance policies, violations, and compliance data"
@@ -55,12 +55,12 @@
     "description": "UI preferences, themes, and user settings"
   },
   "agents": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 31536000000,
     "encrypt": false,
     "sync": "immediate",
-    "conflictResolution": "client-wins",
+    "conflictResolution": "server-wins",
     "retention": "1y",
     "compliance": [],
     "description": "Agent configurations, templates, and orchestration data"
