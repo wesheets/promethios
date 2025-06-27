@@ -2351,7 +2351,20 @@ const AdvancedChatComponent: React.FC = () => {
                   key={index}
                   label={prompt.title}
                   size="small"
-                  onClick={() => setInputValue(prompt.content)}
+                  onClick={() => {
+                    if (!emergencyStop && 
+                        ((chatMode === 'multi-agent' && selectedAgents.length > 0) ||
+                         (chatMode === 'saved-systems' && selectedSystem) ||
+                         (chatMode === 'single' && selectedAgent))) {
+                      setInputValue(prompt.content);
+                    }
+                  }}
+                  disabled={
+                    emergencyStop ||
+                    (chatMode === 'multi-agent' ? selectedAgents.length === 0 : 
+                     chatMode === 'saved-systems' ? !selectedSystem :
+                     !selectedAgent)
+                  }
                   sx={{
                     backgroundColor: DARK_THEME.surface,
                     color: DARK_THEME.text.primary,
@@ -2359,6 +2372,11 @@ const AdvancedChatComponent: React.FC = () => {
                     '&:hover': {
                       backgroundColor: DARK_THEME.primary,
                       color: 'white'
+                    },
+                    '&.Mui-disabled': {
+                      backgroundColor: DARK_THEME.background,
+                      color: DARK_THEME.text.secondary,
+                      opacity: 0.5
                     },
                     cursor: 'pointer'
                   }}
@@ -2376,18 +2394,25 @@ const AdvancedChatComponent: React.FC = () => {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={
-                isMultiAgentMode 
+                chatMode === 'multi-agent'
                   ? selectedAgents.length > 0 
                     ? `Message ${selectedAgents.length} agents...`
                     : "Select agents to start chatting..."
-                  : selectedAgent 
-                    ? `Message ${selectedAgent.identity.name}...` 
-                    : "Select an agent to start chatting..."
+                  : chatMode === 'saved-systems'
+                    ? selectedSystem
+                      ? `Message ${selectedSystem.name} system...`
+                      : "Select a multi-agent system to start chatting..."
+                    : selectedAgent 
+                      ? `Message ${selectedAgent.identity.name}...` 
+                      : "Select an agent to start chatting..."
               }
               variant="outlined"
               disabled={
                 isTyping || 
-                (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
+                emergencyStop ||
+                (chatMode === 'multi-agent' ? selectedAgents.length === 0 : 
+                 chatMode === 'saved-systems' ? !selectedSystem :
+                 !selectedAgent)
               }
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -2440,7 +2465,10 @@ const AdvancedChatComponent: React.FC = () => {
               disabled={
                 (!inputValue.trim() && attachments.length === 0) || 
                 isTyping || 
-                (isMultiAgentMode ? selectedAgents.length === 0 : !selectedAgent)
+                emergencyStop ||
+                (chatMode === 'multi-agent' ? selectedAgents.length === 0 : 
+                 chatMode === 'saved-systems' ? !selectedSystem :
+                 !selectedAgent)
               }
               sx={{
                 backgroundColor: DARK_THEME.primary,
