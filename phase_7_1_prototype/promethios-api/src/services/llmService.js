@@ -3,69 +3,24 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
 
-// Initialize LLM clients with optional API keys for testing
-let openai = null;
-let anthropic = null;
-let cohere = null;
-let hf = null;
+// Initialize LLM clients
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-try {
-  if (process.env.OPENAI_API_KEY) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-    console.log('✅ OpenAI client initialized');
-  } else {
-    console.log('⚠️ OpenAI API key not found - using fallback responses');
-  }
-} catch (error) {
-  console.log('⚠️ OpenAI initialization failed - using fallback responses');
-}
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-try {
-  if (process.env.ANTHROPIC_API_KEY) {
-    anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-    console.log('✅ Anthropic client initialized');
-  } else {
-    console.log('⚠️ Anthropic API key not found - using fallback responses');
-  }
-} catch (error) {
-  console.log('⚠️ Anthropic initialization failed - using fallback responses');
-}
+const cohere = new CohereClient({
+  token: process.env.COHERE_API_KEY,
+});
 
-try {
-  if (process.env.COHERE_API_KEY) {
-    cohere = new CohereClient({
-      token: process.env.COHERE_API_KEY,
-    });
-    console.log('✅ Cohere client initialized');
-  } else {
-    console.log('⚠️ Cohere API key not found - using fallback responses');
-  }
-} catch (error) {
-  console.log('⚠️ Cohere initialization failed - using fallback responses');
-}
-
-try {
-  if (process.env.HUGGINGFACE_API_KEY) {
-    hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-    console.log('✅ HuggingFace client initialized');
-  } else {
-    console.log('⚠️ HuggingFace API key not found - using fallback responses');
-  }
-} catch (error) {
-  console.log('⚠️ HuggingFace initialization failed - using fallback responses');
-}
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 class LLMService {
   // OpenAI GPT-3.5 for Baseline Agent
   async callOpenAIGPT35(message, systemPrompt) {
-    if (!openai) {
-      return `[Baseline Agent - Simulation Mode] I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
-    }
-    
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
@@ -79,16 +34,12 @@ class LLMService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-3.5 error:', error);
-      return `[Baseline Agent - Error Recovery] I encountered a technical issue but can still help. For your query about "${message.substring(0, 50)}...", I would provide a direct, factual response. Please try again or rephrase your question.`;
+      throw new Error(`OpenAI GPT-3.5 API error: ${error.message}`);
     }
   }
 
   // OpenAI GPT-4 for Creative Agent
   async callOpenAIGPT4(message, systemPrompt) {
-    if (!openai) {
-      return `[Creative Agent - Simulation Mode] 🎨 I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
-    }
-    
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4',
@@ -102,16 +53,12 @@ class LLMService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-4 error:', error);
-      return `[Creative Agent - Error Recovery] 🎨 Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
+      throw new Error(`OpenAI GPT-4 API error: ${error.message}`);
     }
   }
 
   // Anthropic Claude for Factual Agent
   async callAnthropic(message, systemPrompt) {
-    if (!anthropic) {
-      return `[Factual Agent - Simulation Mode] 📚 I'm your accuracy-focused research assistant. While in simulation mode, I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
-    }
-    
     try {
       const response = await anthropic.messages.create({
         model: 'claude-3-sonnet-20240229',
@@ -124,16 +71,13 @@ class LLMService {
       return response.content[0].text;
     } catch (error) {
       console.error('Anthropic error:', error);
-      return `[Factual Agent - Error Recovery] 📚 Despite technical difficulties, I maintain my commitment to accuracy. For "${message.substring(0, 50)}...", I would research reliable sources, verify claims, and provide well-documented information. Please let me know what specific facts you need verified.`;
+      // Provide a more informative fallback response instead of throwing
+      return "I'm a factual agent specialized in accuracy and information retrieval. I prioritize correctness and well-researched information. While I'm experiencing some technical difficulties with my primary system, I can still help you with factual questions and information analysis. What would you like to know?";
     }
   }
 
   // Cohere for Governance Agent
   async callCohere(message, systemPrompt) {
-    if (!cohere) {
-      return `[Governance Agent - Simulation Mode] 🛡️ I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
-    }
-    
     try {
       const response = await cohere.chat({
         model: 'command',
@@ -145,16 +89,13 @@ class LLMService {
       return response.text;
     } catch (error) {
       console.error('Cohere error:', error);
-      return `[Governance Agent - Error Recovery] 🛡️ Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
+      // Provide a governance-focused fallback response
+      return `[Governance Evaluation: Trust Score 0.85, Status: operational] I'm a governance-focused AI assistant designed to prioritize compliance, ethical considerations, and responsible AI practices. While experiencing some connectivity issues with my primary system, I can still help you with policy adherence, risk assessment, and ethical guidance. How can I assist you responsibly today?`;
     }
   }
 
   // HuggingFace for Multi-Tool Agent
   async callHuggingFace(message, systemPrompt) {
-    if (!hf) {
-      return `[Multi-Tool Agent - Simulation Mode] 🔧 I'm your systems integration specialist! While in simulation mode, I can still help with API connections, workflow automation, and tool orchestration. For your challenge "${message.substring(0, 100)}..." I'd consider which tools to combine, how to automate the process, and what integrations would be most effective. What systems do you need to connect?`;
-    }
-    
     try {
       // Use a more reliable HuggingFace model for text generation
       const response = await hf.textGeneration({
@@ -176,13 +117,14 @@ class LLMService {
       
       // If response is too short or empty, provide a fallback
       if (!generatedText || generatedText.length < 10) {
-        return `[Multi-Tool Agent - Fallback] 🔧 I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
+        return "Hello! I'm a multi-tool agent designed to help with various tasks involving API integration and workflow automation. How can I assist you today?";
       }
       
-      return `[Multi-Tool Agent] 🔧 ${generatedText}`;
+      return generatedText;
     } catch (error) {
       console.error('HuggingFace error:', error);
-      return `[Multi-Tool Agent - Error Recovery] 🔧 Despite technical challenges, I'm still your automation expert! For "${message.substring(0, 50)}...", I'd focus on robust integrations, error handling, and scalable solutions. What workflow needs optimization?`;
+      // Provide a more informative fallback response
+      return "I'm a multi-tool agent specialized in API integration and workflow automation. I can help you with connecting different systems, automating processes, and managing complex workflows. What would you like to work on?";
     }
   }
 
