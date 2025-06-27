@@ -247,9 +247,9 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
     }
   };
 
-  // Trigger auto-discovery when provider or API key changes
+  // Trigger auto-discovery when provider or API key changes (skip for Custom providers)
   useEffect(() => {
-    if (provider && apiKey.trim().length > 10) {
+    if (provider && provider !== 'Custom' && apiKey.trim().length > 10) {
       const timer = setTimeout(() => {
         discoverAgentInfo();
       }, 1000); // Debounce for 1 second
@@ -309,24 +309,44 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
         {subtitle}
       </Typography>
 
-      {/* Auto-Discovery Alert */}
-      <Alert 
-        severity="info" 
-        sx={{ 
-          backgroundColor: '#1e3a8a', 
-          color: 'white',
-          mb: 3,
-          '& .MuiAlert-icon': { color: 'white' },
-        }}
-      >
-        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-          💡 Auto-Discovery Enabled
-        </Typography>
-        <Typography variant="body2">
-          Select a provider and enter your API key - we'll automatically discover and populate 
-          your agent's capabilities, models, and optimal settings!
-        </Typography>
-      </Alert>
+      {/* Auto-Discovery Alert - Different message for Custom providers */}
+      {provider === 'Custom' ? (
+        <Alert 
+          severity="warning" 
+          sx={{ 
+            backgroundColor: '#92400e', 
+            color: 'white',
+            mb: 3,
+            '& .MuiAlert-icon': { color: 'white' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            ⚙️ Manual Configuration Required
+          </Typography>
+          <Typography variant="body2">
+            For Custom/Other APIs, please manually enter the API Endpoint, capabilities, and models. 
+            Auto-discovery is not available for custom providers.
+          </Typography>
+        </Alert>
+      ) : (
+        <Alert 
+          severity="info" 
+          sx={{ 
+            backgroundColor: '#1e3a8a', 
+            color: 'white',
+            mb: 3,
+            '& .MuiAlert-icon': { color: 'white' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            💡 Auto-Discovery Enabled
+          </Typography>
+          <Typography variant="body2">
+            Select a provider and enter your API key - we'll automatically discover and populate 
+            your agent's capabilities, models, and optimal settings!
+          </Typography>
+        </Alert>
+      )}
 
       {isDiscovering && (
         <Alert 

@@ -77,6 +77,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
 import EnhancedAgentRegistration from '../components/EnhancedAgentRegistration';
+import PromethiosAgentRegistration from '../components/PromethiosAgentRegistration';
 import { useAuth } from '../context/AuthContext';
 import { useDemoAuth } from '../hooks/useDemoAuth';
 import AgentManageModal from '../components/AgentManageModal';
@@ -515,6 +516,9 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showFoundryDialog, setShowFoundryDialog] = useState(false);
+  const [showPromethiosDialog, setShowPromethiosDialog] = useState(false);
+  const [promethiosAgentData, setPromethiosAgentData] = useState<any>(null);
+  const [isSubmittingPromethios, setIsSubmittingPromethios] = useState(false);
   const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -529,6 +533,38 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
     handleClose();
     // Open the Add Agent dialog instead of navigating away
     onShowAddAgentDialog();
+  };
+
+  const handlePromethiosAgent = () => {
+    handleClose();
+    setShowPromethiosDialog(true);
+  };
+
+  const handlePromethiosSubmit = async () => {
+    if (!promethiosAgentData?.agentName?.trim()) {
+      return;
+    }
+
+    setIsSubmittingPromethios(true);
+    try {
+      // Here you would typically call an API to create the Promethios agent
+      console.log('Creating Promethios agent:', promethiosAgentData);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Close dialog and reset state
+      setShowPromethiosDialog(false);
+      setPromethiosAgentData(null);
+      
+      // You might want to refresh the agents list here
+      // or show a success message
+      
+    } catch (error) {
+      console.error('Failed to create Promethios agent:', error);
+    } finally {
+      setIsSubmittingPromethios(false);
+    }
   };
 
   const handleTemplateLibrary = () => {
@@ -567,6 +603,19 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           },
         }}
       >
+        {/* TODO: Uncomment when Promethios agent integration with scorecards is complete
+        <MenuItem onClick={handlePromethiosAgent} sx={{ py: 2 }}>
+          <ListItemIcon>
+            <Security sx={{ color: '#3b82f6' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Create Promethios Agent"
+            secondary="Create a new agent with native governance LLM"
+            secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
+          />
+        </MenuItem>
+        <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        */}
         <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
           <ListItemIcon>
             <SmartToy sx={{ color: '#10b981' }} />
@@ -688,6 +737,56 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
             }}
           >
             Import API Agent Instead
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Promethios Native Agent Dialog */}
+      <Dialog 
+        open={showPromethiosDialog} 
+        onClose={() => setShowPromethiosDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2d3748',
+            color: 'white',
+            border: '1px solid #4a5568',
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Security sx={{ color: '#3b82f6' }} />
+            Create Promethios Native Agent
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <PromethiosAgentRegistration
+            onDataChange={setPromethiosAgentData}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowPromethiosDialog(false)}
+            disabled={isSubmittingPromethios}
+            sx={{ color: '#a0aec0' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained"
+            onClick={handlePromethiosSubmit}
+            disabled={!promethiosAgentData?.agentName?.trim() || isSubmittingPromethios}
+            sx={{
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              '&:hover': { backgroundColor: '#2563eb' },
+              '&:disabled': { backgroundColor: '#374151', color: '#6b7280' },
+            }}
+          >
+            {isSubmittingPromethios ? 'Creating...' : 'Create Agent'}
           </Button>
         </DialogActions>
       </Dialog>
