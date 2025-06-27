@@ -1,214 +1,239 @@
 import { useState, useEffect } from 'react';
-import { agentWrapperRegistry } from '../services/AgentWrapperRegistry';
 import { AgentWrapper, WrapperMetrics } from '../types';
 import { useAuth } from '../../../context/AuthContext';
+import { useDemoAuth } from '../../../hooks/useDemoAuth';
 
 /**
  * Hook for accessing and managing agent wrappers
+ * Updated to use the same data source as the working My Agents page
  */
 export const useAgentWrappers = () => {
   const [wrappers, setWrappers] = useState<AgentWrapper[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user, db, auth } = useAuth();
+  const { currentUser } = useAuth();
+  
+  // Fallback to demo auth for testing if no Firebase user
+  const { currentUser: demoUser } = useDemoAuth();
+  const effectiveUser = currentUser || demoUser;
 
   // Load wrappers on mount
   useEffect(() => {
     const loadWrappers = async () => {
+      if (!effectiveUser?.uid) {
+        console.log('useAgentWrappers: No user logged in, skipping agent loading');
+        setWrappers([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
         
-        if (user && db && auth) {
-          // Try to load from storage
-          await agentWrapperRegistry.loadWrappers(db, auth);
-          const allWrappers = agentWrapperRegistry.getAllWrappers();
-          
-          if (allWrappers.length > 0) {
-            setWrappers(allWrappers);
-          } else {
-            // If no wrappers found, add some mock agents for testing
-            console.log('No agents found in storage, adding mock agents for testing');
-            const mockAgents = createMockAgents();
-            setWrappers(mockAgents);
-          }
-        } else {
-          // If no auth, use mock agents
-          console.log('No authentication, using mock agents');
-          const mockAgents = createMockAgents();
-          setWrappers(mockAgents);
-        }
-      } catch (err) {
-        console.error('Error loading wrappers:', err);
-        setError(err instanceof Error ? err : new Error('Failed to load wrappers'));
+        console.log('useAgentWrappers: Loading agents for user:', effectiveUser.uid);
         
-        // Fallback to mock agents on error
-        console.log('Loading failed, falling back to mock agents');
-        const mockAgents = createMockAgents();
-        setWrappers(mockAgents);
+        // Use the same storage service as the working My Agents page
+        const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
+        userAgentStorage.setCurrentUser(effectiveUser.uid);
+        
+        // Load user's agents
+        const userAgents = await userAgentStorage.loadUserAgents();
+        console.log('useAgentWrappers: Loaded user agents:', userAgents);
+        
+        // Convert AgentProfile format to AgentWrapper format for compatibility
+        const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+          id: agent.identity.id,
+          name: agent.identity.name,
+          description: agent.identity.description,
+          version: agent.identity.version,
+          supportedProviders: ['openai'], // Default, could be enhanced based on agent data
+          inputSchema: {},
+          outputSchema: {},
+          enabled: agent.identity.status === 'active',
+          wrap: async (request: any) => request,
+          unwrap: async (response: any) => response,
+          initialize: async () => true,
+          cleanup: async () => true
+        }));
+        
+        setWrappers(convertedWrappers);
+        console.log('useAgentWrappers: Successfully loaded', convertedWrappers.length, 'agents');
+        
+      } catch (err) {
+        console.error('useAgentWrappers: Error loading agents:', err);
+        setError(err instanceof Error ? err : new Error('Failed to load agents'));
+        setWrappers([]); // Empty array instead of mock agents
       } finally {
         setLoading(false);
       }
     };
 
     loadWrappers();
-  }, [user, db, auth]);
+  }, [effectiveUser?.uid]);
 
-  // Create mock agents for testing when storage fails
-  const createMockAgents = () => {
-    return [
-      {
-        id: 'mock-agent-1',
-        name: 'Content Generator',
-        description: 'Generates high-quality content based on prompts and guidelines',
-        version: '1.0.0',
-        supportedProviders: ['openai', 'anthropic'],
-        inputSchema: {},
-        outputSchema: {},
-        enabled: true,
-        wrap: async (request: any) => request,
-        unwrap: async (response: any) => response,
-        initialize: async () => true,
-        cleanup: async () => true
-      },
-      {
-        id: 'mock-agent-2', 
-        name: 'Data Analyzer',
-        description: 'Analyzes data patterns and generates insights',
-        version: '1.0.0',
+  // Add wrapper function
+  const addWrapper = async (wrapper: AgentWrapper) => {
+    try {
+      if (!effectiveUser?.uid) {
+        throw new Error('No user logged in');
+      }
+
+      // Convert AgentWrapper to AgentProfile format and save
+      const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(effectiveUser.uid);
+      
+      const agentProfile = {
+        identity: {
+          id: wrapper.id,
+          name: wrapper.name,
+          description: wrapper.description,
+          version: wrapper.version,
+          status: wrapper.enabled ? 'active' : 'inactive'
+        },
+        // Add other required fields with defaults
+        healthStatus: 'healthy',
+        governanceStatus: 'compliant',
+        lastActivity: new Date().toISOString()
+      };
+      
+      await userAgentStorage.saveUserAgent(agentProfile);
+      
+      // Reload wrappers to reflect changes
+      const userAgents = await userAgentStorage.loadUserAgents();
+      const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+        id: agent.identity.id,
+        name: agent.identity.name,
+        description: agent.identity.description,
+        version: agent.identity.version,
         supportedProviders: ['openai'],
         inputSchema: {},
         outputSchema: {},
-        enabled: true,
+        enabled: agent.identity.status === 'active',
         wrap: async (request: any) => request,
         unwrap: async (response: any) => response,
         initialize: async () => true,
         cleanup: async () => true
-      },
-      {
-        id: 'mock-agent-3',
-        name: 'Code Assistant', 
-        description: 'Helps with code generation, review, and debugging',
-        version: '1.0.0',
-        supportedProviders: ['openai', 'anthropic'],
-        inputSchema: {},
-        outputSchema: {},
-        enabled: true,
-        wrap: async (request: any) => request,
-        unwrap: async (response: any) => response,
-        initialize: async () => true,
-        cleanup: async () => true
-      },
-      {
-        id: 'mock-agent-4',
-        name: 'Research Assistant',
-        description: 'Conducts research and summarizes findings',
-        version: '1.0.0', 
-        supportedProviders: ['openai'],
-        inputSchema: {},
-        outputSchema: {},
-        enabled: true,
-        wrap: async (request: any) => request,
-        unwrap: async (response: any) => response,
-        initialize: async () => true,
-        cleanup: async () => true
-      }
-    ];
-  };
-
-  // Register a new wrapper
-  const registerWrapper = async (wrapper: AgentWrapper): Promise<boolean> => {
-    try {
-      const success = await agentWrapperRegistry.registerWrapper(db, auth, wrapper);
-      if (success) {
-        setWrappers(agentWrapperRegistry.getAllWrappers());
-      }
-      return success;
+      }));
+      
+      setWrappers(convertedWrappers);
     } catch (err) {
-      console.error('Error registering wrapper:', err);
-      setError(err instanceof Error ? err : new Error('Failed to register wrapper'));
-      return false;
+      console.error('Error adding wrapper:', err);
+      setError(err instanceof Error ? err : new Error('Failed to add wrapper'));
     }
   };
 
-  // Deregister a wrapper
-  const deregisterWrapper = async (wrapperId: string): Promise<boolean> => {
+  // Remove wrapper function
+  const removeWrapper = async (wrapperId: string) => {
     try {
-      const success = await agentWrapperRegistry.deregisterWrapper(db, auth, wrapperId);
-      if (success) {
-        setWrappers(agentWrapperRegistry.getAllWrappers());
+      if (!effectiveUser?.uid) {
+        throw new Error('No user logged in');
       }
-      return success;
+
+      const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(effectiveUser.uid);
+      
+      await userAgentStorage.deleteUserAgent(wrapperId);
+      
+      // Update local state
+      setWrappers(prev => prev.filter(w => w.id !== wrapperId));
     } catch (err) {
-      console.error('Error deregistering wrapper:', err);
-      setError(err instanceof Error ? err : new Error('Failed to deregister wrapper'));
-      return false;
+      console.error('Error removing wrapper:', err);
+      setError(err instanceof Error ? err : new Error('Failed to remove wrapper'));
     }
   };
 
-  // Enable a wrapper
-  const enableWrapper = async (wrapperId: string): Promise<boolean> => {
+  // Update wrapper function
+  const updateWrapper = async (wrapperId: string, updates: Partial<AgentWrapper>) => {
     try {
-      const success = await agentWrapperRegistry.enableWrapper(db, auth, wrapperId);
-      if (success) {
-        // Update local state to reflect the change
-        setWrappers(prev => 
-          prev.map(w => 
-            w.id === wrapperId ? { ...w, enabled: true } : w
-          )
-        );
+      if (!effectiveUser?.uid) {
+        throw new Error('No user logged in');
       }
-      return success;
+
+      // Update local state immediately for better UX
+      setWrappers(prev => prev.map(w => 
+        w.id === wrapperId ? { ...w, ...updates } : w
+      ));
+
+      // TODO: Implement backend update if needed
+      // For now, just update local state
     } catch (err) {
-      console.error('Error enabling wrapper:', err);
-      setError(err instanceof Error ? err : new Error('Failed to enable wrapper'));
-      return false;
+      console.error('Error updating wrapper:', err);
+      setError(err instanceof Error ? err : new Error('Failed to update wrapper'));
     }
   };
 
-  // Disable a wrapper
-  const disableWrapper = async (wrapperId: string): Promise<boolean> => {
+  // Get wrapper metrics function
+  const getWrapperMetrics = async (wrapperId: string): Promise<WrapperMetrics | null> => {
     try {
-      const success = await agentWrapperRegistry.disableWrapper(db, auth, wrapperId);
-      if (success) {
-        // Update local state to reflect the change
-        setWrappers(prev => 
-          prev.map(w => 
-            w.id === wrapperId ? { ...w, enabled: false } : w
-          )
-        );
+      if (!effectiveUser?.uid) {
+        return null;
       }
-      return success;
+
+      const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(effectiveUser.uid);
+      
+      const scorecard = await userAgentStorage.loadScorecard(wrapperId);
+      
+      if (scorecard) {
+        return {
+          totalRequests: scorecard.metrics?.totalRequests || 0,
+          successfulRequests: scorecard.metrics?.successfulRequests || 0,
+          failedRequests: scorecard.metrics?.failedRequests || 0,
+          averageResponseTime: scorecard.metrics?.averageResponseTime || 0,
+          lastActivity: scorecard.lastUpdated || new Date().toISOString()
+        };
+      }
+      
+      return null;
     } catch (err) {
-      console.error('Error disabling wrapper:', err);
-      setError(err instanceof Error ? err : new Error('Failed to disable wrapper'));
-      return false;
+      console.error('Error getting wrapper metrics:', err);
+      return null;
     }
-  };
-
-  // Get metrics for a wrapper
-  const getWrapperMetrics = (wrapperId: string): WrapperMetrics | null => {
-    return agentWrapperRegistry.getWrapperMetrics(wrapperId);
-  };
-
-  // Check if a wrapper is enabled
-  const isWrapperEnabled = (wrapperId: string): boolean => {
-    return agentWrapperRegistry.isWrapperEnabled(wrapperId);
   };
 
   return {
     wrappers,
     loading,
     error,
-    registerWrapper,
-    deregisterWrapper,
-    enableWrapper,
-    disableWrapper,
+    addWrapper,
+    removeWrapper,
+    updateWrapper,
     getWrapperMetrics,
-    isWrapperEnabled
+    // Refresh function to manually reload data
+    refresh: () => {
+      if (effectiveUser?.uid) {
+        const loadWrappers = async () => {
+          try {
+            setLoading(true);
+            const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
+            userAgentStorage.setCurrentUser(effectiveUser.uid);
+            const userAgents = await userAgentStorage.loadUserAgents();
+            const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+              id: agent.identity.id,
+              name: agent.identity.name,
+              description: agent.identity.description,
+              version: agent.identity.version,
+              supportedProviders: ['openai'],
+              inputSchema: {},
+              outputSchema: {},
+              enabled: agent.identity.status === 'active',
+              wrap: async (request: any) => request,
+              unwrap: async (response: any) => response,
+              initialize: async () => true,
+              cleanup: async () => true
+            }));
+            setWrappers(convertedWrappers);
+          } catch (err) {
+            console.error('Error refreshing wrappers:', err);
+            setError(err instanceof Error ? err : new Error('Failed to refresh wrappers'));
+          } finally {
+            setLoading(false);
+          }
+        };
+        loadWrappers();
+      }
+    }
   };
 };
-
-export default useAgentWrappers;
-
 
