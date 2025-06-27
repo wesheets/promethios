@@ -514,12 +514,12 @@ class UltimateGovernanceTrainer:
         # Create dataset
         dataset = Dataset.from_list(formatted_data)
         
-        # Tokenize dataset with dynamic padding for memory efficiency
+        # Tokenize dataset with proper padding for batching
         def tokenize_function(examples):
             return self.tokenizer(
                 examples["text"],
                 truncation=True,
-                padding=False,  # Use dynamic padding instead of fixed padding
+                padding=True,  # Enable padding for proper batching
                 max_length=self.config.model_max_length,
                 return_tensors="pt"
             )
