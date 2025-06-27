@@ -833,9 +833,24 @@ export const observerService = {
 
   // Multi-Agent Observer methods
   getMultiAgentSystemMetrics: async (systemId: string): Promise<MultiAgentSystemMetrics> => {
+    // Get the backend context ID for this system (like single agent uses agent ID)
+    let contextId = systemId;
+    try {
+      const { multiAgentChatIntegration } = await import('./MultiAgentChatIntegrationService');
+      const backendContextId = await multiAgentChatIntegration.getBackendContextId(systemId);
+      if (backendContextId) {
+        contextId = backendContextId;
+        console.log('🔧 OBSERVER: Using backend context ID:', contextId, 'for system:', systemId);
+      } else {
+        console.log('🔧 OBSERVER: No backend context found, using system ID:', systemId);
+      }
+    } catch (error) {
+      console.warn('🔧 OBSERVER: Failed to get backend context ID, using system ID:', error);
+    }
+
     // In a real implementation, this would fetch data from the multi-agent governance API
     try {
-      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/metrics/${systemId}`);
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/metrics/${contextId}`);
       if (response.ok) {
         return await response.json();
       }
@@ -868,9 +883,22 @@ export const observerService = {
   },
 
   getSystemGovernanceHealth: async (systemId: string): Promise<SystemGovernanceHealth> => {
+    // Get the backend context ID for this system (like single agent uses agent ID)
+    let contextId = systemId;
+    try {
+      const { multiAgentChatIntegration } = await import('./MultiAgentChatIntegrationService');
+      const backendContextId = await multiAgentChatIntegration.getBackendContextId(systemId);
+      if (backendContextId) {
+        contextId = backendContextId;
+        console.log('🔧 OBSERVER: Using backend context ID:', contextId, 'for governance health');
+      }
+    } catch (error) {
+      console.warn('🔧 OBSERVER: Failed to get backend context ID for governance health:', error);
+    }
+
     // In a real implementation, this would fetch data from the multi-agent governance API
     try {
-      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/governance-health/${systemId}`);
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/governance-health/${contextId}`);
       if (response.ok) {
         return await response.json();
       }
@@ -887,9 +915,22 @@ export const observerService = {
   },
 
   getCollaborationAnalytics: async (systemId: string): Promise<CollaborationAnalytics> => {
+    // Get the backend context ID for this system (like single agent uses agent ID)
+    let contextId = systemId;
+    try {
+      const { multiAgentChatIntegration } = await import('./MultiAgentChatIntegrationService');
+      const backendContextId = await multiAgentChatIntegration.getBackendContextId(systemId);
+      if (backendContextId) {
+        contextId = backendContextId;
+        console.log('🔧 OBSERVER: Using backend context ID:', contextId, 'for collaboration analytics');
+      }
+    } catch (error) {
+      console.warn('🔧 OBSERVER: Failed to get backend context ID for collaboration analytics:', error);
+    }
+
     // In a real implementation, this would fetch data from the multi-agent governance API
     try {
-      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/collaboration/${systemId}`);
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/collaboration/${contextId}`);
       if (response.ok) {
         return await response.json();
       }
@@ -906,9 +947,22 @@ export const observerService = {
   },
 
   getEmergentBehaviorDetection: async (systemId: string): Promise<EmergentBehaviorDetection> => {
+    // Get the backend context ID for this system (like single agent uses agent ID)
+    let contextId = systemId;
+    try {
+      const { multiAgentChatIntegration } = await import('./MultiAgentChatIntegrationService');
+      const backendContextId = await multiAgentChatIntegration.getBackendContextId(systemId);
+      if (backendContextId) {
+        contextId = backendContextId;
+        console.log('🔧 OBSERVER: Using backend context ID:', contextId, 'for emergent behavior detection');
+      }
+    } catch (error) {
+      console.warn('🔧 OBSERVER: Failed to get backend context ID for emergent behavior detection:', error);
+    }
+
     // In a real implementation, this would fetch data from the multi-agent governance API
     try {
-      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/emergent-behaviors/${systemId}`);
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/observer/emergent-behaviors/${contextId}`);
       if (response.ok) {
         return await response.json();
       }

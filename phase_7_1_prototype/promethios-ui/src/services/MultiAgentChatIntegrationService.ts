@@ -123,6 +123,11 @@ export class MultiAgentChatIntegrationService {
         throw new Error(`Chat is not enabled for system ${systemId}`);
       }
 
+      // Ensure backend context exists for this multi-agent system
+      console.log('🔧 Ensuring backend context exists for system:', systemId);
+      const backendContextId = await this.ensureBackendContext(systemData);
+      console.log('🔧 Backend context ID:', backendContextId);
+
       // Create new chat session
       const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const session: MultiAgentChatSession = {
@@ -140,9 +145,16 @@ export class MultiAgentChatIntegrationService {
 
       console.log('Created chat session:', session);
 
-      // Store session
+      // Store session with backend context ID
       this.activeSessions.set(sessionId, session);
       await this.storageService.set('ui', `chat-session-${sessionId}`, session);
+
+      // Store the backend context ID for this system (for observer calls)
+      await this.storageService.set('ui', `backend-context-${systemId}`, {
+        contextId: backendContextId,
+        systemId,
+        createdAt: new Date().toISOString()
+      });
 
       // Update system's last used timestamp
       systemData.lastUsed = new Date().toISOString();
@@ -305,6 +317,112 @@ export class MultiAgentChatIntegrationService {
       };
     } catch (error) {
       console.error('Failed to get governance status:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Ensure backend context exists for multi-agent system (similar to single agent pattern)
+   */
+  private async ensureBackendContext(systemData: any): Promise<string> {
+    try {
+      // Generate stable context ID based on system ID (like single agent does with agent ID)
+      const stableContextId = `ctx_${systemData.id}`;
+      
+      // Check if we already have a backend context stored locally
+      const existingContext = await this.storageService.get('ui', `backend-context-${systemData.id}`);
+      
+      if (existingContext && existingContext.contextId) {
+        console.log('🔧 Using existing backend context:', existingContext.contextId);
+        
+        // Verify the backend still knows about this context
+        try {
+          const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/context/${existingContext.contextId}`);
+          if (response.ok) {
+            console.log('🔧 Backend context verified:', existingContext.contextId);
+            return existingContext.contextId;
+          } else {
+            console.log('🔧 Backend context not found, will recreate');
+          }
+        } catch (error) {
+          console.log('🔧 Backend context verification failed, will recreate');
+        }
+      }
+
+      // Create new backend context (like single agent does with backend sync)
+      console.log('🔧 Creating new backend context for system:', systemData.name);
+      
+      const contextPayload = {
+        name: systemData.name,
+        agent_ids: systemData.agentIds || [],
+        collaboration_model: systemData.collaborationModel || 'sequential',
+        governance_enabled: systemData.governanceConfiguration ? true : false,
+        policies: systemData.governanceConfiguration || {},
+        metadata: {
+          systemId: systemData.id,
+          createdBy: 'frontend',
+          originalSystemData: systemData
+        }
+      };
+
+      try {
+        const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/context', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(contextPayload)
+        });
+
+        if (response.ok) {
+          const contextResult = await response.json();
+          console.log('🔧 Backend context created successfully:', contextResult.context_id);
+          
+          // Store the backend context ID locally (like single agent stores chat history)
+          await this.storageService.set('ui', `backend-context-${systemData.id}`, {
+            contextId: contextResult.context_id,
+            systemId: systemData.id,
+            createdAt: new Date().toISOString(),
+            lastVerified: new Date().toISOString()
+          });
+          
+          return contextResult.context_id;
+        } else {
+          console.warn('🔧 Backend context creation failed, using stable fallback ID');
+        }
+      } catch (error) {
+        console.warn('🔧 Backend context creation failed, using stable fallback ID:', error);
+      }
+
+      // Fallback: use stable context ID (like single agent uses agent ID)
+      console.log('🔧 Using stable fallback context ID:', stableContextId);
+      
+      // Store the fallback context ID locally
+      await this.storageService.set('ui', `backend-context-${systemData.id}`, {
+        contextId: stableContextId,
+        systemId: systemData.id,
+        createdAt: new Date().toISOString(),
+        fallbackMode: true
+      });
+      
+      return stableContextId;
+      
+    } catch (error) {
+      console.error('🔧 Error ensuring backend context:', error);
+      // Ultimate fallback
+      return `ctx_${systemData.id}`;
+    }
+  }
+
+  /**
+   * Get backend context ID for a system (for observer calls)
+   */
+  async getBackendContextId(systemId: string): Promise<string | null> {
+    try {
+      const contextData = await this.storageService.get('ui', `backend-context-${systemId}`);
+      return contextData?.contextId || null;
+    } catch (error) {
+      console.error('Error getting backend context ID:', error);
       return null;
     }
   }
