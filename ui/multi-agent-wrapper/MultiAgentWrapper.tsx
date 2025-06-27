@@ -91,6 +91,15 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
   const finalPreSelectedAgents = navigationState?.preSelectedAgents || preSelectedAgents;
   const finalInitialStep = navigationState?.initialStep || initialStep;
   const finalInitialTeamData = navigationState?.initialTeamData || initialTeamData;
+
+  // Debug logging
+  console.log('MultiAgentWrapper Debug:', {
+    navigationState,
+    finalPreSelectedAgents,
+    finalInitialStep,
+    finalInitialTeamData,
+    locationState: location.state
+  });
   const [activeTeams, setActiveTeams] = useState<MultiAgentTeam[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);

@@ -78,17 +78,21 @@ const MyAgentsPage: React.FC<MyAgentsPageProps> = ({ className }) => {
   };
 
   const handleContinueToWizard = () => {
+    const navigationData = {
+      preSelectedAgents: selectedAgents,
+      initialStep: 2, // Start at step 3 (Collaboration Model)
+      initialTeamData: {
+        name: systemName,
+        description: systemDescription,
+        workflow: systemType
+      }
+    };
+    
+    console.log('MyAgentsPage Navigation Data:', navigationData);
+    
     // Navigate to MultiAgentWrapper with selected agents and initial data
     navigate('/agents/multi-wrapping', {
-      state: {
-        preSelectedAgents: selectedAgents,
-        initialStep: 2, // Start at step 3 (Collaboration Model)
-        initialTeamData: {
-          name: systemName,
-          description: systemDescription,
-          workflow: systemType
-        }
-      }
+      state: navigationData
     });
   };
 
