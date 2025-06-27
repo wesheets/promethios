@@ -369,6 +369,16 @@ const AdvancedChatComponent: React.FC = () => {
   const [maxMessages, setMaxMessages] = useState(50);
   const [autoStopEnabled, setAutoStopEnabled] = useState(true);
   
+  // Pacing Controls
+  const [pacingMode, setPacingMode] = useState<'realtime' | 'natural' | 'thoughtful'>('natural');
+  const [isSimulatingTyping, setIsSimulatingTyping] = useState(false);
+  const [typingProgress, setTypingProgress] = useState(0);
+  const [pendingResponses, setPendingResponses] = useState<Array<{
+    message: ChatMessage;
+    delay: number;
+    startTime: number;
+  }>>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -618,6 +628,58 @@ const AdvancedChatComponent: React.FC = () => {
       chatStorageService.setCurrentUser(effectiveUser.uid);
     }
   };
+
+  // Pacing Utility Functions
+  const calculateTypingDelay = useCallback((text: string): number => {
+    const baseDelay = 1000; // 1 second minimum
+    const wordsPerMinute = pacingMode === 'realtime' ? 300 : pacingMode === 'natural' ? 150 : 80;
+    const words = text.split(' ').length;
+    const typingTime = (words / wordsPerMinute) * 60 * 1000; // Convert to milliseconds
+    return Math.max(baseDelay, Math.min(typingTime, 8000)); // Cap at 8 seconds
+  }, [pacingMode]);
+
+  const addResponseWithPacing = useCallback(async (message: ChatMessage) => {
+    const delay = calculateTypingDelay(message.content);
+    
+    // Show typing indicator
+    setIsSimulatingTyping(true);
+    setTypingProgress(0);
+    
+    // Simulate typing progress
+    const progressInterval = setInterval(() => {
+      setTypingProgress(prev => Math.min(prev + 10, 90));
+    }, delay / 10);
+    
+    // Wait for the calculated delay
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Clear typing indicator and add message
+    clearInterval(progressInterval);
+    setIsSimulatingTyping(false);
+    setTypingProgress(0);
+    
+    setMessages(prev => [...prev, message]);
+    setMessageCount(prev => prev + 1);
+  }, [calculateTypingDelay]);
+
+  const processResponseQueue = useCallback(async () => {
+    if (pendingResponses.length === 0 || isSimulatingTyping) return;
+    
+    const nextResponse = pendingResponses[0];
+    setPendingResponses(prev => prev.slice(1));
+    
+    await addResponseWithPacing(nextResponse.message);
+    
+    // Process next response if any
+    if (pendingResponses.length > 1) {
+      setTimeout(processResponseQueue, 500); // Brief pause between responses
+    }
+  }, [pendingResponses, isSimulatingTyping, addResponseWithPacing]);
+
+  // Process response queue when it changes
+  useEffect(() => {
+    processResponseQueue();
+  }, [processResponseQueue]);
 
   // Load real agents from unified storage and their chat history
   useEffect(() => {
@@ -1710,13 +1772,39 @@ This error has been logged to the console for debugging.`,
   };
 
   // Safety Control Functions
-  const handleEmergencyStop = () => {
+  const handleEmergencyStop = async () => {
+    console.log('🚨 EMERGENCY STOP: Initiating emergency stop sequence');
     setEmergencyStop(true);
     setIsTyping(false);
+    setIsSimulatingTyping(false);
     
-    // Clear any ongoing timers
+    // Clear any ongoing timers and pending responses
     if (sessionTimerRef.current) {
       clearInterval(sessionTimerRef.current);
+    }
+    setPendingResponses([]);
+    
+    // Send backend stop signal for multi-agent systems
+    if (chatMode === 'saved' && currentChatSession) {
+      try {
+        console.log('🚨 EMERGENCY STOP: Sending backend stop signal for session:', currentChatSession.sessionId);
+        await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/emergency-stop', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId: currentChatSession.sessionId,
+            systemId: currentChatSession.systemId,
+            userId: effectiveUser?.uid,
+            reason: 'user_emergency_stop'
+          })
+        });
+        console.log('🚨 EMERGENCY STOP: Backend stop signal sent successfully');
+      } catch (error) {
+        console.error('🚨 EMERGENCY STOP: Failed to send backend stop signal:', error);
+        // Continue with frontend stop even if backend fails
+      }
     }
     
     const stopMessage: ChatMessage = {
