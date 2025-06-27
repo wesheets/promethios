@@ -53,20 +53,25 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
   // Load wrapped agents from Firebase when user changes
   useEffect(() => {
     const loadUserAgents = async () => {
+      console.log('AgentContext: loadUserAgents called');
+      console.log('AgentContext: user object:', user);
+      console.log('AgentContext: user?.uid:', user?.uid);
+      console.log('AgentContext: user?.email:', user?.email);
+      
       if (!user?.uid) {
-        console.log('No authenticated user, clearing agents');
+        console.log('AgentContext: No authenticated user, clearing agents');
         setWrappedAgents([]);
         setLoading(false);
         return;
       }
 
       try {
-        console.log('Loading agents for user:', user.email, 'UID:', user.uid);
+        console.log('AgentContext: Loading agents for user:', user.email, 'UID:', user.uid);
         setLoading(true);
         
         // Get user-specific agents from Firebase
         const userAgents = await AgentUserLinkageService.getUserAgents(user.uid);
-        console.log('Loaded user agents from Firebase:', userAgents);
+        console.log('AgentContext: Loaded user agents from Firebase:', userAgents);
         
         // Convert Firebase format to WrappedAgent format
         const formattedAgents: WrappedAgent[] = userAgents.map(agent => ({
