@@ -1338,7 +1338,7 @@ const AdvancedChatComponent: React.FC = () => {
       await chatStorageService.saveMessage(userMessage, selectedAgent.identity.id);
     } else if (chatMode === 'saved-systems' && selectedSystem) {
       ensureUserSet();
-      await chatStorageService.saveMessage(userMessage, selectedSystem.id);
+      await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
     }
 
     // Scroll to bottom after user message
@@ -1553,7 +1553,7 @@ const AdvancedChatComponent: React.FC = () => {
           
           // Save user message to storage for the system
           ensureUserSet();
-          await chatStorageService.saveMessage(userMessage, selectedSystem.id);
+          await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
           console.log('🚀 MULTI-AGENT DEBUG: User message saved to storage');
           
           // Add a timeout to prevent infinite waiting
@@ -1631,7 +1631,7 @@ const AdvancedChatComponent: React.FC = () => {
           setMessageCount(prev => prev + 1); // Increment for system response
           
           // Save system response to storage
-          await chatStorageService.saveMessage(systemMessage, selectedSystem.id);
+          await multiAgentChatIntegration.saveMessage(systemMessage, selectedSystem.id);
           console.log('🚀 MULTI-AGENT DEBUG: System response saved to storage');
           
           // Scroll to bottom after system response
@@ -1798,7 +1798,7 @@ This error has been logged to the console for debugging.`,
 
         // Save welcome message to storage
         ensureUserSet();
-        await chatStorageService.saveMessage(welcomeMessage, systemId);
+        await multiAgentChatIntegration.saveMessage(welcomeMessage, systemId);
       }
     } catch (error) {
       console.error('Error selecting system:', error);

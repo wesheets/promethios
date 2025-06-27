@@ -428,6 +428,69 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
+   * Save a message to multi-agent system storage
+   * @param message The message to save
+   * @param systemId The multi-agent system ID
+   */
+  async saveMessage(message: any, systemId: string): Promise<void> {
+    try {
+      if (!this.currentUserId) {
+        throw new Error('User not set for multi-agent chat integration');
+      }
+
+      // Use unified storage to save multi-agent messages
+      const messageKey = `${this.currentUserId}.${systemId}.messages`;
+      
+      // Get existing messages
+      let messages: any[] = [];
+      try {
+        const existingMessages = await this.unifiedStorage.get<any[]>('multiAgentChats', messageKey);
+        if (existingMessages && Array.isArray(existingMessages)) {
+          messages = existingMessages;
+        }
+      } catch (error) {
+        console.log('No existing messages found, starting fresh');
+      }
+
+      // Add new message
+      messages.push({
+        ...message,
+        timestamp: message.timestamp || new Date().toISOString(),
+        systemId
+      });
+
+      // Save back to storage
+      await this.unifiedStorage.set('multiAgentChats', messageKey, messages);
+      
+      console.log(`💬 Multi-agent message saved for system ${systemId}`);
+    } catch (error) {
+      console.error('Error saving multi-agent message:', error);
+      // Don't throw - message saving shouldn't break the chat flow
+    }
+  }
+
+  /**
+   * Load messages for a multi-agent system
+   * @param systemId The multi-agent system ID
+   * @returns Array of messages
+   */
+  async loadMessages(systemId: string): Promise<any[]> {
+    try {
+      if (!this.currentUserId) {
+        return [];
+      }
+
+      const messageKey = `${this.currentUserId}.${systemId}.messages`;
+      const messages = await this.unifiedStorage.get<any[]>('multiAgentChats', messageKey);
+      
+      return messages || [];
+    } catch (error) {
+      console.error('Error loading multi-agent messages:', error);
+      return [];
+    }
+  }
+
+  /**
    * Send emergency stop signal to backend
    */
   async sendEmergencyStop(sessionId: string, systemId: string, userId: string): Promise<void> {
