@@ -17,6 +17,10 @@ from .promethios_llm_service import (
     LLMRequest, 
     LLMResponse
 )
+from .endpoints.ultimate_governance import ultimate_governance_router
+from .endpoints.constitutional import constitutional_governance_router
+from .endpoints.operational import operational_governance_router
+from .model_router import GovernanceModelRouter
 
 logger = logging.getLogger(__name__)
 
@@ -236,9 +240,30 @@ async def get_llm_capabilities():
         ]
     }
 
+# Include Native LLM routers
+router.include_router(ultimate_governance_router, prefix="/governance/ultimate", tags=["ultimate-governance"])
+router.include_router(constitutional_governance_router, prefix="/governance/constitutional", tags=["constitutional-governance"])
+router.include_router(operational_governance_router, prefix="/governance/operational", tags=["operational-governance"])
+
 # Health check for the service
 @router.get("/health")
 async def health_check():
     """Simple health check endpoint."""
     return {"status": "healthy", "service": "promethios-llm"}
+
+# Governance health check
+@router.get("/governance/health")
+async def governance_health_check():
+    """Health check for governance models."""
+    try:
+        # Initialize model router to check model availability
+        model_router = GovernanceModelRouter({})
+        await model_router.initialize()
+        return {
+            "status": "healthy", 
+            "service": "governance-models",
+            "available_models": list(model_router.model_capabilities.keys())
+        }
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
 

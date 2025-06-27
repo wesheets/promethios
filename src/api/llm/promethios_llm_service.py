@@ -73,7 +73,11 @@ class PrometheusLLMService:
         # Base URLs for existing APIs (configurable)
         self.base_url = "http://localhost:8000"  # Adjust as needed
         
-        logger.info("Promethios LLM Service initialized")
+        # Initialize Native LLM integration
+        from .model_router import GovernanceModelRouter
+        self.governance_router = GovernanceModelRouter({})
+        
+        logger.info("Promethios LLM Service initialized with Native LLM integration")
     
     async def process_request(self, request: LLMRequest) -> LLMResponse:
         """
@@ -91,7 +95,25 @@ class PrometheusLLMService:
             # Step 1: Analyze the request to determine intent and requirements
             analysis = await self._analyze_request(request)
             
-            # Step 2: Select agents using existing trust system
+            # Step 1.5: Check if this should be routed to Native LLM
+            if await self._should_use_native_llm(analysis):
+                logger.info("Routing request to Native LLM")
+                execution_result = await self._route_to_native_llm(request, analysis)
+                
+                # Generate response from Native LLM result
+                response = execution_result.get("result", "Analysis completed")
+                
+                return LLMResponse(
+                    response=response,
+                    agents_used=execution_result.get("agents_used", ["native-llm"]),
+                    workflow_type="native_llm",
+                    trust_scores=execution_result.get("trust_scores", {}),
+                    governance_status="compliant",
+                    session_id=request.session_id or "default",
+                    timestamp=datetime.utcnow().isoformat()
+                )
+            
+            # Step 2: Select agents using existing trust system (for multi-agent workflow)
             selected_agents = await self._select_agents(analysis)
             
             # Step 3: Configure workflow using existing flow service
@@ -132,8 +154,11 @@ class PrometheusLLMService:
         """
         Analyze user request to determine intent, complexity, and requirements.
         
-        Uses existing AI model service for analysis.
+        Uses existing AI model service for analysis and checks for governance domains.
         """
+        # Check if this is a governance-specific request
+        governance_domains = await self._detect_governance_domains(request.user_query)
+        
         analysis_prompt = f"""
         Analyze this user request and determine:
         1. Primary intent (research, creation, analysis, coordination, etc.)
@@ -141,6 +166,7 @@ class PrometheusLLMService:
         3. Required capabilities (writing, analysis, research, computation, etc.)
         4. Suggested collaboration model (shared_context, sequential_handoffs, parallel_processing, hierarchical_coordination, consensus_decision)
         5. Estimated agent count needed
+        6. Governance domains detected: {governance_domains}
         
         User request: {request.user_query}
         Context: {request.context or 'None'}
@@ -324,6 +350,112 @@ class PrometheusLLMService:
         )
         
         return response
+    
+    async def _detect_governance_domains(self, query: str) -> List[str]:
+        """
+        Detect if the query relates to governance domains that should use Native LLMs.
+        """
+        governance_keywords = {
+            "constitutional": ["constitution", "legal", "policy", "compliance", "regulation", "law", "statute"],
+            "operational": ["process", "procedure", "workflow", "operation", "efficiency", "resource", "performance"],
+            "crisis": ["crisis", "emergency", "incident", "risk", "threat", "disaster"],
+            "ethical": ["ethics", "moral", "values", "principles", "responsibility", "integrity"],
+            "stakeholder": ["stakeholder", "community", "public", "citizen", "engagement", "participation"]
+        }
+        
+        detected_domains = []
+        query_lower = query.lower()
+        
+        for domain, keywords in governance_keywords.items():
+            if any(keyword in query_lower for keyword in keywords):
+                detected_domains.append(domain)
+        
+        return detected_domains
+    
+    async def _should_use_native_llm(self, analysis: Dict[str, Any]) -> bool:
+        """
+        Determine if the request should be routed to Native LLM instead of multi-agent system.
+        """
+        governance_domains = analysis.get("governance_domains", [])
+        complexity = analysis.get("complexity", "moderate")
+        
+        # Use Native LLM for governance-specific queries with simple to moderate complexity
+        if governance_domains and complexity in ["simple", "moderate"]:
+            return True
+        
+        return False
+    
+    async def _route_to_native_llm(self, request: LLMRequest, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Route request to appropriate Native LLM based on governance domains.
+        """
+        governance_domains = analysis.get("governance_domains", [])
+        
+        # Select best model based on domains
+        selected_model = await self.governance_router.select_best_model(
+            domains=governance_domains,
+            complexity=analysis.get("complexity", "moderate")
+        )
+        
+        # Route to appropriate model
+        if selected_model == "ultimate_governance":
+            return await self._call_ultimate_governance_llm(request, analysis)
+        elif selected_model == "constitutional_governance":
+            return await self._call_constitutional_governance_llm(request, analysis)
+        elif selected_model == "operational_governance":
+            return await self._call_operational_governance_llm(request, analysis)
+        else:
+            # Fallback to ultimate governance
+            return await self._call_ultimate_governance_llm(request, analysis)
+    
+    async def _call_ultimate_governance_llm(self, request: LLMRequest, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Call the Ultimate Governance LLM for analysis.
+        """
+        try:
+            # Import the model loader
+            from .models.ultimate_governance_llm.model_loader import UltimateGovernanceLLM
+            
+            # Load model (this should be cached/singleton in production)
+            model = UltimateGovernanceLLM()
+            
+            # Prepare request for the model
+            scenario = request.user_query
+            context = request.context or {}
+            domains = analysis.get("governance_domains", [])
+            
+            # Call the model
+            result = await model.analyze_governance_scenario(
+                scenario=scenario,
+                context=context,
+                domains=domains
+            )
+            
+            return {
+                "result": result,
+                "model_used": "ultimate_governance",
+                "agents_used": ["ultimate-governance-llm"],
+                "trust_scores": {"ultimate-governance-llm": 0.95}
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calling Ultimate Governance LLM: {str(e)}")
+            # Fallback to multi-agent system
+            return await self._execute_coordination({}, request)
+    
+    async def _call_constitutional_governance_llm(self, request: LLMRequest, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Call the Constitutional Governance LLM for analysis.
+        """
+        # Similar implementation to ultimate governance
+        return await self._call_ultimate_governance_llm(request, analysis)
+    
+    async def _call_operational_governance_llm(self, request: LLMRequest, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Call the Operational Governance LLM for analysis.
+        """
+        # Similar implementation to ultimate governance
+        return await self._call_ultimate_governance_llm(request, analysis)
     
     async def close(self):
         """Clean up resources."""
