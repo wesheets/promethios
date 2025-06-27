@@ -1149,19 +1149,23 @@ const MultiAgentWrappingWizard: React.FC = () => {
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6} md={3}>
                         <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
-                          <Typography variant="h4" color="success.main">✅</Typography>
+                          <Typography variant="h4" color={selectedAgents.length >= 2 ? "success.main" : "error.main"}>
+                            {selectedAgents.length >= 2 ? '✅' : '❌'}
+                          </Typography>
                           <Typography variant="body2" fontWeight="bold">Agent Compatibility</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            All selected agents are compatible
+                            {selectedAgents.length >= 2 ? 'Multi-agent system ready' : 'Need at least 2 agents'}
                           </Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
                         <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
-                          <Typography variant="h4" color="success.main">✅</Typography>
-                          <Typography variant="body2" fontWeight="bold">Resource Allocation</Typography>
+                          <Typography variant="h4" color={Object.keys(agentRoles).length === selectedAgents.length ? "success.main" : "warning.main"}>
+                            {Object.keys(agentRoles).length === selectedAgents.length ? '✅' : '⚠️'}
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">Role Assignment</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Sufficient resources available
+                            {Object.keys(agentRoles).length}/{selectedAgents.length} agents have roles
                           </Typography>
                         </Box>
                       </Grid>
@@ -1178,10 +1182,136 @@ const MultiAgentWrappingWizard: React.FC = () => {
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
                         <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
-                          <Typography variant="h4" color="success.main">✅</Typography>
-                          <Typography variant="body2" fontWeight="bold">Network Connectivity</Typography>
+                          <Typography variant="h4" color={systemName.trim() && systemDescription.trim() ? "success.main" : "error.main"}>
+                            {systemName.trim() && systemDescription.trim() ? '✅' : '❌'}
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">System Configuration</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Backend services accessible
+                            {systemName.trim() && systemDescription.trim() ? 'Name and description set' : 'Missing basic info'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Advanced Validation Tests */}
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom color="primary">
+                      Advanced Validation Tests
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Box p={2} border={1} borderColor="divider" borderRadius={1}>
+                          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            🔄 Collaboration Model Validation
+                          </Typography>
+                          <Box component="ul" sx={{ pl: 2, mt: 1 }}>
+                            <li>
+                              <Typography variant="body2">
+                                Model: {collaborationModel ? collaborationModel.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not selected'} 
+                                {collaborationModel ? ' ✅' : ' ❌'}
+                              </Typography>
+                            </li>
+                            <li>
+                              <Typography variant="body2">
+                                Agent Count Compatibility: {
+                                  collaborationModel === 'hierarchical_coordination' && selectedAgents.length < 3 
+                                    ? 'Hierarchical needs 3+ agents ⚠️'
+                                    : collaborationModel === 'consensus_decision' && selectedAgents.length < 3
+                                    ? 'Consensus needs 3+ agents ⚠️'
+                                    : 'Compatible ✅'
+                                }
+                              </Typography>
+                            </li>
+                            <li>
+                              <Typography variant="body2">
+                                Role Distribution: {
+                                  collaborationModel === 'hierarchical_coordination' && 
+                                  !Object.values(agentRoles).some(role => role?.name?.toLowerCase().includes('lead') || role?.name?.toLowerCase().includes('coordinator'))
+                                    ? 'Missing lead/coordinator role ⚠️'
+                                    : 'Appropriate roles assigned ✅'
+                                }
+                              </Typography>
+                            </li>
+                          </Box>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Box p={2} border={1} borderColor="divider" borderRadius={1}>
+                          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            🛡️ Governance Validation
+                          </Typography>
+                          <Box component="ul" sx={{ pl: 2, mt: 1 }}>
+                            <li>
+                              <Typography variant="body2">
+                                Trust Threshold: {governanceRules.trustThreshold || 0.7} {governanceRules.trustThreshold >= 0.5 ? '✅' : '⚠️'}
+                              </Typography>
+                            </li>
+                            <li>
+                              <Typography variant="body2">
+                                Rate Limiting: {governanceRules.rateLimiting?.requestsPerMinute || 60} req/min ✅
+                              </Typography>
+                            </li>
+                            <li>
+                              <Typography variant="body2">
+                                Error Handling: {governanceRules.errorHandling || 'graceful'} ✅
+                              </Typography>
+                            </li>
+                            <li>
+                              <Typography variant="body2">
+                                Cross-Agent Validation: {governanceRules.crossAgentValidation ? 'Enabled ✅' : 'Disabled ⚠️'}
+                              </Typography>
+                            </li>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Performance & Resource Tests */}
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom color="primary">
+                      Performance & Resource Analysis
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={4}>
+                        <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
+                          <Typography variant="h5" color="info.main">
+                            {selectedAgents.length * 100}MB
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">Estimated Memory</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ~100MB per agent
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
+                          <Typography variant="h5" color="info.main">
+                            {governanceRules.rateLimiting?.requestsPerMinute || 60}/min
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">Rate Limit</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Requests per minute
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Box textAlign="center" p={2} border={1} borderColor="divider" borderRadius={1}>
+                          <Typography variant="h5" color="info.main">
+                            {governanceRules.maxExecutionTime || 300}s
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">Max Execution</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Timeout threshold
                           </Typography>
                         </Box>
                       </Grid>
