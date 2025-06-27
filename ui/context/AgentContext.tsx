@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { AgentUserLinkageService } from '../firebase/AgentUserLinkageService';
 
 interface WrappedAgent {
   id: string;
@@ -44,25 +46,116 @@ interface AgentProviderProps {
 }
 
 export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [wrappedAgents, setWrappedAgents] = useState<WrappedAgent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load wrapped agents from localStorage on mount
+  // Load wrapped agents from Firebase when user changes
   useEffect(() => {
-    const savedAgents = localStorage.getItem('promethios_wrapped_agents');
-    if (savedAgents) {
-      try {
-        const agents = JSON.parse(savedAgents);
-        setWrappedAgents(agents);
-      } catch (error) {
-        console.error('Failed to load wrapped agents from localStorage:', error);
+    const loadUserAgents = async () => {
+      if (!user?.uid) {
+        console.log('No authenticated user, clearing agents');
+        setWrappedAgents([]);
+        setLoading(false);
+        return;
       }
-    }
-  }, []);
 
-  // Save wrapped agents to localStorage whenever they change
+      try {
+        console.log('Loading agents for user:', user.email, 'UID:', user.uid);
+        setLoading(true);
+        
+        // Get user-specific agents from Firebase
+        const userAgents = await AgentUserLinkageService.getUserAgents(user.uid);
+        console.log('Loaded user agents from Firebase:', userAgents);
+        
+        // Convert Firebase format to WrappedAgent format
+        const formattedAgents: WrappedAgent[] = userAgents.map(agent => ({
+          id: agent.id,
+          name: agent.name || 'Unnamed Agent',
+          description: agent.description || '',
+          type: agent.type || 'assistant',
+          provider: agent.provider || 'openai',
+          model: agent.model || 'gpt-4',
+          capabilities: agent.capabilities || [],
+          governance_enabled: agent.governance_enabled || false,
+          status: agent.status || 'active',
+          api_endpoint: agent.api_endpoint,
+          system_prompt: agent.system_prompt,
+          collaboration_style: agent.collaboration_style,
+          role: agent.role,
+          wrapped_at: agent.createdAt?.toISOString() || new Date().toISOString(),
+          user_created: true // All Firebase agents are user-created
+        }));
+        
+        setWrappedAgents(formattedAgents);
+      } catch (error) {
+        console.error('Failed to load user agents from Firebase:', error);
+        // Fallback to localStorage for backward compatibility
+        const savedAgents = localStorage.getItem('promethios_wrapped_agents');
+        if (savedAgents) {
+          try {
+            const agents = JSON.parse(savedAgents);
+            console.log('Fallback: loaded agents from localStorage:', agents);
+            setWrappedAgents(agents);
+          } catch (parseError) {
+            console.error('Failed to parse localStorage agents:', parseError);
+            setWrappedAgents([]);
+          }
+        } else {
+          setWrappedAgents([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserAgents();
+  }, [user?.uid]);
+
+  // Save wrapped agents to Firebase whenever they change (and user is authenticated)
   useEffect(() => {
-    localStorage.setItem('promethios_wrapped_agents', JSON.stringify(wrappedAgents));
-  }, [wrappedAgents]);
+    const saveUserAgents = async () => {
+      if (!user?.uid || loading) {
+        return; // Don't save if no user or still loading
+      }
+
+      try {
+        console.log('Saving agents to Firebase for user:', user.email);
+        
+        // Save each agent to Firebase
+        for (const agent of wrappedAgents) {
+          await AgentUserLinkageService.saveAgentConfiguration(
+            user.uid,
+            agent.id,
+            {
+              name: agent.name,
+              description: agent.description,
+              type: agent.type,
+              provider: agent.provider,
+              model: agent.model,
+              capabilities: agent.capabilities,
+              governance_enabled: agent.governance_enabled,
+              status: agent.status,
+              api_endpoint: agent.api_endpoint,
+              system_prompt: agent.system_prompt,
+              collaboration_style: agent.collaboration_style,
+              role: agent.role,
+              user_created: agent.user_created
+            }
+          );
+        }
+        
+        // Also save to localStorage as backup
+        localStorage.setItem('promethios_wrapped_agents', JSON.stringify(wrappedAgents));
+      } catch (error) {
+        console.error('Failed to save agents to Firebase:', error);
+        // Fallback to localStorage only
+        localStorage.setItem('promethios_wrapped_agents', JSON.stringify(wrappedAgents));
+      }
+    };
+
+    saveUserAgents();
+  }, [wrappedAgents, user?.uid, loading]);
 
   const addWrappedAgent = (agent: WrappedAgent) => {
     const agentWithTimestamp = {
