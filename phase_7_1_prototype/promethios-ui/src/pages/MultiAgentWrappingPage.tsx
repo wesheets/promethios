@@ -46,14 +46,67 @@ const MultiAgentWrappingPage: React.FC = () => {
   const [multiAgentSystems, setMultiAgentSystems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load systems from API
+  // Load systems from unified storage
   useEffect(() => {
-    loadSystemsFromAPI();
+    loadSystemsFromStorage();
   }, []);
+
+  const loadSystemsFromStorage = async () => {
+    try {
+      setLoading(true);
+      
+      // Load from unified storage first
+      const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
+      const storageService = new UnifiedStorageService();
+      
+      // Get user's system list
+      const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
+      
+      // Load full system data for each system
+      const systemsData = await Promise.all(
+        userSystems.map(async (systemRef: any) => {
+          try {
+            const fullSystemData = await storageService.get('agents', `multi-agent-system-${systemRef.id}`);
+            return fullSystemData || systemRef;
+          } catch (error) {
+            console.warn(`Failed to load system ${systemRef.id}:`, error);
+            return systemRef;
+          }
+        })
+      );
+      
+      // Transform to dashboard format
+      const transformedSystems = systemsData.filter(Boolean).map((system: any) => ({
+        id: system.id || system.contextId,
+        name: system.name,
+        description: system.description || `Multi-agent system with ${system.agentIds?.length || 0} agents using ${system.collaborationModel || 'sequential'} collaboration`,
+        agents: system.agentIds || [],
+        status: system.status || 'active',
+        environment: 'production',
+        requests: Math.floor(Math.random() * 1000), // Mock data for now
+        successRate: Math.floor(Math.random() * 20) + 80, // Mock data for now
+        created_at: system.createdAt,
+        collaboration_model: system.collaborationModel || system.systemType,
+        governance_enabled: true
+      }));
+      
+      setMultiAgentSystems(transformedSystems);
+      
+      // Fallback to API if no systems in storage
+      if (transformedSystems.length === 0) {
+        await loadSystemsFromAPI();
+      }
+    } catch (error) {
+      console.error('Error loading systems from storage:', error);
+      // Fallback to API
+      await loadSystemsFromAPI();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadSystemsFromAPI = async () => {
     try {
-      setLoading(true);
       const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/contexts');
       if (response.ok) {
         const data = await response.json();
@@ -77,10 +130,8 @@ const MultiAgentWrappingPage: React.FC = () => {
         setMultiAgentSystems([]); // Empty array instead of demo data
       }
     } catch (error) {
-      console.error('Error loading systems:', error);
+      console.error('Error loading systems from API:', error);
       setMultiAgentSystems([]); // Empty array instead of demo data
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -135,7 +186,7 @@ const MultiAgentWrappingPage: React.FC = () => {
           >
             ← Back to Multi-Agent Systems
           </Button>
-          <MultiAgentWrappingWizard />
+          <MultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
         </Box>
       </ThemeProvider>
     );

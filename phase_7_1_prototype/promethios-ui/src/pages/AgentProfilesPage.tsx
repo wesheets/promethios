@@ -1280,26 +1280,66 @@ const AgentProfilesPage: React.FC = () => {
   const refreshWrappers = async () => {};
   const wrappersStorageReady = true;
 
-  const multiAgentContexts: any[] = [];
-  const activeContexts: any[] = [];
-  const contextsLoading = false;
+  // Load multi-agent systems from unified storage
+  const [multiAgentSystems, setMultiAgentSystems] = useState<any[]>([]);
+  const [systemsLoading, setSystemsLoading] = useState(true);
+
+  // Load multi-agent systems on component mount
+  useEffect(() => {
+    loadMultiAgentSystems();
+  }, []);
+
+  const loadMultiAgentSystems = async () => {
+    try {
+      setSystemsLoading(true);
+      const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
+      const storageService = new UnifiedStorageService();
+      
+      // Get user's system list
+      const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
+      
+      // Load full system data for each system
+      const systemsData = await Promise.all(
+        userSystems.map(async (systemRef: any) => {
+          try {
+            const fullSystemData = await storageService.get('agents', `multi-agent-system-${systemRef.id}`);
+            return fullSystemData || systemRef;
+          } catch (error) {
+            console.warn(`Failed to load system ${systemRef.id}:`, error);
+            return systemRef;
+          }
+        })
+      );
+      
+      setMultiAgentSystems(systemsData.filter(Boolean));
+    } catch (error) {
+      console.error('Error loading multi-agent systems:', error);
+      setMultiAgentSystems([]);
+    } finally {
+      setSystemsLoading(false);
+    }
+  };
+
+  const multiAgentContexts: any[] = multiAgentSystems;
+  const activeContexts: any[] = multiAgentSystems.filter(system => system.status === 'active');
+  const contextsLoading = systemsLoading;
   const contextsError = null;
   const createContext = async () => {};
   const sendMessage = async () => {};
-  const refreshContexts = async () => {};
+  const refreshContexts = loadMultiAgentSystems;
   const contextsStorageReady = true;
 
   // System profiles from multi-agent contexts with null safety
   const systemProfiles: SystemProfile[] = (multiAgentContexts || []).map(context => ({
     identity: {
-      id: context?.context_id || 'unknown',
+      id: context?.id || context?.contextId || 'unknown',
       name: context?.name || 'Unknown System',
-      description: `Multi-agent system with ${context?.agent_ids?.length || 0} agents`,
-      status: context?.status || 'inactive'
+      description: context?.description || `Multi-agent system with ${context?.agentIds?.length || 0} agents`,
+      status: context?.status || 'active'
     },
     healthStatus: 'healthy' as const,
-    attestationCount: 0,
-    lastActivity: context?.lastActivity ? new Date(context.lastActivity) : null
+    attestationCount: 3, // Default attestation count
+    lastActivity: context?.updatedAt ? new Date(context.updatedAt) : new Date()
   }));
 
   // Combine loading states
