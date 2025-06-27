@@ -499,35 +499,27 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
                     Agent Selection
                   </StepLabel>
                   <StepContent>
-                    <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
-                      Select agents from your wrapped agents to include in your multi-agent team (minimum 2 required):
-                    </Typography>
-                    
-                    {wrappedAgents.length === 0 ? (
-                      <Alert severity="warning" sx={{ backgroundColor: '#ff9800', color: 'white', mb: 2 }}>
-                        No wrapped agents available. Please wrap some agents first in the Agent Wrapper.
-                      </Alert>
-                    ) : (
-                      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                    {finalPreSelectedAgents.length > 0 ? (
+                      // Show pre-selected agents (read-only view)
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
+                          Selected agents for your multi-agent team:
+                        </Typography>
                         <Grid container spacing={2}>
-                          {wrappedAgents.map(agent => (
+                          {newTeam.selected_agents.map(agent => (
                             <Grid item xs={12} md={6} key={agent.id}>
                               <Card 
                                 sx={{ 
-                                  backgroundColor: newTeam.selected_agents.find(a => a.id === agent.id) ? '#1976d2' : '#333',
-                                  cursor: 'pointer',
-                                  transition: 'background-color 0.2s'
+                                  backgroundColor: '#1976d2',
+                                  border: '2px solid #2BFFC6'
                                 }}
-                                onClick={() => handleAgentSelection(
-                                  agent as any, 
-                                  !newTeam.selected_agents.find(a => a.id === agent.id)
-                                )}
                               >
                                 <CardContent sx={{ p: 2 }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                     <Checkbox
-                                      checked={!!newTeam.selected_agents.find(a => a.id === agent.id)}
-                                      sx={{ color: 'white', p: 0, mr: 1 }}
+                                      checked={true}
+                                      disabled={true}
+                                      sx={{ color: '#2BFFC6', p: 0, mr: 1 }}
                                     />
                                     <Typography variant="body1" sx={{ color: 'white', flex: 1 }}>
                                       {agent.name}
@@ -550,6 +542,66 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
                             </Grid>
                           ))}
                         </Grid>
+                        <Alert severity="info" sx={{ backgroundColor: '#1976d2', color: 'white', mt: 2 }}>
+                          These agents were selected from your My Agents page. You can modify the selection by going back to My Agents.
+                        </Alert>
+                      </Box>
+                    ) : (
+                      // Original agent selection interface
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
+                          Select agents from your wrapped agents to include in your multi-agent team (minimum 2 required):
+                        </Typography>
+                        
+                        {wrappedAgents.length === 0 ? (
+                          <Alert severity="warning" sx={{ backgroundColor: '#ff9800', color: 'white', mb: 2 }}>
+                            No wrapped agents available. Please wrap some agents first in the Agent Wrapper.
+                          </Alert>
+                        ) : (
+                          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                            <Grid container spacing={2}>
+                              {wrappedAgents.map(agent => (
+                                <Grid item xs={12} md={6} key={agent.id}>
+                                  <Card 
+                                    sx={{ 
+                                      backgroundColor: newTeam.selected_agents.find(a => a.id === agent.id) ? '#1976d2' : '#333',
+                                      cursor: 'pointer',
+                                      transition: 'background-color 0.2s'
+                                    }}
+                                    onClick={() => handleAgentSelection(
+                                      agent as any, 
+                                      !newTeam.selected_agents.find(a => a.id === agent.id)
+                                    )}
+                                  >
+                                    <CardContent sx={{ p: 2 }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Checkbox
+                                          checked={!!newTeam.selected_agents.find(a => a.id === agent.id)}
+                                          sx={{ color: 'white', p: 0, mr: 1 }}
+                                        />
+                                        <Typography variant="body1" sx={{ color: 'white', flex: 1 }}>
+                                          {agent.name}
+                                        </Typography>
+                                        <Chip 
+                                          label={agent.user_created ? 'CUSTOM' : 'DEMO'} 
+                                          size="small" 
+                                          sx={{ 
+                                            backgroundColor: agent.user_created ? '#1976d2' : '#4caf50', 
+                                            color: 'white',
+                                            fontSize: '0.7rem'
+                                          }}
+                                        />
+                                      </Box>
+                                      <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.8rem' }}>
+                                        {agent.description}
+                                      </Typography>
+                                    </CardContent>
+                                  </Card>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </Box>
+                        )}
                       </Box>
                     )}
                     
