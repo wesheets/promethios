@@ -1,69 +1,84 @@
-# Promethios Modern Chat Interface - Todo
+# Multi-Agent Wrapper Wiring Issues - TODO
 
-## Phase 1: Fix Build Errors and Deploy Modern Chat Interface ✅ IN PROGRESS
+## Analysis Phase 1: Current State
+- [x] Examined repository structure
+- [x] Found MultiAgentWrapper.tsx component in ui/multi-agent-wrapper/
+- [x] Found MultiAgentPage.tsx in ui/pages/
+- [x] Found AgentWrapper.tsx in ui/agent-wrapper/
+- [x] Examined routing in ui/routes/AppRoutes.tsx
+- [x] Found backend API routes in src/api/agents/ and src/api/multi_agent/
+- [x] Found main API server configuration in src/api_server.py
 
-### Build Error Fixes
-- [x] Fix export conflicts in ModernChatContainer
-- [x] Fix theme reference errors in ModernMessageInput.tsx (35 references)
-- [x] Fix theme reference errors in GovernancePanel.tsx (18 references) 
-- [x] Fix alpha function references across all components
-- [x] Fix malformed styled component syntax from sed replacements
-- [x] Fix missing parenthesis in CSS linear-gradient
-- [x] Fix keyframes syntax error in AgentCoordinationVisualization.tsx ✅ COMPLETED
-- [x] Fix non-ASCII emoji character causing build syntax error ✅ COMPLETED
-- [x] Fix export mismatch for AgentCoordinationVisualization component ✅ COMPLETED
-- [x] Replace with minimal component version to isolate build issue ✅ COMPLETED
-- [x] Fix theme reference in ModernChatPage styled component ✅ COMPLETED
-- [x] Fix unquoted rgba function calls causing ReferenceError ✅ COMPLETED
-- [x] Fix malformed syntax in GovernancePanel caused by sed replacements ✅ COMPLETED
-- [x] Fix malformed rgba syntax in ModernMessageInput.tsx ✅ COMPLETED
-- [x] Verify deployment builds successfully and interface loads ✅ COMPLETED
-- [x] Test modern chat interface functionality ✅ COMPLETED
+## Identified Issues
 
-### Cosmetic Fixes Needed
-- [x] Fix font contrast issues (text too dark against background) ✅ COMPLETED
-- [x] Attach header bar to governance left panel ✅ COMPLETED
-- [x] Apply dark theme background to governance metrics ✅ COMPLETED
-- [x] Fix button click behavior (jumping to bottom of screen) ✅ COMPLETED
+### Missing Routes
+- [ ] Routes for `/ui/agents/multi-wrapping` not defined in AppRoutes.tsx
+- [ ] Routes for `/ui/agents/profiles` not defined in AppRoutes.tsx
+- [ ] Current routes only have `/multi-agent` but not the specific agent workflow paths
 
-### Deployment Status
-- Branch: notifications-system (deployment branch) ✅ CONFIRMED
-- Latest commit: 04d980f - "Fix header layout and auto-scroll behavior" ✅ PUSHED
-- Status: Phase 1 COMPLETED - Interface working with layout fixes
+### Component Integration Issues
+- [ ] MultiAgentWrapper component exists but may not be properly integrated into routing
+- [ ] AgentWrapper component exists but routing may be missing
+- [ ] Need to verify if agent profiles component exists
 
-## Phase 2: Implement Functional Governance Toggle ✅ COMPLETED
-- [x] Wire up governance toggle to actually enable/disable monitoring ✅ COMPLETED
-- [x] Connect toggle state to backend governance system ✅ COMPLETED (reactive metrics)
-- [x] Update UI indicators based on governance state ✅ COMPLETED
-- [x] Implement real governance logic instead of just visual changes ✅ COMPLETED
-- [x] Add visual feedback when governance is enabled/disabled ✅ COMPLETED
+### Backend Integration
+- [ ] Verify API endpoints are properly connected to frontend
+- [ ] Check if API calls in components are working
+- [ ] Ensure proper error handling and loading states
 
-### Deployment Status
-- Branch: notifications-system (deployment branch) ✅ CONFIRMED
-- Latest commit: 16155b1 - "Implement functional governance toggle with reactive metrics" ✅ PUSHED
-- Status: Phase 2 COMPLETED - Functional governance toggle with reactive metrics
+## Next Steps
 
-## Phase 3: Implement Smart Observer System ⚡ CURRENT
-- [ ] Implement green shield/yellow warning/red exclamation indicators
-- [ ] Connect to real governance metrics from backend
-- [ ] Add smart observer agent functionality
-- [ ] Implement real-time monitoring alerts
+### Phase 2: Frontend Component Analysis
+- [x] Examined all agent-related components
+- [x] Found ProfileSelector component in ui/governance/ProfileSelector.tsx
+- [x] Found AgentContext for state management
+- [x] Found MainLayout with navigation structure
+- [x] Identified missing navigation items for agent workflows
 
-## Phase 4: Connect Real Backend Integration
-- [ ] Connect to actual governance APIs for live metrics
-- [ ] Implement real backend governance system integration
-- [ ] Add persistent governance state management
-- [ ] Implement real-time monitoring of agent performance
-- [ ] Add governance metrics dashboard
-- [ ] Connect multi-agent coordination visualization to real data
+#### Key Findings:
+- ProfileSelector exists but not properly integrated into routing
+- AgentContext provides state management for wrapped agents
+- MainLayout has basic navigation but missing specific agent workflow paths
+- Navigation includes '/agents' and '/multi-agent' but not the specific paths from screenshot
 
-## Phase 5: Add File Upload Functionality
-- [ ] Implement file upload backend integration
-- [ ] Add drag-and-drop file upload to ModernMessageInput
-- [ ] Support multiple file types and validation
-- [ ] Add file preview and management features
+### Phase 3: Backend API Analysis  
+- [x] Review complete API endpoint structure
+- [x] Found comprehensive agent routes in src/api/agents/routes.py
+- [x] Found multi-agent coordination routes in src/api/multi_agent/routes.py
+- [x] Found multi-agent system routes in src/api/multi_agent_system/routes.py
+- [x] Identified API server configuration in src/api_server.py
 
-## Current Status
-🔧 **FIXING**: Persistent build errors due to theme references and syntax issues
-📍 **NEXT**: Verify modern chat interface loads properly after keyframes fix
+#### Key Findings:
+- Backend has extensive API endpoints for agent management
+- Multi-agent coordination APIs exist with proper models
+- API server includes CORS middleware for frontend integration
+- Routes are properly registered in main API server
+- API server may have import/dependency issues preventing startup
+- [ ] Verify data flow between frontend and backend
+
+### Phase 4: Identify gaps and issues in frontend-backend integration
+- [x] Analyzed routing gaps and missing route definitions
+- [x] Identified component integration issues  
+- [x] Found navigation structure problems
+- [x] Documented API integration issues
+- [x] Created detailed analysis in integration_issues_analysis.md
+
+#### Critical Issues Found:
+1. **Missing Routes**: `/ui/agents/multi-wrapping` and `/ui/agents/profiles` not defined
+2. **Component Isolation**: Components exist but not properly wired to routing
+3. **Navigation Gaps**: MainLayout missing agent workflow navigation
+4. **API Integration**: Frontend-backend connection issues
+5. **Workflow Continuity**: No proper flow between workflow steps
+- [ ] Wire components to proper API endpoints
+- [ ] Fix any broken API calls
+- [ ] Ensure proper navigation between workflows
+
+### Phase 5: Testing
+- [ ] Test both workflows end-to-end
+- [ ] Verify all steps in multi-agent wrapper process work
+- [ ] Test navigation between different agent pages
+
+### Phase 6: Documentation
+- [ ] Document the fixed workflows
+- [ ] Create integration guide
 

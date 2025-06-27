@@ -60,8 +60,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       id: 'agents', 
       icon: <span>👤</span>, 
       label: 'Agents', 
-      path: '/agents',
-      active: currentPath === '/agents'
+      path: '/agents/wrapping',
+      active: currentPath.startsWith('/agents')
     },
     { 
       id: 'multi-agent', 
@@ -82,7 +82,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       icon: <span>⚙️</span>, 
       label: 'Settings', 
       path: '/settings',
-      active: currentPath === '/settings'
+      active: currentPath.startsWith('/settings')
     }
   ];
   

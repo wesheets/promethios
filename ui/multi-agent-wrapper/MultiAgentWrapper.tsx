@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -63,14 +64,33 @@ interface MultiAgentTeam {
 
 interface MultiAgentWrapperProps {
   onTeamCreated?: (team: MultiAgentTeam) => void;
+  preSelectedAgents?: DemoAgent[];
+  initialStep?: number;
+  initialTeamData?: {
+    name?: string;
+    description?: string;
+    workflow?: 'debate' | 'consensus' | 'pipeline' | 'swarm';
+  };
 }
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
 const steps = ['Basic Info', 'Agent Selection', 'Flow Configuration', 'Governance Rules', 'Review & Create'];
 
-export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCreated }) => {
+export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ 
+  onTeamCreated, 
+  preSelectedAgents = [],
+  initialStep = 0,
+  initialTeamData = {}
+}) => {
+  const location = useLocation();
   const { wrappedAgents, hasWrappedAgents, userCreatedAgents } = useAgentContext();
+  
+  // Use navigation state if available, otherwise use props
+  const navigationState = location.state as any;
+  const finalPreSelectedAgents = navigationState?.preSelectedAgents || preSelectedAgents;
+  const finalInitialStep = navigationState?.initialStep || initialStep;
+  const finalInitialTeamData = navigationState?.initialTeamData || initialTeamData;
   const [activeTeams, setActiveTeams] = useState<MultiAgentTeam[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -78,14 +98,21 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
   const [error, setError] = useState<string | null>(null);
   
   // Stepper state for creating new teams
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(finalInitialStep);
   const [newTeam, setNewTeam] = useState({
-    name: '',
-    description: '',
-    workflow: 'pipeline' as any,
+    name: finalInitialTeamData.name || '',
+    description: finalInitialTeamData.description || '',
+    workflow: finalInitialTeamData.workflow || 'pipeline' as any,
     governance_enabled: true,
-    selected_agents: [] as DemoAgent[]
+    selected_agents: finalPreSelectedAgents
   });
+
+  // Open dialog automatically if we have pre-selected agents
+  useEffect(() => {
+    if (finalPreSelectedAgents.length > 0) {
+      setDialogOpen(true);
+    }
+  }, [finalPreSelectedAgents]);
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -287,107 +314,7 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
           </Alert>
         )}
       </Box>
-
-      {/* Demo Templates Section - Always show these */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
-          🚀 Demo Team Templates - Try These First!
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#ccc', mb: 3 }}>
-          These pre-configured multi-agent teams showcase different collaboration patterns and workflows.
-          Each team demonstrates how multiple AI agents can work together with Promethios governance.
-        </Typography>
-        
-        <Grid container spacing={3}>
-          {DEMO_TEAM_TEMPLATES.map(template => (
-            <Grid item xs={12} lg={6} key={template.id}>
-              <Card 
-                sx={{ 
-                  backgroundColor: '#2a2a2a', 
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  border: '2px solid #4caf50',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)'
-                  }
-                }}
-                onClick={() => {
-                  setSelectedTemplate(template);
-                  setDialogOpen(true);
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <GroupIcon sx={{ mr: 1, color: '#4caf50' }} />
-                    <Typography variant="h6" sx={{ color: 'white', flex: 1 }}>
-                      {template.name}
-                    </Typography>
-                    <Chip 
-                      label="DEMO" 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: '#4caf50', 
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}
-                    />
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ color: '#ccc', mb: 3, minHeight: '60px' }}>
-                    {template.description}
-                  </Typography>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-                      Team Configuration:
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={`${template.agent_ids.length} Agents`} 
-                        size="small" 
-                        sx={{ backgroundColor: '#555', color: 'white' }}
-                      />
-                      <Chip 
-                        label={template.workflow} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: getWorkflowColor(template.workflow), 
-                          color: 'white'
-                        }}
-                      />
-                      <Chip 
-                        label={template.governance_enabled ? 'Governed' : 'Ungoverned'} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: template.governance_enabled ? '#4caf50' : '#f44336', 
-                          color: 'white'
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    sx={{ 
-                      backgroundColor: '#4caf50',
-                      '&:hover': { backgroundColor: '#45a049' }
-                    }}
-                  >
-                    Activate Team
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      <Divider sx={{ my: 4, backgroundColor: '#555' }} />
-
-      {/* Create Custom Team Section - Show empty state if no wrapped agents */}
+      {/* Create Custom Team Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
           Create Custom Multi-Agent Team
@@ -504,109 +431,15 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({ onTeamCrea
           sx: { backgroundColor: '#2a2a2a', color: 'white' }
         }}
       >
-        {selectedTemplate ? (
-          // Template activation dialog
-          <>
-            <DialogTitle sx={{ color: 'white' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <GroupIcon sx={{ mr: 1, color: '#4caf50' }} />
-                Activate {selectedTemplate.name}
-              </Box>
-            </DialogTitle>
-            <DialogContent>
-              <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
-                {selectedTemplate.description}
-              </Typography>
-
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                Team Members
-              </Typography>
-              <List sx={{ backgroundColor: '#333', borderRadius: 1 }}>
-                {selectedTemplate.agent_ids.map((agentId: string, index: number) => {
-                  const agent = SHARED_DEMO_AGENTS.find(a => a.id === agentId);
-                  if (!agent) return null;
-                  
-                  return (
-                    <ListItem key={agentId} divider={index < selectedTemplate.agent_ids.length - 1}>
-                      <ListItemIcon sx={{ color: 'white' }}>
-                        {getRoleIcon(agent.role || 'specialist')}
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body1" sx={{ color: 'white' }}>
-                              {agent.name}
-                            </Typography>
-                            <Chip 
-                              label={agent.role || 'specialist'} 
-                              size="small" 
-                              sx={{ 
-                                backgroundColor: getRoleColor(agent.role || 'specialist'), 
-                                color: 'white',
-                                fontSize: '0.7rem'
-                              }}
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" sx={{ color: '#ccc', mb: 0.5 }}>
-                              {agent.description}
-                            </Typography>
-                            <Chip 
-                              label={agent.provider} 
-                              size="small" 
-                              sx={{ 
-                                backgroundColor: getProviderColor(agent.provider), 
-                                color: 'white',
-                                fontSize: '0.7rem'
-                              }}
-                            />
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-
-              <Alert severity="info" sx={{ backgroundColor: '#1976d2', color: 'white', mt: 3 }}>
-                This multi-agent team will be activated with Promethios governance coordination, enabling collaborative AI workflows with trust metrics and compliance monitoring across all agents.
-              </Alert>
-            </DialogContent>
-            <DialogActions>
-              <Button 
-                onClick={() => setDialogOpen(false)}
-                sx={{ color: '#ccc' }}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => handleActivateTemplate(selectedTemplate)}
-                variant="contained"
-                disabled={loading}
-                sx={{ 
-                  backgroundColor: '#4caf50',
-                  '&:hover': { backgroundColor: '#45a049' }
-                }}
-              >
-                {loading ? <CircularProgress size={20} /> : 'Activate Team'}
-              </Button>
-            </DialogActions>
-          </>
-        ) : (
-          // Custom team creation dialog with stepper
-          <>
-            <DialogTitle sx={{ color: 'white' }}>
-              Create Custom Multi-Agent Team
-            </DialogTitle>
-            <DialogContent>
-              <Stepper activeStep={activeStep} orientation="vertical">
-                {/* Step 1: Basic Info */}
-                <Step>
-                  <StepLabel sx={{ '& .MuiStepLabel-label': { color: 'white' } }}>
-                    Basic System Information
+        <DialogTitle sx={{ color: 'white' }}>
+          Create Custom Multi-Agent Team
+        </DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={activeStep} orientation="vertical">
+            {/* Step 1: Basic Info */}
+            <Step>
+              <StepLabel sx={{ '& .MuiStepLabel-label': { color: 'white' } }}>
+                Basic System Information
                   </StepLabel>
                   <StepContent>
                     <Grid container spacing={2}>

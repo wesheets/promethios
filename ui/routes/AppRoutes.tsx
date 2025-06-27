@@ -32,6 +32,11 @@ import SettingsObserver from '../pages/settings/SettingsObserver';
 import SettingsApiKeys from '../pages/settings/SettingsApiKeys';
 import SettingsNotifications from '../pages/settings/SettingsNotifications';
 
+// Agent Components
+import { MultiAgentWrapper } from '../multi-agent-wrapper/MultiAgentWrapper';
+import { AgentWrapper } from '../agent-wrapper/AgentWrapper';
+import MyAgentsPage from '../pages/MyAgentsPage';
+
 // Error Pages
 import NotFoundPage from '../pages/NotFoundPage';
 
@@ -129,6 +134,14 @@ const AppRoutes: React.FC = () => {
           <Route path="multi-agent" element={<MultiAgentPage />} />
           <Route path="governance" element={<GovernanceExplorerPage />} />
           
+          {/* Agent Routes */}
+          <Route path="agents">
+            <Route path="multi-wrapping" element={<MultiAgentWrapper />} />
+            <Route path="wrapping" element={<AgentWrapper />} />
+            <Route path="profiles" element={<MyAgentsPage />} />
+            <Route path="" element={<Navigate to="/agents/wrapping" replace />} />
+          </Route>
+          
           {/* Settings Routes */}
           <Route path="settings">
             <Route path="profile" element={<SettingsProfile />} />
@@ -150,6 +163,14 @@ const AppRoutes: React.FC = () => {
           <Route path="agent-wizard" element={<AgentWizardPage />} />
           <Route path="multi-agent" element={<MultiAgentPage />} />
           <Route path="governance" element={<GovernanceExplorerPage />} />
+          
+          {/* Agent Routes */}
+          <Route path="agents">
+            <Route path="multi-wrapping" element={<MultiAgentWrapper />} />
+            <Route path="wrapping" element={<AgentWrapper />} />
+            <Route path="profiles" element={<MyAgentsPage />} />
+            <Route path="" element={<Navigate to="/ui/agents/wrapping" replace />} />
+          </Route>
           
           {/* Settings Routes */}
           <Route path="settings">
