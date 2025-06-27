@@ -2722,11 +2722,11 @@ This error has been logged to the console for debugging.`,
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled && governanceMetrics ? governanceMetrics.trustScore : 0} 
+                  value={governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? governanceMetrics.trustScore : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -2747,11 +2747,11 @@ This error has been logged to the console for debugging.`,
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.complianceRate.toFixed(1)}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? `${governanceMetrics.complianceRate.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled && governanceMetrics ? governanceMetrics.complianceRate : 0} 
+                  value={governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? governanceMetrics.complianceRate : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -2772,7 +2772,7 @@ This error has been logged to the console for debugging.`,
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.responseTime.toFixed(1)}s` : 'N/A'}
+                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.responseTime === 'number' ? `${governanceMetrics.responseTime.toFixed(1)}s` : 'N/A'}
                 </Typography>
               </CardContent>
             </Card>
@@ -2786,7 +2786,7 @@ This error has been logged to the console for debugging.`,
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.warning, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics ? `${governanceMetrics.sessionIntegrity.toFixed(1)}%` : 'N/A'}
+                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.sessionIntegrity === 'number' ? `${governanceMetrics.sessionIntegrity.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
@@ -2914,7 +2914,7 @@ This error has been logged to the console for debugging.`,
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                      {governanceMetrics.missionProgress ? `${governanceMetrics.missionProgress.toFixed(1)}%` : 'N/A'}
+                      {governanceMetrics.missionProgress && typeof governanceMetrics.missionProgress === 'number' ? `${governanceMetrics.missionProgress.toFixed(1)}%` : 'N/A'}
                     </Typography>
                     <LinearProgress 
                       variant="determinate" 
@@ -2940,7 +2940,7 @@ This error has been logged to the console for debugging.`,
                       </Typography>
                     </Box>
                     <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                      {governanceMetrics.collaborationEfficiency ? `${governanceMetrics.collaborationEfficiency.toFixed(1)}%` : 'N/A'}
+                      {governanceMetrics.collaborationEfficiency && typeof governanceMetrics.collaborationEfficiency === 'number' ? `${governanceMetrics.collaborationEfficiency.toFixed(1)}%` : 'N/A'}
                     </Typography>
                     <LinearProgress 
                       variant="determinate" 
@@ -2990,7 +2990,7 @@ This error has been logged to the console for debugging.`,
                           VALIDATION RATE
                         </Typography>
                         <Typography variant="h6" sx={{ color: DARK_THEME.success }}>
-                          {governanceMetrics.crossAgentValidationRate ? `${governanceMetrics.crossAgentValidationRate.toFixed(1)}%` : 'N/A'}
+                          {governanceMetrics.crossAgentValidationRate && typeof governanceMetrics.crossAgentValidationRate === 'number' ? `${governanceMetrics.crossAgentValidationRate.toFixed(1)}%` : 'N/A'}
                         </Typography>
                       </Box>
                       
@@ -2999,7 +2999,7 @@ This error has been logged to the console for debugging.`,
                           RECOVERY RATE
                         </Typography>
                         <Typography variant="h6" sx={{ color: DARK_THEME.warning }}>
-                          {governanceMetrics.errorRecoveryRate ? `${governanceMetrics.errorRecoveryRate.toFixed(1)}%` : 'N/A'}
+                          {governanceMetrics.errorRecoveryRate && typeof governanceMetrics.errorRecoveryRate === 'number' ? `${governanceMetrics.errorRecoveryRate.toFixed(1)}%` : 'N/A'}
                         </Typography>
                       </Box>
                     </Box>
@@ -3095,7 +3095,7 @@ This error has been logged to the console for debugging.`,
                           DECISION QUALITY
                         </Typography>
                         <Typography variant="h6" sx={{ color: DARK_THEME.primary }}>
-                          {governanceMetrics.decisionQuality ? `${governanceMetrics.decisionQuality.toFixed(1)}%` : 'N/A'}
+                          {governanceMetrics.decisionQuality && typeof governanceMetrics.decisionQuality === 'number' ? `${governanceMetrics.decisionQuality.toFixed(1)}%` : 'N/A'}
                         </Typography>
                       </Box>
                       
@@ -3104,7 +3104,7 @@ This error has been logged to the console for debugging.`,
                           ROLE ADHERENCE
                         </Typography>
                         <Typography variant="h6" sx={{ color: DARK_THEME.success }}>
-                          {governanceMetrics.roleAdherence ? `${governanceMetrics.roleAdherence.toFixed(1)}%` : 'N/A'}
+                          {governanceMetrics.roleAdherence && typeof governanceMetrics.roleAdherence === 'number' ? `${governanceMetrics.roleAdherence.toFixed(1)}%` : 'N/A'}
                         </Typography>
                       </Box>
                     </Box>
