@@ -46,7 +46,6 @@ class ConstitutionalGovernanceTrainer:
             "greater_is_better": False,
             "dataloader_num_workers": 4,
             "remove_unused_columns": False,
-            "max_length": 1024,
         }
         
         # LoRA configuration for memory efficiency
