@@ -38,11 +38,11 @@ class UltimateGovernanceConfig:
     base_model: str = "codellama/CodeLlama-7b-Instruct-hf"  # Switched from 34B to 13B for memory efficiency
     model_max_length: int = 1024  # Reduced from 4096 to 1024 for memory efficiency
     
-    # Training configuration
+    # Training configuration - AGGRESSIVE MEMORY OPTIMIZATIONS
     num_train_epochs: int = 3
-    per_device_train_batch_size: int = 1
-    per_device_eval_batch_size: int = 1
-    gradient_accumulation_steps: int = 2  # Reduced from 8 to 2 for memory efficiency
+    per_device_train_batch_size: int = 1  # Minimum batch size for memory efficiency
+    per_device_eval_batch_size: int = 1   # Minimum batch size for memory efficiency
+    gradient_accumulation_steps: int = 4  # Increased to maintain effective batch size
     learning_rate: float = 2e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
@@ -97,7 +97,7 @@ class UltimateGovernanceDatasetGenerator:
             "multi_layer_integration": []
         }
     
-    def generate_ultimate_dataset(self, total_examples: int = 10000) -> List[Dict[str, Any]]:
+    def generate_ultimate_dataset(self, total_examples: int = 5000) -> List[Dict[str, Any]]:
         """Generate ultimate governance training dataset"""
         
         print(f"🚀 Generating ultimate governance dataset with {total_examples} examples...")
@@ -480,12 +480,15 @@ class UltimateGovernanceTrainer:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # Load model with memory optimizations (compatible with distributed training)
+        # Load model with AGGRESSIVE memory optimizations
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
             torch_dtype=torch.float16 if self.config.use_mixed_precision else torch.float32,
             trust_remote_code=True,
             low_cpu_mem_usage=True,  # Reduce CPU memory usage during loading
+            load_in_8bit=True,  # Enable 8-bit quantization for ~50% memory reduction
+            device_map="auto",  # Automatically distribute model across available devices
+            offload_folder="./offload",  # CPU offloading directory
         )
         
         # Resize token embeddings for new special tokens
@@ -719,19 +722,21 @@ class UltimateGovernanceTrainer:
 
 def main():
     """Main training function"""
-    print("🚀 Ultimate Governance LLM Training System")
+    print("🚀 Ultimate Governance LLM Training System - AGGRESSIVE MEMORY OPTIMIZATIONS")
     print("=" * 60)
     
-    # Configuration
+    # Configuration with AGGRESSIVE memory optimizations
     config = UltimateGovernanceConfig(
         base_model="codellama/CodeLlama-7b-Instruct-hf",
         num_train_epochs=3,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=8,
+        per_device_train_batch_size=1,  # Minimum batch size
+        per_device_eval_batch_size=1,   # Minimum batch size
+        gradient_accumulation_steps=4,  # Maintain effective batch size
         learning_rate=2e-5,
         output_dir="./ultimate_governance_llm",
-        use_deepspeed=True,
-        use_wandb_logging=True
+        use_deepspeed=False,  # Disable DeepSpeed for single GPU
+        use_wandb_logging=True,
+        model_max_length=1024,  # Reduced sequence length
     )
     
     # Initialize trainer
