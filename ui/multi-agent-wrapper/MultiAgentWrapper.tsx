@@ -92,14 +92,19 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
   const finalInitialStep = navigationState?.initialStep || initialStep;
   const finalInitialTeamData = navigationState?.initialTeamData || initialTeamData;
 
-  // Debug logging
-  console.log('MultiAgentWrapper Debug:', {
-    navigationState,
-    finalPreSelectedAgents,
-    finalInitialStep,
-    finalInitialTeamData,
-    locationState: location.state
-  });
+  // Debug logging with more detail
+  useEffect(() => {
+    console.log('MultiAgentWrapper Mount/Update Debug:', {
+      locationPathname: location.pathname,
+      locationState: location.state,
+      navigationState,
+      preSelectedAgentsFromProps: preSelectedAgents,
+      finalPreSelectedAgents,
+      finalPreSelectedAgentsLength: finalPreSelectedAgents?.length,
+      finalInitialStep,
+      finalInitialTeamData
+    });
+  }, [location.state, finalPreSelectedAgents]);
   const [activeTeams, setActiveTeams] = useState<MultiAgentTeam[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -116,8 +121,21 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
     selected_agents: finalPreSelectedAgents
   });
 
+  // Debug the initial state
+  useEffect(() => {
+    console.log('Initial newTeam state:', {
+      newTeam,
+      selectedAgentsCount: newTeam.selected_agents?.length,
+      activeStep
+    });
+  }, []);
+
   // Open dialog automatically if we have pre-selected agents
   useEffect(() => {
+    console.log('Dialog effect triggered:', {
+      finalPreSelectedAgentsLength: finalPreSelectedAgents.length,
+      shouldOpenDialog: finalPreSelectedAgents.length > 0
+    });
     if (finalPreSelectedAgents.length > 0) {
       setDialogOpen(true);
     }
