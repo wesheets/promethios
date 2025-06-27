@@ -90,10 +90,21 @@ const MyAgentsPage: React.FC<MyAgentsPageProps> = ({ className }) => {
     
     console.log('MyAgentsPage Navigation Data:', navigationData);
     
-    // Navigate to MultiAgentWrapper with selected agents and initial data
-    navigate('/agents/multi-wrapping', {
-      state: navigationData
+    // Store in localStorage as backup and use URL params
+    localStorage.setItem('multiAgentWrapperData', JSON.stringify(navigationData));
+    
+    // Create URL with parameters
+    const agentIds = selectedAgents.map(agent => agent.id).join(',');
+    const searchParams = new URLSearchParams({
+      agentIds: agentIds,
+      systemName: systemName,
+      systemDescription: systemDescription,
+      systemType: systemType,
+      step: '2'
     });
+    
+    // Navigate to MultiAgentWrapper with URL parameters
+    navigate(`/agents/multi-wrapping?${searchParams.toString()}`);
   };
 
   const isAgentSelected = (agent: any) => {

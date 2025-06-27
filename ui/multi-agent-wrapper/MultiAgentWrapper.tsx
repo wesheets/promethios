@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -84,27 +84,67 @@ export const MultiAgentWrapper: React.FC<MultiAgentWrapperProps> = ({
   initialTeamData = {}
 }) => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { wrappedAgents, hasWrappedAgents, userCreatedAgents } = useAgentContext();
   
-  // Use navigation state if available, otherwise use props
+  // Get data from URL parameters and localStorage
+  const getPreSelectedAgentsFromParams = () => {
+    const agentIds = searchParams.get('agentIds');
+    if (agentIds) {
+      const ids = agentIds.split(',');
+      return wrappedAgents.filter(agent => ids.includes(agent.id));
+    }
+    return [];
+  };
+
+  const getDataFromLocalStorage = () => {
+    try {
+      const stored = localStorage.getItem('multiAgentWrapperData');
+      if (stored) {
+        const data = JSON.parse(stored);
+        // Clear after use
+        localStorage.removeItem('multiAgentWrapperData');
+        return data;
+      }
+    } catch (error) {
+      console.error('Error parsing localStorage data:', error);
+    }
+    return null;
+  };
+
+  // Use URL params, localStorage, or props (in that order of preference)
   const navigationState = location.state as any;
-  const finalPreSelectedAgents = navigationState?.preSelectedAgents || preSelectedAgents;
-  const finalInitialStep = navigationState?.initialStep || initialStep;
-  const finalInitialTeamData = navigationState?.initialTeamData || initialTeamData;
+  const localStorageData = getDataFromLocalStorage();
+  const urlPreSelectedAgents = getPreSelectedAgentsFromParams();
+  
+  const finalPreSelectedAgents = urlPreSelectedAgents.length > 0 
+    ? urlPreSelectedAgents 
+    : localStorageData?.preSelectedAgents || navigationState?.preSelectedAgents || preSelectedAgents;
+    
+  const finalInitialStep = searchParams.get('step') 
+    ? parseInt(searchParams.get('step')!) 
+    : localStorageData?.initialStep || navigationState?.initialStep || initialStep;
+    
+  const finalInitialTeamData = {
+    name: searchParams.get('systemName') || localStorageData?.initialTeamData?.name || navigationState?.initialTeamData?.name || initialTeamData.name || '',
+    description: searchParams.get('systemDescription') || localStorageData?.initialTeamData?.description || navigationState?.initialTeamData?.description || initialTeamData.description || '',
+    workflow: searchParams.get('systemType') || localStorageData?.initialTeamData?.workflow || navigationState?.initialTeamData?.workflow || initialTeamData.workflow || 'pipeline'
+  };
 
   // Debug logging with more detail
   useEffect(() => {
     console.log('MultiAgentWrapper Mount/Update Debug:', {
       locationPathname: location.pathname,
-      locationState: location.state,
+      searchParams: Object.fromEntries(searchParams.entries()),
+      urlPreSelectedAgents,
+      localStorageData,
       navigationState,
-      preSelectedAgentsFromProps: preSelectedAgents,
       finalPreSelectedAgents,
       finalPreSelectedAgentsLength: finalPreSelectedAgents?.length,
       finalInitialStep,
       finalInitialTeamData
     });
-  }, [location.state, finalPreSelectedAgents]);
+  }, [location.pathname, searchParams, finalPreSelectedAgents]);
   const [activeTeams, setActiveTeams] = useState<MultiAgentTeam[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
