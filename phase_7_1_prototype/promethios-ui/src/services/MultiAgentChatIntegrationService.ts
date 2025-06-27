@@ -319,13 +319,29 @@ export class MultiAgentChatIntegrationService {
     governanceEnabled: boolean = true
   ): Promise<{ content: string; governanceData?: any }> {
     try {
+      console.log('🔧 MULTI-AGENT SERVICE: sendMessage called with:', {
+        sessionId,
+        messageLength: message.length,
+        attachmentCount: attachments.length,
+        governanceEnabled
+      });
+
       const session = await this.getChatSession(sessionId);
       if (!session) {
+        console.error('🔧 MULTI-AGENT SERVICE: Session not found:', sessionId);
         throw new Error(`Chat session ${sessionId} not found`);
       }
 
+      console.log('🔧 MULTI-AGENT SERVICE: Session found:', {
+        systemId: session.systemId,
+        systemName: session.systemName,
+        userId: session.userId
+      });
+
       // Get system configuration
+      console.log('🔧 MULTI-AGENT SERVICE: Getting system configuration...');
       const config = await this.getChatConfiguration(session.systemId);
+      console.log('🔧 MULTI-AGENT SERVICE: System configuration:', config);
       
       // Prepare request payload
       const requestPayload = {
@@ -338,15 +354,19 @@ export class MultiAgentChatIntegrationService {
         userId: session.userId
       };
 
-      console.log('Sending message to multi-agent system:', {
+      console.log('🔧 MULTI-AGENT SERVICE: Sending message to multi-agent system:', {
         systemId: session.systemId,
         systemName: session.systemName,
         governanceEnabled,
         messageLength: message.length,
-        attachmentCount: attachments.length
+        attachmentCount: attachments.length,
+        apiUrl: 'https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/send-message'
       });
 
       try {
+        console.log('🔧 MULTI-AGENT SERVICE: Making API call to backend...');
+        const apiStartTime = Date.now();
+        
         // Call the backend multi-agent system API
         const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/send-message', {
           method: 'POST',
@@ -356,22 +376,42 @@ export class MultiAgentChatIntegrationService {
           body: JSON.stringify(requestPayload)
         });
 
+        const apiResponseTime = Date.now() - apiStartTime;
+        console.log('🔧 MULTI-AGENT SERVICE: API response received after', apiResponseTime, 'ms');
+        console.log('🔧 MULTI-AGENT SERVICE: Response status:', response.status, response.statusText);
+
         if (!response.ok) {
+          console.error('🔧 MULTI-AGENT SERVICE: API error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url
+          });
           throw new Error(`Multi-agent system API error: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();
+        console.log('🔧 MULTI-AGENT SERVICE: API response data:', result);
         
         // Update session activity
         await this.updateSessionActivity(sessionId, session.messageCount + 1);
+        console.log('🔧 MULTI-AGENT SERVICE: Session activity updated');
 
         // Return response with governance data
-        return {
+        const finalResponse = {
           content: result.response || result.content || 'No response received',
           governanceData: governanceEnabled ? result.governanceData : undefined
         };
+        
+        console.log('🔧 MULTI-AGENT SERVICE: Returning final response:', finalResponse);
+        return finalResponse;
+        
       } catch (apiError) {
-        console.warn('Backend API unavailable, using fallback response:', apiError);
+        console.warn('🔧 MULTI-AGENT SERVICE: Backend API unavailable, using fallback response:', apiError);
+        console.warn('🔧 MULTI-AGENT SERVICE: API Error details:', {
+          name: apiError.name,
+          message: apiError.message,
+          stack: apiError.stack
+        });
         
         // Fallback response when backend is unavailable
         const fallbackResponse = `Hello! I'm the ${session.systemName} multi-agent system with ${config.agentIds?.length || 0} agents using ${config.collaborationModel} collaboration. 
@@ -380,21 +420,32 @@ I received your message: "${message}"
 
 *Note: This is a fallback response as the backend API is currently unavailable. In a full deployment, this system would coordinate between multiple AI agents to provide comprehensive responses.*
 
+**System Details:**
+- Agents: ${config.agentIds?.length || 0}
+- Collaboration Model: ${config.collaborationModel || 'Unknown'}
+- Governance: ${governanceEnabled ? 'Enabled' : 'Disabled'}
+
 How else can I help you today?`;
+
+        console.log('🔧 MULTI-AGENT SERVICE: Using fallback response');
 
         // Update session activity
         await this.updateSessionActivity(sessionId, session.messageCount + 1);
 
-        return {
+        const fallbackResult = {
           content: fallbackResponse,
           governanceData: governanceEnabled ? {
             trustScore: 85,
             complianceStatus: 'compliant',
             riskLevel: 'low',
             governanceChecks: ['message_length_check', 'content_safety_check'],
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            fallbackMode: true
           } : undefined
         };
+        
+        console.log('🔧 MULTI-AGENT SERVICE: Returning fallback response:', fallbackResult);
+        return fallbackResult;
       }
 
     } catch (error) {

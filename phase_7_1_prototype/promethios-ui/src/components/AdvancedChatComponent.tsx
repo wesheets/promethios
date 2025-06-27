@@ -1502,21 +1502,38 @@ const AdvancedChatComponent: React.FC = () => {
       } else if (chatMode === 'saved-systems' && selectedSystem && currentChatSession) {
         // Handle saved multi-agent system response
         try {
-          console.log('Sending message to multi-agent system:', selectedSystem.name);
+          console.log('🚀 MULTI-AGENT DEBUG: Starting message send to system:', selectedSystem.name);
+          console.log('🚀 MULTI-AGENT DEBUG: Session ID:', currentChatSession.id);
+          console.log('🚀 MULTI-AGENT DEBUG: Message content:', userMessage.content);
+          console.log('🚀 MULTI-AGENT DEBUG: Governance enabled:', governanceEnabled);
           
           // Save user message to storage for the system
           ensureUserSet();
           await chatStorageService.saveMessage(userMessage, selectedSystem.id);
+          console.log('🚀 MULTI-AGENT DEBUG: User message saved to storage');
           
-          // Send message through multi-agent chat integration
-          const response = await multiAgentChatIntegration.sendMessage(
-            currentChatSession.id,
-            userMessage.content,
-            currentAttachments,
-            governanceEnabled // Pass governance setting to backend
-          );
+          // Add a timeout to prevent infinite waiting
+          const TIMEOUT_MS = 30000; // 30 seconds timeout
           
-          console.log('Received response from multi-agent system:', response);
+          console.log('🚀 MULTI-AGENT DEBUG: Calling multiAgentChatIntegration.sendMessage...');
+          const startTime = Date.now();
+          
+          // Send message through multi-agent chat integration with timeout
+          const response = await Promise.race([
+            multiAgentChatIntegration.sendMessage(
+              currentChatSession.id,
+              userMessage.content,
+              currentAttachments,
+              governanceEnabled // Pass governance setting to backend
+            ),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Multi-agent system response timeout after 30 seconds')), TIMEOUT_MS)
+            )
+          ]);
+          
+          const responseTime = Date.now() - startTime;
+          console.log('🚀 MULTI-AGENT DEBUG: Response received after', responseTime, 'ms');
+          console.log('🚀 MULTI-AGENT DEBUG: Response content:', response);
           
           // Create system response message with governance data
           const systemMessage: ChatMessage = {
@@ -1529,25 +1546,45 @@ const AdvancedChatComponent: React.FC = () => {
             governanceData: response.governanceData
           };
           
+          console.log('🚀 MULTI-AGENT DEBUG: Adding system message to chat:', systemMessage);
           setMessages(prev => [...prev, systemMessage]);
+          setMessageCount(prev => prev + 1); // Increment for system response
           
           // Save system response to storage
           await chatStorageService.saveMessage(systemMessage, selectedSystem.id);
+          console.log('🚀 MULTI-AGENT DEBUG: System response saved to storage');
           
           // Scroll to bottom after system response
           setTimeout(() => {
             scrollToBottom();
           }, 100);
           
+          console.log('🚀 MULTI-AGENT DEBUG: Message handling completed successfully');
+          
         } catch (error) {
-          console.error('Error communicating with multi-agent system:', error);
+          console.error('🚨 MULTI-AGENT ERROR: Error communicating with multi-agent system:', error);
+          console.error('🚨 MULTI-AGENT ERROR: Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          });
+          
           const errorMessage: ChatMessage = {
             id: `msg_${Date.now()}_system_error`,
-            content: `❌ Error from multi-agent system "${selectedSystem.name}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+            content: `❌ Error from multi-agent system "${selectedSystem.name}": ${error instanceof Error ? error.message : 'Unknown error'}
+
+🔍 **Debug Info:**
+- System: ${selectedSystem.name}
+- Session: ${currentChatSession?.id || 'No session'}
+- Error Type: ${error.name || 'Unknown'}
+- Timestamp: ${new Date().toISOString()}
+
+This error has been logged to the console for debugging.`,
             sender: 'error',
             timestamp: new Date()
           };
           setMessages(prev => [...prev, errorMessage]);
+          setMessageCount(prev => prev + 1); // Increment for error message
           
           // Save error message to storage
           await chatStorageService.saveMessage(errorMessage, selectedSystem.id);
