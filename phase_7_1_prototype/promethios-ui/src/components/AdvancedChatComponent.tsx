@@ -1635,7 +1635,7 @@ const AdvancedChatComponent: React.FC = () => {
 
       // Start a new chat session with the selected system
       if (effectiveUser?.uid) {
-        const session = await multiAgentChatIntegration.startChatSession(effectiveUser.uid, systemId);
+        const session = await multiAgentChatIntegration.startChatSession(systemId, effectiveUser.uid);
         setCurrentChatSession(session);
         console.log('Started chat session:', session);
 
