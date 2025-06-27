@@ -439,6 +439,18 @@ class SessionManager {
   }
 
   /**
+   * Get session by system ID (for observer endpoints)
+   */
+  getSessionBySystemId(systemId) {
+    for (const session of this.sessions.values()) {
+      if (session.systemId === systemId) {
+        return session;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Force cleanup all sessions (for testing)
    */
   forceCleanup() {
