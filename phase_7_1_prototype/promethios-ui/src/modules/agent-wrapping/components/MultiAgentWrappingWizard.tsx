@@ -848,15 +848,54 @@ const MultiAgentWrappingWizard: React.FC = () => {
                         <TableRow key={agentId}>
                           <TableCell>{agent?.name || agentId}</TableCell>
                           <TableCell>
-                            <TextField
-                              size="small"
-                              placeholder="e.g., Data Processor"
-                              value={agentRoles[agentId]?.name || ''}
-                              onChange={(e) => setAgentRoles(prev => ({
-                                ...prev,
-                                [agentId]: { ...prev[agentId], name: e.target.value }
-                              }))}
-                            />
+                            <FormControl size="small" fullWidth>
+                              <Select
+                                value={agentRoles[agentId]?.name || ''}
+                                onChange={(e) => setAgentRoles(prev => ({
+                                  ...prev,
+                                  [agentId]: { ...prev[agentId], name: e.target.value }
+                                }))}
+                                displayEmpty
+                                renderValue={(selected) => {
+                                  if (!selected) {
+                                    return <em style={{ color: '#999' }}>Select a role...</em>;
+                                  }
+                                  return selected;
+                                }}
+                              >
+                                <MenuItem value="">
+                                  <em>Select a role...</em>
+                                </MenuItem>
+                                <MenuItem value="Content Generator">Content Generator</MenuItem>
+                                <MenuItem value="Data Processor">Data Processor</MenuItem>
+                                <MenuItem value="Research Assistant">Research Assistant</MenuItem>
+                                <MenuItem value="Sentiment Analyzer">Sentiment Analyzer</MenuItem>
+                                <MenuItem value="Customer Support">Customer Support</MenuItem>
+                                <MenuItem value="Compliance Checker">Compliance Checker</MenuItem>
+                                <MenuItem value="Lead Coordinator">Lead Coordinator</MenuItem>
+                                <MenuItem value="Quality Analyst">Quality Analyst</MenuItem>
+                                <MenuItem value="Decision Maker">Decision Maker</MenuItem>
+                                <MenuItem value="Data Validator">Data Validator</MenuItem>
+                                <MenuItem value="Custom Role">Custom Role (specify below)</MenuItem>
+                              </Select>
+                            </FormControl>
+                            {agentRoles[agentId]?.name === 'Custom Role' && (
+                              <TextField
+                                size="small"
+                                placeholder="Enter custom role name"
+                                value={agentRoles[agentId]?.customName || ''}
+                                onChange={(e) => setAgentRoles(prev => ({
+                                  ...prev,
+                                  [agentId]: { 
+                                    ...prev[agentId], 
+                                    customName: e.target.value,
+                                    name: e.target.value || 'Custom Role'
+                                  }
+                                }))}
+                                sx={{ mt: 1 }}
+                                fullWidth
+                              />
+                            )}
                           </TableCell>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>
