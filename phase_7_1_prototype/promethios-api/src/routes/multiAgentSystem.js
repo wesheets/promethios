@@ -235,6 +235,7 @@ router.post('/chat/send-message', async (req, res) => {
 
       res.json({
         response: response.content,
+        agentResponses: response.agentResponses, // Individual agent responses for separate display
         sessionId,
         messageCount: session.messageCount,
         governanceData: response.governanceData,
@@ -902,8 +903,9 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   }
   
   // Generate responses from each conversational agent
-  const responses = [];
+  const agentResponses = [];
   const agentTypes = ['factual-agent', 'creative-agent', 'baseline-agent'];
+  const agentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent'];
   
   for (let i = 0; i < agentCount; i++) {
     if (abortSignal.aborted) {
@@ -913,16 +915,33 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
     try {
       // Use different agent types for variety
       const agentType = agentTypes[i % agentTypes.length];
+      const agentName = agentNames[i % agentNames.length];
       const agentResponse = await llmService.generateResponse(agentType, message);
-      responses.push(`Agent ${i + 1}: ${agentResponse}`);
+      
+      agentResponses.push({
+        agentId: i + 1,
+        agentName: agentName,
+        agentType: agentType,
+        content: agentResponse,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error(`Error generating response for agent ${i + 1}:`, error);
       // Fallback to a basic response if LLM call fails
-      responses.push(`Agent ${i + 1}: I understand your request about "${message.substring(0, 50)}..." and I'm processing this information to provide you with a comprehensive response.`);
+      const agentName = agentNames[i % agentNames.length];
+      agentResponses.push({
+        agentId: i + 1,
+        agentName: agentName,
+        agentType: agentTypes[i % agentTypes.length],
+        content: `I understand your request about "${message.substring(0, 50)}..." and I'm processing this information to provide you with a comprehensive response.`,
+        timestamp: new Date().toISOString()
+      });
     }
   }
   
-  const finalResponse = responses.join('\n\n');
+  // Create a summary for the combined response (for backward compatibility)
+  const combinedContent = agentResponses.map(resp => `${resp.agentName}: ${resp.content}`).join('\n\n');
+  const finalResponse = `Multi-Agent System Response:\n\n${combinedContent}\n\n[Processed by ${session.systemName} with ${agentCount} agents using ${session.metadata?.collaborationModel || 'sequential_handoffs'} collaboration]`;
   
   // Simulate governance data for multi-agent shield
   const governanceData = governanceEnabled ? {
@@ -950,7 +969,8 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   };
   
   return {
-    content: `Multi-Agent System Response:\n\n${finalResponse}\n\n[Processed by ${session.systemName} with ${agentCount} agents using ${session.metadata?.collaborationModel || 'sequential_handoffs'} collaboration]`,
+    content: finalResponse, // Combined response for backward compatibility
+    agentResponses: agentResponses, // Individual agent responses for separate display
     governanceData,
     processingTime: Date.now() - startTime,
     agentCount // Return actual conversational agent count
