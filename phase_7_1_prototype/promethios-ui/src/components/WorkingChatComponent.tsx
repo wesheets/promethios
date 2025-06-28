@@ -163,7 +163,7 @@ interface Message {
 }
 
 const WorkingChatComponent: React.FC = () => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<AgentProfile | null>(null);
@@ -182,8 +182,8 @@ const WorkingChatComponent: React.FC = () => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
-        if (user?.uid) {
-          agentStorageService.setCurrentUser(user.uid);
+        if (currentUser?.uid) {
+          agentStorageService.setCurrentUser(currentUser.uid);
           const userAgents = await agentStorageService.loadUserAgents();
           
           console.log('Loaded agents:', userAgents);
@@ -223,7 +223,7 @@ const WorkingChatComponent: React.FC = () => {
     };
 
     loadAgents();
-  }, [user]);
+  }, [currentUser]);
 
   // Auto-scroll to bottom
   useEffect(() => {

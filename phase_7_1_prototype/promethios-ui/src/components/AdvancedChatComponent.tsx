@@ -52,7 +52,6 @@ import { observerService } from '../services/observers';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
-import { useDemoAuth } from '../hooks/useDemoAuth';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -335,8 +334,6 @@ function TabPanel(props: TabPanelProps) {
 
 const AdvancedChatComponent: React.FC = () => {
   const { currentUser } = useAuth();
-  const { currentUser: demoUser } = useDemoAuth();
-  const effectiveUser = currentUser || demoUser;
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -677,16 +674,16 @@ const AdvancedChatComponent: React.FC = () => {
 
   // Initialize services with user immediately when available
   useEffect(() => {
-    if (effectiveUser?.uid) {
-      agentStorageService.setCurrentUser(effectiveUser.uid);
-      chatStorageService.setCurrentUser(effectiveUser.uid);
+    if (currentUser?.uid) {
+      agentStorageService.setCurrentUser(currentUser.uid);
+      chatStorageService.setCurrentUser(currentUser.uid);
     }
-  }, [effectiveUser, agentStorageService, chatStorageService]);
+  }, [currentUser, agentStorageService, chatStorageService]);
 
   // Helper function to ensure user is set before chat operations
   const ensureUserSet = () => {
-    if (effectiveUser?.uid && !chatStorageService.getCurrentUserId()) {
-      chatStorageService.setCurrentUser(effectiveUser.uid);
+    if (currentUser?.uid && !chatStorageService.getCurrentUserId()) {
+      chatStorageService.setCurrentUser(currentUser.uid);
     }
   };
 
@@ -747,10 +744,10 @@ const AdvancedChatComponent: React.FC = () => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
-        console.log('Loading agents for user:', effectiveUser?.uid);
+        console.log('Loading agents for user:', currentUser?.uid);
         
-        if (effectiveUser?.uid) {
-          agentStorageService.setCurrentUser(effectiveUser.uid);
+        if (currentUser?.uid) {
+          agentStorageService.setCurrentUser(currentUser.uid);
           const userAgents = await agentStorageService.loadUserAgents();
           
           console.log('Loaded user agents:', userAgents);
@@ -845,7 +842,7 @@ const AdvancedChatComponent: React.FC = () => {
     };
 
     loadAgents();
-  }, [effectiveUser]);
+  }, [currentUser]);
 
   // Loa  // Load governance metrics based on chat mode
   useEffect(() => {
@@ -959,10 +956,10 @@ const AdvancedChatComponent: React.FC = () => {
   // Initialize governance session when governance is enabled
   useEffect(() => {
     const initializeGovernanceSession = async () => {
-      if (governanceEnabled && effectiveUser?.uid && !currentGovernanceSession) {
+      if (governanceEnabled && currentUser?.uid && !currentGovernanceSession) {
         try {
           console.log('Initializing governance session...');
-          const session = await governanceService.createSession(effectiveUser.uid);
+          const session = await governanceService.createSession(currentUser.uid);
           setCurrentGovernanceSession(session);
           console.log('Governance session initialized:', session);
         } catch (error) {
@@ -972,7 +969,7 @@ const AdvancedChatComponent: React.FC = () => {
     };
 
     initializeGovernanceSession();
-  }, [governanceEnabled, effectiveUser?.uid, currentGovernanceSession]);
+  }, [governanceEnabled, currentUser?.uid, currentGovernanceSession]);
 
   // Refresh governance metrics periodically based on chat mode
   useEffect(() => {
@@ -1837,13 +1834,13 @@ This error has been logged to the console for debugging.`,
   // Load available multi-agent systems from unified storage
   const loadAvailableSystems = async () => {
     try {
-      if (!effectiveUser?.uid) {
+      if (!currentUser?.uid) {
         console.log('No user available for loading systems');
         return;
       }
 
-      console.log('Loading available multi-agent systems for user:', effectiveUser.uid);
-      const systems = await multiAgentChatIntegration.getAvailableSystems(effectiveUser.uid);
+      console.log('Loading available multi-agent systems for user:', currentUser.uid);
+      const systems = await multiAgentChatIntegration.getAvailableSystems(currentUser.uid);
       console.log('Loaded systems:', systems);
       setAvailableSystems(systems);
     } catch (error) {
@@ -1867,8 +1864,8 @@ This error has been logged to the console for debugging.`,
       setError(null);
 
       // Start a new chat session with the selected system
-      if (effectiveUser?.uid) {
-        const session = await multiAgentChatIntegration.startChatSession(systemId, effectiveUser.uid);
+      if (currentUser?.uid) {
+        const session = await multiAgentChatIntegration.startChatSession(systemId, currentUser.uid);
         setCurrentChatSession(session);
         console.log('Started chat session:', session);
 
@@ -1911,7 +1908,7 @@ This error has been logged to the console for debugging.`,
         await multiAgentChatIntegration.sendEmergencyStop(
           currentChatSession.id,
           selectedSystem.id,
-          effectiveUser?.uid || 'anonymous'
+          currentUser?.uid || 'anonymous'
         );
         console.log('🚨 EMERGENCY STOP: Backend stop signal sent successfully');
       } catch (error) {

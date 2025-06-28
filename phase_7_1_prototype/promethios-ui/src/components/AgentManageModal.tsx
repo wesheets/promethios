@@ -43,7 +43,6 @@ import {
 } from '@mui/icons-material';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { useAuth } from '../context/AuthContext';
-import { useDemoAuth } from '../hooks/useDemoAuth';
 
 interface AgentManageModalProps {
   open: boolean;
@@ -59,8 +58,6 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
   onAgentUpdated
 }) => {
   const { currentUser } = useAuth();
-  const { currentUser: demoUser } = useDemoAuth();
-  const effectiveUser = currentUser || demoUser;
   
   const [agent, setAgent] = useState<AgentProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,15 +71,15 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
     if (open && agentId) {
       loadAgent();
     }
-  }, [open, agentId, effectiveUser]);
+  }, [open, agentId, currentUser]);
 
   const loadAgent = async () => {
-    if (!agentId || !effectiveUser) return;
+    if (!agentId || !currentUser) return;
     
     setLoading(true);
     try {
       const storageService = new UserAgentStorageService();
-      storageService.setCurrentUser(effectiveUser.uid);
+      storageService.setCurrentUser(currentUser.uid);
       
       const agentData = await storageService.getAgent(agentId);
       if (agentData) {
@@ -122,12 +119,12 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!agent || !effectiveUser) return;
+    if (!agent || !currentUser) return;
     
     setSaving(true);
     try {
       const storageService = new UserAgentStorageService();
-      storageService.setCurrentUser(effectiveUser.uid);
+      storageService.setCurrentUser(currentUser.uid);
       
       // Create updated governance policy if agent is wrapped
       let updatedGovernancePolicy = null;
