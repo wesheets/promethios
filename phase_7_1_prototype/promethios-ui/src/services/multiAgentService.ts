@@ -9,8 +9,8 @@
 
 import { API_BASE_URL } from '../config/api';
 
-// New backend URL for multi-agent governance
-const GOVERNANCE_BACKEND_URL = 'https://5000-ivvwtnm57nafn2tky3qfe-df129213.manusvm.computer';
+// Use the same backend API for multi-agent governance
+const GOVERNANCE_BACKEND_URL = API_BASE_URL;
 
 export interface MultiAgentContext {
   context_id: string;

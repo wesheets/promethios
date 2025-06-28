@@ -83,8 +83,11 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     setError(null);
 
     try {
-      // Mock user ID for demo
-      const userId = 'demo-user';
+      // Use real authenticated user ID
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
 
       const [userAgents, userSystems] = await Promise.all([
         agentWrapperRegistry.getUserAgents(db, auth, userId),

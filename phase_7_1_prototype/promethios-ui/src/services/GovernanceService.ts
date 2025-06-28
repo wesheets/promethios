@@ -44,9 +44,9 @@ export class GovernanceService {
   private isApiAvailable: boolean = true; // Default to true for demo
 
   constructor() {
-    // Use a working governance API endpoint or enable demo mode
-    this.baseUrl = process.env.NEXT_PUBLIC_GOVERNANCE_API_URL || 'demo';
-    // Initialize governance as available for demo purposes
+    // Use the actual backend API for governance
+    this.baseUrl = process.env.NEXT_PUBLIC_GOVERNANCE_API_URL || 'https://promethios-phase-7-1-api.onrender.com/api';
+    // Initialize governance with real API
     this.initializeGovernance();
   }
 

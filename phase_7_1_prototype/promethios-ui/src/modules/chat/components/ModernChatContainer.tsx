@@ -26,6 +26,7 @@ import { styled } from '@mui/material/styles';
 import { useEnhancedAgentWrappers } from '../../agent-wrapping/hooks/useEnhancedAgentWrappers';
 import { useEnhancedMultiAgentSystems } from '../../agent-wrapping/hooks/useEnhancedMultiAgentSystems';
 import { governanceMiddleware } from '../services/GovernanceMiddleware';
+import { useAuth } from '../../../context/AuthContext';
 
 // Import our modern components
 import { GovernancePanel } from './GovernancePanel';
@@ -200,6 +201,9 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
   multiAgentSystemId,
   governanceEnabled: initialGovernanceEnabled = true
 }) => {
+  // Auth context
+  const { currentUser } = useAuth();
+  
   // State management
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -612,8 +616,8 @@ export const ModernChatContainer: React.FC<ModernChatContainerProps> = ({
     if (!message.trim() && (!attachments || attachments.length === 0)) return;
 
     // Set current user for governance middleware
-    if (governanceEnabled) {
-      governanceMiddleware.setCurrentUser('demo-user-123'); // In real app, get from auth
+    if (governanceEnabled && currentUser) {
+      governanceMiddleware.setCurrentUser(currentUser.uid); // Use real authenticated user ID
     }
 
     const userMessage: MessageType = {
