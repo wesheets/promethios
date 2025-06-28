@@ -905,7 +905,8 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   const conversationalAgents = session.systemConfiguration?.agents?.filter(agent => 
     agent.role !== 'observer' && agent.role !== 'governance'
   ) || [];
-  const agentCount = conversationalAgents.length || 2; // Default to 2 if no config
+  // Ensure we always have 4 agents for proper round-table discussion
+  const agentCount = Math.max(conversationalAgents.length, 4);
   
   console.log(`👥 Agent count: ${agentCount}, Governance enabled: ${governanceEnabled}`);
   
@@ -1052,15 +1053,35 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
   const maxRounds = 3; // Maximum discussion rounds
   const consensusThreshold = 75; // Consensus threshold percentage
   
-  const agentTypes = ['factual-agent', 'creative-agent', 'baseline-agent', 'governance-agent'];
-  const agentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent', 'Governance Agent'];
+  // Use real agents from session configuration
+  const sessionAgents = session.systemConfiguration?.agents || [];
+  console.log(`📋 Session agents available:`, sessionAgents.map(a => `${a.name} (${a.id})`));
   
-  // Ensure we have enough agent types for the requested count
+  // Filter to get conversational agents (exclude observer/governance if needed)
+  const conversationalAgents = sessionAgents.filter(agent => 
+    agent.role !== 'observer'
+  );
+  
+  // If we don't have enough agents from session, use default types
+  const defaultAgentTypes = ['factual-agent', 'creative-agent', 'baseline-agent', 'governance-agent'];
+  const defaultAgentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent', 'Governance Agent'];
+  
   const expandedAgentTypes = [];
   const expandedAgentNames = [];
+  const expandedAgentIds = [];
+  
   for (let i = 0; i < agentCount; i++) {
-    expandedAgentTypes.push(agentTypes[i % agentTypes.length]);
-    expandedAgentNames.push(agentNames[i % agentNames.length]);
+    if (i < conversationalAgents.length) {
+      // Use real agent from session
+      expandedAgentTypes.push(conversationalAgents[i].role || 'conversational');
+      expandedAgentNames.push(conversationalAgents[i].name);
+      expandedAgentIds.push(conversationalAgents[i].id);
+    } else {
+      // Fall back to default types
+      expandedAgentTypes.push(defaultAgentTypes[i % defaultAgentTypes.length]);
+      expandedAgentNames.push(defaultAgentNames[i % defaultAgentNames.length]);
+      expandedAgentIds.push(defaultAgentTypes[i % defaultAgentTypes.length]);
+    }
   }
   
   let allAgentResponses = [];
@@ -1101,6 +1122,7 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
       try {
         const agentType = expandedAgentTypes[agentIndex];
         const agentName = expandedAgentNames[agentIndex];
+        const agentId = expandedAgentIds[agentIndex];
         
         // Build comprehensive context including all previous rounds and current round
         const roundTableContext = buildRoundTableContext(
@@ -1112,11 +1134,11 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
           agentIndex
         );
         
-        console.log(`🎯 ${agentName} taking turn in Round ${round}`);
+        console.log(`🎯 ${agentName} (${agentId}) taking turn in Round ${round}`);
         console.log(`📚 Context includes ${allAgentResponses.length} previous responses from ${round - 1} rounds`);
         
-        // Generate round-table aware response
-        const agentResponse = await generateRoundTableResponse(agentType, roundTableContext, round);
+        // Generate round-table aware response using real agent ID
+        const agentResponse = await generateRoundTableResponse(agentId, roundTableContext, round, agentName);
         
         const responseData = {
           agentId: agentIndex + 1,
@@ -1485,33 +1507,33 @@ function buildRoundTableContext(originalMessage, allPreviousResponses, currentRo
   return context;
 }
 // Generate round-table aware response
-async function generateRoundTableResponse(agentType, roundTableContext, round) {
+async function generateRoundTableResponse(agentId, roundTableContext, round, agentName = null) {
   try {
     // Call the real LLM service with round-table context
     const roundTablePrompt = `You are participating in a multi-agent round-table discussion (Round ${round}). Here is the complete discussion context from all previous rounds:
 
 ${roundTableContext}
 
-As ${agentType.replace('-', ' ')}, please provide your contribution to this round-table discussion. Build upon the insights from previous rounds and agents, and add your unique perspective. This is Round ${round} of our collaborative discussion.`;
+As ${agentName || agentId}, please provide your contribution to this round-table discussion. Build upon the insights from previous rounds and agents, and add your unique perspective. This is Round ${round} of our collaborative discussion.`;
 
-    console.log(`🎯 Generating round table response for ${agentType} in Round ${round} using internal governance`);
+    console.log(`🎯 Generating round table response for ${agentName || agentId} (${agentId}) in Round ${round} using internal governance`);
     
     // Generate response using internal multi-agent governance for round table discussion
-    const response = await generateInternalAgentResponse(agentType, roundTablePrompt, agentType.replace('-', ' '), {
+    const response = await generateInternalAgentResponse(agentId, roundTablePrompt, agentName || agentId, {
       collaborationModel: 'round_table_sequential',
       round: round,
       contextAware: true,
       roundTableDiscussion: true
     });
     
-    console.log(`✅ Generated internal governance response for ${agentType} in Round ${round}`);
+    console.log(`✅ Generated internal governance response for ${agentName || agentId} (${agentId}) in Round ${round}`);
     return response;
     
   } catch (error) {
-    console.error(`❌ Error calling LLM service for ${agentType} in Round ${round}:`, error);
+    console.error(`❌ Error generating response for ${agentName || agentId} (${agentId}) in Round ${round}:`, error);
     
-    // Fallback to a basic response if LLM call fails
-    return `I apologize, but I'm experiencing technical difficulties in Round ${round}. As ${agentType.replace('-', ' ')}, I would normally contribute to this round-table discussion based on the previous rounds, but I'm unable to process the request at this time.`;
+    // Fallback to a basic response if generation fails
+    return `I apologize, but I'm experiencing technical difficulties in Round ${round}. As ${agentName || agentId}, I would normally contribute to this round-table discussion based on the previous rounds, but I'm unable to process the request at this time.`;
   }
 }
 
@@ -1897,31 +1919,31 @@ async function generateRoleBasedResponse(prompt, agentRole, personality, options
  * Generate factual agent response
  */
 function generateFactualResponse(prompt, isQuestion, isAnalysis, options) {
+  // Extract context from prompt to reference previous agents
+  const contextMatch = prompt.match(/Previous agents have said:(.*?)(?=\n\nAs|$)/s);
+  const previousContext = contextMatch ? contextMatch[1].trim() : '';
+  
   const responses = [
     `Based on available data and factual analysis, I can provide the following insights regarding your request: ${prompt.substring(0, 100)}... 
 
-From a factual perspective, this requires careful examination of evidence and data points. I would recommend gathering additional quantitative information to support any conclusions.
+${previousContext ? `Building on the previous discussion, I want to add some factual perspective to what has been shared. ` : ''}From a factual perspective, this requires careful examination of evidence and data points. I would recommend gathering additional quantitative information to support any conclusions.
 
 Key considerations include:
 - Data accuracy and source reliability
 - Statistical significance of findings
 - Objective measurement criteria
-- Evidence-based recommendations
-
-[Factual Agent - Internal Governance Response]`,
+- Evidence-based recommendations`,
 
     `Analyzing the factual components of your request: "${prompt.substring(0, 80)}..."
 
-My factual assessment indicates several important data points that should be considered:
+${previousContext ? `I've reviewed the insights shared by my colleagues, and ` : ''}My factual assessment indicates several important data points that should be considered:
 
 1. Empirical evidence suggests this topic requires systematic analysis
 2. Available data sources should be verified for accuracy
 3. Quantitative metrics would strengthen any conclusions
 4. Objective criteria should guide decision-making
 
-I recommend a data-driven approach to ensure factual accuracy and reliable outcomes.
-
-[Factual Agent - Internal Governance Response]`
+I recommend a data-driven approach to ensure factual accuracy and reliable outcomes.`
   ];
   
   return responses[Math.floor(Math.random() * responses.length)];
@@ -1931,10 +1953,14 @@ I recommend a data-driven approach to ensure factual accuracy and reliable outco
  * Generate creative agent response
  */
 function generateCreativeResponse(prompt, isQuestion, isStrategy, options) {
+  // Extract context from prompt to reference previous agents
+  const contextMatch = prompt.match(/Previous agents have said:(.*?)(?=\n\nAs|$)/s);
+  const previousContext = contextMatch ? contextMatch[1].trim() : '';
+  
   const responses = [
     `From a creative perspective, your request "${prompt.substring(0, 100)}..." opens up fascinating possibilities!
 
-I envision several innovative approaches:
+${previousContext ? `I love the insights shared so far! Let me build on those ideas with some creative thinking. ` : ''}I envision several innovative approaches:
 
 🎨 Creative Solutions:
 - Unconventional methodologies that challenge traditional thinking
@@ -1942,13 +1968,11 @@ I envision several innovative approaches:
 - Imaginative frameworks that redefine the problem space
 - Innovative collaboration models
 
-The key is to think beyond conventional boundaries and explore creative intersections that others might overlook. What if we approached this from a completely different angle?
-
-[Creative Agent - Internal Governance Response]`,
+The key is to think beyond conventional boundaries and explore creative intersections that others might overlook. What if we approached this from a completely different angle?`,
 
     `Your request sparks my creative imagination! "${prompt.substring(0, 80)}..."
 
-Here's my innovative take:
+${previousContext ? `Building on what my colleagues have shared, here's my innovative take: ` : 'Here\'s my innovative take:'}
 
 ✨ Imaginative Possibilities:
 - Breakthrough thinking that transforms constraints into opportunities
@@ -1956,9 +1980,7 @@ Here's my innovative take:
 - Visionary approaches that anticipate future trends
 - Artistic problem-solving methodologies
 
-I believe the most powerful solutions emerge when we combine analytical rigor with creative exploration. Let's push the boundaries of what's possible!
-
-[Creative Agent - Internal Governance Response]`
+I believe the most powerful solutions emerge when we combine analytical rigor with creative exploration. Let's push the boundaries of what's possible!`
   ];
   
   return responses[Math.floor(Math.random() * responses.length)];
@@ -2084,18 +2106,11 @@ async function applyResponseGovernance(response, agentRole, options) {
   
   // Basic response validation
   if (!response || response.length < 10) {
-    return `I apologize, but I cannot provide a meaningful response at this time. [${agentRole} Agent]`;
+    return `I apologize, but I cannot provide a meaningful response at this time.`;
   }
   
-  // Ensure response includes agent identification
-  if (!response.includes('[') || !response.includes('Agent')) {
-    response += ` [${agentRole.charAt(0).toUpperCase() + agentRole.slice(1)} Agent - Internal Governance]`;
-  }
-  
-  // Apply collaboration-specific formatting
-  if (options.collaborationModel === 'round_table_sequential' && options.round) {
-    response = `Round ${options.round} Contribution:\n\n${response}`;
-  }
+  // Remove any existing agent identification tags for cleaner output
+  response = response.replace(/\[.*Agent.*\]/g, '').trim();
   
   return response;
 }
