@@ -123,6 +123,7 @@ router.post('/chat/create-session', async (req, res) => {
       messageLimit,
       sessionTimeout,
       governanceEnabled,
+      systemConfiguration, // Extract systemConfiguration from request body
       metadata
     } = req.body;
 
@@ -133,11 +134,18 @@ router.post('/chat/create-session', async (req, res) => {
       });
     }
 
-    // Create session with safety controls
+    console.log(`🔧 Creating session with systemConfiguration:`, systemConfiguration ? 'present' : 'missing');
+    if (systemConfiguration?.agents) {
+      console.log(`🤖 System has ${systemConfiguration.agents.length} agents:`, 
+        systemConfiguration.agents.map(a => `${a.name} (${a.id})`));
+    }
+
+    // Create session with safety controls and system configuration
     const session = sessionManager.createSession(systemId, systemName, userId, {
       messageLimit,
       sessionTimeout,
       governanceEnabled,
+      systemConfiguration, // Pass systemConfiguration to sessionManager
       metadata
     });
 
