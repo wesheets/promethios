@@ -130,7 +130,8 @@ class LLMService {
         error: error.error,
         stack: error.stack
       });
-      return `Despite technical difficulties, I maintain my commitment to accuracy. For "${message.substring(0, 50)}...", I would research reliable sources, verify claims, and provide well-documented information. Please let me know what specific facts you need verified.`;
+      // Throw the error instead of returning fallback - let the calling code handle it
+      throw error;
     }
   }
 
