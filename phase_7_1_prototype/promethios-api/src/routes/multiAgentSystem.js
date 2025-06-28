@@ -1036,15 +1036,6 @@ async function generateSequentialResponses(session, message, agentCount, abortSi
   }
   
   return agentResponses;
-}map(r => r.agentName),
-        fallback: true
-      });
-      
-      console.log(`🔄 Used contextual fallback response for ${agentName}`);
-    }
-  }
-  
-  return agentResponses;
 }
 
 // Enhanced Round-Table Discussion with Multi-Round Consensus Building
