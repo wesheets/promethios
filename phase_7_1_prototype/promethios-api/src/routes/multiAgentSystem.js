@@ -1245,7 +1245,7 @@ async function generateParallelResponses(session, message, agentCount, abortSign
       const agentName = expandedAgentNames[i];
       console.log(`🤖 Generating parallel response for ${agentName} (${agentType})`);
       
-      const agentResponse = await generateBasicResponse(agentType, message);
+      const agentResponse = await llmService.generateResponse(agentType, message);
       
       agentResponses.push({
         agentId: i + 1,
@@ -1304,37 +1304,31 @@ function buildConversationContext(originalMessage, previousResponses, currentAge
 
 // Generate context-aware response (enhanced version)
 async function generateContextAwareResponse(agentType, conversationContext) {
-  // For now, use simulated responses that show context awareness
-  // In V2, this would call actual LLM APIs with the full context
-  
-  const responses = {
-    'factual-agent': [
-      `Based on the analysis provided by previous agents, I can add the following factual context: ${conversationContext.substring(0, 100)}... [Factual Agent - Context Aware]`,
-      `Reviewing the previous responses, I notice several key facts that need emphasis: ${conversationContext.substring(0, 100)}... [Factual Agent - Building on Previous Analysis]`,
-      `The previous agents have raised important points. From a factual perspective, I can contribute: ${conversationContext.substring(0, 100)}... [Factual Agent - Complementary Analysis]`
-    ],
-    'creative-agent': [
-      `Building on the insights shared by my colleagues, I see creative opportunities: ${conversationContext.substring(0, 100)}... [Creative Agent - Synthesizing Ideas]`,
-      `The previous responses spark several innovative approaches: ${conversationContext.substring(0, 100)}... [Creative Agent - Expanding on Previous Thoughts]`,
-      `I appreciate the groundwork laid by previous agents. Here's how we can think creatively: ${conversationContext.substring(0, 100)}... [Creative Agent - Adding Innovation]`
-    ],
-    'baseline-agent': [
-      `After reviewing the previous analyses, I can provide strategic perspective: ${conversationContext.substring(0, 100)}... [Strategic Agent - Integrating Insights]`,
-      `The previous agents have provided valuable input. Strategically, I recommend: ${conversationContext.substring(0, 100)}... [Strategic Agent - Building Consensus]`,
-      `Considering all previous perspectives, here's my strategic assessment: ${conversationContext.substring(0, 100)}... [Strategic Agent - Comprehensive View]`
-    ],
-    'governance-agent': [
-      `Reviewing the discussion so far, I can ensure governance compliance: ${conversationContext.substring(0, 100)}... [Governance Agent - Oversight Review]`,
-      `The previous agents have made solid points. From a governance standpoint: ${conversationContext.substring(0, 100)}... [Governance Agent - Policy Alignment]`,
-      `After careful review of all previous responses, governance considerations include: ${conversationContext.substring(0, 100)}... [Governance Agent - Comprehensive Governance]`
-    ]
-  };
-  
-  const agentResponses = responses[agentType] || responses['baseline-agent'];
-  return agentResponses[Math.floor(Math.random() * agentResponses.length)];
+  try {
+    // Call the real LLM service with context-aware system prompt
+    const contextAwarePrompt = `You are participating in a multi-agent discussion. Here is the conversation context so far:
+
+${conversationContext}
+
+Please provide your response as ${agentType.replace('-', ' ')} while being aware of what previous agents have said. Build upon their insights and add your unique perspective.`;
+
+    console.log(`🤖 Calling real LLM service for ${agentType} with context`);
+    
+    // Call the real LLM service (this will route to OpenAI, Anthropic, Cohere, etc.)
+    const response = await llmService.generateResponse(agentType, contextAwarePrompt);
+    
+    console.log(`✅ Received real LLM response for ${agentType}`);
+    return response;
+    
+  } catch (error) {
+    console.error(`❌ Error calling LLM service for ${agentType}:`, error);
+    
+    // Fallback to a basic response if LLM call fails
+    return `I apologize, but I'm experiencing technical difficulties. As ${agentType.replace('-', ' ')}, I would normally provide insights based on the conversation context, but I'm unable to process the request at this time.`;
+  }
 }
 
-// Generate basic response (existing behavior)
+// Generate basic response (fallback behavior)
 async function generateBasicResponse(agentType, message) {
   // Existing basic response generation
   const responses = {
@@ -1477,35 +1471,30 @@ function buildRoundTableContext(originalMessage, allPreviousResponses, currentRo
   
   return context;
 }
-
 // Generate round-table aware response
 async function generateRoundTableResponse(agentType, roundTableContext, round) {
-  // Enhanced responses that show round-table awareness
-  const roundTableResponses = {
-    'factual-agent': [
-      `After reviewing the discussion so far, I can provide these factual insights: ${roundTableContext.substring(0, 150)}... [Factual Agent - Round ${round} Analysis]`,
-      `Building on the previous rounds, here are the key facts we should consider: ${roundTableContext.substring(0, 150)}... [Factual Agent - Evidence-Based Contribution]`,
-      `I've carefully reviewed all previous contributions. From a factual standpoint: ${roundTableContext.substring(0, 150)}... [Factual Agent - Comprehensive Review]`
-    ],
-    'creative-agent': [
-      `Considering all the insights shared in our discussion, I see these creative opportunities: ${roundTableContext.substring(0, 150)}... [Creative Agent - Round ${round} Innovation]`,
-      `The previous rounds have sparked several innovative approaches. Let me add: ${roundTableContext.substring(0, 150)}... [Creative Agent - Building on Collective Wisdom]`,
-      `After reflecting on everyone's contributions, here's how we can think creatively: ${roundTableContext.substring(0, 150)}... [Creative Agent - Synthesis & Innovation]`
-    ],
-    'baseline-agent': [
-      `Having reviewed our entire discussion, I can offer this strategic perspective: ${roundTableContext.substring(0, 150)}... [Strategic Agent - Round ${round} Strategy]`,
-      `The collective insights from previous rounds inform this strategic approach: ${roundTableContext.substring(0, 150)}... [Strategic Agent - Integrated Strategy]`,
-      `Considering all viewpoints shared, my strategic recommendation is: ${roundTableContext.substring(0, 150)}... [Strategic Agent - Consensus Building]`
-    ],
-    'governance-agent': [
-      `After monitoring our discussion, I can ensure governance alignment: ${roundTableContext.substring(0, 150)}... [Governance Agent - Round ${round} Oversight]`,
-      `Reviewing all contributions for governance compliance: ${roundTableContext.substring(0, 150)}... [Governance Agent - Comprehensive Governance]`,
-      `The discussion quality has been excellent. Governance considerations include: ${roundTableContext.substring(0, 150)}... [Governance Agent - Quality Assurance]`
-    ]
-  };
-  
-  const agentResponses = roundTableResponses[agentType] || roundTableResponses['baseline-agent'];
-  return agentResponses[Math.floor(Math.random() * agentResponses.length)];
+  try {
+    // Call the real LLM service with round-table context
+    const roundTablePrompt = `You are participating in a multi-agent round-table discussion (Round ${round}). Here is the complete discussion context from all previous rounds:
+
+${roundTableContext}
+
+As ${agentType.replace('-', ' ')}, please provide your contribution to this round-table discussion. Build upon the insights from previous rounds and agents, and add your unique perspective. This is Round ${round} of our collaborative discussion.`;
+
+    console.log(`🎯 Calling real LLM service for ${agentType} in Round ${round}`);
+    
+    // Call the real LLM service (this will route to OpenAI, Anthropic, Cohere, etc.)
+    const response = await llmService.generateResponse(agentType, roundTablePrompt);
+    
+    console.log(`✅ Received real LLM response for ${agentType} in Round ${round}`);
+    return response;
+    
+  } catch (error) {
+    console.error(`❌ Error calling LLM service for ${agentType} in Round ${round}:`, error);
+    
+    // Fallback to a basic response if LLM call fails
+    return `I apologize, but I'm experiencing technical difficulties in Round ${round}. As ${agentType.replace('-', ' ')}, I would normally contribute to this round-table discussion based on the previous rounds, but I'm unable to process the request at this time.`;
+  }
 }
 
 // Generate round-table fallback response
