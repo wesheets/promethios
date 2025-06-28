@@ -210,9 +210,25 @@ router.post('/', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Chat error:', error);
+        console.error('=== CHAT ERROR DETAILS ===');
+        console.error('Error type:', typeof error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error status:', error.status);
+        console.error('Error code:', error.code);
+        console.error('Error stack:', error.stack);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        console.error('=== END CHAT ERROR ===');
+        
         res.status(500).json({ 
             error: `Chat processing failed: ${error.message}`,
+            error_details: {
+                name: error.name,
+                message: error.message,
+                status: error.status,
+                code: error.code,
+                type: typeof error
+            },
             governance_metrics: {
                 trust_score: 0,
                 compliance_score: 0,
