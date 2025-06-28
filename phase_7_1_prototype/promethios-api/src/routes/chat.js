@@ -395,6 +395,46 @@ router.get('/providers/status', async (req, res) => {
     }
 });
 
+// GET /test/anthropic — Test Anthropic API call with detailed logging
+router.get('/test/anthropic', async (req, res) => {
+    const llmService = require('../services/llmService');
+    
+    try {
+        console.log('=== ANTHROPIC TEST CALL START ===');
+        const testMessage = "Hello, this is a test message.";
+        const systemPrompt = "You are a helpful assistant.";
+        
+        console.log('Calling Anthropic with message:', testMessage);
+        const response = await llmService.callAnthropic(testMessage, systemPrompt);
+        console.log('Anthropic response received:', response.substring(0, 100) + '...');
+        console.log('=== ANTHROPIC TEST CALL END ===');
+        
+        res.status(200).json({
+            success: true,
+            message: 'Anthropic test completed',
+            response: response,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('=== ANTHROPIC TEST ERROR ===');
+        console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            type: error.type,
+            error: error.error,
+            stack: error.stack
+        });
+        console.error('=== ANTHROPIC TEST ERROR END ===');
+        
+        res.status(500).json({
+            success: false,
+            error: 'Anthropic test failed',
+            details: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // GET /governance/metrics — Get current governance system status
 router.get('/governance/metrics', async (req, res) => {
     try {
