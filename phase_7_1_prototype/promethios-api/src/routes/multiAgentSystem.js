@@ -600,226 +600,152 @@ function analyzeEmergentBehaviors(context, session) {
     });
   }
   
-  // Detect consensus acceleration
-  if (context.collaboration_model === 'consensus' && sessionAge > 3) {
+  // Detect communication patterns
+  if (sessionAge > 2) {
     behaviors.push({
-      id: 'consensus_accel_001',
-      type: 'consensus_acceleration',
-      description: 'System reaching consensus 35% faster than baseline through adaptive communication',
-      severity: 'medium',
-      confidence: 0.85,
-      involvedAgents: context.agent_ids,
-      detectionTimestamp: currentTime,
-      duration: Math.floor(sessionAge * 0.8),
-      impact: {
-        onSystemPerformance: 25,
-        onGoalAchievement: 20,
-        onTrustScores: 5
-      },
-      recommendations: [
-        'Document the communication patterns for future systems',
-        'Validate consensus quality is maintained'
-      ]
-    });
-  }
-  
-  // Detect potential negative emergence
-  if (session && session.messageCount > 20) {
-    behaviors.push({
-      id: 'comm_overhead_001',
-      type: 'communication_overhead',
-      description: 'Increased inter-agent communication may be reducing overall efficiency',
-      severity: 'medium',
+      id: 'comm_pattern_001',
+      type: 'communication_efficiency',
+      description: 'Agents have begun using more efficient communication protocols',
+      severity: 'low',
       confidence: 0.65,
       involvedAgents: context.agent_ids,
       detectionTimestamp: currentTime,
-      duration: Math.floor(sessionAge * 0.3),
+      duration: Math.floor(sessionAge * 0.4),
       impact: {
-        onSystemPerformance: -10,
-        onGoalAchievement: -5,
-        onTrustScores: 0
+        onSystemPerformance: 8,
+        onGoalAchievement: 5,
+        onTrustScores: 3
       },
       recommendations: [
-        'Review communication protocols for optimization',
-        'Consider implementing communication rate limits'
+        'Document emerging communication patterns',
+        'Evaluate for potential integration into standard protocols'
       ]
     });
   }
   
   return {
-    systemId: context.context_id,
+    contextId: context.context_id,
     systemName: context.name,
     analysisTimestamp: currentTime,
-    behaviors,
-    patterns: [
-      {
-        pattern: 'adaptive_task_distribution',
-        frequency: Math.floor(sessionAge / 5),
-        lastOccurrence: currentTime,
-        trend: 'increasing'
-      },
-      {
-        pattern: 'consensus_optimization',
-        frequency: Math.floor(sessionAge / 8),
-        lastOccurrence: currentTime,
-        trend: 'stable'
-      }
-    ],
-    shadowGovernanceInsights: {
-      enabled: !context.governance_enabled,
-      message: context.governance_enabled ? null : 
-        'Shadow analysis indicates emergent behaviors would benefit from governance oversight to ensure positive outcomes',
-      potentialIssues: context.governance_enabled ? [] : [
-        'Unmonitored optimization patterns could lead to unexpected system states',
-        'Lack of formal validation for emergent consensus mechanisms'
-      ]
-    }
+    sessionAge: Math.floor(sessionAge),
+    emergentBehaviors: behaviors,
+    summary: {
+      totalBehaviors: behaviors.length,
+      highSeverity: behaviors.filter(b => b.severity === 'high').length,
+      mediumSeverity: behaviors.filter(b => b.severity === 'medium').length,
+      lowSeverity: behaviors.filter(b => b.severity === 'low').length,
+      averageConfidence: behaviors.length > 0 ? 
+        behaviors.reduce((sum, b) => sum + b.confidence, 0) / behaviors.length : 0
+    },
+    recommendations: [
+      'Continue monitoring for new emergent patterns',
+      'Consider implementing formal behavior tracking',
+      'Evaluate impact on system goals and performance'
+    ]
   };
 }
 
 /**
- * Analyze collaboration effectiveness
+ * Analyze collaboration patterns in multi-agent system
  */
 function analyzeCollaboration(context, session) {
   const currentTime = new Date().toISOString();
-  const agentCount = context.agent_ids.length;
-  const sessionDuration = session ? (Date.now() - new Date(session.createdAt).getTime()) / 1000 / 60 : 0;
+  const sessionAge = session ? (Date.now() - new Date(session.createdAt).getTime()) / 1000 / 60 : 0;
   
-  // Calculate role adherence (simulated)
-  const roleAdherence = {};
-  context.agent_ids.forEach((agentId, index) => {
-    roleAdherence[agentId] = 88 + Math.random() * 12; // 88-100%
-  });
+  // Simulate collaboration analysis based on context
+  const collaborationModel = context.collaboration_model;
+  const agentCount = context.agent_ids.length;
+  
+  const collaborationMetrics = {
+    efficiency: Math.min(95, 70 + Math.random() * 25),
+    coordination: Math.min(90, 65 + Math.random() * 25),
+    consensusReaching: Math.min(85, 60 + Math.random() * 25),
+    taskDistribution: Math.min(92, 75 + Math.random() * 17),
+    communicationClarity: Math.min(88, 70 + Math.random() * 18)
+  };
   
   return {
-    systemId: context.context_id,
+    contextId: context.context_id,
     systemName: context.name,
-    collaborationModel: context.collaboration_model,
     analysisTimestamp: currentTime,
-    sessionDuration: Math.floor(sessionDuration),
-    messageExchanges: session ? session.messageCount : 0,
-    consensusReached: Math.floor(sessionDuration / 3), // Rough estimate
-    conflictsResolved: Math.floor(sessionDuration / 8),
-    roleAdherence,
-    workflowEfficiency: {
-      plannedSteps: 15,
-      actualSteps: 12 + Math.floor(Math.random() * 8),
-      efficiencyRatio: 0.85 + Math.random() * 0.15
-    },
-    decisionQuality: {
-      decisionsCount: Math.floor(sessionDuration / 4),
-      averageConfidence: 0.82 + Math.random() * 0.15,
-      reversedDecisions: Math.floor(Math.random() * 2)
-    },
-    communicationPatterns: [
+    collaborationModel,
+    agentCount,
+    sessionAge: Math.floor(sessionAge),
+    metrics: collaborationMetrics,
+    patterns: [
       {
-        pattern: 'sequential_handoffs',
-        frequency: Math.floor(sessionDuration / 2),
-        effectiveness: 0.89
+        type: 'task_delegation',
+        description: `Agents are effectively delegating tasks based on ${collaborationModel} model`,
+        strength: collaborationMetrics.taskDistribution,
+        trend: 'improving'
       },
       {
-        pattern: 'parallel_processing',
-        frequency: Math.floor(sessionDuration / 3),
-        effectiveness: 0.76
+        type: 'consensus_building',
+        description: 'Agents reach consensus efficiently in decision-making processes',
+        strength: collaborationMetrics.consensusReaching,
+        trend: 'stable'
       },
       {
-        pattern: 'consensus_building',
-        frequency: Math.floor(sessionDuration / 5),
-        effectiveness: 0.92
+        type: 'communication_flow',
+        description: 'Information flows clearly between agents with minimal redundancy',
+        strength: collaborationMetrics.communicationClarity,
+        trend: 'improving'
       }
     ],
-    shadowGovernanceInsights: {
-      enabled: !context.governance_enabled,
-      message: context.governance_enabled ? null :
-        'Shadow analysis shows collaboration patterns would benefit from governance validation to ensure optimal outcomes',
-      recommendations: context.governance_enabled ? [] : [
-        'Implement formal role validation mechanisms',
-        'Add consensus quality checks',
-        'Monitor for collaboration anti-patterns'
-      ]
-    }
+    recommendations: [
+      'Maintain current collaboration patterns',
+      'Monitor for potential bottlenecks in communication',
+      'Consider optimizing task distribution algorithms'
+    ]
   };
 }
 
 /**
- * Analyze governance health
+ * Analyze governance health in multi-agent system
  */
 function analyzeGovernanceHealth(context, session) {
   const currentTime = new Date().toISOString();
+  const sessionAge = session ? (Date.now() - new Date(session.createdAt).getTime()) / 1000 / 60 : 0;
   const isGovernanceEnabled = context.governance_enabled;
   
-  // Simulate policy violations
-  const violations = [];
-  if (session && session.messageCount > 10) {
-    violations.push({
-      agentId: context.agent_ids[0],
-      policyType: 'communication_protocol',
-      severity: 'low',
-      description: 'Minor deviation from expected communication sequence',
-      timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-      resolved: true,
-      resolutionTime: 45 // seconds
-    });
-  }
-  
-  if (Math.random() > 0.7) {
-    violations.push({
-      agentId: context.agent_ids[1] || context.agent_ids[0],
-      policyType: 'resource_usage',
-      severity: 'medium',
-      description: 'Exceeded recommended processing time threshold',
-      timestamp: new Date(Date.now() - 120000).toISOString(), // 2 minutes ago
-      resolved: false,
-      resolutionTime: null
-    });
-  }
+  const healthMetrics = {
+    policyCompliance: isGovernanceEnabled ? Math.min(95, 80 + Math.random() * 15) : 0,
+    riskAssessment: isGovernanceEnabled ? Math.min(90, 75 + Math.random() * 15) : 0,
+    transparencyScore: isGovernanceEnabled ? Math.min(92, 78 + Math.random() * 14) : 0,
+    accountabilityTracking: isGovernanceEnabled ? Math.min(88, 70 + Math.random() * 18) : 0,
+    ethicalCompliance: isGovernanceEnabled ? Math.min(94, 85 + Math.random() * 9) : 0
+  };
   
   return {
-    systemId: context.context_id,
+    contextId: context.context_id,
     systemName: context.name,
     analysisTimestamp: currentTime,
     governanceEnabled: isGovernanceEnabled,
-    overallHealth: isGovernanceEnabled ? (92 + Math.random() * 8) : null,
-    policyCompliance: {
-      overall: isGovernanceEnabled ? (90 + Math.random() * 10) : null,
-      byAgent: context.agent_ids.reduce((acc, agentId) => {
-        acc[agentId] = isGovernanceEnabled ? (88 + Math.random() * 12) : null;
-        return acc;
-      }, {}),
-      violations: isGovernanceEnabled ? violations : []
+    sessionAge: Math.floor(sessionAge),
+    healthMetrics,
+    status: isGovernanceEnabled ? 'healthy' : 'unmonitored',
+    alerts: isGovernanceEnabled ? [] : [
+      {
+        level: 'warning',
+        message: 'Governance monitoring is disabled',
+        recommendation: 'Enable governance for better oversight'
+      }
+    ],
+    complianceChecks: {
+      lastCheck: currentTime,
+      checksPerformed: isGovernanceEnabled ? Math.floor(sessionAge * 2) : 0,
+      violationsDetected: 0,
+      violationsResolved: 0
     },
-    rateLimitingStatus: {
-      active: isGovernanceEnabled,
-      violationsCount: isGovernanceEnabled ? violations.length : 0,
-      throttledAgents: [],
-      averageResponseTime: 1.2 + Math.random() * 0.8
-    },
-    crossAgentValidation: {
-      validationsPerformed: isGovernanceEnabled ? (session ? session.messageCount * 2 : 0) : 0,
-      validationSuccessRate: isGovernanceEnabled ? (95 + Math.random() * 5) : 0,
-      trustThresholdViolations: isGovernanceEnabled ? Math.floor(Math.random() * 2) : 0
-    },
-    errorHandling: {
-      errorsDetected: Math.floor(Math.random() * 3),
-      errorsResolved: Math.floor(Math.random() * 2),
-      recoverySuccessRate: 85 + Math.random() * 15,
-      averageRecoveryTime: 2.1 + Math.random() * 1.5
-    },
-    shadowGovernanceInsights: {
-      enabled: !isGovernanceEnabled,
-      message: isGovernanceEnabled ? null :
-        'Shadow governance analysis shows the system would benefit from active governance monitoring',
-      potentialViolations: isGovernanceEnabled ? [] : [
-        'Unvalidated inter-agent communications detected',
-        'Resource usage patterns exceed recommended thresholds',
-        'Consensus mechanisms lack formal validation'
-      ],
-      recommendedPolicies: isGovernanceEnabled ? [] : [
-        'Implement communication rate limiting',
-        'Add resource usage monitoring',
-        'Enable cross-agent validation protocols'
-      ]
-    }
+    recommendations: isGovernanceEnabled ? [
+      'Continue regular governance monitoring',
+      'Review policy effectiveness periodically',
+      'Maintain transparency in agent decisions'
+    ] : [
+      'Enable governance monitoring for better oversight',
+      'Implement policy compliance checking',
+      'Add transparency and accountability measures'
+    ]
   };
 }
 
@@ -886,7 +812,7 @@ function generateComprehensiveMetrics(context, session) {
 // ============================================================================
 
 /**
- * Generate multi-agent response with enhanced collaboration models
+ * Generate multi-agent response with live LLM calls
  */
 async function generateMultiAgentResponse(message, session, abortSignal, governanceEnabled) {
   const startTime = Date.now();
@@ -902,14 +828,17 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   
   console.log(`🤝 Using collaboration model: ${collaborationModel}`);
   
-  // Determine agent count from system configuration
+  // Get real agents from system configuration
   const conversationalAgents = session.systemConfiguration?.agents?.filter(agent => 
     agent.role !== 'observer' && agent.role !== 'governance'
   ) || [];
-  // Ensure we always have 4 agents for proper round-table discussion
-  const agentCount = Math.max(conversationalAgents.length, 4);
   
-  console.log(`👥 Agent count: ${agentCount}, Governance enabled: ${governanceEnabled}`);
+  console.log(`👥 Available agents from session:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  
+  // If no agents configured, return error
+  if (conversationalAgents.length === 0) {
+    throw new Error('No conversational agents configured for this multi-agent system');
+  }
   
   // Generate responses based on collaboration model
   let agentResponses = [];
@@ -917,19 +846,19 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   
   if (collaborationModel === 'round_table_sequential') {
     // Enhanced round-table discussion with multi-round consensus building
-    const roundTableResult = await generateRoundTableDiscussion(session, message, agentCount, abortSignal);
+    const roundTableResult = await generateRoundTableDiscussion(session, message, conversationalAgents, abortSignal);
     agentResponses = roundTableResult.agentResponses;
     roundTableMetrics = roundTableResult.roundTableMetrics;
   } else if (collaborationModel === 'sequential') {
-    agentResponses = await generateSequentialResponses(session, message, agentCount, abortSignal);
+    agentResponses = await generateSequentialResponses(session, message, conversationalAgents, abortSignal);
   } else {
     // Fallback to parallel processing for other models
-    agentResponses = await generateParallelResponses(session, message, agentCount, abortSignal);
+    agentResponses = await generateParallelResponses(session, message, conversationalAgents, abortSignal);
   }
   
   // Create a summary for the combined response (for backward compatibility)
-  const combinedContent = agentResponses.map(resp => `${resp.agentName}: ${resp.content}`).join('\n\n');
-  const finalResponse = `Multi-Agent System Response:\n\n${combinedContent}\n\n[Processed by ${session.systemName} with ${agentCount} agents using ${collaborationModel} collaboration]`;
+  const combinedContent = agentResponses.map(resp => resp.content).join('\n\n');
+  const finalResponse = `${combinedContent}`;
   
   // Simulate governance data for multi-agent shield
   const governanceData = governanceEnabled ? {
@@ -938,7 +867,7 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
     transparencyMessage: 'Multi-agent system governance checks completed',
     behaviorTags: ['multi_agent_collaboration', 'consensus_reached'],
     systemGovernance: {
-      agentCount,
+      agentCount: conversationalAgents.length,
       collaborationModel,
       participationBalance: calculateParticipationBalance(agentResponses),
       consensusProgress: calculateConsensusProgress(agentResponses),
@@ -959,57 +888,43 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   } : null;
 
   return {
-    content: finalResponse, // Changed from 'response' to 'content' for frontend compatibility
+    content: finalResponse,
     agentResponses: agentResponses,
     governanceData: governanceData,
-    processingTime: Date.now() - startTime, // Properly calculated processing time
-    agentCount,
+    processingTime: Date.now() - startTime,
+    agentCount: conversationalAgents.length,
     metadata: {
-      agentCount,
+      agentCount: conversationalAgents.length,
       collaborationModel,
       sessionId: session.sessionId
     }
   };
 }
-// Enhanced sequential processing with context awareness
-async function generateSequentialResponses(session, message, agentCount, abortSignal) {
-  console.log(`🔄 Starting sequential processing with context awareness`);
+
+// Enhanced sequential processing with context awareness and live LLM calls
+async function generateSequentialResponses(session, message, conversationalAgents, abortSignal) {
+  console.log(`🔄 Starting sequential processing with live LLM calls`);
   
   const agentResponses = [];
   
-  // Get real agents from session configuration
-  const conversationalAgents = session.systemConfiguration?.agents?.filter(agent => 
-    agent.role !== 'observer' && agent.role !== 'governance'
-  ) || [];
+  console.log(`🤖 Sequential processing with agents:`, conversationalAgents.map(a => a.name));
   
-  console.log(`🤖 Available agents from session:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
-  
-  // If no agents configured, return error
-  if (conversationalAgents.length === 0) {
-    throw new Error('No conversational agents configured for this multi-agent system');
-  }
-  
-  // Use the actual configured agents (up to agentCount)
-  const agentsToUse = conversationalAgents.slice(0, agentCount);
-  
-  console.log(`🤖 Sequential processing with agents:`, agentsToUse.map(a => a.name));
-  
-  for (let i = 0; i < agentsToUse.length; i++) {
+  for (let i = 0; i < conversationalAgents.length; i++) {
     if (abortSignal.aborted) {
       throw new Error('Request was aborted');
     }
     
     try {
-      const agent = agentsToUse[i];
+      const agent = conversationalAgents[i];
       
       // Build context from previous agents' responses
       const conversationContext = buildConversationContext(message, agentResponses, agent.name, i);
       
-      console.log(`🤖 Generating context-aware response for ${agent.name} (${agent.id})`);
+      console.log(`🤖 Generating live response for ${agent.name} (${agent.id})`);
       console.log(`📝 Context includes ${agentResponses.length} previous responses`);
       
-      // Generate response with full conversation context using real agent ID
-      const agentResponse = await generateContextAwareResponse(agent.id, conversationContext, agent.name);
+      // Generate response with full conversation context using real agent ID and live LLM call
+      const agentResponse = await llmService.generateResponse(agent.id, conversationContext);
       
       const responseData = {
         agentId: agent.id,
@@ -1023,20 +938,20 @@ async function generateSequentialResponses(session, message, agentCount, abortSi
       
       agentResponses.push(responseData);
       
-      console.log(`✅ Generated context-aware response for ${agent.name}`);
+      console.log(`✅ Generated live response for ${agent.name}`);
       
       // Small delay to simulate thoughtful consideration
       await new Promise(resolve => setTimeout(resolve, 500));
       
     } catch (error) {
-      console.error(`❌ Error generating response for agent ${agentsToUse[i].name} (${agentsToUse[i].id}):`, error);
+      console.error(`❌ Error generating response for agent ${conversationalAgents[i].name} (${conversationalAgents[i].id}):`, error);
       
       // Add fallback response for failed agent
       agentResponses.push({
-        agentId: agentsToUse[i].id,
-        agentName: agentsToUse[i].name,
-        agentType: agentsToUse[i].role || 'conversational',
-        content: `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. [${agentsToUse[i].name}]`,
+        agentId: conversationalAgents[i].id,
+        agentName: conversationalAgents[i].name,
+        agentType: conversationalAgents[i].role || 'conversational',
+        content: `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time.`,
         timestamp: new Date().toISOString(),
         contextAware: false,
         error: true
@@ -1047,44 +962,13 @@ async function generateSequentialResponses(session, message, agentCount, abortSi
   return agentResponses;
 }
 
-// Enhanced Round-Table Discussion with Multi-Round Consensus Building
-async function generateRoundTableDiscussion(session, message, agentCount, abortSignal) {
-  console.log(`🎭 Starting round-table discussion with ${agentCount} agents`);
+// Enhanced Round-Table Discussion with live LLM calls
+async function generateRoundTableDiscussion(session, message, conversationalAgents, abortSignal) {
+  console.log(`🎭 Starting round-table discussion with ${conversationalAgents.length} agents`);
   
   const maxRounds = 4; // Increased to allow more thorough discussion
   const minRounds = 3; // Minimum rounds before consensus can end discussion
   const consensusThreshold = 75; // Consensus threshold percentage
-  
-  // Use real agents from session configuration
-  const sessionAgents = session.systemConfiguration?.agents || [];
-  console.log(`📋 Session agents available:`, sessionAgents.map(a => `${a.name} (${a.id})`));
-  
-  // Filter to get conversational agents (exclude observer/governance if needed)
-  const conversationalAgents = sessionAgents.filter(agent => 
-    agent.role !== 'observer'
-  );
-  
-  // If we don't have enough agents from session, use default types
-  const defaultAgentTypes = ['factual-agent', 'creative-agent', 'baseline-agent', 'governance-agent'];
-  const defaultAgentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent', 'Governance Agent'];
-  
-  const expandedAgentTypes = [];
-  const expandedAgentNames = [];
-  const expandedAgentIds = [];
-  
-  for (let i = 0; i < agentCount; i++) {
-    if (i < conversationalAgents.length) {
-      // Use real agent from session
-      expandedAgentTypes.push(conversationalAgents[i].role || 'conversational');
-      expandedAgentNames.push(conversationalAgents[i].name);
-      expandedAgentIds.push(conversationalAgents[i].id);
-    } else {
-      // Fall back to default types
-      expandedAgentTypes.push(defaultAgentTypes[i % defaultAgentTypes.length]);
-      expandedAgentNames.push(defaultAgentNames[i % defaultAgentNames.length]);
-      expandedAgentIds.push(defaultAgentTypes[i % defaultAgentTypes.length]);
-    }
-  }
   
   let allAgentResponses = [];
   let roundTableMetrics = {
@@ -1102,7 +986,7 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
     roundHistory: []
   };
   
-  console.log(`🎭 Round-table participants:`, expandedAgentNames);
+  console.log(`🎭 Round-table participants:`, conversationalAgents.map(a => a.name));
   
   // Multi-round discussion
   for (let round = 1; round <= maxRounds; round++) {
@@ -1116,36 +1000,34 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
     const roundStartTime = Date.now();
     
     // Each agent takes a turn in this round
-    for (let agentIndex = 0; agentIndex < agentCount; agentIndex++) {
+    for (let agentIndex = 0; agentIndex < conversationalAgents.length; agentIndex++) {
       if (abortSignal.aborted) {
         throw new Error('Request was aborted');
       }
       
       try {
-        const agentType = expandedAgentTypes[agentIndex];
-        const agentName = expandedAgentNames[agentIndex];
-        const agentId = expandedAgentIds[agentIndex];
+        const agent = conversationalAgents[agentIndex];
         
         // Build comprehensive context including all previous rounds and current round
         const roundTableContext = buildRoundTableContext(
           message, 
           allAgentResponses, 
           roundResponses, 
-          agentName, 
+          agent.name, 
           round, 
           agentIndex
         );
         
-        console.log(`🎯 ${agentName} (${agentId}) taking turn in Round ${round}`);
+        console.log(`🎯 ${agent.name} (${agent.id}) taking turn in Round ${round}`);
         console.log(`📚 Context includes ${allAgentResponses.length} previous responses from ${round - 1} rounds`);
         
-        // Generate round-table aware response using real agent ID
-        const agentResponse = await generateRoundTableResponse(agentId, roundTableContext, round, agentName);
+        // Generate round-table aware response using real agent ID and live LLM call
+        const agentResponse = await llmService.generateResponse(agent.id, roundTableContext);
         
         const responseData = {
-          agentId: agentIndex + 1,
-          agentName: agentName,
-          agentType: agentType,
+          agentId: agent.id,
+          agentName: agent.name,
+          agentType: agent.role || 'conversational',
           content: agentResponse,
           timestamp: new Date().toISOString(),
           round: round,
@@ -1160,27 +1042,27 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
         };
         
         roundResponses.push(responseData);
-        console.log(`✅ ${agentName} completed turn in Round ${round}`);
+        console.log(`✅ ${agent.name} completed turn in Round ${round}`);
         
         // Small delay for thoughtful consideration
         await new Promise(resolve => setTimeout(resolve, 300));
         
       } catch (error) {
-        console.error(`❌ Error in Round ${round} for ${expandedAgentNames[agentIndex]}:`, error);
+        console.error(`❌ Error in Round ${round} for ${conversationalAgents[agentIndex].name}:`, error);
         
-        const agentName = expandedAgentNames[agentIndex];
+        const agent = conversationalAgents[agentIndex];
         const roundTableFallback = generateRoundTableFallback(
           message, 
           allAgentResponses, 
           roundResponses, 
-          agentName, 
+          agent.name, 
           round
         );
         
         roundResponses.push({
-          agentId: agentIndex + 1,
-          agentName: agentName,
-          agentType: expandedAgentTypes[agentIndex],
+          agentId: agent.id,
+          agentName: agent.name,
+          agentType: agent.role || 'conversational',
           content: roundTableFallback,
           timestamp: new Date().toISOString(),
           round: round,
@@ -1195,7 +1077,7 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
           }
         });
         
-        console.log(`🔄 Used round-table fallback for ${agentName} in Round ${round}`);
+        console.log(`🔄 Used round-table fallback for ${agent.name} in Round ${round}`);
       }
     }
     
@@ -1250,60 +1132,49 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
   };
 }
 
-// Parallel processing (existing behavior)
-async function generateParallelResponses(session, message, agentCount, abortSignal) {
-  console.log(`⚡ Starting parallel processing`);
+// Parallel processing with live LLM calls
+async function generateParallelResponses(session, message, conversationalAgents, abortSignal) {
+  console.log(`⚡ Starting parallel processing with live LLM calls`);
   
   const agentResponses = [];
-  const agentTypes = ['factual-agent', 'creative-agent', 'baseline-agent', 'governance-agent'];
-  const agentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent', 'Governance Agent'];
   
-  // Ensure we have enough agent types for the requested count
-  const expandedAgentTypes = [];
-  const expandedAgentNames = [];
-  for (let i = 0; i < agentCount; i++) {
-    expandedAgentTypes.push(agentTypes[i % agentTypes.length]);
-    expandedAgentNames.push(agentNames[i % agentNames.length]);
-  }
-  
-  for (let i = 0; i < agentCount; i++) {
+  for (let i = 0; i < conversationalAgents.length; i++) {
     if (abortSignal.aborted) {
       throw new Error('Request was aborted');
     }
     
     try {
-      const agentType = expandedAgentTypes[i];
-      const agentName = expandedAgentNames[i];
-      console.log(`🤖 Generating parallel response for ${agentName} (${agentType})`);
+      const agent = conversationalAgents[i];
+      console.log(`🤖 Generating parallel response for ${agent.name} (${agent.id})`);
       
-      // Generate response using internal multi-agent governance
-      const agentResponse = await llmService.generateResponse(agentType, message);
+      // Generate response using live LLM call
+      const agentResponse = await llmService.generateResponse(agent.id, message);
       
       agentResponses.push({
-        agentId: i + 1,
-        agentName: agentName,
-        agentType: agentType,
+        agentId: agent.id,
+        agentName: agent.name,
+        agentType: agent.role || 'conversational',
         content: agentResponse,
         timestamp: new Date().toISOString(),
         contextAware: false
       });
       
-      console.log(`✅ Generated parallel response for ${agentName}`);
+      console.log(`✅ Generated parallel response for ${agent.name}`);
     } catch (error) {
-      console.error(`❌ Error generating response for agent ${i + 1} (${expandedAgentNames[i]}):`, error);
+      console.error(`❌ Error generating response for agent ${conversationalAgents[i].name} (${conversationalAgents[i].id}):`, error);
       
-      const agentName = expandedAgentNames[i];
+      const agent = conversationalAgents[i];
       agentResponses.push({
-        agentId: i + 1,
-        agentName: agentName,
-        agentType: expandedAgentTypes[i],
-        content: `I understand your request about "${message.substring(0, 50)}..." and I'm processing this information to provide you with a comprehensive response. [${agentName} - Error Recovery]`,
+        agentId: agent.id,
+        agentName: agent.name,
+        agentType: agent.role || 'conversational',
+        content: `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time.`,
         timestamp: new Date().toISOString(),
         contextAware: false,
         fallback: true
       });
       
-      console.log(`🔄 Used basic fallback response for ${agentName}`);
+      console.log(`🔄 Used basic fallback response for ${agent.name}`);
     }
   }
   
@@ -1320,7 +1191,7 @@ function buildConversationContext(originalMessage, previousResponses, currentAge
       context += `\n${index + 1}. ${response.agentName}:\n${response.content}\n`;
     });
     
-    context += `\nAs the ${currentAgentName}, please:\n`;
+    context += `\nAs ${currentAgentName}, please:\n`;
     context += `1. Review the previous ${previousResponses.length} agent response(s) above\n`;
     context += `2. Consider their perspectives and insights\n`;
     context += `3. Provide your own unique analysis that builds upon or complements their input\n`;
@@ -1333,122 +1204,6 @@ function buildConversationContext(originalMessage, previousResponses, currentAge
   
   return context;
 }
-
-// Generate context-aware response (enhanced version)
-async function generateContextAwareResponse(agentId, conversationContext, agentName = null) {
-  try {
-    // Call the real LLM service with context-aware system prompt
-    const contextAwarePrompt = `You are participating in a multi-agent discussion. Here is the conversation context so far:
-
-${conversationContext}
-
-Please provide your response while being aware of what previous agents have said. Build upon their insights and add your unique perspective.`;
-
-    console.log(`🤖 Generating context-aware response for agent ${agentId} (${agentName || 'Unknown'}) using internal governance`);
-    
-    // Generate response using internal multi-agent governance with context awareness
-    const response = await llmService.generateResponse(agentId, contextAwarePrompt);
-    
-    console.log(`✅ Generated internal governance response for agent ${agentId}`);
-    return response;
-    
-  } catch (error) {
-    console.error(`❌ Error calling LLM service for agent ${agentId}:`, error);
-    
-    // Fallback to a basic response if LLM call fails
-    return `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. [Agent ${agentId}${agentName ? ` - ${agentName}` : ''}]`;
-  }
-}
-
-// Generate basic response (fallback behavior)
-async function generateBasicResponse(agentType, message) {
-  // Existing basic response generation
-  const responses = {
-    'factual-agent': [
-      `I understand your request about "${message.substring(0, 50)}..." and I'm processing this information to provide you with factual analysis. [Factual Agent]`,
-      `Based on the information provided: "${message.substring(0, 50)}..." I can offer factual insights. [Factual Agent]`
-    ],
-    'creative-agent': [
-      `Your request "${message.substring(0, 50)}..." presents interesting creative possibilities. [Creative Agent]`,
-      `I see creative potential in "${message.substring(0, 50)}..." Let me explore innovative approaches. [Creative Agent]`
-    ],
-    'baseline-agent': [
-      `Regarding "${message.substring(0, 50)}..." I can provide strategic analysis. [Strategic Agent]`,
-      `Your request about "${message.substring(0, 50)}..." requires strategic consideration. [Strategic Agent]`
-    ],
-    'governance-agent': [
-      `From a governance perspective on "${message.substring(0, 50)}..." I need to ensure compliance. [Governance Agent]`,
-      `Reviewing "${message.substring(0, 50)}..." for governance implications. [Governance Agent]`
-    ]
-  };
-  
-  const agentResponses = responses[agentType] || responses['baseline-agent'];
-  return agentResponses[Math.floor(Math.random() * agentResponses.length)];
-}
-
-// Generate contextual fallback response
-function generateContextualFallback(originalMessage, previousResponses, agentName) {
-  if (previousResponses.length > 0) {
-    const previousAgents = previousResponses.map(r => r.agentName).join(', ');
-    return `I've reviewed the valuable insights from ${previousAgents} regarding "${originalMessage.substring(0, 50)}..." and I'm working to add my perspective as ${agentName}. [${agentName} - Contextual Recovery]`;
-  } else {
-    return `As the first ${agentName} to respond to "${originalMessage.substring(0, 50)}..." I'm analyzing the request to provide initial insights. [${agentName} - Initial Recovery]`;
-  }
-}
-
-// Calculate participation balance for governance
-function calculateParticipationBalance(agentResponses) {
-  if (agentResponses.length === 0) return 100;
-  
-  const avgLength = agentResponses.reduce((sum, resp) => sum + resp.content.length, 0) / agentResponses.length;
-  const variance = agentResponses.reduce((sum, resp) => sum + Math.pow(resp.content.length - avgLength, 2), 0) / agentResponses.length;
-  
-  // Convert variance to balance score (lower variance = higher balance)
-  return Math.max(0, 100 - (variance / avgLength) * 10);
-}
-
-// Calculate consensus progress for governance
-function calculateConsensusProgress(agentResponses) {
-  if (agentResponses.length < 2) return 0;
-  
-  // Simple heuristic: look for agreement indicators in responses
-  let agreementScore = 0;
-  const agreementWords = ['agree', 'support', 'align', 'consensus', 'together', 'building on', 'expanding'];
-  
-  agentResponses.forEach(response => {
-    const content = response.content.toLowerCase();
-    agreementWords.forEach(word => {
-      if (content.includes(word)) agreementScore += 10;
-    });
-  });
-  
-  return Math.min(100, agreementScore);
-}
-
-// Calculate discussion quality for governance
-function calculateDiscussionQuality(agentResponses) {
-  if (agentResponses.length === 0) return 0;
-  
-  let qualityScore = 0;
-  const qualityIndicators = ['analysis', 'perspective', 'insight', 'consider', 'evidence', 'strategic', 'innovative'];
-  
-  agentResponses.forEach(response => {
-    const content = response.content.toLowerCase();
-    qualityIndicators.forEach(indicator => {
-      if (content.includes(indicator)) qualityScore += 5;
-    });
-    
-    // Bonus for context awareness
-    if (response.contextAware) qualityScore += 20;
-    if (response.reviewedAgents && response.reviewedAgents.length > 0) qualityScore += 10;
-  });
-  
-  return Math.min(100, qualityScore / agentResponses.length);
-}
-
-// ============================================================================
-// ROUND-TABLE DISCUSSION HELPER FUNCTIONS
-// ============================================================================
 
 // Build comprehensive context for round-table discussions
 function buildRoundTableContext(originalMessage, allPreviousResponses, currentRoundResponses, currentAgentName, round, agentIndex) {
@@ -1503,31 +1258,6 @@ function buildRoundTableContext(originalMessage, allPreviousResponses, currentRo
   
   return context;
 }
-// Generate round-table aware response
-async function generateRoundTableResponse(agentId, roundTableContext, round, agentName = null) {
-  try {
-    // Call the real LLM service with round-table context
-    const roundTablePrompt = `You are participating in a multi-agent round-table discussion (Round ${round}). Here is the complete discussion context from all previous rounds:
-
-${roundTableContext}
-
-As ${agentName || agentId}, please provide your contribution to this round-table discussion. Build upon the insights from previous rounds and agents, and add your unique perspective. This is Round ${round} of our collaborative discussion.`;
-
-    console.log(`🎯 Generating round table response for ${agentName || agentId} (${agentId}) in Round ${round} using internal governance`);
-    
-    // Generate response using internal multi-agent governance for round table discussion
-    const response = await llmService.generateResponse(agentId, roundTablePrompt);
-    
-    console.log(`✅ Generated internal governance response for ${agentName || agentId} (${agentId}) in Round ${round}`);
-    return response;
-    
-  } catch (error) {
-    console.error(`❌ Error generating response for ${agentName || agentId} (${agentId}) in Round ${round}:`, error);
-    
-    // Fallback to a basic response if generation fails
-    return `I apologize, but I'm experiencing technical difficulties in Round ${round}. As ${agentName || agentId}, I would normally contribute to this round-table discussion based on the previous rounds, but I'm unable to process the request at this time.`;
-  }
-}
 
 // Generate round-table fallback response
 function generateRoundTableFallback(originalMessage, allPreviousResponses, currentRoundResponses, agentName, round) {
@@ -1536,9 +1266,9 @@ function generateRoundTableFallback(originalMessage, allPreviousResponses, curre
   const uniqueAgents = [...new Set(previousAgents)];
   
   if (totalResponses > 0) {
-    return `I've been carefully following our round-table discussion through ${round} rounds, reviewing insights from ${uniqueAgents.join(', ')}. As ${agentName}, I'm working to contribute my perspective on "${originalMessage.substring(0, 50)}..." while building on our collective analysis. [${agentName} - Round ${round} Recovery]`;
+    return `I've been carefully following our round-table discussion through ${round} rounds, reviewing insights from ${uniqueAgents.join(', ')}. As ${agentName}, I'm working to contribute my perspective on "${originalMessage.substring(0, 50)}..." while building on our collective analysis.`;
   } else {
-    return `As ${agentName} beginning our round-table discussion on "${originalMessage.substring(0, 50)}..." I'm preparing to provide thoughtful analysis that will contribute to our collaborative exploration. [${agentName} - Round ${round} Initial Recovery]`;
+    return `As ${agentName} beginning our round-table discussion on "${originalMessage.substring(0, 50)}..." I'm preparing to provide thoughtful analysis that will contribute to our collaborative exploration.`;
   }
 }
 
@@ -1743,4 +1473,55 @@ function analyzeDisagreementResolution(allResponses) {
   };
 }
 
+// Calculate participation balance for governance
+function calculateParticipationBalance(agentResponses) {
+  if (agentResponses.length === 0) return 100;
+  
+  const avgLength = agentResponses.reduce((sum, resp) => sum + resp.content.length, 0) / agentResponses.length;
+  const variance = agentResponses.reduce((sum, resp) => sum + Math.pow(resp.content.length - avgLength, 2), 0) / agentResponses.length;
+  
+  // Convert variance to balance score (lower variance = higher balance)
+  return Math.max(0, 100 - (variance / avgLength) * 10);
+}
+
+// Calculate consensus progress for governance
+function calculateConsensusProgress(agentResponses) {
+  if (agentResponses.length < 2) return 0;
+  
+  // Simple heuristic: look for agreement indicators in responses
+  let agreementScore = 0;
+  const agreementWords = ['agree', 'support', 'align', 'consensus', 'together', 'building on', 'expanding'];
+  
+  agentResponses.forEach(response => {
+    const content = response.content.toLowerCase();
+    agreementWords.forEach(word => {
+      if (content.includes(word)) agreementScore += 10;
+    });
+  });
+  
+  return Math.min(100, agreementScore);
+}
+
+// Calculate discussion quality for governance
+function calculateDiscussionQuality(agentResponses) {
+  if (agentResponses.length === 0) return 0;
+  
+  let qualityScore = 0;
+  const qualityIndicators = ['analysis', 'perspective', 'insight', 'consider', 'evidence', 'strategic', 'innovative'];
+  
+  agentResponses.forEach(response => {
+    const content = response.content.toLowerCase();
+    qualityIndicators.forEach(indicator => {
+      if (content.includes(indicator)) qualityScore += 5;
+    });
+    
+    // Bonus for context awareness
+    if (response.contextAware) qualityScore += 20;
+    if (response.reviewedAgents && response.reviewedAgents.length > 0) qualityScore += 10;
+  });
+  
+  return Math.min(100, qualityScore / agentResponses.length);
+}
+
 module.exports = router;
+
