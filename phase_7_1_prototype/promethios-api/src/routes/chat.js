@@ -192,10 +192,6 @@ router.post('/', async (req, res) => {
                 risk_level: "unmonitored",
                 governance_enabled: false
             };
-            
-            // Add standard mode indicator to make the difference clear
-            const standardModeIndicator = "[Standard Mode - No governance monitoring active] ";
-            response = standardModeIndicator + response;
         }
 
         // Add assistant response to session
