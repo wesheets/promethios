@@ -484,7 +484,7 @@ export class MultiAgentChatIntegrationService {
       // Get existing messages
       let messages: any[] = [];
       try {
-        const existingMessages = await this.unifiedStorage.get<any[]>('multiAgentChats', messageKey);
+        const existingMessages = await this.storageService.get<any[]>('multiAgentChats', messageKey);
         if (existingMessages && Array.isArray(existingMessages)) {
           messages = existingMessages;
         }
@@ -500,7 +500,7 @@ export class MultiAgentChatIntegrationService {
       });
 
       // Save back to storage
-      await this.unifiedStorage.set('multiAgentChats', messageKey, messages);
+      await this.storageService.set('multiAgentChats', messageKey, messages);
       
       console.log(`💬 Multi-agent message saved for system ${systemId}`);
     } catch (error) {
@@ -521,7 +521,7 @@ export class MultiAgentChatIntegrationService {
       }
 
       const messageKey = `${this.currentUserId}.${systemId}.messages`;
-      const messages = await this.unifiedStorage.get<any[]>('multiAgentChats', messageKey);
+      const messages = await this.storageService.get<any[]>('multiAgentChats', messageKey);
       
       return messages || [];
     } catch (error) {
