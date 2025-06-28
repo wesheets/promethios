@@ -1176,48 +1176,53 @@ const AdvancedChatComponent: React.FC = () => {
         return data.choices[0]?.message?.content || 'No response received';
         
       } else if (provider === 'anthropic') {
-        // Route through backend instead of direct API call
-        response = await fetch(`${API_BASE_URL}/api/chat`, {
+        response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            agent_id: agent.identity?.id || 'factual-agent',
-            message: messageContent,
-            governance_enabled: governanceEnabled,
-            session_id: `chat_${Date.now()}`
+            model: selectedModel || 'claude-3-sonnet-20240229',
+            max_tokens: 1000,
+            messages: [
+              {
+                role: 'user',
+                content: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.\n\nUser message: ${messageContent}`
+              }
+            ]
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        return data.response || 'No response received';
+        return data.content[0]?.text || 'No response received';
         
       } else if (provider === 'cohere') {
-        // Route through backend instead of direct API call
-        response = await fetch(`${API_BASE_URL}/api/chat`, {
+        response = await fetch('https://api.cohere.ai/v1/generate', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            agent_id: agent.identity?.id || 'governance-agent',
-            message: messageContent,
-            governance_enabled: governanceEnabled,
-            session_id: `chat_${Date.now()}`
+            model: selectedModel || 'command',
+            prompt: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\nUser: ${messageContent}\nAssistant:`,
+            max_tokens: 1000,
+            temperature: 0.7
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+          throw new Error(`Cohere API error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        return data.response || 'No response received';
+        return data.generations[0]?.text || 'No response received';
         
       } else if (provider === 'huggingface') {
         const hfModel = selectedModel || 'microsoft/DialoGPT-medium';
