@@ -783,6 +783,13 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
                   benefits: ['Structured workflow', 'Clear responsibility', 'Quality control']
                 },
                 {
+                  id: 'round_table_sequential',
+                  name: 'Round-Table Discussion',
+                  description: 'Multi-round discussion where agents review each other\'s contributions and build consensus',
+                  icon: '🎭',
+                  benefits: ['Deep collaboration', 'Consensus building', 'Emergent insights', 'Quality synthesis']
+                },
+                {
                   id: 'parallel_processing',
                   name: 'Parallel Processing',
                   description: 'Agents work independently on different aspects, results are combined',

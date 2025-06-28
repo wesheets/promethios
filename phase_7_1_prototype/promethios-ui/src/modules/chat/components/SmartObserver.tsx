@@ -113,6 +113,32 @@ interface GovernanceMetrics {
   observerAlerts: number;
   sessionIntegrity: number;
   lastUpdated: Date;
+  // Round-table specific metrics
+  roundTableMetrics?: {
+    totalRounds: number;
+    consensusReached: boolean;
+    consensusStrength: number;
+    emergentInsights: Array<{
+      round: number;
+      agent: string;
+      type: string;
+      context: string;
+      emergenceScore: number;
+    }>;
+    disagreementResolution: {
+      identified: number;
+      resolved: number;
+      methods: string[];
+      resolutionRate: number;
+    };
+    participationBalance: Record<string, {
+      responseCount: number;
+      totalWords: number;
+      rounds: Set<number>;
+      balanceScore: number;
+    }>;
+    discussionDepth: number;
+  };
 }
 
 interface GovernanceAlert {
@@ -368,6 +394,149 @@ export const SmartObserver: React.FC<SmartObserverProps> = ({
                 {metrics.responseTime.toFixed(1)}s
               </Typography>
             </MetricItem>
+
+            {/* Round-Table Discussion Metrics */}
+            {metrics.roundTableMetrics && (
+              <>
+                <Divider sx={{ my: 2, borderColor: DARK_THEME.border }} />
+                <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.secondary, mb: 1 }}>
+                  Round-Table Discussion
+                </Typography>
+                
+                <MetricItem>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                      🎭 Discussion Rounds
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 600 }}>
+                    {metrics.roundTableMetrics.totalRounds}
+                  </Typography>
+                </MetricItem>
+
+                <MetricItem>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                      🤝 Consensus
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={metrics.roundTableMetrics.consensusStrength}
+                      sx={{
+                        width: 60,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: DARK_THEME.border,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: getStatusColor(metrics.roundTableMetrics.consensusStrength / 100, { good: 0.75, warning: 0.5 })
+                        }
+                      }}
+                    />
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: getStatusColor(metrics.roundTableMetrics.consensusStrength / 100, { good: 0.75, warning: 0.5 }),
+                        fontWeight: 600,
+                        minWidth: 35
+                      }}
+                    >
+                      {metrics.roundTableMetrics.consensusStrength}%
+                    </Typography>
+                  </Box>
+                </MetricItem>
+
+                <MetricItem>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                      💡 Emergent Insights
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 600 }}>
+                    {metrics.roundTableMetrics.emergentInsights.length}
+                  </Typography>
+                </MetricItem>
+
+                <MetricItem>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                      🔧 Discussion Depth
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={metrics.roundTableMetrics.discussionDepth}
+                      sx={{
+                        width: 60,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: DARK_THEME.border,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: getStatusColor(metrics.roundTableMetrics.discussionDepth / 100, { good: 0.7, warning: 0.5 })
+                        }
+                      }}
+                    />
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: getStatusColor(metrics.roundTableMetrics.discussionDepth / 100, { good: 0.7, warning: 0.5 }),
+                        fontWeight: 600,
+                        minWidth: 35
+                      }}
+                    >
+                      {metrics.roundTableMetrics.discussionDepth}%
+                    </Typography>
+                  </Box>
+                </MetricItem>
+
+                {metrics.roundTableMetrics.disagreementResolution.identified > 0 && (
+                  <MetricItem>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                        ⚖️ Resolution Rate
+                      </Typography>
+                    </Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: getStatusColor(metrics.roundTableMetrics.disagreementResolution.resolutionRate / 100, { good: 0.8, warning: 0.6 }),
+                        fontWeight: 600
+                      }}
+                    >
+                      {metrics.roundTableMetrics.disagreementResolution.resolutionRate}%
+                    </Typography>
+                  </MetricItem>
+                )}
+
+                {/* Participation Balance */}
+                {Object.keys(metrics.roundTableMetrics.participationBalance).length > 0 && (
+                  <>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mt: 1, mb: 0.5, display: 'block' }}>
+                      Participation Balance:
+                    </Typography>
+                    {Object.entries(metrics.roundTableMetrics.participationBalance).map(([agentName, balance]) => (
+                      <Box key={agentName} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: DARK_THEME.text.primary, fontSize: '11px' }}>
+                          {agentName}
+                        </Typography>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: getStatusColor(balance.balanceScore / 100, { good: 0.8, warning: 0.6 }),
+                            fontWeight: 600,
+                            fontSize: '11px'
+                          }}
+                        >
+                          {balance.balanceScore}%
+                        </Typography>
+                      </Box>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
 
             {/* Recent Alerts */}
             {alerts.length > 0 && (

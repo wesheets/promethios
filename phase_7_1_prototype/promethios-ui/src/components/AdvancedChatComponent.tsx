@@ -605,6 +605,67 @@ const AdvancedChatComponent: React.FC = () => {
                 <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
                   Status: {displayData.approved ? 'Approved' : 'Flagged'}
                 </Typography>
+                
+                {/* Round-Table Discussion Metrics */}
+                {displayData.systemGovernance?.roundTableMetrics && (
+                  <>
+                    <Divider sx={{ my: 1, borderColor: DARK_THEME.border }} />
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1, color: DARK_THEME.primary }}>
+                      🎭 Round-Table Discussion Analysis
+                    </Typography>
+                    
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Discussion Rounds: {displayData.systemGovernance.roundTableMetrics.totalRounds}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Consensus: {displayData.systemGovernance.roundTableMetrics.consensusStrength}%
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Insights: {displayData.systemGovernance.roundTableMetrics.emergentInsights.length}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Depth: {displayData.systemGovernance.roundTableMetrics.discussionDepth}%
+                      </Typography>
+                    </Box>
+                    
+                    {displayData.systemGovernance.roundTableMetrics.consensusReached && (
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success, fontWeight: 'bold' }}>
+                        🤝 Consensus Successfully Reached
+                      </Typography>
+                    )}
+                    
+                    {displayData.systemGovernance.roundTableMetrics.disagreementResolution.identified > 0 && (
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.info }}>
+                        ⚖️ Resolved {displayData.systemGovernance.roundTableMetrics.disagreementResolution.resolved}/{displayData.systemGovernance.roundTableMetrics.disagreementResolution.identified} disagreements
+                      </Typography>
+                    )}
+                    
+                    {displayData.systemGovernance.roundTableMetrics.emergentInsights.length > 0 && (
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.warning, mt: 0.5 }}>
+                        💡 Generated {displayData.systemGovernance.roundTableMetrics.emergentInsights.length} emergent insights
+                      </Typography>
+                    )}
+                    
+                    {Object.keys(displayData.systemGovernance.roundTableMetrics.participationBalance).length > 0 && (
+                      <>
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1, mb: 0.5, fontWeight: 'bold', color: DARK_THEME.text.secondary }}>
+                          Participation Balance:
+                        </Typography>
+                        {Object.entries(displayData.systemGovernance.roundTableMetrics.participationBalance).map(([agentName, balance]: [string, any]) => (
+                          <Typography key={agentName} variant="caption" sx={{ 
+                            display: 'block', 
+                            color: balance.balanceScore >= 80 ? DARK_THEME.success : 
+                                   balance.balanceScore >= 60 ? DARK_THEME.warning : DARK_THEME.error,
+                            fontSize: '0.65rem'
+                          }}>
+                            {agentName}: {balance.balanceScore}% ({balance.responseCount} responses)
+                          </Typography>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )}
               </>
             )}
           </GovernanceDetails>
