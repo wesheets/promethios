@@ -156,14 +156,11 @@ router.post('/', async (req, res) => {
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
                     response = await llmService.generateResponse(agent_id, message);
                     
-                    // Apply governance filtering and add governance context to response
+                    // Apply governance filtering for high-risk content
                     if (governance_metrics.risk_level === 'high') {
                         response = "I apologize, but I cannot provide a response to that request due to governance policy restrictions. Please rephrase your question or ask about something else.";
-                    } else if (governance_enabled) {
-                        // Add governance evaluation context to the response
-                        const governancePrefix = `[Governance Evaluation: Trust Score ${governance_metrics.trust_score || 0.85}, Status: ${governance_result.status}] `;
-                        response = governancePrefix + response;
                     }
+                    // Note: Governance metrics are already displayed in the UI, no need for prefix
                 } else {
                     response = "I'm unable to process that request due to governance restrictions. Please try a different approach.";
                 }
