@@ -47,6 +47,7 @@ class SessionManager {
       messageLimit: options.messageLimit || this.config.defaultMessageLimit,
       sessionTimeout: options.sessionTimeout || this.config.defaultSessionTimeout,
       governanceEnabled: options.governanceEnabled !== false,
+      systemConfiguration: options.systemConfiguration || {}, // Store system configuration including agents
       messages: [],
       metadata: options.metadata || {},
       
