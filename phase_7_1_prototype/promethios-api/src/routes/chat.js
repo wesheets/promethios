@@ -350,6 +350,58 @@ router.get('/agents', (req, res) => {
     res.status(200).json(agents);
 });
 
+// GET /providers/status — Check status of all LLM providers
+router.get('/providers/status', async (req, res) => {
+    const llmService = require('../services/llmService');
+    
+    try {
+        const status = {
+            timestamp: new Date().toISOString(),
+            providers: {}
+        };
+
+        // Test each provider with a simple message
+        const testMessage = "Hello, this is a test message.";
+
+        try {
+            const anthropicResponse = await llmService.callAnthropic(testMessage, "You are a helpful assistant.");
+            status.providers.anthropic = {
+                status: anthropicResponse.includes('[Factual Agent - Simulation Mode]') ? 'simulation' : 'live',
+                response_preview: anthropicResponse.substring(0, 100) + '...',
+                working: true
+            };
+        } catch (error) {
+            status.providers.anthropic = {
+                status: 'error',
+                error: error.message,
+                working: false
+            };
+        }
+
+        try {
+            const cohereResponse = await llmService.callCohere(testMessage, "You are a helpful assistant.");
+            status.providers.cohere = {
+                status: cohereResponse.includes('[Governance Agent - Simulation Mode]') ? 'simulation' : 'live',
+                response_preview: cohereResponse.substring(0, 100) + '...',
+                working: true
+            };
+        } catch (error) {
+            status.providers.cohere = {
+                status: 'error',
+                error: error.message,
+                working: false
+            };
+        }
+
+        res.status(200).json(status);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to check provider status',
+            details: error.message
+        });
+    }
+});
+
 // GET /governance/metrics — Get current governance system status
 router.get('/governance/metrics', async (req, res) => {
     try {
