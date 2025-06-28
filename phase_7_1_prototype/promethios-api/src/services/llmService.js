@@ -63,7 +63,7 @@ class LLMService {
   // OpenAI GPT-3.5 for Baseline Agent
   async callOpenAIGPT35(message, systemPrompt) {
     if (!openai) {
-      return `[Baseline Agent - Simulation Mode] I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
+      return `I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
     }
     
     try {
@@ -79,14 +79,14 @@ class LLMService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-3.5 error:', error);
-      return `[Baseline Agent - Error Recovery] I encountered a technical issue but can still help. For your query about "${message.substring(0, 50)}...", I would provide a direct, factual response. Please try again or rephrase your question.`;
+      return `I encountered a technical issue but can still help. For your query about "${message.substring(0, 50)}...", I would provide a direct, factual response. Please try again or rephrase your question.`;
     }
   }
 
   // OpenAI GPT-4 for Creative Agent
   async callOpenAIGPT4(message, systemPrompt) {
     if (!openai) {
-      return `[Creative Agent - Simulation Mode] 🎨 I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
+      return `I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
     }
     
     try {
@@ -102,14 +102,14 @@ class LLMService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-4 error:', error);
-      return `[Creative Agent - Error Recovery] 🎨 Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
+      return `Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
     }
   }
 
   // Anthropic Claude for Factual Agent
   async callAnthropic(message, systemPrompt) {
     if (!anthropic) {
-      return `[Factual Agent - Simulation Mode] 📚 I'm your accuracy-focused research assistant. While in simulation mode, I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
+      return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
     }
     
     try {
@@ -123,15 +123,21 @@ class LLMService {
       });
       return response.content[0].text;
     } catch (error) {
-      console.error('Anthropic error:', error);
-      return `[Factual Agent - Error Recovery] 📚 Despite technical difficulties, I maintain my commitment to accuracy. For "${message.substring(0, 50)}...", I would research reliable sources, verify claims, and provide well-documented information. Please let me know what specific facts you need verified.`;
+      console.error('Anthropic error details:', {
+        message: error.message,
+        status: error.status,
+        type: error.type,
+        error: error.error,
+        stack: error.stack
+      });
+      return `Despite technical difficulties, I maintain my commitment to accuracy. For "${message.substring(0, 50)}...", I would research reliable sources, verify claims, and provide well-documented information. Please let me know what specific facts you need verified.`;
     }
   }
 
   // Cohere for Governance Agent
   async callCohere(message, systemPrompt) {
     if (!cohere) {
-      return `[Governance Agent - Simulation Mode] 🛡️ I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
+      return `I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
     }
     
     try {
@@ -145,14 +151,14 @@ class LLMService {
       return response.text;
     } catch (error) {
       console.error('Cohere error:', error);
-      return `[Governance Agent - Error Recovery] 🛡️ Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
+      return `Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
     }
   }
 
   // HuggingFace for Multi-Tool Agent
   async callHuggingFace(message, systemPrompt) {
     if (!hf) {
-      return `[Multi-Tool Agent - Simulation Mode] 🔧 I'm your systems integration specialist! While in simulation mode, I can still help with API connections, workflow automation, and tool orchestration. For your challenge "${message.substring(0, 100)}..." I'd consider which tools to combine, how to automate the process, and what integrations would be most effective. What systems do you need to connect?`;
+      return `I'm your systems integration specialist! While in simulation mode, I can still help with API connections, workflow automation, and tool orchestration. For your challenge "${message.substring(0, 100)}..." I'd consider which tools to combine, how to automate the process, and what integrations would be most effective. What systems do you need to connect?`;
     }
     
     try {
@@ -176,13 +182,13 @@ class LLMService {
       
       // If response is too short or empty, provide a fallback
       if (!generatedText || generatedText.length < 10) {
-        return `[Multi-Tool Agent - Fallback] 🔧 I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
+        return `I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
       }
       
-      return `[Multi-Tool Agent] 🔧 ${generatedText}`;
+      return `generatedText}`;
     } catch (error) {
       console.error('HuggingFace error:', error);
-      return `[Multi-Tool Agent - Error Recovery] 🔧 Despite technical challenges, I'm still your automation expert! For "${message.substring(0, 50)}...", I'd focus on robust integrations, error handling, and scalable solutions. What workflow needs optimization?`;
+      return `Despite technical challenges, I'm still your automation expert! For "${message.substring(0, 50)}...", I'd focus on robust integrations, error handling, and scalable solutions. What workflow needs optimization?`;
     }
   }
 
