@@ -878,12 +878,10 @@ function generateComprehensiveMetrics(context, session) {
 // ============================================================================
 
 /**
- * Simulate multi-agent response (replace with actual OpenAI integration)
+ * Generate multi-agent response with enhanced collaboration models
  */
 async function generateMultiAgentResponse(message, session, abortSignal, governanceEnabled) {
   const startTime = Date.now();
-  
-  // Get system configuration to determine actual agents (exasync function generateMultiAgentResponse(session, message, governanceEnabled = false, abortSignal) {
   console.log(`🔄 Generating multi-agent response for session: ${session.sessionId}`);
   
   if (abortSignal.aborted) {
@@ -952,13 +950,14 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   } : null;
 
   return {
-    response: finalResponse,
+    content: finalResponse, // Changed from 'response' to 'content' for frontend compatibility
     agentResponses: agentResponses,
     governanceData: governanceData,
+    processingTime: Date.now() - startTime, // Properly calculated processing time
+    agentCount,
     metadata: {
       agentCount,
       collaborationModel,
-      processingTime: Date.now(),
       sessionId: session.sessionId
     }
   };
