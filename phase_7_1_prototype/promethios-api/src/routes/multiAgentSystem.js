@@ -1050,7 +1050,8 @@ async function generateSequentialResponses(session, message, agentCount, abortSi
 async function generateRoundTableDiscussion(session, message, agentCount, abortSignal) {
   console.log(`🎭 Starting round-table discussion with ${agentCount} agents`);
   
-  const maxRounds = 3; // Maximum discussion rounds
+  const maxRounds = 4; // Increased to allow more thorough discussion
+  const minRounds = 3; // Minimum rounds before consensus can end discussion
   const consensusThreshold = 75; // Consensus threshold percentage
   
   // Use real agents from session configuration
@@ -1211,16 +1212,19 @@ async function generateRoundTableDiscussion(session, message, agentCount, abortS
       processingTime: Date.now() - roundStartTime
     });
     
-    // Check for consensus
+    // Check for consensus (but only allow early termination after minimum rounds)
     const consensusCheck = checkRoundTableConsensus(allAgentResponses, consensusThreshold);
     roundTableMetrics.consensusStrength = consensusCheck.strength;
     
     console.log(`📊 Round ${round} complete. Consensus strength: ${consensusCheck.strength}%`);
     
-    if (consensusCheck.reached) {
-      console.log(`🎉 Consensus reached after ${round} rounds!`);
+    // Only allow early termination if we've completed minimum rounds
+    if (consensusCheck.reached && round >= minRounds) {
+      console.log(`🎉 Consensus reached after ${round} rounds (minimum ${minRounds} completed)!`);
       roundTableMetrics.consensusReached = true;
       break;
+    } else if (consensusCheck.reached && round < minRounds) {
+      console.log(`📝 Consensus detected but continuing discussion (${round}/${minRounds} minimum rounds)`);
     }
     
     // If not final round, brief pause before next round
