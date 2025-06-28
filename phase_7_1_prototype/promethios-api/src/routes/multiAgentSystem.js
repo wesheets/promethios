@@ -1787,11 +1787,17 @@ async function generateInternalAgentResponse(agentId, prompt, agentName, options
 }
 
 /**
- * Determine agent role from agent ID or name
+ * Determine agent role from agent ID or name - now works with real agent roles from wrapper
  */
 function determineAgentRole(agentId, agentName) {
-  // Map agent IDs to roles
-  const roleMap = {
+  // For real agent IDs, use the agent name as the role since it's more descriptive
+  // This allows for flexible roles like "Content Generator", "Data Processor", etc.
+  if (agentName && agentName !== agentId) {
+    return agentName.toLowerCase().replace(/\s+/g, '_');
+  }
+  
+  // Legacy support for hardcoded agent types (fallback)
+  const legacyRoleMap = {
     'factual-agent': 'factual',
     'creative-agent': 'creative', 
     'baseline-agent': 'strategic',
@@ -1799,21 +1805,27 @@ function determineAgentRole(agentId, agentName) {
     'observer-agent': 'observer'
   };
   
-  // Check if agentId matches known roles
-  if (roleMap[agentId]) {
-    return roleMap[agentId];
+  if (legacyRoleMap[agentId]) {
+    return legacyRoleMap[agentId];
   }
   
-  // Determine role from agent name
-  const nameLower = (agentName || '').toLowerCase();
-  if (nameLower.includes('factual') || nameLower.includes('analyst')) return 'factual';
-  if (nameLower.includes('creative') || nameLower.includes('innovation')) return 'creative';
-  if (nameLower.includes('strategic') || nameLower.includes('planning')) return 'strategic';
-  if (nameLower.includes('governance') || nameLower.includes('compliance')) return 'governance';
-  if (nameLower.includes('observer') || nameLower.includes('monitor')) return 'observer';
+  // Extract role from agent name if available
+  const nameLower = (agentName || agentId || '').toLowerCase();
   
-  // Default to strategic role for unknown agents
-  return 'strategic';
+  // Map common role patterns to general categories
+  if (nameLower.includes('content') || nameLower.includes('generator')) return 'content_generator';
+  if (nameLower.includes('data') || nameLower.includes('processor')) return 'data_processor';
+  if (nameLower.includes('research') || nameLower.includes('assistant')) return 'research_assistant';
+  if (nameLower.includes('sentiment') || nameLower.includes('analyzer')) return 'sentiment_analyzer';
+  if (nameLower.includes('customer') || nameLower.includes('support')) return 'customer_support';
+  if (nameLower.includes('compliance') || nameLower.includes('checker')) return 'compliance_checker';
+  if (nameLower.includes('lead') || nameLower.includes('coordinator')) return 'lead_coordinator';
+  if (nameLower.includes('quality') || nameLower.includes('analyst')) return 'quality_analyst';
+  if (nameLower.includes('decision') || nameLower.includes('maker')) return 'decision_maker';
+  if (nameLower.includes('validator')) return 'data_validator';
+  
+  // Default to a generic conversational role
+  return 'conversational_agent';
 }
 
 /**
@@ -1883,36 +1895,221 @@ async function applyMultiAgentGovernance(prompt, agentRole, options) {
 async function generateRoleBasedResponse(prompt, agentRole, personality, options) {
   console.log(`🎭 ROLE GENERATION: Creating ${agentRole} response`);
   
+  // Extract context from prompt to reference previous agents
+  const contextMatch = prompt.match(/Previous agents have said:(.*?)(?=\n\nAs|$)/s);
+  const previousContext = contextMatch ? contextMatch[1].trim() : '';
+  
   // Extract key information from prompt
   const promptLower = prompt.toLowerCase();
   const isQuestion = promptLower.includes('?') || promptLower.includes('what') || promptLower.includes('how');
   const isAnalysis = promptLower.includes('analyze') || promptLower.includes('evaluate');
   const isStrategy = promptLower.includes('strategy') || promptLower.includes('plan');
   
-  // Generate role-specific response based on agent personality
-  let response = '';
-  
-  switch (agentRole) {
-    case 'factual':
-      response = generateFactualResponse(prompt, isQuestion, isAnalysis, options);
-      break;
-    case 'creative':
-      response = generateCreativeResponse(prompt, isQuestion, isStrategy, options);
-      break;
-    case 'strategic':
-      response = generateStrategicResponse(prompt, isStrategy, isAnalysis, options);
-      break;
-    case 'governance':
-      response = generateGovernanceResponse(prompt, options);
-      break;
-    case 'observer':
-      response = generateObserverResponse(prompt, options);
-      break;
-    default:
-      response = generateDefaultResponse(prompt, options);
-  }
+  // Generate dynamic response based on agent role
+  const response = generateDynamicAgentResponse(prompt, agentRole, personality, {
+    isQuestion,
+    isAnalysis,
+    isStrategy,
+    previousContext,
+    ...options
+  });
   
   return response;
+}
+
+/**
+ * Generate dynamic agent response for any role type
+ */
+function generateDynamicAgentResponse(prompt, agentRole, personality, options) {
+  const { isQuestion, isAnalysis, isStrategy, previousContext } = options;
+  
+  // Create role-appropriate response based on agent role
+  const roleDisplayName = agentRole.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const promptPreview = prompt.substring(0, 80) + (prompt.length > 80 ? '...' : '');
+  
+  // Build context-aware introduction
+  let contextIntro = '';
+  if (previousContext) {
+    contextIntro = `Building on the insights shared by my colleagues, `;
+  }
+  
+  // Generate role-specific response templates
+  const responseTemplates = [
+    `As a ${roleDisplayName}, I'll address your request: "${promptPreview}"
+
+${contextIntro}From my perspective as a ${roleDisplayName}, I can contribute the following insights:
+
+• My specialized approach focuses on ${getRoleSpecialization(agentRole)}
+• Key considerations from my role include ${getRoleConsiderations(agentRole)}
+• I recommend ${getRoleRecommendations(agentRole)} to achieve optimal results
+
+${getRoleClosing(agentRole)}`,
+
+    `${contextIntro}Analyzing your request from a ${roleDisplayName} perspective: "${promptPreview}"
+
+My role-specific assessment reveals:
+
+1. ${getRoleInsight1(agentRole)}
+2. ${getRoleInsight2(agentRole)}
+3. ${getRoleInsight3(agentRole)}
+
+Based on my expertise as a ${roleDisplayName}, I believe ${getRoleConclusion(agentRole)}`
+  ];
+  
+  return responseTemplates[Math.floor(Math.random() * responseTemplates.length)];
+}
+
+/**
+ * Get role specialization description
+ */
+function getRoleSpecialization(agentRole) {
+  const specializations = {
+    'content_generator': 'creating engaging, high-quality content that resonates with target audiences',
+    'data_processor': 'analyzing, transforming, and extracting meaningful insights from complex datasets',
+    'research_assistant': 'conducting thorough research and synthesizing information from multiple sources',
+    'sentiment_analyzer': 'understanding emotional context and sentiment patterns in communications',
+    'customer_support': 'providing exceptional service and resolving customer concerns effectively',
+    'compliance_checker': 'ensuring adherence to regulations, policies, and industry standards',
+    'lead_coordinator': 'orchestrating team efforts and managing project coordination',
+    'quality_analyst': 'maintaining high standards and identifying areas for improvement',
+    'decision_maker': 'evaluating options and making strategic decisions based on available data',
+    'data_validator': 'ensuring data accuracy, integrity, and reliability',
+    'factual': 'providing accurate, evidence-based analysis and factual insights',
+    'creative': 'generating innovative solutions and thinking outside conventional boundaries',
+    'strategic': 'developing long-term plans and strategic approaches',
+    'governance': 'ensuring compliance and maintaining organizational standards',
+    'observer': 'monitoring systems and providing oversight'
+  };
+  
+  return specializations[agentRole] || 'providing specialized expertise and insights';
+}
+
+/**
+ * Get role-specific considerations
+ */
+function getRoleConsiderations(agentRole) {
+  const considerations = {
+    'content_generator': 'audience engagement, content quality, and brand consistency',
+    'data_processor': 'data accuracy, processing efficiency, and meaningful pattern recognition',
+    'research_assistant': 'source credibility, comprehensive coverage, and analytical depth',
+    'sentiment_analyzer': 'emotional nuance, context interpretation, and sentiment trends',
+    'customer_support': 'customer satisfaction, issue resolution, and service excellence',
+    'compliance_checker': 'regulatory requirements, risk mitigation, and policy adherence',
+    'lead_coordinator': 'team alignment, resource optimization, and project success',
+    'quality_analyst': 'standard maintenance, continuous improvement, and quality metrics',
+    'decision_maker': 'strategic impact, risk assessment, and outcome optimization',
+    'data_validator': 'accuracy verification, consistency checks, and reliability assurance'
+  };
+  
+  return considerations[agentRole] || 'specialized expertise and best practices';
+}
+
+/**
+ * Get role-specific recommendations
+ */
+function getRoleRecommendations(agentRole) {
+  const recommendations = {
+    'content_generator': 'developing compelling narratives and engaging content strategies',
+    'data_processor': 'implementing robust data analysis and processing workflows',
+    'research_assistant': 'conducting systematic research and evidence-based analysis',
+    'sentiment_analyzer': 'monitoring emotional indicators and sentiment patterns',
+    'customer_support': 'prioritizing customer experience and satisfaction',
+    'compliance_checker': 'maintaining strict adherence to regulatory standards',
+    'lead_coordinator': 'fostering collaboration and efficient project management',
+    'quality_analyst': 'implementing quality assurance and improvement processes',
+    'decision_maker': 'making informed decisions based on comprehensive analysis',
+    'data_validator': 'ensuring data integrity through rigorous validation processes'
+  };
+  
+  return recommendations[agentRole] || 'applying specialized knowledge and expertise';
+}
+
+/**
+ * Get role-specific insights
+ */
+function getRoleInsight1(agentRole) {
+  const insights = {
+    'content_generator': 'Content strategy should align with audience needs and brand objectives',
+    'data_processor': 'Data quality and processing methodology are critical for reliable results',
+    'research_assistant': 'Comprehensive research requires multiple credible sources and thorough analysis',
+    'sentiment_analyzer': 'Emotional context significantly impacts communication effectiveness',
+    'customer_support': 'Customer experience is paramount to long-term business success',
+    'compliance_checker': 'Regulatory compliance must be integrated into all operational processes',
+    'lead_coordinator': 'Effective coordination requires clear communication and defined responsibilities',
+    'quality_analyst': 'Quality standards must be consistently maintained and continuously improved',
+    'decision_maker': 'Strategic decisions require careful consideration of multiple factors and potential outcomes',
+    'data_validator': 'Data validation is essential for maintaining system integrity and reliability'
+  };
+  
+  return insights[agentRole] || 'Specialized expertise is essential for optimal outcomes';
+}
+
+function getRoleInsight2(agentRole) {
+  const insights = {
+    'content_generator': 'Engaging content requires understanding of target audience preferences and behaviors',
+    'data_processor': 'Efficient processing workflows can significantly improve analytical capabilities',
+    'research_assistant': 'Systematic research methodology ensures comprehensive and reliable findings',
+    'sentiment_analyzer': 'Sentiment trends provide valuable insights into stakeholder perceptions',
+    'customer_support': 'Proactive support strategies can prevent issues and enhance satisfaction',
+    'compliance_checker': 'Regular compliance audits help identify and address potential risks',
+    'lead_coordinator': 'Strong coordination facilitates team collaboration and project success',
+    'quality_analyst': 'Quality metrics provide objective measures for performance evaluation',
+    'decision_maker': 'Data-driven decisions typically yield better long-term results',
+    'data_validator': 'Automated validation processes can improve efficiency while maintaining accuracy'
+  };
+  
+  return insights[agentRole] || 'Continuous improvement and adaptation are key to success';
+}
+
+function getRoleInsight3(agentRole) {
+  const insights = {
+    'content_generator': 'Content performance should be regularly measured and optimized',
+    'data_processor': 'Scalable processing solutions enable handling of larger datasets',
+    'research_assistant': 'Research findings should be clearly documented and easily accessible',
+    'sentiment_analyzer': 'Real-time sentiment monitoring enables rapid response to changes',
+    'customer_support': 'Customer feedback provides valuable insights for service improvement',
+    'compliance_checker': 'Compliance training and awareness are essential for all team members',
+    'lead_coordinator': 'Regular progress reviews help maintain project momentum and quality',
+    'quality_analyst': 'Quality improvements should be based on data-driven insights',
+    'decision_maker': 'Decision frameworks help ensure consistent and objective evaluation',
+    'data_validator': 'Validation standards should be regularly reviewed and updated'
+  };
+  
+  return insights[agentRole] || 'Best practices should be regularly reviewed and updated';
+}
+
+function getRoleConclusion(agentRole) {
+  const conclusions = {
+    'content_generator': 'a strategic content approach will maximize engagement and achieve desired outcomes',
+    'data_processor': 'robust data processing capabilities are essential for generating actionable insights',
+    'research_assistant': 'thorough research and analysis will provide the foundation for informed decisions',
+    'sentiment_analyzer': 'understanding sentiment patterns will enhance communication effectiveness',
+    'customer_support': 'exceptional customer service will drive satisfaction and loyalty',
+    'compliance_checker': 'maintaining compliance standards will mitigate risks and ensure operational integrity',
+    'lead_coordinator': 'effective coordination will optimize team performance and project outcomes',
+    'quality_analyst': 'continuous quality improvement will enhance overall performance and results',
+    'decision_maker': 'strategic decision-making will drive long-term success and growth',
+    'data_validator': 'rigorous data validation will ensure reliability and trustworthiness'
+  };
+  
+  return conclusions[agentRole] || 'applying specialized expertise will contribute to overall success';
+}
+
+function getRoleClosing(agentRole) {
+  const closings = {
+    'content_generator': 'I\'m ready to help develop compelling content that achieves your objectives.',
+    'data_processor': 'I\'m prepared to process and analyze data to extract meaningful insights.',
+    'research_assistant': 'I\'m available to conduct thorough research and provide comprehensive analysis.',
+    'sentiment_analyzer': 'I\'m equipped to analyze sentiment patterns and provide emotional context insights.',
+    'customer_support': 'I\'m committed to ensuring exceptional customer experience and satisfaction.',
+    'compliance_checker': 'I\'m dedicated to maintaining compliance standards and mitigating risks.',
+    'lead_coordinator': 'I\'m ready to coordinate efforts and ensure project success.',
+    'quality_analyst': 'I\'m focused on maintaining quality standards and driving continuous improvement.',
+    'decision_maker': 'I\'m prepared to make strategic decisions based on comprehensive analysis.',
+    'data_validator': 'I\'m committed to ensuring data accuracy and system reliability.'
+  };
+  
+  return closings[agentRole] || 'I\'m ready to contribute my specialized expertise to achieve optimal results.';
 }
 
 /**
