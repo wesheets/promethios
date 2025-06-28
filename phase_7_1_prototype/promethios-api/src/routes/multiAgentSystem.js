@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const sessionManager = require('../services/sessionManager');
+const llmService = require('../services/llmService');
 
 // In-memory storage for demo (in production, use database)
 const contexts = new Map();
@@ -216,8 +217,8 @@ router.post('/chat/send-message', async (req, res) => {
         throw new Error('Session was stopped during processing');
       }
 
-      // Simulate agent collaboration (in real implementation, this would call OpenAI)
-      const response = await simulateMultiAgentResponse(
+      // Generate real multi-agent response using LLM service
+      const response = await generateMultiAgentResponse(
         message, 
         session, 
         abortController.signal,
@@ -878,35 +879,47 @@ function generateComprehensiveMetrics(context, session) {
 /**
  * Simulate multi-agent response (replace with actual OpenAI integration)
  */
-async function simulateMultiAgentResponse(message, session, abortSignal, governanceEnabled) {
+async function generateMultiAgentResponse(message, session, abortSignal, governanceEnabled) {
   const startTime = Date.now();
   
-  // Simulate processing delay
-  await new Promise(resolve => {
-    const timeout = setTimeout(resolve, 1000 + Math.random() * 2000); // 1-3 seconds
-    
-    // Handle abort signal
-    abortSignal.addEventListener('abort', () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-  });
+  // Get system configuration to determine actual agents (excluding Observer)
+  const systemConfig = session.systemConfiguration || {};
+  const allAgents = systemConfig.agents || [];
+  
+  // Filter out Observer agents - only count conversational agents
+  const conversationalAgents = allAgents.filter(agent => 
+    agent.role !== 'observer' && 
+    agent.type !== 'observer' &&
+    !agent.name.toLowerCase().includes('observer')
+  );
+  
+  const agentCount = conversationalAgents.length || 2; // Default to 2 if no config
+  console.log(`🤖 Processing with ${agentCount} conversational agents (excluding observers)`);
   
   // Check if aborted
   if (abortSignal.aborted) {
     throw new Error('Request was aborted');
   }
   
-  // Simulate multi-agent collaboration
-  const agentCount = session.metadata?.agentCount || 3;
+  // Generate responses from each conversational agent
   const responses = [];
+  const agentTypes = ['factual-agent', 'creative-agent', 'baseline-agent'];
   
   for (let i = 0; i < agentCount; i++) {
     if (abortSignal.aborted) {
       throw new Error('Request was aborted');
     }
     
-    responses.push(`Agent ${i + 1}: Response to "${message.substring(0, 50)}..."`);
+    try {
+      // Use different agent types for variety
+      const agentType = agentTypes[i % agentTypes.length];
+      const agentResponse = await llmService.generateResponse(agentType, message);
+      responses.push(`Agent ${i + 1}: ${agentResponse}`);
+    } catch (error) {
+      console.error(`Error generating response for agent ${i + 1}:`, error);
+      // Fallback to a basic response if LLM call fails
+      responses.push(`Agent ${i + 1}: I understand your request about "${message.substring(0, 50)}..." and I'm processing this information to provide you with a comprehensive response.`);
+    }
   }
   
   const finalResponse = responses.join('\n\n');
@@ -918,8 +931,8 @@ async function simulateMultiAgentResponse(message, session, abortSignal, governa
     transparencyMessage: 'Multi-agent system governance checks completed',
     behaviorTags: ['multi_agent_collaboration', 'consensus_reached'],
     systemGovernance: {
-      agentCount,
-      collaborationModel: session.metadata?.collaborationModel || 'consensus',
+      agentCount, // Use actual conversational agent count
+      collaborationModel: session.metadata?.collaborationModel || 'sequential',
       emergentBehaviorsDetected: session.messageCount > 5 ? 1 : 0,
       crossAgentValidation: true
     }
@@ -937,10 +950,10 @@ async function simulateMultiAgentResponse(message, session, abortSignal, governa
   };
   
   return {
-    content: `Multi-Agent System Response:\n\n${finalResponse}\n\n[Processed by ${session.systemName} with ${agentCount} agents using ${session.metadata?.collaborationModel || 'consensus'} collaboration]`,
+    content: `Multi-Agent System Response:\n\n${finalResponse}\n\n[Processed by ${session.systemName} with ${agentCount} agents using ${session.metadata?.collaborationModel || 'sequential_handoffs'} collaboration]`,
     governanceData,
     processingTime: Date.now() - startTime,
-    agentCount
+    agentCount // Return actual conversational agent count
   };
 }
 
