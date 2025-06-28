@@ -273,31 +273,24 @@ const WorkingChatComponent: React.FC = () => {
         return data.choices[0]?.message?.content || 'No response received';
         
       } else if (apiDetails.provider === 'anthropic') {
-        response = await fetch('https://api.anthropic.com/v1/messages', {
+        response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiDetails.key,
-            'anthropic-version': '2023-06-01'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: apiDetails.selectedModel || 'claude-3-sonnet-20240229',
-            max_tokens: 1000,
-            messages: [
-              {
-                role: 'user',
-                content: `You are ${agent.identity.name}. ${agent.identity.description}\n\nUser message: ${message}`
-              }
-            ]
+            agent_id: 'factual-agent', // Maps to Anthropic in backend
+            message: `You are ${agent.identity.name}. ${agent.identity.description}\n\nUser message: ${message}`,
+            governance_enabled: false
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        return data.content[0]?.text || 'No response received';
+        return data.response || 'No response received';
         
       } else {
         // Generic API call for other providers
