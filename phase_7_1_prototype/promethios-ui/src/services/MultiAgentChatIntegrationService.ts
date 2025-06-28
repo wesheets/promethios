@@ -36,9 +36,18 @@ export interface ChatSystemInfo {
 export class MultiAgentChatIntegrationService {
   private storageService: UnifiedStorageService;
   private activeSessions = new Map<string, MultiAgentChatSession>();
+  private currentUserId: string | null = null;
 
   constructor() {
     this.storageService = new UnifiedStorageService();
+  }
+
+  /**
+   * Set the current user ID for the service
+   */
+  setUser(userId: string): void {
+    this.currentUserId = userId;
+    console.log('🔧 MULTI-AGENT SERVICE: User set to:', userId);
   }
 
   /**

@@ -677,6 +677,7 @@ const AdvancedChatComponent: React.FC = () => {
     if (currentUser?.uid) {
       agentStorageService.setCurrentUser(currentUser.uid);
       chatStorageService.setCurrentUser(currentUser.uid);
+      multiAgentChatIntegration.setUser(currentUser.uid); // Set user for multi-agent chat integration
     }
   }, [currentUser, agentStorageService, chatStorageService]);
 
