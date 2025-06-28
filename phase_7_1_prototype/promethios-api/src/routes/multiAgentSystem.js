@@ -962,47 +962,50 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
     }
   };
 }
-
 // Enhanced sequential processing with context awareness
 async function generateSequentialResponses(session, message, agentCount, abortSignal) {
   console.log(`🔄 Starting sequential processing with context awareness`);
   
   const agentResponses = [];
-  const agentTypes = ['factual-agent', 'creative-agent', 'baseline-agent', 'governance-agent'];
-  const agentNames = ['Factual Agent', 'Creative Agent', 'Strategic Agent', 'Governance Agent'];
   
-  // Ensure we have enough agent types for the requested count
-  const expandedAgentTypes = [];
-  const expandedAgentNames = [];
-  for (let i = 0; i < agentCount; i++) {
-    expandedAgentTypes.push(agentTypes[i % agentTypes.length]);
-    expandedAgentNames.push(agentNames[i % agentNames.length]);
+  // Get real agents from session configuration
+  const conversationalAgents = session.systemConfiguration?.agents?.filter(agent => 
+    agent.role !== 'observer' && agent.role !== 'governance'
+  ) || [];
+  
+  console.log(`🤖 Available agents from session:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  
+  // If no agents configured, return error
+  if (conversationalAgents.length === 0) {
+    throw new Error('No conversational agents configured for this multi-agent system');
   }
   
-  console.log(`🤖 Sequential processing with agents:`, expandedAgentNames);
+  // Use the actual configured agents (up to agentCount)
+  const agentsToUse = conversationalAgents.slice(0, agentCount);
   
-  for (let i = 0; i < agentCount; i++) {
+  console.log(`🤖 Sequential processing with agents:`, agentsToUse.map(a => a.name));
+  
+  for (let i = 0; i < agentsToUse.length; i++) {
     if (abortSignal.aborted) {
       throw new Error('Request was aborted');
     }
     
     try {
-      const agentType = expandedAgentTypes[i];
-      const agentName = expandedAgentNames[i];
+      const agent = agentsToUse[i];
       
       // Build context from previous agents' responses
-      const conversationContext = buildConversationContext(message, agentResponses, agentName, i);
+      const conversationContext = buildConversationContext(message, agentResponses, agent.name, i);
       
-      console.log(`🤖 Generating context-aware response for ${agentName} (${agentType})`);
+      console.log(`🤖 Generating context-aware response for ${agent.name} (${agent.id})`);
       console.log(`📝 Context includes ${agentResponses.length} previous responses`);
       
-      // Generate response with full conversation context
-      const agentResponse = await generateContextAwareResponse(agentType, conversationContext);
+      // Generate response with full conversation context using real agent ID
+      const agentResponse = await generateContextAwareResponse(agent.id, conversationContext, agent.name);
       
       const responseData = {
-        agentId: i + 1,
-        agentName: agentName,
-        agentType: agentType,
+        agentId: agent.id,
+        agentName: agent.name,
+        agentType: agent.role || 'conversational',
         content: agentResponse,
         timestamp: new Date().toISOString(),
         contextAware: true,
@@ -1011,26 +1014,29 @@ async function generateSequentialResponses(session, message, agentCount, abortSi
       
       agentResponses.push(responseData);
       
-      console.log(`✅ Generated context-aware response for ${agentName}`);
+      console.log(`✅ Generated context-aware response for ${agent.name}`);
       
       // Small delay to simulate thoughtful consideration
       await new Promise(resolve => setTimeout(resolve, 500));
       
     } catch (error) {
-      console.error(`❌ Error generating response for agent ${i + 1} (${expandedAgentNames[i]}):`, error);
+      console.error(`❌ Error generating response for agent ${agentsToUse[i].name} (${agentsToUse[i].id}):`, error);
       
-      // Fallback response with context awareness
-      const agentName = expandedAgentNames[i];
-      const contextualFallback = generateContextualFallback(message, agentResponses, agentName);
-      
+      // Add fallback response for failed agent
       agentResponses.push({
-        agentId: i + 1,
-        agentName: agentName,
-        agentType: expandedAgentTypes[i],
-        content: contextualFallback,
+        agentId: agentsToUse[i].id,
+        agentName: agentsToUse[i].name,
+        agentType: agentsToUse[i].role || 'conversational',
+        content: `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. [${agentsToUse[i].name}]`,
         timestamp: new Date().toISOString(),
-        contextAware: true,
-        reviewedAgents: agentResponses.map(r => r.agentName),
+        contextAware: false,
+        error: true
+      });
+    }
+  }
+  
+  return agentResponses;
+}map(r => r.agentName),
         fallback: true
       });
       
@@ -1303,28 +1309,28 @@ function buildConversationContext(originalMessage, previousResponses, currentAge
 }
 
 // Generate context-aware response (enhanced version)
-async function generateContextAwareResponse(agentType, conversationContext) {
+async function generateContextAwareResponse(agentId, conversationContext, agentName = null) {
   try {
     // Call the real LLM service with context-aware system prompt
     const contextAwarePrompt = `You are participating in a multi-agent discussion. Here is the conversation context so far:
 
 ${conversationContext}
 
-Please provide your response as ${agentType.replace('-', ' ')} while being aware of what previous agents have said. Build upon their insights and add your unique perspective.`;
+Please provide your response while being aware of what previous agents have said. Build upon their insights and add your unique perspective.`;
 
-    console.log(`🤖 Calling real LLM service for ${agentType} with context`);
+    console.log(`🤖 Calling real LLM service for agent ${agentId} (${agentName || 'Unknown'}) with context`);
     
-    // Call the real LLM service (this will route to OpenAI, Anthropic, Cohere, etc.)
-    const response = await llmService.generateResponse(agentType, contextAwarePrompt);
+    // Call the real LLM service with actual agent ID (this will route to OpenAI, Anthropic, Cohere, etc.)
+    const response = await llmService.generateResponse(agentId, contextAwarePrompt);
     
-    console.log(`✅ Received real LLM response for ${agentType}`);
+    console.log(`✅ Received real LLM response for agent ${agentId}`);
     return response;
     
   } catch (error) {
-    console.error(`❌ Error calling LLM service for ${agentType}:`, error);
+    console.error(`❌ Error calling LLM service for agent ${agentId}:`, error);
     
     // Fallback to a basic response if LLM call fails
-    return `I apologize, but I'm experiencing technical difficulties. As ${agentType.replace('-', ' ')}, I would normally provide insights based on the conversation context, but I'm unable to process the request at this time.`;
+    return `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. [Agent ${agentId}${agentName ? ` - ${agentName}` : ''}]`;
   }
 }
 
