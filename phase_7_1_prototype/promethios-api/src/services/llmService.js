@@ -215,6 +215,7 @@ class LLMService {
     // Use custom system message if provided, otherwise generate default
     const systemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
     
+    // Handle legacy hardcoded agent IDs (for backward compatibility)
     switch (agentId) {
       case 'baseline-agent':
         return await this.callOpenAIGPT35(message, systemPrompt);
@@ -230,10 +231,42 @@ class LLMService {
       
       case 'multi-tool-agent':
         return await this.callHuggingFace(message, systemPrompt);
-      
-      default:
-        throw new Error(`Unknown agent ID: ${agentId}`);
     }
+    
+    // Handle real user agent IDs by looking up agent configuration
+    // For now, we'll need to determine the provider from the agent ID
+    // This is a temporary solution until we have proper agent lookup
+    console.log(`🔍 Looking up real agent: ${agentId}`);
+    
+    // Try to determine provider from agent ID pattern or use a default rotation
+    // This is a simplified approach - in production, you'd query the database
+    const agentHash = this.hashAgentId(agentId);
+    const providers = ['openai-gpt4', 'anthropic', 'cohere'];
+    const selectedProvider = providers[agentHash % providers.length];
+    
+    console.log(`🎯 Selected provider for agent ${agentId}: ${selectedProvider}`);
+    
+    switch (selectedProvider) {
+      case 'openai-gpt4':
+        return await this.callOpenAIGPT4(message, systemPrompt);
+      case 'anthropic':
+        return await this.callAnthropic(message, systemPrompt);
+      case 'cohere':
+        return await this.callCohere(message, systemPrompt);
+      default:
+        return await this.callOpenAIGPT4(message, systemPrompt); // fallback
+    }
+  }
+  
+  // Simple hash function to consistently map agent IDs to providers
+  hashAgentId(agentId) {
+    let hash = 0;
+    for (let i = 0; i < agentId.length; i++) {
+      const char = agentId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 }
 
