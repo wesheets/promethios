@@ -18,6 +18,7 @@ export interface MultiAgentChatSession {
   messageCount: number;
   governanceEnabled: boolean;
   collaborationModel: string;
+  backendContextId?: string; // Backend context ID for session management
 }
 
 export interface ChatSystemInfo {
@@ -128,8 +129,36 @@ export class MultiAgentChatIntegrationService {
       const backendContextId = await this.ensureBackendContext(systemData);
       console.log('🔧 Backend context ID:', backendContextId);
 
-      // Create new chat session
-      const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Create backend chat session first
+      console.log('🔧 Creating backend chat session...');
+      const backendSessionResponse = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/create-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemId: backendContextId,
+          systemName: systemData.name,
+          userId,
+          governanceEnabled: systemData.governanceConfiguration ? true : false,
+          metadata: {
+            frontendSystemId: systemId,
+            collaborationModel: systemData.collaborationModel || 'sequential'
+          }
+        })
+      });
+
+      if (!backendSessionResponse.ok) {
+        const errorData = await backendSessionResponse.json().catch(() => ({}));
+        console.error('🔧 Failed to create backend session:', errorData);
+        throw new Error(`Failed to create backend session: ${backendSessionResponse.status} ${backendSessionResponse.statusText}`);
+      }
+
+      const backendSession = await backendSessionResponse.json();
+      console.log('🔧 Backend session created:', backendSession);
+
+      // Create frontend chat session using backend session ID
+      const sessionId = backendSession.sessionId;
       const session: MultiAgentChatSession = {
         id: sessionId,
         systemId,
@@ -140,7 +169,8 @@ export class MultiAgentChatIntegrationService {
         status: 'active',
         messageCount: 0,
         governanceEnabled: systemData.governanceConfiguration ? true : false,
-        collaborationModel: systemData.collaborationModel || 'sequential'
+        collaborationModel: systemData.collaborationModel || 'sequential',
+        backendContextId // Store the backend context ID for reference
       };
 
       console.log('Created chat session:', session);
