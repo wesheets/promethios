@@ -1581,16 +1581,16 @@ const AdvancedChatComponent: React.FC = () => {
           
           // Apply pacing controls for natural conversation flow
           const applyPacingDelay = (content: string, mode: string) => {
-            const baseDelay = 1000; // 1 second minimum
-            const wordsPerMinute = mode === 'realtime' ? 300 : mode === 'natural' ? 150 : 80;
+            const baseDelay = 500; // 0.5 second minimum
+            const wordsPerMinute = mode === 'realtime' ? 300 : mode === 'natural' ? 200 : 120;
             const wordCount = content.split(' ').length;
             const typingTime = (wordCount / wordsPerMinute) * 60 * 1000; // Convert to milliseconds
             
             // Add thinking time based on complexity
-            const thinkingTime = mode === 'thoughtful' ? Math.min(wordCount * 50, 3000) : 
-                                mode === 'natural' ? Math.min(wordCount * 20, 2000) : 0;
+            const thinkingTime = mode === 'thoughtful' ? Math.min(wordCount * 20, 1000) : 
+                                mode === 'natural' ? Math.min(wordCount * 10, 500) : 0;
             
-            return Math.max(baseDelay, Math.min(typingTime + thinkingTime, 8000)); // Cap at 8 seconds
+            return Math.max(baseDelay, Math.min(typingTime + thinkingTime, 2000)); // Cap at 2 seconds
           };
 
           const delay = applyPacingDelay(response.content, pacingMode);
