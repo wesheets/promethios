@@ -886,37 +886,37 @@ const AdvancedChatComponent: React.FC = () => {
           // while adding new multi-agent specific fields
           const multiAgentMetrics = {
             // Single agent compatible fields (for existing UI components)
-            trustScore: systemMetrics.overallTrustScore,
-            complianceRate: governanceHealth.policyCompliance.overall,
-            responseTime: collaborationAnalytics.workflowEfficiency.efficiencyRatio / 100 * 2, // Convert to response time
-            sessionIntegrity: systemMetrics.collaborationEfficiency,
-            policyViolations: governanceHealth.policyCompliance.violations.length,
+            trustScore: systemMetrics?.overallTrustScore || 0,
+            complianceRate: governanceHealth?.policyCompliance?.overall || 0,
+            responseTime: collaborationAnalytics?.workflowEfficiency?.efficiencyRatio ? collaborationAnalytics.workflowEfficiency.efficiencyRatio / 100 * 2 : 1.5, // Convert to response time
+            sessionIntegrity: systemMetrics?.collaborationEfficiency || 0,
+            policyViolations: governanceHealth?.policyCompliance?.violations?.length || 0,
             status: 'multi-agent-monitoring',
             lastUpdated: new Date(),
             
             // New multi-agent specific fields
             systemId: selectedSystem.id,
             systemName: selectedSystem.name,
-            agentCount: systemMetrics.agentCount,
-            collaborationModel: systemMetrics.collaborationModel,
-            missionProgress: systemMetrics.missionProgress,
-            collaborationEfficiency: systemMetrics.collaborationEfficiency,
-            crossAgentTrustMatrix: systemMetrics.crossAgentTrustMatrix,
-            emergentBehaviors: emergentBehaviors.behaviors,
-            resourceUtilization: systemMetrics.resourceUtilization,
+            agentCount: systemMetrics?.agentCount || 0,
+            collaborationModel: systemMetrics?.collaborationModel || 'unknown',
+            missionProgress: systemMetrics?.missionProgress || 0,
+            collaborationEfficiency: systemMetrics?.collaborationEfficiency || 0,
+            crossAgentTrustMatrix: systemMetrics?.crossAgentTrustMatrix || {},
+            emergentBehaviors: emergentBehaviors?.behaviors || [],
+            resourceUtilization: systemMetrics?.resourceUtilization || { cpu: 0, memory: 0, bandwidth: 0 },
             governanceHealth: governanceHealth,
             collaborationAnalytics: collaborationAnalytics,
             
             // System health indicators
-            rateLimitingActive: governanceHealth.rateLimitingStatus.active,
-            crossAgentValidationRate: governanceHealth.crossAgentValidation.validationSuccessRate,
-            errorRecoveryRate: governanceHealth.errorHandling.recoverySuccessRate,
+            rateLimitingActive: governanceHealth?.rateLimitingStatus?.active || false,
+            crossAgentValidationRate: governanceHealth?.crossAgentValidation?.validationSuccessRate || 0,
+            errorRecoveryRate: governanceHealth?.errorHandling?.recoverySuccessRate || 0,
             
             // Collaboration metrics
-            consensusReached: collaborationAnalytics.consensusReached,
-            conflictsResolved: collaborationAnalytics.conflictsResolved,
-            decisionQuality: collaborationAnalytics.decisionQuality.averageConfidence * 100,
-            roleAdherence: Object.values(collaborationAnalytics.roleAdherence).reduce((a, b) => a + b, 0) / Object.keys(collaborationAnalytics.roleAdherence).length
+            consensusReached: collaborationAnalytics?.consensusReached || 0,
+            conflictsResolved: collaborationAnalytics?.conflictsResolved || 0,
+            decisionQuality: collaborationAnalytics?.decisionQuality?.averageConfidence ? collaborationAnalytics.decisionQuality.averageConfidence * 100 : 0,
+            roleAdherence: collaborationAnalytics?.roleAdherence ? Object.values(collaborationAnalytics.roleAdherence).reduce((a, b) => a + b, 0) / Object.keys(collaborationAnalytics.roleAdherence).length : 0
           };
           
           setGovernanceMetrics(multiAgentMetrics);
@@ -999,15 +999,15 @@ const AdvancedChatComponent: React.FC = () => {
           // Update existing metrics with fresh data
           setGovernanceMetrics(prev => prev ? {
             ...prev,
-            trustScore: systemMetrics.overallTrustScore,
-            complianceRate: governanceHealth.policyCompliance.overall,
-            sessionIntegrity: systemMetrics.collaborationEfficiency,
-            policyViolations: governanceHealth.policyCompliance.violations.length,
+            trustScore: systemMetrics?.overallTrustScore || prev.trustScore || 0,
+            complianceRate: governanceHealth?.policyCompliance?.overall || prev.complianceRate || 0,
+            sessionIntegrity: systemMetrics?.collaborationEfficiency || prev.sessionIntegrity || 0,
+            policyViolations: governanceHealth?.policyCompliance?.violations?.length || prev.policyViolations || 0,
             lastUpdated: new Date(),
-            missionProgress: systemMetrics.missionProgress,
-            collaborationEfficiency: systemMetrics.collaborationEfficiency,
-            crossAgentValidationRate: governanceHealth.crossAgentValidation.validationSuccessRate,
-            errorRecoveryRate: governanceHealth.errorHandling.recoverySuccessRate
+            missionProgress: systemMetrics?.missionProgress || prev.missionProgress || 0,
+            collaborationEfficiency: systemMetrics?.collaborationEfficiency || prev.collaborationEfficiency || 0,
+            crossAgentValidationRate: governanceHealth?.crossAgentValidation?.validationSuccessRate || prev.crossAgentValidationRate || 0,
+            errorRecoveryRate: governanceHealth?.errorHandling?.recoverySuccessRate || prev.errorRecoveryRate || 0
           } : null);
         }
       } catch (error) {
