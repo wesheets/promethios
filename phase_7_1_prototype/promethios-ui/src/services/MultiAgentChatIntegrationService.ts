@@ -141,6 +141,7 @@ export class MultiAgentChatIntegrationService {
           systemName: systemData.name,
           userId,
           governanceEnabled: systemData.governanceConfiguration ? true : false,
+          systemConfiguration: systemData, // Pass the full system configuration including agents
           metadata: {
             frontendSystemId: systemId,
             collaborationModel: systemData.collaborationModel || 'sequential'
