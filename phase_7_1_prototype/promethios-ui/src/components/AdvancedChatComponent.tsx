@@ -1627,12 +1627,44 @@ const AdvancedChatComponent: React.FC = () => {
           };
           
           console.log('🚀 MULTI-AGENT DEBUG: Adding system message to chat:', systemMessage);
-          setMessages(prev => [...prev, systemMessage]);
-          setMessageCount(prev => prev + 1); // Increment for system response
           
-          // Save system response to storage
-          await multiAgentChatIntegration.saveMessage(systemMessage, selectedSystem.id);
-          console.log('🚀 MULTI-AGENT DEBUG: System response saved to storage');
+          // Check if we have individual agent responses to display separately
+          if (response.agentResponses && response.agentResponses.length > 0) {
+            console.log('🚀 MULTI-AGENT DEBUG: Processing individual agent responses:', response.agentResponses);
+            
+            // Add each agent response as a separate message
+            const agentMessages: ChatMessage[] = [];
+            response.agentResponses.forEach((agentResponse: any, index: number) => {
+              const agentMessage: ChatMessage = {
+                id: `msg_${Date.now()}_agent_${agentResponse.agentId}`,
+                content: agentResponse.content,
+                sender: 'agent',
+                timestamp: new Date(agentResponse.timestamp || new Date()),
+                agentName: agentResponse.agentName || `Agent ${agentResponse.agentId}`,
+                agentId: `${selectedSystem.id}_agent_${agentResponse.agentId}`,
+                governanceData: index === 0 ? response.governanceData : undefined // Only show governance on first agent
+              };
+              agentMessages.push(agentMessage);
+            });
+            
+            // Add all agent messages to chat
+            setMessages(prev => [...prev, ...agentMessages]);
+            setMessageCount(prev => prev + agentMessages.length);
+            
+            // Save individual agent messages to storage
+            for (const agentMessage of agentMessages) {
+              await multiAgentChatIntegration.saveMessage(agentMessage, selectedSystem.id);
+            }
+            console.log('🚀 MULTI-AGENT DEBUG: Individual agent responses saved to storage');
+          } else {
+            // Fallback to single combined message if no individual responses
+            setMessages(prev => [...prev, systemMessage]);
+            setMessageCount(prev => prev + 1);
+            
+            // Save system response to storage
+            await multiAgentChatIntegration.saveMessage(systemMessage, selectedSystem.id);
+            console.log('🚀 MULTI-AGENT DEBUG: Combined system response saved to storage');
+          }
           
           // Scroll to bottom after system response
           setTimeout(() => {

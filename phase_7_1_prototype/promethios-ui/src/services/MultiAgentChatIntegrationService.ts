@@ -640,9 +640,10 @@ export class MultiAgentChatIntegrationService {
         await this.updateSessionActivity(sessionId, session.messageCount + 1);
         console.log('🔧 MULTI-AGENT SERVICE: Session activity updated');
 
-        // Return response with governance data
+        // Return response with governance data and individual agent responses
         const finalResponse = {
           content: result.response || result.content || 'No response received',
+          agentResponses: result.agentResponses || [], // Individual agent responses
           governanceData: governanceEnabled ? result.governanceData : undefined
         };
         
