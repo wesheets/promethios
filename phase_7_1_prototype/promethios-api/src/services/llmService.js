@@ -211,8 +211,9 @@ class LLMService {
   }
 
   // Main method to call appropriate LLM based on agent
-  async generateResponse(agentId, message) {
-    const systemPrompt = this.getSystemPrompt(agentId);
+  async generateResponse(agentId, message, customSystemMessage = null) {
+    // Use custom system message if provided, otherwise generate default
+    const systemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
     
     switch (agentId) {
       case 'baseline-agent':

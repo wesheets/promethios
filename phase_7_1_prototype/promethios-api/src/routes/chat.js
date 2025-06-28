@@ -103,7 +103,7 @@ const governance_core = new PrometheusGovernanceCore();
 // POST / — Real-time chat with agents (governed or ungoverned)
 router.post('/', async (req, res) => {
     try {
-        const { agent_id, message, governance_enabled = false, session_id } = req.body;
+        const { agent_id, message, governance_enabled = false, session_id, system_message } = req.body;
 
         if (!agent_id || !message) {
             return res.status(400).json({ 
@@ -154,7 +154,7 @@ router.post('/', async (req, res) => {
 
                 // If governance approves, generate LLM response
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
-                    response = await llmService.generateResponse(agent_id, message);
+                    response = await llmService.generateResponse(agent_id, message, system_message);
                     
                     // Apply governance filtering for high-risk content
                     if (governance_metrics.risk_level === 'high') {
@@ -168,7 +168,7 @@ router.post('/', async (req, res) => {
             } catch (governance_error) {
                 console.error('Governance error:', governance_error);
                 // Fallback to direct LLM call with warning
-                response = await llmService.generateResponse(agent_id, message);
+                response = await llmService.generateResponse(agent_id, message, system_message);
                 const governanceWarning = "[Governance Warning: System temporarily unavailable, operating in fallback mode] ";
                 response = governanceWarning + response;
                 governance_metrics = {
@@ -182,7 +182,7 @@ router.post('/', async (req, res) => {
 
         } else {
             // Direct LLM call without governance
-            response = await llmService.generateResponse(agent_id, message);
+            response = await llmService.generateResponse(agent_id, message, system_message);
             governance_metrics = {
                 trust_score: null,
                 compliance_score: null,

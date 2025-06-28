@@ -1173,6 +1173,17 @@ const AdvancedChatComponent: React.FC = () => {
         return data.choices[0]?.message?.content || 'No response received';
         
       } else if (provider === 'anthropic') {
+        console.log('Taking Anthropic path...');
+        // Create system message based on governance setting (same as OpenAI)
+        let systemMessage;
+        if (governanceEnabled) {
+          // Use Promethios governance kernel for governed agents
+          systemMessage = createPromethiosSystemMessage();
+        } else {
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+        }
+
         response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
@@ -1181,6 +1192,7 @@ const AdvancedChatComponent: React.FC = () => {
           body: JSON.stringify({
             agent_id: 'factual-agent', // Maps to Anthropic in backend
             message: messageContent,
+            system_message: systemMessage, // Pass the governance system message
             governance_enabled: governanceEnabled
           })
         });
@@ -1193,6 +1205,17 @@ const AdvancedChatComponent: React.FC = () => {
         return data.response || 'No response received';
         
       } else if (provider === 'cohere') {
+        console.log('Taking Cohere path...');
+        // Create system message based on governance setting (same as OpenAI)
+        let systemMessage;
+        if (governanceEnabled) {
+          // Use Promethios governance kernel for governed agents
+          systemMessage = createPromethiosSystemMessage();
+        } else {
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+        }
+
         response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
@@ -1201,6 +1224,7 @@ const AdvancedChatComponent: React.FC = () => {
           body: JSON.stringify({
             agent_id: 'governance-agent', // Maps to Cohere in backend
             message: messageContent,
+            system_message: systemMessage, // Pass the governance system message
             governance_enabled: governanceEnabled
           })
         });
