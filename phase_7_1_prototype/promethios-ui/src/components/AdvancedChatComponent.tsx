@@ -1181,7 +1181,7 @@ const AdvancedChatComponent: React.FC = () => {
           body: JSON.stringify({
             agent_id: 'factual-agent', // Maps to Anthropic in backend
             message: messageContent,
-            governance_enabled: false
+            governance_enabled: governanceEnabled
           })
         });
 
@@ -1201,7 +1201,7 @@ const AdvancedChatComponent: React.FC = () => {
           body: JSON.stringify({
             agent_id: 'governance-agent', // Maps to Cohere in backend
             message: messageContent,
-            governance_enabled: false
+            governance_enabled: governanceEnabled
           })
         });
 
