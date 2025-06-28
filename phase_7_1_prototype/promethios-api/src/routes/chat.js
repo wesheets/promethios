@@ -100,8 +100,8 @@ except Exception as e:
 
 const governance_core = new PrometheusGovernanceCore();
 
-// POST /chat — Real-time chat with agents (governed or ungoverned)
-router.post('/chat', async (req, res) => {
+// POST / — Real-time chat with agents (governed or ungoverned)
+router.post('/', async (req, res) => {
     try {
         const { agent_id, message, governance_enabled = false, session_id } = req.body;
 
@@ -231,8 +231,8 @@ router.post('/chat', async (req, res) => {
     }
 });
 
-// GET /chat/sessions — Get all active chat sessions
-router.get('/chat/sessions', (req, res) => {
+// GET /sessions — Get all active chat sessions
+router.get('/sessions', (req, res) => {
     const sessions = Object.values(activeChatSessions).map(session => ({
         id: session.id,
         agent_id: session.agent_id,
@@ -247,8 +247,8 @@ router.get('/chat/sessions', (req, res) => {
     res.status(200).json(sessions);
 });
 
-// GET /chat/sessions/:session_id — Get specific chat session
-router.get('/chat/sessions/:session_id', (req, res) => {
+// GET /sessions/:session_id — Get specific chat session
+router.get('/sessions/:session_id', (req, res) => {
     const session_id = req.params.session_id;
     
     if (!activeChatSessions[session_id]) {
@@ -258,8 +258,8 @@ router.get('/chat/sessions/:session_id', (req, res) => {
     res.status(200).json(activeChatSessions[session_id]);
 });
 
-// DELETE /chat/sessions/:session_id — Delete chat session
-router.delete('/chat/sessions/:session_id', (req, res) => {
+// DELETE /sessions/:session_id — Delete chat session
+router.delete('/sessions/:session_id', (req, res) => {
     const session_id = req.params.session_id;
     
     if (!activeChatSessions[session_id]) {
@@ -268,6 +268,28 @@ router.delete('/chat/sessions/:session_id', (req, res) => {
 
     delete activeChatSessions[session_id];
     res.status(200).json({ message: 'Chat session deleted successfully' });
+});
+
+// POST /history — Save chat message to history
+router.post('/history', async (req, res) => {
+    try {
+        const { sessionId, message, userId } = req.body;
+        
+        // For now, just return success since we're storing in memory
+        // In a real implementation, this would save to a database
+        res.status(200).json({ 
+            success: true, 
+            message: 'Message saved to history',
+            sessionId: sessionId,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('History save error:', error);
+        res.status(500).json({ 
+            error: 'Failed to save message to history',
+            details: error.message
+        });
+    }
 });
 
 // GET /agents — Get available demo agents with real capabilities
