@@ -946,9 +946,8 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       throw error;
     }
   }
-
   /**
-   * Send message to multi-agent system with governance control
+   * Send message to multi-agent system - routes to appropriate collaboration model handler
    */
   async sendMessage(
     sessionId: string, 
@@ -957,118 +956,562 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     governanceEnabled: boolean = true,
     conversationHistory: any[] = []
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
-    console.log('🚨 DEBUG: sendMessage method called - ENTRY POINT');
+    console.log('🚨 DEBUG: sendMessage method called - ENTRY POINT (ROUTER)');
+    
     try {
-      console.log('🔧 MULTI-AGENT SERVICE: sendMessage called (DIRECT LLM MODE):', {
-        sessionId,
-        messageLength: message.length,
-        attachmentCount: attachments.length,
-        governanceEnabled
-      });
-
       const session = await this.getChatSession(sessionId);
       if (!session) {
-        console.error('🔧 MULTI-AGENT SERVICE: Session not found:', sessionId);
         throw new Error(`Chat session ${sessionId} not found`);
       }
 
-      console.log('🔧 MULTI-AGENT SERVICE: Session found:', {
-        systemId: session.systemId,
-        systemName: session.systemName,
-        userId: session.userId
-      });
-
       // Get system configuration with agents
-      console.log('🔧 MULTI-AGENT SERVICE: Getting system configuration...');
       const config = await this.getChatConfiguration(session.systemId);
-      console.log('🔧 MULTI-AGENT SERVICE: System configuration:', config);
-      
       if (!config.agents || config.agents.length === 0) {
-        console.error('🔧 MULTI-AGENT SERVICE: No agents found in system configuration');
         throw new Error('No agents found in system configuration');
       }
 
-      console.log('🤖 MULTI-AGENT: Calling', config.agents.length, 'agents directly...');
+      const collaborationModel = config.collaborationModel || 'shared_context';
+      console.log('🎯 COLLABORATION ROUTER: Using model:', collaborationModel);
 
-      // Call each agent individually using direct LLM provider calls
-      const agentResponses = [];
-      const errors = [];
+      // Route to appropriate collaboration model handler
+      switch (collaborationModel) {
+        case 'round_table_discussion':
+          console.log('🎭 ROUTER: Routing to Round-Table Discussion handler');
+          return this.handleRoundTableDiscussion(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        case 'shared_context':
+          console.log('🧡 ROUTER: Routing to Shared Context handler');
+          return this.handleSharedContext(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        case 'sequential_handoffs':
+          console.log('🔵 ROUTER: Routing to Sequential Handoffs handler');
+          return this.handleSequentialHandoffs(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        case 'parallel_processing':
+          console.log('⚡ ROUTER: Routing to Parallel Processing handler');
+          return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        case 'hierarchical_coordination':
+          console.log('🏛️ ROUTER: Routing to Hierarchical Coordination handler');
+          return this.handleHierarchicalCoordination(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        case 'consensus_decision':
+          console.log('🗳️ ROUTER: Routing to Consensus Decision handler');
+          return this.handleConsensusDecision(sessionId, message, attachments, governanceEnabled, conversationHistory);
+        
+        default:
+          console.log('🔄 ROUTER: Unknown collaboration model, using fallback (parallel processing)');
+          return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+      }
+      
+    } catch (error) {
+      console.error('🚨 COLLABORATION ROUTER ERROR:', error);
+      throw error;
+    }
+  }
 
-      for (const agent of config.agents) {
+  /**
+   * Handle Parallel Processing collaboration model (current default behavior)
+   */
+  private async handleParallelProcessing(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('⚡ PARALLEL PROCESSING: Starting parallel agent execution');
+    
+    const session = await this.getChatSession(sessionId);
+    const config = await this.getChatConfiguration(session!.systemId);
+    
+    const agentResponses = [];
+    const errors = [];
+
+    // Call all agents in parallel (current behavior)
+    const agentPromises = config.agents.map(async (agent: any) => {
+      try {
+        console.log('🤖 PARALLEL PROCESSING: Processing agent:', agent.identity?.name || agent.name);
+        
+        const response = await this.callAgentAPI(
+          message,
+          agent,
+          attachments,
+          conversationHistory,
+          governanceEnabled
+        );
+
+        return {
+          agentName: agent.identity?.name || agent.name,
+          agentId: agent.id,
+          content: response,
+          timestamp: new Date().toISOString(),
+          provider: agent.provider || 'openai',
+          model: agent.model || 'gpt-3.5-turbo'
+        };
+      } catch (error) {
+        console.error(`❌ PARALLEL PROCESSING: Error from ${agent.identity?.name || agent.name}:`, error);
+        errors.push({
+          agentName: agent.identity?.name || agent.name,
+          error: error.message
+        });
+        return {
+          agentName: agent.identity?.name || agent.name,
+          agentId: agent.id,
+          content: `Error: Agent could not respond - ${error.message}`,
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+      }
+    });
+
+    const responses = await Promise.all(agentPromises);
+    agentResponses.push(...responses);
+
+    // Create combined content for backward compatibility
+    const combinedContent = agentResponses
+      .filter(r => !r.isError)
+      .map(r => `**${r.agentName}:** ${r.content}`)
+      .join('\n\n');
+
+    console.log('⚡ PARALLEL PROCESSING: Completed with', agentResponses.length, 'responses');
+
+    return {
+      content: combinedContent || 'No successful responses received.',
+      agentResponses,
+      governanceData: {
+        collaborationModel: 'parallel_processing',
+        totalResponses: agentResponses.length,
+        errors: errors.length > 0 ? errors : undefined
+      }
+    };
+  }
+
+  /**
+   * Handle Round-Table Discussion collaboration model (sequential debate engine)
+   */
+  private async handleRoundTableDiscussion(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🎭 ROUND-TABLE DISCUSSION: Starting sequential debate system');
+    
+    const session = await this.getChatSession(sessionId);
+    const config = await this.getChatConfiguration(session!.systemId);
+    
+    // Sort agents alphabetically by name for consistent ordering
+    const sortedAgents = [...config.agents].sort((a, b) => {
+      const nameA = (a.identity?.name || a.name || '').toLowerCase();
+      const nameB = (b.identity?.name || b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    console.log('🎭 ROUND-TABLE: Agent order (alphabetical):', 
+      sortedAgents.map(a => a.identity?.name || a.name));
+
+    // Initialize debate state
+    const debateHistory = [];
+    const maxRounds = 3;
+    let allAgentResponses = [];
+
+    // DEBATE ROUNDS (3 rounds maximum)
+    for (let round = 1; round <= maxRounds; round++) {
+      console.log(`\n🎭 ROUND-TABLE: === ROUND ${round} ===`);
+      
+      // Each agent responds in alphabetical order
+      for (let agentIndex = 0; agentIndex < sortedAgents.length; agentIndex++) {
+        const agent = sortedAgents[agentIndex];
+        const agentName = agent.identity?.name || agent.name;
+        
+        console.log(`🎭 ROUND-TABLE: Round ${round} - Agent ${agentIndex + 1}/${sortedAgents.length}: ${agentName}`);
+
         try {
-          const agentName = agent.identity?.name || agent.name;
-          const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
-          console.log('🤖 MULTI-AGENT: Processing agent:', agentName, '(', agentRole, ')');
-          
-          const agentResponse = await this.callAgentAPI(
-            message, 
+          // Create debate-specific prompt based on round and position
+          const debatePrompt = this.createDebatePrompt(
             agent, 
-            attachments, 
-            conversationHistory, 
+            message, 
+            debateHistory, 
+            round, 
+            agentIndex, 
+            sortedAgents,
+            round === maxRounds // isLastRound
+          );
+
+          // Call agent with full debate context
+          const agentResponse = await this.callAgentAPI(
+            debatePrompt,
+            agent,
+            attachments,
+            conversationHistory,
             governanceEnabled
           );
 
-          agentResponses.push({
-            agentId: agent.id,
-            agentName: agentName,
-            assignedRole: agentRole,
+          // Add response to debate history
+          const debateEntry = {
+            round,
+            agentName,
+            agentId: agent.id || `agent_${agentIndex}`,
             content: agentResponse,
-            timestamp: new Date().toISOString()
-          });
+            timestamp: new Date().toISOString(),
+            order: agentIndex + 1
+          };
 
-          console.log('✅ MULTI-AGENT: Agent response received from:', agentName);
-          
+          debateHistory.push(debateEntry);
+          allAgentResponses.push(debateEntry);
+
+          console.log(`✅ ROUND-TABLE: ${agentName} responded (${agentResponse.length} chars)`);
+
+          // Add small delay between agents for natural flow
+          await new Promise(resolve => setTimeout(resolve, 500));
+
         } catch (error) {
-          console.error('❌ MULTI-AGENT: Error from agent', agent.identity?.name || agent.name, ':', error);
-          errors.push({
-            agentId: agent.id,
-            agentName: agent.identity?.name || agent.name,
-            error: error.message
-          });
+          console.error(`❌ ROUND-TABLE: Error from ${agentName}:`, error);
+          const errorEntry = {
+            round,
+            agentName,
+            agentId: agent.id || `agent_${agentIndex}`,
+            content: `[Error: ${agentName} could not respond - ${error.message}]`,
+            timestamp: new Date().toISOString(),
+            order: agentIndex + 1,
+            isError: true
+          };
+          debateHistory.push(errorEntry);
+          allAgentResponses.push(errorEntry);
         }
       }
 
-      // Create combined response
-      let combinedContent = '';
-      if (agentResponses.length > 0) {
-        combinedContent = `Multi-agent system "${session.systemName}" responses:\n\n`;
-        agentResponses.forEach(response => {
-          combinedContent += `**${response.agentName} (${response.assignedRole}):**\n${response.content}\n\n`;
-        });
+      console.log(`🎭 ROUND-TABLE: Round ${round} completed. Total responses: ${debateHistory.length}`);
+    }
+
+    // CONSENSUS PHASE - Select final reporter
+    console.log('\n🎭 ROUND-TABLE: === CONSENSUS PHASE ===');
+    const consensusReporter = await this.selectConsensusReporter(sortedAgents, debateHistory, message);
+    
+    // Generate final consensus report
+    console.log(`🎭 ROUND-TABLE: ${consensusReporter.agentName} selected as consensus reporter`);
+    const finalConsensus = await this.generateConsensusReport(
+      consensusReporter.agent,
+      message,
+      debateHistory,
+      attachments,
+      conversationHistory,
+      governanceEnabled
+    );
+
+    // Add consensus report to responses
+    const consensusEntry = {
+      round: 'consensus',
+      agentName: consensusReporter.agentName,
+      agentId: consensusReporter.agent.id || 'consensus_reporter',
+      content: finalConsensus,
+      timestamp: new Date().toISOString(),
+      order: 999, // Always last
+      isConsensus: true
+    };
+
+    allAgentResponses.push(consensusEntry);
+
+    // Create summary for backward compatibility
+    const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, consensusReporter.agentName);
+
+    console.log('🎭 ROUND-TABLE: Debate completed successfully!');
+    console.log(`🎭 ROUND-TABLE: Total responses: ${allAgentResponses.length} (${debateHistory.length} debate + 1 consensus)`);
+
+    return {
+      content: summaryContent,
+      agentResponses: allAgentResponses,
+      governanceData: {
+        collaborationModel: 'round_table_discussion',
+        debateRounds: maxRounds,
+        totalResponses: allAgentResponses.length,
+        consensusReporter: consensusReporter.agentName,
+        debateMode: 'sequential_consensus'
       }
+    };
+  }
 
-      if (errors.length > 0) {
-        combinedContent += `\n**Errors:**\n`;
-        errors.forEach(error => {
-          combinedContent += `- ${error.agentName}: ${error.error}\n`;
-        });
-      }
+  /**
+   * Handle Shared Context collaboration model (placeholder)
+   */
+  private async handleSharedContext(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🧡 SHARED CONTEXT: Using parallel processing as placeholder');
+    // For now, use parallel processing - can be enhanced later
+    return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+  }
 
-      // Update session activity
-      await this.updateSessionActivity(sessionId, session.messageCount + 1);
-      console.log('🔧 MULTI-AGENT SERVICE: Session activity updated');
+  /**
+   * Handle Sequential Handoffs collaboration model (placeholder)
+   */
+  private async handleSequentialHandoffs(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🔵 SEQUENTIAL HANDOFFS: Using parallel processing as placeholder');
+    // For now, use parallel processing - can be enhanced later
+    return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+  }
 
-      const finalResponse = {
-        content: combinedContent || 'No responses received from agents',
-        agentResponses: agentResponses, // This is the key - individual agent responses!
-        governanceData: governanceEnabled ? {
-          trustScore: 85,
-          complianceStatus: 'compliant',
-          riskLevel: 'low',
-          timestamp: new Date().toISOString(),
-          agentCount: agentResponses.length,
-          errorCount: errors.length
-        } : undefined
-      };
+  /**
+   * Handle Hierarchical Coordination collaboration model (placeholder)
+   */
+  private async handleHierarchicalCoordination(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🏛️ HIERARCHICAL COORDINATION: Using parallel processing as placeholder');
+    // For now, use parallel processing - can be enhanced later
+    return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+  }
+
+  /**
+   * Handle Consensus Decision collaboration model (placeholder)
+   */
+  private async handleConsensusDecision(
+    sessionId: string,
+    message: string,
+    attachments: any[] = [],
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🗳️ CONSENSUS DECISION: Using parallel processing as placeholder');
+    // For now, use parallel processing - can be enhanced later
+    return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
+  }
+
+  /**
+   * Create debate-specific prompt for an agent based on round and context
+   */
+  private createDebatePrompt(
+    agent: any,
+    originalMessage: string,
+    debateHistory: any[],
+    round: number,
+    agentIndex: number,
+    allAgents: any[],
+    isLastRound: boolean
+  ): string {
+    const agentName = agent.identity?.name || agent.name;
+    const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
+    
+    // Get other agent names for reference
+    const otherAgents = allAgents
+      .filter(a => (a.identity?.name || a.name) !== agentName)
+      .map(a => a.identity?.name || a.name);
+
+    let prompt = `You are ${agentName}, ${agentRole}. You are participating in a round-table discussion with ${otherAgents.join(', ')}.
+
+ORIGINAL QUESTION: "${originalMessage}"
+
+`;
+
+    // Add previous debate context if available
+    if (debateHistory.length > 0) {
+      prompt += `PREVIOUS DISCUSSION:\n`;
+      debateHistory.forEach(entry => {
+        prompt += `\n**${entry.agentName} (Round ${entry.round}):**\n${entry.content}\n`;
+      });
+      prompt += `\n`;
+    }
+
+    // Round-specific instructions
+    if (round === 1) {
+      prompt += `ROUND ${round} INSTRUCTIONS:
+- This is the first round of discussion
+- Provide your initial perspective on the question
+- Draw from your expertise as ${agentRole}
+- Keep your response focused and substantive (2-3 paragraphs)
+- You will have 2 more rounds to build on this discussion
+
+`;
+    } else if (round === 2) {
+      prompt += `ROUND ${round} INSTRUCTIONS:
+- This is the second round of discussion
+- Review what ${otherAgents.join(' and ')} said in Round 1
+- Respond to their points - agree, disagree, or build upon their ideas
+- Reference other agents by name when responding to their points
+- Provide additional insights or counter-arguments
+- Look for areas of potential consensus or disagreement
+
+`;
+    } else if (round === 3) {
+      prompt += `ROUND ${round} INSTRUCTIONS (FINAL ROUND):
+- This is the final round of discussion
+- Review all previous responses from ${otherAgents.join(', ')}
+- Work toward consensus and synthesis
+- Acknowledge where you agree with others
+- Address any remaining disagreements constructively
+- Help identify who should provide the final consensus report
+- Suggest which agent is best positioned to synthesize everyone's input
+
+`;
+    }
+
+    prompt += `RESPONSE GUIDELINES:
+- Engage directly with other agents' ideas by name
+- Be respectful but don't hesitate to disagree constructively
+- Build on good ideas and challenge weak ones
+- Stay true to your role as ${agentRole}
+- Keep responses substantial but concise (2-4 paragraphs)
+- Focus on moving the discussion forward
+
+Your response:`;
+
+    return prompt;
+  }
+
+  /**
+   * Select which agent should provide the final consensus report
+   */
+  private async selectConsensusReporter(
+    agents: any[],
+    debateHistory: any[],
+    originalMessage: string
+  ): Promise<{ agent: any; agentName: string; reason: string }> {
+    console.log('🗳️ CONSENSUS SELECTION: Determining best reporter from', agents.length, 'agents');
+
+    // Simple algorithm: select the agent who contributed most substantively
+    // In a more advanced version, we could ask agents to vote
+    
+    const agentContributions = agents.map(agent => {
+      const agentName = agent.identity?.name || agent.name;
+      const agentEntries = debateHistory.filter(entry => entry.agentName === agentName && !entry.isError);
       
-      console.log('🎉 MULTI-AGENT: Returning response with', agentResponses.length, 'individual agent responses');
-      console.log('🔧 MULTI-AGENT SERVICE: Final response:', finalResponse);
-      return finalResponse;
+      const totalLength = agentEntries.reduce((sum, entry) => sum + entry.content.length, 0);
+      const avgLength = agentEntries.length > 0 ? totalLength / agentEntries.length : 0;
+      
+      return {
+        agent,
+        agentName,
+        contributions: agentEntries.length,
+        totalLength,
+        avgLength,
+        score: agentEntries.length * 0.4 + avgLength * 0.6 // Weight both participation and depth
+      };
+    });
+
+    // Sort by score (highest first)
+    agentContributions.sort((a, b) => b.score - a.score);
+    
+    const selected = agentContributions[0];
+    const reason = `Selected based on contribution quality (${selected.contributions} responses, avg ${Math.round(selected.avgLength)} chars)`;
+    
+    console.log('🗳️ CONSENSUS SELECTION: Selected', selected.agentName, '-', reason);
+    
+    return {
+      agent: selected.agent,
+      agentName: selected.agentName,
+      reason
+    };
+  }
+
+  /**
+   * Generate final consensus report from selected agent
+   */
+  private async generateConsensusReport(
+    reporterAgent: any,
+    originalMessage: string,
+    debateHistory: any[],
+    attachments: any[] = [],
+    conversationHistory: any[] = [],
+    governanceEnabled: boolean = true
+  ): Promise<string> {
+    const reporterName = reporterAgent.identity?.name || reporterAgent.name;
+    console.log('📋 CONSENSUS REPORT: Generating final report from', reporterName);
+
+    // Create comprehensive prompt for consensus report
+    const consensusPrompt = `You are ${reporterName}, and you have been selected to provide the final consensus report for this round-table discussion.
+
+ORIGINAL QUESTION: "${originalMessage}"
+
+COMPLETE DISCUSSION HISTORY:
+${debateHistory.map(entry => `\n**${entry.agentName} (Round ${entry.round}):**\n${entry.content}`).join('\n')}
+
+CONSENSUS REPORT INSTRUCTIONS:
+Your task is to synthesize the entire discussion into a comprehensive, balanced consensus report. This should:
+
+1. **EXECUTIVE SUMMARY**: Provide a clear, concise answer to the original question
+2. **KEY POINTS OF AGREEMENT**: Highlight where all agents found common ground
+3. **DIVERSE PERSPECTIVES**: Acknowledge different viewpoints that emerged
+4. **SYNTHESIS**: Combine the best insights from all participants
+5. **RECOMMENDATIONS**: Provide actionable conclusions based on the collective wisdom
+6. **AREAS FOR FURTHER CONSIDERATION**: Note any unresolved questions or areas needing more exploration
+
+FORMATTING:
+- Use clear headings for each section
+- Reference specific agents by name when citing their contributions
+- Maintain objectivity while synthesizing different viewpoints
+- Aim for 4-6 paragraphs total
+- End with clear, actionable recommendations
+
+Generate the final consensus report:`;
+
+    try {
+      const consensusReport = await this.callAgentAPI(
+        consensusPrompt,
+        reporterAgent,
+        attachments,
+        conversationHistory,
+        governanceEnabled
+      );
+
+      console.log('📋 CONSENSUS REPORT: Generated successfully (', consensusReport.length, 'chars)');
+      return consensusReport;
       
     } catch (error) {
-      console.error('🔧 MULTI-AGENT SERVICE: Error in sendMessage:', error);
-      throw error;
+      console.error('📋 CONSENSUS REPORT: Error generating report:', error);
+      return `**CONSENSUS REPORT ERROR**\n\nUnable to generate consensus report from ${reporterName}. Error: ${error.message}\n\nPlease review the individual agent responses above for the discussion outcomes.`;
     }
+  }
+
+  /**
+   * Create summary of the entire debate for backward compatibility
+   */
+  private createDebateSummary(
+    debateHistory: any[],
+    consensusReport: string,
+    reporterName: string
+  ): string {
+    const totalRounds = Math.max(...debateHistory.map(entry => entry.round));
+    const participantCount = new Set(debateHistory.map(entry => entry.agentName)).size;
+    
+    let summary = `# Round-Table Discussion Summary\n\n`;
+    summary += `**Participants:** ${participantCount} agents over ${totalRounds} rounds\n`;
+    summary += `**Consensus Reporter:** ${reporterName}\n\n`;
+    
+    // Add round-by-round summary
+    for (let round = 1; round <= totalRounds; round++) {
+      const roundEntries = debateHistory.filter(entry => entry.round === round);
+      if (roundEntries.length > 0) {
+        summary += `## Round ${round}\n`;
+        roundEntries.forEach(entry => {
+          if (!entry.isError) {
+            summary += `**${entry.agentName}:** ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}\n\n`;
+          }
+        });
+      }
+    }
+    
+    // Add consensus report
+    summary += `## Final Consensus Report\n`;
+    summary += `**Prepared by ${reporterName}:**\n\n`;
+    summary += consensusReport;
+    
+    return summary;
   }
 
   /**
