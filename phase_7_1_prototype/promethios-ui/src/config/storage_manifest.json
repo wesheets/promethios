@@ -87,6 +87,17 @@
     "compliance": [],
     "description": "Multi-agent conversation history and collaborative sessions"
   },
+  "multiAgentSystems": {
+    "provider": "localStorage",
+    "fallback": "memory", 
+    "ttl": 31536000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": [],
+    "description": "Multi-agent system configurations, orchestration settings, and system definitions"
+  },
   "ui": {
     "provider": "localStorage",
     "fallback": "memory",
