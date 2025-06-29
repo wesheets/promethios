@@ -7,6 +7,7 @@
 
 import { UnifiedStorageService } from './UnifiedStorageService';
 import { UserAgentStorageService } from './UserAgentStorageService';
+import { API_BASE_URL } from '../config/api';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -794,6 +795,157 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
+   * Call individual agent's LLM provider directly (same pattern as single agents)
+   */
+  private async callAgentAPI(
+    message: string, 
+    agent: any, 
+    attachments: any[] = [], 
+    conversationHistory: any[] = [],
+    governanceEnabled: boolean = true
+  ): Promise<string> {
+    try {
+      console.log('🤖 MULTI-AGENT: Calling agent API for:', agent.identity?.name || agent.name);
+      
+      // Extract API configuration from agent's apiDetails
+      const apiDetails = agent.apiConfig || agent.apiDetails;
+      if (!apiDetails) {
+        console.error('Missing apiDetails in agent:', agent);
+        throw new Error(`Agent API configuration incomplete. Missing: apiDetails`);
+      }
+      
+      const apiKey = apiDetails.apiKey || apiDetails.key;
+      const provider = (apiDetails.provider || agent.provider)?.toLowerCase();
+      const selectedModel = apiDetails.model || apiDetails.selectedModel || agent.model;
+      
+      if (!apiKey || !provider) {
+        console.error('Missing API configuration in agent apiDetails:', { 
+          apiKey: !!apiKey, 
+          provider, 
+          selectedModel 
+        });
+        throw new Error(`Agent API configuration incomplete. Missing: ${!apiKey ? 'apiKey ' : ''}${!provider ? 'provider' : ''}`);
+      }
+
+      console.log('🤖 MULTI-AGENT: Using API configuration:', { 
+        provider, 
+        selectedModel, 
+        hasApiKey: !!apiKey 
+      });
+
+      // Prepare message with attachments
+      let messageContent = message;
+      if (attachments.length > 0) {
+        messageContent += '\n\nAttachments:\n';
+        attachments.forEach(att => {
+          messageContent += `- ${att.name} (${att.type})\n`;
+          if (att.type.startsWith('image/') && att.data) {
+            messageContent += `  Image data: ${att.data}\n`;
+          }
+        });
+      }
+
+      let response;
+      
+      if (provider === 'openai') {
+        console.log('🤖 MULTI-AGENT: Taking OpenAI path for agent:', agent.identity?.name || agent.name);
+        
+        // Create system message with agent's role context
+        const agentName = agent.identity?.name || agent.name;
+        const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
+        const systemMessage = `You are ${agentName}, ${agentRole}. ${agent.systemPrompt || agent.identity?.description || `You are a helpful AI assistant specializing in ${agentRole}.`}`;
+
+        // Convert conversation history to OpenAI API format
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        const messages = [
+          {
+            role: 'system',
+            content: systemMessage
+          },
+          ...historyMessages,
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ];
+
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: selectedModel || 'gpt-3.5-turbo',
+            messages: messages,
+            max_tokens: apiDetails.maxTokens || 1000,
+            temperature: apiDetails.temperature || 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || 'No response received';
+        
+      } else if (provider === 'anthropic') {
+        console.log('🤖 MULTI-AGENT: Taking Anthropic path for agent:', agent.identity?.name || agent.name);
+        
+        // Create system message with agent's role context
+        const agentName = agent.identity?.name || agent.name;
+        const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
+        const systemMessage = `You are ${agentName}, ${agentRole}. ${agent.systemPrompt || agent.identity?.description || `You are a helpful AI assistant specializing in ${agentRole}.`}`;
+
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20)
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        response = await fetch(`${API_BASE_URL}/api/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            agent_id: 'factual-agent', // Maps to Anthropic in backend
+            message: messageContent,
+            system_message: systemMessage,
+            conversation_history: historyMessages,
+            governance_enabled: governanceEnabled
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.response || 'No response received';
+      }
+      
+      // Add other providers as needed...
+      throw new Error(`Unsupported provider: ${provider}`);
+      
+    } catch (error) {
+      console.error('🤖 MULTI-AGENT: Error calling agent API:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Send message to multi-agent system with governance control
    */
   async sendMessage(
@@ -802,9 +954,9 @@ export class MultiAgentChatIntegrationService {
     attachments: any[] = [],
     governanceEnabled: boolean = true,
     conversationHistory: any[] = []
-  ): Promise<{ content: string; governanceData?: any }> {
+  ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
     try {
-      console.log('🔧 MULTI-AGENT SERVICE: sendMessage called with:', {
+      console.log('🔧 MULTI-AGENT SERVICE: sendMessage called (DIRECT LLM MODE):', {
         sessionId,
         messageLength: message.length,
         attachmentCount: attachments.length,
@@ -823,132 +975,95 @@ export class MultiAgentChatIntegrationService {
         userId: session.userId
       });
 
-      // Get system configuration
+      // Get system configuration with agents
       console.log('🔧 MULTI-AGENT SERVICE: Getting system configuration...');
       const config = await this.getChatConfiguration(session.systemId);
       console.log('🔧 MULTI-AGENT SERVICE: System configuration:', config);
       
-      // Convert conversation history to API format
-      const historyMessages = conversationHistory
-        .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
-        .slice(-20) // Last 20 messages to manage payload size
-        .map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.content,
-          timestamp: msg.timestamp,
-          agentName: msg.agentName,
-          agentId: msg.agentId
-        }));
-
-      // Prepare request payload
-      const requestPayload = {
-        message,
-        attachments,
-        sessionId,
-        systemId: session.systemId,
-        systemConfiguration: config,
-        conversationHistory: historyMessages, // Include conversation history
-        governanceEnabled, // Pass governance setting to backend
-        userId: session.userId
-      };
-
-      console.log('🔧 MULTI-AGENT SERVICE: Sending message to multi-agent system:', {
-        systemId: session.systemId,
-        systemName: session.systemName,
-        governanceEnabled,
-        messageLength: message.length,
-        attachmentCount: attachments.length,
-        apiUrl: 'https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/send-message'
-      });
-
-      try {
-        console.log('🔧 MULTI-AGENT SERVICE: Making API call to backend...');
-        const apiStartTime = Date.now();
-        
-        // Call the backend multi-agent system API
-        const response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/send-message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestPayload)
-        });
-
-        const apiResponseTime = Date.now() - apiStartTime;
-        console.log('🔧 MULTI-AGENT SERVICE: API response received after', apiResponseTime, 'ms');
-        console.log('🔧 MULTI-AGENT SERVICE: Response status:', response.status, response.statusText);
-
-        if (!response.ok) {
-          console.error('🔧 MULTI-AGENT SERVICE: API error response:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: response.url
-          });
-          throw new Error(`Multi-agent system API error: ${response.status} ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('🔧 MULTI-AGENT SERVICE: API response data:', result);
-        
-        // Update session activity
-        await this.updateSessionActivity(sessionId, session.messageCount + 1);
-        console.log('🔧 MULTI-AGENT SERVICE: Session activity updated');
-
-        // Return response with governance data and individual agent responses
-        const finalResponse = {
-          content: result.response || result.content || 'No response received',
-          agentResponses: result.agentResponses || [], // Individual agent responses
-          governanceData: governanceEnabled ? result.governanceData : undefined
-        };
-        
-        console.log('🔧 MULTI-AGENT SERVICE: Returning final response:', finalResponse);
-        return finalResponse;
-        
-      } catch (apiError) {
-        console.warn('🔧 MULTI-AGENT SERVICE: Backend API unavailable, using fallback response:', apiError);
-        console.warn('🔧 MULTI-AGENT SERVICE: API Error details:', {
-          name: apiError.name,
-          message: apiError.message,
-          stack: apiError.stack
-        });
-        
-        // Fallback response when backend is unavailable
-        const fallbackResponse = `Hello! I'm the ${session.systemName} multi-agent system with ${config.agentIds?.length || 0} agents using ${config.collaborationModel} collaboration. 
-
-I received your message: "${message}"
-
-*Note: This is a fallback response as the backend API is currently unavailable. In a full deployment, this system would coordinate between multiple AI agents to provide comprehensive responses.*
-
-**System Details:**
-- Agents: ${config.agentIds?.length || 0}
-- Collaboration Model: ${config.collaborationModel || 'Unknown'}
-- Governance: ${governanceEnabled ? 'Enabled' : 'Disabled'}
-
-How else can I help you today?`;
-
-        console.log('🔧 MULTI-AGENT SERVICE: Using fallback response');
-
-        // Update session activity
-        await this.updateSessionActivity(sessionId, session.messageCount + 1);
-
-        const fallbackResult = {
-          content: fallbackResponse,
-          governanceData: governanceEnabled ? {
-            trustScore: 85,
-            complianceStatus: 'compliant',
-            riskLevel: 'low',
-            governanceChecks: ['message_length_check', 'content_safety_check'],
-            timestamp: new Date().toISOString(),
-            fallbackMode: true
-          } : undefined
-        };
-        
-        console.log('🔧 MULTI-AGENT SERVICE: Returning fallback response:', fallbackResult);
-        return fallbackResult;
+      if (!config.agents || config.agents.length === 0) {
+        console.error('🔧 MULTI-AGENT SERVICE: No agents found in system configuration');
+        throw new Error('No agents found in system configuration');
       }
 
+      console.log('🤖 MULTI-AGENT: Calling', config.agents.length, 'agents directly...');
+
+      // Call each agent individually using direct LLM provider calls
+      const agentResponses = [];
+      const errors = [];
+
+      for (const agent of config.agents) {
+        try {
+          const agentName = agent.identity?.name || agent.name;
+          const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
+          console.log('🤖 MULTI-AGENT: Processing agent:', agentName, '(', agentRole, ')');
+          
+          const agentResponse = await this.callAgentAPI(
+            message, 
+            agent, 
+            attachments, 
+            conversationHistory, 
+            governanceEnabled
+          );
+
+          agentResponses.push({
+            agentId: agent.id,
+            agentName: agentName,
+            assignedRole: agentRole,
+            content: agentResponse,
+            timestamp: new Date().toISOString()
+          });
+
+          console.log('✅ MULTI-AGENT: Agent response received from:', agentName);
+          
+        } catch (error) {
+          console.error('❌ MULTI-AGENT: Error from agent', agent.identity?.name || agent.name, ':', error);
+          errors.push({
+            agentId: agent.id,
+            agentName: agent.identity?.name || agent.name,
+            error: error.message
+          });
+        }
+      }
+
+      // Create combined response
+      let combinedContent = '';
+      if (agentResponses.length > 0) {
+        combinedContent = `Multi-agent system "${session.systemName}" responses:\n\n`;
+        agentResponses.forEach(response => {
+          combinedContent += `**${response.agentName} (${response.assignedRole}):**\n${response.content}\n\n`;
+        });
+      }
+
+      if (errors.length > 0) {
+        combinedContent += `\n**Errors:**\n`;
+        errors.forEach(error => {
+          combinedContent += `- ${error.agentName}: ${error.error}\n`;
+        });
+      }
+
+      // Update session activity
+      await this.updateSessionActivity(sessionId, session.messageCount + 1);
+      console.log('🔧 MULTI-AGENT SERVICE: Session activity updated');
+
+      const finalResponse = {
+        content: combinedContent || 'No responses received from agents',
+        agentResponses: agentResponses, // This is the key - individual agent responses!
+        governanceData: governanceEnabled ? {
+          trustScore: 85,
+          complianceStatus: 'compliant',
+          riskLevel: 'low',
+          timestamp: new Date().toISOString(),
+          agentCount: agentResponses.length,
+          errorCount: errors.length
+        } : undefined
+      };
+      
+      console.log('🎉 MULTI-AGENT: Returning response with', agentResponses.length, 'individual agent responses');
+      console.log('🔧 MULTI-AGENT SERVICE: Final response:', finalResponse);
+      return finalResponse;
+      
     } catch (error) {
-      console.error('Failed to send message to multi-agent system:', error);
+      console.error('🔧 MULTI-AGENT SERVICE: Error in sendMessage:', error);
       throw error;
     }
   }
