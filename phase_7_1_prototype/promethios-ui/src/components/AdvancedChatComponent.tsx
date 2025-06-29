@@ -1652,6 +1652,11 @@ const AdvancedChatComponent: React.FC = () => {
             await multiAgentChatIntegration.saveMessage(errorMessage, selectedSystem.id);
           }
           
+        } catch (outerError) {
+          console.error('🚨 OUTER ERROR:', outerError);
+          // Handle any outer errors
+        }
+        
       } else if (selectedAgent) {
         // Handle single agent response
         let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
