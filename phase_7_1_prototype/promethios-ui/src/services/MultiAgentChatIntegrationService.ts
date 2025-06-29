@@ -6,6 +6,7 @@
  */
 
 import { UnifiedStorageService } from './UnifiedStorageService';
+import { UserAgentStorageService } from './UserAgentStorageService';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -35,11 +36,13 @@ export interface ChatSystemInfo {
 
 export class MultiAgentChatIntegrationService {
   private storageService: UnifiedStorageService;
+  private agentStorageService: UserAgentStorageService;
   private activeSessions = new Map<string, MultiAgentChatSession>();
   private currentUserId: string | null = null;
 
   constructor() {
     this.storageService = new UnifiedStorageService();
+    this.agentStorageService = new UserAgentStorageService();
   }
 
   /**
@@ -47,6 +50,7 @@ export class MultiAgentChatIntegrationService {
    */
   setUser(userId: string): void {
     this.currentUserId = userId;
+    this.agentStorageService.setCurrentUser(userId);
     console.log('🔧 MULTI-AGENT SERVICE: User set to:', userId);
   }
 
@@ -293,11 +297,11 @@ export class MultiAgentChatIntegrationService {
     }
     
     try {
-      // Load user's agents from their session
-      const userAgents = await this.storageService.getAll('agents', this.currentUserId);
+      // Load user's agents using the proper agent storage service
+      const userAgents = await this.agentStorageService.loadUserAgents();
       
       // Filter out Observer Agent (it shouldn't participate in multi-agent chats)
-      const filteredAgents = userAgents.filter(agent => 
+      const filteredAgents = (userAgents || []).filter(agent => 
         agent.identity?.name !== 'Observer Agent' && 
         agent.identity?.role !== 'observer'
       );
