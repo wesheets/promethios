@@ -113,18 +113,19 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
-   * Start a chat session with a multi-agent system
+   * Start a chat session with a multi-agent system (user-session-based)
    */
   async startChatSession(systemId: string, userId: string): Promise<MultiAgentChatSession> {
     try {
-      console.log('Starting chat session for system:', systemId, 'user:', userId);
+      console.log('🔧 CHAT SESSION: Starting session for system:', systemId, 'user:', userId);
+      this.setUser(userId); // Ensure user is set
       
-      // Load the multi-agent system data
-      const systemData = await this.storageService.get('agents', `multi-agent-system-${systemId}`);
-      console.log('Loaded system data for chat session:', systemData);
+      // Load user's specific multi-agent system
+      const systemData = await this.getUserMultiAgentSystem(systemId);
+      console.log('🔧 CHAT SESSION: Loaded system data:', systemData?.name);
       
       if (!systemData) {
-        throw new Error(`Multi-agent system ${systemId} not found`);
+        throw new Error(`Multi-agent system ${systemId} not found for user ${userId}`);
       }
 
       // Check if chat is enabled (default to true if not specified)
@@ -133,21 +134,23 @@ export class MultiAgentChatIntegrationService {
         throw new Error(`Chat is not enabled for system ${systemId}`);
       }
 
-      // Load full agent objects if not already present
-      if (systemData.agentIds && systemData.agentIds.length > 0 && !systemData.agents) {
-        console.log('🔧 Loading agent objects for existing system:', systemData.agentIds);
-        systemData.agents = await this.loadAgentObjects(systemData.agentIds);
-        console.log('🔧 Agent objects loaded for system:', systemData.agents.length);
-      }
+      // Load agents using role-based mapping (not hardcoded IDs)
+      console.log('🔧 CHAT SESSION: Loading agents using role-based mapping...');
+      const agents = await this.loadAgentsByRoles(systemData);
+      console.log('🔧 CHAT SESSION: Loaded', agents.length, 'agents for session');
+      
+      // Update system data with loaded agents
+      systemData.agents = agents;
+      systemData.agentIds = agents.map(a => a.id);
 
       // Ensure backend context exists for this multi-agent system
-      console.log('🔧 Ensuring backend context exists for system:', systemId);
+      console.log('🔧 CHAT SESSION: Ensuring backend context exists for system:', systemId);
       const backendContextId = await this.ensureBackendContext(systemData);
-      console.log('🔧 Backend context ID:', backendContextId);
+      console.log('🔧 CHAT SESSION: Backend context ID:', backendContextId);
 
       // Create backend chat session first
-      console.log('🔧 Creating backend chat session...');
-      console.log('🤖 System data includes agents:', !!systemData.agents, 'Count:', systemData.agents?.length || 0);
+      console.log('🔧 CHAT SESSION: Creating backend chat session...');
+      console.log('🤖 CHAT SESSION: System data includes agents:', !!systemData.agents, 'Count:', systemData.agents?.length || 0);
       console.log('🤖 Agent objects:', systemData.agents?.map(a => `${a.name} (${a.provider})`) || 'None');
       
       const backendSessionResponse = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/create-session', {
@@ -281,91 +284,199 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
-   * Load full agent objects from agent IDs (shared method)
+   * Get all agents for the current user (excluding Observer)
    */
-  private async loadAgentObjects(agentIds: string[]): Promise<any[]> {
+  private async getUserAgents(): Promise<any[]> {
+    if (!this.currentUserId) {
+      throw new Error('No user set for multi-agent service');
+    }
+    
+    try {
+      // Load user's agents from their session
+      const userAgents = await this.storageService.getAll('agents', this.currentUserId);
+      
+      // Filter out Observer Agent (it shouldn't participate in multi-agent chats)
+      const filteredAgents = userAgents.filter(agent => 
+        agent.identity?.name !== 'Observer Agent' && 
+        agent.identity?.role !== 'observer'
+      );
+      
+      console.log('🔧 USER AGENTS: Loaded', filteredAgents.length, 'agents for user', this.currentUserId);
+      return filteredAgents;
+    } catch (error) {
+      console.error('🔧 USER AGENTS: Error loading user agents:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Load user's agents based on role assignments or auto-assign if needed
+   */
+  private async loadAgentsByRoles(systemConfig: any): Promise<any[]> {
+    const userAgents = await this.getUserAgents();
     const agentObjects = [];
-    for (const agentId of agentIds) {
-      try {
-        const agentData = await this.storageService.get('agents', agentId);
-        if (agentData) {
-          console.log('🔧 Loaded agent:', agentData.identity?.name || agentId);
-          agentObjects.push({
-            id: agentData.id,
-            name: agentData.identity?.name || agentId,
-            role: agentData.identity?.role || 'conversational',
-            provider: agentData.llmProvider || 'openai',
-            model: agentData.llmModel || 'gpt-3.5-turbo',
-            systemPrompt: agentData.identity?.systemPrompt || `You are ${agentData.identity?.name || agentId}, a helpful AI assistant.`,
-            apiConfig: {
-              temperature: agentData.llmConfig?.temperature || 0.7,
-              maxTokens: agentData.llmConfig?.maxTokens || 1000,
-              apiKey: agentData.llmConfig?.apiKey
-            }
-          });
+    
+    console.log('🔧 ROLE MAPPING: System config:', systemConfig);
+    console.log('🔧 ROLE MAPPING: Available user agents:', userAgents.length);
+    
+    // If system has role assignments, use them
+    if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
+      console.log('🔧 ROLE MAPPING: Using existing role assignments');
+      
+      for (const [role, agentId] of Object.entries(systemConfig.roleAssignments)) {
+        const agent = userAgents.find(a => a.id === agentId);
+        if (agent) {
+          console.log('🔧 ROLE MAPPING: Found agent for role', role, ':', agent.identity?.name);
+          agentObjects.push(this.formatAgentForBackend(agent, role));
         } else {
-          console.warn('🔧 Agent not found, creating fallback:', agentId);
-          agentObjects.push({
-            id: agentId,
-            name: `Agent ${agentId}`,
-            role: 'conversational',
-            provider: 'openai',
-            model: 'gpt-3.5-turbo',
-            systemPrompt: `You are Agent ${agentId}, a helpful AI assistant.`,
-            apiConfig: { temperature: 0.7, maxTokens: 1000 }
-          });
+          console.warn('🔧 ROLE MAPPING: Agent not found for role', role, ':', agentId);
         }
-      } catch (error) {
-        console.warn('🔧 Error loading agent, creating fallback:', agentId, error);
-        agentObjects.push({
-          id: agentId,
-          name: `Agent ${agentId}`,
-          role: 'conversational',
-          provider: 'openai',
-          model: 'gpt-3.5-turbo',
-          systemPrompt: `You are Agent ${agentId}, a helpful AI assistant.`,
-          apiConfig: { temperature: 0.7, maxTokens: 1000 }
-        });
+      }
+    } 
+    // If system has old agentIds format, try to auto-assign roles
+    else if (systemConfig.agentIds && systemConfig.agentIds.length > 0) {
+      console.log('🔧 ROLE MAPPING: Migrating from old agentIds format');
+      const roleAssignments = await this.autoAssignRolesToUserAgents(userAgents, systemConfig.agentIds.length);
+      
+      for (const [role, agent] of Object.entries(roleAssignments)) {
+        if (agent) {
+          console.log('🔧 ROLE MAPPING: Auto-assigned role', role, 'to agent:', agent.identity?.name);
+          agentObjects.push(this.formatAgentForBackend(agent, role));
+        }
       }
     }
+    // Fallback: use first available user agents
+    else {
+      console.log('🔧 ROLE MAPPING: Using first available user agents as fallback');
+      const defaultRoles = ['strategic_analyst', 'risk_assessor', 'innovation_expert', 'financial_advisor'];
+      
+      for (let i = 0; i < Math.min(userAgents.length, defaultRoles.length); i++) {
+        const agent = userAgents[i];
+        const role = defaultRoles[i];
+        console.log('🔧 ROLE MAPPING: Fallback assignment - role', role, 'to agent:', agent.identity?.name);
+        agentObjects.push(this.formatAgentForBackend(agent, role));
+      }
+    }
+    
+    console.log('🔧 ROLE MAPPING: Final agent objects:', agentObjects.length);
     return agentObjects;
   }
 
   /**
-   * Get chat configuration for a multi-agent system
+   * Auto-assign roles to user's agents based on their capabilities or names
+   */
+  private async autoAssignRolesToUserAgents(userAgents: any[], requiredCount: number): Promise<Record<string, any>> {
+    const roles = ['strategic_analyst', 'risk_assessor', 'innovation_expert', 'financial_advisor'];
+    const assignments: Record<string, any> = {};
+    
+    // Take up to the required number of agents
+    const agentsToUse = userAgents.slice(0, Math.min(requiredCount, roles.length));
+    
+    for (let i = 0; i < agentsToUse.length; i++) {
+      const role = roles[i];
+      const agent = agentsToUse[i];
+      assignments[role] = agent;
+    }
+    
+    return assignments;
+  }
+
+  /**
+   * Format agent data for backend consumption
+   */
+  private formatAgentForBackend(agentData: any, assignedRole?: string): any {
+    return {
+      id: agentData.id,
+      name: agentData.identity?.name || agentData.id,
+      role: agentData.identity?.role || 'conversational',
+      assignedRole: assignedRole, // Role in the multi-agent system
+      provider: agentData.llmProvider || 'openai',
+      model: agentData.llmModel || 'gpt-3.5-turbo',
+      systemPrompt: agentData.identity?.systemPrompt || `You are ${agentData.identity?.name || agentData.id}, a helpful AI assistant.`,
+      apiConfig: {
+        temperature: agentData.llmConfig?.temperature || 0.7,
+        maxTokens: agentData.llmConfig?.maxTokens || 1000,
+        apiKey: agentData.llmConfig?.apiKey
+      }
+    };
+  }
+
+  /**
+   * Get chat configuration for a multi-agent system (user-session-based)
    */
   async getChatConfiguration(systemId: string): Promise<any> {
     try {
-      const systemData = await this.storageService.get('agents', `multi-agent-system-${systemId}`);
-      if (!systemData) {
-        throw new Error(`System ${systemId} not found`);
+      if (!this.currentUserId) {
+        throw new Error('No user set for multi-agent service');
       }
 
-      // Load full agent objects if not already present
-      if (systemData.agentIds && systemData.agentIds.length > 0 && !systemData.agents) {
-        console.log('🔧 Loading agent objects for system configuration:', systemData.agentIds);
-        systemData.agents = await this.loadAgentObjects(systemData.agentIds);
-        console.log('🔧 Agent objects loaded for configuration:', systemData.agents.length);
-        
-        // Update the stored system data with agent objects for future use
-        await this.storageService.set('agents', `multi-agent-system-${systemId}`, systemData);
+      // Load user's specific multi-agent system
+      const systemData = await this.getUserMultiAgentSystem(systemId);
+      if (!systemData) {
+        throw new Error(`System ${systemId} not found for user ${this.currentUserId}`);
       }
+
+      console.log('🔧 CHAT CONFIG: Loading configuration for system:', systemData.name);
+      
+      // Load agents using role-based mapping (not hardcoded IDs)
+      const agents = await this.loadAgentsByRoles(systemData);
+      
+      console.log('🔧 CHAT CONFIG: Loaded', agents.length, 'agents for system');
 
       return {
         systemId,
         systemName: systemData.name,
-        agentIds: systemData.agentIds || [],
-        agents: systemData.agents || [], // ✅ INCLUDE FULL AGENT OBJECTS
+        agentIds: agents.map(a => a.id), // ✅ Current user's agent IDs
+        agents: agents, // ✅ User's actual agent objects with role assignments
         collaborationModel: systemData.collaborationModel || 'sequential',
         governanceConfiguration: systemData.governanceConfiguration || {},
-        chatEnabled: systemData.chatEnabled || false,
+        chatEnabled: systemData.chatEnabled !== false, // Default to true
         dashboardEnabled: systemData.dashboardEnabled || false,
-        agentRoles: systemData.agentRoles || [],
-        systemType: systemData.systemType || 'sequential'
+        agentRoles: agents.map(a => a.assignedRole).filter(Boolean),
+        systemType: systemData.systemType || 'sequential',
+        userId: this.currentUserId, // ✅ User-specific
+        roleAssignments: systemData.roleAssignments || {} // ✅ Role mappings
       };
     } catch (error) {
-      console.error('Failed to get chat configuration:', error);
+      console.error('🔧 CHAT CONFIG: Failed to get chat configuration:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Load user's specific multi-agent system (not global/shared)
+   */
+  private async getUserMultiAgentSystem(systemId: string): Promise<any> {
+    if (!this.currentUserId) {
+      throw new Error('No user set for multi-agent service');
+    }
+    
+    try {
+      // Try user-specific system first
+      const userSystemKey = `${this.currentUserId}.multi-agent-systems.${systemId}`;
+      let systemData = await this.storageService.get('multiAgentSystems', userSystemKey);
+      
+      // Fallback to old format for migration
+      if (!systemData) {
+        console.log('🔧 USER SYSTEM: Trying old format for system:', systemId);
+        systemData = await this.storageService.get('agents', `multi-agent-system-${systemId}`);
+        
+        if (systemData) {
+          console.log('🔧 USER SYSTEM: Found system in old format, migrating...');
+          // Migrate to user-specific format
+          systemData.userId = this.currentUserId;
+          systemData.migratedAt = new Date().toISOString();
+          
+          // Save in new format
+          await this.storageService.set('multiAgentSystems', userSystemKey, systemData);
+          console.log('🔧 USER SYSTEM: System migrated to user-specific format');
+        }
+      }
+      
+      return systemData;
+    } catch (error) {
+      console.error('🔧 USER SYSTEM: Error loading user multi-agent system:', error);
+      return null;
     }
   }
 
