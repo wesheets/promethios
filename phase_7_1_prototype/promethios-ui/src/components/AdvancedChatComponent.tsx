@@ -2349,7 +2349,7 @@ This error has been logged to the console for debugging.`,
               <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Multi-Agent System</InputLabel>
               <Select
                 value={selectedSystem?.id || ''}
-                onChange={(e) => handleSystemChange(e.target.value)}
+                onChange={(e) => handleSystemSelect(e.target.value)}
                 MenuProps={{
                   PaperProps: {
                     sx: {
