@@ -1155,6 +1155,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
 
         // Send "thinking" indicator
         if (onStreamResponse) {
+          console.log('🎭 STREAMING: Sending thinking indicator for', agentName);
           onStreamResponse({
             type: 'agent_thinking',
             content: `💭 **${agentName}** is ${round === 1 ? 'formulating initial thoughts' : round === 2 ? 'analyzing previous responses' : 'working toward consensus'}...`,
@@ -1165,6 +1166,8 @@ Respond from your unique perspective and expertise. Keep responses focused and d
             timestamp: new Date().toISOString(),
             isSystemMessage: true
           });
+        } else {
+          console.log('🎭 STREAMING: No onStreamResponse callback available');
         }
 
         try {
@@ -1205,6 +1208,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
 
           // Stream the agent response immediately
           if (onStreamResponse) {
+            console.log('🎭 STREAMING: Sending agent response for', agentName, '(' + agentResponse.length + ' chars)');
             onStreamResponse({
               type: 'agent_response',
               content: agentResponse,
@@ -1218,6 +1222,8 @@ Respond from your unique perspective and expertise. Keep responses focused and d
               provider: agent.provider || 'openai',
               model: agent.model || 'gpt-3.5-turbo'
             });
+          } else {
+            console.log('🎭 STREAMING: No onStreamResponse callback available for agent response');
           }
 
           // Add pacing delay between agents (except after last agent in round)
