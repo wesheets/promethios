@@ -1426,7 +1426,15 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   const handleSendMessage = async () => {
-    if ((!inputValue.trim() && attachments.length === 0) || isTyping) return;
+    console.log('🚨 DEBUG: handleSendMessage CALLED - ENTRY POINT');
+    console.log('🚨 DEBUG: inputValue:', inputValue);
+    console.log('🚨 DEBUG: attachments length:', attachments.length);
+    console.log('🚨 DEBUG: isTyping:', isTyping);
+    
+    if ((!inputValue.trim() && attachments.length === 0) || isTyping) {
+      console.log('🚨 DEBUG: Early return - no input or isTyping');
+      return;
+    }
     
     // Safety checks
     if (emergencyStop) {
