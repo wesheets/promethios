@@ -843,7 +843,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         console.log('🤖 MULTI-AGENT: Taking OpenAI path for agent:', agent.identity?.name || agent.name);
         
         // Get global OpenAI API key from environment or user settings
-        const globalApiKey = process.env.REACT_APP_OPENAI_API_KEY || 
+        const globalApiKey = import.meta.env.VITE_OPENAI_API_KEY || 
                            localStorage.getItem('openai_api_key') ||
                            sessionStorage.getItem('openai_api_key');
         
