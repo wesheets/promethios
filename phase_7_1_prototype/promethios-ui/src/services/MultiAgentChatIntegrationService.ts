@@ -434,6 +434,7 @@ export class MultiAgentChatIntegrationService {
         systemName: systemData.name,
         agentIds: agents.map(a => a.id), // ✅ Current user's agent IDs
         agents: agents, // ✅ User's actual agent objects with role assignments
+        agentCount: agents.length, // ✅ Add missing agentCount property for UI display
         collaborationModel: systemData.collaborationModel || 'sequential',
         governanceConfiguration: systemData.governanceConfiguration || {},
         chatEnabled: systemData.chatEnabled !== false, // Default to true
