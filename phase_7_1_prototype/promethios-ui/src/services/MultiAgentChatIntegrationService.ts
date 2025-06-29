@@ -77,7 +77,7 @@ export class MultiAgentChatIntegrationService {
             
             if (chatEnabled) {
               chatSystems.push({
-                id: systemData.id || systemData.contextId,
+                id: systemRef.id, // 🔧 FIX: Use storage reference ID instead of contextId
                 name: systemData.name,
                 description: systemData.description,
                 type: 'multi-agent-system',
@@ -87,6 +87,7 @@ export class MultiAgentChatIntegrationService {
                 governanceConfiguration: systemData.governanceConfiguration,
                 lastUsed: systemData.lastUsed
               });
+              console.log('🔧 SYSTEM ID FIX: Added system with storage reference ID:', systemRef.id, 'instead of contextId:', systemData.contextId);
             }
           } else {
             console.warn(`System data not found for ${systemRef.id}`);
