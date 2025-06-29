@@ -1959,6 +1959,14 @@ This error has been logged to the console for debugging.`,
       }
 
       console.log('🔧 SYSTEM SELECT: System found:', system);
+      console.log('🔧 SYSTEM SELECT: System details:', {
+        id: system.id,
+        name: system.name,
+        agentCount: system.agentCount,
+        collaborationModel: system.collaborationModel,
+        hasAgents: !!system.agents,
+        agentIds: system.agentIds || 'Not available in ChatSystemInfo'
+      });
       setSelectedSystem(system);
       setError(null);
 

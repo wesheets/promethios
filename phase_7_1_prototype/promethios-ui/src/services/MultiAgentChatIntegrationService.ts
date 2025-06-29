@@ -133,6 +133,13 @@ export class MultiAgentChatIntegrationService {
         throw new Error(`Chat is not enabled for system ${systemId}`);
       }
 
+      // Load full agent objects if not already present
+      if (systemData.agentIds && systemData.agentIds.length > 0 && !systemData.agents) {
+        console.log('🔧 Loading agent objects for existing system:', systemData.agentIds);
+        systemData.agents = await this.loadAgentObjects(systemData.agentIds);
+        console.log('🔧 Agent objects loaded for system:', systemData.agents.length);
+      }
+
       // Ensure backend context exists for this multi-agent system
       console.log('🔧 Ensuring backend context exists for system:', systemId);
       const backendContextId = await this.ensureBackendContext(systemData);
@@ -274,6 +281,57 @@ export class MultiAgentChatIntegrationService {
   }
 
   /**
+   * Load full agent objects from agent IDs (shared method)
+   */
+  private async loadAgentObjects(agentIds: string[]): Promise<any[]> {
+    const agentObjects = [];
+    for (const agentId of agentIds) {
+      try {
+        const agentData = await this.storageService.get('agents', agentId);
+        if (agentData) {
+          console.log('🔧 Loaded agent:', agentData.identity?.name || agentId);
+          agentObjects.push({
+            id: agentData.id,
+            name: agentData.identity?.name || agentId,
+            role: agentData.identity?.role || 'conversational',
+            provider: agentData.llmProvider || 'openai',
+            model: agentData.llmModel || 'gpt-3.5-turbo',
+            systemPrompt: agentData.identity?.systemPrompt || `You are ${agentData.identity?.name || agentId}, a helpful AI assistant.`,
+            apiConfig: {
+              temperature: agentData.llmConfig?.temperature || 0.7,
+              maxTokens: agentData.llmConfig?.maxTokens || 1000,
+              apiKey: agentData.llmConfig?.apiKey
+            }
+          });
+        } else {
+          console.warn('🔧 Agent not found, creating fallback:', agentId);
+          agentObjects.push({
+            id: agentId,
+            name: `Agent ${agentId}`,
+            role: 'conversational',
+            provider: 'openai',
+            model: 'gpt-3.5-turbo',
+            systemPrompt: `You are Agent ${agentId}, a helpful AI assistant.`,
+            apiConfig: { temperature: 0.7, maxTokens: 1000 }
+          });
+        }
+      } catch (error) {
+        console.warn('🔧 Error loading agent, creating fallback:', agentId, error);
+        agentObjects.push({
+          id: agentId,
+          name: `Agent ${agentId}`,
+          role: 'conversational',
+          provider: 'openai',
+          model: 'gpt-3.5-turbo',
+          systemPrompt: `You are Agent ${agentId}, a helpful AI assistant.`,
+          apiConfig: { temperature: 0.7, maxTokens: 1000 }
+        });
+      }
+    }
+    return agentObjects;
+  }
+
+  /**
    * Get chat configuration for a multi-agent system
    */
   async getChatConfiguration(systemId: string): Promise<any> {
@@ -283,10 +341,21 @@ export class MultiAgentChatIntegrationService {
         throw new Error(`System ${systemId} not found`);
       }
 
+      // Load full agent objects if not already present
+      if (systemData.agentIds && systemData.agentIds.length > 0 && !systemData.agents) {
+        console.log('🔧 Loading agent objects for system configuration:', systemData.agentIds);
+        systemData.agents = await this.loadAgentObjects(systemData.agentIds);
+        console.log('🔧 Agent objects loaded for configuration:', systemData.agents.length);
+        
+        // Update the stored system data with agent objects for future use
+        await this.storageService.set('agents', `multi-agent-system-${systemId}`, systemData);
+      }
+
       return {
         systemId,
         systemName: systemData.name,
         agentIds: systemData.agentIds || [],
+        agents: systemData.agents || [], // ✅ INCLUDE FULL AGENT OBJECTS
         collaborationModel: systemData.collaborationModel || 'sequential',
         governanceConfiguration: systemData.governanceConfiguration || {},
         chatEnabled: systemData.chatEnabled || false,
