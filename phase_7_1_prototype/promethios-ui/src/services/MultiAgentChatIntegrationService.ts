@@ -976,6 +976,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       // Route to appropriate collaboration model handler
       switch (collaborationModel) {
         case 'round_table_discussion':
+        case 'round_table_sequential':  // Handle existing systems
           console.log('🎭 ROUTER: Routing to Round-Table Discussion handler');
           return this.handleRoundTableDiscussion(sessionId, message, attachments, governanceEnabled, conversationHistory);
         
