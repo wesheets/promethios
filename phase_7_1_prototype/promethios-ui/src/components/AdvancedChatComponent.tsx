@@ -1545,163 +1545,6 @@ const AdvancedChatComponent: React.FC = () => {
             await chatStorageService.saveMessage(errorMessage, agent.identity.id);
           }
         }
-      } else if (selectedAgent) {
-        // Handle single agent response
-        let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
-        
-        // Initialize governance data
-        let governanceData = undefined;
-        let shadowGovernanceData = undefined;
-        
-        // Always run governance analysis in background for transparency (shadow governance)
-        try {
-          const isGovernanceActive = governanceService.isGovernanceActive();
-          
-          if (isGovernanceActive) {
-            // Run governance monitoring for transparency
-            const monitoringResult = await governanceService.monitorMessage(
-              agentResponse,
-              selectedAgent.identity.id,
-              `msg_${Date.now()}_agent`,
-              currentAttachments
-            );
-            
-            // Create behavior-based transparency message
-            let transparencyMessage = '';
-            if (monitoringResult.behaviorTags?.includes('veritas_prevention_successful')) {
-              transparencyMessage = '✅ Hallucination Prevention Successful - Agent correctly refused to provide unverifiable information';
-            } else if (monitoringResult.behaviorTags?.includes('self-questioning_engaged')) {
-              transparencyMessage = '🧠 Veritas Self-Questioning Engaged - Agent demonstrated appropriate caution';
-            } else if (monitoringResult.behaviorTags?.includes('uncertainty_detected')) {
-              transparencyMessage = '⚠️ Appropriate Uncertainty Detected - Agent expressed proper caution';
-            }
-            
-            const analysisResult = {
-              trustScore: monitoringResult.trustScore,
-              violations: monitoringResult.violations || [],
-              approved: monitoringResult.approved,
-              behaviorTags: monitoringResult.behaviorTags || [],
-              transparencyMessage
-            };
-            
-            if (governanceEnabled) {
-              // Layer 2: Policy Enforcement - Apply governance if enabled
-              governanceData = {
-                ...analysisResult,
-                governanceDisabled: false
-              };
-            } else {
-              // Shadow governance - Store analysis but don't enforce
-              shadowGovernanceData = {
-                ...analysisResult,
-                governanceDisabled: true,
-                shadowMode: true,
-                shadowMessage: governanceEnabled ? null : 
-                  `🔍 Shadow Analysis: ${analysisResult.violations.length > 0 ? 
-                    `${analysisResult.violations.length} potential issue(s) detected` : 
-                    'No governance issues detected'} (Governance disabled)`
-              };
-              
-              // Set minimal governance data for disabled state
-              governanceData = {
-                trustScore: 0,
-                violations: [],
-                approved: true,
-                governanceDisabled: true
-              };
-            }
-          } else {
-            // Fallback when governance service is not available
-            const fallbackAnalysis = {
-              trustScore: 85 + Math.random() * 10,
-              violations: [],
-              approved: true,
-              fallbackMode: true
-            };
-            
-            if (governanceEnabled) {
-              governanceData = {
-                ...fallbackAnalysis,
-                governanceDisabled: false
-              };
-            } else {
-              shadowGovernanceData = {
-                ...fallbackAnalysis,
-                governanceDisabled: true,
-                shadowMode: true,
-                shadowMessage: '🔍 Shadow Analysis: Governance service unavailable (Governance disabled)'
-              };
-              
-              governanceData = {
-                trustScore: 0,
-                violations: [],
-                approved: true,
-                governanceDisabled: true
-              };
-            }
-          }
-        } catch (error) {
-          console.error('Error during governance monitoring:', error);
-          
-          const errorAnalysis = {
-            trustScore: 75,
-            violations: ['Monitoring error occurred'],
-            approved: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          };
-          
-          if (governanceEnabled) {
-            governanceData = {
-              ...errorAnalysis,
-              governanceDisabled: false
-            };
-          } else {
-            shadowGovernanceData = {
-              ...errorAnalysis,
-              governanceDisabled: true,
-              shadowMode: true,
-              shadowMessage: '🔍 Shadow Analysis: Error during analysis (Governance disabled)'
-            };
-            
-            governanceData = {
-              trustScore: 0,
-              violations: [],
-              approved: true,
-              governanceDisabled: true
-            };
-          }
-        }
-        
-        // Layer 3: Emotional Veritas 2.0 - Now integrated into agent's self-questioning (no post-processing needed)
-        // The agent should have already questioned itself before responding
-        
-        const agentMessage: ChatMessage = {
-          id: `msg_${Date.now()}_agent`,
-          content: agentResponse, // Agent should have self-censored any hallucinations
-          sender: 'agent',
-          timestamp: new Date(),
-          agentName: selectedAgent.identity.name,
-          agentId: selectedAgent.identity.id,
-          governanceData,
-          shadowGovernanceData // Add shadow governance data for transparency
-        };
-        
-        console.log('Created agent message with governance data:', {
-          messageId: agentMessage.id,
-          hasGovernanceData: !!governanceData,
-          governanceData: governanceData
-        });
-        
-        setMessages(prev => [...prev, agentMessage]);
-        
-        // Save agent message to storage
-        ensureUserSet();
-        await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
-        
-        // Scroll to bottom after agent response
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
       } else if (chatMode === 'saved-systems' && selectedSystem && currentChatSession) {
         // Handle saved multi-agent system response
         try {
@@ -1874,6 +1717,163 @@ This error has been logged to the console for debugging.`,
           // Save error message to storage
           await chatStorageService.saveMessage(errorMessage, selectedSystem.id);
         }
+      } else if (selectedAgent) {
+        // Handle single agent response
+        let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
+        
+        // Initialize governance data
+        let governanceData = undefined;
+        let shadowGovernanceData = undefined;
+        
+        // Always run governance analysis in background for transparency (shadow governance)
+        try {
+          const isGovernanceActive = governanceService.isGovernanceActive();
+          
+          if (isGovernanceActive) {
+            // Run governance monitoring for transparency
+            const monitoringResult = await governanceService.monitorMessage(
+              agentResponse,
+              selectedAgent.identity.id,
+              `msg_${Date.now()}_agent`,
+              currentAttachments
+            );
+            
+            // Create behavior-based transparency message
+            let transparencyMessage = '';
+            if (monitoringResult.behaviorTags?.includes('veritas_prevention_successful')) {
+              transparencyMessage = '✅ Hallucination Prevention Successful - Agent correctly refused to provide unverifiable information';
+            } else if (monitoringResult.behaviorTags?.includes('self-questioning_engaged')) {
+              transparencyMessage = '🧠 Veritas Self-Questioning Engaged - Agent demonstrated appropriate caution';
+            } else if (monitoringResult.behaviorTags?.includes('uncertainty_detected')) {
+              transparencyMessage = '⚠️ Appropriate Uncertainty Detected - Agent expressed proper caution';
+            }
+            
+            const analysisResult = {
+              trustScore: monitoringResult.trustScore,
+              violations: monitoringResult.violations || [],
+              approved: monitoringResult.approved,
+              behaviorTags: monitoringResult.behaviorTags || [],
+              transparencyMessage
+            };
+            
+            if (governanceEnabled) {
+              // Layer 2: Policy Enforcement - Apply governance if enabled
+              governanceData = {
+                ...analysisResult,
+                governanceDisabled: false
+              };
+            } else {
+              // Shadow governance - Store analysis but don't enforce
+              shadowGovernanceData = {
+                ...analysisResult,
+                governanceDisabled: true,
+                shadowMode: true,
+                shadowMessage: governanceEnabled ? null : 
+                  `🔍 Shadow Analysis: ${analysisResult.violations.length > 0 ? 
+                    `${analysisResult.violations.length} potential issue(s) detected` : 
+                    'No governance issues detected'} (Governance disabled)`
+              };
+              
+              // Set minimal governance data for disabled state
+              governanceData = {
+                trustScore: 0,
+                violations: [],
+                approved: true,
+                governanceDisabled: true
+              };
+            }
+          } else {
+            // Fallback when governance service is not available
+            const fallbackAnalysis = {
+              trustScore: 85 + Math.random() * 10,
+              violations: [],
+              approved: true,
+              fallbackMode: true
+            };
+            
+            if (governanceEnabled) {
+              governanceData = {
+                ...fallbackAnalysis,
+                governanceDisabled: false
+              };
+            } else {
+              shadowGovernanceData = {
+                ...fallbackAnalysis,
+                governanceDisabled: true,
+                shadowMode: true,
+                shadowMessage: '🔍 Shadow Analysis: Governance service unavailable (Governance disabled)'
+              };
+              
+              governanceData = {
+                trustScore: 0,
+                violations: [],
+                approved: true,
+                governanceDisabled: true
+              };
+            }
+          }
+        } catch (error) {
+          console.error('Error during governance monitoring:', error);
+          
+          const errorAnalysis = {
+            trustScore: 75,
+            violations: ['Monitoring error occurred'],
+            approved: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
+          
+          if (governanceEnabled) {
+            governanceData = {
+              ...errorAnalysis,
+              governanceDisabled: false
+            };
+          } else {
+            shadowGovernanceData = {
+              ...errorAnalysis,
+              governanceDisabled: true,
+              shadowMode: true,
+              shadowMessage: '🔍 Shadow Analysis: Error during analysis (Governance disabled)'
+            };
+            
+            governanceData = {
+              trustScore: 0,
+              violations: [],
+              approved: true,
+              governanceDisabled: true
+            };
+          }
+        }
+        
+        // Layer 3: Emotional Veritas 2.0 - Now integrated into agent's self-questioning (no post-processing needed)
+        // The agent should have already questioned itself before responding
+        
+        const agentMessage: ChatMessage = {
+          id: `msg_${Date.now()}_agent`,
+          content: agentResponse, // Agent should have self-censored any hallucinations
+          sender: 'agent',
+          timestamp: new Date(),
+          agentName: selectedAgent.identity.name,
+          agentId: selectedAgent.identity.id,
+          governanceData,
+          shadowGovernanceData // Add shadow governance data for transparency
+        };
+        
+        console.log('Created agent message with governance data:', {
+          messageId: agentMessage.id,
+          hasGovernanceData: !!governanceData,
+          governanceData: governanceData
+        });
+        
+        setMessages(prev => [...prev, agentMessage]);
+        
+        // Save agent message to storage
+        ensureUserSet();
+        await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
+        
+        // Scroll to bottom after agent response
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
       }
 
     } catch (error) {
