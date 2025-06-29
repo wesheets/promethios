@@ -570,7 +570,8 @@ export class MultiAgentChatIntegrationService {
     sessionId: string, 
     message: string, 
     attachments: any[] = [],
-    governanceEnabled: boolean = true
+    governanceEnabled: boolean = true,
+    conversationHistory: any[] = []
   ): Promise<{ content: string; governanceData?: any }> {
     try {
       console.log('🔧 MULTI-AGENT SERVICE: sendMessage called with:', {
@@ -597,6 +598,18 @@ export class MultiAgentChatIntegrationService {
       const config = await this.getChatConfiguration(session.systemId);
       console.log('🔧 MULTI-AGENT SERVICE: System configuration:', config);
       
+      // Convert conversation history to API format
+      const historyMessages = conversationHistory
+        .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+        .slice(-20) // Last 20 messages to manage payload size
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.content,
+          timestamp: msg.timestamp,
+          agentName: msg.agentName,
+          agentId: msg.agentId
+        }));
+
       // Prepare request payload
       const requestPayload = {
         message,
@@ -604,6 +617,7 @@ export class MultiAgentChatIntegrationService {
         sessionId,
         systemId: session.systemId,
         systemConfiguration: config,
+        conversationHistory: historyMessages, // Include conversation history
         governanceEnabled, // Pass governance setting to backend
         userId: session.userId
       };

@@ -65,6 +65,28 @@
     "compliance": [],
     "description": "Agent configurations, templates, and orchestration data"
   },
+  "singleAgentChats": {
+    "provider": "localStorage",
+    "fallback": "memory",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Single agent conversation history and chat sessions"
+  },
+  "multiAgentChats": {
+    "provider": "localStorage", 
+    "fallback": "memory",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Multi-agent conversation history and collaborative sessions"
+  },
   "ui": {
     "provider": "localStorage",
     "fallback": "memory",

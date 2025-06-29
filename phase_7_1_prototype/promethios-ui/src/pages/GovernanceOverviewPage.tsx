@@ -159,6 +159,24 @@ const GovernanceOverviewPage: React.FC = () => {
     filterViolations
   } = useGovernanceDashboard();
 
+  // Mock data for missing variables until backend integration is complete
+  const vigilMetrics = {
+    trustScores: {},
+    driftStats: {
+      totalGoals: 0,
+      driftDetected: 0,
+      significantDrift: 0
+    },
+    lastUpdated: new Date().toISOString()
+  };
+
+  const governanceAwareness = {
+    totalAgents: 0,
+    governedAgents: 0,
+    complianceRate: 0,
+    lastAudit: new Date().toISOString()
+  };
+
   const loading = metricsLoading || violationsLoading || overviewLoading;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {

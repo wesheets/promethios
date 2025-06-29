@@ -1084,7 +1084,7 @@ const AdvancedChatComponent: React.FC = () => {
   };
 
   // Call actual agent API using the agent's own configuration
-  const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = []): Promise<string> => {
+  const callAgentAPI = async (message: string, agent: AgentProfile, attachments: FileAttachment[] = [], conversationHistory: ChatMessage[] = []): Promise<string> => {
     try {
       console.log('Agent object:', agent);
       
@@ -1141,11 +1141,21 @@ const AdvancedChatComponent: React.FC = () => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
+        // Convert conversation history to OpenAI API format
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
         const messages = [
           {
             role: 'system',
             content: systemMessage
           },
+          ...historyMessages, // Include conversation history
           {
             role: 'user',
             content: messageContent
@@ -1185,6 +1195,15 @@ const AdvancedChatComponent: React.FC = () => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
         response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
@@ -1194,6 +1213,7 @@ const AdvancedChatComponent: React.FC = () => {
             agent_id: 'factual-agent', // Maps to Anthropic in backend
             message: messageContent,
             system_message: systemMessage, // Pass the governance system message
+            conversation_history: historyMessages, // Include conversation history
             governance_enabled: governanceEnabled
           })
         });
@@ -1217,6 +1237,15 @@ const AdvancedChatComponent: React.FC = () => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
         response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
@@ -1226,6 +1255,7 @@ const AdvancedChatComponent: React.FC = () => {
             agent_id: 'governance-agent', // Maps to Cohere in backend
             message: messageContent,
             system_message: systemMessage, // Pass the governance system message
+            conversation_history: historyMessages, // Include conversation history
             governance_enabled: governanceEnabled
           })
         });
@@ -1238,6 +1268,22 @@ const AdvancedChatComponent: React.FC = () => {
         return data.response || 'No response received';
         
       } else if (provider === 'huggingface') {
+        // Build conversation context for HuggingFace
+        let conversationContext = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\n`;
+        
+        // Add recent conversation history
+        const recentHistory = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-10) // Last 10 messages for HuggingFace
+          .map(msg => `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+          .join('\n');
+        
+        if (recentHistory) {
+          conversationContext += recentHistory + '\n';
+        }
+        
+        conversationContext += `User: ${messageContent}\nAssistant:`;
+
         const hfModel = selectedModel || 'microsoft/DialoGPT-medium';
         response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
           method: 'POST',
@@ -1246,7 +1292,7 @@ const AdvancedChatComponent: React.FC = () => {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            inputs: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\nUser: ${messageContent}\nAssistant:`
+            inputs: conversationContext
           })
         });
 
@@ -1260,6 +1306,16 @@ const AdvancedChatComponent: React.FC = () => {
       } else if (apiEndpoint) {
         // Custom API endpoint
         console.log('Taking custom API endpoint path...');
+        // Convert conversation history for custom API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage payload size
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content,
+            timestamp: msg.timestamp
+          }));
+
         response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
@@ -1271,6 +1327,7 @@ const AdvancedChatComponent: React.FC = () => {
             agent_name: agent.agentName || agent.identity?.name,
             agent_description: agent.description || agent.identity?.description,
             model: selectedModel,
+            conversation_history: historyMessages, // Include conversation history
             attachments: attachments.map(att => ({
               name: att.name,
               type: att.type,
@@ -1427,7 +1484,7 @@ const AdvancedChatComponent: React.FC = () => {
         // Handle multi-agent responses
         for (const agent of selectedAgents) {
           try {
-            const agentResponse = await callAgentAPI(userMessage.content, agent, currentAttachments);
+            const agentResponse = await callAgentAPI(userMessage.content, agent, currentAttachments, messages);
             
             const agentMessage: ChatMessage = {
               id: `msg_${Date.now()}_agent_${agent.identity.id}`,
@@ -1463,7 +1520,7 @@ const AdvancedChatComponent: React.FC = () => {
         }
       } else if (selectedAgent) {
         // Handle single agent response
-        let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments);
+        let agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
         
         // Initialize governance data
         let governanceData = undefined;
@@ -1656,7 +1713,8 @@ const AdvancedChatComponent: React.FC = () => {
               currentChatSession.id,
               userMessage.content,
               currentAttachments,
-              governanceEnabled // Pass governance setting to backend
+              governanceEnabled, // Pass governance setting to backend
+              messages // Pass conversation history
             ),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Multi-agent system response timeout after 30 seconds')), TIMEOUT_MS)
