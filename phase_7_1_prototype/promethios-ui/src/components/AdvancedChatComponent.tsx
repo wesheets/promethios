@@ -1492,6 +1492,12 @@ const AdvancedChatComponent: React.FC = () => {
     }, 100);
 
     try {
+      console.log('🚨 DEBUG: handleSendMessage - checking conditions');
+      console.log('🚨 DEBUG: isMultiAgentMode:', isMultiAgentMode);
+      console.log('🚨 DEBUG: selectedAgent:', selectedAgent?.identity?.name);
+      console.log('🚨 DEBUG: chatMode:', chatMode);
+      console.log('🚨 DEBUG: selectedSystem:', selectedSystem?.name);
+      console.log('🚨 DEBUG: currentChatSession:', currentChatSession?.id);
 
       if (isMultiAgentMode) {
         // Handle multi-agent responses
