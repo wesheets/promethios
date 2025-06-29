@@ -956,6 +956,7 @@ export class MultiAgentChatIntegrationService {
     governanceEnabled: boolean = true,
     conversationHistory: any[] = []
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
+    console.log('🚨 DEBUG: sendMessage method called - ENTRY POINT');
     try {
       console.log('🔧 MULTI-AGENT SERVICE: sendMessage called (DIRECT LLM MODE):', {
         sessionId,
