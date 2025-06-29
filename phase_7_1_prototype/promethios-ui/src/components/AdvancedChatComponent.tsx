@@ -1623,10 +1623,23 @@ const AdvancedChatComponent: React.FC = () => {
         try {
           console.log('🚀 MULTI-AGENT DEBUG: Starting message send to system:', selectedSystem.name);
           console.log('🚀 MULTI-AGENT DEBUG: Session ID:', currentChatSession.id);
+          console.log('🚀 MULTI-AGENT DEBUG: Session details:', {
+            sessionId: currentChatSession.id,
+            systemId: currentChatSession.systemId,
+            systemName: currentChatSession.systemName,
+            status: currentChatSession.status,
+            userId: currentChatSession.userId
+          });
           console.log('🚀 MULTI-AGENT DEBUG: Message content:', userMessage.content);
           console.log('🚀 MULTI-AGENT DEBUG: Governance enabled:', governanceEnabled);
           
-          // Save user message to storage for the system
+          // Verify session is still valid before sending
+          if (!currentChatSession.id) {
+            console.error('🚀 MULTI-AGENT DEBUG: Session ID is missing!');
+            throw new Error('Invalid session: missing session ID');
+          }
+          
+          // Save user message to storage first
           ensureUserSet();
           await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
           console.log('🚀 MULTI-AGENT DEBUG: User message saved to storage');
@@ -1876,23 +1889,56 @@ This error has been logged to the console for debugging.`,
   };
 
   // Handle system selection for saved systems mode
-  const handleSystemChange = async (systemId: string) => {
+  const handleSystemSelect = async (systemId: string) => {
     try {
+      console.log('🔧 SYSTEM SELECT: Starting system selection process for:', systemId);
+      
       const system = availableSystems.find(s => s.id === systemId);
       if (!system) {
-        console.error('System not found:', systemId);
+        console.error('🔧 SYSTEM SELECT: System not found:', systemId);
+        setError('System not found');
         return;
       }
 
-      console.log('Selecting system:', system);
+      console.log('🔧 SYSTEM SELECT: System found:', system);
       setSelectedSystem(system);
       setError(null);
 
       // Start a new chat session with the selected system
-      if (currentUser?.uid) {
+      if (!currentUser?.uid) {
+        console.error('🔧 SYSTEM SELECT: No current user found');
+        setError('User not authenticated');
+        return;
+      }
+
+      console.log('🔧 SYSTEM SELECT: Starting chat session for user:', currentUser.uid);
+      
+      try {
         const session = await multiAgentChatIntegration.startChatSession(systemId, currentUser.uid);
+        
+        if (!session) {
+          console.error('🔧 SYSTEM SELECT: Session creation returned null/undefined');
+          setError('Failed to create chat session');
+          return;
+        }
+        
+        if (!session.id) {
+          console.error('🔧 SYSTEM SELECT: Session created but has no ID:', session);
+          setError('Invalid session created');
+          return;
+        }
+        
+        console.log('🔧 SYSTEM SELECT: Chat session created successfully:', {
+          sessionId: session.id,
+          systemId: session.systemId,
+          systemName: session.systemName,
+          status: session.status
+        });
+        
         setCurrentChatSession(session);
-        console.log('Started chat session:', session);
+        
+        // Verify the session was set correctly
+        console.log('🔧 SYSTEM SELECT: Current chat session state updated');
 
         // Clear existing messages and add welcome message
         const welcomeMessage: ChatMessage = {
@@ -1905,11 +1951,26 @@ This error has been logged to the console for debugging.`,
 
         // Save welcome message to storage
         ensureUserSet();
-        await multiAgentChatIntegration.saveMessage(welcomeMessage, systemId);
+        try {
+          await multiAgentChatIntegration.saveMessage(welcomeMessage, systemId);
+          console.log('🔧 SYSTEM SELECT: Welcome message saved to storage');
+        } catch (saveError) {
+          console.warn('🔧 SYSTEM SELECT: Failed to save welcome message:', saveError);
+          // Don't fail the entire process for this
+        }
+        
+        console.log('🔧 SYSTEM SELECT: System selection completed successfully');
+        
+      } catch (sessionError) {
+        console.error('🔧 SYSTEM SELECT: Error creating chat session:', sessionError);
+        setError(`Failed to create chat session: ${sessionError.message}`);
+        setCurrentChatSession(null);
       }
+      
     } catch (error) {
-      console.error('Error selecting system:', error);
+      console.error('🔧 SYSTEM SELECT: Error in system selection:', error);
       setError('Failed to connect to multi-agent system');
+      setCurrentChatSession(null);
     }
   };
 
