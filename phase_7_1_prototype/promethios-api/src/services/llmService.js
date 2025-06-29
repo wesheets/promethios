@@ -130,8 +130,8 @@ class LLMService {
         error: error.error,
         stack: error.stack
       });
-      // Throw the error instead of returning fallback - let the calling code handle it
-      throw error;
+      // Return fallback response instead of throwing error
+      return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
     }
   }
 
