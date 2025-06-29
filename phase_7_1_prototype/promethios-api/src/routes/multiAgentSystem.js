@@ -838,15 +838,25 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   
   console.log(`🤝 Using collaboration model: ${collaborationModel}`);
   
-  // Get real agents from system configuration
-  const conversationalAgents = session.systemConfiguration?.agents?.filter(agent => 
-    agent.role !== 'observer' && agent.role !== 'governance'
-  ) || [];
+  // Get agents from system configuration - handle both formats
+  let conversationalAgents = [];
   
-  console.log(`👥 Available agents from session:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  if (session.systemConfiguration?.agents) {
+    // Format 1: Full agent objects already provided
+    conversationalAgents = session.systemConfiguration.agents.filter(agent => 
+      agent.role !== 'observer' && agent.role !== 'governance'
+    );
+    console.log(`👥 Using provided agent objects:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  } else if (session.systemConfiguration?.agentIds) {
+    // Format 2: Agent IDs that need to be resolved to full objects
+    console.log(`🔧 Resolving agent IDs to full objects:`, session.systemConfiguration.agentIds);
+    conversationalAgents = await resolveAgentIds(session.systemConfiguration.agentIds);
+    console.log(`👥 Resolved agents:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  }
   
   // If no agents configured, return error
   if (conversationalAgents.length === 0) {
+    console.error(`❌ No conversational agents found. systemConfiguration:`, JSON.stringify(session.systemConfiguration, null, 2));
     throw new Error('No conversational agents configured for this multi-agent system');
   }
   
@@ -933,8 +943,8 @@ async function generateSequentialResponses(session, message, conversationalAgent
       console.log(`🤖 Generating live response for ${agent.name} (${agent.id})`);
       console.log(`📝 Context includes ${agentResponses.length} previous responses`);
       
-      // Generate response with full conversation context using real agent ID and live LLM call
-      const agentResponse = await llmService.generateResponse(agent.id, conversationContext);
+      // Generate response with full conversation context using real agent configuration and live LLM call
+      const agentResponse = await llmService.generateResponseWithAgent(agent, conversationContext);
       
       const responseData = {
         agentId: agent.id,
@@ -1031,8 +1041,8 @@ async function generateRoundTableDiscussion(session, message, conversationalAgen
         console.log(`🎯 ${agent.name} (${agent.id}) taking turn in Round ${round}`);
         console.log(`📚 Context includes ${allAgentResponses.length} previous responses from ${round - 1} rounds`);
         
-        // Generate round-table aware response using real agent ID and live LLM call
-        const agentResponse = await llmService.generateResponse(agent.id, roundTableContext);
+        // Generate round-table aware response using real agent configuration and live LLM call
+        const agentResponse = await llmService.generateResponseWithAgent(agent, roundTableContext);
         
         const responseData = {
           agentId: agent.id,
@@ -1157,8 +1167,8 @@ async function generateParallelResponses(session, message, conversationalAgents,
       const agent = conversationalAgents[i];
       console.log(`🤖 Generating parallel response for ${agent.name} (${agent.id})`);
       
-      // Generate response using live LLM call
-      const agentResponse = await llmService.generateResponse(agent.id, message);
+      // Generate response using live LLM call with full agent configuration
+      const agentResponse = await llmService.generateResponseWithAgent(agent, message);
       
       agentResponses.push({
         agentId: agent.id,
@@ -1533,5 +1543,45 @@ function calculateDiscussionQuality(agentResponses) {
   return Math.min(100, qualityScore / agentResponses.length);
 }
 
-module.exports = router;
+/**
+ * Resolve agent IDs to full agent objects with LLM configurations
+ */
+async function resolveAgentIds(agentIds) {
+  console.log(`🔧 Resolving ${agentIds.length} agent IDs to full objects`);
+  
+  const resolvedAgents = [];
+  
+  for (const agentId of agentIds) {
+    try {
+      // Create a mock agent object with conversational role
+      // In a full implementation, this would load from a database or storage service
+      const agent = {
+        id: agentId,
+        name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
+        role: 'conversational', // Set as conversational so it passes the filter
+        provider: 'openai', // Default provider
+        model: 'gpt-3.5-turbo', // Default model
+        systemPrompt: `You are ${agentId.replace('agent_', '').toUpperCase()}, a helpful AI assistant participating in a multi-agent discussion.`,
+        apiConfig: {
+          apiKey: process.env.OPENAI_API_KEY,
+          model: 'gpt-3.5-turbo',
+          temperature: 0.7,
+          maxTokens: 1000
+        }
+      };
+      
+      resolvedAgents.push(agent);
+      console.log(`✅ Resolved agent: ${agent.name} (${agent.id})`);
+      
+    } catch (error) {
+      console.error(`❌ Failed to resolve agent ${agentId}:`, error);
+      // Continue with other agents
+    }
+  }
+  
+  console.log(`🎯 Successfully resolved ${resolvedAgents.length}/${agentIds.length} agents`);
+  return resolvedAgents;
+}
+
+module.exports = router;;
 

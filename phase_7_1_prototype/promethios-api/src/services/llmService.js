@@ -258,6 +258,50 @@ class LLMService {
     }
   }
   
+  /**
+   * Generate response using full agent configuration object
+   */
+  async generateResponseWithAgent(agent, message, customSystemMessage = null) {
+    console.log(`🤖 Generating response for agent: ${agent.name} (${agent.id})`);
+    console.log(`🔧 Agent provider: ${agent.provider || 'default'}, model: ${agent.model || 'default'}`);
+    
+    // Use agent's system prompt or custom message
+    const systemPrompt = customSystemMessage || agent.systemPrompt || this.getSystemPrompt(agent.id);
+    
+    // Use agent's specified provider or fallback to default behavior
+    const provider = agent.provider || 'openai';
+    const model = agent.model || 'gpt-3.5-turbo';
+    
+    try {
+      switch (provider.toLowerCase()) {
+        case 'openai':
+          if (model.includes('gpt-4')) {
+            return await this.callOpenAIGPT4(message, systemPrompt);
+          } else {
+            return await this.callOpenAIGPT35(message, systemPrompt);
+          }
+        
+        case 'anthropic':
+          return await this.callAnthropic(message, systemPrompt);
+        
+        case 'cohere':
+          return await this.callCohere(message, systemPrompt);
+        
+        case 'huggingface':
+          return await this.callHuggingFace(message, systemPrompt);
+        
+        default:
+          console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);
+          return await this.callOpenAIGPT35(message, systemPrompt);
+      }
+    } catch (error) {
+      console.error(`❌ Error generating response for ${agent.name}:`, error);
+      
+      // Fallback response
+      return `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. (Agent: ${agent.name})`;
+    }
+  }
+  
   // Simple hash function to consistently map agent IDs to providers
   hashAgentId(agentId) {
     let hash = 0;
