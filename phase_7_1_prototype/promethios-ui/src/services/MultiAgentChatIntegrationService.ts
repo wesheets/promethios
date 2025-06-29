@@ -140,6 +140,9 @@ export class MultiAgentChatIntegrationService {
 
       // Create backend chat session first
       console.log('🔧 Creating backend chat session...');
+      console.log('🤖 System data includes agents:', !!systemData.agents, 'Count:', systemData.agents?.length || 0);
+      console.log('🤖 Agent objects:', systemData.agents?.map(a => `${a.name} (${a.provider})`) || 'None');
+      
       const backendSessionResponse = await fetch('https://promethios-phase-7-1-api.onrender.com/api/multi_agent_system/chat/create-session', {
         method: 'POST',
         headers: {

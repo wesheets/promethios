@@ -555,6 +555,65 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
       const { UnifiedStorageService } = await import('../../../services/UnifiedStorageService');
       const storageService = new UnifiedStorageService();
       
+      // Load full agent objects for the selected agents
+      console.log('🤖 Loading agent objects for system creation...');
+      const agentObjects = await Promise.all(
+        selectedAgents.map(async (agentId) => {
+          try {
+            // Try to load existing agent data
+            const agentData = await storageService.get('agents', agentId);
+            
+            if (agentData) {
+              console.log(`✅ Loaded agent data for ${agentId}:`, agentData.name);
+              return {
+                id: agentId,
+                name: agentData.name,
+                role: 'conversational',
+                provider: agentData.provider || 'openai',
+                model: agentData.model || 'gpt-3.5-turbo',
+                systemPrompt: agentData.systemPrompt || agentData.instructions || `You are ${agentData.name || agentId}.`,
+                apiConfig: {
+                  temperature: 0.7,
+                  maxTokens: 1000,
+                  ...agentData.apiConfig
+                }
+              };
+            } else {
+              // Fallback for missing agent data
+              console.warn(`⚠️ No agent data found for ${agentId}, using fallback`);
+              return {
+                id: agentId,
+                name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
+                role: 'conversational',
+                provider: 'openai',
+                model: 'gpt-3.5-turbo',
+                systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
+                apiConfig: {
+                  temperature: 0.7,
+                  maxTokens: 1000
+                }
+              };
+            }
+          } catch (error) {
+            console.warn(`Failed to load agent ${agentId}, using fallback:`, error);
+            return {
+              id: agentId,
+              name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
+              role: 'conversational',
+              provider: 'openai',
+              model: 'gpt-3.5-turbo',
+              systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
+              apiConfig: {
+                temperature: 0.7,
+                maxTokens: 1000
+              }
+            };
+          }
+        })
+      );
+      
+      console.log('🤖 Loaded agent objects for system:', agentObjects.map(a => `${a.name} (${a.provider})`));
+      
       const completeSystemData = {
         ...systemData,
         id: contextId,
@@ -563,6 +622,8 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
         updatedAt: new Date().toISOString(),
         userId: 'current-user', // TODO: Get from auth context
         collaborationModel,
+        agentIds: selectedAgents,
+        agents: agentObjects, // Include full agent objects
         governanceConfiguration: {
           rateLimiting: governanceRules.rateLimiting,
           crossAgentValidation: governanceRules.crossAgentValidation,

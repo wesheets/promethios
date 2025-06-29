@@ -841,24 +841,41 @@ async function generateMultiAgentResponse(message, session, abortSignal, governa
   // Get agents from system configuration - handle both formats
   let conversationalAgents = [];
   
-  if (session.systemConfiguration?.agents) {
-    // Format 1: Full agent objects already provided
+  console.log('🔧 System configuration received:', {
+    hasAgents: !!session.systemConfiguration?.agents,
+    agentsCount: session.systemConfiguration?.agents?.length || 0,
+    hasAgentIds: !!session.systemConfiguration?.agentIds,
+    agentIdsCount: session.systemConfiguration?.agentIds?.length || 0,
+    collaborationModel: session.systemConfiguration?.collaborationModel
+  });
+  
+  if (session.systemConfiguration?.agents && Array.isArray(session.systemConfiguration.agents)) {
+    // Format 1: Full agent objects already provided (PREFERRED)
     conversationalAgents = session.systemConfiguration.agents.filter(agent => 
       agent.role !== 'observer' && agent.role !== 'governance'
     );
-    console.log(`👥 Using provided agent objects:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
-  } else if (session.systemConfiguration?.agentIds) {
-    // Format 2: Agent IDs that need to be resolved to full objects
-    console.log(`🔧 Resolving agent IDs to full objects:`, session.systemConfiguration.agentIds);
+    console.log(`👥 Using ${conversationalAgents.length} provided agent objects:`, 
+      conversationalAgents.map(a => `${a.name} (${a.provider || 'unknown'})`));
+  } else if (session.systemConfiguration?.agentIds && Array.isArray(session.systemConfiguration.agentIds)) {
+    // Format 2: Agent IDs that need to be resolved to full objects (FALLBACK)
+    console.log(`⚠️ No agent objects provided, falling back to ID resolution:`, session.systemConfiguration.agentIds);
     conversationalAgents = await resolveAgentIds(session.systemConfiguration.agentIds);
-    console.log(`👥 Resolved agents:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+    console.log(`👥 Resolved ${conversationalAgents.length} agents:`, conversationalAgents.map(a => `${a.name} (${a.id})`));
+  } else {
+    // No agent configuration found
+    console.error(`❌ No agent configuration found in system data. Available keys:`, 
+      Object.keys(session.systemConfiguration || {}));
+    console.error(`❌ Full systemConfiguration:`, JSON.stringify(session.systemConfiguration, null, 2));
   }
   
   // If no agents configured, return error
   if (conversationalAgents.length === 0) {
-    console.error(`❌ No conversational agents found. systemConfiguration:`, JSON.stringify(session.systemConfiguration, null, 2));
+    console.error(`❌ No conversational agents found after processing. systemConfiguration:`, 
+      JSON.stringify(session.systemConfiguration, null, 2));
     throw new Error('No conversational agents configured for this multi-agent system');
   }
+  
+  console.log(`✅ Found ${conversationalAgents.length} conversational agents for processing`);
   
   // Generate responses based on collaboration model
   let agentResponses = [];
