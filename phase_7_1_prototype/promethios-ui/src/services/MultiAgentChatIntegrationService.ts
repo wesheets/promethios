@@ -946,15 +946,17 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       throw error;
     }
   }
+
   /**
-   * Send message to multi-agent system - routes to appropriate collaboration model handler
+   * Send message to multi-agent system with optional streaming support
    */
   async sendMessage(
     sessionId: string, 
     message: string, 
     attachments: any[] = [],
     governanceEnabled: boolean = true,
-    conversationHistory: any[] = []
+    conversationHistory: any[] = [],
+    onStreamResponse?: (response: any) => void
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
     console.log('🚨 DEBUG: sendMessage method called - ENTRY POINT (ROUTER)');
     
@@ -978,7 +980,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         case 'round_table_discussion':
         case 'round_table_sequential':  // Handle existing systems
           console.log('🎭 ROUTER: Routing to Round-Table Discussion handler');
-          return this.handleRoundTableDiscussion(sessionId, message, attachments, governanceEnabled, conversationHistory);
+          return this.handleRoundTableDiscussion(sessionId, message, attachments, governanceEnabled, conversationHistory, onStreamResponse);
         
         case 'shared_context':
           console.log('🧡 ROUTER: Routing to Shared Context handler');
@@ -1089,16 +1091,17 @@ Respond from your unique perspective and expertise. Keep responses focused and d
   }
 
   /**
-   * Handle Round-Table Discussion collaboration model (sequential debate engine)
+   * Handle Round-Table Discussion collaboration model (sequential debate engine with streaming)
    */
   private async handleRoundTableDiscussion(
     sessionId: string,
     message: string,
     attachments: any[] = [],
     governanceEnabled: boolean = true,
-    conversationHistory: any[] = []
+    conversationHistory: any[] = [],
+    onStreamResponse?: (response: any) => void
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
-    console.log('🎭 ROUND-TABLE DISCUSSION: Starting sequential debate system');
+    console.log('🎭 ROUND-TABLE DISCUSSION: Starting sequential debate system with streaming');
     
     const session = await this.getChatSession(sessionId);
     const config = await this.getChatConfiguration(session!.systemId);
@@ -1118,9 +1121,30 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     const maxRounds = 3;
     let allAgentResponses = [];
 
+    // Send initial debate start indicator
+    if (onStreamResponse) {
+      onStreamResponse({
+        type: 'debate_start',
+        content: `🎭 **Round-Table Discussion Started**\n\n**Participants:** ${sortedAgents.map(a => a.identity?.name || a.name).join(', ')}\n**Format:** 3 rounds + consensus\n**Order:** Alphabetical`,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true
+      });
+    }
+
     // DEBATE ROUNDS (3 rounds maximum)
     for (let round = 1; round <= maxRounds; round++) {
       console.log(`\n🎭 ROUND-TABLE: === ROUND ${round} ===`);
+      
+      // Send round start indicator
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'round_start',
+          content: `## 🎭 Round ${round} ${round === 1 ? '- Initial Perspectives' : round === 2 ? '- Building on Ideas' : '- Seeking Consensus'}`,
+          round,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true
+        });
+      }
       
       // Each agent responds in alphabetical order
       for (let agentIndex = 0; agentIndex < sortedAgents.length; agentIndex++) {
@@ -1128,6 +1152,20 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         const agentName = agent.identity?.name || agent.name;
         
         console.log(`🎭 ROUND-TABLE: Round ${round} - Agent ${agentIndex + 1}/${sortedAgents.length}: ${agentName}`);
+
+        // Send "thinking" indicator
+        if (onStreamResponse) {
+          onStreamResponse({
+            type: 'agent_thinking',
+            content: `💭 **${agentName}** is ${round === 1 ? 'formulating initial thoughts' : round === 2 ? 'analyzing previous responses' : 'working toward consensus'}...`,
+            agentName,
+            round,
+            agentIndex: agentIndex + 1,
+            totalAgents: sortedAgents.length,
+            timestamp: new Date().toISOString(),
+            isSystemMessage: true
+          });
+        }
 
         try {
           // Create debate-specific prompt based on round and position
@@ -1165,8 +1203,28 @@ Respond from your unique perspective and expertise. Keep responses focused and d
 
           console.log(`✅ ROUND-TABLE: ${agentName} responded (${agentResponse.length} chars)`);
 
-          // Add small delay between agents for natural flow
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Stream the agent response immediately
+          if (onStreamResponse) {
+            onStreamResponse({
+              type: 'agent_response',
+              content: agentResponse,
+              agentName,
+              agentId: agent.id,
+              round,
+              agentIndex: agentIndex + 1,
+              totalAgents: sortedAgents.length,
+              timestamp: new Date().toISOString(),
+              order: agentIndex + 1,
+              provider: agent.provider || 'openai',
+              model: agent.model || 'gpt-3.5-turbo'
+            });
+          }
+
+          // Add pacing delay between agents (except after last agent in round)
+          if (agentIndex < sortedAgents.length - 1) {
+            console.log('🎭 ROUND-TABLE: Adding 3-second pacing delay...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
 
         } catch (error) {
           console.error(`❌ ROUND-TABLE: Error from ${agentName}:`, error);
@@ -1181,18 +1239,75 @@ Respond from your unique perspective and expertise. Keep responses focused and d
           };
           debateHistory.push(errorEntry);
           allAgentResponses.push(errorEntry);
+
+          // Stream error response
+          if (onStreamResponse) {
+            onStreamResponse({
+              type: 'agent_error',
+              content: `❌ **${agentName}** encountered an error: ${error.message}`,
+              agentName,
+              round,
+              timestamp: new Date().toISOString(),
+              isError: true,
+              isSystemMessage: true
+            });
+          }
         }
       }
 
       console.log(`🎭 ROUND-TABLE: Round ${round} completed. Total responses: ${debateHistory.length}`);
+      
+      // Add delay between rounds (except after last round)
+      if (round < maxRounds) {
+        console.log('🎭 ROUND-TABLE: Adding 5-second delay between rounds...');
+        if (onStreamResponse) {
+          onStreamResponse({
+            type: 'round_complete',
+            content: `✅ **Round ${round} Complete** - Preparing for Round ${round + 1}...`,
+            round,
+            timestamp: new Date().toISOString(),
+            isSystemMessage: true
+          });
+        }
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
     }
 
     // CONSENSUS PHASE - Select final reporter
     console.log('\n🎭 ROUND-TABLE: === CONSENSUS PHASE ===');
+    
+    if (onStreamResponse) {
+      onStreamResponse({
+        type: 'consensus_start',
+        content: `## 🗳️ Consensus Phase\n\nSelecting the best agent to provide the final consensus report...`,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true
+      });
+    }
+
     const consensusReporter = await this.selectConsensusReporter(sortedAgents, debateHistory, message);
     
     // Generate final consensus report
     console.log(`🎭 ROUND-TABLE: ${consensusReporter.agentName} selected as consensus reporter`);
+    
+    if (onStreamResponse) {
+      onStreamResponse({
+        type: 'consensus_reporter_selected',
+        content: `📋 **${consensusReporter.agentName}** has been selected to provide the final consensus report.\n\n*${consensusReporter.reason}*`,
+        agentName: consensusReporter.agentName,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true
+      });
+      
+      onStreamResponse({
+        type: 'consensus_generating',
+        content: `💭 **${consensusReporter.agentName}** is synthesizing all perspectives into a comprehensive consensus report...`,
+        agentName: consensusReporter.agentName,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true
+      });
+    }
+
     const finalConsensus = await this.generateConsensusReport(
       consensusReporter.agent,
       message,
@@ -1215,6 +1330,27 @@ Respond from your unique perspective and expertise. Keep responses focused and d
 
     allAgentResponses.push(consensusEntry);
 
+    // Stream the final consensus report
+    if (onStreamResponse) {
+      onStreamResponse({
+        type: 'consensus_report',
+        content: finalConsensus,
+        agentName: consensusReporter.agentName,
+        agentId: consensusReporter.agent.id,
+        timestamp: new Date().toISOString(),
+        isConsensus: true,
+        isFinal: true
+      });
+      
+      onStreamResponse({
+        type: 'debate_complete',
+        content: `🎉 **Round-Table Discussion Complete!**\n\n**Total Responses:** ${allAgentResponses.length} (${debateHistory.length} debate + 1 consensus)\n**Consensus Reporter:** ${consensusReporter.agentName}`,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true,
+        isFinal: true
+      });
+    }
+
     // Create summary for backward compatibility
     const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, consensusReporter.agentName);
 
@@ -1229,7 +1365,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         debateRounds: maxRounds,
         totalResponses: allAgentResponses.length,
         consensusReporter: consensusReporter.agentName,
-        debateMode: 'sequential_consensus'
+        debateMode: 'sequential_consensus_streaming'
       }
     };
   }

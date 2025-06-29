@@ -1571,148 +1571,88 @@ const AdvancedChatComponent: React.FC = () => {
           await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
           console.log('🚀 MULTI-AGENT DEBUG: User message saved to storage');
           
-          // Add a timeout to prevent infinite waiting
-          const TIMEOUT_MS = 30000; // 30 seconds timeout
-          
-          console.log('🚀 MULTI-AGENT DEBUG: Calling multiAgentChatIntegration.sendMessage...');
+          console.log('🚀 MULTI-AGENT DEBUG: Starting streaming multi-agent response...');
           const startTime = Date.now();
           
-          // Send message through multi-agent chat integration with timeout
-          const response = await Promise.race([
-            multiAgentChatIntegration.sendMessage(
+          // Handle streaming responses for round-table discussions
+          const handleStreamResponse = (streamData: any) => {
+            console.log('🎭 STREAM RESPONSE:', streamData.type, streamData);
+            
+            const streamMessage: ChatMessage = {
+              id: `stream_${Date.now()}_${Math.random()}`,
+              content: streamData.content,
+              sender: streamData.agentName || 'System',
+              timestamp: new Date(streamData.timestamp),
+              isUser: false,
+              isSystem: streamData.isSystemMessage || false,
+              isStreaming: true,
+              streamType: streamData.type,
+              agentId: streamData.agentId,
+              round: streamData.round,
+              provider: streamData.provider,
+              model: streamData.model,
+              isConsensus: streamData.isConsensus,
+              isFinal: streamData.isFinal,
+              isError: streamData.isError
+            };
+
+            // Add the streaming message to the chat immediately
+            setMessages(prevMessages => [...prevMessages, streamMessage]);
+            
+            // Save streaming messages to storage for persistence
+            if (streamData.type === 'agent_response' || streamData.type === 'consensus_report') {
+              multiAgentChatIntegration.saveMessage(streamMessage, selectedSystem.id);
+            }
+            
+            // Auto-scroll to bottom for new messages
+            setTimeout(() => {
+              const chatContainer = document.querySelector('[data-chat-messages]');
+              if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+              }
+            }, 100);
+          };
+          
+          // Send message through multi-agent chat integration with streaming support
+          try {
+            const response = await multiAgentChatIntegration.sendMessage(
               currentChatSession.id,
               userMessage.content,
               currentAttachments,
               governanceEnabled, // Pass governance setting to backend
-              messages // Pass conversation history
-            ),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Multi-agent system response timeout after 30 seconds')), TIMEOUT_MS)
-            )
-          ]);
-          
-          const responseTime = Date.now() - startTime;
-          console.log('🚀 MULTI-AGENT DEBUG: Response received after', responseTime, 'ms');
-          console.log('🚀 MULTI-AGENT DEBUG: Response content:', response);
-          
-          // Apply pacing controls for natural conversation flow
-          const applyPacingDelay = (content: string, mode: string) => {
-            const baseDelay = 500; // 0.5 second minimum
-            const wordsPerMinute = mode === 'realtime' ? 300 : mode === 'natural' ? 200 : 120;
-            const wordCount = content.split(' ').length;
-            const typingTime = (wordCount / wordsPerMinute) * 60 * 1000; // Convert to milliseconds
+              messages, // Pass conversation history
+              handleStreamResponse // Pass streaming callback
+            );
             
-            // Add thinking time based on complexity
-            const thinkingTime = mode === 'thoughtful' ? Math.min(wordCount * 20, 1000) : 
-                                mode === 'natural' ? Math.min(wordCount * 10, 500) : 0;
+            const responseTime = Date.now() - startTime;
+            console.log('🚀 MULTI-AGENT DEBUG: Streaming debate completed after', responseTime, 'ms');
+            console.log('🚀 MULTI-AGENT DEBUG: Final response summary:', response);
             
-            return Math.max(baseDelay, Math.min(typingTime + thinkingTime, 2000)); // Cap at 2 seconds
-          };
-
-          const delay = applyPacingDelay(response.content, pacingMode);
-          console.log('🚀 MULTI-AGENT DEBUG: Applying pacing delay of', delay, 'ms for', pacingMode, 'mode');
-          
-          // Show typing indicator with progress
-          setIsSimulatingTyping(true);
-          setTypingProgress(0);
-          
-          const progressInterval = setInterval(() => {
-            setTypingProgress(prev => {
-              const newProgress = prev + (100 / (delay / 100));
-              return newProgress >= 100 ? 100 : newProgress;
-            });
-          }, 100);
-          
-          // Apply the pacing delay
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-          // Clear typing simulation
-          clearInterval(progressInterval);
-          setIsSimulatingTyping(false);
-          setTypingProgress(0);
-          
-          // Create system response message with governance data
-          const systemMessage: ChatMessage = {
-            id: `msg_${Date.now()}_system`,
-            content: response.content,
-            sender: 'agent',
-            timestamp: new Date(),
-            agentName: selectedSystem.name,
-            agentId: selectedSystem.id,
-            governanceData: response.governanceData
-          };
-          
-          console.log('🚀 MULTI-AGENT DEBUG: Adding system message to chat:', systemMessage);
-          
-          // Check if we have individual agent responses to display separately
-          if (response.agentResponses && response.agentResponses.length > 0) {
-            console.log('🚀 MULTI-AGENT DEBUG: Processing individual agent responses:', response.agentResponses);
-            
-            // Add each agent response as a separate message
-            const agentMessages: ChatMessage[] = [];
-            response.agentResponses.forEach((agentResponse: any, index: number) => {
-              const agentMessage: ChatMessage = {
-                id: `msg_${Date.now()}_agent_${agentResponse.agentId}`,
-                content: agentResponse.content,
-                sender: 'agent',
-                timestamp: new Date(agentResponse.timestamp || new Date()),
-                agentName: agentResponse.agentName || `Agent ${agentResponse.agentId}`,
-                agentId: `${selectedSystem.id}_agent_${agentResponse.agentId}`,
-                governanceData: index === 0 ? response.governanceData : undefined // Only show governance on first agent
-              };
-              agentMessages.push(agentMessage);
-            });
-            
-            // Add all agent messages to chat
-            setMessages(prev => [...prev, ...agentMessages]);
-            setMessageCount(prev => prev + agentMessages.length);
-            
-            // Save individual agent messages to storage
-            for (const agentMessage of agentMessages) {
-              await multiAgentChatIntegration.saveMessage(agentMessage, selectedSystem.id);
+            // The streaming responses have already been displayed, so we don't need to show the summary
+            // Just update any final metadata or governance data
+            if (response.governanceData) {
+              console.log('🛡️ GOVERNANCE: Final debate data:', response.governanceData);
             }
-            console.log('🚀 MULTI-AGENT DEBUG: Individual agent responses saved to storage');
-          } else {
-            // Fallback to single combined message if no individual responses
-            setMessages(prev => [...prev, systemMessage]);
-            setMessageCount(prev => prev + 1);
             
-            // Save system response to storage
-            await multiAgentChatIntegration.saveMessage(systemMessage, selectedSystem.id);
-            console.log('🚀 MULTI-AGENT DEBUG: Combined system response saved to storage');
+          } catch (error) {
+            console.error('🚨 MULTI-AGENT ERROR:', error);
+            
+            // Show error message in chat
+            const errorMessage: ChatMessage = {
+              id: `error_${Date.now()}`,
+              content: `❌ **System Error:** ${error.message}`,
+              sender: 'System',
+              timestamp: new Date(),
+              isUser: false,
+              isSystem: true,
+              isError: true
+            };
+            
+            setMessages(prevMessages => [...prevMessages, errorMessage]);
+            await multiAgentChatIntegration.saveMessage(errorMessage, selectedSystem.id);
           }
           
-          // Scroll to bottom after system response
-          setTimeout(() => {
-            scrollToBottom();
-          }, 100);
-          
-          console.log('🚀 MULTI-AGENT DEBUG: Message handling completed successfully');
-          
-        } catch (error) {
-          console.error('🚨 MULTI-AGENT ERROR: Error communicating with multi-agent system:', error);
-          console.error('🚨 MULTI-AGENT ERROR: Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          });
-          
-          const errorMessage: ChatMessage = {
-            id: `msg_${Date.now()}_system_error`,
-            content: `❌ Error from multi-agent system "${selectedSystem.name}": ${error instanceof Error ? error.message : 'Unknown error'}
-
-🔍 **Debug Info:**
-- System: ${selectedSystem.name}
-- Session: ${currentChatSession?.id || 'No session'}
-- Error Type: ${error.name || 'Unknown'}
-- Timestamp: ${new Date().toISOString()}
-
-This error has been logged to the console for debugging.`,
-            sender: 'error',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, errorMessage]);
-          setMessageCount(prev => prev + 1); // Increment for error message
+        } else {
           
           // Save error message to storage
           await chatStorageService.saveMessage(errorMessage, selectedSystem.id);
@@ -2627,7 +2567,7 @@ This error has been logged to the console for debugging.`,
         )}
 
         {/* Messages */}
-        <MessagesContainer ref={messagesContainerRef}>
+        <MessagesContainer ref={messagesContainerRef} data-chat-messages>
           {messages.map((message) => (
             <MessageBubble 
               key={message.id} 
