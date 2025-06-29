@@ -808,30 +808,15 @@ export class MultiAgentChatIntegrationService {
     try {
       console.log('🤖 MULTI-AGENT: Calling agent API for:', agent.identity?.name || agent.name);
       
-      // Extract API configuration from agent's apiDetails
-      const apiDetails = agent.apiConfig || agent.apiDetails;
-      if (!apiDetails) {
-        console.error('Missing apiDetails in agent:', agent);
-        throw new Error(`Agent API configuration incomplete. Missing: apiDetails`);
-      }
+      // Use global API configuration instead of individual agent API keys
+      // This matches how single agents work in AdvancedChatComponent
+      const provider = (agent.provider || 'openai').toLowerCase();
+      const selectedModel = agent.model || 'gpt-3.5-turbo';
       
-      const apiKey = apiDetails.apiKey || apiDetails.key;
-      const provider = (apiDetails.provider || agent.provider)?.toLowerCase();
-      const selectedModel = apiDetails.model || apiDetails.selectedModel || agent.model;
-      
-      if (!apiKey || !provider) {
-        console.error('Missing API configuration in agent apiDetails:', { 
-          apiKey: !!apiKey, 
-          provider, 
-          selectedModel 
-        });
-        throw new Error(`Agent API configuration incomplete. Missing: ${!apiKey ? 'apiKey ' : ''}${!provider ? 'provider' : ''}`);
-      }
-
-      console.log('🤖 MULTI-AGENT: Using API configuration:', { 
+      console.log('🤖 MULTI-AGENT: Using global API configuration:', { 
         provider, 
-        selectedModel, 
-        hasApiKey: !!apiKey 
+        selectedModel,
+        agentName: agent.identity?.name || agent.name
       });
 
       // Prepare message with attachments
@@ -846,10 +831,25 @@ export class MultiAgentChatIntegrationService {
         });
       }
 
+      // Create system message with agent role context
+      const agentRole = agent.role || 'assistant';
+      const systemMessage = `You are ${agent.identity?.name || agent.name}, a specialized ${agentRole}. 
+Respond from your unique perspective and expertise. Keep responses focused and distinct from other agents.`;
+
       let response;
+      
       
       if (provider === 'openai') {
         console.log('🤖 MULTI-AGENT: Taking OpenAI path for agent:', agent.identity?.name || agent.name);
+        
+        // Get global OpenAI API key from environment or user settings
+        const globalApiKey = process.env.REACT_APP_OPENAI_API_KEY || 
+                           localStorage.getItem('openai_api_key') ||
+                           sessionStorage.getItem('openai_api_key');
+        
+        if (!globalApiKey) {
+          throw new Error('OpenAI API key not configured. Please set your API key in settings.');
+        }
         
         // Create system message with agent's role context
         const agentName = agent.identity?.name || agent.name;
@@ -881,13 +881,13 @@ export class MultiAgentChatIntegrationService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${globalApiKey}`
           },
           body: JSON.stringify({
             model: selectedModel || 'gpt-3.5-turbo',
             messages: messages,
-            max_tokens: apiDetails.maxTokens || 1000,
-            temperature: apiDetails.temperature || 0.7
+            max_tokens: 1000,
+            temperature: 0.7
           })
         });
 
@@ -901,6 +901,7 @@ export class MultiAgentChatIntegrationService {
       } else if (provider === 'anthropic') {
         console.log('🤖 MULTI-AGENT: Taking Anthropic path for agent:', agent.identity?.name || agent.name);
         
+        // For Anthropic, use the backend proxy (same as single agents)
         // Create system message with agent's role context
         const agentName = agent.identity?.name || agent.name;
         const agentRole = agent.assignedRole || agent.role || agent.identity?.role;
