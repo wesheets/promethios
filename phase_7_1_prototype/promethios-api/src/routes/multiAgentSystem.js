@@ -135,9 +135,19 @@ router.post('/chat/create-session', async (req, res) => {
     }
 
     console.log(`🔧 Creating session with systemConfiguration:`, systemConfiguration ? 'present' : 'missing');
-    if (systemConfiguration?.agents) {
-      console.log(`🤖 System has ${systemConfiguration.agents.length} agents:`, 
-        systemConfiguration.agents.map(a => `${a.name} (${a.id})`));
+    if (systemConfiguration) {
+      console.log(`🔧 Full systemConfiguration:`, JSON.stringify(systemConfiguration, null, 2));
+      console.log(`🔧 systemConfiguration keys:`, Object.keys(systemConfiguration));
+      if (systemConfiguration.agents) {
+        console.log(`🤖 System has ${systemConfiguration.agents.length} agents:`, 
+          systemConfiguration.agents.map(a => `${a.name} (${a.id})`));
+      } else {
+        console.log(`🤖 No agents found in systemConfiguration.agents`);
+        console.log(`🔧 Looking for agents in other properties...`);
+        console.log(`🔧 systemConfiguration.agentIds:`, systemConfiguration.agentIds);
+        console.log(`🔧 systemConfiguration.selectedAgents:`, systemConfiguration.selectedAgents);
+        console.log(`🔧 systemConfiguration.agentConfiguration:`, systemConfiguration.agentConfiguration);
+      }
     }
 
     // Create session with safety controls and system configuration
