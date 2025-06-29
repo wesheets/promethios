@@ -445,35 +445,77 @@ export class MultiAgentChatIntegrationService {
 
   /**
    * Load user's specific multi-agent system (not global/shared)
+   * Handles both id and contextId scenarios for proper migration
    */
   private async getUserMultiAgentSystem(systemId: string): Promise<any> {
     if (!this.currentUserId) {
       throw new Error('No user set for multi-agent service');
     }
     
+    console.log('🔧 USER SYSTEM: Loading system for user:', this.currentUserId, 'systemId:', systemId);
+    
     try {
       // Try user-specific system first
       const userSystemKey = `${this.currentUserId}.multi-agent-systems.${systemId}`;
+      console.log('🔧 USER SYSTEM: Trying user-specific key:', userSystemKey);
       let systemData = await this.storageService.get('multiAgentSystems', userSystemKey);
       
-      // Fallback to old format for migration
-      if (!systemData) {
-        console.log('🔧 USER SYSTEM: Trying old format for system:', systemId);
-        systemData = await this.storageService.get('agents', `multi-agent-system-${systemId}`);
+      if (systemData) {
+        console.log('🔧 USER SYSTEM: Found system in user-specific format:', systemData.name);
+        return systemData;
+      }
+      
+      // Fallback to old format for migration - try multiple possible keys
+      console.log('🔧 USER SYSTEM: Trying old format migration for system:', systemId);
+      
+      // Try direct system ID
+      let oldFormatKey = `multi-agent-system-${systemId}`;
+      console.log('🔧 USER SYSTEM: Trying old format key:', oldFormatKey);
+      systemData = await this.storageService.get('agents', oldFormatKey);
+      
+      // If not found and systemId looks like a contextId (starts with ctx_), 
+      // try to find by contextId in all systems
+      if (!systemData && systemId.startsWith('ctx_')) {
+        console.log('🔧 USER SYSTEM: SystemId appears to be contextId, searching all systems...');
         
-        if (systemData) {
-          console.log('🔧 USER SYSTEM: Found system in old format, migrating...');
-          // Migrate to user-specific format
-          systemData.userId = this.currentUserId;
-          systemData.migratedAt = new Date().toISOString();
+        // Get user's multi-agent systems list
+        const userSystems = await this.storageService.get('user', 'multi-agent-systems') || [];
+        console.log('🔧 USER SYSTEM: Found user systems list:', userSystems.length);
+        
+        // Try each system to find one with matching contextId
+        for (const systemRef of userSystems) {
+          const testKey = `multi-agent-system-${systemRef.id}`;
+          console.log('🔧 USER SYSTEM: Testing system key:', testKey);
+          const testSystemData = await this.storageService.get('agents', testKey);
           
-          // Save in new format
-          await this.storageService.set('multiAgentSystems', userSystemKey, systemData);
-          console.log('🔧 USER SYSTEM: System migrated to user-specific format');
+          if (testSystemData && (testSystemData.contextId === systemId || testSystemData.id === systemId)) {
+            console.log('🔧 USER SYSTEM: Found matching system by contextId:', testSystemData.name);
+            systemData = testSystemData;
+            break;
+          }
         }
       }
       
-      return systemData;
+      if (systemData) {
+        console.log('🔧 USER SYSTEM: Found system in old format, migrating...', systemData.name);
+        console.log('🔧 USER SYSTEM: System details - id:', systemData.id, 'contextId:', systemData.contextId);
+        
+        // Migrate to user-specific format
+        systemData.userId = this.currentUserId;
+        systemData.migratedAt = new Date().toISOString();
+        systemData.originalStorageKey = oldFormatKey; // Keep track of original key
+        
+        // Save in new format using the systemId that was requested
+        const newUserSystemKey = `${this.currentUserId}.multi-agent-systems.${systemId}`;
+        await this.storageService.set('multiAgentSystems', newUserSystemKey, systemData);
+        console.log('🔧 USER SYSTEM: System migrated to user-specific format:', newUserSystemKey);
+        
+        return systemData;
+      }
+      
+      console.warn('🔧 USER SYSTEM: System not found in any format:', systemId);
+      return null;
+      
     } catch (error) {
       console.error('🔧 USER SYSTEM: Error loading user multi-agent system:', error);
       return null;

@@ -758,67 +758,80 @@ const AdvancedChatComponent: React.FC = () => {
           const realAgents = userAgents || [];
           setAgents(realAgents);
           
-          // Set first agent as selected if available and load its chat history
+          // Set first agent as selected if available and load appropriate chat history
           if (realAgents.length > 0 && !selectedAgent) {
             console.log('Setting first agent as selected:', realAgents[0]);
             setSelectedAgent(realAgents[0]);
             
-            // Load existing chat history for this agent
-            const chatHistory = await chatStorageService.loadAgentChatHistory(realAgents[0].identity.id);
-            
-            if (chatHistory && chatHistory.messages.length > 0) {
-              // Load existing conversation and sort by timestamp (oldest first)
-              console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
+            // 🔧 CHAT HISTORY FIX: Only load single-agent history when in single-agent mode
+            if (chatMode === 'single') {
+              console.log('🔧 CHAT MODE: Loading single-agent chat history for:', realAgents[0].identity.name);
               
-              // Debug: Log timestamps before sorting
-              console.log('Messages before sorting:', chatHistory.messages.map(m => ({
-                id: m.id,
-                content: m.content.substring(0, 50),
-                timestamp: m.timestamp,
-                timestampString: m.timestamp.toString()
-              })));
+              // Load existing chat history for this agent
+              const chatHistory = await chatStorageService.loadAgentChatHistory(realAgents[0].identity.id);
               
-              const sortedMessages = [...chatHistory.messages].sort((a, b) => 
-                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-              );
-              
-              // Debug: Log timestamps after sorting
-              console.log('Messages after sorting:', sortedMessages.map(m => ({
-                id: m.id,
-                content: m.content.substring(0, 50),
-                timestamp: m.timestamp,
-                timestampString: m.timestamp.toString()
-              })));
-              
-              setMessages(sortedMessages);
-              
-              // Auto-scroll to bottom to show newest messages when loading existing chat
-              // Use longer timeout to ensure messages are fully rendered
-              setTimeout(() => {
-                scrollToBottom();
-                // Double-check scroll after additional time for complex rendering
+              if (chatHistory && chatHistory.messages.length > 0) {
+                // Load existing conversation and sort by timestamp (oldest first)
+                console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
+                
+                // Debug: Log timestamps before sorting
+                console.log('Messages before sorting:', chatHistory.messages.map(m => ({
+                  id: m.id,
+                  content: m.content.substring(0, 50),
+                  timestamp: m.timestamp,
+                  timestampString: m.timestamp.toString()
+                })));
+                
+                const sortedMessages = [...chatHistory.messages].sort((a, b) => 
+                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                );
+                
+                // Debug: Log timestamps after sorting
+                console.log('Messages after sorting:', sortedMessages.map(m => ({
+                  id: m.id,
+                  content: m.content.substring(0, 50),
+                  timestamp: m.timestamp,
+                  timestampString: m.timestamp.toString()
+                })));
+                
+                setMessages(sortedMessages);
+                
+                // Auto-scroll to bottom to show newest messages when loading existing chat
+                // Use longer timeout to ensure messages are fully rendered
                 setTimeout(() => {
                   scrollToBottom();
-                }, 100);
-              }, 500);
-            } else {
-              // Add welcome message for new conversation
-              const welcomeMessage: ChatMessage = {
-                id: `msg_${Date.now()}_welcome`,
-                content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
-                sender: 'agent',
-                timestamp: new Date(),
-                agentName: realAgents[0].identity.name,
-                agentId: realAgents[0].identity.id
-              };
-              setMessages([welcomeMessage]);
+                  // Double-check scroll after additional time for complex rendering
+                  setTimeout(() => {
+                    scrollToBottom();
+                  }, 100);
+                }, 500);
+              } else {
+                // Add welcome message for new single-agent conversation
+                const welcomeMessage: ChatMessage = {
+                  id: `msg_${Date.now()}_welcome`,
+                  content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
+                  sender: 'agent',
+                  timestamp: new Date(),
+                  agentName: realAgents[0].identity.name,
+                  agentId: realAgents[0].identity.id
+                };
+                setMessages([welcomeMessage]);
+                
+                // Save welcome message to storage
+                await chatStorageService.saveMessage(welcomeMessage, realAgents[0].identity.id);
+              }
               
-              // Save welcome message to storage
-              await chatStorageService.saveMessage(welcomeMessage, realAgents[0].identity.id);
+              // Initialize chat session for single-agent mode
+              await chatStorageService.initializeChatSession(realAgents[0], governanceEnabled);
+            } else if (chatMode === 'saved-systems') {
+              console.log('🔧 CHAT MODE: Multi-agent mode - keeping chat history clean');
+              // Multi-agent mode should start clean - don't load single-agent history
+              setMessages([]);
+            } else {
+              console.log('🔧 CHAT MODE: Unknown chat mode, keeping clean:', chatMode);
+              // For any other mode, start clean
+              setMessages([]);
             }
-            
-            // Initialize chat session
-            await chatStorageService.initializeChatSession(realAgents[0], governanceEnabled);
           } else if (realAgents.length === 0) {
             console.log('No user agents found');
             const noAgentsMessage: ChatMessage = {
@@ -843,7 +856,7 @@ const AdvancedChatComponent: React.FC = () => {
     };
 
     loadAgents();
-  }, [currentUser]);
+  }, [currentUser, chatMode]); // 🔧 CHAT MODE FIX: Add chatMode dependency to reload when mode changes
 
   // Loa  // Load governance metrics based on chat mode
   useEffect(() => {
