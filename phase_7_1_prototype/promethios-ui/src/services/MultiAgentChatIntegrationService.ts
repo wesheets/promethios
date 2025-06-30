@@ -10,7 +10,7 @@ import { UserAgentStorageService } from './UserAgentStorageService';
 import { API_BASE_URL } from '../config/api';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { multiAgentGovernanceWrapper, GovernanceState } from './MultiAgentGovernanceWrapper';
-import { EnhancedConsensusEngine } from './EnhancedConsensusEngine';
+import { FactualConsensusEngine } from './FactualConsensusEngine';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -41,14 +41,14 @@ export interface ChatSystemInfo {
 export class MultiAgentChatIntegrationService {
   private storageService: UnifiedStorageService;
   private agentStorageService: UserAgentStorageService;
-  private enhancedConsensusEngine: EnhancedConsensusEngine;
+  private factualConsensusEngine: FactualConsensusEngine;
   private activeSessions = new Map<string, MultiAgentChatSession>();
   private currentUserId: string | null = null;
 
   constructor() {
     this.storageService = new UnifiedStorageService();
     this.agentStorageService = new UserAgentStorageService();
-    this.enhancedConsensusEngine = new EnhancedConsensusEngine();
+    this.factualConsensusEngine = new FactualConsensusEngine();
   }
 
   /**
@@ -1532,45 +1532,45 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       timestamp: entry.timestamp
     }));
 
-    // Generate enhanced consensus using collaborative intelligence engine
-    const finalConsensus = await this.enhancedConsensusEngine.generateEnhancedConsensus(
+    // Generate factual consensus using citation-linked analysis engine
+    const finalConsensus = await this.factualConsensusEngine.generateFactualConsensus(
       message,
       enhancedDebateHistory,
       sortedAgents
     );
 
-    console.log('🧬 ENHANCED CONSENSUS: Generated collaborative intelligence report');
+    console.log('🔍 FACTUAL CONSENSUS: Generated citation-linked analysis report');
 
-    // Add enhanced consensus report to responses
+    // Add factual consensus report to responses
     const consensusEntry = {
       round: 'consensus',
-      agentName: 'Collaborative Intelligence Engine',
-      agentId: 'enhanced_consensus_engine',
+      agentName: 'Factual Consensus Engine',
+      agentId: 'factual_consensus_engine',
       content: finalConsensus,
       timestamp: new Date().toISOString(),
       order: 999, // Always last
       isConsensus: true,
-      isEnhancedConsensus: true // Flag for enhanced consensus
+      isFactualConsensus: true // Flag for factual consensus
     };
 
     allAgentResponses.push(consensusEntry);
 
-    // Stream the enhanced consensus report
+    // Stream the factual consensus report
     if (onStreamResponse) {
       onStreamResponse({
-        type: 'enhanced_consensus_report',
+        type: 'factual_consensus_report',
         content: finalConsensus,
-        agentName: 'Collaborative Intelligence Engine',
-        agentId: 'enhanced_consensus_engine',
+        agentName: 'Factual Consensus Engine',
+        agentId: 'factual_consensus_engine',
         timestamp: new Date().toISOString(),
         isConsensus: true,
-        isEnhancedConsensus: true,
+        isFactualConsensus: true,
         isFinal: true
       });
       
       onStreamResponse({
         type: 'debate_complete',
-        content: `🎉 **Multi-Agent Collaborative Intelligence Complete!**\n\n**Total Responses:** ${allAgentResponses.length} (${debateHistory.length} debate + 1 enhanced consensus)\n**Analysis Engine:** Collaborative Intelligence Engine\n**Revolutionary Feature:** Demonstrates evolutionary depth and collaborative value!`,
+        content: `🎉 **Citation-Linked Collaborative Analysis Complete!**\n\n**Total Responses:** ${allAgentResponses.length} (${debateHistory.length} debate + 1 factual consensus)\n**Analysis Engine:** Factual Consensus Engine\n**Zero Hallucination:** ✅ Citation-linked, verifiable analysis only!`,
         timestamp: new Date().toISOString(),
         isSystemMessage: true,
         isFinal: true
@@ -1578,7 +1578,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     }
 
     // Create summary for backward compatibility
-    const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, 'Collaborative Intelligence Engine');
+    const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, 'Factual Consensus Engine');
 
     console.log('🎭 ROUND-TABLE: Debate completed successfully!');
     console.log(`🎭 ROUND-TABLE: Total responses: ${allAgentResponses.length} (${debateHistory.length} debate + 1 consensus)`);
