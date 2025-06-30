@@ -1733,7 +1733,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         throw new Error('Session not found');
       }
 
-      const system = await this.storageService.getMultiAgentSystem(session.systemId);
+      const system = await this.storageService.get('multi-agent-systems', session.systemId);
       if (!system || !system.agents || system.agents.length === 0) {
         throw new Error('No agents found in system');
       }
