@@ -437,42 +437,6 @@ export class GovernanceService {
     return recommendations;
   }
 
-  // Get real-time system status
-  async getSystemStatus(): Promise<{
-    overallStatus: 'healthy' | 'warning' | 'critical';
-    activeAgents: number;
-    totalSessions: number;
-    recentViolations: number;
-    systemLoad: number;
-    uptime: string;
-  }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/system/status`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch system status: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching system status:', error);
-      // Fallback to default status
-      return {
-        overallStatus: 'healthy',
-        activeAgents: 5,
-        totalSessions: 12,
-        recentViolations: 0,
-        systemLoad: 45,
-        uptime: '99.9%'
-      };
-    }
-  }
-
   // End governance session
   async endSession(): Promise<void> {
     if (!this.currentSession) return;

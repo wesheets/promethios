@@ -138,7 +138,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const collapsed = preferences.navigationCollapsed;
+  // collapsed is already defined above in the fallback preferences object
 
   // Pulsing effect on page navigation
   useEffect(() => {
