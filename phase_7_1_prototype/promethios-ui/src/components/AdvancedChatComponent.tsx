@@ -428,6 +428,12 @@ const AdvancedChatComponent: React.FC = () => {
     const displayData = hasActiveGovernance ? message.governanceData : message.shadowGovernanceData;
     const isShadowMode = !hasActiveGovernance && hasShadowGovernance;
     
+    // 🎭 DETECT MULTI-AGENT CONTEXT
+    const isMultiAgent = displayData?.multiAgentContext || displayData?.agentName || displayData?.round;
+    const multiAgentData = displayData?.multiAgentContext;
+    const crossAgentInteractions = displayData?.crossAgentInteractions;
+    const emergentBehaviors = displayData?.emergentBehaviors || [];
+    
     const hasIssues = !displayData.approved || (displayData.violations && displayData.violations.length > 0);
     const isExpanded = expandedGovernance.has(message.id);
     
@@ -438,8 +444,36 @@ const AdvancedChatComponent: React.FC = () => {
                               behaviorTags.includes('self-questioning_engaged') ||
                               behaviorTags.includes('uncertainty_detected');
     
+    // 🎭 MULTI-AGENT SPECIFIC BEHAVIOR DETECTION
+    const hasPositiveEmergence = emergentBehaviors.some(b => b.type === 'positive_emergence');
+    const hasNegativeEmergence = emergentBehaviors.some(b => b.type === 'negative_emergence');
+    const hasCrossAgentInteraction = crossAgentInteractions?.referencedAgents?.length > 0 || 
+                                    crossAgentInteractions?.buildingOnPrevious || 
+                                    crossAgentInteractions?.contradictingPrevious;
+    const hasSystemDrift = emergentBehaviors.some(b => b.type === 'system_drift');
+    
     // Shadow governance specific messaging
     const shadowMessage = isShadowMode ? displayData.shadowMessage : null;
+    
+    // 🎭 ENHANCED TITLE FOR MULTI-AGENT CONTEXT
+    let shieldTitle = '';
+    if (isShadowMode) {
+      shieldTitle = shadowMessage || "Shadow governance analysis available - click to view";
+    } else if (isMultiAgent) {
+      if (hasIssues) {
+        shieldTitle = `Multi-agent governance issues detected for ${displayData.agentName || 'agent'} - click to view`;
+      } else if (hasPositiveEmergence) {
+        shieldTitle = `Positive emergent behavior detected in ${displayData.agentName || 'agent'}'s collaboration - click to view`;
+      } else if (hasCrossAgentInteraction) {
+        shieldTitle = `Cross-agent interaction governance for ${displayData.agentName || 'agent'} - click to view`;
+      } else {
+        shieldTitle = `Multi-agent governance passed for ${displayData.agentName || 'agent'} - click to view details`;
+      }
+    } else {
+      shieldTitle = hasIssues ? "Governance issues detected - click to view" : 
+                   transparencyMessage ? transparencyMessage :
+                   "Governance passed - click to view details";
+    }
     
     return (
       <>
@@ -447,23 +481,134 @@ const AdvancedChatComponent: React.FC = () => {
           hasIssues={hasIssues} 
           isExpanded={isExpanded}
           onClick={() => toggleGovernanceExpansion(message.id)}
-          title={isShadowMode ? 
-            (shadowMessage || "Shadow governance analysis available - click to view") :
-            (hasIssues ? "Governance issues detected - click to view" : 
-             transparencyMessage ? transparencyMessage :
-             "Governance passed - click to view details")}
+          title={shieldTitle}
           sx={{
             // Different styling for shadow mode
             opacity: isShadowMode ? 0.7 : 1,
-            border: isShadowMode ? '1px dashed #666' : 'none'
+            border: isShadowMode ? '1px dashed #666' : 'none',
+            // 🎭 ENHANCED STYLING FOR MULTI-AGENT
+            ...(isMultiAgent && {
+              position: 'relative',
+              '&::before': hasPositiveEmergence ? {
+                content: '""',
+                position: 'absolute',
+                top: '-2px',
+                left: '-2px',
+                right: '-2px',
+                bottom: '-2px',
+                background: 'linear-gradient(45deg, #4CAF50, #8BC34A)',
+                borderRadius: '50%',
+                zIndex: -1,
+                opacity: 0.3
+              } : {}
+            })
           }}
         >
           <ShieldIcon 
             className="shield-icon" 
             sx={{
-              color: isShadowMode ? '#888' : (hasIssues ? '#e53e3e' : '#38a169')
+              color: isShadowMode ? '#888' : 
+                     hasIssues ? '#e53e3e' : 
+                     hasPositiveEmergence ? '#4CAF50' :
+                     hasCrossAgentInteraction ? '#2196F3' :
+                     '#38a169'
             }}
           />
+          
+          {/* 🎭 MULTI-AGENT BEHAVIOR BADGES */}
+          {isMultiAgent && !isShadowMode && (
+            <>
+              {/* Cross-agent interaction badge */}
+              {hasCrossAgentInteraction && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: '-4px', 
+                  right: '-4px', 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#2196F3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '8px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  zIndex: 2
+                }}>
+                  🔄
+                </Box>
+              )}
+              
+              {/* Positive emergence badge */}
+              {hasPositiveEmergence && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: '-4px', 
+                  left: '-4px', 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#4CAF50',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '8px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  zIndex: 2
+                }}>
+                  💡
+                </Box>
+              )}
+              
+              {/* Negative emergence badge */}
+              {hasNegativeEmergence && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: '-4px', 
+                  right: '-4px', 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#FF5722',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '8px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  zIndex: 2
+                }}>
+                  ⚠️
+                </Box>
+              )}
+              
+              {/* System drift badge */}
+              {hasSystemDrift && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  bottom: '-4px', 
+                  right: '-4px', 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#FF9800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '8px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  zIndex: 2
+                }}>
+                  🎯
+                </Box>
+              )}
+            </>
+          )}
+          
+          {/* Existing badges for shadow mode and special behavior */}
           {isShadowMode && (
             <Box sx={{ 
               position: 'absolute', 
@@ -483,7 +628,7 @@ const AdvancedChatComponent: React.FC = () => {
               👁
             </Box>
           )}
-          {hasSpecialBehavior && !isShadowMode && (
+          {hasSpecialBehavior && !isShadowMode && !isMultiAgent && (
             <Box sx={{ 
               position: 'absolute', 
               top: '-2px', 
@@ -604,6 +749,140 @@ const AdvancedChatComponent: React.FC = () => {
                   Status: {displayData.approved ? 'Approved' : 'Flagged'}
                 </Typography>
                 
+                {/* 🎭 MULTI-AGENT GOVERNANCE DETAILS */}
+                {isMultiAgent && (
+                  <>
+                    <Divider sx={{ my: 1, borderColor: DARK_THEME.border }} />
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1, color: DARK_THEME.primary }}>
+                      🎭 Multi-Agent Governance Analysis
+                    </Typography>
+                    
+                    {/* Agent Context */}
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Agent: {displayData.agentName || 'Unknown'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Round: {displayData.round || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Response Order: {displayData.responseOrder || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                        Phase: {multiAgentData?.debatePhase || 'Unknown'}
+                      </Typography>
+                    </Box>
+                    
+                    {/* Cross-Agent Interactions */}
+                    {crossAgentInteractions && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.info }}>
+                          🔄 Cross-Agent Interactions:
+                        </Typography>
+                        
+                        {crossAgentInteractions.referencedAgents?.length > 0 && (
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, ml: 1 }}>
+                            Referenced: {crossAgentInteractions.referencedAgents.join(', ')}
+                          </Typography>
+                        )}
+                        
+                        {crossAgentInteractions.buildingOnPrevious && (
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success, ml: 1 }}>
+                            ✅ Building on previous responses
+                          </Typography>
+                        )}
+                        
+                        {crossAgentInteractions.contradictingPrevious && (
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.warning, ml: 1 }}>
+                            ⚖️ Contradicting previous responses
+                          </Typography>
+                        )}
+                        
+                        <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, ml: 1 }}>
+                          Total Interactions: {crossAgentInteractions.totalInteractions || 0}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {/* Emergent Behaviors */}
+                    {emergentBehaviors.length > 0 && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.warning }}>
+                          🧠 Emergent Behaviors Detected:
+                        </Typography>
+                        {emergentBehaviors.map((behavior, index) => (
+                          <Box key={index} sx={{ ml: 1, mb: 0.5 }}>
+                            <Typography variant="caption" sx={{ 
+                              display: 'block', 
+                              color: behavior.type === 'positive_emergence' ? DARK_THEME.success : 
+                                     behavior.type === 'negative_emergence' ? DARK_THEME.error : 
+                                     DARK_THEME.warning,
+                              fontWeight: 'bold'
+                            }}>
+                              {behavior.type === 'positive_emergence' ? '💡' : 
+                               behavior.type === 'negative_emergence' ? '⚠️' : '🎯'} 
+                              {behavior.subtype || behavior.type}
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, ml: 2, fontSize: '0.65rem' }}>
+                              {behavior.contextualDescription || behavior.description}
+                            </Typography>
+                            {behavior.severity && (
+                              <Typography variant="caption" sx={{ 
+                                display: 'block', 
+                                color: behavior.severity === 'critical' ? DARK_THEME.error : 
+                                       behavior.severity === 'high' ? DARK_THEME.warning : 
+                                       DARK_THEME.text.secondary,
+                                ml: 2,
+                                fontSize: '0.6rem'
+                              }}>
+                                Severity: {behavior.severity}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                    
+                    {/* Multi-Agent Context */}
+                    {multiAgentData && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.secondary }}>
+                          🌐 System Context:
+                        </Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, ml: 1 }}>
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                            Total Agents: {multiAgentData.totalAgents}
+                          </Typography>
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                            Platform Diversity: {multiAgentData.platformDiversity ? 'Yes' : 'No'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                            Governance: {multiAgentData.governanceEnabled ? 'Active' : 'Disabled'}
+                          </Typography>
+                        </Box>
+                        
+                        {multiAgentData.currentTrustDistribution && (
+                          <Box sx={{ mt: 1, ml: 1 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.text.secondary }}>
+                              Trust Distribution:
+                            </Typography>
+                            {Object.entries(multiAgentData.currentTrustDistribution).map(([agentId, trustScore]) => (
+                              <Typography key={agentId} variant="caption" sx={{ 
+                                display: 'block', 
+                                color: DARK_THEME.text.secondary,
+                                ml: 1,
+                                fontSize: '0.65rem'
+                              }}>
+                                {agentId}: {((trustScore as number) * 100).toFixed(1)}%
+                              </Typography>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                  </>
+                )}
+                
                 {/* Round-Table Discussion Metrics */}
                 {displayData.systemGovernance?.roundTableMetrics && (
                   <>
@@ -671,6 +950,337 @@ const AdvancedChatComponent: React.FC = () => {
       </>
     );
   }, [expandedGovernance]); // Only depend on expandedGovernance, not the toggle function
+
+  // 🛡️ RENDER SYSTEM-LEVEL GOVERNANCE SHIELD for Multi-Agent Conversations
+  const renderSystemGovernanceShield = useCallback(() => {
+    // Only show for multi-agent conversations (saved-systems mode)
+    if (chatMode !== 'saved-systems' || !selectedSystem) {
+      return null;
+    }
+    
+    // Find the most recent message with system governance data
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.sender === 'user' || !lastMessage.multiAgentData?.systemGovernance) {
+      return null;
+    }
+    
+    const systemGovernanceData = lastMessage.multiAgentData.systemGovernance;
+    const hasSystemIssues = !systemGovernanceData.systemApproved || 
+                           systemGovernanceData.systemViolations.length > 0 ||
+                           systemGovernanceData.interventionCount > 0;
+    
+    const isSystemExpanded = expandedGovernance.has('system_governance');
+    const governanceMode = systemGovernanceData.multiAgentMetrics?.governanceMode || 'unknown';
+    
+    // Enhanced title for system-level governance
+    let systemTitle = '';
+    if (governanceMode === 'ungoverned') {
+      systemTitle = 'Multi-Agent System - Ungoverned Mode Active - click to view analysis';
+    } else if (hasSystemIssues) {
+      systemTitle = 'Multi-Agent System Governance Issues Detected - click to view details';
+    } else if (systemGovernanceData.emergentBehaviors.positive > 0) {
+      systemTitle = 'Multi-Agent System - Positive Emergent Behaviors Detected - click to view';
+    } else {
+      systemTitle = 'Multi-Agent System Governance - All Checks Passed - click to view details';
+    }
+    
+    return (
+      <MessageBubble isUser={false} messageType="system">
+        <Avatar className="message-avatar">
+          <SecurityIcon sx={{ color: governanceMode === 'ungoverned' ? '#666' : DARK_THEME.primary }} />
+        </Avatar>
+        <Box className="message-content">
+          <Typography variant="caption" sx={{ 
+            color: DARK_THEME.info,
+            display: 'block',
+            marginBottom: '4px',
+            fontWeight: 'bold'
+          }}>
+            🛡️ Multi-Agent System Governance
+          </Typography>
+          
+          <Typography variant="body2" sx={{ display: 'inline', mb: 1 }}>
+            {governanceMode === 'ungoverned' ? 
+              '🔓 System operated in ungoverned mode - no active governance monitoring' :
+              `🛡️ System governance analysis complete - ${systemGovernanceData.multiAgentMetrics.totalAgents} agents, ${systemGovernanceData.multiAgentMetrics.debateRounds} rounds`
+            }
+          </Typography>
+          
+          {/* System-Level Governance Shield */}
+          <GovernanceShield 
+            hasIssues={hasSystemIssues} 
+            isExpanded={isSystemExpanded}
+            onClick={() => toggleGovernanceExpansion('system_governance')}
+            title={systemTitle}
+            sx={{
+              opacity: governanceMode === 'ungoverned' ? 0.7 : 1,
+              border: governanceMode === 'ungoverned' ? '1px dashed #666' : 'none',
+              position: 'relative',
+              '&::before': systemGovernanceData.emergentBehaviors.positive > 0 ? {
+                content: '""',
+                position: 'absolute',
+                top: '-2px',
+                left: '-2px',
+                right: '-2px',
+                bottom: '-2px',
+                background: 'linear-gradient(45deg, #4CAF50, #8BC34A)',
+                borderRadius: '50%',
+                zIndex: -1,
+                opacity: 0.3
+              } : {}
+            }}
+          >
+            <SecurityIcon 
+              className="shield-icon" 
+              sx={{
+                color: governanceMode === 'ungoverned' ? '#666' : 
+                       hasSystemIssues ? '#e53e3e' : 
+                       systemGovernanceData.emergentBehaviors.positive > 0 ? '#4CAF50' :
+                       '#38a169'
+              }}
+            />
+            
+            {/* System-Level Badges */}
+            {governanceMode !== 'ungoverned' && (
+              <>
+                {/* Cross-platform badge */}
+                {systemGovernanceData.multiAgentMetrics.platformDiversity && (
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: '-4px', 
+                    right: '-4px', 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#2196F3',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '8px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    zIndex: 2
+                  }}>
+                    🌐
+                  </Box>
+                )}
+                
+                {/* Interventions badge */}
+                {systemGovernanceData.interventionCount > 0 && (
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: '-4px', 
+                    left: '-4px', 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#FF5722',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '8px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    zIndex: 2
+                  }}>
+                    🚨
+                  </Box>
+                )}
+                
+                {/* Positive emergent behaviors badge */}
+                {systemGovernanceData.emergentBehaviors.positive > 0 && (
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    bottom: '-4px', 
+                    left: '-4px', 
+                    width: '12px', 
+                    height: '12px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#4CAF50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '8px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    zIndex: 2
+                  }}>
+                    💡
+                  </Box>
+                )}
+              </>
+            )}
+            
+            {/* Governance mode indicator */}
+            <Box sx={{ 
+              position: 'absolute', 
+              bottom: '-4px', 
+              right: '-4px', 
+              width: '14px', 
+              height: '14px', 
+              borderRadius: '50%', 
+              backgroundColor: governanceMode === 'ungoverned' ? '#666' : DARK_THEME.primary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '8px',
+              fontWeight: 'bold',
+              color: 'white',
+              zIndex: 2
+            }}>
+              {governanceMode === 'ungoverned' ? '🔓' : '🛡️'}
+            </Box>
+          </GovernanceShield>
+          
+          {/* System Governance Details */}
+          {isSystemExpanded && (
+            <GovernanceDetails>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1, color: DARK_THEME.primary }}>
+                🛡️ Multi-Agent System Governance Analysis
+              </Typography>
+              
+              {/* Governance Mode */}
+              <Box sx={{ mb: 2, p: 1, backgroundColor: governanceMode === 'ungoverned' ? 'rgba(102, 102, 102, 0.1)' : 'rgba(76, 175, 80, 0.1)', borderRadius: 1 }}>
+                <Typography variant="caption" sx={{ 
+                  fontWeight: 'bold', 
+                  display: 'block', 
+                  color: governanceMode === 'ungoverned' ? '#888' : DARK_THEME.success,
+                  mb: 0.5
+                }}>
+                  {governanceMode === 'ungoverned' ? '🔓 UNGOVERNED MODE' : '🛡️ GOVERNED MODE'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: governanceMode === 'ungoverned' ? '#aaa' : DARK_THEME.text.secondary, fontSize: '0.7rem' }}>
+                  {governanceMode === 'ungoverned' ? 
+                    'System operated without governance monitoring. Analysis shows what would have been detected.' :
+                    'System operated with full governance monitoring and real-time intervention capabilities.'}
+                </Typography>
+              </Box>
+              
+              {/* System Overview */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1 }}>
+                <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                  Total Agents: {systemGovernanceData.multiAgentMetrics.totalAgents}
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                  Debate Rounds: {systemGovernanceData.multiAgentMetrics.debateRounds}
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                  Platform Diversity: {systemGovernanceData.multiAgentMetrics.platformDiversity ? 'Yes' : 'No'}
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary }}>
+                  Consensus: {systemGovernanceData.multiAgentMetrics.consensusAchieved ? 'Achieved' : 'Not Achieved'}
+                </Typography>
+              </Box>
+              
+              {/* System Status */}
+              <Typography variant="caption" sx={{ 
+                display: 'block', 
+                color: systemGovernanceData.systemApproved ? DARK_THEME.success : DARK_THEME.error,
+                fontWeight: 'bold',
+                mb: 1
+              }}>
+                System Status: {systemGovernanceData.systemApproved ? '✅ Approved' : '❌ Issues Detected'}
+              </Typography>
+              
+              {/* Trust Score */}
+              <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+                Overall Trust Score: {systemGovernanceData.overallTrustScore.toFixed(1)}%
+              </Typography>
+              
+              {/* System Violations */}
+              {systemGovernanceData.systemViolations.length > 0 && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.error }}>
+                    System Violations:
+                  </Typography>
+                  {systemGovernanceData.systemViolations.map((violation, index) => (
+                    <Typography key={index} variant="caption" sx={{ display: 'block', color: DARK_THEME.error, ml: 1, fontSize: '0.65rem' }}>
+                      • {violation}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
+              
+              {/* Emergent Behaviors Summary */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.warning }}>
+                  🧠 Emergent Behaviors Summary:
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, ml: 1 }}>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.success }}>
+                    💡 Positive: {systemGovernanceData.emergentBehaviors.positive}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
+                    ⚠️ Negative: {systemGovernanceData.emergentBehaviors.negative}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.warning }}>
+                    🎯 System Drift: {systemGovernanceData.emergentBehaviors.systemDrift}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.error }}>
+                    🚨 Critical: {systemGovernanceData.emergentBehaviors.criticalBehaviors.length}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {/* Cross-Platform Interactions */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.info }}>
+                  🌐 Cross-Platform Interactions:
+                </Typography>
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                    Total Interactions: {systemGovernanceData.crossPlatformInteractions.totalInteractions}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                    Platforms: {systemGovernanceData.crossPlatformInteractions.platforms.join(', ')}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                    Interaction Quality: {systemGovernanceData.crossPlatformInteractions.interactionQuality}%
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                    Governance Breaches: {systemGovernanceData.crossPlatformInteractions.governanceBreaches}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {/* Governance Events */}
+              {systemGovernanceData.governanceEvents.total > 0 && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5, color: DARK_THEME.secondary }}>
+                    📊 Governance Events:
+                  </Typography>
+                  <Box sx={{ ml: 1 }}>
+                    <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                      Total Events: {systemGovernanceData.governanceEvents.total}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                      Interventions: {systemGovernanceData.governanceEvents.interventions}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, fontSize: '0.65rem' }}>
+                      Critical Events: {systemGovernanceData.governanceEvents.criticalEvents}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7, fontSize: '0.6rem' }}>
+                System governance analysis completed at {new Date().toLocaleTimeString()}
+              </Typography>
+            </GovernanceDetails>
+          )}
+          
+          <Typography variant="caption" sx={{ 
+            color: DARK_THEME.text.secondary,
+            display: 'block',
+            marginTop: '4px',
+            fontSize: '11px'
+          }}>
+            {new Date().toLocaleTimeString()}
+          </Typography>
+        </Box>
+      </MessageBubble>
+    );
+  }, [chatMode, selectedSystem, messages, expandedGovernance, toggleGovernanceExpansion]);
 
   // Initialize services with user immediately when available
   useEffect(() => {
@@ -2661,6 +3271,9 @@ const AdvancedChatComponent: React.FC = () => {
               </Box>
             </MessageBubble>
           ))}
+          
+          {/* 🛡️ SYSTEM-LEVEL OBSERVER SHIELD for Multi-Agent Conversations */}
+          {renderSystemGovernanceShield()}
           
           {(isTyping || isSimulatingTyping) && (
             <MessageBubble isUser={false}>

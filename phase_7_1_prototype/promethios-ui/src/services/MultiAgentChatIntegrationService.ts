@@ -1356,9 +1356,52 @@ Respond from your unique perspective and expertise. Keep responses focused and d
             }
           }
 
-          // Stream the agent response immediately
+          // Stream the agent response immediately with governance data
           if (onStreamResponse) {
             console.log('🎭 STREAMING: Sending agent response for', agentName, '(' + agentResponse.length + ' chars)');
+            
+            // 🛡️ PREPARE INDIVIDUAL AGENT GOVERNANCE DATA FOR SHIELD
+            const individualGovernanceData = governanceEnabled && governanceState ? {
+              // Standard governance fields
+              approved: !governanceAnalysis.interventionNeeded && governanceAnalysis.violations.length === 0,
+              trustScore: (governanceState.trustScores[agent.id || agentName] || 1.0) * 100,
+              violations: governanceAnalysis.violations.map(v => v.description || v.type || 'Unknown violation'),
+              behaviorTags: governanceAnalysis.emergentBehaviors.map(b => b.subtype || b.type),
+              transparencyMessage: governanceAnalysis.emergentBehaviors.some(b => b.type === 'positive_emergence') ? 
+                'Agent demonstrated positive emergent behavior in multi-agent collaboration' : undefined,
+              
+              // 🎭 MULTI-AGENT SPECIFIC FIELDS
+              agentId: agent.id || agentName,
+              agentName,
+              round,
+              responseOrder: agentIndex + 1,
+              
+              // Cross-agent interaction analysis
+              crossAgentInteractions: {
+                referencedAgents: this.detectAgentReferences(agentResponse, sortedAgents, agentName),
+                buildingOnPrevious: this.detectBuildingBehavior(agentResponse, debateHistory),
+                contradictingPrevious: this.detectContradictingBehavior(agentResponse, debateHistory),
+                totalInteractions: debateHistory.filter(entry => entry.agentName !== agentName).length
+              },
+              
+              // Emergent behaviors with enhanced detail
+              emergentBehaviors: governanceAnalysis.emergentBehaviors.map(behavior => ({
+                ...behavior,
+                round,
+                agentName,
+                contextualDescription: this.enhanceEmergentBehaviorDescription(behavior, agentName, round)
+              })),
+              
+              // Multi-agent context
+              multiAgentContext: {
+                totalAgents: sortedAgents.length,
+                debatePhase: round <= maxRounds ? 'debate' : 'consensus',
+                governanceEnabled: governanceEnabled,
+                platformDiversity: [...new Set(sortedAgents.map(a => a.provider || 'openai'))].length > 1,
+                currentTrustDistribution: governanceState.trustScores
+              }
+            } : null;
+
             onStreamResponse({
               type: 'agent_response',
               content: agentResponse,
@@ -1370,7 +1413,9 @@ Respond from your unique perspective and expertise. Keep responses focused and d
               timestamp: new Date().toISOString(),
               order: agentIndex + 1,
               provider: agent.provider || 'openai',
-              model: agent.model || 'gpt-3.5-turbo'
+              model: agent.model || 'gpt-3.5-turbo',
+              // 🛡️ ADD INDIVIDUAL GOVERNANCE DATA FOR OBSERVER SHIELD
+              governanceData: individualGovernanceData
             });
           } else {
             console.log('🎭 STREAMING: No onStreamResponse callback available for agent response');
@@ -1539,6 +1584,91 @@ Respond from your unique perspective and expertise. Keep responses focused and d
             agentCount: sortedAgents.length,
             platforms: [...new Set(sortedAgents.map(a => a.provider || 'openai'))],
             totalInteractions: debateHistory.length
+          }
+        },
+        // 🛡️ SYSTEM-LEVEL GOVERNANCE DATA FOR OBSERVER SHIELD
+        systemGovernance: governanceEnabled && governanceState ? {
+          systemApproved: governanceState.interventionCount === 0 && 
+                         governanceState.emergentBehaviors.filter(b => b.type === 'negative_emergence').length === 0,
+          overallTrustScore: Object.values(governanceState.trustScores).reduce((sum, score) => sum + (score as number), 0) / 
+                            Object.keys(governanceState.trustScores).length * 100,
+          systemViolations: governanceState.governanceEvents
+            .filter(event => event.type === 'violation' || event.severity === 'critical')
+            .map(event => event.description || event.type),
+          interventionCount: governanceState.interventionCount,
+          
+          // Cross-platform interaction governance
+          crossPlatformInteractions: {
+            totalInteractions: debateHistory.length,
+            platforms: [...new Set(sortedAgents.map(a => a.provider || 'openai'))],
+            interactionQuality: governanceState.collaborationHealth || 100,
+            governanceBreaches: governanceState.governanceEvents.filter(e => e.type === 'breach').length
+          },
+          
+          // Emergent behavior system analysis
+          emergentBehaviors: {
+            positive: governanceState.emergentBehaviors.filter(b => b.type === 'positive_emergence').length,
+            negative: governanceState.emergentBehaviors.filter(b => b.type === 'negative_emergence').length,
+            systemDrift: governanceState.emergentBehaviors.filter(b => b.type === 'system_drift').length,
+            criticalBehaviors: governanceState.emergentBehaviors.filter(b => b.severity === 'critical')
+          },
+          
+          // Collaboration health
+          collaborationHealth: {
+            overall: governanceState.collaborationHealth || 100,
+            trustDistribution: governanceState.trustScores,
+            consensusStrength: debateHistory.length > 0 ? 
+              (debateHistory.filter(entry => entry.content.toLowerCase().includes('agree') || 
+                                           entry.content.toLowerCase().includes('consensus')).length / debateHistory.length) * 100 : 0,
+            participationBalance: sortedAgents.reduce((balance, agent) => {
+              const agentName = agent.identity?.name || agent.name;
+              const agentResponses = debateHistory.filter(entry => entry.agentName === agentName);
+              balance[agentName] = (agentResponses.length / debateHistory.length) * 100;
+              return balance;
+            }, {} as Record<string, number>)
+          },
+          
+          // Governance events summary
+          governanceEvents: {
+            total: governanceState.governanceEvents.length,
+            byType: governanceState.governanceEvents.reduce((summary, event) => {
+              summary[event.type] = (summary[event.type] || 0) + 1;
+              return summary;
+            }, {} as Record<string, number>),
+            interventions: governanceState.interventionCount,
+            criticalEvents: governanceState.governanceEvents.filter(e => e.severity === 'critical').length
+          },
+          
+          // Multi-agent specific metrics
+          multiAgentMetrics: {
+            totalAgents: sortedAgents.length,
+            platformDiversity: [...new Set(sortedAgents.map(a => a.provider || 'openai'))].length > 1,
+            debateRounds: maxRounds,
+            consensusAchieved: summaryContent.toLowerCase().includes('consensus') || 
+                              summaryContent.toLowerCase().includes('agreement'),
+            governanceMode: governanceEnabled ? 'active' : 'disabled'
+          }
+        } : {
+          // Ungoverned mode system data
+          systemApproved: false,
+          overallTrustScore: 0,
+          systemViolations: ['Governance disabled - no monitoring active'],
+          interventionCount: 0,
+          crossPlatformInteractions: {
+            totalInteractions: debateHistory.length,
+            platforms: [...new Set(sortedAgents.map(a => a.provider || 'openai'))],
+            interactionQuality: 0,
+            governanceBreaches: 0
+          },
+          emergentBehaviors: { positive: 0, negative: 0, systemDrift: 0, criticalBehaviors: [] },
+          collaborationHealth: { overall: 0, trustDistribution: {}, consensusStrength: 0, participationBalance: {} },
+          governanceEvents: { total: 0, byType: {}, interventions: 0, criticalEvents: 0 },
+          multiAgentMetrics: {
+            totalAgents: sortedAgents.length,
+            platformDiversity: [...new Set(sortedAgents.map(a => a.provider || 'openai'))].length > 1,
+            debateRounds: maxRounds,
+            consensusAchieved: false,
+            governanceMode: 'ungoverned'
           }
         }
       }
@@ -1824,6 +1954,87 @@ Generate the final consensus report:`;
     summary += consensusReport;
     
     return summary;
+  }
+
+  /**
+   * 🛡️ HELPER METHODS FOR INDIVIDUAL AGENT GOVERNANCE ANALYSIS
+   */
+
+  /**
+   * Detect which other agents are referenced in the current agent's response
+   */
+  private detectAgentReferences(response: string, allAgents: any[], currentAgentName: string): string[] {
+    const referencedAgents = [];
+    
+    allAgents.forEach(agent => {
+      const agentName = agent.identity?.name || agent.name;
+      if (agentName !== currentAgentName) {
+        // Check for direct name references (case insensitive)
+        if (response.toLowerCase().includes(agentName.toLowerCase())) {
+          referencedAgents.push(agentName);
+        }
+        
+        // Check for role-based references
+        const agentRole = agent.role || agent.identity?.role || '';
+        if (agentRole && response.toLowerCase().includes(agentRole.toLowerCase())) {
+          referencedAgents.push(agentName);
+        }
+      }
+    });
+    
+    return [...new Set(referencedAgents)]; // Remove duplicates
+  }
+
+  /**
+   * Detect if the agent is building on previous responses
+   */
+  private detectBuildingBehavior(response: string, debateHistory: any[]): boolean {
+    const buildingPatterns = [
+      /building on|expanding on|adding to|following up on/gi,
+      /as mentioned|as noted|as discussed|as stated/gi,
+      /I agree with|I support|building upon|extending/gi,
+      /furthermore|additionally|moreover|in addition/gi,
+      /this point|this idea|this perspective|this approach/gi
+    ];
+    
+    return buildingPatterns.some(pattern => pattern.test(response)) && debateHistory.length > 0;
+  }
+
+  /**
+   * Detect if the agent is contradicting previous responses
+   */
+  private detectContradictingBehavior(response: string, debateHistory: any[]): boolean {
+    const contradictingPatterns = [
+      /however|but|on the contrary|in contrast/gi,
+      /I disagree|I differ|I challenge|I question/gi,
+      /that's not|that isn't|this is incorrect|this is wrong/gi,
+      /alternatively|instead|rather than|opposed to/gi,
+      /different view|different perspective|different approach/gi
+    ];
+    
+    return contradictingPatterns.some(pattern => pattern.test(response)) && debateHistory.length > 0;
+  }
+
+  /**
+   * Enhance emergent behavior description with contextual information
+   */
+  private enhanceEmergentBehaviorDescription(behavior: any, agentName: string, round: number): string {
+    const baseDescription = behavior.description || `${behavior.type}: ${behavior.subtype}`;
+    const contextualInfo = `(${agentName}, Round ${round})`;
+    
+    switch (behavior.type) {
+      case 'positive_emergence':
+        return `🌟 ${baseDescription} ${contextualInfo} - This demonstrates beneficial AI collaboration`;
+      
+      case 'negative_emergence':
+        return `⚠️ ${baseDescription} ${contextualInfo} - This requires governance attention`;
+      
+      case 'system_drift':
+        return `🎯 ${baseDescription} ${contextualInfo} - Agent may be deviating from objectives`;
+      
+      default:
+        return `${baseDescription} ${contextualInfo}`;
+    }
   }
 
   /**
