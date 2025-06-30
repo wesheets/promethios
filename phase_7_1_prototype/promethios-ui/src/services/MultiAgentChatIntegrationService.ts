@@ -1733,7 +1733,10 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         throw new Error('Session not found');
       }
 
-      const system = await this.storageService.get('multiAgentSystems', session.systemId);
+      // Load system using user-specific key format (same as other parts of the system)
+      const userSystemKey = `${this.currentUserId}.multi-agent-systems.${session.systemId}`;
+      console.log('🔍 BLIND VISION DEBUG: Trying user-specific key:', userSystemKey);
+      const system = await this.storageService.get('multiAgentSystems', userSystemKey);
       console.log('🔍 BLIND VISION DEBUG: System loaded:', !!system);
       console.log('🔍 BLIND VISION DEBUG: System structure:', system ? Object.keys(system) : 'null');
       console.log('🔍 BLIND VISION DEBUG: System.agents exists:', !!system?.agents);
