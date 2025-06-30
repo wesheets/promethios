@@ -1,6 +1,7 @@
 /**
  * Main Application Entry Point
  * Initializes and coordinates all modules
+ * Firebase integration removed to prevent conflicts with main app
  */
 
 // Import modules

@@ -1,3 +1,15 @@
+/**
+ * Firebase Configuration for UI Directory
+ * 
+ * DISABLED: This Firebase configuration has been disabled to prevent conflicts
+ * with the main application Firebase instance in /phase_7_1_prototype/
+ */
+
+// FIREBASE DISABLED - Preventing conflicts with main app
+console.warn('Firebase configuration in /ui/ directory has been disabled to prevent conflicts with main app');
+
+// Commented out to prevent Firebase initialization conflicts
+/*
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -29,5 +41,10 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 export default app;
+*/
 
+// Provide mock exports to prevent import errors
+export const db = null;
+export const auth = null;
+export default null;
 

@@ -1,6 +1,7 @@
 /**
  * Main Application Entry Point
  * Initializes and coordinates all modules for CMU Interactive Playground
+ * Firebase integration removed to prevent conflicts with main app
  */
 
 // Import modules
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     try {
         console.log('🚀 Initializing CMU Interactive Playground Application...');
+        console.log('Note: Firebase integration removed to prevent conflicts with main app');
         
         // Check for development mode
         checkDevelopmentMode();

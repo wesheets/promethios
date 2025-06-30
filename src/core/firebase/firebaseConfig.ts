@@ -1,11 +1,19 @@
 /**
  * Firebase Configuration for Promethios
  * 
+ * DISABLED: This Firebase configuration has been disabled to prevent conflicts
+ * with the main application Firebase instance in /phase_7_1_prototype/
+ * 
  * This file contains the Firebase configuration and initialization for the Promethios application.
  * It provides a centralized point for Firebase services including Authentication, Firestore,
  * and other Firebase features used throughout the application.
  */
 
+// FIREBASE DISABLED - Preventing conflicts with main app
+console.warn('Firebase configuration in /src/ directory has been disabled to prevent conflicts with main app');
+
+// Commented out to prevent Firebase initialization conflicts
+/*
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
@@ -47,3 +55,12 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export { app, auth, firestore, functions, storage };
+*/
+
+// Provide mock exports to prevent import errors
+export const app = null;
+export const auth = null;
+export const firestore = null;
+export const functions = null;
+export const storage = null;
+
