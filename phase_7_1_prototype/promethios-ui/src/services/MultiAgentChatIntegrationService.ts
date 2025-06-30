@@ -8,6 +8,7 @@
 import { UnifiedStorageService } from './UnifiedStorageService';
 import { UserAgentStorageService } from './UserAgentStorageService';
 import { API_BASE_URL } from '../config/api';
+import { createPromethiosSystemMessage } from '../api/openaiProxy';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -831,10 +832,24 @@ export class MultiAgentChatIntegrationService {
         });
       }
 
-      // Create system message with agent role context
-      const agentRole = agent.role || 'assistant';
-      const systemMessage = `You are ${agent.identity?.name || agent.name}, a specialized ${agentRole}. 
+      // Create system message based on governance setting
+      let systemMessage;
+      if (governanceEnabled) {
+        // Use Promethios governance kernel for governed agents
+        console.log('🛡️ GOVERNANCE: Using governance system message for agent:', agent.identity?.name || agent.name);
+        systemMessage = createPromethiosSystemMessage();
+        
+        // Add agent-specific role context to governance message
+        const agentRole = agent.role || 'assistant';
+        const agentContext = `\n\nAgent Role Context: You are ${agent.identity?.name || agent.name}, a specialized ${agentRole}. Respond from your unique perspective and expertise while maintaining governance standards. Keep responses focused and distinct from other agents.`;
+        systemMessage += agentContext;
+      } else {
+        // Use basic agent description for ungoverned agents
+        console.log('🔓 UNGOVERNED: Using basic system message for agent:', agent.identity?.name || agent.name);
+        const agentRole = agent.role || 'assistant';
+        systemMessage = `You are ${agent.identity?.name || agent.name}, a specialized ${agentRole}. 
 Respond from your unique perspective and expertise. Keep responses focused and distinct from other agents.`;
+      }
 
       let response;
       
@@ -959,6 +974,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     onStreamResponse?: (response: any) => void
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
     console.log('🚨 DEBUG: sendMessage method called - ENTRY POINT (ROUTER)');
+    console.log('🛡️ GOVERNANCE STATUS: Governance enabled =', governanceEnabled);
     
     try {
       const session = await this.getChatSession(sessionId);
@@ -1102,6 +1118,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     onStreamResponse?: (response: any) => void
   ): Promise<{ content: string; agentResponses: any[]; governanceData?: any }> {
     console.log('🎭 ROUND-TABLE DISCUSSION: Starting sequential debate system with streaming');
+    console.log('🛡️ ROUND-TABLE GOVERNANCE: Individual agent governance enabled =', governanceEnabled);
     
     const session = await this.getChatSession(sessionId);
     const config = await this.getChatConfiguration(session!.systemId);
