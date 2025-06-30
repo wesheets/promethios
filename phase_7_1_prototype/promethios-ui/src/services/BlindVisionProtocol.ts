@@ -239,12 +239,40 @@ export class BlindVisionProtocol {
     // Execute all agents in parallel with complete isolation
     const blindPromises = agents.map(async (agent) => {
       // Enhanced agent name extraction with debugging
-      const agentName = agent.identity?.name || agent.name || agent.id || 'Unknown Agent';
+      let agentName = agent.identity?.name || agent.name || agent.id || 'Unknown Agent';
+      
+      // If we still have a generic ID, try to create a meaningful name
+      if (agentName.startsWith('Agent AGENT-') || agentName.startsWith('agent-')) {
+        // Try to get a better name from the agent's provider or model info
+        if (agent.provider) {
+          switch (agent.provider.toLowerCase()) {
+            case 'anthropic':
+              agentName = 'Claude Assistant';
+              break;
+            case 'openai':
+              agentName = agent.model?.includes('gpt-4') ? 'GPT-4 Assistant' : 'OpenAI Assistant';
+              break;
+            case 'cohere':
+              agentName = 'Cohere Assistant';
+              break;
+            case 'google':
+              agentName = 'Gemini Assistant';
+              break;
+            default:
+              agentName = `${agent.provider} Assistant`;
+          }
+        } else {
+          // Final fallback - keep the original but make it cleaner
+          agentName = agentName.replace('Agent AGENT-', 'Assistant ').replace('agent-', 'Assistant ');
+        }
+      }
+      
       console.log('🔍 AGENT DEBUG: Full agent structure:', {
         agent: agent,
         identityName: agent.identity?.name,
         name: agent.name,
         id: agent.id,
+        provider: agent.provider,
         extractedName: agentName
       });
       
@@ -1130,7 +1158,13 @@ ${creativityPrompt.antiConsensusWarning}
   }
 
   // Utility methods
-  private normalizeAgentName(name: string): string {
+  private normalizeAgentName(name: string | undefined | null): string {
+    // Safety check to ensure name is a string
+    if (!name || typeof name !== 'string') {
+      console.log('🔍 NORMALIZE DEBUG: Invalid name input:', name, 'type:', typeof name);
+      return 'unknown';
+    }
+    
     const normalized = name.toLowerCase();
     console.log('🔍 NORMALIZE DEBUG: Input name:', name, 'Normalized:', normalized);
     
