@@ -49,23 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const interest = document.getElementById('interest').value;
     
     try {
-      // Check if email already exists
-      const emailQuery = await db.collection('waitlist')
-        .where('email', '==', email)
-        .get();
-      
-      if (!emailQuery.empty) {
-        alert('This email is already on our waitlist.');
-        return;
-      }
-      
-      // Add to waitlist collection
-      await db.collection('waitlist').add({
+      // Simple form submission - Firebase removed to prevent conflicts
+      // TODO: Implement proper waitlist submission via main app API
+      console.log('Waitlist submission:', {
         name: name,
         email: email,
         role: isEarlyAccessDev ? 'developer' : 'user',
         interest: interest,
-        createdAt: firebase.firestore.Timestamp.now(),
+        timestamp: new Date().toISOString(),
         status: 'pending'
       });
       
@@ -77,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
       successModal.classList.remove('hidden');
       
     } catch (error) {
-      console.error('Error adding to waitlist:', error);
+      console.error('Error submitting waitlist form:', error);
       alert('There was an error submitting your information. Please try again.');
     }
   });

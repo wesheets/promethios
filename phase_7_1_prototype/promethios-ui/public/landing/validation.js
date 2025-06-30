@@ -33,19 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ All required elements exist');
   }
   
-  // Check if Firebase is initialized
-  if (typeof firebase !== 'undefined' && firebase.app()) {
-    console.log('✅ Firebase is initialized');
-  } else {
-    console.error('Firebase is not initialized');
-  }
-  
-  // Check if Firestore is accessible
-  if (typeof db !== 'undefined') {
-    console.log('✅ Firestore is accessible');
-  } else {
-    console.error('Firestore is not accessible');
-  }
+  // Firebase removed to prevent conflicts with main app
+  console.log('Landing page validation - Firebase integration removed');
   
   // Test modal open/close functionality
   const waitlistButton = document.getElementById('waitlistButton');
