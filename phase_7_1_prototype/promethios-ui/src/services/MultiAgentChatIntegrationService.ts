@@ -337,11 +337,28 @@ export class MultiAgentChatIntegrationService {
     console.log('🔧 ROLE MAPPING: Available user agents:', userAgents.length);
     console.log('🔧 ROLE MAPPING: roleAssignments exists:', !!systemConfig.roleAssignments);
     console.log('🔧 ROLE MAPPING: roleAssignments content:', systemConfig.roleAssignments);
+    console.log('🔧 ROLE MAPPING: agentRoles exists:', !!systemConfig.agentRoles);
+    console.log('🔧 ROLE MAPPING: agentRoles content:', systemConfig.agentRoles);
     console.log('🔧 ROLE MAPPING: agentIds exists:', !!systemConfig.agentIds);
     console.log('🔧 ROLE MAPPING: agentIds content:', systemConfig.agentIds);
     
-    // If system has role assignments, use them
-    if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
+    // Check for agentRoles first (new format from MultiAgentWrappingWizard)
+    if (systemConfig.agentRoles && Object.keys(systemConfig.agentRoles).length > 0) {
+      console.log('🔧 ROLE MAPPING: Using agentRoles from system configuration');
+      
+      for (const [agentId, roleData] of Object.entries(systemConfig.agentRoles)) {
+        const agent = userAgents.find(a => a.id === agentId);
+        if (agent) {
+          const roleName = (roleData as any)?.name || (roleData as any)?.customName || roleData;
+          console.log('🔧 ROLE MAPPING: Found agent for agentRoles', agentId, ':', agent.identity?.name, 'with role:', roleName);
+          agentObjects.push(this.formatAgentForBackend(agent, roleName));
+        } else {
+          console.warn('🔧 ROLE MAPPING: Agent not found for agentRoles', agentId);
+        }
+      }
+    }
+    // If system has role assignments, use them (legacy format)
+    else if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
       console.log('🔧 ROLE MAPPING: Using existing role assignments');
       
       for (const [role, agentId] of Object.entries(systemConfig.roleAssignments)) {
@@ -413,14 +430,51 @@ export class MultiAgentChatIntegrationService {
       agentDataKeys: Object.keys(agentData)
     });
     
+    // Enhanced name extraction to preserve proper agent names
+    let agentName = agentData.identity?.name || agentData.name;
+    
+    // If no proper name found, try to extract from ID or create a meaningful name
+    if (!agentName || agentName.startsWith('Agent AGENT-')) {
+      // Try to get name from identity description or create based on provider
+      if (agentData.identity?.description) {
+        agentName = agentData.identity.description.split(',')[0].trim();
+      } else if (agentData.llmProvider) {
+        // Create meaningful names based on provider
+        switch (agentData.llmProvider.toLowerCase()) {
+          case 'anthropic':
+            agentName = 'Claude Assistant';
+            break;
+          case 'openai':
+            agentName = agentData.llmModel?.includes('gpt-4') ? 'GPT-4 Assistant' : 'OpenAI Assistant';
+            break;
+          case 'cohere':
+            agentName = 'Cohere Assistant';
+            break;
+          case 'google':
+            agentName = 'Gemini Assistant';
+            break;
+          default:
+            agentName = `${agentData.llmProvider} Assistant`;
+        }
+      } else {
+        agentName = agentData.id;
+      }
+    }
+    
     const formattedAgent = {
       id: agentData.id,
-      name: agentData.identity?.name || agentData.id,
+      name: agentName,
+      identity: {
+        name: agentName, // Ensure identity.name is set
+        role: agentData.identity?.role || 'conversational',
+        description: agentData.identity?.description || `AI assistant powered by ${agentData.llmProvider || 'OpenAI'}`,
+        systemPrompt: agentData.identity?.systemPrompt
+      },
       role: agentData.identity?.role || 'conversational',
       assignedRole: assignedRole, // Role in the multi-agent system
       provider: agentData.llmProvider || 'openai',
       model: agentData.llmModel || 'gpt-3.5-turbo',
-      systemPrompt: agentData.identity?.systemPrompt || `You are ${agentData.identity?.name || agentData.id}, a helpful AI assistant.`,
+      systemPrompt: agentData.identity?.systemPrompt || `You are ${agentName}, a helpful AI assistant.`,
       apiConfig: {
         temperature: agentData.llmConfig?.temperature || 0.7,
         maxTokens: agentData.llmConfig?.maxTokens || 1000,
@@ -431,6 +485,7 @@ export class MultiAgentChatIntegrationService {
     console.log('🔧 FORMAT AGENT RESULT:', {
       originalName: agentData.identity?.name,
       finalName: formattedAgent.name,
+      identityName: formattedAgent.identity.name,
       assignedRole: assignedRole
     });
     

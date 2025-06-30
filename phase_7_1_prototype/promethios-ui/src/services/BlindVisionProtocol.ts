@@ -151,7 +151,10 @@ export class BlindVisionProtocol {
         originalPrompt,
         agents,
         creativityLevel,
-        onStreamResponse
+        onStreamResponse,
+        attachments,
+        conversationHistory,
+        governanceEnabled
       );
 
       // Round 1: Confrontation
@@ -215,7 +218,10 @@ export class BlindVisionProtocol {
     originalPrompt: string,
     agents: string[],
     creativityLevel: string,
-    onStreamResponse?: (response: any) => void
+    onStreamResponse?: (response: any) => void,
+    attachments: any[] = [],
+    conversationHistory: any[] = [],
+    governanceEnabled: boolean = false
   ): Promise<Map<string, BlindResponse>> {
     this.isolationActive = true;
     this.blindResponses.clear();
