@@ -335,6 +335,7 @@ export class MultiAgentChatIntegrationService {
     
     console.log('🔧 ROLE MAPPING: System config:', systemConfig);
     console.log('🔧 ROLE MAPPING: Available user agents:', userAgents.length);
+    console.log('🔧 ROLE MAPPING: User agent IDs:', userAgents.map(a => a.id));
     console.log('🔧 ROLE MAPPING: roleAssignments exists:', !!systemConfig.roleAssignments);
     console.log('🔧 ROLE MAPPING: roleAssignments content:', systemConfig.roleAssignments);
     console.log('🔧 ROLE MAPPING: agentRoles exists:', !!systemConfig.agentRoles);
@@ -346,57 +347,77 @@ export class MultiAgentChatIntegrationService {
     if (systemConfig.agentRoles && Object.keys(systemConfig.agentRoles).length > 0) {
       console.log('🔧 ROLE MAPPING: Using agentRoles from system configuration');
       
-      for (const [agentId, roleData] of Object.entries(systemConfig.agentRoles)) {
-        const agent = userAgents.find(a => a.id === agentId);
-        if (agent) {
-          const roleName = (roleData as any)?.name || (roleData as any)?.customName || roleData;
-          console.log('🔧 ROLE MAPPING: Found agent for agentRoles', agentId, ':', agent.identity?.name, 'with role:', roleName);
-          agentObjects.push(this.formatAgentForBackend(agent, roleName));
-        } else {
-          console.warn('🔧 ROLE MAPPING: Agent not found for agentRoles', agentId);
-        }
+      // Get the agent IDs from agentRoles
+      const agentRoleIds = Object.keys(systemConfig.agentRoles);
+      console.log('🔧 ROLE MAPPING: Agent role IDs:', agentRoleIds);
+      
+      // If agent IDs don't match exactly, try to map by index or provider
+      let mappedAgents = [];
+      for (let i = 0; i < agentRoleIds.length && i < userAgents.length; i++) {
+        const roleId = agentRoleIds[i];
+        const roleData = systemConfig.agentRoles[roleId];
+        const userAgent = userAgents[i]; // Map by index as fallback
+        
+        console.log(`🔧 ROLE MAPPING: Mapping role ${roleId} to user agent ${userAgent.id} (${userAgent.identity?.name || userAgent.name})`);
+        
+        const roleName = (roleData as any)?.name || (roleData as any)?.customName || roleData;
+        console.log('🔧 ROLE MAPPING: Assigning role:', roleName);
+        
+        mappedAgents.push(this.formatAgentForBackend(userAgent, roleName));
+      }
+      
+      if (mappedAgents.length > 0) {
+        agentObjects.push(...mappedAgents);
+      } else {
+        console.warn('🔧 ROLE MAPPING: No agents could be mapped from agentRoles, falling back to auto-assignment');
+        // Fall through to auto-assignment logic below
       }
     }
-    // If system has role assignments, use them (legacy format)
-    else if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
-      console.log('🔧 ROLE MAPPING: Using existing role assignments');
-      
-      for (const [role, agentId] of Object.entries(systemConfig.roleAssignments)) {
-        const agent = userAgents.find(a => a.id === agentId);
-        if (agent) {
-          console.log('🔧 ROLE MAPPING: Found agent for role', role, ':', agent.identity?.name);
-          agentObjects.push(this.formatAgentForBackend(agent, role));
-        } else {
-          console.warn('🔧 ROLE MAPPING: Agent not found for role', role, ':', agentId);
+    
+    // If no agents were mapped from agentRoles, try other methods
+    if (agentObjects.length === 0) {
+      // If system has role assignments, use them (legacy format)
+      if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
+        console.log('🔧 ROLE MAPPING: Using existing role assignments');
+        
+        for (const [role, agentId] of Object.entries(systemConfig.roleAssignments)) {
+          const agent = userAgents.find(a => a.id === agentId);
+          if (agent) {
+            console.log('🔧 ROLE MAPPING: Found agent for role', role, ':', agent.identity?.name);
+            agentObjects.push(this.formatAgentForBackend(agent, role));
+          } else {
+            console.warn('🔧 ROLE MAPPING: Agent not found for role', role, ':', agentId);
+          }
+        }
+      } 
+      // If system has old agentIds format, try to auto-assign roles
+      else if (systemConfig.agentIds && systemConfig.agentIds.length > 0) {
+        console.log('🔧 ROLE MAPPING: Migrating from old agentIds format');
+        const roleAssignments = await this.autoAssignRolesToUserAgents(userAgents, systemConfig.agentIds.length);
+        
+        for (const [role, agent] of Object.entries(roleAssignments)) {
+          if (agent) {
+            console.log('🔧 ROLE MAPPING: Auto-assigned role', role, 'to agent:', agent.identity?.name);
+            agentObjects.push(this.formatAgentForBackend(agent, role));
+          }
         }
       }
-    } 
-    // If system has old agentIds format, try to auto-assign roles
-    else if (systemConfig.agentIds && systemConfig.agentIds.length > 0) {
-      console.log('🔧 ROLE MAPPING: Migrating from old agentIds format');
-      const roleAssignments = await this.autoAssignRolesToUserAgents(userAgents, systemConfig.agentIds.length);
-      
-      for (const [role, agent] of Object.entries(roleAssignments)) {
-        if (agent) {
-          console.log('🔧 ROLE MAPPING: Auto-assigned role', role, 'to agent:', agent.identity?.name);
+      // Final fallback: use first available user agents
+      else {
+        console.log('🔧 ROLE MAPPING: Using first available user agents as fallback');
+        const defaultRoles = ['strategic_analyst', 'risk_assessor', 'innovation_expert', 'financial_advisor'];
+        
+        for (let i = 0; i < Math.min(userAgents.length, defaultRoles.length); i++) {
+          const agent = userAgents[i];
+          const role = defaultRoles[i];
+          console.log('🔧 ROLE MAPPING: Fallback assignment - role', role, 'to agent:', agent.identity?.name);
           agentObjects.push(this.formatAgentForBackend(agent, role));
         }
-      }
-    }
-    // Fallback: use first available user agents
-    else {
-      console.log('🔧 ROLE MAPPING: Using first available user agents as fallback');
-      const defaultRoles = ['strategic_analyst', 'risk_assessor', 'innovation_expert', 'financial_advisor'];
-      
-      for (let i = 0; i < Math.min(userAgents.length, defaultRoles.length); i++) {
-        const agent = userAgents[i];
-        const role = defaultRoles[i];
-        console.log('🔧 ROLE MAPPING: Fallback assignment - role', role, 'to agent:', agent.identity?.name);
-        agentObjects.push(this.formatAgentForBackend(agent, role));
       }
     }
     
     console.log('🔧 ROLE MAPPING: Final agent objects:', agentObjects.length);
+    console.log('🔧 ROLE MAPPING: Final agent names:', agentObjects.map(a => a.name));
     return agentObjects;
   }
 
