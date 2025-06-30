@@ -8,7 +8,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['*']
+    allowedHosts: ['*', '5173-irvp18jlopbh17iy0n4g8-ffd3d388.manusvm.computer']
   },
   define: {
     'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(process.env.VITE_FIREBASE_API_KEY),

@@ -565,10 +565,15 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
             
             if (agentData) {
               console.log(`✅ Loaded agent data for ${agentId}:`, agentData.name);
+              // Get the selected role from UI, fallback to agent's original role or 'conversational'
+              const selectedRole = agentRoles[agentId]?.name || agentData.role || 'conversational';
+              console.log(`🎭 Assigning role "${selectedRole}" to agent ${agentData.name}`);
+              
               return {
                 id: agentId,
                 name: agentData.name,
-                role: 'conversational',
+                role: selectedRole,
+                assignedRole: selectedRole, // Also store in assignedRole for compatibility
                 provider: agentData.provider || 'openai',
                 model: agentData.model || 'gpt-3.5-turbo',
                 systemPrompt: agentData.systemPrompt || agentData.instructions || `You are ${agentData.name || agentId}.`,
@@ -581,10 +586,15 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
             } else {
               // Fallback for missing agent data
               console.warn(`⚠️ No agent data found for ${agentId}, using fallback`);
+              // Get the selected role from UI, fallback to 'conversational'
+              const selectedRole = agentRoles[agentId]?.name || 'conversational';
+              console.log(`🎭 Assigning fallback role "${selectedRole}" to agent ${agentId}`);
+              
               return {
                 id: agentId,
                 name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
-                role: 'conversational',
+                role: selectedRole,
+                assignedRole: selectedRole, // Also store in assignedRole for compatibility
                 provider: 'openai',
                 model: 'gpt-3.5-turbo',
                 systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
@@ -596,10 +606,15 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
             }
           } catch (error) {
             console.warn(`Failed to load agent ${agentId}, using fallback:`, error);
+            // Get the selected role from UI, fallback to 'conversational'
+            const selectedRole = agentRoles[agentId]?.name || 'conversational';
+            console.log(`🎭 Assigning error fallback role "${selectedRole}" to agent ${agentId}`);
+            
             return {
               id: agentId,
               name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
-              role: 'conversational',
+              role: selectedRole,
+              assignedRole: selectedRole, // Also store in assignedRole for compatibility
               provider: 'openai',
               model: 'gpt-3.5-turbo',
               systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
@@ -982,17 +997,65 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
                                 <MenuItem value="">
                                   <em>Select a role...</em>
                                 </MenuItem>
-                                <MenuItem value="Content Generator">Content Generator</MenuItem>
-                                <MenuItem value="Data Processor">Data Processor</MenuItem>
-                                <MenuItem value="Research Assistant">Research Assistant</MenuItem>
-                                <MenuItem value="Sentiment Analyzer">Sentiment Analyzer</MenuItem>
-                                <MenuItem value="Customer Support">Customer Support</MenuItem>
-                                <MenuItem value="Compliance Checker">Compliance Checker</MenuItem>
-                                <MenuItem value="Lead Coordinator">Lead Coordinator</MenuItem>
-                                <MenuItem value="Quality Analyst">Quality Analyst</MenuItem>
-                                <MenuItem value="Decision Maker">Decision Maker</MenuItem>
-                                <MenuItem value="Data Validator">Data Validator</MenuItem>
-                                <MenuItem value="Custom Role">Custom Role (specify below)</MenuItem>
+                                
+                                {/* 🎭 CREATIVE & INNOVATION ROLES */}
+                                <MenuItem disabled sx={{ fontWeight: 'bold', color: 'primary.main', backgroundColor: 'primary.light', opacity: '1 !important' }}>
+                                  🎭 CREATIVE & INNOVATION
+                                </MenuItem>
+                                <MenuItem value="Visionary Inventor">🔮 Visionary Inventor</MenuItem>
+                                <MenuItem value="Disruptive Thinker">💥 Disruptive Thinker</MenuItem>
+                                <MenuItem value="Creative Catalyst">⚡ Creative Catalyst</MenuItem>
+                                <MenuItem value="Future Architect">🏗️ Future Architect</MenuItem>
+                                <MenuItem value="Breakthrough Engineer">🚀 Breakthrough Engineer</MenuItem>
+                                <MenuItem value="Innovation Strategist">🎯 Innovation Strategist</MenuItem>
+                                <MenuItem value="Radical Designer">🎨 Radical Designer</MenuItem>
+                                <MenuItem value="Paradigm Shifter">🌀 Paradigm Shifter</MenuItem>
+                                
+                                <Divider sx={{ my: 1 }} />
+                                
+                                {/* 🛡️ GOVERNANCE & COMPLIANCE ROLES */}
+                                <MenuItem disabled sx={{ fontWeight: 'bold', color: 'warning.main', backgroundColor: 'warning.light', opacity: '1 !important' }}>
+                                  🛡️ GOVERNANCE & COMPLIANCE
+                                </MenuItem>
+                                <MenuItem value="Risk Assessor">⚠️ Risk Assessor</MenuItem>
+                                <MenuItem value="Compliance Checker">✅ Compliance Checker</MenuItem>
+                                <MenuItem value="Quality Analyst">🔍 Quality Analyst</MenuItem>
+                                <MenuItem value="Data Validator">🔐 Data Validator</MenuItem>
+                                <MenuItem value="Ethics Guardian">⚖️ Ethics Guardian</MenuItem>
+                                <MenuItem value="Security Auditor">🛡️ Security Auditor</MenuItem>
+                                
+                                <Divider sx={{ my: 1 }} />
+                                
+                                {/* 📊 OPERATIONAL & ANALYSIS ROLES */}
+                                <MenuItem disabled sx={{ fontWeight: 'bold', color: 'info.main', backgroundColor: 'info.light', opacity: '1 !important' }}>
+                                  📊 OPERATIONAL & ANALYSIS
+                                </MenuItem>
+                                <MenuItem value="Research Assistant">🔬 Research Assistant</MenuItem>
+                                <MenuItem value="Data Processor">💾 Data Processor</MenuItem>
+                                <MenuItem value="Content Generator">📝 Content Generator</MenuItem>
+                                <MenuItem value="Sentiment Analyzer">😊 Sentiment Analyzer</MenuItem>
+                                <MenuItem value="Market Analyst">📈 Market Analyst</MenuItem>
+                                <MenuItem value="Technical Specialist">⚙️ Technical Specialist</MenuItem>
+                                
+                                <Divider sx={{ my: 1 }} />
+                                
+                                {/* 🎯 COORDINATION & LEADERSHIP ROLES */}
+                                <MenuItem disabled sx={{ fontWeight: 'bold', color: 'success.main', backgroundColor: 'success.light', opacity: '1 !important' }}>
+                                  🎯 COORDINATION & LEADERSHIP
+                                </MenuItem>
+                                <MenuItem value="Lead Coordinator">👑 Lead Coordinator</MenuItem>
+                                <MenuItem value="Decision Maker">⚡ Decision Maker</MenuItem>
+                                <MenuItem value="Customer Support">🤝 Customer Support</MenuItem>
+                                <MenuItem value="Project Manager">📋 Project Manager</MenuItem>
+                                <MenuItem value="Strategic Advisor">🎯 Strategic Advisor</MenuItem>
+                                
+                                <Divider sx={{ my: 1 }} />
+                                
+                                {/* 🛠️ CUSTOM ROLE */}
+                                <MenuItem disabled sx={{ fontWeight: 'bold', color: 'secondary.main', backgroundColor: 'secondary.light', opacity: '1 !important' }}>
+                                  🛠️ CUSTOM
+                                </MenuItem>
+                                <MenuItem value="Custom Role">🎭 Custom Role (specify below)</MenuItem>
                               </Select>
                             </FormControl>
                             {agentRoles[agentId]?.name === 'Custom Role' && (
