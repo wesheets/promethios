@@ -870,6 +870,13 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
                   description: 'Agents discuss and vote on decisions, requiring agreement',
                   icon: '🗳️',
                   benefits: ['Democratic process', 'Reduced bias', 'High-quality decisions']
+                },
+                {
+                  id: 'innovation_lab',
+                  name: 'Innovation Lab',
+                  description: 'Revolutionary parallel ideation with agent isolation for breakthrough creativity',
+                  icon: '🧪',
+                  benefits: ['True divergence', 'Creative conflict', 'Breakthrough potential', 'Revolutionary thinking']
                 }
               ].map((model) => (
                 <Grid item xs={12} md={6} key={model.id}>

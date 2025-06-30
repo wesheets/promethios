@@ -1029,6 +1029,10 @@ Respond from your unique perspective and expertise. Keep responses focused and d
           console.log('🧠 ROUTER: Routing to Blind Vision Creative handler');
           return this.handleBlindVisionCreative(sessionId, message, attachments, governanceEnabled, conversationHistory, onStreamResponse);
         
+        case 'innovation_lab':
+          console.log('🧪 ROUTER: Routing to Innovation Lab handler');
+          return this.handleBlindVisionCreative(sessionId, message, attachments, governanceEnabled, conversationHistory, onStreamResponse);
+        
         default:
           console.log('🔄 ROUTER: Unknown collaboration model, using fallback (parallel processing)');
           return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
