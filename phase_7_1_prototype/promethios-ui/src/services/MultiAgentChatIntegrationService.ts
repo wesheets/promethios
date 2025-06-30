@@ -10,6 +10,7 @@ import { UserAgentStorageService } from './UserAgentStorageService';
 import { API_BASE_URL } from '../config/api';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { multiAgentGovernanceWrapper, GovernanceState } from './MultiAgentGovernanceWrapper';
+import { EnhancedConsensusEngine } from './EnhancedConsensusEngine';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -40,12 +41,14 @@ export interface ChatSystemInfo {
 export class MultiAgentChatIntegrationService {
   private storageService: UnifiedStorageService;
   private agentStorageService: UserAgentStorageService;
+  private enhancedConsensusEngine: EnhancedConsensusEngine;
   private activeSessions = new Map<string, MultiAgentChatSession>();
   private currentUserId: string | null = null;
 
   constructor() {
     this.storageService = new UnifiedStorageService();
     this.agentStorageService = new UserAgentStorageService();
+    this.enhancedConsensusEngine = new EnhancedConsensusEngine();
   }
 
   /**
@@ -1509,43 +1512,65 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       });
     }
 
-    const finalConsensus = await this.generateConsensusReport(
-      consensusReporter.agent,
+    // 🧬 ENHANCED CONSENSUS: Generate collaborative intelligence report
+    console.log('🧬 ENHANCED CONSENSUS: Generating collaborative intelligence analysis...');
+    
+    if (onStreamResponse) {
+      onStreamResponse({
+        type: 'consensus_analysis',
+        content: `💭 **Analyzing collaborative intelligence...** Tracking conversation evolution, emergent insights, and collaborative value...`,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: true
+      });
+    }
+
+    // Transform debate history for enhanced analysis
+    const enhancedDebateHistory = debateHistory.map(entry => ({
+      agentName: entry.agentName,
+      content: entry.content,
+      round: entry.round,
+      timestamp: entry.timestamp
+    }));
+
+    // Generate enhanced consensus using collaborative intelligence engine
+    const finalConsensus = await this.enhancedConsensusEngine.generateEnhancedConsensus(
       message,
-      debateHistory,
-      attachments,
-      conversationHistory,
-      governanceEnabled
+      enhancedDebateHistory,
+      sortedAgents
     );
 
-    // Add consensus report to responses
+    console.log('🧬 ENHANCED CONSENSUS: Generated collaborative intelligence report');
+
+    // Add enhanced consensus report to responses
     const consensusEntry = {
       round: 'consensus',
-      agentName: consensusReporter.agentName,
-      agentId: consensusReporter.agent.id || 'consensus_reporter',
+      agentName: 'Collaborative Intelligence Engine',
+      agentId: 'enhanced_consensus_engine',
       content: finalConsensus,
       timestamp: new Date().toISOString(),
       order: 999, // Always last
-      isConsensus: true
+      isConsensus: true,
+      isEnhancedConsensus: true // Flag for enhanced consensus
     };
 
     allAgentResponses.push(consensusEntry);
 
-    // Stream the final consensus report
+    // Stream the enhanced consensus report
     if (onStreamResponse) {
       onStreamResponse({
-        type: 'consensus_report',
+        type: 'enhanced_consensus_report',
         content: finalConsensus,
-        agentName: consensusReporter.agentName,
-        agentId: consensusReporter.agent.id,
+        agentName: 'Collaborative Intelligence Engine',
+        agentId: 'enhanced_consensus_engine',
         timestamp: new Date().toISOString(),
         isConsensus: true,
+        isEnhancedConsensus: true,
         isFinal: true
       });
       
       onStreamResponse({
         type: 'debate_complete',
-        content: `🎉 **Round-Table Discussion Complete!**\n\n**Total Responses:** ${allAgentResponses.length} (${debateHistory.length} debate + 1 consensus)\n**Consensus Reporter:** ${consensusReporter.agentName}`,
+        content: `🎉 **Multi-Agent Collaborative Intelligence Complete!**\n\n**Total Responses:** ${allAgentResponses.length} (${debateHistory.length} debate + 1 enhanced consensus)\n**Analysis Engine:** Collaborative Intelligence Engine\n**Revolutionary Feature:** Demonstrates evolutionary depth and collaborative value!`,
         timestamp: new Date().toISOString(),
         isSystemMessage: true,
         isFinal: true
@@ -1553,7 +1578,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
     }
 
     // Create summary for backward compatibility
-    const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, consensusReporter.agentName);
+    const summaryContent = this.createDebateSummary(debateHistory, finalConsensus, 'Collaborative Intelligence Engine');
 
     console.log('🎭 ROUND-TABLE: Debate completed successfully!');
     console.log(`🎭 ROUND-TABLE: Total responses: ${allAgentResponses.length} (${debateHistory.length} debate + 1 consensus)`);
