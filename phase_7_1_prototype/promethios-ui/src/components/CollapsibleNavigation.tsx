@@ -55,8 +55,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
-// TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
-// import { useUserPreferences } from '../hooks/useUserPreferences';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -115,20 +114,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   userPermissions = [],
   isAdmin = false,
 }) => {
-  // TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
-  // const { preferences, updateNavigationState } = useUserPreferences();
-  
-  // Fallback to localStorage for navigation state
-  const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('navCollapsed') === 'true';
-  });
-  
-  const updateNavigationState = (newCollapsed: boolean) => {
-    setCollapsed(newCollapsed);
-    localStorage.setItem('navCollapsed', String(newCollapsed));
-  };
-  
-  const preferences = { navigationCollapsed: collapsed };
+  const { preferences, updateNavigationState } = useUserPreferences();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [observerExpanded, setObserverExpanded] = useState(false);
   const [observerMessages, setObserverMessages] = useState<Message[]>([]);
@@ -138,7 +124,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // collapsed is already defined above in the fallback preferences object
+  const collapsed = preferences.navigationCollapsed;
 
   // Pulsing effect on page navigation
   useEffect(() => {

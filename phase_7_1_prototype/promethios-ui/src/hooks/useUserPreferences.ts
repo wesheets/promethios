@@ -37,11 +37,16 @@ export const useUserPreferences = () => {
 
   // Load preferences from Firestore with localStorage fallback
   useEffect(() => {
+    console.log("🔧 useUserPreferences: Effect triggered");
+    console.log("🔧 useUserPreferences: currentUser:", currentUser?.uid || "null");
+    console.log("🔧 useUserPreferences: db:", db ? "available" : "null");
+    
     const loadPreferences = async () => {
       if (!currentUser || !db) { // Ensure db is available
-        console.log("useUserPreferences: currentUser or db not available. currentUser:", currentUser, "db:", db);
+        console.log("⚠️ useUserPreferences: currentUser or db not available. currentUser:", currentUser, "db:", db);
         // For logged-out users or if db is not yet initialized, use localStorage
         const localNavCollapsed = localStorage.getItem("navCollapsed");
+        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed);
         setPreferences({
           ...defaultPreferences,
           navigationCollapsed: localNavCollapsed === "true",
@@ -50,12 +55,16 @@ export const useUserPreferences = () => {
         return;
       }
 
+      console.log("🔥 useUserPreferences: Starting Firestore operations for user:", currentUser.uid);
       setLoading(true);
       const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
+      console.log("🔥 useUserPreferences: Created document reference:", userPrefsRef.path);
 
       const unsubscribe = onSnapshot(userPrefsRef, (docSnap) => {
+        console.log("🔥 useUserPreferences: onSnapshot triggered. Document exists:", docSnap.exists());
+        
         if (!docSnap.exists()) {
-          console.warn('useUserPreferences: User preferences document does not exist for UID:', currentUser.uid, '. Checking localStorage for migration.');
+          console.warn('⚠️ useUserPreferences: User preferences document does not exist for UID:', currentUser.uid, '. Checking localStorage for migration.');
           // No Firestore document exists, check localStorage for migration
           const localNavCollapsed = localStorage.getItem('navCollapsed');
           const initialPrefs = {
@@ -63,23 +72,26 @@ export const useUserPreferences = () => {
             navigationCollapsed: localNavCollapsed === 'true',
           };
           
-          console.log('useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
+          console.log('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
           setDoc(userPrefsRef, initialPrefs).then(() => {
+            console.log('✅ useUserPreferences: Successfully created initial document');
             setPreferences(initialPrefs);
             setLoading(false);
           }).catch(err => {
-            console.error('useUserPreferences: Error creating initial user preferences document:', err.code, err.message, err);
+            console.error('❌ useUserPreferences: Error creating initial user preferences document:', err.code, err.message, err);
+            console.error('❌ useUserPreferences: Full error object:', err);
             setError('Failed to create initial preferences');
             setLoading(false);
           });
         } else {
-          console.log('useUserPreferences: User preferences found:', docSnap.data());
+          console.log('✅ useUserPreferences: User preferences found:', docSnap.data());
           const firestorePrefs = docSnap.data() as UserPreferences;
           setPreferences(firestorePrefs);
           setLoading(false);
         }
       }, (err: any) => {
-        console.error('useUserPreferences: Error listening to user preferences:', err.code, err.message, err);
+        console.error('❌ useUserPreferences: Error listening to user preferences:', err.code, err.message, err);
+        console.error('❌ useUserPreferences: Full error object:', err);
         setError('Failed to load preferences');
         setLoading(false);
         
@@ -99,22 +111,31 @@ export const useUserPreferences = () => {
 
   // Update preferences in both Firestore and localStorage
   const updatePreferences = async (updates: Partial<UserPreferences>) => {
+    console.log("🔧 useUserPreferences: updatePreferences called with:", updates);
+    
     try {
       const newPreferences = { ...preferences, ...updates };
+      console.log("🔧 useUserPreferences: Setting new preferences:", newPreferences);
       setPreferences(newPreferences);
 
       // Always update localStorage for immediate response
       if ('navigationCollapsed' in updates) {
+        console.log("📱 useUserPreferences: Updating localStorage navCollapsed:", updates.navigationCollapsed);
         localStorage.setItem('navCollapsed', String(updates.navigationCollapsed));
       }
 
       // Update Firestore if user is logged in and db is available
       if (currentUser && db) {
+        console.log("🔥 useUserPreferences: Updating Firestore for user:", currentUser.uid);
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         await updateDoc(userPrefsRef, updates);
+        console.log("✅ useUserPreferences: Successfully updated Firestore");
+      } else {
+        console.log("⚠️ useUserPreferences: Skipping Firestore update - currentUser or db not available");
       }
     } catch (err) {
-      console.error('Error updating user preferences:', err);
+      console.error('❌ useUserPreferences: Error updating user preferences:', err);
+      console.error('❌ useUserPreferences: Full error object:', err);
       setError('Failed to update preferences');
       
       // Revert local state on error
@@ -125,6 +146,7 @@ export const useUserPreferences = () => {
 
   // Convenience method for navigation state
   const updateNavigationState = async (collapsed: boolean) => {
+    console.log("🔧 useUserPreferences: updateNavigationState called with:", collapsed);
     await updatePreferences({ navigationCollapsed: collapsed });
   };
 

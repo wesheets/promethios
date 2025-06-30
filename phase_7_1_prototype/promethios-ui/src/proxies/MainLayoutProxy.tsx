@@ -2,8 +2,7 @@ import React, { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-// TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
-// import { useUserPreferences } from '../hooks/useUserPreferences';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useAdminCheck } from '../hooks/useAdminCheck';
 
 // Import navigation components
@@ -29,13 +28,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   console.log("MainLayoutProxy rendering...");
   const location = useLocation();
   const { currentUser, logout } = useAuth();
-  // TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
-  // const { preferences } = useUserPreferences();
-  
-  // Fallback to localStorage for navigation state
-  const preferences = {
-    navigationCollapsed: localStorage.getItem('navCollapsed') === 'true'
-  };
+  const { preferences } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
 
   // Debug authentication state
