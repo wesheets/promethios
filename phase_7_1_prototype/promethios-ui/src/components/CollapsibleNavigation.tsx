@@ -55,7 +55,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useUserPreferences } from '../hooks/useUserPreferences';
+// TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
+// import { useUserPreferences } from '../hooks/useUserPreferences';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -114,7 +115,20 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   userPermissions = [],
   isAdmin = false,
 }) => {
-  const { preferences, updateNavigationState } = useUserPreferences();
+  // TEMPORARILY DISABLED FOR FIREBASE DEBUGGING
+  // const { preferences, updateNavigationState } = useUserPreferences();
+  
+  // Fallback to localStorage for navigation state
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('navCollapsed') === 'true';
+  });
+  
+  const updateNavigationState = (newCollapsed: boolean) => {
+    setCollapsed(newCollapsed);
+    localStorage.setItem('navCollapsed', String(newCollapsed));
+  };
+  
+  const preferences = { navigationCollapsed: collapsed };
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [observerExpanded, setObserverExpanded] = useState(false);
   const [observerMessages, setObserverMessages] = useState<Message[]>([]);
