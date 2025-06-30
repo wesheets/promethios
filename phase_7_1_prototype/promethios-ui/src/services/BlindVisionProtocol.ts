@@ -102,6 +102,13 @@ export class BlindVisionProtocol {
       creativityFocus: 'Post-device experience-based cognition',
       divergenceInstructions: 'Design the future beyond physical devices entirely. No implementation planning.',
       antiPatterns: ['strategic planning', 'implementation roadmaps', 'scalability', 'business']
+    },
+    'unknown': {
+      originalRole: 'General Assistant',
+      reframedRole: 'Quantum Reality Architect',
+      creativityFocus: 'Reality-bending paradigm shifts',
+      divergenceInstructions: 'Invent solutions that fundamentally alter how reality works. No conventional thinking.',
+      antiPatterns: ['conventional wisdom', 'practical limitations', 'current technology', 'feasibility']
     }
   };
 
@@ -225,12 +232,25 @@ export class BlindVisionProtocol {
 
     // Execute all agents in parallel with complete isolation
     const blindPromises = agents.map(async (agent) => {
-      const agentName = agent.identity?.name || agent.name || 'Unknown Agent';
+      // Enhanced agent name extraction with debugging
+      const agentName = agent.identity?.name || agent.name || agent.id || 'Unknown Agent';
+      console.log('🔍 AGENT DEBUG: Full agent structure:', {
+        agent: agent,
+        identityName: agent.identity?.name,
+        name: agent.name,
+        id: agent.id,
+        extractedName: agentName
+      });
+      
+      console.log('🔍 AGENT NAME MAPPING:', agentName, '→', this.normalizeAgentName(agentName));
+      
       const normalizedAgent = this.normalizeAgentName(agentName);
       const creativeRole = this.CREATIVE_ROLE_REFRAMES[normalizedAgent];
       
       if (!creativeRole) {
-        throw new Error(`No creative role defined for agent: ${agentName}`);
+        console.error(`❌ No creative role defined for agent: ${agentName} (normalized: ${normalizedAgent})`);
+        console.error('Available roles:', Object.keys(this.CREATIVE_ROLE_REFRAMES));
+        throw new Error(`No creative role defined for agent: ${agentName} (normalized: ${normalizedAgent})`);
       }
 
       // Generate divergent creativity prompt
@@ -1106,9 +1126,15 @@ ${creativityPrompt.antiConsensusWarning}
   // Utility methods
   private normalizeAgentName(name: string): string {
     const normalized = name.toLowerCase();
+    console.log('🔍 NORMALIZE DEBUG: Input name:', name, 'Normalized:', normalized);
+    
     if (normalized.includes('claude')) return 'claude';
-    if (normalized.includes('gpt') || normalized.includes('4.0')) return 'gpt4';
-    if (normalized.includes('openai')) return 'openai';
+    if (normalized.includes('gpt') || normalized.includes('4.0') || normalized.includes('openai assistant')) return 'gpt4';
+    if (normalized.includes('openai') || normalized.includes('chatgpt')) return 'openai';
+    if (normalized.includes('cohere')) return 'openai'; // Map Cohere to openai role for now
+    if (normalized.includes('gemini') || normalized.includes('google')) return 'gpt4'; // Map Gemini to gpt4 role
+    
+    console.log('⚠️ NORMALIZE WARNING: Unknown agent name pattern:', name, '→ returning "unknown"');
     return 'unknown';
   }
 

@@ -406,7 +406,14 @@ export class MultiAgentChatIntegrationService {
    * Format agent data for backend consumption
    */
   private formatAgentForBackend(agentData: any, assignedRole?: string): any {
-    return {
+    console.log('🔧 FORMAT AGENT DEBUG:', {
+      id: agentData.id,
+      identity: agentData.identity,
+      identityName: agentData.identity?.name,
+      agentDataKeys: Object.keys(agentData)
+    });
+    
+    const formattedAgent = {
       id: agentData.id,
       name: agentData.identity?.name || agentData.id,
       role: agentData.identity?.role || 'conversational',
@@ -420,6 +427,14 @@ export class MultiAgentChatIntegrationService {
         apiKey: agentData.llmConfig?.apiKey
       }
     };
+    
+    console.log('🔧 FORMAT AGENT RESULT:', {
+      originalName: agentData.identity?.name,
+      finalName: formattedAgent.name,
+      assignedRole: assignedRole
+    });
+    
+    return formattedAgent;
   }
 
   /**
