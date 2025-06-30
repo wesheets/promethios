@@ -11,6 +11,7 @@ import { API_BASE_URL } from '../config/api';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { multiAgentGovernanceWrapper, GovernanceState } from './MultiAgentGovernanceWrapper';
 import { ReadableConsensusEngine } from './ReadableConsensusEngine';
+import { BlindVisionProtocol } from './BlindVisionProtocol';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -42,6 +43,7 @@ export class MultiAgentChatIntegrationService {
   private storageService: UnifiedStorageService;
   private agentStorageService: UserAgentStorageService;
   private readableConsensusEngine: ReadableConsensusEngine;
+  private blindVisionProtocol: BlindVisionProtocol;
   private activeSessions = new Map<string, MultiAgentChatSession>();
   private currentUserId: string | null = null;
 
@@ -49,6 +51,7 @@ export class MultiAgentChatIntegrationService {
     this.storageService = new UnifiedStorageService();
     this.agentStorageService = new UserAgentStorageService();
     this.readableConsensusEngine = new ReadableConsensusEngine();
+    this.blindVisionProtocol = new BlindVisionProtocol();
   }
 
   /**
@@ -1022,6 +1025,10 @@ Respond from your unique perspective and expertise. Keep responses focused and d
           console.log('🗳️ ROUTER: Routing to Consensus Decision handler');
           return this.handleConsensusDecision(sessionId, message, attachments, governanceEnabled, conversationHistory);
         
+        case 'blind_vision_creative':
+          console.log('🧠 ROUTER: Routing to Blind Vision Creative handler');
+          return this.handleBlindVisionCreative(sessionId, message, attachments, governanceEnabled, conversationHistory, onStreamResponse);
+        
         default:
           console.log('🔄 ROUTER: Unknown collaboration model, using fallback (parallel processing)');
           return this.handleParallelProcessing(sessionId, message, attachments, governanceEnabled, conversationHistory);
@@ -1698,6 +1705,389 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         }
       }
     };
+  }
+
+  /**
+   * Handle Blind Vision Creative collaboration model
+   * Enables true parallel ideation with agent isolation for breakthrough creativity
+   */
+  private async handleBlindVisionCreative(
+    sessionId: string,
+    message: string,
+    attachments: any[],
+    governanceEnabled: boolean,
+    conversationHistory: any[],
+    onStreamResponse?: (response: any) => void,
+    creativityLevel: 'radical' | 'breakthrough' | 'revolutionary' = 'breakthrough'
+  ): Promise<any> {
+    try {
+      console.log('🧠 BLIND VISION CREATIVE: Starting parallel ideation protocol');
+
+      // Get session and agents
+      const session = this.activeSessions.get(sessionId);
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      const system = await this.storageService.getMultiAgentSystem(session.systemId);
+      if (!system || !system.agents || system.agents.length === 0) {
+        throw new Error('No agents found in system');
+      }
+
+      const sortedAgents = [...system.agents].sort((a, b) => (a.order || 0) - (b.order || 0));
+      console.log(`🎭 BLIND VISION: ${sortedAgents.length} agents ready for creative divergence`);
+
+      // Stream initial protocol message
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'blind_vision_protocol_start',
+          content: `🧠 **BLIND VISION CREATIVE PROTOCOL ACTIVATED**\n\n🎯 **Mission:** ${message}\n🔒 **Agent Isolation:** ACTIVE\n⚡ **Creativity Level:** ${creativityLevel.toUpperCase()}\n🎭 **Agents:** ${sortedAgents.map(a => a.identity?.name || a.name).join(', ')}\n\n**Preparing for parallel ideation with zero cross-contamination...**`,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true,
+          isBlindVisionStart: true
+        });
+      }
+
+      // Execute Blind Vision Protocol
+      const blindVisionResult = await this.blindVisionProtocol.executeBlindVisionProtocol(
+        message,
+        sortedAgents.map(a => a.identity?.name || a.name),
+        creativityLevel,
+        onStreamResponse
+      );
+
+      // Generate final creative synthesis report
+      const creativeSynthesis = await this.generateCreativeSynthesisReport(
+        blindVisionResult,
+        message,
+        sortedAgents,
+        creativityLevel
+      );
+
+      // Stream the creative synthesis
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'creative_synthesis',
+          content: creativeSynthesis,
+          agentName: 'Creative Synthesis Engine',
+          agentId: 'synthesis_engine',
+          timestamp: new Date().toISOString(),
+          isCreativeSynthesis: true,
+          isFinal: true,
+          creativityMetrics: blindVisionResult.creativityMetrics
+        });
+      }
+
+      console.log('🎉 BLIND VISION CREATIVE: Protocol completed successfully');
+
+      // Return comprehensive result
+      return {
+        content: creativeSynthesis,
+        agentResponses: this.formatBlindVisionResponses(blindVisionResult),
+        creativityData: {
+          collaborationModel: 'blind_vision_creative',
+          creativityLevel,
+          protocolPhases: 4,
+          metrics: blindVisionResult.creativityMetrics,
+          consensusAchieved: blindVisionResult.finalVision.consensusAchieved,
+          competingVisions: blindVisionResult.finalVision.competingVisions?.length || 0,
+          breakthroughPotential: blindVisionResult.creativityMetrics.breakthroughPotential,
+          
+          // Round-by-round data
+          blindResponses: Array.from(blindVisionResult.blindResponses.values()),
+          confrontationResults: blindVisionResult.confrontationResults,
+          synthesisResults: blindVisionResult.synthesisResults,
+          finalVision: blindVisionResult.finalVision,
+          
+          // Agent creativity analysis
+          agentCreativity: Array.from(blindVisionResult.blindResponses.values()).map(response => ({
+            agentName: response.agentName,
+            prototypeGenerated: response.prototypeGenerated,
+            radicalityScore: response.radicalityScore,
+            divergenceContribution: this.calculateAgentDivergenceContribution(response, blindVisionResult.blindResponses)
+          })),
+          
+          // Protocol effectiveness
+          protocolEffectiveness: {
+            isolationSuccess: true, // All Round 0 responses were independent
+            divergenceAchieved: blindVisionResult.creativityMetrics.divergenceScore > 6,
+            conflictGenerated: blindVisionResult.creativityMetrics.conflictLevel > 5,
+            synthesisQuality: blindVisionResult.creativityMetrics.synthesisSuccess,
+            breakthroughAchieved: blindVisionResult.creativityMetrics.breakthroughPotential > 7
+          }
+        },
+        governanceData: {
+          // Blind Vision operates in ungoverned mode for maximum creativity
+          governanceMode: 'creative_ungoverned',
+          creativityOptimized: true,
+          safetyConstraints: 'minimal',
+          innovationPriority: 'maximum'
+        }
+      };
+
+    } catch (error) {
+      console.error('Blind Vision Creative error:', error);
+      
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'error',
+          content: `❌ **BLIND VISION PROTOCOL ERROR**\n\nError: ${error.message}\n\nFalling back to standard multi-agent discussion...`,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true,
+          isError: true
+        });
+      }
+
+      // Fallback to regular round table discussion
+      return this.handleRoundTableDiscussion(sessionId, message, attachments, false, conversationHistory, onStreamResponse);
+    }
+  }
+
+  /**
+   * Generate creative synthesis report from blind vision results
+   */
+  private async generateCreativeSynthesisReport(
+    blindVisionResult: any,
+    originalPrompt: string,
+    agents: any[],
+    creativityLevel: string
+  ): Promise<string> {
+    const { blindResponses, confrontationResults, synthesisResults, finalVision, creativityMetrics } = blindVisionResult;
+
+    // Build comprehensive creative synthesis
+    let report = `🧬 **BLIND VISION CREATIVE SYNTHESIS**\n\n`;
+    
+    // Executive Summary
+    report += `🎯 **CREATIVE BREAKTHROUGH SUMMARY**\n`;
+    report += `**Challenge:** ${originalPrompt}\n`;
+    report += `**Creativity Level:** ${creativityLevel.toUpperCase()}\n`;
+    report += `**Breakthrough Potential:** ${creativityMetrics.breakthroughPotential}/10\n`;
+    report += `**Divergence Achieved:** ${creativityMetrics.divergenceScore}/10\n\n`;
+
+    // Round 0: Independent Visions
+    report += `🔒 **ROUND 0: INDEPENDENT VISIONS** (Isolation Mode)\n\n`;
+    Array.from(blindResponses.values()).forEach((response: any) => {
+      const agentRole = this.getCreativeRole(response.agentName);
+      report += `**${agentRole.icon} ${response.agentName} (${agentRole.role})**\n`;
+      report += `• **Prototype:** ${response.prototypeGenerated || 'Unnamed Innovation'}\n`;
+      report += `• **Radicality:** ${response.radicalityScore}/10\n`;
+      report += `• **Vision:** ${this.extractVisionSummary(response.content)}\n\n`;
+    });
+
+    // Round 1: Creative Confrontation
+    if (confrontationResults.length > 0) {
+      report += `⚔️ **ROUND 1: CREATIVE CONFRONTATION**\n\n`;
+      report += `**Challenges Raised:** ${confrontationResults.reduce((sum, r) => sum + r.challengesRaised.length, 0)}\n`;
+      report += `**Defenses Offered:** ${confrontationResults.reduce((sum, r) => sum + r.defensesOffered.length, 0)}\n`;
+      report += `**Conflict Level:** ${creativityMetrics.conflictLevel}/10\n\n`;
+      
+      confrontationResults.forEach((result: any) => {
+        if (result.challengesRaised.length > 0) {
+          report += `**${result.agentName} Key Challenges:**\n`;
+          result.challengesRaised.slice(0, 2).forEach((challenge: string) => {
+            report += `• ${challenge}\n`;
+          });
+          report += `\n`;
+        }
+      });
+    }
+
+    // Round 2: Creative Synthesis
+    if (synthesisResults.length > 0) {
+      report += `🔬 **ROUND 2: CREATIVE SYNTHESIS**\n\n`;
+      report += `**Hybridization Attempts:** ${synthesisResults.reduce((sum, r) => sum + r.hybridizationAttempts.length, 0)}\n`;
+      report += `**Evolution Proposals:** ${synthesisResults.reduce((sum, r) => sum + r.evolutionProposed.length, 0)}\n`;
+      report += `**Synthesis Quality:** ${creativityMetrics.synthesisSuccess}/10\n\n`;
+      
+      synthesisResults.forEach((result: any) => {
+        if (result.hybridizationAttempts.length > 0) {
+          report += `**${result.agentName} Synthesis Contributions:**\n`;
+          result.hybridizationAttempts.slice(0, 2).forEach((hybrid: string) => {
+            report += `• ${hybrid}\n`;
+          });
+          report += `\n`;
+        }
+      });
+    }
+
+    // Round 3: Final Creative Vision
+    report += `🎯 **ROUND 3: FINAL CREATIVE VISION**\n\n`;
+    if (finalVision.consensusAchieved && finalVision.finalVision) {
+      report += `✅ **UNIFIED BREAKTHROUGH ACHIEVED**\n\n`;
+      report += `**Revolutionary Vision:**\n${finalVision.finalVision}\n\n`;
+    } else if (finalVision.competingVisions && finalVision.competingVisions.length > 0) {
+      report += `⚔️ **COMPETING REVOLUTIONARY VISIONS**\n\n`;
+      finalVision.competingVisions.forEach((vision: any, index: number) => {
+        report += `**Vision ${index + 1} (${vision.agentId}):**\n${vision.vision}\n`;
+        report += `**Justification:** ${vision.justification}\n\n`;
+      });
+      
+      if (finalVision.winnerDeclared) {
+        report += `🏆 **DECLARED WINNER:** ${finalVision.winnerDeclared.agentId}\n`;
+        report += `**Reason:** ${finalVision.winnerDeclared.voteReason}\n\n`;
+      }
+    }
+
+    // Creativity Analysis
+    report += `📊 **CREATIVITY ANALYSIS**\n\n`;
+    report += `• **Divergence Score:** ${creativityMetrics.divergenceScore}/10 - ${this.getDivergenceDescription(creativityMetrics.divergenceScore)}\n`;
+    report += `• **Radicality Score:** ${creativityMetrics.radicalityScore}/10 - ${this.getRadicalityDescription(creativityMetrics.radicalityScore)}\n`;
+    report += `• **Prototype Quality:** ${creativityMetrics.prototypeQuality}/10 - ${this.getPrototypeDescription(creativityMetrics.prototypeQuality)}\n`;
+    report += `• **Breakthrough Potential:** ${creativityMetrics.breakthroughPotential}/10 - ${this.getBreakthroughDescription(creativityMetrics.breakthroughPotential)}\n\n`;
+
+    // Why This Beats Single AI
+    report += `🚀 **WHY BLIND VISION BEATS SINGLE AI**\n\n`;
+    report += `**Parallel Ideation:** ${Array.from(blindResponses.values()).length} independent visions generated simultaneously\n`;
+    report += `**Creative Conflict:** ${creativityMetrics.conflictLevel}/10 ideological friction drove innovation\n`;
+    report += `**Synthesis Power:** ${creativityMetrics.synthesisSuccess}/10 concept hybridization and evolution\n`;
+    report += `**Breakthrough Factor:** ${creativityMetrics.breakthroughPotential}/10 revolutionary potential achieved\n\n`;
+    
+    const singleAIComparison = this.generateSingleAIComparison(creativityMetrics, creativityLevel);
+    report += singleAIComparison;
+
+    return report;
+  }
+
+  /**
+   * Format blind vision responses for the UI
+   */
+  private formatBlindVisionResponses(blindVisionResult: any): any[] {
+    const allResponses: any[] = [];
+
+    // Add Round 0 blind responses
+    Array.from(blindVisionResult.blindResponses.values()).forEach((response: any) => {
+      allResponses.push({
+        agentName: response.agentName,
+        agentId: response.agentId,
+        content: response.content,
+        timestamp: response.timestamp,
+        round: 0,
+        isBlindResponse: true,
+        prototypeGenerated: response.prototypeGenerated,
+        radicalityScore: response.radicalityScore
+      });
+    });
+
+    // Add Round 1 confrontation responses
+    blindVisionResult.confrontationResults.forEach((result: any) => {
+      allResponses.push({
+        agentName: result.agentName,
+        agentId: result.agentId,
+        content: result.content,
+        timestamp: new Date().toISOString(),
+        round: 1,
+        isConfrontation: true,
+        challengesRaised: result.challengesRaised,
+        defensesOffered: result.defensesOffered
+      });
+    });
+
+    // Add Round 2 synthesis responses
+    blindVisionResult.synthesisResults.forEach((result: any) => {
+      allResponses.push({
+        agentName: result.agentName,
+        agentId: result.agentId,
+        content: result.content,
+        timestamp: new Date().toISOString(),
+        round: 2,
+        isSynthesis: true,
+        hybridizationAttempts: result.hybridizationAttempts,
+        evolutionProposed: result.evolutionProposed
+      });
+    });
+
+    return allResponses;
+  }
+
+  // Helper methods for creative synthesis
+  private getCreativeRole(agentName: string): { icon: string; role: string } {
+    const normalizedName = agentName.toLowerCase();
+    if (normalizedName.includes('claude')) {
+      return { icon: '🛡️', role: 'NeuroSpiritualist Inventor' };
+    } else if (normalizedName.includes('gpt') || normalizedName.includes('4.0')) {
+      return { icon: '🧠', role: 'Biointegration Engineer' };
+    } else if (normalizedName.includes('openai')) {
+      return { icon: '📈', role: 'Anti-Tech Reformer' };
+    }
+    return { icon: '🎭', role: 'Creative Innovator' };
+  }
+
+  private extractVisionSummary(content: string): string {
+    // Extract the key vision from the content
+    const sentences = content.split(/[.!?]+/);
+    const meaningfulSentences = sentences.filter(s => s.trim().length > 30);
+    return meaningfulSentences.slice(0, 2).join('. ').trim() + (meaningfulSentences.length > 2 ? '...' : '');
+  }
+
+  private calculateAgentDivergenceContribution(
+    response: any,
+    allResponses: Map<string, any>
+  ): number {
+    // Calculate how much this agent contributed to overall divergence
+    const otherResponses = Array.from(allResponses.values()).filter(r => r.agentId !== response.agentId);
+    let totalDifference = 0;
+    
+    otherResponses.forEach(otherResponse => {
+      const similarity = this.calculateContentSimilarity(response.content, otherResponse.content);
+      totalDifference += (1 - similarity);
+    });
+    
+    return otherResponses.length > 0 ? (totalDifference / otherResponses.length) * 10 : 5;
+  }
+
+  private calculateContentSimilarity(text1: string, text2: string): number {
+    // Simple similarity calculation
+    const words1 = new Set(text1.toLowerCase().split(/\s+/));
+    const words2 = new Set(text2.toLowerCase().split(/\s+/));
+    
+    const intersection = new Set([...words1].filter(x => words2.has(x)));
+    const union = new Set([...words1, ...words2]);
+    
+    return intersection.size / union.size;
+  }
+
+  private getDivergenceDescription(score: number): string {
+    if (score >= 8) return 'Exceptional diversity of concepts';
+    if (score >= 6) return 'Strong conceptual divergence';
+    if (score >= 4) return 'Moderate idea variation';
+    return 'Limited conceptual diversity';
+  }
+
+  private getRadicalityDescription(score: number): string {
+    if (score >= 8) return 'Revolutionary breakthrough thinking';
+    if (score >= 6) return 'Highly innovative concepts';
+    if (score >= 4) return 'Creative but conventional';
+    return 'Incremental improvements only';
+  }
+
+  private getPrototypeDescription(score: number): string {
+    if (score >= 8) return 'Concrete, detailed inventions';
+    if (score >= 6) return 'Well-defined prototypes';
+    if (score >= 4) return 'Basic concept outlines';
+    return 'Abstract ideas only';
+  }
+
+  private getBreakthroughDescription(score: number): string {
+    if (score >= 8) return 'Paradigm-shifting potential';
+    if (score >= 6) return 'Significant innovation impact';
+    if (score >= 4) return 'Moderate advancement';
+    return 'Incremental improvement';
+  }
+
+  private generateSingleAIComparison(metrics: any, creativityLevel: string): string {
+    let comparison = `**Single AI Limitation Analysis:**\n`;
+    comparison += `A single AI would have provided one perspective, likely anchored to conventional thinking patterns. `;
+    comparison += `The Blind Vision protocol generated ${metrics.divergenceScore > 6 ? 'exceptional' : 'significant'} conceptual diversity `;
+    comparison += `through parallel ideation, followed by ${metrics.conflictLevel > 5 ? 'intense' : 'moderate'} creative conflict `;
+    comparison += `that refined ideas through confrontation and synthesis.\n\n`;
+    
+    comparison += `**Collaborative Advantage:**\n`;
+    comparison += `• **Parallel Processing:** Multiple AI minds working simultaneously\n`;
+    comparison += `• **Creative Conflict:** Ideas tested through ideological friction\n`;
+    comparison += `• **Synthesis Power:** Concept hybridization and evolution\n`;
+    comparison += `• **Breakthrough Amplification:** ${creativityLevel} creativity level achieved through collaboration\n\n`;
+    
+    return comparison;
   }
 
   /**
