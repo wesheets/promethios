@@ -51,7 +51,10 @@ export class MultiAgentChatIntegrationService {
     this.storageService = new UnifiedStorageService();
     this.agentStorageService = new UserAgentStorageService();
     this.readableConsensusEngine = new ReadableConsensusEngine();
-    this.blindVisionProtocol = new BlindVisionProtocol();
+    this.blindVisionProtocol = new BlindVisionProtocol(
+      (prompt: string, agent: any, attachments: any[], conversationHistory: any[], governanceEnabled: boolean) => 
+        this.callAgentAPI(prompt, agent, attachments, conversationHistory, governanceEnabled)
+    );
   }
 
   /**
@@ -1763,7 +1766,15 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       // Get proper agent names for BlindVisionProtocol
       const agentNames = sortedAgents.map(a => {
         // Try to get the actual agent name from identity or provider info
-        const actualName = a.identity?.name || a.provider || a.name;
+        console.log('🔍 AGENT STRUCTURE:', {
+          name: a.name,
+          identity: a.identity,
+          provider: a.provider,
+          role: a.role
+        });
+        
+        // Use identity.name if available, otherwise fall back to name
+        const actualName = a.identity?.name || a.name || `Agent ${a.id}`;
         console.log('🔍 AGENT NAME MAPPING:', a.name, '→', actualName);
         return actualName;
       });
@@ -1782,9 +1793,12 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       // Execute Blind Vision Protocol
       const blindVisionResult = await this.blindVisionProtocol.executeBlindVisionProtocol(
         message,
-        agentNames,
+        sortedAgents, // Pass agent objects instead of agent names
         creativityLevel,
-        onStreamResponse
+        onStreamResponse,
+        attachments,
+        conversationHistory,
+        governanceEnabled
       );
 
       // Generate final creative synthesis report

@@ -78,6 +78,7 @@ export class BlindVisionProtocol {
   private isolationActive: boolean = false;
   private blindResponses: Map<string, BlindResponse> = new Map();
   private creativityAnalyzer: CreativityAnalyzer;
+  private apiCaller: (prompt: string, agent: any, attachments: any[], conversationHistory: any[], governanceEnabled: boolean) => Promise<string>;
   
   // Creative role reframes for divergent thinking
   private readonly CREATIVE_ROLE_REFRAMES: Record<string, CreativeRole> = {
@@ -104,8 +105,9 @@ export class BlindVisionProtocol {
     }
   };
 
-  constructor() {
+  constructor(apiCaller: (prompt: string, agent: any, attachments: any[], conversationHistory: any[], governanceEnabled: boolean) => Promise<string>) {
     this.creativityAnalyzer = new CreativityAnalyzer();
+    this.apiCaller = apiCaller;
   }
 
   /**
@@ -113,9 +115,12 @@ export class BlindVisionProtocol {
    */
   async executeBlindVisionProtocol(
     originalPrompt: string,
-    agents: string[],
+    agents: any[], // Changed from string[] to any[] to accept full agent objects
     creativityLevel: 'radical' | 'breakthrough' | 'revolutionary' = 'breakthrough',
-    onStreamResponse?: (response: any) => void
+    onStreamResponse?: (response: any) => void,
+    attachments: any[] = [],
+    conversationHistory: any[] = [],
+    governanceEnabled: boolean = false
   ): Promise<{
     blindResponses: Map<string, BlindResponse>;
     confrontationResults: ConfrontationResult[];
@@ -219,7 +224,8 @@ export class BlindVisionProtocol {
     }
 
     // Execute all agents in parallel with complete isolation
-    const blindPromises = agents.map(async (agentName) => {
+    const blindPromises = agents.map(async (agent) => {
+      const agentName = agent.identity?.name || agent.name || 'Unknown Agent';
       const normalizedAgent = this.normalizeAgentName(agentName);
       const creativeRole = this.CREATIVE_ROLE_REFRAMES[normalizedAgent];
       
@@ -233,12 +239,14 @@ export class BlindVisionProtocol {
         creativeRole,
         creativityLevel
       );
-
       // Execute in complete isolation
       const response = await this.executeAgentInIsolation(
+        agent,
         agentName,
         creativityPrompt,
-        onStreamResponse
+        attachments,
+        conversationHistory,
+        governanceEnabled
       );
 
       return response;
@@ -523,8 +531,12 @@ export class BlindVisionProtocol {
    * Execute agent in complete isolation
    */
   private async executeAgentInIsolation(
+    agent: any,
     agentName: string,
     creativityPrompt: CreativityPrompt,
+    attachments: any[] = [],
+    conversationHistory: any[] = [],
+    governanceEnabled: boolean = false,
     onStreamResponse?: (response: any) => void
   ): Promise<BlindResponse> {
     // Construct full isolated prompt
@@ -540,8 +552,7 @@ ${creativityPrompt.antiConsensusWarning}
 
 🚀 **BEGIN INVENTION NOW:**`;
 
-    // Execute with no governance (creativity mode)
-    const response = await this.callAgentAPI(agentName, fullPrompt, false);
+    const response = await this.callAgentAPI(agent, fullPrompt, governanceEnabled, attachments, conversationHistory);
 
     const blindResponse: BlindResponse = {
       agentId: this.normalizeAgentName(agentName),
@@ -1102,13 +1113,14 @@ ${creativityPrompt.antiConsensusWarning}
   }
 
   private async callAgentAPI(
-    agentName: string,
+    agent: any,
     prompt: string,
-    governanceEnabled: boolean
+    governanceEnabled: boolean,
+    attachments: any[] = [],
+    conversationHistory: any[] = []
   ): Promise<string> {
-    // This would integrate with the existing agent API calling system
-    // For now, return a placeholder that would be replaced with actual API calls
-    return `[${agentName} response to: ${prompt.substring(0, 100)}...]`;
+    // Use the injected API caller to make real API calls
+    return await this.apiCaller(prompt, agent, attachments, conversationHistory, governanceEnabled);
   }
 }
 
