@@ -332,6 +332,10 @@ export class MultiAgentChatIntegrationService {
     
     console.log('🔧 ROLE MAPPING: System config:', systemConfig);
     console.log('🔧 ROLE MAPPING: Available user agents:', userAgents.length);
+    console.log('🔧 ROLE MAPPING: roleAssignments exists:', !!systemConfig.roleAssignments);
+    console.log('🔧 ROLE MAPPING: roleAssignments content:', systemConfig.roleAssignments);
+    console.log('🔧 ROLE MAPPING: agentIds exists:', !!systemConfig.agentIds);
+    console.log('🔧 ROLE MAPPING: agentIds content:', systemConfig.agentIds);
     
     // If system has role assignments, use them
     if (systemConfig.roleAssignments && Object.keys(systemConfig.roleAssignments).length > 0) {
@@ -1749,12 +1753,26 @@ Respond from your unique perspective and expertise. Keep responses focused and d
 
       const sortedAgents = [...system.agents].sort((a, b) => (a.order || 0) - (b.order || 0));
       console.log(`🎭 BLIND VISION: ${sortedAgents.length} agents ready for creative divergence`);
+      console.log('🔍 AGENT DEBUG: Agent structures:', sortedAgents.map(a => ({
+        name: a.name,
+        identity: a.identity,
+        provider: a.provider,
+        role: a.role
+      })));
+
+      // Get proper agent names for BlindVisionProtocol
+      const agentNames = sortedAgents.map(a => {
+        // Try to get the actual agent name from identity or provider info
+        const actualName = a.identity?.name || a.provider || a.name;
+        console.log('🔍 AGENT NAME MAPPING:', a.name, '→', actualName);
+        return actualName;
+      });
 
       // Stream initial protocol message
       if (onStreamResponse) {
         onStreamResponse({
           type: 'blind_vision_protocol_start',
-          content: `🧠 **BLIND VISION CREATIVE PROTOCOL ACTIVATED**\n\n🎯 **Mission:** ${message}\n🔒 **Agent Isolation:** ACTIVE\n⚡ **Creativity Level:** ${creativityLevel.toUpperCase()}\n🎭 **Agents:** ${sortedAgents.map(a => a.identity?.name || a.name).join(', ')}\n\n**Preparing for parallel ideation with zero cross-contamination...**`,
+          content: `🧠 **BLIND VISION CREATIVE PROTOCOL ACTIVATED**\n\n🎯 **Mission:** ${message}\n🔒 **Agent Isolation:** ACTIVE\n⚡ **Creativity Level:** ${creativityLevel.toUpperCase()}\n🎭 **Agents:** ${agentNames.join(', ')}\n\n**Preparing for parallel ideation with zero cross-contamination...**`,
           timestamp: new Date().toISOString(),
           isSystemMessage: true,
           isBlindVisionStart: true
@@ -1764,7 +1782,7 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       // Execute Blind Vision Protocol
       const blindVisionResult = await this.blindVisionProtocol.executeBlindVisionProtocol(
         message,
-        sortedAgents.map(a => a.identity?.name || a.name),
+        agentNames,
         creativityLevel,
         onStreamResponse
       );
