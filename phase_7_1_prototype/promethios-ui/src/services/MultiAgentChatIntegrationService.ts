@@ -9,6 +9,7 @@ import { UnifiedStorageService } from './UnifiedStorageService';
 import { UserAgentStorageService } from './UserAgentStorageService';
 import { API_BASE_URL } from '../config/api';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
+import { multiAgentGovernanceWrapper, GovernanceState } from './MultiAgentGovernanceWrapper';
 
 export interface MultiAgentChatSession {
   id: string;
@@ -1148,6 +1149,47 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       });
     }
 
+    // 🛡️ INITIALIZE MULTI-AGENT GOVERNANCE
+    let governanceState: GovernanceState | null = null;
+    if (governanceEnabled) {
+      console.log('🛡️ MULTI-AGENT GOVERNANCE: Initializing governance wrapper for debate system');
+      const agentIds = sortedAgents.map(a => a.id || a.identity?.name || a.name);
+      governanceState = await multiAgentGovernanceWrapper.initializeGovernance(
+        session!.systemId,
+        sessionId,
+        governanceEnabled,
+        agentIds
+      );
+
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'governance_initialized',
+          content: `🛡️ **Multi-Agent Governance Active**\n\n**Monitoring:** Emergent behaviors, trust scores, policy compliance\n**Intervention:** Automatic safety controls enabled\n**Agents:** ${agentIds.length} agents under governance`,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true,
+          governanceData: {
+            enabled: true,
+            agentCount: agentIds.length,
+            trustScores: governanceState.trustScores
+          }
+        });
+      }
+    } else {
+      console.log('🔓 MULTI-AGENT GOVERNANCE: Governance disabled - running ungoverned debate');
+      if (onStreamResponse) {
+        onStreamResponse({
+          type: 'governance_disabled',
+          content: `🔓 **Ungoverned Mode Active**\n\n**Warning:** No governance monitoring or intervention\n**Behavior:** Raw, unfiltered AI-to-AI interaction\n**Risk:** Emergent behaviors may occur without control`,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true,
+          governanceData: {
+            enabled: false,
+            warning: 'Ungoverned mode - no safety controls active'
+          }
+        });
+      }
+    }
+
     // DEBATE ROUNDS (3 rounds maximum)
     for (let round = 1; round <= maxRounds; round++) {
       console.log(`\n🎭 ROUND-TABLE: === ROUND ${round} ===`);
@@ -1222,6 +1264,97 @@ Respond from your unique perspective and expertise. Keep responses focused and d
           allAgentResponses.push(debateEntry);
 
           console.log(`✅ ROUND-TABLE: ${agentName} responded (${agentResponse.length} chars)`);
+
+          // 🛡️ GOVERNANCE MONITORING: Analyze agent response for violations and emergent behaviors
+          let governanceAnalysis = { violations: [], emergentBehaviors: [], interventionNeeded: false };
+          if (governanceEnabled && governanceState) {
+            console.log(`🛡️ GOVERNANCE MONITOR: Analyzing ${agentName}'s response for governance compliance`);
+            
+            governanceAnalysis = await multiAgentGovernanceWrapper.monitorAgentResponse(
+              sessionId,
+              agent.id || agentName,
+              agentName,
+              agentResponse,
+              round,
+              debateHistory
+            );
+
+            // Log governance findings
+            if (governanceAnalysis.violations.length > 0) {
+              console.log(`⚠️ GOVERNANCE: ${governanceAnalysis.violations.length} violations detected from ${agentName}`);
+            }
+            if (governanceAnalysis.emergentBehaviors.length > 0) {
+              console.log(`🔍 GOVERNANCE: ${governanceAnalysis.emergentBehaviors.length} emergent behaviors detected from ${agentName}`);
+            }
+
+            // Stream governance alerts if significant issues found
+            if (governanceAnalysis.violations.length > 0 || governanceAnalysis.emergentBehaviors.length > 0) {
+              if (onStreamResponse) {
+                const criticalIssues = [
+                  ...governanceAnalysis.violations.filter(v => v.severity === 'critical' || v.severity === 'high'),
+                  ...governanceAnalysis.emergentBehaviors.filter(b => b.severity === 'critical' || b.severity === 'high')
+                ];
+
+                if (criticalIssues.length > 0) {
+                  onStreamResponse({
+                    type: 'governance_alert',
+                    content: `🚨 **Governance Alert**: ${criticalIssues.length} significant issue(s) detected in ${agentName}'s response`,
+                    agentName,
+                    round,
+                    timestamp: new Date().toISOString(),
+                    isSystemMessage: true,
+                    governanceData: {
+                      violations: governanceAnalysis.violations,
+                      emergentBehaviors: governanceAnalysis.emergentBehaviors,
+                      trustScore: governanceState.trustScores[agent.id || agentName]
+                    }
+                  });
+                }
+              }
+            }
+
+            // Execute intervention if needed
+            if (governanceAnalysis.interventionNeeded) {
+              console.log(`🚨 GOVERNANCE INTERVENTION: Required for ${agentName}'s response`);
+              
+              const interventionResult = await multiAgentGovernanceWrapper.executeIntervention(
+                sessionId,
+                `Governance violations or critical emergent behaviors detected in ${agentName}'s response`,
+                governanceAnalysis.violations.some(v => v.severity === 'critical') || 
+                governanceAnalysis.emergentBehaviors.some(b => b.severity === 'critical') ? 'critical' : 'high'
+              );
+
+              if (onStreamResponse && interventionResult.message) {
+                onStreamResponse({
+                  type: 'governance_intervention',
+                  content: interventionResult.message,
+                  agentName,
+                  round,
+                  timestamp: new Date().toISOString(),
+                  isSystemMessage: true,
+                  governanceData: {
+                    action: interventionResult.action,
+                    shouldContinue: interventionResult.shouldContinue,
+                    interventionCount: governanceState.interventionCount
+                  }
+                });
+              }
+
+              // Stop debate if critical intervention
+              if (!interventionResult.shouldContinue) {
+                console.log('🚨 GOVERNANCE: Debate stopped due to critical intervention');
+                return {
+                  content: `🚨 **Debate Terminated**: ${interventionResult.message}`,
+                  agentResponses: allAgentResponses,
+                  governanceData: {
+                    terminated: true,
+                    reason: interventionResult.message,
+                    governanceState: multiAgentGovernanceWrapper.getGovernanceState(sessionId)
+                  }
+                };
+              }
+            }
+          }
 
           // Stream the agent response immediately
           if (onStreamResponse) {
@@ -1388,7 +1521,26 @@ Respond from your unique perspective and expertise. Keep responses focused and d
         debateRounds: maxRounds,
         totalResponses: allAgentResponses.length,
         consensusReporter: consensusReporter.agentName,
-        debateMode: 'sequential_consensus_streaming'
+        debateMode: 'sequential_consensus_streaming',
+        // 🛡️ COMPREHENSIVE GOVERNANCE DATA
+        governance: {
+          enabled: governanceEnabled,
+          state: governanceState ? multiAgentGovernanceWrapper.getGovernanceState(sessionId) : null,
+          summary: governanceState ? {
+            totalEvents: governanceState.governanceEvents.length,
+            interventions: governanceState.interventionCount,
+            emergentBehaviors: governanceState.emergentBehaviors.length,
+            collaborationHealth: governanceState.collaborationHealth,
+            trustScores: governanceState.trustScores,
+            lastHealthCheck: governanceState.lastHealthCheck
+          } : null,
+          crossPlatformInteraction: {
+            monitored: governanceEnabled,
+            agentCount: sortedAgents.length,
+            platforms: [...new Set(sortedAgents.map(a => a.provider || 'openai'))],
+            totalInteractions: debateHistory.length
+          }
+        }
       }
     };
   }
