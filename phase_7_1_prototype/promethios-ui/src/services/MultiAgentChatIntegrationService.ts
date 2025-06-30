@@ -1734,6 +1734,12 @@ Respond from your unique perspective and expertise. Keep responses focused and d
       }
 
       const system = await this.storageService.get('multiAgentSystems', session.systemId);
+      console.log('🔍 BLIND VISION DEBUG: System loaded:', !!system);
+      console.log('🔍 BLIND VISION DEBUG: System structure:', system ? Object.keys(system) : 'null');
+      console.log('🔍 BLIND VISION DEBUG: System.agents exists:', !!system?.agents);
+      console.log('🔍 BLIND VISION DEBUG: System.agents length:', system?.agents?.length || 0);
+      console.log('🔍 BLIND VISION DEBUG: Full system object:', system);
+      
       if (!system || !system.agents || system.agents.length === 0) {
         throw new Error('No agents found in system');
       }
