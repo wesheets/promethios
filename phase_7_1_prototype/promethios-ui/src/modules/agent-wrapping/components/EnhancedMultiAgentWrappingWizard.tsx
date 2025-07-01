@@ -65,7 +65,7 @@ import { PolicyTemplate } from '../../../services/policyBackendService';
 import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
 import { useAuth } from '../../../context/AuthContext';
 import { DualAgentWrapperRegistry } from '../services/DualAgentWrapperRegistry';
-import { MultiAgentSystemRegistry } from '../services/MultiAgentSystemRegistry';
+import MultiAgentSystemRegistry from '../services/MultiAgentSystemRegistry';
 import { DualAgentWrapper, GovernanceConfiguration } from '../types/dualWrapper';
 
 // Enhanced Success component with deployment options

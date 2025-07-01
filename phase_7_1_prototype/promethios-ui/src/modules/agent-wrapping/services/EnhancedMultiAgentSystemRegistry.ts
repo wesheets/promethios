@@ -22,7 +22,7 @@ import {
   MultiAgentQueryFilters,
   MultiAgentQueryResult
 } from '../types/enhancedMultiAgent';
-import { MultiAgentSystemRegistry } from './MultiAgentSystemRegistry';
+import MultiAgentSystemRegistry from './MultiAgentSystemRegistry';
 import { DualAgentWrapperRegistry } from './DualAgentWrapperRegistry';
 import { MultiAgentGovernanceEngine, MultiAgentGovernanceConfig } from './governance/MultiAgentGovernanceEngine';
 import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
