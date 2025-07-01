@@ -27,30 +27,16 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Initialize Firestore with enhanced settings to completely eliminate WebSocket issues
+// Initialize Firestore with working configuration for nam5 database
 const db = initializeFirestore(app, {
-  // AGGRESSIVE WEBSOCKET DISABLING for nam5 multi-region database
-  experimentalForceLongPolling: true, // Force HTTP long polling
-  experimentalAutoDetectLongPolling: false, // Disable auto-detection
-  
-  // Additional settings to ensure HTTP-only connections
-  ignoreUndefinedProperties: true,
-  
-  // Explicit host and connection settings
-  host: 'firestore.googleapis.com',
-  ssl: true,
-  
-  // Disable any WebSocket-related features
-  cacheSizeBytes: 1048576, // 1MB cache to reduce network calls
-  
-  // Force specific transport settings
-  merge: true
+  // Use long polling for nam5 multi-region database compatibility
+  experimentalForceLongPolling: true,
+  ignoreUndefinedProperties: true
 });
 
-console.log('🔧 Firestore initialized with ENHANCED nam5 region workaround');
-console.log('🔧 WebSocket COMPLETELY DISABLED - HTTP-only mode');
+console.log('🔧 Firestore initialized with working nam5 configuration');
+console.log('🔧 Long polling enabled for region compatibility');
 console.log('🔧 Database settings:', db._delegate._databaseId);
-console.log('🔧 App settings:', app.options);
 
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
