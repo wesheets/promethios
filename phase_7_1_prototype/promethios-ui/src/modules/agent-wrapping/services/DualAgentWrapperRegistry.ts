@@ -23,7 +23,7 @@ import {
 } from '../types/dualWrapper';
 import { GovernanceEngine } from '../types/governance';
 import { DualWrapperStorage } from '../types/storage';
-import { AgentWrapperRegistry } from './AgentWrapperRegistry';
+import AgentWrapperRegistry from './AgentWrapperRegistry';
 import { AgentWrapperConfig, AgentWrapper } from '../types';
 
 /**
