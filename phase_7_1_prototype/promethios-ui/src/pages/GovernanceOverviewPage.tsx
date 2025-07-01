@@ -393,7 +393,7 @@ const GovernanceOverviewPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h3" color="warning.main" gutterBottom>
-                    {prismViolations.filter(v => !v.resolved).length + vigilViolations.length}
+                    {totalViolations}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Active Violations

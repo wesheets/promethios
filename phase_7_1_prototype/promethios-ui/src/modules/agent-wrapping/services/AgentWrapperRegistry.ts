@@ -351,22 +351,6 @@ class AgentWrapperRegistry {
   }
 
   /**
-   * Persist wrapper to unified storage
-   */
-  private async persistWrapper(wrapper: AgentWrapper): Promise<void> {
-    const key = this.getUserScopedKey(`wrappers.${wrapper.id}`);
-    await this.storageService.set('agents', key, wrapper);
-  }
-  
-  /**
-   * Remove wrapper from unified storage
-   */
-  private async removeWrapper(wrapperId: string): Promise<void> {
-    const key = this.getUserScopedKey(`wrappers.${wrapperId}`);
-    await this.storageService.delete('agents', key);
-  }
-  
-  /**
    * Load all wrappers for current user from storage
    */
   async loadUserWrappers(): Promise<void> {
