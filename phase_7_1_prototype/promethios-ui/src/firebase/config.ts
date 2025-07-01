@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, initializeFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -27,8 +27,20 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-const db = getFirestore(app);
-console.log('Firestore initialized with options:', db.settings);
+// Initialize Firestore with region-specific settings for nam5 database
+const db = initializeFirestore(app, {
+  // Force specific settings for nam5 multi-region database
+  experimentalForceLongPolling: true, // Use long polling instead of WebSocket
+  ignoreUndefinedProperties: true,
+  // Add explicit host configuration for nam5 region
+  host: 'firestore.googleapis.com',
+  ssl: true
+});
+
+console.log('🔧 Firestore initialized with nam5 region workaround settings');
+console.log('🔧 Database settings:', db._delegate._databaseId);
+console.log('🔧 App settings:', app.options);
+
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
 
