@@ -7,6 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGovernanceDashboard } from '../hooks/useGovernanceDashboard';
+import { usePageMetrics } from '../hooks/usePageMetrics';
+import { useAnalytics } from '../components/common/AnalyticsProvider';
 import {
   Box,
   Grid,
@@ -143,6 +145,16 @@ const GovernanceOverviewPage: React.FC = () => {
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'single' | 'multi'>('all');
 
+  // Metrics tracking
+  const { trackButtonClick, trackFeatureUsage, trackError } = usePageMetrics({
+    pageName: 'governance_overview',
+    metadata: {
+      component: 'GovernanceOverviewPage',
+      version: '1.0'
+    }
+  });
+  const { trackGovernance } = useAnalytics();
+
   // Use real backend data
   const {
     metrics,
@@ -181,11 +193,25 @@ const GovernanceOverviewPage: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+    
+    // Track tab change
+    const tabNames = ['overview', 'violations', 'reports', 'agents'];
+    trackFeatureUsage('governance_tabs', 'tab_change', {
+      from_tab: tabNames[activeTab] || 'unknown',
+      to_tab: tabNames[newValue] || 'unknown',
+      tab_index: newValue
+    });
   };
 
   const handleViewModeChange = (event: React.MouseEvent<HTMLElement>, newMode: 'all' | 'single' | 'multi') => {
     if (newMode !== null) {
       setViewMode(newMode);
+      
+      // Track view mode change
+      trackFeatureUsage('governance_view_mode', 'mode_change', {
+        from_mode: viewMode,
+        to_mode: newMode
+      });
     }
   };
 
@@ -200,6 +226,37 @@ const GovernanceOverviewPage: React.FC = () => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     return detectedAt > weekAgo;
   }).length;
+
+  // Track governance metrics when data loads
+  useEffect(() => {
+    if (metrics && !loading) {
+      trackGovernance('compliance_score', complianceScore, undefined, {
+        trust_score: trustScore,
+        total_violations: totalViolations,
+        critical_violations: criticalViolations,
+        governance_health: governanceHealth
+      });
+      
+      trackGovernance('trust_score', trustScore, undefined, {
+        compliance_score: complianceScore,
+        total_violations: totalViolations,
+        critical_violations: criticalViolations
+      });
+    }
+  }, [metrics, loading, complianceScore, trustScore, totalViolations, criticalViolations, governanceHealth, trackGovernance]);
+
+  // Track errors when they occur
+  useEffect(() => {
+    if (metricsError || violationsError || overviewError) {
+      const error = new Error(metricsError || violationsError || overviewError || 'Unknown governance error');
+      trackError(error, {
+        error_type: 'governance_data_load',
+        metrics_error: !!metricsError,
+        violations_error: !!violationsError,
+        overview_error: !!overviewError
+      });
+    }
+  }, [metricsError, violationsError, overviewError, trackError]);
 
   if (loading) {
     return (
@@ -259,6 +316,14 @@ const GovernanceOverviewPage: React.FC = () => {
   };
 
   const exportGovernanceReport = () => {
+    // Track export action
+    trackButtonClick('export_governance_report', {
+      total_violations: totalViolations,
+      critical_violations: criticalViolations,
+      compliance_score: complianceScore,
+      trust_score: trustScore
+    });
+    
     // Implementation for exporting governance report
     console.log('Exporting governance report...');
   };
@@ -307,7 +372,14 @@ const GovernanceOverviewPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              trackButtonClick('refresh_governance_data', {
+                active_tab: activeTab,
+                view_mode: viewMode,
+                total_violations: totalViolations
+              });
+              window.location.reload();
+            }}
             sx={{ 
               borderColor: '#4a5568',
               color: '#a0aec0',
