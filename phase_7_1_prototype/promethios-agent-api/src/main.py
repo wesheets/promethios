@@ -10,6 +10,7 @@ from src.models.agent_data import AgentMetrics, AgentViolation, AgentLog, AgentH
 from src.routes.user import user_bp
 from src.routes.agent_metrics import agent_metrics_bp
 from src.routes.policy_enhancement import policy_enhancement_bp
+from src.routes.promethios_policy_integration import promethios_policy_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -21,6 +22,7 @@ CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(agent_metrics_bp, url_prefix='/api/agents')
 app.register_blueprint(policy_enhancement_bp, url_prefix='/api/policy-enhancement')
+app.register_blueprint(promethios_policy_bp, url_prefix='/api/promethios-policy')
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"

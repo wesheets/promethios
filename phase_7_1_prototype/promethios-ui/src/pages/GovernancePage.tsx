@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import { darkTheme } from '../theme/darkTheme';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { observerService, PRISMMetrics, PRISMViolation, VigilMetrics, VigilViolation } from '../services/observers';
@@ -834,4 +836,10 @@ const GovernancePage: React.FC = () => {
   );
 };
 
-export default GovernancePage;
+const ThemedGovernancePage = () => (
+  <ThemeProvider theme={darkTheme}>
+    <GovernancePage />
+  </ThemeProvider>
+);
+
+export default ThemedGovernancePage;

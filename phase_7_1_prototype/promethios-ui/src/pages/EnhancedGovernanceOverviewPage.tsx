@@ -7,6 +7,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
 import { usePageMetrics } from '../hooks/usePageMetrics';
 import { useAnalytics } from '../components/common/AnalyticsProvider';
@@ -1012,5 +1014,11 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
   );
 };
 
-export default EnhancedGovernanceOverviewPage;
+const ThemedEnhancedGovernanceOverviewPage = () => (
+  <ThemeProvider theme={darkTheme}>
+    <EnhancedGovernanceOverviewPage />
+  </ThemeProvider>
+);
+
+export default ThemedEnhancedGovernanceOverviewPage;
 

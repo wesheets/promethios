@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import { darkTheme } from '../theme/darkTheme';
 import { useTrustBackend } from '../hooks/useTrustBackend';
 import { useAgentBackend } from '../hooks/useAgentBackend';
 import {
@@ -513,5 +515,11 @@ const TrustMetricsOverviewPage: React.FC = () => {
   );
 };
 
-export default TrustMetricsOverviewPage;
+const ThemedTrustMetricsOverviewPage = () => (
+  <ThemeProvider theme={darkTheme}>
+    <TrustMetricsOverviewPage />
+  </ThemeProvider>
+);
+
+export default ThemedTrustMetricsOverviewPage;
 

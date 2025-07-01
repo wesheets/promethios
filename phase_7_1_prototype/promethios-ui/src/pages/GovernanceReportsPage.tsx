@@ -6,6 +6,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import { darkTheme } from '../theme/darkTheme';
 import {
   Box,
   Grid,
@@ -1328,5 +1330,11 @@ const GovernanceReportsPage: React.FC = () => {
   );
 };
 
-export default GovernanceReportsPage;
+const ThemedGovernanceReportsPage = () => (
+  <ThemeProvider theme={darkTheme}>
+    <GovernanceReportsPage />
+  </ThemeProvider>
+);
+
+export default ThemedGovernanceReportsPage;
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -27,8 +27,18 @@ import {
   AccordionDetails,
   Switch,
   FormControlLabel,
-  Slider
+  Slider,
+  Tab,
+  Tabs,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Badge,
+  LinearProgress
 } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import { darkTheme } from '../../theme/darkTheme';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -41,820 +51,1137 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-  Lightbulb as SuggestionIcon
+  Lightbulb as SuggestionIcon,
+  Psychology as AIIcon,
+  Timeline as AnalyticsIcon,
+  Security as SecurityIcon,
+  Gavel as ComplianceIcon,
+  Settings as OperationalIcon,
+  Balance as EthicalIcon,
+  Article as LegalIcon,
+  SmartToy as NLIcon,
+  TrendingUp as OptimizeIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useToast } from '../../hooks/use-toast';
-import { policiesAPI } from '../../services/api/policiesAPI';
+import { prometheiosPolicyAPI } from '../../services/api/prometheiosPolicyAPI';
 
-interface PolicyRule {
-  id: string;
-  name: string;
-  type: 'trust_threshold' | 'content_filter' | 'rate_limit' | 'data_retention' | 'audit_requirement' | 'pii_protection' | 'response_validation';
-  condition: string;
-  action: 'allow' | 'deny' | 'warn' | 'escalate' | 'log' | 'throttle';
-  parameters: Record<string, any>;
-  enabled: boolean;
-  priority: number;
+// Promethios Policy Schema Interfaces (matching existing schema)
+interface PrometheiosPolicyRule {
+  rule_id: string;
+  name?: string;
   description?: string;
+  condition: string;
+  action: 'allow' | 'deny' | 'log' | 'alert' | 'escalate';
+  priority?: number;
+  metadata?: {
+    rationale?: string;
+    tags?: string[];
+    [key: string]: any;
+  };
+  created_at?: string;
+  updated_at?: string;
 }
 
-interface RuleTemplate {
-  id: string;
+interface PrometheiosPolicy {
+  policy_id: string;
   name: string;
-  description: string;
-  type: PolicyRule['type'];
-  defaultParameters: Record<string, any>;
-  category: string;
+  version: string;
+  status: 'draft' | 'active' | 'deprecated' | 'archived';
+  category?: string;
+  description?: string;
+  rules: PrometheiosPolicyRule[];
+  metadata?: {
+    owner?: string;
+    compliance_mappings?: {
+      [standard: string]: string[];
+    };
+    tags?: string[];
+    [key: string]: any;
+  };
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
-const RULE_TEMPLATES: RuleTemplate[] = [
-  {
-    id: 'trust_basic',
-    name: 'Basic Trust Threshold',
-    description: 'Require minimum trust score for agent responses',
-    type: 'trust_threshold',
-    defaultParameters: { threshold: 70, action_on_fail: 'warn' },
-    category: 'Trust Management'
-  },
-  {
-    id: 'pii_protection',
-    name: 'PII Protection',
-    description: 'Detect and block personally identifiable information',
-    type: 'pii_protection',
-    defaultParameters: { sensitivity: 'high', block_types: ['ssn', 'credit_card', 'email'] },
-    category: 'Data Protection'
-  },
-  {
-    id: 'rate_limit_basic',
-    name: 'Basic Rate Limiting',
-    description: 'Limit requests per time window',
-    type: 'rate_limit',
-    defaultParameters: { limit: 100, window: 'minute', burst_allowance: 10 },
-    category: 'Performance'
-  },
-  {
-    id: 'content_safety',
-    name: 'Content Safety Filter',
-    description: 'Filter inappropriate or harmful content',
-    type: 'content_filter',
-    defaultParameters: { categories: ['hate', 'violence', 'adult'], severity: 'medium' },
-    category: 'Content Safety'
-  },
-  {
-    id: 'data_retention',
-    name: 'Data Retention Policy',
-    description: 'Automatically manage data lifecycle',
-    type: 'data_retention',
-    defaultParameters: { retention_days: 90, auto_delete: true },
-    category: 'Compliance'
-  }
-];
+// Enhanced features interfaces
+interface PolicyAnalytics {
+  effectiveness_score: number;
+  compliance_rate: number;
+  violation_count: number;
+  total_evaluations: number;
+  avg_trust_score: number;
+  trend_data: Array<{
+    date: string;
+    compliance_rate: number;
+    violation_count: number;
+    total_evaluations: number;
+  }>;
+}
 
-const RULE_ACTIONS = [
-  { value: 'allow', label: 'Allow', color: 'success', description: 'Permit the action to proceed' },
-  { value: 'deny', label: 'Deny', color: 'error', description: 'Block the action completely' },
-  { value: 'warn', label: 'Warn', color: 'warning', description: 'Log warning but allow action' },
-  { value: 'escalate', label: 'Escalate', color: 'info', description: 'Escalate to human review' },
-  { value: 'log', label: 'Log Only', color: 'default', description: 'Log for audit purposes only' },
-  { value: 'throttle', label: 'Throttle', color: 'secondary', description: 'Slow down the action' }
-];
+interface PolicyOptimization {
+  suggestions: Array<{
+    type: 'rule_modification' | 'rule_addition' | 'rule_removal' | 'priority_adjustment';
+    description: string;
+    impact_score: number;
+    confidence: number;
+  }>;
+  predicted_improvement: number;
+  risk_assessment: 'low' | 'medium' | 'high';
+}
+
+interface PolicyConflict {
+  rule_id_1: string;
+  rule_id_2: string;
+  conflict_type: 'contradiction' | 'redundancy' | 'priority_conflict';
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  resolution_suggestion: string;
+}
+
+// Policy type configurations
+const POLICY_TYPE_CONFIGS = {
+  SECURITY: {
+    icon: SecurityIcon,
+    color: '#f44336',
+    description: 'Policies for security controls and threat protection',
+    commonRules: [
+      { condition: 'contains_pii', action: 'alert' as const, description: 'Detect PII in content' },
+      { condition: 'trust_score < 70', action: 'deny' as const, description: 'Block low trust responses' },
+      { condition: 'contains_malicious_content', action: 'deny' as const, description: 'Block malicious content' }
+    ]
+  },
+  COMPLIANCE: {
+    icon: ComplianceIcon,
+    color: '#2196f3',
+    description: 'Policies for regulatory and compliance requirements',
+    commonRules: [
+      { condition: 'data_classification == "sensitive"', action: 'log' as const, description: 'Log sensitive data access' },
+      { condition: 'user_role != "authorized"', action: 'deny' as const, description: 'Restrict unauthorized access' },
+      { condition: 'retention_period_exceeded', action: 'alert' as const, description: 'Data retention compliance' }
+    ]
+  },
+  OPERATIONAL: {
+    icon: OperationalIcon,
+    color: '#ff9800',
+    description: 'Policies for operational controls and procedures',
+    commonRules: [
+      { condition: 'response_time > 5000', action: 'alert' as const, description: 'Monitor response times' },
+      { condition: 'error_rate > 0.05', action: 'escalate' as const, description: 'Escalate high error rates' },
+      { condition: 'resource_usage > 80', action: 'log' as const, description: 'Monitor resource usage' }
+    ]
+  },
+  ETHICAL: {
+    icon: EthicalIcon,
+    color: '#9c27b0',
+    description: 'Policies for ethical AI behavior and fairness',
+    commonRules: [
+      { condition: 'bias_score > 0.3', action: 'alert' as const, description: 'Detect potential bias' },
+      { condition: 'fairness_metric < 0.8', action: 'escalate' as const, description: 'Ensure fairness' },
+      { condition: 'contains_discriminatory_content', action: 'deny' as const, description: 'Block discriminatory content' }
+    ]
+  },
+  LEGAL: {
+    icon: LegalIcon,
+    color: '#607d8b',
+    description: 'Policies for legal compliance and risk management',
+    commonRules: [
+      { condition: 'contains_legal_advice', action: 'escalate' as const, description: 'Escalate legal advice requests' },
+      { condition: 'copyright_violation_detected', action: 'deny' as const, description: 'Prevent copyright violations' },
+      { condition: 'jurisdiction_restricted', action: 'deny' as const, description: 'Respect jurisdiction restrictions' }
+    ]
+  }
+};
 
 interface PolicyRuleBuilderProps {
-  initialRules?: PolicyRule[];
-  onRulesChange?: (rules: PolicyRule[]) => void;
-  onSave?: (rules: PolicyRule[]) => void;
-  readOnly?: boolean;
+  policy?: PrometheiosPolicy;
+  onSave?: (policy: PrometheiosPolicy) => void;
+  onCancel?: () => void;
+  mode?: 'create' | 'edit' | 'view';
 }
 
-export const PolicyRuleBuilder: React.FC<PolicyRuleBuilderProps> = ({
-  initialRules = [],
-  onRulesChange,
+const PolicyRuleBuilder: React.FC<PolicyRuleBuilderProps> = ({
+  policy: initialPolicy,
   onSave,
-  readOnly = false
+  onCancel,
+  mode = 'create'
 }) => {
-  const [rules, setRules] = useState<PolicyRule[]>(initialRules);
-  const [selectedRule, setSelectedRule] = useState<PolicyRule | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
-  const [isTestingRule, setIsTestingRule] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [nlpInput, setNlpInput] = useState('');
-  const [isProcessingNLP, setIsProcessingNLP] = useState(false);
-  const [nlpSuggestions, setNlpSuggestions] = useState<any>(null);
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Policy state
+  const [policy, setPolicy] = useState<PrometheiosPolicy>(() => ({
+    policy_id: initialPolicy?.policy_id || `pol-${Date.now()}`,
+    name: initialPolicy?.name || '',
+    version: initialPolicy?.version || '1.0.0',
+    status: initialPolicy?.status || 'draft',
+    category: initialPolicy?.category || '',
+    description: initialPolicy?.description || '',
+    rules: initialPolicy?.rules || [],
+    metadata: initialPolicy?.metadata || {
+      owner: '',
+      compliance_mappings: {},
+      tags: []
+    },
+    created_at: initialPolicy?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: initialPolicy?.created_by || 'current_user',
+    updated_by: 'current_user'
+  }));
 
-  const handleRulesChange = useCallback((newRules: PolicyRule[]) => {
-    setRules(newRules);
-    onRulesChange?.(newRules);
-  }, [onRulesChange]);
+  // Enhanced features state
+  const [analytics, setAnalytics] = useState<PolicyAnalytics | null>(null);
+  const [optimization, setOptimization] = useState<PolicyOptimization | null>(null);
+  const [conflicts, setConflicts] = useState<PolicyConflict[]>([]);
+  const [nlDescription, setNlDescription] = useState('');
+  const [generatingFromNL, setGeneratingFromNL] = useState(false);
+  const [testResults, setTestResults] = useState<any>(null);
+  const [testing, setTesting] = useState(false);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination || readOnly) return;
+  // Load analytics and optimization data
+  useEffect(() => {
+    if (policy.policy_id && mode !== 'create') {
+      loadPolicyAnalytics();
+      loadPolicyOptimization();
+      detectConflicts();
+    }
+  }, [policy.policy_id, mode]);
 
-    const newRules = Array.from(rules);
-    const [reorderedRule] = newRules.splice(result.source.index, 1);
-    newRules.splice(result.destination.index, 0, reorderedRule);
-
-    // Update priorities based on new order
-    const updatedRules = newRules.map((rule, index) => ({
-      ...rule,
-      priority: index + 1
-    }));
-
-    handleRulesChange(updatedRules);
-    toast({
-      title: "Rules reordered",
-      description: "Rule priorities have been updated based on the new order."
-    });
+  const loadPolicyAnalytics = async () => {
+    try {
+      const analyticsData = await prometheiosPolicyAPI.getPolicyAnalytics(policy.policy_id);
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error('Failed to load policy analytics:', error);
+    }
   };
 
-  const addRuleFromTemplate = (template: RuleTemplate) => {
-    const newRule: PolicyRule = {
-      id: `rule_${Date.now()}`,
-      name: template.name,
-      type: template.type,
-      condition: generateConditionFromTemplate(template),
-      action: 'warn',
-      parameters: { ...template.defaultParameters },
-      enabled: true,
-      priority: rules.length + 1,
-      description: template.description
+  const loadPolicyOptimization = async () => {
+    try {
+      const optimizationData = await prometheiosPolicyAPI.optimizePolicy(policy.policy_id);
+      setOptimization(optimizationData);
+    } catch (error) {
+      console.error('Failed to load policy optimization:', error);
+    }
+  };
+
+  const detectConflicts = async () => {
+    try {
+      const conflictData = await prometheiosPolicyAPI.detectConflicts(policy.policy_id);
+      setConflicts(conflictData);
+    } catch (error) {
+      console.error('Failed to detect conflicts:', error);
+    }
+  };
+
+  const generatePolicyFromNL = async () => {
+    if (!nlDescription.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a description for the policy',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setGeneratingFromNL(true);
+    try {
+      const generatedPolicy = await prometheiosPolicyAPI.generateFromNL({
+        description: nlDescription,
+        policy_type: policy.category || 'SECURITY',
+        compliance_requirements: policy.metadata?.compliance_mappings ? Object.keys(policy.metadata.compliance_mappings) : [],
+        context: policy.description || ''
+      });
+
+      setPolicy(prev => ({
+        ...prev,
+        name: generatedPolicy.name || prev.name,
+        description: generatedPolicy.description || prev.description,
+        rules: [...prev.rules, ...generatedPolicy.rules],
+        metadata: {
+          ...prev.metadata,
+          ...generatedPolicy.metadata
+        }
+      }));
+
+      toast({
+        title: 'Success',
+        description: 'Policy generated from natural language description',
+        variant: 'default'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate policy from description',
+        variant: 'destructive'
+      });
+    } finally {
+      setGeneratingFromNL(false);
+    }
+  };
+
+  const testPolicy = async () => {
+    setTesting(true);
+    try {
+      const results = await prometheiosPolicyAPI.testPolicy({
+        policy,
+        test_scenarios: [
+          { input: 'Sample user input with PII: SSN 123-45-6789', expected_action: 'alert' },
+          { input: 'Normal user query about weather', expected_action: 'allow' },
+          { input: 'Potentially harmful content', expected_action: 'deny' }
+        ]
+      });
+      setTestResults(results);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to test policy',
+        variant: 'destructive'
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const addRule = () => {
+    const newRule: PrometheiosPolicyRule = {
+      rule_id: `rule-${Date.now()}`,
+      name: '',
+      description: '',
+      condition: '',
+      action: 'log',
+      priority: policy.rules.length + 1,
+      metadata: {
+        rationale: '',
+        tags: []
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    handleRulesChange([...rules, newRule]);
-    setSelectedRule(newRule);
-    setIsEditing(true);
-    setShowTemplates(false);
-    
-    toast({
-      title: "Rule added",
-      description: `${template.name} rule has been added to your policy.`
-    });
+    setPolicy(prev => ({
+      ...prev,
+      rules: [...prev.rules, newRule],
+      updated_at: new Date().toISOString()
+    }));
   };
 
-  const generateConditionFromTemplate = (template: RuleTemplate): string => {
-    switch (template.type) {
-      case 'trust_threshold':
-        return `trust_score >= ${template.defaultParameters.threshold}`;
-      case 'rate_limit':
-        return `request_count <= ${template.defaultParameters.limit} per ${template.defaultParameters.window}`;
-      case 'pii_protection':
-        return `contains_pii == false`;
-      case 'content_filter':
-        return `content_safety_score >= 0.8`;
-      case 'data_retention':
-        return `data_age <= ${template.defaultParameters.retention_days} days`;
-      default:
-        return 'true';
-    }
+  const updateRule = (ruleId: string, updates: Partial<PrometheiosPolicyRule>) => {
+    setPolicy(prev => ({
+      ...prev,
+      rules: prev.rules.map(rule => 
+        rule.rule_id === ruleId 
+          ? { ...rule, ...updates, updated_at: new Date().toISOString() }
+          : rule
+      ),
+      updated_at: new Date().toISOString()
+    }));
   };
 
   const deleteRule = (ruleId: string) => {
-    const updatedRules = rules.filter(rule => rule.id !== ruleId);
-    handleRulesChange(updatedRules);
-    
-    if (selectedRule?.id === ruleId) {
-      setSelectedRule(null);
-      setIsEditing(false);
-    }
-    
-    toast({
-      title: "Rule deleted",
-      description: "The rule has been removed from your policy."
-    });
+    setPolicy(prev => ({
+      ...prev,
+      rules: prev.rules.filter(rule => rule.rule_id !== ruleId),
+      updated_at: new Date().toISOString()
+    }));
   };
 
-  const duplicateRule = (rule: PolicyRule) => {
-    const duplicatedRule: PolicyRule = {
-      ...rule,
-      id: `rule_${Date.now()}`,
-      name: `${rule.name} (Copy)`,
-      priority: rules.length + 1
+  const addCommonRule = (commonRule: any) => {
+    const newRule: PrometheiosPolicyRule = {
+      rule_id: `rule-${Date.now()}`,
+      name: commonRule.description,
+      description: commonRule.description,
+      condition: commonRule.condition,
+      action: commonRule.action,
+      priority: policy.rules.length + 1,
+      metadata: {
+        rationale: `Common rule for ${policy.category} policies`,
+        tags: ['common', policy.category?.toLowerCase() || 'general']
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    handleRulesChange([...rules, duplicatedRule]);
-    toast({
-      title: "Rule duplicated",
-      description: "A copy of the rule has been created."
-    });
+    setPolicy(prev => ({
+      ...prev,
+      rules: [...prev.rules, newRule],
+      updated_at: new Date().toISOString()
+    }));
   };
 
-  const testRule = async (rule: PolicyRule) => {
-    if (!rule) return;
-
-    setIsTestingRule(true);
-    try {
-      const result = await policiesAPI.validateRule({
-        rule: rule,
-        agent_id: undefined // Test against all agents
-      });
-
-      setTestResults(result);
+  const handleSave = async () => {
+    if (!policy.name.trim()) {
       toast({
-        title: "Rule tested",
-        description: `Rule validation completed with ${result.validation_result?.triggers || 0} triggers.`
+        title: 'Error',
+        description: 'Policy name is required',
+        variant: 'destructive'
       });
-    } catch (error) {
-      console.error('Error testing rule:', error);
-      toast({
-        title: "Test failed",
-        description: "Failed to test the rule. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTestingRule(false);
+      return;
     }
-  };
 
-  const processNaturalLanguage = async () => {
-    if (!nlpInput.trim()) return;
+    if (policy.rules.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'At least one rule is required',
+        variant: 'destructive'
+      });
+      return;
+    }
 
-    setIsProcessingNLP(true);
+    setSaving(true);
     try {
-      const result = await policiesAPI.createFromNaturalLanguage({
-        description: nlpInput,
-        context: 'Policy rule creation'
+      let savedPolicy;
+      if (mode === 'create') {
+        savedPolicy = await prometheiosPolicyAPI.createPolicy(policy);
+      } else {
+        savedPolicy = await prometheiosPolicyAPI.updatePolicy(policy.policy_id, policy);
+      }
+
+      toast({
+        title: 'Success',
+        description: `Policy ${mode === 'create' ? 'created' : 'updated'} successfully`,
+        variant: 'default'
       });
 
-      if (result.success && result.suggested_rules?.length > 0) {
-        setNlpSuggestions(result);
-        toast({
-          title: "AI suggestions ready",
-          description: `Generated ${result.suggested_rules.length} rule suggestions from your description.`
-        });
-      } else {
-        toast({
-          title: "No suggestions",
-          description: "Could not generate rule suggestions from the description. Try being more specific.",
-          variant: "destructive"
-        });
+      if (onSave) {
+        onSave(savedPolicy);
       }
     } catch (error) {
-      console.error('Error processing natural language:', error);
       toast({
-        title: "Processing failed",
-        description: "Failed to process natural language input. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: `Failed to ${mode === 'create' ? 'create' : 'update'} policy`,
+        variant: 'destructive'
       });
     } finally {
-      setIsProcessingNLP(false);
+      setSaving(false);
     }
   };
 
-  const addSuggestedRule = (suggestedRule: any) => {
-    const newRule: PolicyRule = {
-      id: `rule_${Date.now()}`,
-      name: suggestedRule.name,
-      type: suggestedRule.type,
-      condition: suggestedRule.condition,
-      action: suggestedRule.action,
-      parameters: suggestedRule.parameters || {},
-      enabled: true,
-      priority: rules.length + 1,
-      description: `AI-generated rule with ${(suggestedRule.confidence * 100).toFixed(0)}% confidence`
-    };
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
 
-    handleRulesChange([...rules, newRule]);
-    setSelectedRule(newRule);
-    setIsEditing(true);
-    
-    toast({
-      title: "AI rule added",
-      description: `${suggestedRule.name} has been added to your policy.`
-    });
+    const items = Array.from(policy.rules);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update priorities
+    const updatedRules = items.map((rule, index) => ({
+      ...rule,
+      priority: index + 1,
+      updated_at: new Date().toISOString()
+    }));
+
+    setPolicy(prev => ({
+      ...prev,
+      rules: updatedRules,
+      updated_at: new Date().toISOString()
+    }));
   };
 
-  const updateSelectedRule = (updates: Partial<PolicyRule>) => {
-    if (!selectedRule) return;
-
-    const updatedRule = { ...selectedRule, ...updates };
-    const updatedRules = rules.map(rule => 
-      rule.id === selectedRule.id ? updatedRule : rule
-    );
-
-    handleRulesChange(updatedRules);
-    setSelectedRule(updatedRule);
-  };
-
-  const getRuleIcon = (type: PolicyRule['type']) => {
-    switch (type) {
-      case 'trust_threshold': return '🛡️';
-      case 'content_filter': return '🔍';
-      case 'rate_limit': return '⏱️';
-      case 'data_retention': return '📁';
-      case 'audit_requirement': return '📋';
-      case 'pii_protection': return '🔒';
-      case 'response_validation': return '✅';
-      default: return '⚙️';
-    }
-  };
-
-  const getActionColor = (action: PolicyRule['action']) => {
-    const actionConfig = RULE_ACTIONS.find(a => a.value === action);
-    return actionConfig?.color || 'default';
-  };
-
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        🏗️ Policy Rule Builder
-        <Tooltip title="Create and manage policy rules with visual drag-and-drop interface, AI assistance, and real-time testing">
-          <IconButton size="small">
-            <HelpIcon />
-          </IconButton>
-        </Tooltip>
-      </Typography>
-
-      <Grid container spacing={3}>
-        {/* Left Panel - Rule List */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Policy Rules ({rules.length})</Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Tooltip title="Add rule from template">
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => setShowTemplates(true)}
-                      disabled={readOnly}
-                      size="small"
-                    >
-                      Add Rule
-                    </Button>
-                  </Tooltip>
-                  {onSave && (
-                    <Tooltip title="Save all rules">
-                      <Button
-                        variant="contained"
-                        startIcon={<SaveIcon />}
-                        onClick={() => onSave(rules)}
-                        disabled={readOnly}
-                        size="small"
-                      >
-                        Save
-                      </Button>
-                    </Tooltip>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Natural Language Input */}
-              <Accordion sx={{ mb: 2 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SuggestionIcon color="primary" />
-                    <Typography>AI Rule Generation</Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      placeholder="Describe your policy rule in natural language... e.g., 'Block responses with trust score below 80%' or 'Limit to 100 requests per minute'"
-                      value={nlpInput}
-                      onChange={(e) => setNlpInput(e.target.value)}
-                      disabled={readOnly}
-                    />
-                    <Button
-                      variant="outlined"
-                      startIcon={isProcessingNLP ? <CircularProgress size={16} /> : <SuggestionIcon />}
-                      onClick={processNaturalLanguage}
-                      disabled={!nlpInput.trim() || isProcessingNLP || readOnly}
-                    >
-                      {isProcessingNLP ? 'Processing...' : 'Generate Rules'}
-                    </Button>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
-
-              {/* AI Suggestions */}
-              {nlpSuggestions && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    AI Generated {nlpSuggestions.suggested_rules.length} Rule Suggestions:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {nlpSuggestions.suggested_rules.map((suggestion: any, index: number) => (
-                      <Paper key={index} sx={{ p: 2, bgcolor: 'background.default' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'center' }}>
-                          <Box>
-                            <Typography variant="subtitle2">{suggestion.name}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {suggestion.condition} → {suggestion.action}
-                            </Typography>
-                            <Typography variant="caption">
-                              Confidence: {(suggestion.confidence * 100).toFixed(0)}%
-                            </Typography>
-                          </Box>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => addSuggestedRule(suggestion)}
-                            disabled={readOnly}
-                          >
-                            Add
-                          </Button>
-                        </Box>
-                      </Paper>
-                    ))}
-                  </Box>
-                </Alert>
-              )}
-
-              {/* Rules List */}
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="rules">
-                  {(provided) => (
-                    <Box {...provided.droppableProps} ref={provided.innerRef}>
-                      {rules.map((rule, index) => (
-                        <Draggable key={rule.id} draggableId={rule.id} index={index} isDragDisabled={readOnly}>
-                          {(provided, snapshot) => (
-                            <Paper
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              sx={{
-                                p: 2,
-                                mb: 1,
-                                cursor: 'pointer',
-                                border: selectedRule?.id === rule.id ? 2 : 1,
-                                borderColor: selectedRule?.id === rule.id ? 'primary.main' : 'divider',
-                                bgcolor: snapshot.isDragging ? 'action.hover' : 'background.paper',
-                                '&:hover': { bgcolor: 'action.hover' }
-                              }}
-                              onClick={() => {
-                                setSelectedRule(rule);
-                                setIsEditing(false);
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box {...provided.dragHandleProps}>
-                                  <DragIcon color="action" />
-                                </Box>
-                                <Typography sx={{ fontSize: '1.2em' }}>
-                                  {getRuleIcon(rule.type)}
-                                </Typography>
-                                <Box sx={{ flexGrow: 1 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="subtitle2">{rule.name}</Typography>
-                                    <Chip
-                                      label={rule.action}
-                                      size="small"
-                                      color={getActionColor(rule.action) as any}
-                                      variant="outlined"
-                                    />
-                                    {!rule.enabled && (
-                                      <Chip label="Disabled" size="small" variant="outlined" />
-                                    )}
-                                  </Box>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {rule.condition}
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                  <Tooltip title="Test rule">
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        testRule(rule);
-                                      }}
-                                      disabled={isTestingRule}
-                                    >
-                                      <TestIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Duplicate rule">
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        duplicateRule(rule);
-                                      }}
-                                      disabled={readOnly}
-                                    >
-                                      <CopyIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Delete rule">
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        deleteRule(rule.id);
-                                      }}
-                                      disabled={readOnly}
-                                    >
-                                      <DeleteIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
-                              </Box>
-                            </Paper>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable>
-              </DragDropContext>
-
-              {rules.length === 0 && (
-                <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default' }}>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No rules defined
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Add your first rule using templates or AI generation
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => setShowTemplates(true)}
-                    disabled={readOnly}
-                  >
-                    Add First Rule
-                  </Button>
-                </Paper>
-              )}
-            </CardContent>
-          </Card>
+  const renderBasicInfo = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Basic Information
+          <Tooltip title="Configure the basic policy information including name, type, and description">
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <HelpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Policy Name"
+              value={policy.name}
+              onChange={(e) => setPolicy(prev => ({ ...prev, name: e.target.value, updated_at: new Date().toISOString() }))}
+              disabled={mode === 'view'}
+              helperText="A descriptive name for this policy"
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <InputLabel>Policy Type</InputLabel>
+              <Select
+                value={policy.category || ''}
+                onChange={(e) => setPolicy(prev => ({ ...prev, category: e.target.value, updated_at: new Date().toISOString() }))}
+                disabled={mode === 'view'}
+              >
+                {Object.entries(POLICY_TYPE_CONFIGS).map(([type, config]) => {
+                  const IconComponent = config.icon;
+                  return (
+                    <MenuItem key={type} value={type}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <IconComponent sx={{ color: config.color, fontSize: 20 }} />
+                        {type}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={policy.status}
+                onChange={(e) => setPolicy(prev => ({ ...prev, status: e.target.value as any, updated_at: new Date().toISOString() }))}
+                disabled={mode === 'view'}
+              >
+                <MenuItem value="draft">Draft</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="deprecated">Deprecated</MenuItem>
+                <MenuItem value="archived">Archived</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Version"
+              value={policy.version}
+              onChange={(e) => setPolicy(prev => ({ ...prev, version: e.target.value, updated_at: new Date().toISOString() }))}
+              disabled={mode === 'view'}
+              helperText="Semantic version (e.g., 1.0.0)"
+            />
+          </Grid>
+          
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Description"
+              value={policy.description}
+              onChange={(e) => setPolicy(prev => ({ ...prev, description: e.target.value, updated_at: new Date().toISOString() }))}
+              disabled={mode === 'view'}
+              helperText="Detailed description of what this policy does and why it's needed"
+            />
+          </Grid>
         </Grid>
 
-        {/* Right Panel - Rule Editor */}
-        <Grid item xs={12} md={6}>
-          {selectedRule ? (
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">
-                    {getRuleIcon(selectedRule.type)} {selectedRule.name}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant={isEditing ? "contained" : "outlined"}
-                      size="small"
-                      onClick={() => setIsEditing(!isEditing)}
-                      disabled={readOnly}
-                    >
-                      {isEditing ? 'View' : 'Edit'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={isTestingRule ? <CircularProgress size={16} /> : <TestIcon />}
-                      onClick={() => testRule(selectedRule)}
-                      disabled={isTestingRule}
-                    >
-                      Test
-                    </Button>
-                  </Box>
-                </Box>
+        {policy.category && POLICY_TYPE_CONFIGS[policy.category as keyof typeof POLICY_TYPE_CONFIGS] && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              {POLICY_TYPE_CONFIGS[policy.category as keyof typeof POLICY_TYPE_CONFIGS].description}
+            </Typography>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
 
-                {isEditing ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                      label="Rule Name"
-                      value={selectedRule.name}
-                      onChange={(e) => updateSelectedRule({ name: e.target.value })}
-                      fullWidth
-                    />
+  const renderNaturalLanguageGenerator = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Natural Language Policy Generator
+          <Tooltip title="Describe your policy requirements in plain English and let AI generate the rules">
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <HelpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          label="Describe your policy requirements"
+          value={nlDescription}
+          onChange={(e) => setNlDescription(e.target.value)}
+          placeholder="e.g., 'I want to block responses with trust scores below 80% and require human review for any financial advice'"
+          disabled={mode === 'view' || generatingFromNL}
+          helperText="Describe what you want the policy to do in natural language"
+          sx={{ mb: 2 }}
+        />
+        
+        <Button
+          variant="contained"
+          startIcon={generatingFromNL ? <CircularProgress size={20} /> : <NLIcon />}
+          onClick={generatePolicyFromNL}
+          disabled={mode === 'view' || generatingFromNL || !nlDescription.trim()}
+        >
+          {generatingFromNL ? 'Generating...' : 'Generate Policy Rules'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
 
-                    <FormControl fullWidth>
-                      <InputLabel>Rule Type</InputLabel>
-                      <Select
-                        value={selectedRule.type}
-                        onChange={(e) => updateSelectedRule({ type: e.target.value as PolicyRule['type'] })}
+  const renderRulesBuilder = () => (
+    <Card>
+      <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">
+            Policy Rules
+            <Tooltip title="Define the specific rules that make up this policy. Rules are evaluated in priority order.">
+              <IconButton size="small" sx={{ ml: 1 }}>
+                <HelpIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Typography>
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<TestIcon />}
+              onClick={testPolicy}
+              disabled={mode === 'view' || testing || policy.rules.length === 0}
+            >
+              {testing ? 'Testing...' : 'Test Policy'}
+            </Button>
+            
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={addRule}
+              disabled={mode === 'view'}
+            >
+              Add Rule
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Common Rules for Policy Type */}
+        {policy.category && POLICY_TYPE_CONFIGS[policy.category as keyof typeof POLICY_TYPE_CONFIGS] && (
+          <Accordion sx={{ mb: 2 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1">
+                Common {policy.category} Rules
+                <Tooltip title="Pre-defined rules commonly used for this policy type">
+                  <IconButton size="small" sx={{ ml: 1 }}>
+                    <HelpIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {POLICY_TYPE_CONFIGS[policy.category as keyof typeof POLICY_TYPE_CONFIGS].commonRules.map((commonRule, index) => (
+                  <Grid item xs={12} md={6} key={index}>
+                    <Paper sx={{ p: 2, border: '1px dashed #ccc' }}>
+                      <Typography variant="body2" gutterBottom>
+                        {commonRule.description}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                        Condition: {commonRule.condition}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                        Action: {commonRule.action}
+                      </Typography>
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => addCommonRule(commonRule)}
+                        disabled={mode === 'view'}
                       >
-                        <MenuItem value="trust_threshold">Trust Threshold</MenuItem>
-                        <MenuItem value="content_filter">Content Filter</MenuItem>
-                        <MenuItem value="rate_limit">Rate Limit</MenuItem>
-                        <MenuItem value="data_retention">Data Retention</MenuItem>
-                        <MenuItem value="audit_requirement">Audit Requirement</MenuItem>
-                        <MenuItem value="pii_protection">PII Protection</MenuItem>
-                        <MenuItem value="response_validation">Response Validation</MenuItem>
-                      </Select>
-                    </FormControl>
+                        Add Rule
+                      </Button>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        )}
 
-                    <TextField
-                      label="Condition"
-                      value={selectedRule.condition}
-                      onChange={(e) => updateSelectedRule({ condition: e.target.value })}
-                      fullWidth
-                      multiline
-                      rows={2}
-                      helperText="Define when this rule should trigger (e.g., trust_score < 70)"
-                    />
-
-                    <FormControl fullWidth>
-                      <InputLabel>Action</InputLabel>
-                      <Select
-                        value={selectedRule.action}
-                        onChange={(e) => updateSelectedRule({ action: e.target.value as PolicyRule['action'] })}
+        {/* Rules List */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="rules">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef}>
+                {policy.rules.map((rule, index) => (
+                  <Draggable key={rule.rule_id} draggableId={rule.rule_id} index={index}>
+                    {(provided, snapshot) => (
+                      <Card
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        sx={{
+                          mb: 2,
+                          opacity: snapshot.isDragging ? 0.8 : 1,
+                          transform: snapshot.isDragging ? 'rotate(5deg)' : 'none'
+                        }}
                       >
-                        {RULE_ACTIONS.map((action) => (
-                          <MenuItem key={action.value} value={action.value}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                              <Typography>{action.label}</Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {action.description}
-                              </Typography>
-                            </Box>
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <div {...provided.dragHandleProps}>
+                              <DragIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                            </div>
+                            <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                              Rule {index + 1}
+                              <Tooltip title="Drag to reorder rules. Rules are evaluated in priority order from top to bottom.">
+                                <IconButton size="small" sx={{ ml: 1 }}>
+                                  <HelpIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Typography>
+                            <Chip
+                              label={`Priority: ${rule.priority || index + 1}`}
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() => deleteRule(rule.rule_id)}
+                              disabled={mode === 'view'}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
 
-                    <TextField
-                      label="Description"
-                      value={selectedRule.description || ''}
-                      onChange={(e) => updateSelectedRule({ description: e.target.value })}
-                      fullWidth
-                      multiline
-                      rows={2}
-                    />
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={selectedRule.enabled}
-                            onChange={(e) => updateSelectedRule({ enabled: e.target.checked })}
-                          />
-                        }
-                        label="Enabled"
-                      />
-                      <Box sx={{ flexGrow: 1 }}>
-                        <Typography gutterBottom>Priority: {selectedRule.priority}</Typography>
-                        <Slider
-                          value={selectedRule.priority}
-                          onChange={(_, value) => updateSelectedRule({ priority: value as number })}
-                          min={1}
-                          max={rules.length}
-                          marks
-                          step={1}
-                        />
-                      </Box>
-                    </Box>
-
-                    {/* Rule-specific parameters */}
-                    {selectedRule.type === 'trust_threshold' && (
-                      <TextField
-                        label="Trust Threshold"
-                        type="number"
-                        value={selectedRule.parameters.threshold || 70}
-                        onChange={(e) => updateSelectedRule({
-                          parameters: { ...selectedRule.parameters, threshold: parseInt(e.target.value) }
-                        })}
-                        inputProps={{ min: 0, max: 100 }}
-                        helperText="Minimum trust score required (0-100)"
-                      />
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="Rule Name"
+                                value={rule.name || ''}
+                                onChange={(e) => updateRule(rule.rule_id, { name: e.target.value })}
+                                disabled={mode === 'view'}
+                                helperText="A descriptive name for this rule"
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                              <FormControl fullWidth>
+                                <InputLabel>Action</InputLabel>
+                                <Select
+                                  value={rule.action}
+                                  onChange={(e) => updateRule(rule.rule_id, { action: e.target.value as any })}
+                                  disabled={mode === 'view'}
+                                >
+                                  <MenuItem value="allow">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <CheckIcon sx={{ color: 'success.main' }} />
+                                      Allow
+                                    </Box>
+                                  </MenuItem>
+                                  <MenuItem value="deny">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <ErrorIcon sx={{ color: 'error.main' }} />
+                                      Deny
+                                    </Box>
+                                  </MenuItem>
+                                  <MenuItem value="log">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <AnalyticsIcon sx={{ color: 'info.main' }} />
+                                      Log
+                                    </Box>
+                                  </MenuItem>
+                                  <MenuItem value="alert">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <WarningIcon sx={{ color: 'warning.main' }} />
+                                      Alert
+                                    </Box>
+                                  </MenuItem>
+                                  <MenuItem value="escalate">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <SuggestionIcon sx={{ color: 'secondary.main' }} />
+                                      Escalate
+                                    </Box>
+                                  </MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <TextField
+                                fullWidth
+                                label="Condition"
+                                value={rule.condition}
+                                onChange={(e) => updateRule(rule.rule_id, { condition: e.target.value })}
+                                disabled={mode === 'view'}
+                                helperText="Boolean expression that determines when this rule applies (e.g., trust_score < 70)"
+                                placeholder="e.g., trust_score < 70 OR contains_pii == true"
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <TextField
+                                fullWidth
+                                multiline
+                                rows={2}
+                                label="Description"
+                                value={rule.description || ''}
+                                onChange={(e) => updateRule(rule.rule_id, { description: e.target.value })}
+                                disabled={mode === 'view'}
+                                helperText="Explain what this rule does and why it's needed"
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <TextField
+                                fullWidth
+                                label="Rationale"
+                                value={rule.metadata?.rationale || ''}
+                                onChange={(e) => updateRule(rule.rule_id, { 
+                                  metadata: { ...rule.metadata, rationale: e.target.value }
+                                })}
+                                disabled={mode === 'view'}
+                                helperText="Business or technical justification for this rule"
+                              />
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
                     )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
-                    {selectedRule.type === 'rate_limit' && (
-                      <Box sx={{ display: 'flex', gap: 2 }}>
-                        <TextField
-                          label="Request Limit"
-                          type="number"
-                          value={selectedRule.parameters.limit || 100}
-                          onChange={(e) => updateSelectedRule({
-                            parameters: { ...selectedRule.parameters, limit: parseInt(e.target.value) }
-                          })}
-                          sx={{ flex: 1 }}
-                        />
-                        <FormControl sx={{ flex: 1 }}>
-                          <InputLabel>Time Window</InputLabel>
-                          <Select
-                            value={selectedRule.parameters.window || 'minute'}
-                            onChange={(e) => updateSelectedRule({
-                              parameters: { ...selectedRule.parameters, window: e.target.value }
-                            })}
-                          >
-                            <MenuItem value="second">Second</MenuItem>
-                            <MenuItem value="minute">Minute</MenuItem>
-                            <MenuItem value="hour">Hour</MenuItem>
-                            <MenuItem value="day">Day</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    )}
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Type</Typography>
-                      <Typography>{selectedRule.type.replace('_', ' ').toUpperCase()}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Condition</Typography>
-                      <Typography fontFamily="monospace" sx={{ bgcolor: 'background.default', p: 1, borderRadius: 1 }}>
-                        {selectedRule.condition}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Action</Typography>
-                      <Chip
-                        label={selectedRule.action}
-                        color={getActionColor(selectedRule.action) as any}
-                        variant="outlined"
-                      />
-                    </Box>
-                    {selectedRule.description && (
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">Description</Typography>
-                        <Typography>{selectedRule.description}</Typography>
-                      </Box>
-                    )}
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">Status</Typography>
-                        <Chip
-                          label={selectedRule.enabled ? 'Enabled' : 'Disabled'}
-                          color={selectedRule.enabled ? 'success' : 'default'}
-                          variant="outlined"
-                        />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
-                        <Typography>{selectedRule.priority}</Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                )}
+        {policy.rules.length === 0 && (
+          <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'grey.50' }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              No rules defined yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Add rules to define how this policy should behave
+            </Typography>
+          </Paper>
+        )}
+      </CardContent>
+    </Card>
+  );
 
-                {/* Test Results */}
-                {testResults && (
-                  <Box sx={{ mt: 3 }}>
-                    <Divider sx={{ mb: 2 }} />
-                    <Typography variant="h6" gutterBottom>Test Results</Typography>
-                    <Alert
-                      severity={testResults.validation_result?.effectiveness > 0.7 ? 'success' : 
-                               testResults.validation_result?.effectiveness > 0.4 ? 'warning' : 'error'}
-                    >
-                      <Typography variant="subtitle2">
-                        Rule Effectiveness: {((testResults.validation_result?.effectiveness || 0) * 100).toFixed(1)}%
-                      </Typography>
-                      <Typography variant="body2">
-                        Triggers: {testResults.validation_result?.triggers || 0} out of {testResults.data_points || 0} data points
-                      </Typography>
-                      <Typography variant="caption">
-                        Tested against {testResults.time_range} of historical data
-                      </Typography>
-                    </Alert>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Select a rule to view details
+  const renderAnalytics = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Policy Analytics
+          <Tooltip title="Real-time analytics showing how this policy is performing in production">
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <HelpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        
+        {analytics ? (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="primary">
+                  {(analytics.effectiveness_score * 100).toFixed(1)}%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Click on a rule from the list to view or edit its configuration
+                  Effectiveness Score
                 </Typography>
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
-      </Grid>
-
-      {/* Rule Templates Dialog */}
-      <Dialog open={showTemplates} onClose={() => setShowTemplates(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Add Rule from Template</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {RULE_TEMPLATES.map((template) => (
-              <Grid item xs={12} sm={6} key={template.id}>
-                <Card sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
-                  <CardContent onClick={() => addRuleFromTemplate(template)}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Typography sx={{ fontSize: '1.2em' }}>
-                        {getRuleIcon(template.type)}
-                      </Typography>
-                      <Typography variant="h6">{template.name}</Typography>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {template.description}
-                    </Typography>
-                    <Chip label={template.category} size="small" variant="outlined" />
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="success.main">
+                  {(analytics.compliance_rate * 100).toFixed(1)}%
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Compliance Rate
+                </Typography>
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="warning.main">
+                  {analytics.violation_count}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Violations (30 days)
+                </Typography>
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12} md={3}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="info.main">
+                  {analytics.total_evaluations}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Evaluations
+                </Typography>
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>
+                Compliance Trend (Last 7 Days)
+              </Typography>
+              <Box sx={{ height: 200, bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                {/* Placeholder for chart - would integrate with Recharts */}
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 8 }}>
+                  Compliance trend chart would be displayed here
+                </Typography>
+              </Box>
+            </Grid>
           </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowTemplates(false)}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
+        ) : (
+          <Alert severity="info">
+            Analytics data will be available after the policy is deployed and has some usage history.
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderOptimization = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          AI-Powered Optimization
+          <Tooltip title="Machine learning suggestions to improve policy effectiveness based on historical data">
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <HelpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        
+        {optimization ? (
+          <Box>
+            <Alert 
+              severity={optimization.risk_assessment === 'low' ? 'success' : optimization.risk_assessment === 'medium' ? 'warning' : 'error'}
+              sx={{ mb: 2 }}
+            >
+              <Typography variant="body2">
+                Predicted improvement: <strong>{(optimization.predicted_improvement * 100).toFixed(1)}%</strong>
+                {' '}(Risk: {optimization.risk_assessment})
+              </Typography>
+            </Alert>
+            
+            <Typography variant="subtitle1" gutterBottom>
+              Optimization Suggestions
+            </Typography>
+            
+            <List>
+              {optimization.suggestions.map((suggestion, index) => (
+                <ListItem key={index}>
+                  <ListItemIcon>
+                    <OptimizeIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={suggestion.description}
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block">
+                          Type: {suggestion.type.replace('_', ' ')}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          Impact Score: {(suggestion.impact_score * 100).toFixed(1)}% | 
+                          Confidence: {(suggestion.confidence * 100).toFixed(1)}%
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        ) : (
+          <Alert severity="info">
+            Optimization suggestions will be available after the policy has sufficient usage data for analysis.
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderConflictDetection = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Conflict Detection
+          <Tooltip title="Automatic detection of conflicts between rules in this policy">
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <HelpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        
+        {conflicts.length > 0 ? (
+          <List>
+            {conflicts.map((conflict, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <WarningIcon 
+                    color={conflict.severity === 'high' ? 'error' : conflict.severity === 'medium' ? 'warning' : 'info'} 
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={conflict.description}
+                  secondary={
+                    <Box>
+                      <Typography variant="caption" display="block">
+                        Type: {conflict.conflict_type} | Severity: {conflict.severity}
+                      </Typography>
+                      <Typography variant="caption" display="block">
+                        Resolution: {conflict.resolution_suggestion}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Alert severity="success">
+            No conflicts detected between policy rules.
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderTestResults = () => (
+    testResults && (
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Test Results
+            <Tooltip title="Results from testing this policy against sample scenarios">
+              <IconButton size="small" sx={{ ml: 1 }}>
+                <HelpIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Typography>
+          
+          <List>
+            {testResults.results?.map((result: any, index: number) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  {result.passed ? (
+                    <CheckIcon color="success" />
+                  ) : (
+                    <ErrorIcon color="error" />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={result.scenario}
+                  secondary={
+                    <Box>
+                      <Typography variant="caption" display="block">
+                        Expected: {result.expected} | Actual: {result.actual}
+                      </Typography>
+                      {result.explanation && (
+                        <Typography variant="caption" display="block">
+                          {result.explanation}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+          
+          <Alert severity={testResults.overall_passed ? 'success' : 'warning'} sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              Test Summary: {testResults.passed_count}/{testResults.total_count} scenarios passed
+              {testResults.overall_passed ? ' ✓' : ' - Review failed scenarios'}
+            </Typography>
+          </Alert>
+        </CardContent>
+      </Card>
+    )
+  );
+
+  return (
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          {mode === 'create' ? 'Create Policy' : mode === 'edit' ? 'Edit Policy' : 'View Policy'}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {mode !== 'view' && (
+            <Button
+              variant="contained"
+              startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : mode === 'create' ? 'Create Policy' : 'Save Changes'}
+            </Button>
+          )}
+          
+          {onCancel && (
+            <Button variant="outlined" onClick={onCancel}>
+              {mode === 'view' ? 'Close' : 'Cancel'}
+            </Button>
+          )}
+        </Box>
+      </Box>
+
+      <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+        <Tab 
+          label="Basic Info" 
+          icon={<SecurityIcon />}
+          iconPosition="start"
+        />
+        <Tab 
+          label="AI Generator" 
+          icon={<AIIcon />}
+          iconPosition="start"
+          disabled={mode === 'view'}
+        />
+        <Tab 
+          label="Rules Builder" 
+          icon={<SettingsIcon />}
+          iconPosition="start"
+        />
+        <Tab 
+          label="Analytics" 
+          icon={<AnalyticsIcon />}
+          iconPosition="start"
+          disabled={mode === 'create'}
+        />
+        <Tab 
+          label="Optimization" 
+          icon={<OptimizeIcon />}
+          iconPosition="start"
+          disabled={mode === 'create'}
+        />
+        <Tab 
+          label="Conflicts" 
+          icon={
+            <Badge badgeContent={conflicts.length} color="error">
+              <WarningIcon />
+            </Badge>
+          }
+          iconPosition="start"
+        />
+      </Tabs>
+
+      {activeTab === 0 && renderBasicInfo()}
+      {activeTab === 1 && renderNaturalLanguageGenerator()}
+      {activeTab === 2 && (
+        <Box>
+          {renderRulesBuilder()}
+          {renderTestResults()}
+        </Box>
+      )}
+      {activeTab === 3 && renderAnalytics()}
+      {activeTab === 4 && renderOptimization()}
+      {activeTab === 5 && renderConflictDetection()}
     </Box>
   );
 };
+
+const ThemedPolicyRuleBuilder = (props: PolicyRuleBuilderProps) => (
+  <ThemeProvider theme={darkTheme}>
+    <PolicyRuleBuilder {...props} />
+  </ThemeProvider>
+);
+
+export default ThemedPolicyRuleBuilder;
 
