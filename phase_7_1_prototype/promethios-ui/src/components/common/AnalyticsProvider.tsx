@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useAuthContext } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { metricsService } from '../../services/MetricsCollectionService';
 
 interface AnalyticsContextType {
@@ -51,7 +51,7 @@ interface AnalyticsProviderProps {
 }
 
 export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }) => {
-  const { currentUser } = useAuthContext();
+  const { currentUser } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize metrics service when user changes
