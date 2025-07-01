@@ -636,8 +636,6 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
       wrapper => wrapper.metadata.userId === userId
     );
   }
-}
-
 
   /**
    * Create a dual wrapper for multi-agent systems
@@ -887,4 +885,7 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
 
     await this.updateDualWrapper(updateRequest);
   }
+
+
+}
 
