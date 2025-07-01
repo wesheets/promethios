@@ -185,11 +185,33 @@ export class FirebaseStorageProvider implements StorageProvider {
   }
 
   async clear(): Promise<void> {
-    console.warn('FirebaseStorageProvider.clear() not implemented - would require admin permissions');
-    
-    // Fallback to clear local storage
-    if (this.fallbackProvider) {
-      await this.fallbackProvider.clear();
+    try {
+      const available = await this.isAvailable();
+      if (!available && this.fallbackProvider) {
+        return this.fallbackProvider.clear();
+      }
+
+      if (!available) {
+        throw new Error('Firebase not available and no fallback provider');
+      }
+
+      // Firebase clear implementation would go here
+      // For now, fallback to localStorage if available
+      console.warn('FirebaseStorageProvider.clear() not implemented - would require admin permissions');
+      
+      if (this.fallbackProvider) {
+        return this.fallbackProvider.clear();
+      }
+
+    } catch (error) {
+      console.error('FirebaseStorageProvider.clear error:', error);
+      
+      // Fallback on error
+      if (this.fallbackProvider) {
+        return this.fallbackProvider.clear();
+      }
+      
+      throw error;
     }
   }
 
@@ -222,6 +244,36 @@ export class FirebaseStorageProvider implements StorageProvider {
       }
       
       return [];
+    }
+  }
+
+  async size(): Promise<number> {
+    try {
+      const available = await this.isAvailable();
+      if (!available && this.fallbackProvider) {
+        return this.fallbackProvider.size();
+      }
+
+      if (!available) {
+        return 0;
+      }
+
+      // Firebase size implementation would go here
+      // For now, fallback to localStorage if available
+      if (this.fallbackProvider) {
+        return this.fallbackProvider.size();
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('FirebaseStorageProvider.size error:', error);
+      
+      // Fallback on error
+      if (this.fallbackProvider) {
+        return this.fallbackProvider.size();
+      }
+      
+      return 0;
     }
   }
 
@@ -301,116 +353,6 @@ export class FirebaseStorageProvider implements StorageProvider {
     } catch (error) {
       console.error('FirebaseStorageProvider.getStats error:', error);
       return { totalDocuments: 0, totalSize: 0, collections: [] };
-    }
-  }
-}
-
-      // Firebase implementation would go here
-      // For now, fallback to localStorage if available
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.delete(key);
-      }
-
-      throw new Error('Firebase not available');
-    } catch (error) {
-      console.error(`FirebaseStorageProvider.delete error for key ${key}:`, error);
-      
-      // Fallback on error
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.delete(key);
-      }
-      
-      throw error;
-    }
-  }
-
-  async clear(): Promise<void> {
-    try {
-      const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.clear();
-      }
-
-      if (!available) {
-        throw new Error('Firebase not available and no fallback provider');
-      }
-
-      // Firebase implementation would go here
-      // For now, fallback to localStorage if available
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.clear();
-      }
-
-      throw new Error('Firebase not available');
-    } catch (error) {
-      console.error('FirebaseStorageProvider.clear error:', error);
-      
-      // Fallback on error
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.clear();
-      }
-      
-      throw error;
-    }
-  }
-
-  async keys(): Promise<string[]> {
-    try {
-      const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.keys();
-      }
-
-      if (!available) {
-        return [];
-      }
-
-      // Firebase implementation would go here
-      // For now, fallback to localStorage if available
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.keys();
-      }
-
-      return [];
-    } catch (error) {
-      console.error('FirebaseStorageProvider.keys error:', error);
-      
-      // Fallback on error
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.keys();
-      }
-      
-      return [];
-    }
-  }
-
-  async size(): Promise<number> {
-    try {
-      const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.size();
-      }
-
-      if (!available) {
-        return 0;
-      }
-
-      // Firebase implementation would go here
-      // For now, fallback to localStorage if available
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.size();
-      }
-
-      return 0;
-    } catch (error) {
-      console.error('FirebaseStorageProvider.size error:', error);
-      
-      // Fallback on error
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.size();
-      }
-      
-      return 0;
     }
   }
 }
