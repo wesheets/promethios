@@ -1,7 +1,7 @@
 {
   "user": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 31536000000,
     "encrypt": true,
     "sync": "immediate",
@@ -11,8 +11,8 @@
     "description": "User profile data, preferences, and settings"
   },
   "observer": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 86400000,
     "encrypt": false,
     "sync": "immediate",
@@ -22,8 +22,8 @@
     "description": "Observer agent conversations and insights"
   },
   "notifications": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 2592000000,
     "encrypt": false,
     "sync": "batched",
@@ -33,8 +33,8 @@
     "description": "User notifications and alerts"
   },
   "governance": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 220752000000,
     "encrypt": true,
     "sync": "immediate",
@@ -44,8 +44,8 @@
     "description": "Governance policies, violations, and compliance data"
   },
   "preferences": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 31536000000,
     "encrypt": false,
     "sync": "manual",
@@ -55,8 +55,8 @@
     "description": "UI preferences, themes, and user settings"
   },
   "agents": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 31536000000,
     "encrypt": false,
     "sync": "immediate",
@@ -66,8 +66,8 @@
     "description": "Agent configurations, templates, and orchestration data"
   },
   "singleAgentChats": {
-    "provider": "localStorage",
-    "fallback": "memory",
+    "provider": "firebase",
+    "fallback": "localStorage",
     "ttl": 2592000000,
     "encrypt": false,
     "sync": "immediate",
@@ -77,8 +77,8 @@
     "description": "Single agent conversation history and chat sessions"
   },
   "multiAgentChats": {
-    "provider": "localStorage", 
-    "fallback": "memory",
+    "provider": "firebase", 
+    "fallback": "localStorage",
     "ttl": 2592000000,
     "encrypt": false,
     "sync": "immediate",
@@ -88,8 +88,8 @@
     "description": "Multi-agent conversation history and collaborative sessions"
   },
   "multiAgentSystems": {
-    "provider": "localStorage",
-    "fallback": "memory", 
+    "provider": "firebase",
+    "fallback": "localStorage", 
     "ttl": 31536000000,
     "encrypt": false,
     "sync": "immediate",

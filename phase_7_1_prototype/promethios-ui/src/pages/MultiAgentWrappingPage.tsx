@@ -35,7 +35,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { darkTheme } from '../theme/darkTheme';
-import MultiAgentWrappingWizard from '../modules/agent-wrapping/components/MultiAgentWrappingWizard';
+import EnhancedMultiAgentWrappingWizard from '../modules/agent-wrapping/components/EnhancedMultiAgentWrappingWizard';
 
 const MultiAgentWrappingPage: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
@@ -186,7 +186,7 @@ const MultiAgentWrappingPage: React.FC = () => {
           >
             ← Back to Multi-Agent Systems
           </Button>
-          <MultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
+          <EnhancedMultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
         </Box>
       </ThemeProvider>
     );

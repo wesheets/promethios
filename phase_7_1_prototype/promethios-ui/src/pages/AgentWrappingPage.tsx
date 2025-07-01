@@ -1,10 +1,10 @@
 import React from 'react';
-import AgentWrappingPage from '../modules/agent-wrapping/ui-stubs/AgentWrappingPage';
+import EnhancedAgentWrappingWizard from '../modules/agent-wrapping/components/EnhancedAgentWrappingWizard';
 
-// This is a wrapper component that imports the stubbed implementation
-// In the future, this can be replaced with the actual implementation
+// Enhanced agent wrapping page with automatic dual wrapping
+// Creates both testing and deployment versions transparently
 const AgentWrappingPageWrapper: React.FC = () => {
-  return <AgentWrappingPage />;
+  return <EnhancedAgentWrappingWizard />;
 };
 
 export default AgentWrappingPageWrapper;
