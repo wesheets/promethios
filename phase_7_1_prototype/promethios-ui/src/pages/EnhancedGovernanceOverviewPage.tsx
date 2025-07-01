@@ -20,6 +20,9 @@ import { BasicGovernanceEngine } from '../modules/agent-wrapping/services/govern
 import GovernanceHeatmap from '../components/governance/GovernanceHeatmap';
 import PolicyImpactChart from '../components/governance/PolicyImpactChart';
 import TrustNetworkGraph from '../components/governance/TrustNetworkGraph';
+import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
+import { MonitoringDashboardWidget } from '../components/monitoring/MonitoringDashboardWidget';
+import { RealTimeMetricsChart } from '../components/monitoring/RealTimeMetricsChart';
 import {
   Box,
   Grid,
@@ -921,6 +924,76 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
             console.log('Navigate to agent:', agentId);
           }}
         />
+      )}
+
+      {/* Live Monitoring Section */}
+      {scorecards.length > 0 && (
+        <Box mt={4}>
+          <Typography variant="h5" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <MonitorHeart sx={{ color: '#3B82F6' }} />
+            Live Agent Monitoring
+            <Tooltip title="Real-time monitoring data from deployed agents with governance metrics and performance analytics">
+              <Info sx={{ color: '#a0aec0', fontSize: 20, cursor: 'help' }} />
+            </Tooltip>
+          </Typography>
+          
+          <Grid container spacing={3}>
+            {/* Monitoring Dashboard Widget */}
+            <Grid item xs={12}>
+              <Box sx={{ 
+                backgroundColor: '#2d3748', 
+                borderRadius: '12px',
+                border: '1px solid #4a5568',
+                overflow: 'hidden'
+              }}>
+                <MonitoringDashboardWidget 
+                  agentIds={scorecards.map(s => s.agentId)}
+                  refreshInterval={30000}
+                  showAlerts={true}
+                  className="h-full"
+                />
+              </Box>
+            </Grid>
+            
+            {/* Individual Agent Status Widgets */}
+            {scorecards.slice(0, 6).map((scorecard) => (
+              <Grid item xs={12} md={6} lg={4} key={scorecard.agentId}>
+                <Box sx={{ 
+                  backgroundColor: '#2d3748', 
+                  borderRadius: '12px',
+                  border: '1px solid #4a5568',
+                  overflow: 'hidden'
+                }}>
+                  <LiveAgentStatusWidget 
+                    agentId={scorecard.agentId}
+                    refreshInterval={30000}
+                    showDetails={true}
+                    className="h-full"
+                  />
+                </Box>
+              </Grid>
+            ))}
+            
+            {/* Real-Time Metrics Chart for Top Agent */}
+            {scorecards.length > 0 && (
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  backgroundColor: '#2d3748', 
+                  borderRadius: '12px',
+                  border: '1px solid #4a5568',
+                  overflow: 'hidden'
+                }}>
+                  <RealTimeMetricsChart 
+                    agentId={scorecards[0].agentId}
+                    timeRange="6h"
+                    refreshInterval={30000}
+                    className="h-full"
+                  />
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        </Box>
       )}
 
       {/* Data Source Disclaimer */}

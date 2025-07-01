@@ -77,6 +77,9 @@ import { useToast } from '../hooks/use-toast';
 import { enhancedDeploymentService, RealDeploymentResult, DeploymentMethod } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
 import { DualAgentWrapperRegistry } from '../modules/agent-wrapping/services/DualAgentWrapperRegistry';
 import { MultiAgentSystemRegistry } from '../modules/agent-wrapping/services/MultiAgentSystemRegistry';
+import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
+import { DeploymentPipelineStatus } from '../components/monitoring/DeploymentPipelineStatus';
+import { RealTimeMetricsChart } from '../components/monitoring/RealTimeMetricsChart';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -911,6 +914,7 @@ const EnhancedDeployPage: React.FC = () => {
             }}
           >
             <Tab label="Active Deployments" />
+            <Tab label="Live Monitoring" />
             <Tab label="Deployment History" />
             <Tab label="Performance Analytics" />
           </Tabs>
@@ -955,6 +959,98 @@ const EnhancedDeployPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+            Live Agent Monitoring
+          </Typography>
+          
+          {realDeployments.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <MonitorHeart sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
+                No Agents to Monitor
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+                Deploy agents to see real-time monitoring data, governance metrics, and performance analytics.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setWizardOpen(true)}
+                sx={{
+                  backgroundColor: '#3b82f6',
+                  '&:hover': { backgroundColor: '#2563eb' },
+                }}
+              >
+                Deploy Agent
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {realDeployments.map((deployment) => (
+                <React.Fragment key={deployment.deploymentId}>
+                  {/* Agent Status Widget */}
+                  <Grid item xs={12} md={6} lg={4}>
+                    <Box sx={{ 
+                      backgroundColor: '#2d3748', 
+                      borderRadius: '12px',
+                      border: '1px solid #4a5568',
+                      overflow: 'hidden'
+                    }}>
+                      <LiveAgentStatusWidget 
+                        agentId={deployment.agentId}
+                        refreshInterval={30000}
+                        showDetails={true}
+                        className="h-full"
+                      />
+                    </Box>
+                  </Grid>
+                  
+                  {/* Deployment Pipeline Status */}
+                  <Grid item xs={12} md={6} lg={8}>
+                    <Box sx={{ 
+                      backgroundColor: '#2d3748', 
+                      borderRadius: '12px',
+                      border: '1px solid #4a5568',
+                      overflow: 'hidden'
+                    }}>
+                      <DeploymentPipelineStatus 
+                        deploymentId={deployment.deploymentId}
+                        agentId={deployment.agentId}
+                        onStageClick={(stage) => {
+                          toast({
+                            title: `Stage: ${stage.name}`,
+                            description: `Status: ${stage.status}${stage.duration ? ` (${stage.duration}s)` : ''}`,
+                            variant: "default"
+                          });
+                        }}
+                        className="h-full"
+                      />
+                    </Box>
+                  </Grid>
+                  
+                  {/* Real-Time Metrics Chart */}
+                  <Grid item xs={12}>
+                    <Box sx={{ 
+                      backgroundColor: '#2d3748', 
+                      borderRadius: '12px',
+                      border: '1px solid #4a5568',
+                      overflow: 'hidden'
+                    }}>
+                      <RealTimeMetricsChart 
+                        agentId={deployment.agentId}
+                        timeRange="1h"
+                        refreshInterval={30000}
+                        className="h-full"
+                      />
+                    </Box>
+                  </Grid>
+                </React.Fragment>
+              ))}
+            </Grid>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
           <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
             Deployment History
           </Typography>
@@ -966,7 +1062,7 @@ const EnhancedDeployPage: React.FC = () => {
           </Typography>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={3}>
           <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
             Performance Analytics
           </Typography>

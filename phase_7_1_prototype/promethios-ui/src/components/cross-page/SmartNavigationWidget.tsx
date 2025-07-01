@@ -1,526 +1,438 @@
-/**
- * Smart Navigation Widget
- * 
- * Provides contextual navigation between Deploy, Integrations, and Data Management pages.
- * Shows relevant actions and status across the deployment pipeline.
- */
-
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  IconButton,
-  Tooltip,
-  Alert,
-  Divider,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
-  Badge,
-  CircularProgress,
-} from '@mui/material';
-import {
-  Launch,
-  Settings,
-  Storage,
-  CloudUpload,
-  Integration,
-  Assessment,
-  Warning,
-  CheckCircle,
-  Error,
-  Info,
-  ArrowForward,
-  Refresh,
-  Notifications,
-  Security,
-  Speed,
-  Timeline,
-} from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { enhancedDeploymentService } from '../../modules/agent-wrapping/services/EnhancedDeploymentService';
-import { deployedAgentDataProcessor } from '../../services/DeployedAgentDataProcessor';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  ArrowRight, 
+  Activity, 
+  Shield, 
+  Settings, 
+  BarChart3,
+  Zap,
+  Bell,
+  CheckCircle,
+  AlertTriangle,
+  TrendingUp,
+  Users,
+  Server,
+  Eye,
+  Play,
+  Pause,
+  RefreshCw,
+  Info,
+  ExternalLink,
+  ChevronRight
+} from 'lucide-react';
+import { MonitoringExtension } from '@/extensions/MonitoringExtension';
 
-interface NavigationContext {
-  currentPage: 'deploy' | 'integrations' | 'data-management' | 'governance' | 'other';
-  deploymentCount: number;
-  activeIntegrations: number;
-  dataIssues: number;
-  governanceAlerts: number;
-  suggestedActions: SuggestedAction[];
-}
-
-interface SuggestedAction {
+interface NavigationSuggestion {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
-  targetPage: string;
-  targetPath: string;
+  path: string;
   icon: React.ReactNode;
-  actionType: 'setup' | 'configure' | 'monitor' | 'fix';
+  priority: 'high' | 'medium' | 'low';
+  badge?: {
+    text: string;
+    variant: 'default' | 'destructive' | 'secondary' | 'outline';
+  };
+  tooltip: string;
+  action?: () => void;
 }
 
-interface IntegrationStatus {
-  provider: string;
-  configured: boolean;
-  active: boolean;
-  deploymentsUsing: number;
+interface SmartNavigationWidgetProps {
+  currentPage?: string;
+  agentIds?: string[];
+  showQuickActions?: boolean;
+  maxSuggestions?: number;
+  className?: string;
 }
 
-const SmartNavigationWidget: React.FC = () => {
-  const [context, setContext] = useState<NavigationContext | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [integrationStatuses, setIntegrationStatuses] = useState<IntegrationStatus[]>([]);
-  const [expanded, setExpanded] = useState(false);
-
+export const SmartNavigationWidget: React.FC<SmartNavigationWidgetProps> = ({
+  currentPage,
+  agentIds = [],
+  showQuickActions = true,
+  maxSuggestions = 4,
+  className = ''
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const [suggestions, setSuggestions] = useState<NavigationSuggestion[]>([]);
+  const [systemStatus, setSystemStatus] = useState({
+    totalAgents: 0,
+    onlineAgents: 0,
+    activeAlerts: 0,
+    averageTrustScore: 0,
+    recentViolations: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  const monitoringExtension = new MonitoringExtension();
 
-  useEffect(() => {
-    loadNavigationContext();
-  }, [currentUser, location.pathname]);
-
-  const loadNavigationContext = async () => {
-    if (!currentUser) {
-      setContext(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
+  // Fetch system status for smart suggestions
+  const fetchSystemStatus = async () => {
     try {
-      // Determine current page
-      const currentPage = getCurrentPage(location.pathname);
-
-      // Load deployment data
-      const deployments = await enhancedDeploymentService.listRealDeployments(currentUser.uid);
+      setLoading(true);
       
-      // Load processed agent data for governance alerts
-      const processedData = await deployedAgentDataProcessor.getUserProcessedData(currentUser.uid);
+      let totalAgents = agentIds.length;
+      let onlineAgents = 0;
+      let averageTrustScore = 0;
+      let recentViolations = 0;
       
-      // Count governance alerts
-      const governanceAlerts = processedData.filter(data => 
-        data.health.status === 'critical' || 
-        data.violations.critical > 0 ||
-        data.dataQuality.freshness === 'offline'
-      ).length;
-
-      // Load integration statuses
-      const integrations = await loadIntegrationStatuses();
-      setIntegrationStatuses(integrations);
-
-      // Generate suggested actions
-      const suggestedActions = generateSuggestedActions(
-        currentPage,
-        deployments.length,
-        integrations,
-        processedData,
-        governanceAlerts
-      );
-
-      setContext({
-        currentPage,
-        deploymentCount: deployments.length,
-        activeIntegrations: integrations.filter(i => i.active).length,
-        dataIssues: processedData.filter(data => data.dataQuality.freshness === 'stale').length,
-        governanceAlerts,
-        suggestedActions
+      if (agentIds.length > 0) {
+        const statusPromises = agentIds.map(async (agentId) => {
+          try {
+            const status = await monitoringExtension.getAgentStatus(agentId);
+            const metrics = await monitoringExtension.getAgentMetrics(agentId, '1h');
+            
+            if (status.status === 'online') onlineAgents++;
+            if (metrics.length > 0) {
+              averageTrustScore += metrics[metrics.length - 1].trustScore;
+              recentViolations += metrics[metrics.length - 1].violationCount;
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch status for agent ${agentId}:`, error);
+          }
+        });
+        
+        await Promise.all(statusPromises);
+        averageTrustScore = totalAgents > 0 ? averageTrustScore / totalAgents : 0;
+      }
+      
+      const activeAlerts = monitoringExtension.getActiveAlerts().length;
+      
+      setSystemStatus({
+        totalAgents,
+        onlineAgents,
+        activeAlerts,
+        averageTrustScore,
+        recentViolations
       });
-
+      
     } catch (error) {
-      console.error('Failed to load navigation context:', error);
-      setContext(null);
+      console.error('Failed to fetch system status:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getCurrentPage = (pathname: string): NavigationContext['currentPage'] => {
-    if (pathname.includes('/deploy')) return 'deploy';
-    if (pathname.includes('/integrations')) return 'integrations';
-    if (pathname.includes('/data-management')) return 'data-management';
-    if (pathname.includes('/governance')) return 'governance';
-    return 'other';
-  };
+  // Generate smart navigation suggestions based on current context
+  const generateSuggestions = () => {
+    const currentPath = location.pathname;
+    const newSuggestions: NavigationSuggestion[] = [];
 
-  const loadIntegrationStatuses = async (): Promise<IntegrationStatus[]> => {
-    // This would integrate with your existing integrations system
-    // For now, return example structure
-    return [
-      { provider: 'AWS', configured: true, active: true, deploymentsUsing: 2 },
-      { provider: 'GCP', configured: false, active: false, deploymentsUsing: 0 },
-      { provider: 'Azure', configured: true, active: false, deploymentsUsing: 0 },
-    ];
-  };
-
-  const generateSuggestedActions = (
-    currentPage: NavigationContext['currentPage'],
-    deploymentCount: number,
-    integrations: IntegrationStatus[],
-    processedData: any[],
-    governanceAlerts: number
-  ): SuggestedAction[] => {
-    const actions: SuggestedAction[] = [];
-
-    // Page-specific suggestions
-    switch (currentPage) {
-      case 'deploy':
-        if (deploymentCount === 0) {
-          actions.push({
-            id: 'first-deployment',
-            title: 'Deploy Your First Agent',
-            description: 'Create and deploy your first governed agent',
-            priority: 'high',
-            targetPage: 'Agent Wrapping',
-            targetPath: '/agents/wrapping',
-            icon: <CloudUpload />,
-            actionType: 'setup'
-          });
-        }
-
-        if (integrations.filter(i => i.configured).length === 0) {
-          actions.push({
-            id: 'setup-integrations',
-            title: 'Configure Cloud Integrations',
-            description: 'Set up AWS, GCP, or Azure for easier deployment',
-            priority: 'medium',
-            targetPage: 'Integrations',
-            targetPath: '/settings/integrations',
-            icon: <Integration />,
-            actionType: 'configure'
-          });
-        }
-        break;
-
-      case 'integrations':
-        if (deploymentCount > 0 && integrations.filter(i => i.active).length === 0) {
-          actions.push({
-            id: 'activate-integrations',
-            title: 'Activate Configured Integrations',
-            description: 'Enable integrations for your existing deployments',
-            priority: 'medium',
-            targetPage: 'Deploy',
-            targetPath: '/agents/deploy',
-            icon: <Launch />,
-            actionType: 'configure'
-          });
-        }
-        break;
-
-      case 'data-management':
-        if (processedData.length > 0) {
-          actions.push({
-            id: 'view-governance',
-            title: 'Monitor Governance Dashboard',
-            description: 'View real-time governance metrics from your deployed agents',
-            priority: 'medium',
-            targetPage: 'Governance Overview',
-            targetPath: '/governance/overview',
-            icon: <Assessment />,
-            actionType: 'monitor'
-          });
-        }
-        break;
-
-      case 'governance':
-        if (governanceAlerts > 0) {
-          actions.push({
-            id: 'fix-governance-issues',
-            title: 'Address Governance Alerts',
-            description: `${governanceAlerts} agent${governanceAlerts === 1 ? '' : 's'} need attention`,
-            priority: 'high',
-            targetPage: 'Deploy',
-            targetPath: '/agents/deploy',
-            icon: <Warning />,
-            actionType: 'fix'
-          });
-        }
-        break;
+    // Deployment-related suggestions
+    if (currentPath.includes('/deploy') || currentPath.includes('/agent-wrapping')) {
+      if (systemStatus.totalAgents === 0) {
+        newSuggestions.push({
+          id: 'deploy-first-agent',
+          title: 'Deploy Your First Agent',
+          description: 'Get started by deploying an agent with governance',
+          path: '/deploy',
+          icon: <Play className="h-4 w-4" />,
+          priority: 'high',
+          tooltip: 'Deploy your first agent to start monitoring governance metrics and performance'
+        });
+      } else {
+        newSuggestions.push({
+          id: 'monitor-deployments',
+          title: 'Monitor Live Deployments',
+          description: `View real-time status of ${systemStatus.totalAgents} deployed agents`,
+          path: '/deploy?tab=1', // Live Monitoring tab
+          icon: <Activity className="h-4 w-4" />,
+          priority: 'high',
+          badge: {
+            text: `${systemStatus.onlineAgents}/${systemStatus.totalAgents} online`,
+            variant: systemStatus.onlineAgents === systemStatus.totalAgents ? 'default' : 'destructive'
+          },
+          tooltip: 'Monitor real-time status, metrics, and performance of your deployed agents'
+        });
+      }
     }
 
-    // Global suggestions
-    if (governanceAlerts > 0 && currentPage !== 'governance') {
-      actions.push({
-        id: 'check-governance',
-        title: 'Governance Alerts',
-        description: `${governanceAlerts} critical issue${governanceAlerts === 1 ? '' : 's'} detected`,
-        priority: 'high',
-        targetPage: 'Governance Overview',
-        targetPath: '/governance/overview',
-        icon: <Security />,
-        actionType: 'fix'
+    // Governance-related suggestions
+    if (currentPath.includes('/governance') || systemStatus.recentViolations > 0) {
+      newSuggestions.push({
+        id: 'governance-overview',
+        title: 'Governance Dashboard',
+        description: 'View compliance metrics and trust scores',
+        path: '/governance-overview',
+        icon: <Shield className="h-4 w-4" />,
+        priority: systemStatus.recentViolations > 0 ? 'high' : 'medium',
+        badge: systemStatus.recentViolations > 0 ? {
+          text: `${systemStatus.recentViolations} violations`,
+          variant: 'destructive'
+        } : undefined,
+        tooltip: 'Comprehensive governance dashboard with real-time compliance metrics and trust scores'
       });
     }
 
-    return actions.slice(0, 4); // Limit to 4 suggestions
+    // Alert-related suggestions
+    if (systemStatus.activeAlerts > 0) {
+      newSuggestions.push({
+        id: 'manage-alerts',
+        title: 'Manage Active Alerts',
+        description: 'Review and resolve governance alerts',
+        path: '/governance-overview',
+        icon: <Bell className="h-4 w-4" />,
+        priority: 'high',
+        badge: {
+          text: `${systemStatus.activeAlerts} alerts`,
+          variant: 'destructive'
+        },
+        tooltip: 'Review and manage active alerts from deployed agents including violations and performance issues'
+      });
+    }
+
+    // Performance suggestions
+    if (systemStatus.averageTrustScore < 0.8 && systemStatus.totalAgents > 0) {
+      newSuggestions.push({
+        id: 'improve-trust',
+        title: 'Improve Trust Scores',
+        description: 'Analyze and optimize agent performance',
+        path: '/governance-overview',
+        icon: <TrendingUp className="h-4 w-4" />,
+        priority: 'medium',
+        badge: {
+          text: `${(systemStatus.averageTrustScore * 100).toFixed(0)}% avg`,
+          variant: 'secondary'
+        },
+        tooltip: 'Analyze trust scores and get recommendations to improve agent governance and performance'
+      });
+    }
+
+    // Settings suggestions
+    if (!currentPath.includes('/settings')) {
+      newSuggestions.push({
+        id: 'configure-monitoring',
+        title: 'Configure Monitoring',
+        description: 'Set up alerts and thresholds',
+        path: '/integrations-settings',
+        icon: <Settings className="h-4 w-4" />,
+        priority: 'low',
+        tooltip: 'Configure monitoring settings, alert thresholds, and integration preferences'
+      });
+    }
+
+    // Analytics suggestions
+    if (systemStatus.totalAgents > 0 && !currentPath.includes('/analytics')) {
+      newSuggestions.push({
+        id: 'view-analytics',
+        title: 'Performance Analytics',
+        description: 'Deep dive into agent performance trends',
+        path: '/deploy?tab=3', // Performance Analytics tab
+        icon: <BarChart3 className="h-4 w-4" />,
+        priority: 'medium',
+        tooltip: 'View detailed performance analytics, trends, and insights for your deployed agents'
+      });
+    }
+
+    // Sort by priority and limit
+    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    newSuggestions.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+    
+    setSuggestions(newSuggestions.slice(0, maxSuggestions));
   };
 
-  const handleActionClick = (action: SuggestedAction) => {
-    navigate(action.targetPath);
-  };
+  useEffect(() => {
+    fetchSystemStatus();
+  }, [agentIds]);
 
-  const getStatusColor = (status: 'good' | 'warning' | 'error') => {
-    switch (status) {
-      case 'good': return '#10b981';
-      case 'warning': return '#f59e0b';
-      case 'error': return '#ef4444';
-      default: return '#6b7280';
+  useEffect(() => {
+    generateSuggestions();
+  }, [location.pathname, systemStatus, maxSuggestions]);
+
+  const handleNavigate = (suggestion: NavigationSuggestion) => {
+    if (suggestion.action) {
+      suggestion.action();
+    } else {
+      navigate(suggestion.path);
     }
   };
 
-  const getStatusIcon = (status: 'good' | 'warning' | 'error') => {
-    switch (status) {
-      case 'good': return <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />;
-      case 'warning': return <Warning sx={{ color: '#f59e0b', fontSize: 16 }} />;
-      case 'error': return <Error sx={{ color: '#ef4444', fontSize: 16 }} />;
-      default: return <Info sx={{ color: '#6b7280', fontSize: 16 }} />;
-    }
-  };
-
-  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return '#ef4444';
-      case 'medium': return '#f59e0b';
-      case 'low': return '#3b82f6';
-      default: return '#6b7280';
+      case 'high': return 'border-l-red-500 bg-red-50';
+      case 'medium': return 'border-l-yellow-500 bg-yellow-50';
+      case 'low': return 'border-l-blue-500 bg-blue-50';
+      default: return 'border-l-gray-500 bg-gray-50';
     }
   };
 
-  if (loading) {
-    return (
-      <Card sx={{ 
-        backgroundColor: '#2d3748', 
-        border: '1px solid #4a5568',
-        borderRadius: '12px'
-      }}>
-        <CardContent sx={{ p: 2, textAlign: 'center' }}>
-          <CircularProgress size={24} />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!context) {
-    return null;
-  }
+  const getSystemHealthColor = () => {
+    if (systemStatus.activeAlerts > 0 || systemStatus.recentViolations > 0) return 'text-red-600';
+    if (systemStatus.averageTrustScore < 0.8) return 'text-yellow-600';
+    if (systemStatus.onlineAgents === systemStatus.totalAgents && systemStatus.totalAgents > 0) return 'text-green-600';
+    return 'text-gray-600';
+  };
 
   return (
-    <Card sx={{ 
-      backgroundColor: '#2d3748', 
-      border: '1px solid #4a5568',
-      borderRadius: '12px',
-      transition: 'all 0.2s ease-in-out',
-      '&:hover': {
-        borderColor: '#718096',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-      }
-    }}>
-      <CardContent sx={{ p: 2 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600 }}>
-            Pipeline Status
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <Tooltip title="Refresh status">
-              <IconButton 
-                size="small" 
-                onClick={loadNavigationContext}
-                sx={{ color: '#a0aec0' }}
-              >
-                <Refresh fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={expanded ? "Collapse" : "Expand details"}>
-              <IconButton 
-                size="small" 
-                onClick={() => setExpanded(!expanded)}
-                sx={{ color: '#a0aec0' }}
-              >
-                <ArrowForward 
-                  fontSize="small" 
-                  sx={{ 
-                    transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s'
-                  }} 
-                />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Box>
+    <TooltipProvider>
+      <Card className={`${className}`}>
+        <CardContent className="p-4">
+          {/* System Status Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Activity className={`h-5 w-5 ${getSystemHealthColor()}`} />
+              <span className="font-medium text-gray-900">Smart Navigation</span>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Context-aware navigation suggestions based on your current workflow and system status</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {systemStatus.totalAgents > 0 && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="outline" className="text-xs">
+                      {systemStatus.onlineAgents}/{systemStatus.totalAgents} online
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Deployed agents currently online and reporting metrics</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchSystemStatus}
+                    disabled={loading}
+                    className="h-6 w-6 p-0"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Refresh system status and navigation suggestions</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
 
-        {/* Status Overview */}
-        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <Tooltip title={`${context.deploymentCount} deployed agent${context.deploymentCount === 1 ? '' : 's'}`}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <CloudUpload sx={{ fontSize: 16, color: context.deploymentCount > 0 ? '#10b981' : '#6b7280' }} />
-              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                {context.deploymentCount}
-              </Typography>
-            </Box>
-          </Tooltip>
-
-          <Tooltip title={`${context.activeIntegrations} active integration${context.activeIntegrations === 1 ? '' : 's'}`}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Integration sx={{ fontSize: 16, color: context.activeIntegrations > 0 ? '#10b981' : '#6b7280' }} />
-              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                {context.activeIntegrations}
-              </Typography>
-            </Box>
-          </Tooltip>
-
-          <Tooltip title={`${context.dataIssues} data issue${context.dataIssues === 1 ? '' : 's'}`}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Storage sx={{ fontSize: 16, color: context.dataIssues > 0 ? '#f59e0b' : '#10b981' }} />
-              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                {context.dataIssues}
-              </Typography>
-            </Box>
-          </Tooltip>
-
-          {context.governanceAlerts > 0 && (
-            <Tooltip title={`${context.governanceAlerts} governance alert${context.governanceAlerts === 1 ? '' : 's'}`}>
-              <Badge badgeContent={context.governanceAlerts} color="error">
-                <Security sx={{ fontSize: 16, color: '#ef4444' }} />
-              </Badge>
-            </Tooltip>
+          {/* Quick Status Indicators */}
+          {systemStatus.totalAgents > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-4 p-2 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <div className={`text-sm font-bold ${getSystemHealthColor()}`}>
+                  {(systemStatus.averageTrustScore * 100).toFixed(0)}%
+                </div>
+                <div className="text-xs text-gray-600">Trust</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-sm font-bold ${systemStatus.activeAlerts > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {systemStatus.activeAlerts}
+                </div>
+                <div className="text-xs text-gray-600">Alerts</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-sm font-bold ${systemStatus.recentViolations > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {systemStatus.recentViolations}
+                </div>
+                <div className="text-xs text-gray-600">Violations</div>
+              </div>
+            </div>
           )}
-        </Stack>
 
-        {/* Suggested Actions */}
-        {context.suggestedActions.length > 0 && (
-          <>
-            <Divider sx={{ borderColor: '#4a5568', mb: 2 }} />
-            <Typography variant="caption" sx={{ color: '#a0aec0', mb: 1, display: 'block' }}>
-              Suggested Actions
-            </Typography>
-            <Stack spacing={1}>
-              {context.suggestedActions.slice(0, expanded ? 4 : 2).map((action) => (
-                <Box
-                  key={action.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    p: 1,
-                    backgroundColor: '#374151',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: '#4b5563',
-                      transform: 'translateX(2px)'
-                    }
-                  }}
-                  onClick={() => handleActionClick(action)}
-                >
-                  <Box sx={{ color: getPriorityColor(action.priority) }}>
-                    {action.icon}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="caption" sx={{ 
-                      color: 'white', 
-                      fontWeight: 500,
-                      display: 'block',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {action.title}
-                    </Typography>
-                    <Typography variant="caption" sx={{ 
-                      color: '#a0aec0',
-                      fontSize: '0.7rem',
-                      display: 'block',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {action.description}
-                    </Typography>
-                  </Box>
-                  <Chip 
-                    label={action.priority}
-                    size="small"
-                    sx={{
-                      backgroundColor: getPriorityColor(action.priority),
-                      color: 'white',
-                      fontSize: '0.6rem',
-                      height: 16,
-                      '& .MuiChip-label': { px: 0.5 }
-                    }}
-                  />
-                </Box>
-              ))}
-            </Stack>
-          </>
-        )}
+          {/* Navigation Suggestions */}
+          <div className="space-y-2">
+            {suggestions.length === 0 ? (
+              <div className="text-center py-4">
+                <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">All systems running smoothly</p>
+                <p className="text-xs text-gray-500">No immediate actions required</p>
+              </div>
+            ) : (
+              suggestions.map((suggestion) => (
+                <Tooltip key={suggestion.id}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`p-3 border-l-4 rounded-r-lg cursor-pointer transition-all hover:shadow-md ${getPriorityColor(suggestion.priority)}`}
+                      onClick={() => handleNavigate(suggestion)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {suggestion.icon}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{suggestion.title}</span>
+                              {suggestion.badge && (
+                                <Badge variant={suggestion.badge.variant} className="text-xs">
+                                  {suggestion.badge.text}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">{suggestion.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{suggestion.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))
+            )}
+          </div>
 
-        {/* Quick Navigation */}
-        {expanded && (
-          <>
-            <Divider sx={{ borderColor: '#4a5568', my: 2 }} />
-            <Typography variant="caption" sx={{ color: '#a0aec0', mb: 1, display: 'block' }}>
-              Quick Navigation
-            </Typography>
-            <Stack direction="row" spacing={1}>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CloudUpload />}
-                onClick={() => navigate('/agents/deploy')}
-                sx={{
-                  borderColor: '#4a5568',
-                  color: '#a0aec0',
-                  fontSize: '0.7rem',
-                  '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-                }}
-              >
-                Deploy
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<Integration />}
-                onClick={() => navigate('/settings/integrations')}
-                sx={{
-                  borderColor: '#4a5568',
-                  color: '#a0aec0',
-                  fontSize: '0.7rem',
-                  '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-                }}
-              >
-                Integrations
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<Assessment />}
-                onClick={() => navigate('/governance/overview')}
-                sx={{
-                  borderColor: '#4a5568',
-                  color: '#a0aec0',
-                  fontSize: '0.7rem',
-                  '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-                }}
-              >
-                Governance
-              </Button>
-            </Stack>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          {/* Quick Actions */}
+          {showQuickActions && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-700">Quick Actions</span>
+                <div className="flex gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/deploy')}
+                        className="h-6 text-xs"
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        Deploy
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Quick access to agent deployment</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/governance-overview')}
+                        className="h-6 text-xs"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Monitor
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Quick access to governance monitoring</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };
 
