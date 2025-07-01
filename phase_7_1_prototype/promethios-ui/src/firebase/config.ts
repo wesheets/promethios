@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, initializeFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -27,16 +27,8 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Initialize Firestore with working configuration for nam5 database
-const db = initializeFirestore(app, {
-  // Use long polling for nam5 multi-region database compatibility
-  experimentalForceLongPolling: true,
-  ignoreUndefinedProperties: true
-});
-
-console.log('🔧 Firestore initialized with working nam5 configuration');
-console.log('🔧 Long polling enabled for region compatibility');
-console.log('🔧 Database settings:', db._delegate._databaseId);
+const db = getFirestore(app);
+console.log('Firestore initialized with default configuration');
 
 export { auth, googleProvider, firebaseConfig, db };
 export default app;
