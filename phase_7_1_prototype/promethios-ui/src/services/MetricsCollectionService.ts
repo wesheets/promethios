@@ -7,7 +7,7 @@
 
 import { getAnalytics, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { app } from '../firebase/config';
+import app from '../firebase/config';
 
 // Types for different metric categories
 export interface UserInteractionMetric {
