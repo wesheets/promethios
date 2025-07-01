@@ -11,6 +11,8 @@ from src.routes.user import user_bp
 from src.routes.agent_metrics import agent_metrics_bp
 from src.routes.policy_enhancement import policy_enhancement_bp
 from src.routes.promethios_policy_integration import promethios_policy_bp
+from src.routes.trust_metrics_integration import trust_metrics_bp
+from src.routes.reporting_integration import reporting_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -19,10 +21,12 @@ app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Register blueprints
-app.register_blueprint(user_bp, url_prefix='/api')
-app.register_blueprint(agent_metrics_bp, url_prefix='/api/agents')
+app.register_blueprint(user_bp, url_prefix='/api/user')
+app.register_blueprint(agent_metrics_bp, url_prefix='/api/agent-metrics')
 app.register_blueprint(policy_enhancement_bp, url_prefix='/api/policy-enhancement')
 app.register_blueprint(promethios_policy_bp, url_prefix='/api/promethios-policy')
+app.register_blueprint(trust_metrics_bp, url_prefix='/api/trust-metrics')
+app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
