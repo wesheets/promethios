@@ -453,6 +453,7 @@ const EmotionalVeritasPage: React.FC = () => {
           <Typography variant="body1" sx={{ color: '#a0aec0' }}>
             Advanced emotional monitoring with governance correlation and trust analysis
           </Typography>
+          {/* Enhanced version - Build timestamp: 2025-01-07 */}
         </Box>
         <Box display="flex" gap={2}>
           <FormControlLabel
