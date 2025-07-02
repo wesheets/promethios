@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
+import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
 import {
   Box,
   Card,
@@ -142,9 +145,15 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const PreferencesSettingsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [notificationTestResult, setNotificationTestResult] = useState<string | null>(null);
 
   // Mock preferences data
   const [uiPreferences, setUIPreferences] = useState<UIPreferences>({
@@ -210,12 +219,134 @@ const PreferencesSettingsPage: React.FC = () => {
     setTabValue(newValue);
   };
 
+  // Real data loading functions with authentication
+  const loadUserPreferences = useCallback(async () => {
+    if (!currentUser) {
+      setAuthError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Load user preferences from backend
+      const [uiPrefs, notifPrefs, accessPrefs] = await Promise.all([
+        authApiService.getUserUIPreferences(currentUser),
+        authApiService.getUserNotificationPreferences(currentUser),
+        authApiService.getUserAccessibilityPreferences(currentUser)
+      ]);
+
+      if (uiPrefs) {
+        setUIPreferences(prev => ({ ...prev, ...uiPrefs }));
+      }
+      
+      if (notifPrefs) {
+        setNotificationPreferences(prev => ({ ...prev, ...notifPrefs }));
+      }
+
+      if (accessPrefs) {
+        setAccessibilityPreferences(prev => ({ ...prev, ...accessPrefs }));
+      }
+
+    } catch (error) {
+      console.error('Failed to load user preferences:', error);
+      setAuthError('Failed to load user preferences');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
+  // Load data on component mount and user change
+  useEffect(() => {
+    loadUserPreferences();
+  }, [loadUserPreferences]);
+
+  // Enhanced save function with notifications integration
   const handleSavePreferences = async () => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
+    if (!currentUser) {
+      setAuthError('Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Save all preferences with governance integration
+      await Promise.all([
+        authApiService.updateUserUIPreferences(currentUser, uiPreferences),
+        authApiService.updateUserNotificationPreferences(currentUser, notificationPreferences),
+        authApiService.updateUserAccessibilityPreferences(currentUser, accessibilityPreferences)
+      ]);
+
+      // Update governance notification settings if needed
+      await governanceDashboardBackendService.updateUserNotificationSettings(currentUser, notificationPreferences);
+
+      setSaveSuccess(true);
+      
+      // Auto-hide success message
+      setTimeout(() => setSaveSuccess(false), 3000);
+
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+      setAuthError('Failed to save preferences');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Test notification function
+  const handleTestNotification = async (type: string) => {
+    if (!currentUser) {
+      setNotificationTestResult('Authentication required');
+      return;
+    }
+
+    try {
+      setNotificationTestResult('Sending test notification...');
+      
+      // Send test notification through governance system
+      await governanceDashboardBackendService.sendTestNotification(currentUser, {
+        type,
+        preferences: notificationPreferences
+      });
+
+      setNotificationTestResult(`Test ${type} notification sent successfully!`);
+      
+      // Auto-hide result message
+      setTimeout(() => setNotificationTestResult(null), 5000);
+
+    } catch (error) {
+      console.error('Failed to send test notification:', error);
+      setNotificationTestResult('Failed to send test notification');
+      setTimeout(() => setNotificationTestResult(null), 5000);
+    }
+  };
+
+  // Authentication validation
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          <AlertTitle>Authentication Required</AlertTitle>
+          Please log in to access preferences settings. This page requires user authentication to manage personal preferences.
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (loading && !uiPreferences.theme) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Preferences
+        </Typography>
+        <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
 
   const handleResetToDefaults = () => {
     setUIPreferences({

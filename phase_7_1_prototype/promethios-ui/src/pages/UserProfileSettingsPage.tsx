@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
+import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
 import {
   Box,
   Card,
@@ -150,11 +153,17 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const UserProfileSettingsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profileVerificationStatus, setProfileVerificationStatus] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
 

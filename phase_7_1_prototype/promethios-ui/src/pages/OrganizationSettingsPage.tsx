@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
+import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
+import { trustBackendService } from '../services/trustBackendService';
 import {
   Box,
   Card,
@@ -148,15 +152,21 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const OrganizationSettingsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [governanceMetrics, setGovernanceMetrics] = useState<any>(null);
 
-  // Mock organization data
+  // Enhanced organization data with real backend integration
   const [organization, setOrganization] = useState<Organization>({
     id: 'org-001',
     name: 'Promethios Corp',
@@ -265,16 +275,108 @@ const OrganizationSettingsPage: React.FC = () => {
     ]
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  // Real data loading functions with authentication
+  const loadOrganizationData = useCallback(async () => {
+    if (!currentUser) {
+      setAuthError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Load organization data, team members, and governance metrics
+      const [orgData, teamData, govMetrics] = await Promise.all([
+        authApiService.getUserOrganization(currentUser),
+        authApiService.getOrganizationMembers(currentUser),
+        governanceDashboardBackendService.getOrganizationGovernanceMetrics(currentUser)
+      ]);
+
+      if (orgData) {
+        setOrganization(prev => ({ ...prev, ...orgData }));
+      }
+      
+      if (teamData) {
+        setTeamMembers(teamData);
+      }
+
+      if (govMetrics) {
+        setGovernanceMetrics(govMetrics);
+      }
+
+    } catch (error) {
+      console.error('Failed to load organization data:', error);
+      setAuthError('Failed to load organization data');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
+  // Load data on component mount and user change
+  useEffect(() => {
+    loadOrganizationData();
+  }, [loadOrganizationData]);
+
+  // Enhanced save function with notifications
+  const handleSaveOrganization = async () => {
+    if (!currentUser) {
+      setAuthError('Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Save organization data with governance integration
+      await authApiService.updateOrganization(currentUser, organization);
+      
+      // Trigger governance policy update if needed
+      if (governanceMetrics) {
+        await governanceDashboardBackendService.updateOrganizationPolicies(currentUser, organization.settings);
+      }
+
+      setSaveSuccess(true);
+      setEditMode(false);
+      
+      // Auto-hide success message
+      setTimeout(() => setSaveSuccess(false), 3000);
+
+    } catch (error) {
+      console.error('Failed to save organization:', error);
+      setAuthError('Failed to save organization settings');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSaveOrganization = async () => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setEditMode(false);
-    setLoading(false);
+  // Authentication validation
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          <AlertTitle>Authentication Required</AlertTitle>
+          Please log in to access organization settings. This page requires admin authentication to manage organization data.
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (loading && !organization.id) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Organization Settings
+        </Typography>
+        <LinearProgress sx={{ mt: 2 }} />
+      </Box>
+    );
+  }
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
   const handleInviteMember = () => {
@@ -328,28 +430,47 @@ const OrganizationSettingsPage: React.FC = () => {
           Organization Settings
         </Typography>
         <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-          Manage your organization profile, team members, and billing information
+          Manage your organization profile, team members, billing information, and governance settings
         </Typography>
+        
+        {/* Success/Error Messages */}
+        {saveSuccess && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            Organization settings saved successfully!
+          </Alert>
+        )}
+        {authError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {authError}
+          </Alert>
+        )}
       </Box>
 
       {/* Organization Overview Card */}
       <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Avatar
-              src={organization.logo}
-              sx={{ width: 80, height: 80, mr: 3 }}
-            />
+            <Tooltip title="Organization logo - click to upload new logo">
+              <Avatar
+                src={organization.logo}
+                sx={{ width: 80, height: 80, mr: 3, cursor: 'pointer' }}
+              />
+            </Tooltip>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-                {organization.name}
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#a0aec0', mb: 1 }}>
-                {organization.industry} • {organization.size}
-              </Typography>
+              <Tooltip title="Organization name and primary identifier">
+                <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                  {organization.name}
+                </Typography>
+              </Tooltip>
+              <Tooltip title="Industry classification and organization size">
+                <Typography variant="body1" sx={{ color: '#a0aec0', mb: 1 }}>
+                  {organization.industry} • {organization.size}
+                </Typography>
+              </Tooltip>
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                <Chip
-                  label={organization.plan.charAt(0).toUpperCase() + organization.plan.slice(1)}
+                <Tooltip title="Current subscription plan level">
+                  <Chip
+                    label={organization.plan.charAt(0).toUpperCase() + organization.plan.slice(1)}
                   sx={{ backgroundColor: '#3b82f6', color: 'white' }}
                 />
                 <Chip
