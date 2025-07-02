@@ -1,4 +1,4 @@
-import { Notification, NotificationProvider, NotificationFilter } from '../types/notification';
+import { AppNotification, NotificationProvider, NotificationFilter } from '../types/notification';
 
 /**
  * Notification Service
@@ -6,8 +6,8 @@ import { Notification, NotificationProvider, NotificationFilter } from '../types
  */
 export class NotificationService {
   private providers = new Map<string, NotificationProvider>();
-  private notifications: Notification[] = [];
-  private listeners = new Set<(notifications: Notification[]) => void>();
+  private notifications: AppNotification[] = [];
+  private listeners = new Set<(notifications: AppNotification[]) => void>();
   private unsubscribeFunctions = new Map<string, () => void>();
 
   constructor() {

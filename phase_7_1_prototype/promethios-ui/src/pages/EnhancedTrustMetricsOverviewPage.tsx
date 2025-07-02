@@ -89,7 +89,7 @@ import {
   Assignment,
   Build,
   Analytics,
-  PredictiveText,
+  Psychology,
   AutoFixHigh,
   ExpandMore,
   Home,
@@ -855,7 +855,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
               <Tab 
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PredictiveText sx={{ mr: 1 }} />
+                    <Psychology sx={{ mr: 1 }} />
                     ML Insights
                     <Tooltip title="Machine learning powered predictions and insights">
                       <Info sx={{ ml: 0.5, fontSize: '0.8rem' }} />

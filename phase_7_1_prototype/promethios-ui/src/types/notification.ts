@@ -8,7 +8,7 @@ export interface NotificationAction {
   style?: 'primary' | 'secondary' | 'danger';
 }
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error' | 'governance' | 'trust_boundary' | 'observer' | 'system';
   title: string;
@@ -25,17 +25,17 @@ export interface Notification {
 
 export interface NotificationProvider {
   name: string;
-  subscribe(callback: (notification: Notification) => void): () => void;
+  subscribe(callback: (notification: AppNotification) => void): () => void;
   markAsRead(notificationId: string): Promise<void>;
   markAllAsRead(): Promise<void>;
   deleteNotification(notificationId: string): Promise<void>;
-  getNotifications(filter?: NotificationFilter): Promise<Notification[]>;
-  createNotification(notification: Omit<Notification, 'id' | 'timestamp'>): Promise<string>;
+  getNotifications(filter?: NotificationFilter): Promise<AppNotification[]>;
+  createNotification(notification: Omit<AppNotification, 'id' | 'timestamp'>): Promise<string>;
 }
 
 export interface NotificationFilter {
-  type?: Notification['type'][];
-  priority?: Notification['priority'][];
+  type?: AppNotification['type'][];
+  priority?: AppNotification['priority'][];
   category?: string[];
   unreadOnly?: boolean;
   since?: string;
@@ -60,13 +60,13 @@ export interface NotificationHandler {
   name: string;
   type: string;
   priority: number;
-  handle(notification: Notification): Promise<void>;
+  handle(notification: AppNotification): Promise<void>;
 }
 
 export interface NotificationProcessor {
   id: string;
   name: string;
-  process(notification: Notification): Promise<Notification>;
+  process(notification: AppNotification): Promise<AppNotification>;
 }
 
 export interface NotificationConfig {
