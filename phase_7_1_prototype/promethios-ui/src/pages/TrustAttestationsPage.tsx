@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
+import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
+import { trustBackendService } from '../services/trustBackendService';
 import { useTrustAttestations } from '../hooks/useTrustAttestations';
 import {
   Box,
@@ -117,12 +121,16 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const TrustAttestationsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Use real backend data
+  // Use real backend data with user authentication
   const {
     attestations,
     chains: attestationChains,
@@ -202,6 +210,18 @@ const TrustAttestationsPage: React.FC = () => {
     return createdAt > weekAgo;
   }).length;
 
+  // Authentication validation
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          <AlertTitle>Authentication Required</AlertTitle>
+          Please log in to access trust attestations management. This page requires user authentication to display user-scoped attestation data.
+        </Alert>
+      </Box>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -275,8 +295,12 @@ const TrustAttestationsPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Badge sx={{ color: '#3b82f6', mr: 2 }} />
-                <Typography variant="h6">Total Attestations</Typography>
+                <Tooltip title="Digital certificates that verify the trustworthiness and credibility of agents">
+                  <Badge sx={{ color: '#3b82f6', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Total number of trust attestations issued and managed">
+                  <Typography variant="h6">Total Attestations</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
                 {totalAttestations}
@@ -292,8 +316,12 @@ const TrustAttestationsPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <CheckCircle sx={{ color: '#10b981', mr: 2 }} />
-                <Typography variant="h6">Active Attestations</Typography>
+                <Tooltip title="Attestations that are currently valid and not expired or revoked">
+                  <CheckCircle sx={{ color: '#10b981', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Number of attestations that are currently active and valid">
+                  <Typography variant="h6">Active Attestations</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: '#10b981', fontWeight: 'bold' }}>
                 {activeAttestations}
@@ -309,8 +337,12 @@ const TrustAttestationsPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <TrendingUp sx={{ color: '#f59e0b', mr: 2 }} />
-                <Typography variant="h6">Average Confidence</Typography>
+                <Tooltip title="Average confidence score across all trust attestations">
+                  <TrendingUp sx={{ color: '#f59e0b', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Mean confidence level indicating the reliability of attestations">
+                  <Typography variant="h6">Average Confidence</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: getConfidenceColor(averageConfidence), fontWeight: 'bold' }}>
                 {Math.round(averageConfidence * 100)}%

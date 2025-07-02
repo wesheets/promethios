@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
+import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
+import { trustBackendService } from '../services/trustBackendService';
 import { useTrustBoundaries } from '../hooks/useTrustBoundaries';
 import {
   Box,
@@ -116,11 +120,15 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const TrustBoundariesPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
   const [createBoundaryOpen, setCreateBoundaryOpen] = useState(false);
   const [createThresholdOpen, setCreateThresholdOpen] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Use real backend data
+  // Use real backend data with user authentication
   const {
     boundaries,
     thresholds,
@@ -187,6 +195,18 @@ const TrustBoundariesPage: React.FC = () => {
   const boundariesAtRisk = boundaries.filter(b => b.trust_level < 80).length;
   const totalPolicies = boundaries.reduce((sum, b) => sum + b.policies.length, 0);
 
+  // Authentication validation
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          <AlertTitle>Authentication Required</AlertTitle>
+          Please log in to access trust boundaries management. This page requires user authentication to display user-scoped trust data.
+        </Alert>
+      </Box>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -231,8 +251,12 @@ const TrustBoundariesPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Shield sx={{ color: '#3b82f6', mr: 2 }} />
-                <Typography variant="h6">Active Boundaries</Typography>
+                <Tooltip title="Trust boundaries that are currently active and enforcing policies between agents">
+                  <Shield sx={{ color: '#3b82f6', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Number of trust boundaries currently active and operational">
+                  <Typography variant="h6">Active Boundaries</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
                 {activeBoundaries}
@@ -248,8 +272,12 @@ const TrustBoundariesPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Timeline sx={{ color: '#10b981', mr: 2 }} />
-                <Typography variant="h6">Average Trust Level</Typography>
+                <Tooltip title="Average trust level across all active trust boundaries">
+                  <Timeline sx={{ color: '#10b981', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Mean trust score calculated from all trust boundaries">
+                  <Typography variant="h6">Average Trust Level</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: getTrustLevelColor(averageTrustLevel), fontWeight: 'bold' }}>
                 {Math.round(averageTrustLevel)}%
@@ -265,8 +293,12 @@ const TrustBoundariesPage: React.FC = () => {
           <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Warning sx={{ color: '#f59e0b', mr: 2 }} />
-                <Typography variant="h6">At Risk</Typography>
+                <Tooltip title="Trust boundaries with trust levels below the 80% safety threshold">
+                  <Warning sx={{ color: '#f59e0b', mr: 2 }} />
+                </Tooltip>
+                <Tooltip title="Number of trust boundaries that may require attention due to low trust scores">
+                  <Typography variant="h6">At Risk</Typography>
+                </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: boundariesAtRisk > 0 ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
                 {boundariesAtRisk}
