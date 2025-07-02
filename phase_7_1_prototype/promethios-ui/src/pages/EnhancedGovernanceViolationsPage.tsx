@@ -3,12 +3,14 @@
  * 
  * Enterprise-grade violation tracking and remediation interface with advanced analytics,
  * real-time updates, workflow management, and notification system integration.
- * Uses real AgentViolation data from the Promethios backend.
+ * Uses real AgentViolation data from the Promethios backend with proper user authentication.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
 import { useNotificationBackend } from '../hooks/useNotificationBackend';
 import {
   Box,
@@ -266,6 +268,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const EnhancedGovernanceViolationsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   // State management
   const [activeTab, setActiveTab] = useState(0);
   const [violations, setViolations] = useState<RealViolation[]>([]);
@@ -326,31 +331,29 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [realTimeEnabled]);
 
-  // Load real violation data from backend
+  // Load real violation data from backend with authentication
   const loadViolations = useCallback(async (showLoading = true) => {
+    if (!currentUser) {
+      setError('User authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (showLoading) {
         setLoading(true);
         setError(null);
       }
       
-      // Call the real backend API
-      const response = await fetch('/api/agent-metrics/violations', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Call the authenticated backend API
+      const data = await authApiService.getUserViolations(currentUser, {
+        limit: 1000 // Load all violations for the user
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to load violations: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
       // Transform backend data to include enhanced fields
-      const enhancedViolations = data.map((violation: any) => ({
+      const enhancedViolations = (data.violations || []).map((violation: any) => ({
         ...violation,
+        id: violation.id || violation.violation_id,
         status: violation.status || 'open',
         resolved_at: violation.resolved_at || null,
         resolved_by: violation.resolved_by || null,
@@ -360,7 +363,10 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
         escalated: violation.escalated || false,
         impact_score: violation.impact_score || calculateImpactScore(violation),
         business_impact: violation.business_impact || 'Medium',
-        tags: violation.tags || []
+        tags: violation.tags || [],
+        agent_name: violation.agent_name || `Agent ${violation.agent_id}`,
+        policy_name: violation.policy_name || `Policy ${violation.policy_id}`,
+        timestamp: violation.timestamp || violation.detected_at
       }));
       
       setViolations(enhancedViolations);
@@ -379,7 +385,7 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
         setLoading(false);
       }
     }
-  }, []);
+  }, [currentUser]);
 
   // Calculate SLA deadline based on severity
   const calculateSLADeadline = (violation: any): string => {
@@ -663,26 +669,22 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
     };
   }, [violations]);
 
-  // Resolve violation with notification
+  // Resolve violation with notification and authentication
   const handleResolveViolation = async (violationId: number, notes: string, status: 'resolved' | 'false_positive') => {
+    if (!currentUser) {
+      setError('User authentication required');
+      return;
+    }
+
     try {
       setResolving(true);
       
-      const response = await fetch(`/api/agent-metrics/violations/${violationId}/resolve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status,
-          resolution_notes: notes,
-          resolved_by: 'current_user' // In real app, get from auth context
-        }),
+      // Use authenticated API service
+      await authApiService.resolveViolation(currentUser, violationId.toString(), {
+        status,
+        resolution_notes: notes,
+        resolved_by: currentUser.email || 'unknown'
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to resolve violation: ${response.statusText}`);
-      }
       
       // Update local state
       const updatedViolations = violations.map(v => 
@@ -692,7 +694,7 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
               status, 
               resolution_notes: notes, 
               resolved_at: new Date().toISOString(),
-              resolved_by: 'current_user'
+              resolved_by: currentUser.email || 'unknown'
             }
           : v
       );
@@ -710,7 +712,7 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
         metadata: {
           violation_id: violationId,
           action: status,
-          resolved_by: 'current_user'
+          resolved_by: currentUser.email || 'unknown'
         }
       });
       
@@ -726,28 +728,22 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
     }
   };
 
-  // Assign violation with notification
+  // Assign violation with notification and authentication
   const handleAssignViolation = async (violationId: number, assigneeEmail: string, priority: string, dueDate: string, notes: string) => {
+    if (!currentUser) {
+      setError('User authentication required');
+      return;
+    }
+
     try {
       setResolving(true);
       
-      const response = await fetch(`/api/agent-metrics/violations/${violationId}/assign`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          assigned_to: assigneeEmail,
-          priority,
-          due_date: dueDate,
-          assignment_notes: notes,
-          assigned_by: 'current_user'
-        }),
+      // Use authenticated API service
+      await authApiService.assignViolation(currentUser, violationId.toString(), {
+        assigned_to: assigneeEmail,
+        priority,
+        sla_deadline: dueDate
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to assign violation: ${response.statusText}`);
-      }
       
       // Update local state
       const updatedViolations = violations.map(v => 
@@ -806,16 +802,17 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
     );
 
     for (const violation of overdueViolations) {
+      if (!currentUser) continue;
+      
       try {
-        await fetch(`/api/agent-metrics/violations/${violation.id}/escalate`, {
+        // Use authenticated API call for escalation
+        await authApiService.authenticatedFetch(`/api/agent-metrics/violations/${violation.id}/escalate`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            escalated_by: 'system',
+          body: {
+            escalated_by: currentUser.email || 'system',
             escalation_reason: 'SLA deadline exceeded'
-          }),
+          },
+          user: currentUser
         });
 
         // Create escalation notification
@@ -851,31 +848,29 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [checkAndEscalateOverdue]);
 
-  // Bulk operations with notifications
+  // Bulk operations with notifications and authentication
   const handleBulkAction = async () => {
     if (selectedViolations.length === 0) return;
+    if (!currentUser) {
+      setError('User authentication required');
+      return;
+    }
     
     try {
       setResolving(true);
       
       if (bulkAction === 'resolve') {
-        // Bulk resolve violations
-        const response = await fetch('/api/agent-metrics/violations/bulk-resolve', {
+        // Bulk resolve violations using authenticated API
+        await authApiService.authenticatedFetch('/api/agent-metrics/violations/bulk-resolve', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             violation_ids: selectedViolations,
             status: 'resolved',
             resolution_notes: resolutionNotes || 'Bulk resolved',
-            resolved_by: 'current_user'
-          }),
+            resolved_by: currentUser.email || 'unknown'
+          },
+          user: currentUser
         });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to bulk resolve violations: ${response.statusText}`);
-        }
         
         // Update local state
         setViolations(prev => prev.map(v => 
@@ -885,7 +880,7 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
                 status: 'resolved' as const, 
                 resolution_notes: resolutionNotes || 'Bulk resolved',
                 resolved_at: new Date().toISOString(),
-                resolved_by: 'current_user'
+                resolved_by: currentUser.email || 'unknown'
               }
             : v
         ));
@@ -905,24 +900,18 @@ const EnhancedGovernanceViolationsPage: React.FC = () => {
         });
         
       } else if (bulkAction === 'assign') {
-        // Bulk assign violations
-        const response = await fetch('/api/agent-metrics/violations/bulk-assign', {
+        // Bulk assign violations using authenticated API
+        await authApiService.authenticatedFetch('/api/agent-metrics/violations/bulk-assign', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             violation_ids: selectedViolations,
             assigned_to: assignee,
             priority,
             due_date: dueDate,
             assignment_notes: assignmentNotes
-          }),
+          },
+          user: currentUser
         });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to bulk assign violations: ${response.statusText}`);
-        }
         
         // Update local state
         setViolations(prev => prev.map(v => 

@@ -1,7 +1,7 @@
 /**
  * Governance Dashboard Backend Service
  * 
- * Service layer for governance dashboard data using existing policy and audit APIs.
+ * Service layer for governance dashboard data using authenticated APIs.
  * Provides comprehensive governance metrics, violations, and reporting functionality.
  */
 
@@ -9,6 +9,8 @@ import { API_BASE_URL } from '../config/api';
 import { policyBackendService } from './policyBackendService';
 import { auditBackendService } from './auditBackendService';
 import { trustBackendService } from './trustBackendService';
+import { authApiService } from './authApiService';
+import { User } from 'firebase/auth';
 
 export interface GovernanceMetrics {
   total_policies: number;
@@ -98,34 +100,55 @@ class GovernanceDashboardBackendService {
   }
 
   /**
-   * Get comprehensive governance metrics
+   * Get comprehensive governance metrics for authenticated user
    */
-  async getGovernanceMetrics(): Promise<GovernanceMetrics> {
+  async getGovernanceMetrics(user: User | null): Promise<GovernanceMetrics> {
     try {
-      // Aggregate data from multiple services
-      const [policies, auditMetrics, trustMetrics] = await Promise.all([
-        policyBackendService.getPolicies(),
-        auditBackendService.getAuditMetrics(),
-        trustBackendService.getTrustMetrics()
+      // Get real user-scoped data from authenticated APIs
+      const [userAnalytics, userViolations, userAgents] = await Promise.all([
+        authApiService.getUserAnalytics(user),
+        authApiService.getUserViolations(user, { limit: 1000 }),
+        authApiService.getUserAgents(user)
       ]);
 
-      // Calculate governance metrics
+      // Calculate real governance metrics from user's data
+      const totalViolations = userViolations.violations?.length || 0;
+      const criticalViolations = userViolations.violations?.filter((v: any) => v.severity === 'critical').length || 0;
+      const resolvedViolations = userViolations.violations?.filter((v: any) => v.status === 'resolved').length || 0;
+      const pendingViolations = userViolations.violations?.filter((v: any) => v.status === 'open' || v.status === 'investigating').length || 0;
+      const recentViolations = userViolations.violations?.filter((v: any) => {
+        const violationDate = new Date(v.timestamp);
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return violationDate > sevenDaysAgo;
+      }).length || 0;
+
+      // Calculate compliance score based on violations
+      const complianceScore = totalViolations > 0 
+        ? Math.max(0, Math.round(100 - (criticalViolations * 20) - (pendingViolations * 5)))
+        : 95;
+
+      // Calculate trust score from analytics
+      const trustScore = userAnalytics.trust_metrics?.average_trust_score 
+        ? Math.round(userAnalytics.trust_metrics.average_trust_score * 100)
+        : 85;
+
       const metrics: GovernanceMetrics = {
-        total_policies: policies.policies.length,
-        active_policies: policies.policies.filter(p => p.status === 'active').length,
-        policy_violations: auditMetrics.policy_violations || 0,
-        compliance_score: auditMetrics.compliance_score || 85,
-        trust_score: Math.round((trustMetrics.average_trust_score || 0.8) * 100),
-        audit_events: auditMetrics.total_events || 0,
-        recent_violations: auditMetrics.recent_violations || 0,
-        resolved_violations: auditMetrics.resolved_violations || 0,
-        pending_violations: auditMetrics.pending_violations || 0,
-        critical_violations: auditMetrics.critical_violations || 0
+        total_policies: userAnalytics.policy_metrics?.total_policies || 0,
+        active_policies: userAnalytics.policy_metrics?.active_policies || 0,
+        policy_violations: totalViolations,
+        compliance_score: complianceScore,
+        trust_score: trustScore,
+        audit_events: userAnalytics.audit_metrics?.total_events || 0,
+        recent_violations: recentViolations,
+        resolved_violations: resolvedViolations,
+        pending_violations: pendingViolations,
+        critical_violations: criticalViolations
       };
 
       return metrics;
     } catch (error) {
       console.error('Error fetching governance metrics:', error);
+      // Return empty metrics on error
       return {
         total_policies: 0,
         active_policies: 0,
@@ -142,34 +165,37 @@ class GovernanceDashboardBackendService {
   }
 
   /**
-   * Get governance violations
+   * Get governance violations for authenticated user
    */
-  async getGovernanceViolations(): Promise<GovernanceViolation[]> {
+  async getGovernanceViolations(user: User | null, filters: {
+    agent_id?: string;
+    severity?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<GovernanceViolation[]> {
     try {
-      // Get audit events and transform them into violations
-      const auditEvents = await auditBackendService.queryAuditLogs({
-        event_type: 'policy_violation',
-        limit: 100
-      });
-
-      const violations: GovernanceViolation[] = auditEvents.events.map((event, index) => ({
-        violation_id: `violation_${event.event_id}`,
-        violation_type: this.getViolationTypeFromEvent(event),
-        severity: this.getSeverityFromEvent(event),
-        agent_id: event.agent_id || `agent_${index}`,
-        agent_name: `Agent ${event.agent_id || index}`,
-        policy_id: event.policy_id,
-        policy_name: event.policy_name || `Policy ${event.policy_id}`,
-        description: event.description || 'Policy violation detected',
-        detected_at: event.timestamp,
-        resolved_at: Math.random() < 0.6 ? new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
-        status: this.getViolationStatus(),
-        impact_score: Math.random() * 10,
-        remediation_steps: this.getRemediationSteps(event),
-        evidence: event.evidence || [],
-        assigned_to: Math.random() < 0.7 ? `admin_${Math.floor(Math.random() * 5)}` : undefined,
-        resolution_notes: Math.random() < 0.6 ? 'Violation resolved through policy adjustment' : undefined,
-        metadata: event.metadata || {}
+      const response = await authApiService.getUserViolations(user, filters);
+      
+      // Transform backend data to frontend format
+      const violations: GovernanceViolation[] = (response.violations || []).map((violation: any) => ({
+        violation_id: violation.id.toString(),
+        violation_type: violation.violation_type || 'policy',
+        severity: violation.severity || 'medium',
+        agent_id: violation.agent_id,
+        agent_name: `Agent ${violation.agent_id}`,
+        policy_id: violation.policy_id,
+        policy_name: violation.policy_name || `Policy ${violation.policy_id}`,
+        description: violation.description || 'Policy violation detected',
+        detected_at: violation.timestamp,
+        resolved_at: violation.resolved_at,
+        status: violation.status || 'open',
+        impact_score: Math.random() * 10, // TODO: Calculate real impact score
+        remediation_steps: violation.remediation_suggested ? [violation.remediation_suggested] : [],
+        evidence: violation.context ? [violation.context] : [],
+        assigned_to: violation.assigned_to,
+        resolution_notes: violation.resolution_notes,
+        metadata: violation.context || {}
       }));
 
       return violations;
@@ -180,13 +206,13 @@ class GovernanceDashboardBackendService {
   }
 
   /**
-   * Get dashboard overview
+   * Get dashboard overview for authenticated user
    */
-  async getDashboardOverview(): Promise<DashboardOverview> {
+  async getDashboardOverview(user: User | null): Promise<DashboardOverview> {
     try {
       const [metrics, violations] = await Promise.all([
-        this.getGovernanceMetrics(),
-        this.getGovernanceViolations()
+        this.getGovernanceMetrics(user),
+        this.getGovernanceViolations(user)
       ]);
 
       // Calculate governance health
@@ -222,13 +248,13 @@ class GovernanceDashboardBackendService {
   }
 
   /**
-   * Generate governance report
+   * Generate governance report for authenticated user
    */
-  async generateGovernanceReport(reportType: 'compliance' | 'audit' | 'violations' | 'trust' | 'summary'): Promise<GovernanceReport> {
+  async generateGovernanceReport(user: User | null, reportType: 'compliance' | 'audit' | 'violations' | 'trust' | 'summary'): Promise<GovernanceReport> {
     try {
       const [metrics, violations] = await Promise.all([
-        this.getGovernanceMetrics(),
-        this.getGovernanceViolations()
+        this.getGovernanceMetrics(user),
+        this.getGovernanceViolations(user)
       ]);
 
       const report: GovernanceReport = {
@@ -242,7 +268,7 @@ class GovernanceDashboardBackendService {
         status: 'completed',
         format: 'json',
         metrics: {
-          total_agents: 10, // Simulated
+          total_agents: await this.getUserAgentCount(user),
           total_policies: metrics.total_policies,
           total_violations: violations.length,
           compliance_score: metrics.compliance_score,
@@ -251,7 +277,8 @@ class GovernanceDashboardBackendService {
         sections: this.generateReportSections(reportType, metrics, violations),
         metadata: {
           generated_by: 'governance_dashboard',
-          version: '1.0.0'
+          version: '1.0.0',
+          user_id: user?.uid || 'unknown'
         }
       };
 
@@ -263,23 +290,31 @@ class GovernanceDashboardBackendService {
   }
 
   /**
-   * Resolve a governance violation
+   * Resolve a governance violation for authenticated user
    */
-  async resolveViolation(violationId: string, resolutionNotes: string): Promise<void> {
+  async resolveViolation(user: User | null, violationId: string, resolutionNotes: string): Promise<void> {
     try {
-      // Simulate violation resolution by logging an audit event
-      await auditBackendService.logAuditEvent({
-        event_type: 'violation_resolved',
-        severity: 'info',
-        description: `Violation ${violationId} resolved: ${resolutionNotes}`,
-        metadata: {
-          violation_id: violationId,
-          resolution_notes: resolutionNotes
-        }
+      await authApiService.resolveViolation(user, violationId, {
+        status: 'resolved',
+        resolution_notes: resolutionNotes,
+        resolved_by: user?.email || 'unknown'
       });
     } catch (error) {
       console.error('Error resolving violation:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get user's agent count
+   */
+  private async getUserAgentCount(user: User | null): Promise<number> {
+    try {
+      const agents = await authApiService.getUserAgents(user);
+      return agents.length;
+    } catch (error) {
+      console.error('Error fetching user agent count:', error);
+      return 0;
     }
   }
 

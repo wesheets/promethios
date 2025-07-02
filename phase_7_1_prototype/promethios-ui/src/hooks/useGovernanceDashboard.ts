@@ -3,9 +3,11 @@
  * 
  * React hook for managing governance dashboard state and backend integration.
  * Provides state management for metrics, violations, reports, and overview data.
+ * Now includes proper user authentication and scoping.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import governanceDashboardBackendService, {
   GovernanceMetrics,
   GovernanceViolation,
@@ -71,6 +73,8 @@ interface UseGovernanceDashboardActions {
 export interface UseGovernanceDashboardReturn extends UseGovernanceDashboardState, UseGovernanceDashboardActions {}
 
 export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
+  const { currentUser } = useAuth();
+  
   // State
   const [metrics, setMetrics] = useState<GovernanceMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -94,11 +98,16 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
 
   // Metrics Actions
   const loadMetrics = useCallback(async () => {
+    if (!currentUser) {
+      setMetricsError('User authentication required');
+      return;
+    }
+
     setMetricsLoading(true);
     setMetricsError(null);
     
     try {
-      const metricsData = await governanceDashboardBackendService.getGovernanceMetrics();
+      const metricsData = await governanceDashboardBackendService.getGovernanceMetrics(currentUser);
       setMetrics(metricsData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load governance metrics';
@@ -107,15 +116,20 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setMetricsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // Violations Actions
   const loadViolations = useCallback(async () => {
+    if (!currentUser) {
+      setViolationsError('User authentication required');
+      return;
+    }
+
     setViolationsLoading(true);
     setViolationsError(null);
     
     try {
-      const violationsData = await governanceDashboardBackendService.getGovernanceViolations();
+      const violationsData = await governanceDashboardBackendService.getGovernanceViolations(currentUser);
       setViolations(violationsData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load governance violations';
@@ -124,14 +138,19 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setViolationsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   const resolveViolation = useCallback(async (violationId: string, resolutionNotes: string) => {
+    if (!currentUser) {
+      setOperationError('User authentication required');
+      return;
+    }
+
     setResolvingViolation(true);
     setOperationError(null);
     
     try {
-      await governanceDashboardBackendService.resolveViolation(violationId, resolutionNotes);
+      await governanceDashboardBackendService.resolveViolation(currentUser, violationId, resolutionNotes);
       
       // Update the violation status locally
       setViolations(prev => prev.map(violation => 
@@ -152,19 +171,24 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setResolvingViolation(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // Reports Actions
   const loadReports = useCallback(async () => {
+    if (!currentUser) {
+      setReportsError('User authentication required');
+      return;
+    }
+
     setReportsLoading(true);
     setReportsError(null);
     
     try {
-      // Simulate loading existing reports
+      // Generate sample reports for the user
       const mockReports: GovernanceReport[] = [
-        await governanceDashboardBackendService.generateGovernanceReport('summary'),
-        await governanceDashboardBackendService.generateGovernanceReport('compliance'),
-        await governanceDashboardBackendService.generateGovernanceReport('violations')
+        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'summary'),
+        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'compliance'),
+        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'violations')
       ];
       
       setReports(mockReports);
@@ -175,14 +199,19 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setReportsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   const generateReport = useCallback(async (reportType: 'compliance' | 'audit' | 'violations' | 'trust' | 'summary') => {
+    if (!currentUser) {
+      setOperationError('User authentication required');
+      throw new Error('User authentication required');
+    }
+
     setGeneratingReport(true);
     setOperationError(null);
     
     try {
-      const report = await governanceDashboardBackendService.generateGovernanceReport(reportType);
+      const report = await governanceDashboardBackendService.generateGovernanceReport(currentUser, reportType);
       setReports(prev => [report, ...prev]);
       return report;
     } catch (error) {
@@ -193,15 +222,20 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setGeneratingReport(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // Overview Actions
   const loadOverview = useCallback(async () => {
+    if (!currentUser) {
+      setOverviewError('User authentication required');
+      return;
+    }
+
     setOverviewLoading(true);
     setOverviewError(null);
     
     try {
-      const overviewData = await governanceDashboardBackendService.getDashboardOverview();
+      const overviewData = await governanceDashboardBackendService.getDashboardOverview(currentUser);
       setOverview(overviewData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard overview';
@@ -210,17 +244,22 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     } finally {
       setOverviewLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // Utility Actions
   const refreshAll = useCallback(async () => {
+    if (!currentUser) {
+      console.warn('Cannot refresh data: User authentication required');
+      return;
+    }
+    
     await Promise.all([
       loadMetrics(),
       loadViolations(),
       loadReports(),
       loadOverview()
     ]);
-  }, [loadMetrics, loadViolations, loadReports, loadOverview]);
+  }, [currentUser, loadMetrics, loadViolations, loadReports, loadOverview]);
 
   const clearErrors = useCallback(() => {
     setMetricsError(null);
@@ -254,10 +293,19 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     });
   }, [violations]);
 
-  // Load initial data
+  // Load initial data when user is authenticated
   useEffect(() => {
-    refreshAll();
-  }, [refreshAll]);
+    if (currentUser) {
+      refreshAll();
+    } else {
+      // Clear data when user is not authenticated
+      setMetrics(null);
+      setViolations([]);
+      setReports([]);
+      setOverview(null);
+      clearErrors();
+    }
+  }, [currentUser, refreshAll, clearErrors]);
 
   return {
     // State

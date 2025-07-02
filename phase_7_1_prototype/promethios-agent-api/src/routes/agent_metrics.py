@@ -324,6 +324,292 @@ def health_check():
         'version': '1.0.0'
     }), 200
 
+# User-scoped data retrieval endpoints
+@agent_metrics_bp.route('/violations', methods=['GET'])
+@require_api_key
+def get_user_violations():
+    """
+    Get all violations for the authenticated user's agents
+    """
+    try:
+        # Get query parameters for filtering
+        agent_id = request.args.get('agent_id')
+        severity = request.args.get('severity')
+        status = request.args.get('status')
+        limit = request.args.get('limit', 100, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        
+        # Build query for user's violations
+        query = AgentViolation.query.filter_by(user_id=request.user_id)
+        
+        # Apply filters
+        if agent_id:
+            query = query.filter_by(agent_id=agent_id)
+        if severity:
+            query = query.filter_by(severity=severity)
+        if status:
+            query = query.filter_by(status=status)
+        
+        # Get total count for pagination
+        total_count = query.count()
+        
+        # Apply pagination and ordering
+        violations = query.order_by(AgentViolation.timestamp.desc()).offset(offset).limit(limit).all()
+        
+        # Convert to JSON
+        violations_data = []
+        for violation in violations:
+            violations_data.append({
+                'id': violation.id,
+                'agent_id': violation.agent_id,
+                'user_id': violation.user_id,
+                'deployment_id': violation.deployment_id,
+                'violation_type': violation.violation_type,
+                'severity': violation.severity,
+                'policy_id': violation.policy_id,
+                'policy_name': violation.policy_name,
+                'description': violation.description,
+                'context': json.loads(violation.context) if violation.context else {},
+                'remediation_suggested': violation.remediation_suggested,
+                'timestamp': violation.timestamp.isoformat(),
+                'status': violation.status,
+                'resolution_notes': violation.resolution_notes,
+                'resolved_at': violation.resolved_at.isoformat() if violation.resolved_at else None,
+                'resolved_by': violation.resolved_by,
+                'assigned_to': violation.assigned_to,
+                'sla_deadline': violation.sla_deadline.isoformat() if violation.sla_deadline else None,
+                'escalated': violation.escalated,
+                'impact_score': violation.impact_score,
+                'business_impact': violation.business_impact,
+                'tags': json.loads(violation.tags) if violation.tags else []
+            })
+        
+        return jsonify({
+            'violations': violations_data,
+            'pagination': {
+                'total': total_count,
+                'limit': limit,
+                'offset': offset,
+                'has_more': offset + limit < total_count
+            },
+            'user_id': request.user_id,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"ERROR in get_user_violations: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@agent_metrics_bp.route('/metrics', methods=['GET'])
+@require_api_key
+def get_user_metrics():
+    """
+    Get all metrics for the authenticated user's agents
+    """
+    try:
+        # Get query parameters
+        agent_id = request.args.get('agent_id')
+        limit = request.args.get('limit', 100, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        
+        # Build query for user's metrics
+        query = AgentMetrics.query.filter_by(user_id=request.user_id)
+        
+        if agent_id:
+            query = query.filter_by(agent_id=agent_id)
+        
+        # Get total count
+        total_count = query.count()
+        
+        # Apply pagination and ordering
+        metrics = query.order_by(AgentMetrics.timestamp.desc()).offset(offset).limit(limit).all()
+        
+        # Convert to JSON
+        metrics_data = []
+        for metric in metrics:
+            metrics_data.append({
+                'id': metric.id,
+                'agent_id': metric.agent_id,
+                'user_id': metric.user_id,
+                'deployment_id': metric.deployment_id,
+                'trust_score': metric.trust_score,
+                'compliance_rate': metric.compliance_rate,
+                'response_time_avg': metric.response_time_avg,
+                'error_rate': metric.error_rate,
+                'throughput': metric.throughput,
+                'cpu_usage': metric.cpu_usage,
+                'memory_usage': metric.memory_usage,
+                'disk_usage': metric.disk_usage,
+                'network_io': metric.network_io,
+                'governance_score': metric.governance_score,
+                'policy_adherence': metric.policy_adherence,
+                'violation_count': metric.violation_count,
+                'timestamp': metric.timestamp.isoformat()
+            })
+        
+        return jsonify({
+            'metrics': metrics_data,
+            'pagination': {
+                'total': total_count,
+                'limit': limit,
+                'offset': offset,
+                'has_more': offset + limit < total_count
+            },
+            'user_id': request.user_id,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"ERROR in get_user_metrics: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@agent_metrics_bp.route('/agents', methods=['GET'])
+@require_api_key
+def get_user_agents():
+    """
+    Get all agents for the authenticated user
+    """
+    try:
+        # Get unique agent IDs for this user from heartbeats and metrics
+        agent_heartbeats = db.session.query(AgentHeartbeat.agent_id).filter_by(user_id=request.user_id).distinct().all()
+        agent_metrics = db.session.query(AgentMetrics.agent_id).filter_by(user_id=request.user_id).distinct().all()
+        
+        # Combine and deduplicate agent IDs
+        agent_ids = set()
+        for heartbeat in agent_heartbeats:
+            agent_ids.add(heartbeat.agent_id)
+        for metric in agent_metrics:
+            agent_ids.add(metric.agent_id)
+        
+        # Get latest status for each agent
+        agents_data = []
+        for agent_id in agent_ids:
+            # Get latest heartbeat
+            latest_heartbeat = AgentHeartbeat.query.filter_by(
+                user_id=request.user_id,
+                agent_id=agent_id
+            ).order_by(AgentHeartbeat.timestamp.desc()).first()
+            
+            # Get latest metrics
+            latest_metrics = AgentMetrics.query.filter_by(
+                user_id=request.user_id,
+                agent_id=agent_id
+            ).order_by(AgentMetrics.timestamp.desc()).first()
+            
+            # Get violation count
+            violation_count = AgentViolation.query.filter_by(
+                user_id=request.user_id,
+                agent_id=agent_id,
+                status='open'
+            ).count()
+            
+            # Determine if agent is online (heartbeat within last 5 minutes)
+            is_online = False
+            if latest_heartbeat:
+                time_diff = datetime.utcnow() - latest_heartbeat.timestamp
+                is_online = time_diff.total_seconds() < 300  # 5 minutes
+            
+            agents_data.append({
+                'agent_id': agent_id,
+                'status': 'online' if is_online else 'offline',
+                'last_heartbeat': latest_heartbeat.timestamp.isoformat() if latest_heartbeat else None,
+                'deployment_id': latest_heartbeat.deployment_id if latest_heartbeat else None,
+                'version': latest_heartbeat.version if latest_heartbeat else None,
+                'environment': latest_heartbeat.environment if latest_heartbeat else None,
+                'trust_score': latest_metrics.trust_score if latest_metrics else None,
+                'compliance_rate': latest_metrics.compliance_rate if latest_metrics else None,
+                'open_violations': violation_count,
+                'last_metrics_update': latest_metrics.timestamp.isoformat() if latest_metrics else None
+            })
+        
+        return jsonify({
+            'agents': agents_data,
+            'total_agents': len(agents_data),
+            'user_id': request.user_id,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"ERROR in get_user_agents: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@agent_metrics_bp.route('/analytics', methods=['GET'])
+@require_api_key
+def get_user_analytics():
+    """
+    Get analytics and aggregated data for the authenticated user's agents
+    """
+    try:
+        # Get time range parameters
+        days = request.args.get('days', 30, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get violation analytics
+        violation_stats = db.session.query(
+            AgentViolation.severity,
+            db.func.count(AgentViolation.id).label('count')
+        ).filter(
+            AgentViolation.user_id == request.user_id,
+            AgentViolation.timestamp >= start_date
+        ).group_by(AgentViolation.severity).all()
+        
+        # Get trust score trends
+        trust_trends = db.session.query(
+            db.func.date(AgentMetrics.timestamp).label('date'),
+            db.func.avg(AgentMetrics.trust_score).label('avg_trust_score'),
+            db.func.avg(AgentMetrics.compliance_rate).label('avg_compliance_rate')
+        ).filter(
+            AgentMetrics.user_id == request.user_id,
+            AgentMetrics.timestamp >= start_date
+        ).group_by(db.func.date(AgentMetrics.timestamp)).order_by('date').all()
+        
+        # Get agent performance summary
+        agent_performance = db.session.query(
+            AgentMetrics.agent_id,
+            db.func.avg(AgentMetrics.trust_score).label('avg_trust_score'),
+            db.func.avg(AgentMetrics.compliance_rate).label('avg_compliance_rate'),
+            db.func.avg(AgentMetrics.response_time_avg).label('avg_response_time'),
+            db.func.count(AgentMetrics.id).label('metrics_count')
+        ).filter(
+            AgentMetrics.user_id == request.user_id,
+            AgentMetrics.timestamp >= start_date
+        ).group_by(AgentMetrics.agent_id).all()
+        
+        return jsonify({
+            'violation_stats': [{'severity': stat.severity, 'count': stat.count} for stat in violation_stats],
+            'trust_trends': [
+                {
+                    'date': trend.date.isoformat(),
+                    'avg_trust_score': float(trend.avg_trust_score) if trend.avg_trust_score else 0,
+                    'avg_compliance_rate': float(trend.avg_compliance_rate) if trend.avg_compliance_rate else 0
+                } for trend in trust_trends
+            ],
+            'agent_performance': [
+                {
+                    'agent_id': perf.agent_id,
+                    'avg_trust_score': float(perf.avg_trust_score) if perf.avg_trust_score else 0,
+                    'avg_compliance_rate': float(perf.avg_compliance_rate) if perf.avg_compliance_rate else 0,
+                    'avg_response_time': float(perf.avg_response_time) if perf.avg_response_time else 0,
+                    'metrics_count': perf.metrics_count
+                } for perf in agent_performance
+            ],
+            'time_range_days': days,
+            'user_id': request.user_id,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"ERROR in get_user_analytics: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # Error handlers
 @agent_metrics_bp.errorhandler(400)
 def bad_request(error):

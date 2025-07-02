@@ -3,11 +3,14 @@
  * 
  * Enterprise-grade trust monitoring with real-time updates, advanced analytics,
  * ML-powered insights, notification integration, and comprehensive workflows.
+ * Now includes proper user authentication and scoping.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
+import { useAuth } from '../context/AuthContext';
+import { authApiService } from '../services/authApiService';
 import { trustMetricsExtension } from '../extensions/TrustMetricsExtension';
 import { useNotificationBackend } from '../hooks/useNotificationBackend';
 import {
@@ -174,6 +177,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const EnhancedTrustMetricsOverviewPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   // State management
   const [tabValue, setTabValue] = useState(0);
   const [trustMetrics, setTrustMetrics] = useState<any[]>([]);
@@ -227,17 +233,25 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
     initializeExtension();
   }, []);
   
-  // Load trust data
-  const loadTrustData = useCallback(async () => {
+  // Lo  const loadTrustData = useCallback(async () => {
+    if (!currentUser) {
+      setError('User authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      // Load trust metrics, analytics, and alerts in parallel
+      // Load trust metrics, analytics, and alerts in parallel with authentication
       const [metrics, analytics, alerts] = await Promise.all([
-        trustMetricsExtension.getTrustMetrics(),
-        trustMetricsExtension.getTrustAnalytics('30d'),
-        fetch('/api/trust-metrics/alerts/check').then(res => res.json())
+        trustMetricsExtension.getTrustMetrics(currentUser),
+        trustMetricsExtension.getTrustAnalytics(currentUser, '30d'),
+        authApiService.authenticatedFetch('/api/trust-metrics/alerts/check', {
+          method: 'GET',
+          user: currentUser
+        })
       ]);
       
       setTrustMetrics(metrics);
@@ -262,18 +276,13 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
         });
       }
       
-    } catch (error) {
-      console.error('Error loading trust data:', error);
-      setError('Failed to load trust metrics data');
-      setSnackbar({
-        open: true,
-        message: 'Failed to load trust data',
-        severity: 'error'
-      });
+    } catch (err) {
+      console.error('Error loading trust data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load trust data');
     } finally {
       setLoading(false);
     }
-  }, [sendNotification]);
+  }, [currentUser, sendNotification]);
   
   // Real-time updates
   useEffect(() => {

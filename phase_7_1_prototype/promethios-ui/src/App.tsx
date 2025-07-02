@@ -26,8 +26,9 @@ import DashboardPage from './pages/DashboardPage';
 import GovernancePage from './pages/GovernancePage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
 import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
-import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
-import GovernanceReportsPage from './pages/GovernanceReportsPage';
+// Import Enhanced versions for main routes
+import EnhancedGovernanceViolationsPage from './pages/EnhancedGovernanceViolationsPage';
+import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 import DocumentationPage from './pages/DocumentationPage';
 import AtlasDemoPage from './pages/AtlasDemoPage';
@@ -70,8 +71,8 @@ const AppContent: React.FC = () => {
                   <Route path="/governance" element={<GovernancePage />} />
                   <Route path="/governance/overview" element={<GovernanceOverviewPage />} />
                   <Route path="/governance/policies" element={<GovernancePoliciesPage />} />
-                  <Route path="/governance/violations" element={<GovernanceViolationsPage />} />
-                  <Route path="/governance/reports" element={<GovernanceReportsPage />} />
+                  <Route path="/governance/violations" element={<EnhancedGovernanceViolationsPage />} />
+                  <Route path="/governance/reports" element={<EnhancedGovernanceReportsPage />} />
                   <Route path="/governance/emotional-veritas" element={<EmotionalVeritasPage />} />
                   
                   <Route path="/documentation" element={<DocumentationPage />} />

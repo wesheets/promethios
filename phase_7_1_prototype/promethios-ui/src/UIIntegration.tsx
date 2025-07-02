@@ -30,10 +30,13 @@ import RegistryPage from './pages/RegistryPage';
 import BenchmarksPage from './pages/BenchmarksPage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
 import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
-import GovernanceViolationsPage from './pages/GovernanceViolationsPage';
-import GovernanceReportsPage from './pages/GovernanceReportsPage';
+// Import Enhanced versions instead of original pages
+import EnhancedGovernanceViolationsPage from './pages/EnhancedGovernanceViolationsPage';
+import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
-import TrustMetricsOverviewPage from './pages/TrustMetricsOverviewPage';
+import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
+// Import Enhanced version instead of original
+import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
 import UserProfileSettingsPage from './pages/UserProfileSettingsPage';
@@ -232,7 +235,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/violations" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <GovernanceViolationsPage />
+              <EnhancedGovernanceViolationsPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -240,7 +243,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/reports" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <GovernanceReportsPage />
+              <EnhancedGovernanceReportsPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -253,11 +256,19 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        <Route path="governance/veritas-enterprise" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <EnterpriseVeritasDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Trust Metrics Routes */}
         <Route path="trust/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <TrustMetricsOverviewPage />
+              <EnhancedTrustMetricsOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

@@ -4,9 +4,11 @@
  * Enterprise-grade reporting system with real data integration, advanced analytics,
  * notification system integration, and comprehensive workflow management.
  * Uses ReportingExtension following existing extension patterns.
+ * Now includes proper user authentication and scoping.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   Box,
   Card,
@@ -167,6 +169,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const EnhancedGovernanceReportsPage: React.FC = () => {
+  // Authentication context
+  const { currentUser } = useAuth();
+  
   // State management
   const [currentTab, setCurrentTab] = useState(0);
   const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
@@ -225,7 +230,7 @@ const EnhancedGovernanceReportsPage: React.FC = () => {
           enable_real_time: realTimeUpdates,
           enable_ml_insights: true,
           enable_predictive_analytics: true
-        });
+        }, currentUser);
         
         if (!initialized) {
           throw new Error('Failed to initialize reporting system');
@@ -272,20 +277,26 @@ const EnhancedGovernanceReportsPage: React.FC = () => {
       }
     };
 
-    initializeReporting();
+    // Only initialize if user is authenticated
+    if (currentUser) {
+      initializeReporting();
+    } else {
+      setError('User authentication required');
+      setLoading(false);
+    }
 
     // Cleanup on unmount
     return () => {
       reportingExtension.cleanup();
     };
-  }, [realTimeUpdates, addNotification]);
+  }, [realTimeUpdates, addNotification, currentUser]);
 
   // Load all data
   const loadAllData = useCallback(async () => {
     try {
       const [templates, reports, analytics] = await Promise.all([
-        reportingExtension.getReportTemplates(),
-        reportingExtension.getGeneratedReports(),
+        reportingExtension.getReportTemplates(currentUser),
+        reportingExtension.getGeneratedReports(currentUser),
         reportingExtension.getReportAnalytics('30d')
       ]);
 
@@ -380,7 +391,7 @@ const EnhancedGovernanceReportsPage: React.FC = () => {
         }
       };
 
-      const result = await reportingExtension.generateReport(template.id, filters, onProgress);
+      const result = await reportingExtension.generateReport(currentUser, template.id, filters, onProgress);
       
       setSnackbar({
         open: true,
@@ -412,7 +423,7 @@ const EnhancedGovernanceReportsPage: React.FC = () => {
   // Download report
   const handleDownloadReport = useCallback(async (reportId: string) => {
     try {
-      const blob = await reportingExtension.downloadReport(reportId);
+      const blob = await reportingExtension.downloadReport(currentUser, reportId);
       const report = generatedReports.find(r => r.id === reportId);
       
       if (!report) {

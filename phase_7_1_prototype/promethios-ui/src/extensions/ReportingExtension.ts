@@ -4,9 +4,12 @@
  * Enterprise-grade reporting system extension for Promethios governance.
  * Provides comprehensive report generation, scheduling, distribution, and analytics
  * with full integration to existing Promethios modules and real data sources.
+ * Now includes proper user authentication and scoping.
  */
 
 import { Extension } from './Extension';
+import { authApiService } from '../services/authApiService';
+import type { User } from 'firebase/auth';
 
 export interface ReportTemplate {
   id: string;
@@ -179,19 +182,30 @@ class ReportingExtension extends Extension {
     this.baseUrl = '/api/reporting';
   }
 
-  async initialize(config?: any): Promise<boolean> {
+  async initialize(config?: any, user?: User | null): Promise<boolean> {
     try {
       // Initialize WebSocket connection for real-time progress updates
       await this.initializeWebSocket();
       
-      // Verify backend connectivity
-      const healthCheck = await fetch(`${this.baseUrl}/health`);
-      if (!healthCheck.ok) {
-        throw new Error('Reporting backend not available');
+      // Verify backend connectivity with authentication if user provided
+      if (user) {
+        const healthCheck = await authApiService.authenticatedFetch(`${this.baseUrl}/health`, {
+          method: 'GET',
+          user: user
+        });
+        if (!healthCheck.ok) {
+          throw new Error('Reporting backend not available');
+        }
+      } else {
+        // Fallback to unauthenticated health check for initialization
+        const healthCheck = await fetch(`${this.baseUrl}/health`);
+        if (!healthCheck.ok) {
+          throw new Error('Reporting backend not available');
+        }
       }
 
       // Initialize report generation engine
-      await this.initializeReportEngine();
+      await this.initializeReportEngine(user);
       
       console.log('Reporting extension initialized successfully');
       return true;
@@ -238,36 +252,69 @@ class ReportingExtension extends Extension {
     });
   }
 
-  private async initializeReportEngine(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/engine/initialize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        enable_real_time: true,
-        enable_ml_insights: true,
-        enable_predictive_analytics: true
-      })
-    });
+  private async initializeReportEngine(user?: User | null): Promise<void> {
+    if (user) {
+      const response = await authApiService.authenticatedFetch(`${this.baseUrl}/engine/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enable_real_time: true,
+          enable_ml_insights: true,
+          enable_predictive_analytics: true
+        }),
+        user: user
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to initialize report engine');
+      if (!response.ok) {
+        throw new Error('Failed to initialize report engine');
+      }
+    } else {
+      // Fallback for initialization without user
+      const response = await fetch(`${this.baseUrl}/engine/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enable_real_time: true,
+          enable_ml_insights: true,
+          enable_predictive_analytics: true
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to initialize report engine');
+      }
     }
   }
 
-  // Template Management
-  async getReportTemplates(): Promise<ReportTemplate[]> {
-    const response = await fetch(`${this.baseUrl}/templates`);
+  // Template Management with authentication
+  async getReportTemplates(user: User | null): Promise<ReportTemplate[]> {
+    if (!user) {
+      throw new Error('User authentication required for report templates');
+    }
+
+    const response = await authApiService.authenticatedFetch(`${this.baseUrl}/templates`, {
+      method: 'GET',
+      user: user
+    });
+    
     if (!response.ok) {
       throw new Error('Failed to fetch report templates');
     }
+    
     return response.json();
   }
 
-  async createReportTemplate(template: Omit<ReportTemplate, 'id' | 'created_at' | 'version' | 'usage_stats'>): Promise<ReportTemplate> {
-    const response = await fetch(`${this.baseUrl}/templates`, {
+  async createReportTemplate(user: User | null, template: Omit<ReportTemplate, 'id' | 'created_at' | 'version' | 'usage_stats'>): Promise<ReportTemplate> {
+    if (!user) {
+      throw new Error('User authentication required for creating report templates');
+    }
+
+    const response = await authApiService.authenticatedFetch(`${this.baseUrl}/templates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(template)
+      body: JSON.stringify(template),
+      user: user
+    });
     });
 
     if (!response.ok) {
@@ -299,13 +346,27 @@ class ReportingExtension extends Extension {
     }
   }
 
-  // Report Generation
+  // Report Generation with authentication
   async generateReport(
+    user: User | null,
     templateId: string, 
     filters: Record<string, any>,
     onProgress?: (progress: ReportGenerationProgress) => void
   ): Promise<GeneratedReport> {
-    const response = await fetch(`${this.baseUrl}/generate`, {
+    if (!user) {
+      throw new Error('User authentication required for report generation');
+    }
+
+    const response = await authApiService.authenticatedFetch(`${this.baseUrl}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template_id: templateId,
+        filters,
+        real_time_progress: !!onProgress
+      }),
+      user: user
+    });
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -348,13 +409,17 @@ class ReportingExtension extends Extension {
     this.progressCallbacks.delete(reportId);
   }
 
-  // Generated Reports Management
-  async getGeneratedReports(filters?: {
+  // Generated Reports Management with authentication
+  async getGeneratedReports(user: User | null, filters?: {
     template_id?: string;
     status?: string;
     date_range?: { start: string; end: string };
     generated_by?: string;
   }): Promise<GeneratedReport[]> {
+    if (!user) {
+      throw new Error('User authentication required for accessing generated reports');
+    }
+
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -364,15 +429,27 @@ class ReportingExtension extends Extension {
       });
     }
 
-    const response = await fetch(`${this.baseUrl}/reports?${params}`);
+    const response = await authApiService.authenticatedFetch(`${this.baseUrl}/reports?${params}`, {
+      method: 'GET',
+      user: user
+    });
+    
     if (!response.ok) {
       throw new Error('Failed to fetch generated reports');
     }
     return response.json();
   }
 
-  async downloadReport(reportId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/reports/${reportId}/download`);
+  async downloadReport(user: User | null, reportId: string): Promise<Blob> {
+    if (!user) {
+      throw new Error('User authentication required for downloading reports');
+    }
+
+    const response = await authApiService.authenticatedFetch(`${this.baseUrl}/reports/${reportId}/download`, {
+      method: 'GET',
+      user: user
+    });
+    
     if (!response.ok) {
       throw new Error('Failed to download report');
     }
