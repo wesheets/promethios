@@ -4,7 +4,7 @@
  * Provides metrics collection functionality for deployed agents following extension pattern
  */
 
-import { MetricsCollectionService } from '../services/MetricsCollectionService';
+import { metricsService } from '../services/MetricsCollectionService';
 import { UnifiedStorageService } from '../services/UnifiedStorageService';
 import { deployedAgentAPI } from '../services/api/deployedAgentAPI';
 import { DeployedAgentDataProcessor } from '../services/DeployedAgentDataProcessor';
@@ -72,23 +72,19 @@ export interface MetricsAlert {
 }
 
 /**
- * Metrics Collection Extension Class
+ * Metrics Collection Extension Class/**
  * Provides metrics collection functionality following extension pattern
  */
 export class MetricsCollectionExtension {
   private static instance: MetricsCollectionExtension;
   private initialized = false;
-  private metricsService: MetricsCollectionService;
   private storage: UnifiedStorageService;
   private dataProcessor: DeployedAgentDataProcessor;
 
   private constructor() {
-    this.metricsService = new MetricsCollectionService();
     this.storage = new UnifiedStorageService();
     this.dataProcessor = new DeployedAgentDataProcessor();
-  }
-
-  static getInstance(): MetricsCollectionExtension {
+  } static getInstance(): MetricsCollectionExtension {
     if (!MetricsCollectionExtension.instance) {
       MetricsCollectionExtension.instance = new MetricsCollectionExtension();
     }
@@ -477,8 +473,8 @@ export class MetricsCollectionExtension {
   }
 
   // Getter methods
-  getMetricsService(): MetricsCollectionService {
-    return this.metricsService;
+  getMetricsService() {
+    return metricsService;
   }
 
   getStorageService(): UnifiedStorageService {

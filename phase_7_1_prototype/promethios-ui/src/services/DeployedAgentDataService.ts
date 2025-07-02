@@ -8,7 +8,7 @@
 
 import { deployedAgentAPI, DeployedAgentStatus, AgentMetrics, PolicyViolation, AgentLogEntry } from './api/deployedAgentAPI';
 import { UnifiedStorageService } from './UnifiedStorageService';
-import { MetricsCollectionService } from './MetricsCollectionService';
+import { metricsService } from './MetricsCollectionService';
 
 export interface ProcessedAgentMetrics {
   agentId: string;
@@ -58,14 +58,12 @@ export interface LogQueryResult {
  */
 export class DeployedAgentDataService {
   private storage: UnifiedStorageService;
-  private metricsService: MetricsCollectionService;
   private dataCache: Map<string, any> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
   private readonly CACHE_TTL = 30 * 1000; // 30 seconds
 
   constructor(storage: UnifiedStorageService) {
     this.storage = storage;
-    this.metricsService = new MetricsCollectionService();
   }
 
   /**

@@ -12,7 +12,7 @@
  * - Transparent logging of all processing activities
  */
 
-import { MetricsCollectionService, GovernanceMetric } from './MetricsCollectionService';
+import { metricsService, GovernanceMetric } from './MetricsCollectionService';
 import { UnifiedStorageService } from './UnifiedStorageService';
 import { notificationBackendService } from './notificationBackendService';
 import { deployedAgentAPI, AgentMetrics, AgentViolation, AgentLog } from './api/deployedAgentAPI';
@@ -86,7 +86,6 @@ export interface NotificationRule {
  * Real-time data processor for deployed agents
  */
 export class DeployedAgentDataProcessor {
-  private metricsService: MetricsCollectionService;
   private storage: UnifiedStorageService;
   private processingQueue: Map<string, any[]> = new Map();
   private notificationRules: NotificationRule[] = [];
@@ -94,7 +93,6 @@ export class DeployedAgentDataProcessor {
   private processingInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.metricsService = new MetricsCollectionService();
     this.storage = new UnifiedStorageService();
     this.initializeNotificationRules();
     this.startProcessing();
@@ -240,7 +238,7 @@ export class DeployedAgentDataProcessor {
           }
         };
 
-        await this.metricsService.collectGovernanceMetric(governanceMetric, userId);
+        await metricsService.collectGovernanceMetric(governanceMetric, userId);
       }
 
       // Check for critical violation notifications
@@ -600,7 +598,7 @@ export class DeployedAgentDataProcessor {
     ];
     
     for (const metric of governanceMetrics) {
-      await this.metricsService.collectGovernanceMetric(metric, data.userId);
+      await metricsService.collectGovernanceMetric(metric, data.userId);
     }
   }
 
