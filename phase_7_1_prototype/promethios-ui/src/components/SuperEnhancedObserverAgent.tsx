@@ -92,7 +92,7 @@ const ExpandedWindow = styled(Paper)(({ theme }) => ({
   top: 80,
   right: 20,
   width: 900, // Much larger width
-  height: 800, // Much larger height
+  height: 900, // Increased height for better chat experience
   zIndex: 1400,
   borderRadius: 16,
   overflow: 'hidden',
@@ -436,8 +436,8 @@ You are the definitive expert on all things Promethios. Respond with confidence,
 
       {/* Quick Actions Panel */}
       <Collapse in={showQuickActions}>
-        <Box sx={{ p: 3, borderBottom: '1px solid #334155', backgroundColor: '#0f172a' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ p: 2, borderBottom: '1px solid #334155', backgroundColor: '#0f172a' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="h6" sx={{ color: '#e2e8f0', fontWeight: 600 }}>
               Quick Actions
             </Typography>
@@ -449,7 +449,7 @@ You are the definitive expert on all things Promethios. Respond with confidence,
               <ExpandMoreIcon sx={{ transform: showQuickActions ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
             </IconButton>
           </Box>
-          <Grid container spacing={1}>
+          <Grid container spacing={0.5}>
             {getQuickActions().map((action, index) => (
               <Grid item xs={4} key={index}>
                 <Card
@@ -465,10 +465,10 @@ You are the definitive expert on all things Promethios. Respond with confidence,
                   }}
                   onClick={() => setInputValue(action.text)}
                 >
-                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {action.icon}
-                      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>
                         {action.text}
                       </Typography>
                     </Box>
