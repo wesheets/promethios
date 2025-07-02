@@ -11,6 +11,7 @@ import HeaderNavigation from '../components/HeaderNavigation';
 import CollapsibleNavigation from '../components/CollapsibleNavigation';
 import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
+import SuperEnhancedObserverButton from '../components/SuperEnhancedObserverButton';
 
 /**
  * MainLayoutProxy Component
@@ -111,6 +112,22 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           {children}
         </Box>
       </Box>
+      
+      {/* Super Enhanced Observer Button - Floating on all pages */}
+      <SuperEnhancedObserverButton
+        currentContext={location.pathname.replace('/ui/', '')}
+        dashboardData={{
+          trustScore: '85',
+          governanceScore: '78%',
+          agentCount: '3',
+          violations: '3',
+          competence: '92%',
+          reliability: '88%',
+          honesty: '82%',
+          transparency: '79%'
+        }}
+        hasNotifications={true}
+      />
       
       {/* No Footer for logged-in users to prevent chat input positioning issues */}
     </Box>
