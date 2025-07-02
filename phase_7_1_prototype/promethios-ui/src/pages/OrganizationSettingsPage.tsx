@@ -471,8 +471,9 @@ const OrganizationSettingsPage: React.FC = () => {
                 <Tooltip title="Current subscription plan level">
                   <Chip
                     label={organization.plan.charAt(0).toUpperCase() + organization.plan.slice(1)}
-                  sx={{ backgroundColor: '#3b82f6', color: 'white' }}
-                />
+                    sx={{ backgroundColor: '#3b82f6', color: 'white' }}
+                  />
+                </Tooltip>
                 <Chip
                   label={`${teamMembers.length} members`}
                   variant="outlined"

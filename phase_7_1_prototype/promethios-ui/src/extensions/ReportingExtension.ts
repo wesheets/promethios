@@ -366,14 +366,6 @@ class ReportingExtension extends Extension {
       }),
       user: user
     });
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        template_id: templateId,
-        filters,
-        real_time_progress: !!onProgress
-      })
-    });
 
     if (!response.ok) {
       throw new Error('Failed to start report generation');

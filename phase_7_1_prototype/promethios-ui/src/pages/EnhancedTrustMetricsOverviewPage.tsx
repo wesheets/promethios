@@ -233,7 +233,8 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
     initializeExtension();
   }, []);
   
-  // Lo  const loadTrustData = useCallback(async () => {
+  // Load trust data with authentication
+  const loadTrustData = useCallback(async () => {
     if (!currentUser) {
       setError('User authentication required');
       setLoading(false);
