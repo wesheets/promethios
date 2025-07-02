@@ -31,8 +31,10 @@ import BenchmarksPage from './pages/BenchmarksPage';
 import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
 import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
 // Import Enhanced versions instead of original pages
+import EnhancedGovernanceOverviewPage from './pages/EnhancedGovernanceOverviewPage';
 import EnhancedGovernanceViolationsPage from './pages/EnhancedGovernanceViolationsPage';
 import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage';
+import EnhancedDeployPage from './pages/EnhancedDeployPage';
 import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
 // Import Enhanced version instead of original
@@ -181,7 +183,7 @@ const UIIntegration: React.FC = () => {
         <Route path="agents/deploy" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <DeployPage />
+              <EnhancedDeployPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -219,7 +221,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <GovernanceOverviewPage />
+              <EnhancedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
