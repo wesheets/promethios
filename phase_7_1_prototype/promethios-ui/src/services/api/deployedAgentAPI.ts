@@ -6,7 +6,7 @@
  * logs, heartbeats, and violation reports.
  */
 
-import { apiConfig } from '../../config/api';
+import apiConfig from '../../config/api';
 
 // Types for deployed agent communication
 export interface AgentHeartbeat {
