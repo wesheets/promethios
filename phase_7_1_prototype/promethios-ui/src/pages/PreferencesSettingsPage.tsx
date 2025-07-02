@@ -64,7 +64,6 @@ import {
   Computer,
   PhoneAndroid
 } from '@mui/icons-material';
-import { darkThemeStyles } from '../styles/darkThemeStyles';
 
 interface UIPreferences {
   theme: 'light' | 'dark' | 'auto';

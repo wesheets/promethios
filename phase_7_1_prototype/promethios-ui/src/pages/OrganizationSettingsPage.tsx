@@ -1246,7 +1246,6 @@ const OrganizationSettingsPage: React.FC = () => {
       </Dialog>
     </Box>
   );
-import { darkThemeStyles } from '../styles/darkThemeStyles';
 };
 
 export default OrganizationSettingsPage;

@@ -76,7 +76,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { enhancedDeploymentService, RealDeploymentResult, DeploymentMethod } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
 import { DualAgentWrapperRegistry } from '../modules/agent-wrapping/services/DualAgentWrapperRegistry';
-import { MultiAgentSystemRegistry } from '../modules/agent-wrapping/services/MultiAgentSystemRegistry';
+import MultiAgentSystemRegistry from '../modules/agent-wrapping/services/MultiAgentSystemRegistry';
 import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
 import { DeploymentPipelineStatus } from '../components/monitoring/DeploymentPipelineStatus';
 import { RealTimeMetricsChart } from '../components/monitoring/RealTimeMetricsChart';

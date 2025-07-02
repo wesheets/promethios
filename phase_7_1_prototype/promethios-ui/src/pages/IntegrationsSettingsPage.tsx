@@ -116,12 +116,19 @@ import {
 } from '@mui/icons-material';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
-import integrationsAPI, { 
-  Integration, 
-  ApiKey, 
-  Webhook, 
-  MonitoringConfig 
-} from '../services/api/integrationsAPI';
+import integrationsAPI from '../services/api/integrationsAPI';
+// import { 
+//   Integration, 
+//   ApiKey, 
+//   Webhook, 
+//   MonitoringConfig 
+// } from '../services/api/integrationsAPI';
+
+// Temporary type definitions
+type Integration = any;
+type ApiKey = any;
+type Webhook = any;
+type MonitoringConfig = any;
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
 import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
 import { AlertManagementWidget } from '../components/monitoring/AlertManagementWidget';
