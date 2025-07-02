@@ -55,7 +55,7 @@ export interface MetricEvent {
   environment: 'development' | 'staging' | 'production';
 }
 
-class MetricsCollectionService {
+export class MetricsCollectionService {
   private analytics;
   private firestore;
   private sessionId: string;
