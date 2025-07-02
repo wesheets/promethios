@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApiService } from '../services/authApiService';
 import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
+import { darkThemeStyles } from '../styles/darkThemeStyles';
 import {
   Box,
   Card,
@@ -63,6 +64,7 @@ import {
   Computer,
   PhoneAndroid
 } from '@mui/icons-material';
+import { darkThemeStyles } from '../styles/darkThemeStyles';
 
 interface UIPreferences {
   theme: 'light' | 'dark' | 'auto';
@@ -340,7 +342,7 @@ const PreferencesSettingsPage: React.FC = () => {
   if (loading && !uiPreferences.theme) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+        <Typography variant="h4" gutterBottom sx={darkThemeStyles.typography.primary}>
           Preferences
         </Typography>
         <LinearProgress sx={{ mt: 2 }} />
@@ -376,22 +378,22 @@ const PreferencesSettingsPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+    <Box sx={darkThemeStyles.pageContainer}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+        <Typography variant="h4" gutterBottom sx={darkThemeStyles.typography.primary}>
           Preferences
         </Typography>
-        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+        <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
           Customize your experience with personalized settings for UI, notifications, and accessibility
         </Typography>
       </Box>
 
       {/* Quick Actions */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
+      <Card sx={darkThemeStyles.card}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>
+            <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
               Quick Actions
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -418,7 +420,7 @@ const PreferencesSettingsPage: React.FC = () => {
       </Card>
 
       {/* Tabs */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
+      <Card sx={darkThemeStyles.card}>
         <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
           <Tabs 
             value={tabValue} 
@@ -443,15 +445,15 @@ const PreferencesSettingsPage: React.FC = () => {
           <Grid container spacing={3}>
             {/* Theme Settings */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Theme & Colors
               </Typography>
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Theme Mode
                   </Typography>
                   <FormControl fullWidth>
@@ -490,9 +492,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Primary Color
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -513,7 +515,7 @@ const PreferencesSettingsPage: React.FC = () => {
                         }}
                       >
                         {uiPreferences.primaryColor === color.value && (
-                          <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+                          <Typography variant="caption" sx={darkThemeStyles.typography.primary}>
                             ✓
                           </Typography>
                         )}
@@ -526,15 +528,15 @@ const PreferencesSettingsPage: React.FC = () => {
 
             {/* Layout Settings */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Layout & Navigation
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Font Size
                   </Typography>
                   <FormControl fullWidth>
@@ -558,9 +560,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Interface Density
                   </Typography>
                   <FormControl fullWidth>
@@ -584,9 +586,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Sidebar Width
                   </Typography>
                   <Box sx={{ px: 2 }}>
@@ -615,19 +617,19 @@ const PreferencesSettingsPage: React.FC = () => {
 
             {/* Behavior Settings */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Behavior & Interactions
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Enable animations</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Smooth transitions and visual effects</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Enable animations</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Smooth transitions and visual effects</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -643,8 +645,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Show tooltips</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Helpful hints on hover</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Show tooltips</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Helpful hints on hover</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -660,8 +662,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Auto-save changes</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Automatically save form changes</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Auto-save changes</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Automatically save form changes</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -677,8 +679,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Confirm destructive actions</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Show confirmation dialogs for delete operations</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Confirm destructive actions</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Show confirmation dialogs for delete operations</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -703,13 +705,13 @@ const PreferencesSettingsPage: React.FC = () => {
           <Grid container spacing={3}>
             {/* Notification Channels */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Notification Channels
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
@@ -717,10 +719,10 @@ const PreferencesSettingsPage: React.FC = () => {
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Email />
-                            <Typography variant="body1" sx={{ color: 'white' }}>Email notifications</Typography>
+                            <Typography variant="body1" sx={darkThemeStyles.typography.primary}>Email notifications</Typography>
                           </Box>
                         }
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Receive notifications via email</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Receive notifications via email</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -739,10 +741,10 @@ const PreferencesSettingsPage: React.FC = () => {
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Computer />
-                            <Typography variant="body1" sx={{ color: 'white' }}>Desktop notifications</Typography>
+                            <Typography variant="body1" sx={darkThemeStyles.typography.primary}>Desktop notifications</Typography>
                           </Box>
                         }
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Browser push notifications</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Browser push notifications</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -761,10 +763,10 @@ const PreferencesSettingsPage: React.FC = () => {
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Sms />
-                            <Typography variant="body1" sx={{ color: 'white' }}>SMS notifications</Typography>
+                            <Typography variant="body1" sx={darkThemeStyles.typography.primary}>SMS notifications</Typography>
                           </Box>
                         }
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Text message alerts</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Text message alerts</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -783,9 +785,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Notification Frequency
                   </Typography>
                   <FormControl fullWidth>
@@ -811,16 +813,16 @@ const PreferencesSettingsPage: React.FC = () => {
 
             {/* Quiet Hours */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Quiet Hours
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                       Enable quiet hours
                     </Typography>
                     <Switch
@@ -887,21 +889,21 @@ const PreferencesSettingsPage: React.FC = () => {
 
             {/* Notification Categories */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Notification Categories
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     {Object.entries(notificationPreferences.categories).map(([category, enabled]) => (
                       <React.Fragment key={category}>
                         <ListItem sx={{ px: 0 }}>
                           <ListItemText
-                            primary={<Typography variant="body1" sx={{ color: 'white', textTransform: 'capitalize' }}>{category.replace(/([A-Z])/g, ' $1')}</Typography>}
-                            secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Notifications related to {category.toLowerCase()}</Typography>}
+                            primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>{category.replace(/([A-Z])/g, ' $1')}</Typography>}
+                            secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Notifications related to {category.toLowerCase()}</Typography>}
                           />
                           <ListItemSecondaryAction>
                             <Switch
@@ -933,9 +935,9 @@ const PreferencesSettingsPage: React.FC = () => {
           {/* Language & Region */}
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Language
                   </Typography>
                   <FormControl fullWidth>
@@ -963,9 +965,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Timezone
                   </Typography>
                   <FormControl fullWidth>
@@ -994,9 +996,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Date Format
                   </Typography>
                   <FormControl fullWidth>
@@ -1021,9 +1023,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Time Format
                   </Typography>
                   <FormControl fullWidth>
@@ -1034,12 +1036,12 @@ const PreferencesSettingsPage: React.FC = () => {
                       <FormControlLabel
                         value="12h"
                         control={<Radio sx={{ color: '#a0aec0', '&.Mui-checked': { color: '#3b82f6' } }} />}
-                        label={<Typography sx={{ color: 'white' }}>12-hour (2:30 PM)</Typography>}
+                        label={<Typography sx={darkThemeStyles.typography.primary}>12-hour (2:30 PM)</Typography>}
                       />
                       <FormControlLabel
                         value="24h"
                         control={<Radio sx={{ color: '#a0aec0', '&.Mui-checked': { color: '#3b82f6' } }} />}
-                        label={<Typography sx={{ color: 'white' }}>24-hour (14:30)</Typography>}
+                        label={<Typography sx={darkThemeStyles.typography.primary}>24-hour (14:30)</Typography>}
                       />
                     </RadioGroup>
                   </FormControl>
@@ -1048,9 +1050,9 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Currency
                   </Typography>
                   <FormControl fullWidth>
@@ -1089,19 +1091,19 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Visual Accessibility
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>High contrast mode</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Increase contrast for better visibility</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>High contrast mode</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Increase contrast for better visibility</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1117,8 +1119,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Reduced motion</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Minimize animations and transitions</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Reduced motion</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Minimize animations and transitions</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1134,8 +1136,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Color blind support</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Adjust colors for color blindness</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Color blind support</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Adjust colors for color blindness</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1154,19 +1156,19 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Navigation & Interaction
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Keyboard navigation</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Navigate using keyboard only</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Keyboard navigation</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Navigate using keyboard only</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1182,8 +1184,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Enhanced focus indicators</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Clearer focus outlines for keyboard navigation</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Enhanced focus indicators</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Clearer focus outlines for keyboard navigation</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1199,8 +1201,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Skip navigation links</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Quick links to main content areas</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Skip navigation links</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Quick links to main content areas</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1219,19 +1221,19 @@ const PreferencesSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2, mt: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Screen Reader & Audio
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Screen reader optimization</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Optimize interface for screen readers</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Screen reader optimization</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Optimize interface for screen readers</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1247,8 +1249,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Enhanced alt text</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Detailed descriptions for images and charts</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Enhanced alt text</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Detailed descriptions for images and charts</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1264,8 +1266,8 @@ const PreferencesSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Text-to-speech</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Read content aloud</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Text-to-speech</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Read content aloud</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -1298,7 +1300,7 @@ const PreferencesSettingsPage: React.FC = () => {
       >
         <DialogTitle>Reset to Default Settings</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" sx={{ color: 'white', mb: 2 }}>
+          <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
             Are you sure you want to reset all preferences to their default values? This action cannot be undone.
           </Typography>
           <Alert severity="warning" sx={{ backgroundColor: '#92400e', color: 'white' }}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApiService } from '../services/authApiService';
 import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
+import { darkThemeStyles } from '../styles/darkThemeStyles';
 import {
   Box,
   Card,
@@ -418,19 +419,19 @@ const UserProfileSettingsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+    <Box sx={darkThemeStyles.pageContainer}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+        <Typography variant="h4" gutterBottom sx={{ ...darkThemeStyles.typography.primary, fontWeight: 'bold' }}>
           User Profile Settings
         </Typography>
-        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+        <Typography variant="body1" sx={darkThemeStyles.typography.secondary}>
           Manage your account information, security settings, and profile preferences
         </Typography>
       </Box>
 
       {/* Profile Overview Card */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
+      <Card sx={{ ...darkThemeStyles.card, mb: 4 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Box 
@@ -502,10 +503,10 @@ const UserProfileSettingsPage: React.FC = () => {
               )}
             </Box>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h5" sx={darkThemeStyles.typography.primary}>
                 {profile.displayName}
               </Typography>
-              <Typography variant="body1" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                 {profile.jobTitle} at {profile.organization}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
@@ -534,7 +535,7 @@ const UserProfileSettingsPage: React.FC = () => {
                   />
                 )}
               </Box>
-              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Member since {formatDate(profile.dateJoined)} • Last login {formatDate(profile.lastLogin)}
               </Typography>
             </Box>
@@ -560,7 +561,7 @@ const UserProfileSettingsPage: React.FC = () => {
       </Card>
 
       {/* Tabs */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
+      <Card sx={darkThemeStyles.card}>
         <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
           <Tabs 
             value={tabValue} 
@@ -589,15 +590,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.firstName}
                 onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -779,12 +772,12 @@ const UserProfileSettingsPage: React.FC = () => {
             {/* Roles and Permissions */}
             <Grid item xs={12}>
               <Divider sx={{ borderColor: '#4a5568', my: 2 }} />
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Roles and Permissions
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Current Roles
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -798,7 +791,7 @@ const UserProfileSettingsPage: React.FC = () => {
               </Box>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Permissions
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -843,17 +836,17 @@ const UserProfileSettingsPage: React.FC = () => {
           <Grid container spacing={3}>
             {/* Password Change */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Password & Authentication
               </Typography>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
-                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                         Password
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                      <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                         Last changed 30 days ago
                       </Typography>
                     </Box>
@@ -868,14 +861,14 @@ const UserProfileSettingsPage: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
-                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                         Two-Factor Authentication
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                      <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                         Add an extra layer of security to your account
                       </Typography>
                     </Box>
@@ -899,10 +892,10 @@ const UserProfileSettingsPage: React.FC = () => {
 
             {/* Active Sessions */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Active Sessions
               </Typography>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     {securitySettings.sessions.map((session, index) => (
@@ -911,7 +904,7 @@ const UserProfileSettingsPage: React.FC = () => {
                           <ListItemText
                             primary={
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body1" sx={{ color: 'white' }}>
+                                <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                                   {session.device}
                                 </Typography>
                                 {session.current && (
@@ -924,7 +917,7 @@ const UserProfileSettingsPage: React.FC = () => {
                               </Box>
                             }
                             secondary={
-                              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                                 {session.location} • Last active {formatDate(session.lastActive)}
                               </Typography>
                             }
@@ -954,7 +947,7 @@ const UserProfileSettingsPage: React.FC = () => {
             {/* API Keys */}
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ color: 'white' }}>
+                <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                   API Keys
                 </Typography>
                 <Button
@@ -966,7 +959,7 @@ const UserProfileSettingsPage: React.FC = () => {
                   Generate API Key
                 </Button>
               </Box>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     {securitySettings.apiKeys.map((apiKey, index) => (
@@ -974,13 +967,13 @@ const UserProfileSettingsPage: React.FC = () => {
                         <ListItem sx={{ px: 0 }}>
                           <ListItemText
                             primary={
-                              <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                                 {apiKey.name}
                               </Typography>
                             }
                             secondary={
                               <Box>
-                                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                                   Created {formatDate(apiKey.created)} • Last used {formatDate(apiKey.lastUsed)}
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
@@ -1022,10 +1015,10 @@ const UserProfileSettingsPage: React.FC = () => {
           {/* Privacy Settings */}
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Profile Visibility
               </Typography>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <FormControl fullWidth>
                     <InputLabel sx={{ color: '#a0aec0' }}>Who can see your profile</InputLabel>
@@ -1049,7 +1042,7 @@ const UserProfileSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Data & Privacy
               </Typography>
               <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white', mb: 2 }}>
@@ -1057,13 +1050,13 @@ const UserProfileSettingsPage: React.FC = () => {
                 Your data is encrypted and stored securely. We never share your personal information with third parties without your explicit consent.
               </Alert>
               
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Download your data</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Get a copy of all your data</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Download your data</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Get a copy of all your data</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Button variant="outlined" sx={{ borderColor: '#3b82f6', color: '#3b82f6' }}>
@@ -1074,8 +1067,8 @@ const UserProfileSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Delete your account</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Permanently delete your account and all data</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Delete your account</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Permanently delete your account and all data</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Button variant="outlined" sx={{ borderColor: '#ef4444', color: '#ef4444' }}>
@@ -1203,7 +1196,7 @@ const UserProfileSettingsPage: React.FC = () => {
               />
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Select permissions for this API key:
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -1296,7 +1289,7 @@ const UserProfileSettingsPage: React.FC = () => {
           {/* Crop Controls */}
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Zoom
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1317,7 +1310,7 @@ const UserProfileSettingsPage: React.FC = () => {
               </Box>
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Rotation
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
@@ -1343,7 +1336,7 @@ const UserProfileSettingsPage: React.FC = () => {
 
           {photoUpload.uploading && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Uploading... {photoUpload.progress}%
               </Typography>
               <LinearProgress

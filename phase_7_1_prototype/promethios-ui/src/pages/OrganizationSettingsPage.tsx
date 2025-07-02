@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { authApiService } from '../services/authApiService';
 import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
 import { trustBackendService } from '../services/trustBackendService';
+import { darkThemeStyles } from '../styles/darkThemeStyles';
 import {
   Box,
   Card,
@@ -367,7 +368,7 @@ const OrganizationSettingsPage: React.FC = () => {
   if (loading && !organization.id) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+        <Typography variant="h4" gutterBottom sx={darkThemeStyles.typography.primary}>
           Organization Settings
         </Typography>
         <LinearProgress sx={{ mt: 2 }} />
@@ -423,13 +424,13 @@ const OrganizationSettingsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+    <Box sx={darkThemeStyles.pageContainer}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+        <Typography variant="h4" gutterBottom sx={darkThemeStyles.typography.primary}>
           Organization Settings
         </Typography>
-        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+        <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
           Manage your organization profile, team members, billing information, and governance settings
         </Typography>
         
@@ -447,7 +448,7 @@ const OrganizationSettingsPage: React.FC = () => {
       </Box>
 
       {/* Organization Overview Card */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
+      <Card sx={darkThemeStyles.card}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Tooltip title="Organization logo - click to upload new logo">
@@ -458,12 +459,12 @@ const OrganizationSettingsPage: React.FC = () => {
             </Tooltip>
             <Box sx={{ flex: 1 }}>
               <Tooltip title="Organization name and primary identifier">
-                <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                <Typography variant="h5" sx={darkThemeStyles.typography.primary}>
                   {organization.name}
                 </Typography>
               </Tooltip>
               <Tooltip title="Industry classification and organization size">
-                <Typography variant="body1" sx={{ color: '#a0aec0', mb: 1 }}>
+                <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                   {organization.industry} • {organization.size}
                 </Typography>
               </Tooltip>
@@ -480,7 +481,7 @@ const OrganizationSettingsPage: React.FC = () => {
                   sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
                 />
               </Box>
-              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                 Created {formatDate(organization.createdAt)}
               </Typography>
             </Box>
@@ -506,7 +507,7 @@ const OrganizationSettingsPage: React.FC = () => {
       </Card>
 
       {/* Tabs */}
-      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
+      <Card sx={darkThemeStyles.card}>
         <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
           <Tabs 
             value={tabValue} 
@@ -729,7 +730,7 @@ const OrganizationSettingsPage: React.FC = () => {
         <TabPanel value={tabValue} index={1}>
           {/* Team Members */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>
+            <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
               Team Members ({teamMembers.length})
             </Typography>
             <Button
@@ -761,10 +762,10 @@ const OrganizationSettingsPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar src={member.avatar} sx={{ width: 40, height: 40 }} />
                         <Box>
-                          <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                          <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                             {member.name}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                          <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                             {member.email}
                           </Typography>
                         </Box>
@@ -773,7 +774,7 @@ const OrganizationSettingsPage: React.FC = () => {
                     <TableCell sx={{ borderColor: '#4a5568' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {getRoleIcon(member.role)}
-                        <Typography sx={{ color: 'white' }}>{member.role}</Typography>
+                        <Typography sx={darkThemeStyles.typography.primary}>{member.role}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
@@ -833,19 +834,19 @@ const OrganizationSettingsPage: React.FC = () => {
           {/* Security & Settings */}
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Security Settings
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <List>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Allow self-registration</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Users can register with your organization domain</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Allow self-registration</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Users can register with your organization domain</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -864,8 +865,8 @@ const OrganizationSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Require email verification</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>New users must verify their email address</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Require email verification</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>New users must verify their email address</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -884,8 +885,8 @@ const OrganizationSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Enable Single Sign-On (SSO)</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Allow users to sign in with SAML/OAuth</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Enable Single Sign-On (SSO)</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Allow users to sign in with SAML/OAuth</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -904,8 +905,8 @@ const OrganizationSettingsPage: React.FC = () => {
                     <Divider sx={{ borderColor: '#4a5568' }} />
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText
-                        primary={<Typography variant="body1" sx={{ color: 'white' }}>Enforce password policy</Typography>}
-                        secondary={<Typography variant="body2" sx={{ color: '#a0aec0' }}>Require strong passwords for all users</Typography>}
+                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Enforce password policy</Typography>}
+                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Require strong passwords for all users</Typography>}
                       />
                       <ListItemSecondaryAction>
                         <Switch
@@ -927,9 +928,9 @@ const OrganizationSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Session Timeout (minutes)
                   </Typography>
                   <TextField
@@ -955,9 +956,9 @@ const OrganizationSettingsPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                     Data Retention (days)
                   </Typography>
                   <TextField
@@ -989,20 +990,20 @@ const OrganizationSettingsPage: React.FC = () => {
           <Grid container spacing={3}>
             {/* Current Plan */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Current Plan
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={8}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Box>
-                      <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Typography variant="h5" sx={darkThemeStyles.typography.primary}>
                         {billingInfo.plan}
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                      <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
                         ${billingInfo.amount}/{billingInfo.currency} per month
                       </Typography>
                     </Box>
@@ -1015,10 +1016,10 @@ const OrganizationSettingsPage: React.FC = () => {
                       }}
                     />
                   </Box>
-                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                  <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                     Next billing date: {formatDate(billingInfo.nextBillingDate)}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                  <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                     Payment method: {billingInfo.paymentMethod}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2 }}>
@@ -1041,32 +1042,32 @@ const OrganizationSettingsPage: React.FC = () => {
 
             {/* Usage Stats */}
             <Grid item xs={12} md={4}>
-              <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+              <Card sx={darkThemeStyles.card}>
                 <CardContent>
-                  <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                  <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                     Usage This Month
                   </Typography>
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                       Active Users
                     </Typography>
-                    <Typography variant="h4" sx={{ color: '#3b82f6' }}>
+                    <Typography variant="h4" sx={darkThemeStyles.typography.primary}>
                       {teamMembers.filter(m => m.status === 'active').length}
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                       API Calls
                     </Typography>
-                    <Typography variant="h4" sx={{ color: '#10b981' }}>
+                    <Typography variant="h4" sx={darkThemeStyles.typography.primary}>
                       12.4K
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
                       Storage Used
                     </Typography>
-                    <Typography variant="h4" sx={{ color: '#f59e0b' }}>
+                    <Typography variant="h4" sx={darkThemeStyles.typography.primary}>
                       2.1GB
                     </Typography>
                   </Box>
@@ -1076,7 +1077,7 @@ const OrganizationSettingsPage: React.FC = () => {
 
             {/* Billing History */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
                 Billing History
               </Typography>
               <TableContainer component={Paper} sx={{ backgroundColor: '#1a202c' }}>
@@ -1222,7 +1223,7 @@ const OrganizationSettingsPage: React.FC = () => {
       >
         <DialogTitle>Remove Team Member</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" sx={{ color: 'white', mb: 2 }}>
+          <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
             Are you sure you want to remove {selectedMember?.name} from your organization?
           </Typography>
           <Alert severity="warning" sx={{ backgroundColor: '#92400e', color: 'white' }}>
@@ -1245,6 +1246,7 @@ const OrganizationSettingsPage: React.FC = () => {
       </Dialog>
     </Box>
   );
+import { darkThemeStyles } from '../styles/darkThemeStyles';
 };
 
 export default OrganizationSettingsPage;
