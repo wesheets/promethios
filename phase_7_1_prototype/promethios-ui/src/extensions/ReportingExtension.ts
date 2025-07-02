@@ -315,7 +315,6 @@ class ReportingExtension extends Extension {
       body: JSON.stringify(template),
       user: user
     });
-    });
 
     if (!response.ok) {
       throw new Error('Failed to create report template');

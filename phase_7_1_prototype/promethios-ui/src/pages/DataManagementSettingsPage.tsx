@@ -286,27 +286,6 @@ const DataManagementSettingsPage: React.FC = () => {
 
     loadUserDataManagement();
   }, [currentUser]);
-      status: 'running',
-      progress: 65,
-      createdAt: '2025-06-20T14:15:00Z',
-      includeData: ['trust_scores', 'attestations', 'boundaries'],
-      format: 'csv',
-      compression: false,
-      encryption: false
-    },
-    {
-      id: 'export-003',
-      name: 'Policy Configuration',
-      type: 'policies_only',
-      status: 'failed',
-      progress: 0,
-      createdAt: '2025-06-19T16:20:00Z',
-      includeData: ['policies', 'violations', 'compliance_reports'],
-      format: 'json',
-      compression: true,
-      encryption: true
-    }
-  ]);
 
   // Mock import jobs data
   const [importJobs, setImportJobs] = useState<ImportJob[]>([
