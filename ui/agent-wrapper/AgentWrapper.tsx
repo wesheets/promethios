@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -34,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { SHARED_DEMO_AGENTS, DemoAgent } from '../shared/DemoAgents';
 import { useAgentContext } from '../context/AgentContext';
+import { darkTheme } from '../theme/darkTheme';
 
 interface WrapperAgent {
   id: string;
@@ -263,19 +265,20 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
   };
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white' }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
-          Agent Wrapping
-        </Typography>
-        <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
-          Wrap AI agents with Promethios governance to add trust metrics, compliance monitoring, and ethical oversight to any LLM or custom AI API.
-        </Typography>
+    <ThemeProvider theme={darkTheme}>
+      <Box sx={{ p: 3, backgroundColor: '#0D1117', minHeight: '100vh', color: 'white' }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+            Agent Wrapping
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
+            Wrap AI agents with Promethios governance to add trust metrics, compliance monitoring, and ethical oversight to any LLM or custom AI API.
+          </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2, backgroundColor: '#2a2a2a', color: 'white' }}>
-            {error}
-          </Alert>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
         )}
       </Box>
 
@@ -645,16 +648,13 @@ export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) =>
             onClick={selectedAgent ? () => handleWrapDemoAgent(selectedAgent) : handleSaveNewAgent}
             variant="contained"
             disabled={loading}
-            sx={{ 
-              backgroundColor: '#4caf50',
-              '&:hover': { backgroundColor: '#45a049' }
-            }}
           >
             {loading ? <CircularProgress size={20} /> : (selectedAgent ? 'Wrap Agent' : 'Create Agent')}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
 

@@ -15,6 +15,7 @@ interface DashboardContextType {
   agentCode: string;
   setAgentCode: (code: string) => void;
   analyzeAgent: () => Promise<any>;
+  analyzeAgentCode: () => Promise<any>;
   generateWrapper: () => Promise<any>;
   testAgent: () => Promise<any>;
   deployAgent: () => Promise<any>;
@@ -24,6 +25,8 @@ interface DashboardContextType {
   setAnalysisResults: (results: any) => void;
   wrapperCode: any;
   setWrapperCode: (code: any) => void;
+  loading: boolean;
+  error: string | null;
 }
 
 // Create the context with default values
@@ -33,6 +36,7 @@ export const DashboardContext = createContext<DashboardContextType>({
   agentCode: '',
   setAgentCode: () => {},
   analyzeAgent: async () => ({}),
+  analyzeAgentCode: async () => ({}),
   generateWrapper: async () => ({}),
   testAgent: async () => ({}),
   deployAgent: async () => ({}),
@@ -41,7 +45,9 @@ export const DashboardContext = createContext<DashboardContextType>({
   analysisResults: null,
   setAnalysisResults: () => {},
   wrapperCode: null,
-  setWrapperCode: () => {}
+  setWrapperCode: () => {},
+  loading: false,
+  error: null
 });
 
 // Hook for using the dashboard context
@@ -58,33 +64,90 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [wrapperCode, setWrapperCode] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Import services
-  const services = require('../services/integration');
+  // Import services (mock for now)
+  // const services = require('../services/integration');
   
   // Analyze agent
   const analyzeAgent = async () => {
-    const results = await services.analyzeAgent(agentCode, agentName);
-    setAnalysisResults(results);
-    return results;
+    setLoading(true);
+    setError(null);
+    try {
+      // Mock analysis
+      const results = {
+        framework: 'openai',
+        capabilities: ['chat', 'completion'],
+        model: 'gpt-3.5-turbo'
+      };
+      setAnalysisResults(results);
+      return results;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Analysis failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  // Analyze agent code (alias for analyzeAgent)
+  const analyzeAgentCode = analyzeAgent;
   
   // Generate wrapper
   const generateWrapper = async () => {
-    const framework = analysisResults?.framework || 'unknown';
-    const wrapper = await services.generateWrapper(agentCode, agentName, framework);
-    setWrapperCode(wrapper);
-    return wrapper;
+    setLoading(true);
+    setError(null);
+    try {
+      const framework = analysisResults?.framework || 'unknown';
+      // Mock wrapper generation
+      const wrapper = {
+        code: `// Generated wrapper for ${agentName}`,
+        framework,
+        governance: true
+      };
+      setWrapperCode(wrapper);
+      return wrapper;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Wrapper generation failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Test agent
   const testAgent = async () => {
-    return await services.testWrappedAgent(wrapperCode);
+    setLoading(true);
+    setError(null);
+    try {
+      // Mock testing
+      return { success: true, message: 'Agent test successful' };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Agent test failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Deploy agent
   const deployAgent = async () => {
-    return await services.deployWrappedAgent(wrapperCode);
+    setLoading(true);
+    setError(null);
+    try {
+      // Mock deployment
+      return { success: true, url: 'https://example.com/agent' };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Agent deployment failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -95,6 +158,7 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
         agentCode,
         setAgentCode,
         analyzeAgent,
+        analyzeAgentCode,
         generateWrapper,
         testAgent,
         deployAgent,
@@ -103,7 +167,9 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
         analysisResults,
         setAnalysisResults,
         wrapperCode,
-        setWrapperCode
+        setWrapperCode,
+        loading,
+        error
       }}
     >
       {children}
