@@ -307,13 +307,13 @@ const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4, backgroundColor: 'transparent' }}>
       {/* Header */}
       <Box mb={4}>
         <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           Agent Wrapper
         </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
+        <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           Wrap your AI agents with governance controls for secure testing and deployment
         </Typography>
       </Box>
