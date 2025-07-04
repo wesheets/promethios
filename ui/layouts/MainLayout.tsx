@@ -72,10 +72,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     },
     { 
       id: 'governance', 
-      icon: <span>📈</span>, 
-      label: 'Governance Explorer', 
+      icon: <span>🧠</span>, 
+      label: 'Enhanced Veritas', 
       path: '/governance',
-      active: currentPath === '/governance'
+      active: currentPath.startsWith('/governance')
     },
     { 
       id: 'settings', 
@@ -128,9 +128,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       '/tutorials',
       '/onboarding',
       
-      // Governance Explorer
+      // Governance Explorer and Enhanced Veritas
       '/governance',
       '/governance/',
+      '/governance/dashboard',
+      '/governance/emotional-veritas',
+      '/governance/admin',
       
       // Testing environments
       '/test',

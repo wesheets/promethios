@@ -24,7 +24,11 @@ import OnboardingComplete from '../onboarding/OnboardingComplete';
 import Dashboard from '../pages/Dashboard';
 import AgentWizardPage from '../pages/AgentWizardPage';
 import MultiAgentPage from '../pages/MultiAgentPage';
-import GovernanceExplorerPage from '../pages/GovernanceExplorerPage';
+
+// Enhanced Veritas 2 Components
+import EnhancedVeritasDashboard from '../../src/veritas/enhanced/dashboard/EnhancedVeritasDashboard';
+import EmotionalVeritasPage from '../../phase_7_1_prototype/promethios-ui/src/pages/EmotionalVeritasPage';
+import EmotionalVeritasAdminPage from '../../src/admin/EmotionalVeritasAdminPage';
 
 // Settings Pages
 import SettingsProfile from '../pages/settings/SettingsProfile';
@@ -132,7 +136,14 @@ const AppRoutes: React.FC = () => {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="agent-wizard" element={<AgentWizardPage />} />
           <Route path="multi-agent" element={<MultiAgentPage />} />
-          <Route path="governance" element={<GovernanceExplorerPage />} />
+          
+          {/* Enhanced Veritas 2 Governance Routes */}
+          <Route path="governance">
+            <Route path="" element={<EnhancedVeritasDashboard />} />
+            <Route path="dashboard" element={<EnhancedVeritasDashboard />} />
+            <Route path="emotional-veritas" element={<EmotionalVeritasPage />} />
+            <Route path="admin" element={<EmotionalVeritasAdminPage />} />
+          </Route>
           
           {/* Agent Routes */}
           <Route path="agents">
@@ -162,7 +173,14 @@ const AppRoutes: React.FC = () => {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="agent-wizard" element={<AgentWizardPage />} />
           <Route path="multi-agent" element={<MultiAgentPage />} />
-          <Route path="governance" element={<GovernanceExplorerPage />} />
+          
+          {/* Enhanced Veritas 2 Governance Routes */}
+          <Route path="governance">
+            <Route path="" element={<EnhancedVeritasDashboard />} />
+            <Route path="dashboard" element={<EnhancedVeritasDashboard />} />
+            <Route path="emotional-veritas" element={<EmotionalVeritasPage />} />
+            <Route path="admin" element={<EmotionalVeritasAdminPage />} />
+          </Route>
           
           {/* Agent Routes */}
           <Route path="agents">
