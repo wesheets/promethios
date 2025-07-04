@@ -37,8 +37,8 @@ import SettingsApiKeys from '../pages/settings/SettingsApiKeys';
 import SettingsNotifications from '../pages/settings/SettingsNotifications';
 
 // Agent Components
-import { MultiAgentWrapper } from '../multi-agent-wrapper/MultiAgentWrapper';
 import { AgentWrapper } from '../agent-wrapper/AgentWrapper';
+import { MultiAgentWrapper } from '../../phase_7_1_prototype/promethios-ui/src/modules/agent-wrapping/components/MultiAgentWrappingWizard';
 import MyAgentsPage from '../pages/MyAgentsPage';
 
 // Error Pages
