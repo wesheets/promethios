@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from '@mui/material/styles';
 import {
   Box,
   Typography,
@@ -21,7 +20,9 @@ import {
   FormControlLabel,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
+  Paper,
+  Container
 } from '@mui/material';
 import {
   SmartToy as AgentIcon,
@@ -35,7 +36,6 @@ import {
 } from '@mui/icons-material';
 import { SHARED_DEMO_AGENTS, DemoAgent } from '../shared/DemoAgents';
 import { useAgentContext } from '../context/AgentContext';
-import { darkTheme } from '../theme/darkTheme';
 
 interface WrapperAgent {
   id: string;
@@ -98,563 +98,528 @@ const DEMO_WRAPPER_AGENTS: WrapperAgent[] = [
   {
     id: 'creative-writer',
     name: 'Creative Writer',
-    description: 'A creative AI specialized in writing, storytelling, content creation, and artistic expression.',
+    description: 'A creative AI assistant specialized in writing, storytelling, content creation, and creative ideation.',
     type: 'creative',
-    provider: 'OpenAI',
-    model: 'gpt-4',
-    capabilities: ['creative-writing', 'storytelling', 'content-creation', 'brainstorming'],
-    governance_enabled: false,
+    provider: 'Anthropic',
+    model: 'claude-3-opus',
+    capabilities: ['creative-writing', 'storytelling', 'content-creation', 'ideation'],
+    governance_enabled: true,
     status: 'demo',
-    system_prompt: 'You are a creative writing assistant. Help with storytelling, creative content, brainstorming, and artistic expression. Be imaginative and inspiring.'
+    system_prompt: 'You are a creative writing assistant. Help with storytelling, content creation, creative ideation, and writing improvement while maintaining originality and engagement.'
   },
   {
     id: 'research-assistant',
     name: 'Research Assistant',
-    description: 'A research-focused AI that helps with information gathering, analysis, and academic writing.',
+    description: 'A research-focused AI that helps with information gathering, analysis, fact-checking, and academic writing.',
     type: 'specialist',
-    provider: 'Anthropic',
-    model: 'claude-3-sonnet',
-    capabilities: ['research', 'information-gathering', 'academic-writing', 'fact-checking'],
+    provider: 'OpenAI',
+    model: 'gpt-4',
+    capabilities: ['research', 'fact-checking', 'analysis', 'academic-writing'],
     governance_enabled: true,
     status: 'demo',
-    system_prompt: 'You are a research assistant. Help with information gathering, analysis, academic writing, and fact-checking. Always cite sources and maintain accuracy.'
+    system_prompt: 'You are a research assistant AI. Help with information gathering, fact-checking, analysis, and academic writing while ensuring accuracy and proper sourcing.'
   }
 ];
 
-export const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) => {
-  const { addWrappedAgent, wrappedAgents } = useAgentContext();
-  const [demoAgents, setDemoAgents] = useState<WrapperAgent[]>(DEMO_WRAPPER_AGENTS);
-  const [dialogOpen, setDialogOpen] = useState(false);
+const AgentWrapper: React.FC<AgentWrapperProps> = ({ onAgentWrapped }) => {
+  // State management
+  const [agents, setAgents] = useState<WrapperAgent[]>(DEMO_WRAPPER_AGENTS);
   const [selectedAgent, setSelectedAgent] = useState<WrapperAgent | null>(null);
-  const [newAgent, setNewAgent] = useState<Partial<WrapperAgent>>({
+  const [isWrapperDialogOpen, setIsWrapperDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // Wrapper configuration state
+  const [wrapperConfig, setWrapperConfig] = useState({
     name: '',
     description: '',
-    type: 'assistant',
     provider: 'OpenAI',
     model: 'gpt-3.5-turbo',
-    capabilities: [],
+    api_endpoint: '',
+    api_key: '',
+    system_prompt: '',
     governance_enabled: true,
-    status: 'configured'
+    auto_discovery: true
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'assistant': return <PsychologyIcon />;
-      case 'specialist': return <ScienceIcon />;
-      case 'tool': return <CodeIcon />;
-      case 'creative': return <BusinessIcon />;
-      default: return <AgentIcon />;
-    }
-  };
+  // Agent context
+  const { addAgent } = useAgentContext();
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'assistant': return '#2196f3';
-      case 'specialist': return '#9c27b0';
-      case 'tool': return '#ff9800';
-      case 'creative': return '#e91e63';
-      default: return '#757575';
-    }
-  };
+  // Load agents on component mount
+  useEffect(() => {
+    loadAgents();
+  }, []);
 
-  const getProviderColor = (provider: string) => {
-    switch (provider) {
-      case 'OpenAI': return '#10a37f';
-      case 'Anthropic': return '#d97706';
-      case 'Cohere': return '#7c3aed';
-      case 'HuggingFace': return '#ff6b35';
-      default: return '#6b7280';
-    }
-  };
-
-  const handleWrapDemoAgent = async (agent: WrapperAgent) => {
-    setLoading(true);
-    setError(null);
-
+  const loadAgents = async () => {
     try {
-      // Simulate API call to wrap the agent
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(true);
+      setError(null);
       
-      const wrappedAgent: any = {
-        ...agent,
-        id: `wrapped_${agent.id}_${Date.now()}`,
-        status: 'active',
-        api_endpoint: `${API_BASE_URL}/api/chat/chat`,
-        role: agent.type === 'assistant' ? 'specialist' : 
-              agent.type === 'creative' ? 'specialist' :
-              agent.type === 'tool' ? 'executor' : 'specialist',
-        collaboration_style: 'parallel'
+      // Try to load from API, fallback to demo agents
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/agents`);
+        if (response.ok) {
+          const apiAgents = await response.json();
+          if (apiAgents && apiAgents.length > 0) {
+            setAgents([...DEMO_WRAPPER_AGENTS, ...apiAgents]);
+          }
+        }
+      } catch (apiError) {
+        console.warn('Could not load agents from API, using demo agents:', apiError);
+      }
+      
+    } catch (error) {
+      console.error('Error loading agents:', error);
+      setError('Failed to load agents. Using demo agents.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWrapAgent = (agent: WrapperAgent) => {
+    setSelectedAgent(agent);
+    setWrapperConfig({
+      name: agent.name,
+      description: agent.description,
+      provider: agent.provider,
+      model: agent.model,
+      api_endpoint: agent.api_endpoint || '',
+      api_key: '',
+      system_prompt: agent.system_prompt || '',
+      governance_enabled: agent.governance_enabled,
+      auto_discovery: true
+    });
+    setIsWrapperDialogOpen(true);
+  };
+
+  const handleCreateWrapper = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      // Validate required fields
+      if (!wrapperConfig.name.trim()) {
+        throw new Error('Agent name is required');
+      }
+      if (!wrapperConfig.description.trim()) {
+        throw new Error('Agent description is required');
+      }
+      if (!wrapperConfig.provider.trim()) {
+        throw new Error('Provider is required');
+      }
+      if (!wrapperConfig.model.trim()) {
+        throw new Error('Model is required');
+      }
+
+      // Create wrapped agent
+      const wrappedAgent: WrapperAgent = {
+        id: `wrapped_${Date.now()}`,
+        name: wrapperConfig.name,
+        description: wrapperConfig.description,
+        type: selectedAgent?.type || 'assistant',
+        provider: wrapperConfig.provider,
+        model: wrapperConfig.model,
+        capabilities: selectedAgent?.capabilities || ['general-assistance'],
+        governance_enabled: wrapperConfig.governance_enabled,
+        status: 'configured',
+        api_endpoint: wrapperConfig.api_endpoint,
+        system_prompt: wrapperConfig.system_prompt
       };
 
-      // Add to shared context
-      addWrappedAgent(wrappedAgent);
+      // Try to save to API
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/agents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(wrappedAgent)
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+      } catch (apiError) {
+        console.warn('Could not save to API, proceeding with local storage:', apiError);
+      }
+
+      // Add to local state
+      setAgents(prev => [...prev, wrappedAgent]);
       
+      // Add to agent context
+      if (addAgent) {
+        addAgent({
+          id: wrappedAgent.id,
+          name: wrappedAgent.name,
+          description: wrappedAgent.description,
+          type: wrappedAgent.type,
+          status: 'active',
+          capabilities: wrappedAgent.capabilities,
+          governance_enabled: wrappedAgent.governance_enabled
+        });
+      }
+
+      // Call callback if provided
       if (onAgentWrapped) {
         onAgentWrapped(wrappedAgent);
       }
 
-      setSelectedAgent(null);
-      setDialogOpen(false);
-
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to wrap agent');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateNewAgent = () => {
-    setNewAgent({
-      name: '',
-      description: '',
-      type: 'assistant',
-      provider: 'OpenAI',
-      model: 'gpt-3.5-turbo',
-      capabilities: [],
-      governance_enabled: true,
-      status: 'configured'
-    });
-    setSelectedAgent(null);
-    setDialogOpen(true);
-  };
-
-  const handleSaveNewAgent = async () => {
-    if (!newAgent.name || !newAgent.description) {
-      setError('Name and description are required');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const agent: any = {
-        id: `custom_${Date.now()}`,
-        name: newAgent.name!,
-        description: newAgent.description!,
-        type: newAgent.type as any,
-        provider: newAgent.provider!,
-        model: newAgent.model!,
-        capabilities: newAgent.capabilities || [],
-        governance_enabled: newAgent.governance_enabled!,
-        status: 'active',
-        api_endpoint: `${API_BASE_URL}/api/chat/chat`,
-        system_prompt: newAgent.system_prompt,
-        role: newAgent.type === 'assistant' ? 'specialist' : 
-              newAgent.type === 'creative' ? 'specialist' :
-              newAgent.type === 'tool' ? 'executor' : 'specialist',
-        collaboration_style: 'parallel'
-      };
-
-      // Add to shared context
-      addWrappedAgent(agent);
+      setSuccess(`Successfully wrapped ${wrappedAgent.name}!`);
+      setIsWrapperDialogOpen(false);
       
-      if (onAgentWrapped) {
-        onAgentWrapped(agent);
-      }
-
-      setDialogOpen(false);
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create agent');
+      console.error('Error creating wrapper:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create agent wrapper');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsWrapperDialogOpen(false);
+    setSelectedAgent(null);
+    setError(null);
+  };
+
+  const getAgentIcon = (type: string) => {
+    switch (type) {
+      case 'assistant': return <AgentIcon />;
+      case 'specialist': return <PsychologyIcon />;
+      case 'tool': return <CodeIcon />;
+      case 'creative': return <ScienceIcon />;
+      default: return <AgentIcon />;
+    }
+  };
+
+  const getTypeColor = (type: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+    switch (type) {
+      case 'assistant': return 'primary';
+      case 'specialist': return 'secondary';
+      case 'tool': return 'info';
+      case 'creative': return 'success';
+      default: return 'default';
     }
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <Box sx={{ p: 3, backgroundColor: '#0D1117', minHeight: '100vh', color: 'white' }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
-            Agent Wrapping
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
-            Wrap AI agents with Promethios governance to add trust metrics, compliance monitoring, and ethical oversight to any LLM or custom AI API.
-          </Typography>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Header */}
+      <Box mb={4}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          Agent Wrapper
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          Wrap your AI agents with governance controls for secure testing and deployment
+        </Typography>
+      </Box>
 
+      {/* Success/Error Messages */}
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Loading State */}
+      {isLoading && !isWrapperDialogOpen && (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Agents Grid */}
+      <Grid container spacing={3}>
+        {agents.map((agent) => (
+          <Grid item xs={12} md={6} lg={4} key={agent.id}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  transform: 'translateY(-2px)',
+                  transition: 'all 0.2s ease-in-out'
+                }
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                  {getAgentIcon(agent.type)}
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white' }}>
+                      {agent.name}
+                    </Typography>
+                    <Chip 
+                      label={agent.type} 
+                      size="small" 
+                      color={getTypeColor(agent.type)}
+                    />
+                  </Box>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  {agent.description}
+                </Typography>
+                
+                <Box mb={2}>
+                  <Typography variant="caption" color="text.secondary">
+                    Provider: {agent.provider} • Model: {agent.model}
+                  </Typography>
+                </Box>
+                
+                <Box display="flex" flexWrap="wrap" gap={0.5} mb={2}>
+                  {agent.capabilities.slice(0, 3).map((capability) => (
+                    <Chip 
+                      key={capability} 
+                      label={capability} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  ))}
+                  {agent.capabilities.length > 3 && (
+                    <Chip 
+                      label={`+${agent.capabilities.length - 3} more`} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Box>
+                
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <GovernanceIcon fontSize="small" />
+                  <Typography variant="caption" color="text.secondary">
+                    Governance: {agent.governance_enabled ? 'Enabled' : 'Disabled'}
+                  </Typography>
+                </Box>
+              </CardContent>
+              
+              <Box p={2} pt={0}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => handleWrapAgent(agent)}
+                  disabled={isLoading}
+                >
+                  Wrap Agent
+                </Button>
+              </Box>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Wrapper Configuration Dialog */}
+      <Dialog 
+        open={isWrapperDialogOpen} 
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#1e1e1e',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>
+          Configure Agent Wrapper
+          {selectedAgent && (
+            <Typography variant="subtitle2" color="text.secondary">
+              Wrapping: {selectedAgent.name}
+            </Typography>
+          )}
+        </DialogTitle>
+        
+        <DialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
-        )}
-      </Box>
-
-      {/* Demo Agents Section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
-          🚀 Demo Agents - Try These First!
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#ccc', mb: 3 }}>
-          These pre-configured demo agents showcase different types of AI assistants you can wrap with Promethios governance.
-          Click "Wrap Agent" to see governance in action!
-        </Typography>
-        
-        <Grid container spacing={3}>
-          {demoAgents.map(agent => (
-            <Grid item xs={12} md={6} lg={4} key={agent.id}>
-              <Card 
-                sx={{ 
-                  backgroundColor: '#2a2a2a', 
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  border: '2px solid #4caf50',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)'
+          )}
+          
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Agent Name"
+                value={wrapperConfig.name}
+                onChange={(e) => setWrapperConfig(prev => ({ ...prev, name: e.target.value }))}
+                required
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#1976d2' }
                   }
                 }}
-                onClick={() => {
-                  setSelectedAgent(agent);
-                  setDialogOpen(true);
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    {getTypeIcon(agent.type)}
-                    <Typography variant="h6" sx={{ color: 'white', ml: 1, flex: 1 }}>
-                      {agent.name}
-                    </Typography>
-                    <Chip 
-                      label="DEMO" 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: '#4caf50', 
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}
-                    />
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ color: '#ccc', mb: 2, minHeight: '60px' }}>
-                    {agent.description}
-                  </Typography>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                      <Chip 
-                        label={agent.type} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: getTypeColor(agent.type), 
-                          color: 'white'
-                        }}
-                      />
-                      <Chip 
-                        label={agent.provider} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: getProviderColor(agent.provider), 
-                          color: 'white'
-                        }}
-                      />
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <GovernanceIcon sx={{ 
-                        color: agent.governance_enabled ? '#4caf50' : '#ccc',
-                        fontSize: 16 
-                      }} />
-                      <Typography variant="caption" sx={{ 
-                        color: agent.governance_enabled ? '#4caf50' : '#ccc' 
-                      }}>
-                        {agent.governance_enabled ? 'Governance Ready' : 'No Governance'}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    sx={{ 
-                      backgroundColor: '#4caf50',
-                      '&:hover': { backgroundColor: '#45a049' }
-                    }}
-                  >
-                    Wrap Agent
-                  </Button>
-                </CardContent>
-              </Card>
+              />
             </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      <Divider sx={{ my: 4, backgroundColor: '#555' }} />
-
-      {/* Wrap New Agent Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
-          Wrap New Agent
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#ccc', mb: 3 }}>
-          Create and wrap your own custom AI agent with Promethios governance.
-        </Typography>
-        
-        <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={handleCreateNewAgent}
-          sx={{ 
-            color: 'white', 
-            borderColor: 'white',
-            '&:hover': {
-              borderColor: '#1976d2',
-              backgroundColor: 'rgba(25, 118, 210, 0.1)'
-            }
-          }}
-        >
-          Create New Agent
-        </Button>
-      </Box>
-
-      {/* Wrapped Agents Section */}
-      {wrappedAgents.length > 0 && (
-        <Box>
-          <Typography variant="h5" gutterBottom sx={{ color: 'white', mb: 3 }}>
-            Your Wrapped Agents ({wrappedAgents.length})
-          </Typography>
-          
-          <Grid container spacing={3}>
-            {wrappedAgents.map(agent => (
-              <Grid item xs={12} md={6} lg={4} key={agent.id}>
-                <Card sx={{ backgroundColor: '#2a2a2a', color: 'white' }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      {getTypeIcon(agent.type)}
-                      <Typography variant="h6" sx={{ color: 'white', ml: 1, flex: 1 }}>
-                        {agent.name}
-                      </Typography>
-                      <Chip 
-                        label={agent.user_created ? "CUSTOM" : "DEMO"} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: agent.user_created ? '#1976d2' : '#4caf50', 
-                          color: 'white'
-                        }}
-                      />
-                    </Box>
-                    
-                    <Typography variant="body2" sx={{ color: '#ccc', mb: 2 }}>
-                      {agent.description}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                      <Chip 
-                        label={agent.provider} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: getProviderColor(agent.provider), 
-                          color: 'white'
-                        }}
-                      />
-                      <Chip 
-                        label="Governed" 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: '#4caf50', 
-                          color: 'white'
-                        }}
-                      />
-                    </Box>
-
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<SettingsIcon />}
-                      sx={{ color: 'white', borderColor: 'white' }}
-                    >
-                      Configure
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Provider</InputLabel>
+                <Select
+                  value={wrapperConfig.provider}
+                  onChange={(e) => setWrapperConfig(prev => ({ ...prev, provider: e.target.value }))}
+                  label="Provider"
+                  sx={{
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' }
+                  }}
+                >
+                  <MenuItem value="OpenAI">OpenAI</MenuItem>
+                  <MenuItem value="Anthropic">Anthropic</MenuItem>
+                  <MenuItem value="Google">Google</MenuItem>
+                  <MenuItem value="Custom">Custom</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Model"
+                value={wrapperConfig.model}
+                onChange={(e) => setWrapperConfig(prev => ({ ...prev, model: e.target.value }))}
+                required
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#1976d2' }
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="API Endpoint (Optional)"
+                value={wrapperConfig.api_endpoint}
+                onChange={(e) => setWrapperConfig(prev => ({ ...prev, api_endpoint: e.target.value }))}
+                placeholder="https://api.example.com/v1"
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#1976d2' }
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Description"
+                value={wrapperConfig.description}
+                onChange={(e) => setWrapperConfig(prev => ({ ...prev, description: e.target.value }))}
+                required
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#1976d2' }
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                label="System Prompt (Optional)"
+                value={wrapperConfig.system_prompt}
+                onChange={(e) => setWrapperConfig(prev => ({ ...prev, system_prompt: e.target.value }))}
+                placeholder="You are a helpful AI assistant..."
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'rgba(255, 255, 255, 0.7)' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#1976d2' }
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={wrapperConfig.governance_enabled}
+                    onChange={(e) => setWrapperConfig(prev => ({ ...prev, governance_enabled: e.target.checked }))}
+                    color="primary"
+                  />
+                }
+                label="Enable Governance Controls"
+                sx={{ color: 'white' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={wrapperConfig.auto_discovery}
+                    onChange={(e) => setWrapperConfig(prev => ({ ...prev, auto_discovery: e.target.checked }))}
+                    color="primary"
+                  />
+                }
+                label="Auto-Discovery Enabled"
+                sx={{ color: 'white' }}
+              />
+            </Grid>
           </Grid>
-        </Box>
-      )}
-
-      {/* Agent Configuration Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={() => setDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { backgroundColor: '#2a2a2a', color: 'white' }
-        }}
-      >
-        <DialogTitle sx={{ color: 'white' }}>
-          {selectedAgent ? `Wrap ${selectedAgent.name}` : 'Create New Agent'}
-        </DialogTitle>
-        <DialogContent>
-          {selectedAgent ? (
-            // Demo agent wrapping
-            <Box>
-              <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
-                {selectedAgent.description}
-              </Typography>
-              
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                  Agent Configuration
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#ccc' }}>Type:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white' }}>{selectedAgent.type}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#ccc' }}>Provider:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white' }}>{selectedAgent.provider}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#ccc' }}>Model:</Typography>
-                    <Typography variant="body1" sx={{ color: 'white' }}>{selectedAgent.model}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" sx={{ color: '#ccc' }}>Governance:</Typography>
-                    <Typography variant="body1" sx={{ 
-                      color: selectedAgent.governance_enabled ? '#4caf50' : '#f44336' 
-                    }}>
-                      {selectedAgent.governance_enabled ? 'Enabled' : 'Disabled'}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Box>
-
-              <Alert severity="info" sx={{ backgroundColor: '#1976d2', color: 'white', mb: 2 }}>
-                This demo agent will be wrapped with Promethios governance, adding trust metrics, compliance monitoring, and ethical oversight. Once wrapped, it will be available for multi-agent team building.
-              </Alert>
-            </Box>
-          ) : (
-            // New agent creation
-            <Box>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Agent Name"
-                    value={newAgent.name || ''}
-                    onChange={(e) => setNewAgent(prev => ({ ...prev, name: e.target.value }))}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: 'white',
-                        '& fieldset': { borderColor: '#555' },
-                        '&:hover fieldset': { borderColor: '#777' },
-                        '&.Mui-focused fieldset': { borderColor: '#1976d2' }
-                      },
-                      '& .MuiInputLabel-root': { color: '#ccc' }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Description"
-                    value={newAgent.description || ''}
-                    onChange={(e) => setNewAgent(prev => ({ ...prev, description: e.target.value }))}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: 'white',
-                        '& fieldset': { borderColor: '#555' },
-                        '&:hover fieldset': { borderColor: '#777' },
-                        '&.Mui-focused fieldset': { borderColor: '#1976d2' }
-                      },
-                      '& .MuiInputLabel-root': { color: '#ccc' }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ color: '#ccc' }}>Type</InputLabel>
-                    <Select
-                      value={newAgent.type || 'assistant'}
-                      onChange={(e) => setNewAgent(prev => ({ ...prev, type: e.target.value as any }))}
-                      sx={{
-                        color: 'white',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#777' },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' }
-                      }}
-                    >
-                      <MenuItem value="assistant">Assistant</MenuItem>
-                      <MenuItem value="specialist">Specialist</MenuItem>
-                      <MenuItem value="tool">Tool</MenuItem>
-                      <MenuItem value="creative">Creative</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ color: '#ccc' }}>Provider</InputLabel>
-                    <Select
-                      value={newAgent.provider || 'OpenAI'}
-                      onChange={(e) => setNewAgent(prev => ({ ...prev, provider: e.target.value }))}
-                      sx={{
-                        color: 'white',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#777' },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' }
-                      }}
-                    >
-                      <MenuItem value="OpenAI">OpenAI</MenuItem>
-                      <MenuItem value="Anthropic">Anthropic</MenuItem>
-                      <MenuItem value="Cohere">Cohere</MenuItem>
-                      <MenuItem value="HuggingFace">HuggingFace</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={newAgent.governance_enabled || false}
-                        onChange={(e) => setNewAgent(prev => ({ ...prev, governance_enabled: e.target.checked }))}
-                        sx={{
-                          '& .MuiSwitch-switchBase.Mui-checked': { color: '#4caf50' },
-                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#4caf50' }
-                        }}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <GovernanceIcon sx={{ color: newAgent.governance_enabled ? '#4caf50' : '#ccc' }} />
-                        <Typography sx={{ color: 'white' }}>
-                          Enable Promethios Governance
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ color: 'white' }}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          )}
         </DialogContent>
+        
         <DialogActions>
-          <Button 
-            onClick={() => setDialogOpen(false)}
-            sx={{ color: '#ccc' }}
-            disabled={loading}
-          >
+          <Button onClick={handleCloseDialog} sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
             Cancel
           </Button>
           <Button 
-            onClick={selectedAgent ? () => handleWrapDemoAgent(selectedAgent) : handleSaveNewAgent}
+            onClick={handleCreateWrapper}
             variant="contained"
-            disabled={loading}
+            disabled={isLoading || !wrapperConfig.name.trim() || !wrapperConfig.description.trim()}
+            startIcon={isLoading ? <CircularProgress size={20} /> : <AddIcon />}
           >
-            {loading ? <CircularProgress size={20} /> : (selectedAgent ? 'Wrap Agent' : 'Create Agent')}
+            {isLoading ? 'Creating...' : 'Create Wrapper'}
           </Button>
         </DialogActions>
       </Dialog>
-      </Box>
-    </ThemeProvider>
+    </Container>
   );
 };
 
