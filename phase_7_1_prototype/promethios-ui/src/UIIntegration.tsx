@@ -253,7 +253,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/veritas" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <EmotionalVeritasPage />
+              <EnterpriseVeritasDashboard />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
