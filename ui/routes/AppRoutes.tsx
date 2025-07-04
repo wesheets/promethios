@@ -141,6 +141,7 @@ const AppRoutes: React.FC = () => {
           <Route path="governance">
             <Route path="" element={<EnhancedVeritasDashboard />} />
             <Route path="dashboard" element={<EnhancedVeritasDashboard />} />
+            <Route path="veritas" element={<EnhancedVeritasDashboard />} />
             <Route path="emotional-veritas" element={<EmotionalVeritasPage />} />
             <Route path="admin" element={<EmotionalVeritasAdminPage />} />
           </Route>
@@ -178,6 +179,7 @@ const AppRoutes: React.FC = () => {
           <Route path="governance">
             <Route path="" element={<EnhancedVeritasDashboard />} />
             <Route path="dashboard" element={<EnhancedVeritasDashboard />} />
+            <Route path="veritas" element={<EnhancedVeritasDashboard />} />
             <Route path="emotional-veritas" element={<EmotionalVeritasPage />} />
             <Route path="admin" element={<EmotionalVeritasAdminPage />} />
           </Route>
