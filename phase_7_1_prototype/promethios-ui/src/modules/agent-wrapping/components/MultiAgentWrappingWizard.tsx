@@ -557,26 +557,34 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
       
       // Load full agent objects for the selected agents
       console.log('🤖 Loading agent objects for system creation...');
+      console.log('📋 Selected main agent IDs:', selectedAgents);
+      
+      // Convert main agent IDs to testing versions for consistency with single agent chat
+      const testingAgentIds = selectedAgents.map(agentId => `${agentId}-testing`);
+      console.log('🧪 Using testing agent IDs for multi-agent system:', testingAgentIds);
+      
       const agentObjects = await Promise.all(
-        selectedAgents.map(async (agentId) => {
+        testingAgentIds.map(async (testingAgentId, index) => {
+          const originalAgentId = selectedAgents[index]; // Get the original ID for role lookup
           try {
-            // Try to load existing agent data
-            const agentData = await storageService.get('agents', agentId);
+            // Try to load testing version of the agent
+            const agentData = await storageService.get('agents', testingAgentId);
             
             if (agentData) {
-              console.log(`✅ Loaded agent data for ${agentId}:`, agentData.name);
-              // Get the selected role from UI, fallback to agent's original role or 'conversational'
-              const selectedRole = agentRoles[agentId]?.name || agentData.role || 'conversational';
+              console.log(`✅ Loaded testing agent data for ${testingAgentId}:`, agentData.name);
+              // Get the selected role from UI using original agent ID, fallback to agent's original role or 'conversational'
+              const selectedRole = agentRoles[originalAgentId]?.name || agentData.role || 'conversational';
               console.log(`🎭 Assigning role "${selectedRole}" to agent ${agentData.name}`);
               
               return {
-                id: agentId,
+                id: testingAgentId, // Use testing agent ID
+                originalId: originalAgentId, // Keep reference to original ID
                 name: agentData.name,
                 role: selectedRole,
                 assignedRole: selectedRole, // Also store in assignedRole for compatibility
                 provider: agentData.provider || 'openai',
                 model: agentData.model || 'gpt-3.5-turbo',
-                systemPrompt: agentData.systemPrompt || agentData.instructions || `You are ${agentData.name || agentId}.`,
+                systemPrompt: agentData.systemPrompt || agentData.instructions || `You are ${agentData.name || originalAgentId}.`,
                 apiConfig: {
                   temperature: 0.7,
                   maxTokens: 1000,
@@ -584,40 +592,64 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
                 }
               };
             } else {
-              // Fallback for missing agent data
-              console.warn(`⚠️ No agent data found for ${agentId}, using fallback`);
-              // Get the selected role from UI, fallback to 'conversational'
-              const selectedRole = agentRoles[agentId]?.name || 'conversational';
-              console.log(`🎭 Assigning fallback role "${selectedRole}" to agent ${agentId}`);
+              // Fallback: try to load main agent if testing version doesn't exist
+              console.warn(`⚠️ No testing agent data found for ${testingAgentId}, trying main agent ${originalAgentId}`);
+              const mainAgentData = await storageService.get('agents', originalAgentId);
               
-              return {
-                id: agentId,
-                name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
-                role: selectedRole,
-                assignedRole: selectedRole, // Also store in assignedRole for compatibility
-                provider: 'openai',
-                model: 'gpt-3.5-turbo',
-                systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
-                apiConfig: {
-                  temperature: 0.7,
-                  maxTokens: 1000
-                }
-              };
+              if (mainAgentData) {
+                console.log(`✅ Loaded main agent data as fallback for ${originalAgentId}:`, mainAgentData.name);
+                const selectedRole = agentRoles[originalAgentId]?.name || mainAgentData.role || 'conversational';
+                
+                return {
+                  id: testingAgentId, // Still use testing ID for consistency
+                  originalId: originalAgentId,
+                  name: mainAgentData.name,
+                  role: selectedRole,
+                  assignedRole: selectedRole,
+                  provider: mainAgentData.provider || 'openai',
+                  model: mainAgentData.model || 'gpt-3.5-turbo',
+                  systemPrompt: mainAgentData.systemPrompt || mainAgentData.instructions || `You are ${mainAgentData.name || originalAgentId}.`,
+                  apiConfig: {
+                    temperature: 0.7,
+                    maxTokens: 1000,
+                    ...mainAgentData.apiConfig
+                  }
+                };
+              } else {
+                // Final fallback for missing agent data
+                console.warn(`⚠️ No agent data found for ${originalAgentId}, using fallback`);
+                const selectedRole = agentRoles[originalAgentId]?.name || 'conversational';
+                console.log(`🎭 Assigning fallback role "${selectedRole}" to agent ${originalAgentId}`);
+                
+                return {
+                  id: testingAgentId, // Use testing ID for consistency
+                  originalId: originalAgentId,
+                  name: `Agent ${originalAgentId}`,
+                  role: selectedRole,
+                  assignedRole: selectedRole,
+                  provider: 'openai',
+                  model: 'gpt-3.5-turbo',
+                  systemPrompt: `You are Agent ${originalAgentId} with the role of ${selectedRole}.`,
+                  apiConfig: {
+                    temperature: 0.7,
+                    maxTokens: 1000
+                  }
+                };
+              }
             }
           } catch (error) {
-            console.warn(`Failed to load agent ${agentId}, using fallback:`, error);
-            // Get the selected role from UI, fallback to 'conversational'
-            const selectedRole = agentRoles[agentId]?.name || 'conversational';
-            console.log(`🎭 Assigning error fallback role "${selectedRole}" to agent ${agentId}`);
+            console.error(`❌ Error loading agent ${testingAgentId}:`, error);
+            const selectedRole = agentRoles[originalAgentId]?.name || 'conversational';
             
             return {
-              id: agentId,
-              name: `Agent ${agentId.replace('agent_', '').toUpperCase()}`,
+              id: testingAgentId,
+              originalId: originalAgentId,
+              name: `Agent ${originalAgentId}`,
               role: selectedRole,
-              assignedRole: selectedRole, // Also store in assignedRole for compatibility
+              assignedRole: selectedRole,
               provider: 'openai',
               model: 'gpt-3.5-turbo',
-              systemPrompt: `You are a helpful AI assistant with ID ${agentId}.`,
+              systemPrompt: `You are Agent ${originalAgentId} with the role of ${selectedRole}.`,
               apiConfig: {
                 temperature: 0.7,
                 maxTokens: 1000
@@ -627,7 +659,7 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
         })
       );
       
-      console.log('🤖 Loaded agent objects for system:', agentObjects.map(a => `${a.name} (${a.provider})`));
+      console.log('🤖 Loaded agent objects for system:', agentObjects.map(a => `${a.name} (${a.provider}) [${a.id}]`));
       
       const completeSystemData = {
         ...systemData,
@@ -637,8 +669,9 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
         updatedAt: new Date().toISOString(),
         userId: 'current-user', // TODO: Get from auth context
         collaborationModel,
-        agentIds: selectedAgents,
-        agents: agentObjects, // Include full agent objects
+        agentIds: testingAgentIds, // Use testing agent IDs for consistency
+        originalAgentIds: selectedAgents, // Keep reference to original IDs
+        agents: agentObjects, // Include full agent objectsts
         governanceConfiguration: {
           rateLimiting: governanceRules.rateLimiting,
           crossAgentValidation: governanceRules.crossAgentValidation,
