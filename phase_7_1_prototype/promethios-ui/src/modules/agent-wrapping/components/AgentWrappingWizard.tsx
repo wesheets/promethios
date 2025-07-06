@@ -178,7 +178,7 @@ const AgentWrappingWizard: React.FC = () => {
         throw new Error('No user authenticated');
       }
 
-      console.log('🚀 Starting agent wrapping with governance integration...');
+      console.log('🚀 Starting agent wrapping with dual deployment...');
       console.log('Using currentUser:', currentUser.uid);
 
       // Create governance policy from wizard data (or null for no policy)
@@ -369,7 +369,43 @@ const AgentWrappingWizard: React.FC = () => {
       console.log('Using user ID:', currentUser.uid);
       await storageService.saveAgent(updatedAgent);
 
-      console.log('🎉 Agent successfully wrapped and deployed with governance policy');
+      // Step 4: Dual Deployment (Testing + Production)
+      console.log('🚀 Starting dual deployment (testing + production)...');
+      
+      // Create testing version
+      const testingAgent = {
+        ...updatedAgent,
+        identity: {
+          ...updatedAgent.identity,
+          id: `${updatedAgent.identity.id}-testing`,
+          name: `${updatedAgent.identity.name} (Testing)`,
+        },
+        environment: 'testing',
+        isDeployed: true,
+        deploymentType: 'testing'
+      };
+      
+      // Create production version
+      const productionAgent = {
+        ...updatedAgent,
+        identity: {
+          ...updatedAgent.identity,
+          id: `${updatedAgent.identity.id}-production`,
+          name: `${updatedAgent.identity.name} (Production)`,
+        },
+        environment: 'production',
+        isDeployed: true,
+        deploymentType: 'production'
+      };
+      
+      // Save both versions
+      await storageService.saveAgent(testingAgent);
+      await storageService.saveAgent(productionAgent);
+      
+      console.log('✅ Testing deployment completed:', testingAgent.identity.id);
+      console.log('✅ Production deployment completed:', productionAgent.identity.id);
+
+      console.log('🎉 Agent successfully wrapped and deployed to both testing and production');
       console.log('Final agent state:', updatedAgent);
       
       // Verify the agent was saved by trying to load it

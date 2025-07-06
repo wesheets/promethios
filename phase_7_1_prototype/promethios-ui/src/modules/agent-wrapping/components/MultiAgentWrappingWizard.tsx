@@ -653,15 +653,63 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
       // Store in the 'agents' namespace for multi-agent systems
       await storageService.set('agents', `multi-agent-system-${contextId}`, completeSystemData);
       
-      // Also store a reference in user's system list
+      // Dual Deployment: Create testing and production versions
+      console.log('🚀 Starting dual deployment (testing + production)...');
+      
+      // Create testing version
+      const testingSystemData = {
+        ...completeSystemData,
+        id: `${contextId}-testing`,
+        contextId: `${contextId}-testing`,
+        name: `${systemName} (Testing)`,
+        environment: 'testing',
+        deploymentType: 'testing'
+      };
+      
+      // Create production version
+      const productionSystemData = {
+        ...completeSystemData,
+        id: `${contextId}-production`,
+        contextId: `${contextId}-production`,
+        name: `${systemName} (Production)`,
+        environment: 'production',
+        deploymentType: 'production'
+      };
+      
+      // Save both versions
+      await storageService.set('agents', `multi-agent-system-${contextId}-testing`, testingSystemData);
+      await storageService.set('agents', `multi-agent-system-${contextId}-production`, productionSystemData);
+      
+      console.log('✅ Testing deployment completed:', `${contextId}-testing`);
+      console.log('✅ Production deployment completed:', `${contextId}-production`);
+      
+      // Also store references in user's system list for both environments
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
-      userSystems.push({
-        id: contextId,
-        name: systemName,
-        description: systemDescription,
-        createdAt: new Date().toISOString(),
-        type: 'multi-agent-system'
-      });
+      userSystems.push(
+        {
+          id: contextId,
+          name: systemName,
+          description: systemDescription,
+          createdAt: new Date().toISOString(),
+          type: 'multi-agent-system'
+        },
+        {
+          id: `${contextId}-testing`,
+          name: `${systemName} (Testing)`,
+          description: `${systemDescription} - Testing Environment`,
+          createdAt: new Date().toISOString(),
+          type: 'multi-agent-system',
+          environment: 'testing'
+        },
+        {
+          id: `${contextId}-production`,
+          name: `${systemName} (Production)`,
+          description: `${systemDescription} - Production Environment`,
+          createdAt: new Date().toISOString(),
+          type: 'multi-agent-system',
+          environment: 'production'
+        }
+      );
       await storageService.set('user', 'multi-agent-systems', userSystems);
       
       setCreatedSystemId(contextId);
