@@ -18,7 +18,7 @@ import {
   QuantumUncertaintyResult
 } from './types';
 import { VerificationResult, VeritasOptions } from '../types';
-import veritasService from '../../services/VeritasService';
+import { veritasService } from '../../services/VeritasService';
 import { uncertaintyEngine } from './uncertaintyEngine';
 import { hitlCollaborationEngine } from './hitlCollaborationEngine';
 
