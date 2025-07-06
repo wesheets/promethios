@@ -22,9 +22,14 @@ export class FirebaseStorageProvider implements StorageProvider {
   private async initialize(): Promise<void> {
     try {
       // Test Firebase connection with a simple read
-      await this.isAvailable();
-      this.isInitialized = true;
-      console.log('🔥 FirebaseStorageProvider initialized successfully');
+      const available = await this.isAvailable();
+      if (available) {
+        this.isInitialized = true;
+        console.log('🔥 FirebaseStorageProvider initialized successfully');
+      } else {
+        this.isInitialized = false;
+        console.warn('⚠️ FirebaseStorageProvider initialization failed - Firebase not available, will use fallback');
+      }
     } catch (error) {
       console.warn('⚠️ FirebaseStorageProvider initialization failed, will use fallback:', error);
       this.isInitialized = false;
@@ -33,9 +38,18 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
+      // Check if Firebase is properly configured
+      if (!db) {
+        console.warn('Firebase database not initialized');
+        return false;
+      }
+
       // Test Firebase connection by trying to read from a test document
       const testDoc = doc(db, 'system', 'health_check');
-      await getDoc(testDoc);
+      const docSnap = await getDoc(testDoc);
+      
+      // If we can read (even if document doesn't exist), Firebase is available
+      console.log('🔥 Firebase connection test successful');
       return true;
     } catch (error) {
       console.warn('Firebase not available:', error);
@@ -45,13 +59,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async get<T>(key: string): Promise<T | null> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
-        return this.fallbackProvider.get<T>(key);
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
+          return this.fallbackProvider.get<T>(key);
+        }
         return null;
       }
 
@@ -91,13 +105,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async set<T>(key: string, value: T, options?: StorageOptions): Promise<void> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
-        return this.fallbackProvider.set(key, value, options);
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
+          return this.fallbackProvider.set(key, value, options);
+        }
         throw new Error('Firebase not available and no fallback provider');
       }
 
@@ -144,13 +158,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async delete(key: string): Promise<void> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
-        return this.fallbackProvider.delete(key);
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
+          return this.fallbackProvider.delete(key);
+        }
         throw new Error('Firebase not available and no fallback provider');
       }
 
@@ -186,12 +200,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async clear(): Promise<void> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.clear();
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for clear operation`);
+          return this.fallbackProvider.clear();
+        }
         throw new Error('Firebase not available and no fallback provider');
       }
 
@@ -217,12 +232,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async keys(): Promise<string[]> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.keys();
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for keys operation`);
+          return this.fallbackProvider.keys();
+        }
         return [];
       }
 
@@ -249,12 +265,13 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async size(): Promise<number> {
     try {
+      // Always check availability for each operation
       const available = await this.isAvailable();
-      if (!available && this.fallbackProvider) {
-        return this.fallbackProvider.size();
-      }
-
       if (!available) {
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase unavailable, using fallback for size operation`);
+          return this.fallbackProvider.size();
+        }
         return 0;
       }
 
@@ -353,6 +370,66 @@ export class FirebaseStorageProvider implements StorageProvider {
     } catch (error) {
       console.error('FirebaseStorageProvider.getStats error:', error);
       return { totalDocuments: 0, totalSize: 0, collections: [] };
+    }
+  }
+
+  /**
+   * Debug method to test Firebase connectivity and configuration
+   */
+  async debugFirebaseConnection(): Promise<{
+    isConfigured: boolean;
+    isConnected: boolean;
+    canRead: boolean;
+    canWrite: boolean;
+    error?: string;
+  }> {
+    const result = {
+      isConfigured: false,
+      isConnected: false,
+      canRead: false,
+      canWrite: false,
+      error: undefined as string | undefined
+    };
+
+    try {
+      // Check if Firebase is configured
+      if (!db) {
+        result.error = 'Firebase database not initialized';
+        return result;
+      }
+      result.isConfigured = true;
+
+      // Test connection
+      const testDoc = doc(db, 'debug', 'connection_test');
+      
+      // Test read
+      try {
+        await getDoc(testDoc);
+        result.canRead = true;
+        result.isConnected = true;
+      } catch (readError) {
+        result.error = `Read test failed: ${readError}`;
+        return result;
+      }
+
+      // Test write
+      try {
+        await setDoc(testDoc, {
+          timestamp: Date.now(),
+          test: 'Firebase connection test'
+        });
+        result.canWrite = true;
+      } catch (writeError) {
+        result.error = `Write test failed: ${writeError}`;
+        return result;
+      }
+
+      console.log('🔥 Firebase debug test completed successfully');
+      return result;
+
+    } catch (error) {
+      result.error = `Debug test failed: ${error}`;
+      return result;
     }
   }
 }
