@@ -19,6 +19,9 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  Switch,
+  FormControlLabel,
+  Alert,
 } from '@mui/material';
 import {
   Search,
@@ -31,14 +34,18 @@ import {
   TrendingUp,
   Warning,
   CheckCircle,
+  Rocket,
+  Science,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { darkTheme } from '../theme/darkTheme';
 import MultiAgentWrappingWizard from '../modules/agent-wrapping/components/MultiAgentWrappingWizard';
+import EnhancedMultiAgentWrappingWizard from '../modules/agent-wrapping/components/EnhancedMultiAgentWrappingWizard';
 
 const MultiAgentWrappingPage: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
+  const [useDualDeployment, setUseDualDeployment] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -178,7 +185,7 @@ const MultiAgentWrappingPage: React.FC = () => {
     return (
       <ThemeProvider theme={darkTheme}>
         <CssBaseline />
-        <Box>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
           <Button 
             variant="outlined" 
             sx={{ mb: 2 }}
@@ -186,8 +193,81 @@ const MultiAgentWrappingPage: React.FC = () => {
           >
             ← Back to Multi-Agent Systems
           </Button>
-          <MultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
-        </Box>
+
+          {/* Dual Deployment Toggle */}
+          <Card sx={{ mb: 4, border: useDualDeployment ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)' }}>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    {useDualDeployment ? (
+                      <Rocket color="primary" />
+                    ) : (
+                      <Science color="action" />
+                    )}
+                    <Typography variant="h6">
+                      {useDualDeployment ? 'Enhanced Multi-Agent Dual Deployment' : 'Standard Multi-Agent Wrapping'}
+                    </Typography>
+                    {useDualDeployment && (
+                      <Chip label="BETA" color="primary" size="small" />
+                    )}
+                  </Box>
+                </Box>
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={useDualDeployment}
+                      onChange={(e) => setUseDualDeployment(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Enable Dual Deployment"
+                />
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                {useDualDeployment ? (
+                  <>
+                    🎯 <strong>Multi-Agent Dual Deployment:</strong> Creates both testing and production versions of your multi-agent system automatically. 
+                    Test system-level governance and agent collaboration, then deploy live systems off Promethios.
+                  </>
+                ) : (
+                  <>
+                    🔧 <strong>Standard Mode:</strong> Traditional multi-agent system creation with basic governance controls.
+                  </>
+                )}
+              </Typography>
+
+              {useDualDeployment && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Multi-Agent Dual Deployment Benefits:</strong>
+                    <br />• System-level governance and cross-agent validation
+                    <br />• Collaboration session management and monitoring
+                    <br />• Automatic testing and production environment setup
+                    <br />• Enhanced multi-agent orchestration and consensus
+                    <br />• Comprehensive deployment package generation
+                  </Typography>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Render appropriate wizard based on mode */}
+          {useDualDeployment ? (
+            <EnhancedMultiAgentWrappingWizard 
+              onSystemCreated={(system) => {
+                console.log('Enhanced multi-agent system created:', system);
+                loadSystemsFromStorage();
+                setShowWizard(false);
+              }}
+              onCancel={() => setUseDualDeployment(false)}
+            />
+          ) : (
+            <MultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
+          )}
+        </Container>
       </ThemeProvider>
     );
   }
