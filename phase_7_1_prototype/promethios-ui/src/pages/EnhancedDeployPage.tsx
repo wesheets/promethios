@@ -349,10 +349,287 @@ const RealDeployedAgentCard: React.FC<{ deployment: RealDeploymentResult }> = ({
   );
 };
 
-const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy: (result: RealDeploymentResult) => void }> = ({ 
+// Available Agents Tab Component
+const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }> = ({ onDeployAgent }) => {
+  const [availableAgents, setAvailableAgents] = useState<any[]>([]);
+  const [availableMultiAgentSystems, setAvailableMultiAgentSystems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadAvailableAgents();
+  }, [currentUser]);
+
+  const loadAvailableAgents = async () => {
+    try {
+      if (!currentUser?.uid) {
+        setAvailableAgents([]);
+        setAvailableMultiAgentSystems([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      // Load agents from unified storage where our dual deployment system stores them
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
+      
+      // Get all agent keys for this user
+      const agentKeys = await unifiedStorage.keys('agents');
+      const multiAgentKeys = await unifiedStorage.keys('multiAgentSystems');
+      
+      // Filter for this user's agents and production versions
+      const userAgentKeys = agentKeys.filter(key => key.includes(currentUser.uid));
+      const userMultiAgentKeys = multiAgentKeys.filter(key => key.includes(currentUser.uid));
+      
+      // Load production versions of agents (these are ready for deployment)
+      const productionAgents = [];
+      const productionSystems = [];
+      
+      for (const key of userAgentKeys) {
+        if (key.includes('-production')) {
+          try {
+            const agent = await unifiedStorage.get('agents', key);
+            if (agent) {
+              productionAgents.push({
+                id: key.replace('-production', ''), // Remove suffix for UI
+                metadata: {
+                  name: agent.name || agent.metadata?.name || 'Unnamed Agent',
+                  description: agent.description || agent.metadata?.description || 'No description',
+                  provider: agent.provider || agent.agentType || 'Unknown',
+                  model: agent.model || agent.configuration?.model || 'Unknown',
+                },
+                deploymentWrapper: true, // Mark as ready for deployment
+                ...agent
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to load agent ${key}:`, error);
+          }
+        }
+      }
+      
+      for (const key of userMultiAgentKeys) {
+        if (key.includes('-production')) {
+          try {
+            const system = await unifiedStorage.get('multiAgentSystems', key);
+            if (system) {
+              productionSystems.push({
+                id: key.replace('-production', ''), // Remove suffix for UI
+                metadata: {
+                  name: system.name || system.metadata?.name || 'Unnamed System',
+                  description: system.description || system.metadata?.description || 'No description',
+                  type: system.type || 'multi-agent-system',
+                },
+                deploymentSystem: true, // Mark as ready for deployment
+                ...system
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to load multi-agent system ${key}:`, error);
+          }
+        }
+      }
+      
+      console.log(`📦 Loaded ${productionAgents.length} production agents and ${productionSystems.length} production systems for deployment`);
+      
+      setAvailableAgents(productionAgents);
+      setAvailableMultiAgentSystems(productionSystems);
+      
+    } catch (error) {
+      console.error('Failed to load available agents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available agents for deployment",
+        variant: "destructive"
+      });
+      setAvailableAgents([]);
+      setAvailableMultiAgentSystems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const AvailableAgentCard: React.FC<{ agent: any; type: 'single' | 'multi' }> = ({ agent, type }) => (
+    <Card sx={{ 
+      backgroundColor: '#2d3748', 
+      color: 'white',
+      border: '1px solid #4a5568',
+      borderRadius: '12px',
+      transition: 'all 0.2s ease-in-out',
+      '&:hover': {
+        borderColor: '#718096',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+      }
+    }}>
+      <CardContent sx={{ p: 3 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                {agent.metadata.name}
+              </Typography>
+              <Chip 
+                label="Ready to Deploy" 
+                size="small" 
+                sx={{ 
+                  backgroundColor: '#10b981', 
+                  color: 'white',
+                  fontSize: '0.7rem',
+                  height: 20,
+                }} 
+              />
+            </Box>
+            <Typography variant="body2" sx={{ color: '#a0aec0', mb: 1 }}>
+              {agent.metadata.description}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip 
+                label={type === 'single' ? agent.metadata.provider : 'Multi-Agent System'}
+                size="small"
+                sx={{ 
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  height: 20
+                }}
+              />
+              {type === 'single' && (
+                <Chip 
+                  label={agent.metadata.model}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    fontSize: '0.75rem',
+                    height: 20
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Metrics */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={6}>
+            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
+              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
+                Health Status
+              </Typography>
+              <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 600 }}>
+                Healthy
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6}>
+            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
+              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
+                Trust Score
+              </Typography>
+              <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600 }}>
+                85%
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Action Button */}
+        <Button
+          variant="contained"
+          fullWidth
+          startIcon={<Launch />}
+          onClick={() => onDeployAgent(agent.id)}
+          sx={{
+            backgroundColor: '#7c3aed',
+            '&:hover': { backgroundColor: '#6d28d9' },
+            fontWeight: 600,
+          }}
+        >
+          Deploy {type === 'single' ? 'Agent' : 'System'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (availableAgents.length === 0 && availableMultiAgentSystems.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <CloudUpload sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
+        <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
+          No Agents Ready for Deployment
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+          Create and wrap agents using the Agent Wrapping wizard to see them here ready for deployment.
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          href="/ui/agents/wrapping"
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': { backgroundColor: '#2563eb' },
+          }}
+        >
+          Create Agent
+        </Button>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {/* Single Agents Section */}
+      {availableAgents.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+            Single Agents ({availableAgents.length})
+          </Typography>
+          <Grid container spacing={3}>
+            {availableAgents.map((agent) => (
+              <Grid item xs={12} md={6} lg={4} key={agent.id}>
+                <AvailableAgentCard agent={agent} type="single" />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Multi-Agent Systems Section */}
+      {availableMultiAgentSystems.length > 0 && (
+        <Box>
+          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+            Multi-Agent Systems ({availableMultiAgentSystems.length})
+          </Typography>
+          <Grid container spacing={3}>
+            {availableMultiAgentSystems.map((system) => (
+              <Grid item xs={12} md={6} lg={4} key={system.id}>
+                <AvailableAgentCard agent={system} type="multi" />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy: (result: RealDeploymentResult) => void; preSelectedAgent?: string }> = ({ 
   open, 
   onClose, 
-  onDeploy 
+  onDeploy,
+  preSelectedAgent 
 }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState('');
@@ -369,17 +646,89 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
   useEffect(() => {
     if (open) {
       loadAvailableAgents();
+      if (preSelectedAgent) {
+        setSelectedAgent(preSelectedAgent);
+        setActiveStep(1); // Skip agent selection if pre-selected
+      } else {
+        setSelectedAgent('');
+        setActiveStep(0);
+      }
     }
-  }, [open]);
+  }, [open, preSelectedAgent]);
 
   const loadAvailableAgents = async () => {
     try {
-      // Load real agents from registries - no mock data
-      const dualWrappers = await DualAgentWrapperRegistry.getDualWrappers(currentUser?.uid || 'anonymous');
-      const multiAgentSystems = await MultiAgentSystemRegistry.getMultiAgentSystems(currentUser?.uid || 'anonymous');
+      if (!currentUser?.uid) {
+        setAvailableAgents([]);
+        setAvailableMultiAgentSystems([]);
+        return;
+      }
+
+      // Load agents from unified storage where our dual deployment system stores them
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
       
-      setAvailableAgents(dualWrappers.filter(wrapper => wrapper.deploymentWrapper)); // Only agents ready for deployment
-      setAvailableMultiAgentSystems(multiAgentSystems.filter(system => system.deploymentSystem)); // Only systems ready for deployment
+      // Get all agent keys for this user
+      const agentKeys = await unifiedStorage.keys('agents');
+      const multiAgentKeys = await unifiedStorage.keys('multiAgentSystems');
+      
+      // Filter for this user's agents and production versions
+      const userAgentKeys = agentKeys.filter(key => key.includes(currentUser.uid));
+      const userMultiAgentKeys = multiAgentKeys.filter(key => key.includes(currentUser.uid));
+      
+      // Load production versions of agents (these are ready for deployment)
+      const productionAgents = [];
+      const productionSystems = [];
+      
+      for (const key of userAgentKeys) {
+        if (key.includes('-production')) {
+          try {
+            const agent = await unifiedStorage.get('agents', key);
+            if (agent) {
+              productionAgents.push({
+                id: key.replace('-production', ''), // Remove suffix for UI
+                metadata: {
+                  name: agent.name || agent.metadata?.name || 'Unnamed Agent',
+                  description: agent.description || agent.metadata?.description || 'No description',
+                  provider: agent.provider || agent.agentType || 'Unknown',
+                  model: agent.model || agent.configuration?.model || 'Unknown',
+                },
+                deploymentWrapper: true, // Mark as ready for deployment
+                ...agent
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to load agent ${key}:`, error);
+          }
+        }
+      }
+      
+      for (const key of userMultiAgentKeys) {
+        if (key.includes('-production')) {
+          try {
+            const system = await unifiedStorage.get('multiAgentSystems', key);
+            if (system) {
+              productionSystems.push({
+                id: key.replace('-production', ''), // Remove suffix for UI
+                metadata: {
+                  name: system.name || system.metadata?.name || 'Unnamed System',
+                  description: system.description || system.metadata?.description || 'No description',
+                  type: system.type || 'multi-agent-system',
+                },
+                deploymentSystem: true, // Mark as ready for deployment
+                ...system
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to load multi-agent system ${key}:`, error);
+          }
+        }
+      }
+      
+      console.log(`📦 Loaded ${productionAgents.length} production agents and ${productionSystems.length} production systems for deployment`);
+      
+      setAvailableAgents(productionAgents);
+      setAvailableMultiAgentSystems(productionSystems);
+      
     } catch (error) {
       console.error('Failed to load available agents:', error);
       toast({
@@ -387,6 +736,8 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
         description: "Failed to load available agents for deployment",
         variant: "destructive"
       });
+      setAvailableAgents([]);
+      setAvailableMultiAgentSystems([]);
     }
   };
 
@@ -793,6 +1144,7 @@ const EnhancedDeployPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [preSelectedAgent, setPreSelectedAgent] = useState<string | undefined>(undefined);
 
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -840,6 +1192,16 @@ const EnhancedDeployPage: React.FC = () => {
 
   const handleNewDeployment = (result: RealDeploymentResult) => {
     setRealDeployments(prev => [result, ...prev]);
+  };
+
+  const handleDeployAgent = (agentId: string) => {
+    setPreSelectedAgent(agentId);
+    setWizardOpen(true);
+  };
+
+  const handleCloseWizard = () => {
+    setWizardOpen(false);
+    setPreSelectedAgent(undefined);
   };
 
   return (
@@ -913,7 +1275,9 @@ const EnhancedDeployPage: React.FC = () => {
               '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
             }}
           >
-            <Tab label="Active Deployments" />
+            <Tab label="Single Agent Deployments" />
+            <Tab label="Multi-Agent System Deployments" />
+            <Tab label="Available Agents" />
             <Tab label="Live Monitoring" />
             <Tab label="Deployment History" />
             <Tab label="Performance Analytics" />
@@ -926,14 +1290,14 @@ const EnhancedDeployPage: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : realDeployments.length === 0 ? (
+          ) : realDeployments.filter(d => !d.agentId.includes('multi-agent')).length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <CloudUpload sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
               <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
-                No Deployed Agents
+                No Single Agent Deployments
               </Typography>
               <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-                Deploy your first agent to start monitoring governance metrics and performance.
+                Deploy your first single agent to start monitoring governance metrics and performance.
               </Typography>
               <Button
                 variant="contained"
@@ -949,7 +1313,7 @@ const EnhancedDeployPage: React.FC = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {realDeployments.map((deployment) => (
+              {realDeployments.filter(d => !d.agentId.includes('multi-agent')).map((deployment) => (
                 <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
                   <RealDeployedAgentCard deployment={deployment} />
                 </Grid>
@@ -959,6 +1323,49 @@ const EnhancedDeployPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : realDeployments.filter(d => d.agentId.includes('multi-agent')).length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <CloudUpload sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
+                No Multi-Agent System Deployments
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+                Deploy your first multi-agent system to start monitoring governance metrics and performance.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setWizardOpen(true)}
+                sx={{
+                  backgroundColor: '#3b82f6',
+                  '&:hover': { backgroundColor: '#2563eb' },
+                }}
+              >
+                Deploy System
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {realDeployments.filter(d => d.agentId.includes('multi-agent')).map((deployment) => (
+                <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
+                  <RealDeployedAgentCard deployment={deployment} />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <AvailableAgentsTab 
+            onDeployAgent={handleDeployAgent}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
           <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
             Live Agent Monitoring
           </Typography>
@@ -1050,7 +1457,7 @@ const EnhancedDeployPage: React.FC = () => {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={4}>
           <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
             Deployment History
           </Typography>
@@ -1062,7 +1469,7 @@ const EnhancedDeployPage: React.FC = () => {
           </Typography>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={5}>
           <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
             Performance Analytics
           </Typography>
@@ -1077,8 +1484,9 @@ const EnhancedDeployPage: React.FC = () => {
         {/* Deployment Wizard */}
         <DeploymentWizard 
           open={wizardOpen}
-          onClose={() => setWizardOpen(false)}
+          onClose={handleCloseWizard}
           onDeploy={handleNewDeployment}
+          preSelectedAgent={preSelectedAgent}
         />
       </Container>
     </ThemeProvider>

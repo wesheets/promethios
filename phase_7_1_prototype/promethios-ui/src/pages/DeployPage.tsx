@@ -30,6 +30,10 @@ import {
   Paper,
   Switch,
   FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -58,6 +62,10 @@ import {
 } from '@mui/material/icons';
 import { ThemeProvider, CircularProgress } from '@mui/material';
 import { darkTheme } from '../theme/darkTheme';
+import { useAuth } from '../context/AuthContext';
+
+// Import the existing deployment wizard
+// Note: We'll need to extract DeploymentWizard as a separate component
 
 interface DeployedAgent {
   id: string;
@@ -359,29 +367,12 @@ const DeployedAgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => {
 };
 
 // Available Agent Card Component (similar to agent scorecard)
-const AvailableAgentCard: React.FC<{ agent: any }> = ({ agent }) => {
+const AvailableAgentCard: React.FC<{ agent: any; onDeploy: () => void }> = ({ agent, onDeploy }) => {
   const [deploying, setDeploying] = useState(false);
 
   const handleDeploy = async () => {
-    setDeploying(true);
-    try {
-      console.log('🚀 Deploying agent:', agent.identity.name);
-      
-      // Here we would implement the actual deployment logic
-      // For now, we'll simulate the deployment process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Show success message
-      alert(`Agent "${agent.identity.name}" deployed successfully!`);
-      
-      // Refresh the page to update deployment status
-      window.location.reload();
-    } catch (error) {
-      console.error('Deployment failed:', error);
-      alert('Deployment failed. Please try again.');
-    } finally {
-      setDeploying(false);
-    }
+    // Open the deployment wizard instead of placeholder deployment
+    onDeploy();
   };
 
   return (
@@ -512,8 +503,13 @@ const DeployPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [deployedAgents, setDeployedAgents] = useState<DeployedAgent[]>([]);
   const [availableAgents, setAvailableAgents] = useState<any[]>([]); // Available agents for deployment
+  const [availableMultiAgentSystems, setAvailableMultiAgentSystems] = useState<any[]>([]); // Available multi-agent systems
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Deployment wizard state
+  const [showDeploymentWizard, setShowDeploymentWizard] = useState(false);
+  const [selectedAgentForDeployment, setSelectedAgentForDeployment] = useState<any>(null);
 
   useEffect(() => {
     // Load real user data from unified storage (our dual deployment system)
@@ -551,7 +547,16 @@ const DeployPage: React.FC = () => {
           !agent.deploymentType
         );
         console.log('📋 Found main agents for deployment:', mainAgents.length);
-        setAvailableAgents(mainAgents);
+        
+        // Separate single agents from multi-agent systems
+        const singleAgents = mainAgents.filter(agent => !agent.isMultiAgentSystem);
+        const multiAgentSystems = mainAgents.filter(agent => agent.isMultiAgentSystem);
+        
+        setAvailableAgents(singleAgents);
+        setAvailableMultiAgentSystems(multiAgentSystems);
+        
+        console.log('👤 Single agents:', singleAgents.length);
+        console.log('🤖 Multi-agent systems:', multiAgentSystems.length);
         
         // Load production versions of single agents (for deployed agents tabs)
         const productionAgents = allUserAgents.filter(agent => 
@@ -728,6 +733,25 @@ const DeployPage: React.FC = () => {
     setTabValue(newValue);
   };
 
+  // Deployment wizard handlers
+  const handleOpenDeploymentWizard = (agent: any) => {
+    setSelectedAgentForDeployment(agent);
+    setShowDeploymentWizard(true);
+  };
+
+  const handleCloseDeploymentWizard = () => {
+    setShowDeploymentWizard(false);
+    setSelectedAgentForDeployment(null);
+  };
+
+  const handleDeploymentComplete = (result: any) => {
+    console.log('🎉 Deployment completed:', result);
+    setShowDeploymentWizard(false);
+    setSelectedAgentForDeployment(null);
+    // Refresh the deployed agents list
+    loadDeployedAgents();
+  };
+
   const externalAgents = deployedAgents.filter(agent => agent.type === 'external');
   const foundryAgents = deployedAgents.filter(agent => agent.type === 'foundry');
 
@@ -884,7 +908,7 @@ const DeployPage: React.FC = () => {
                   label={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CloudUpload />
-                      Available Agents ({availableAgents.length})
+                      Available Agents ({availableAgents.length + availableMultiAgentSystems.length})
                     </Box>
                   } 
                 />
@@ -929,23 +953,94 @@ const DeployPage: React.FC = () => {
 
             <TabPanel value={tabValue} index={2}>
               {/* Available Agents for Deployment */}
-              {availableAgents.length === 0 ? (
+              {availableAgents.length === 0 && availableMultiAgentSystems.length === 0 ? (
                 <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
                   <AlertTitle>No Agents Available for Deployment</AlertTitle>
                   Create and configure agents with governance before deploying. Visit the Agent Wrapping page to create deployment-ready agents.
                 </Alert>
               ) : (
-                <Grid container spacing={3}>
-                  {availableAgents.map((agent) => (
-                    <Grid item xs={12} md={6} lg={4} key={agent.identity.id}>
-                      <AvailableAgentCard agent={agent} />
-                    </Grid>
-                  ))}
-                </Grid>
+                <Box>
+                  {/* Single Agents Section */}
+                  {availableAgents.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                      <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>
+                        Single Agents ({availableAgents.length})
+                      </Typography>
+                      <Grid container spacing={3}>
+                        {availableAgents.map((agent) => (
+                          <Grid item xs={12} md={6} lg={4} key={agent.identity.id}>
+                            <AvailableAgentCard 
+                              agent={agent} 
+                              onDeploy={() => handleOpenDeploymentWizard(agent)}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+
+                  {/* Multi-Agent Systems Section */}
+                  {availableMultiAgentSystems.length > 0 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>
+                        Multi-Agent Systems ({availableMultiAgentSystems.length})
+                      </Typography>
+                      <Grid container spacing={3}>
+                        {availableMultiAgentSystems.map((system) => (
+                          <Grid item xs={12} md={6} lg={4} key={system.identity.id}>
+                            <AvailableAgentCard 
+                              agent={system} 
+                              onDeploy={() => handleOpenDeploymentWizard(system)}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                </Box>
               )}
             </TabPanel>
           </Card>
         </Container>
+
+        {/* Deployment Wizard Dialog */}
+        <Dialog 
+          open={showDeploymentWizard} 
+          onClose={handleCloseDeploymentWizard}
+          maxWidth="md" 
+          fullWidth
+          sx={{
+            '& .MuiDialog-paper': {
+              backgroundColor: '#2d3748',
+              color: 'white'
+            }
+          }}
+        >
+          <DialogTitle>
+            Deploy {selectedAgentForDeployment?.identity?.name || 'Agent'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              This will open the deployment wizard for {selectedAgentForDeployment?.identity?.name}.
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              Note: Integration with the full deployment wizard from EnhancedDeployPage is in progress.
+              For now, this is a placeholder that demonstrates the workflow.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeploymentWizard} sx={{ color: '#a0aec0' }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => handleDeploymentComplete({ success: true })}
+              variant="contained"
+              sx={{ backgroundColor: '#3b82f6' }}
+            >
+              Deploy
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );
