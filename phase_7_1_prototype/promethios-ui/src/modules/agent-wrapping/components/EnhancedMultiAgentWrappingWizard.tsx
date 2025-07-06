@@ -68,6 +68,10 @@ import { DualAgentWrapperRegistry } from '../services/DualAgentWrapperRegistry';
 import MultiAgentSystemRegistry from '../services/MultiAgentSystemRegistry';
 import { DualAgentWrapper, GovernanceConfiguration } from '../types/dualWrapper';
 
+// Enhanced Veritas 2 Integration
+import { useEnhancedVeritas } from '../../../veritas/enhanced/hooks/useEnhancedVeritas';
+import UncertaintyAnalysisDisplay from '../../../veritas/enhanced/components/UncertaintyAnalysisDisplay';
+
 // Enhanced Success component with deployment options
 const EnhancedSuccessStep: React.FC<{ 
   systemId: string | null;
@@ -367,6 +371,10 @@ const EnhancedMultiAgentWrappingWizard: React.FC<EnhancedMultiAgentWrappingWizar
   const { wrappers: agentWrappers, loading: loadingAgents } = useAgentWrappers();
   const { policies, policiesLoading, loadPolicies } = usePolicyBackend();
   
+  // Enhanced Veritas 2 Integration
+  const { analyzeUncertainty, result: uncertaintyResult } = useEnhancedVeritas();
+  const [enhancedVeritasEnabled, setEnhancedVeritasEnabled] = useState(false);
+  
   // Registries
   const [dualRegistry] = useState(() => new DualAgentWrapperRegistry());
   const [multiAgentRegistry] = useState(() => new MultiAgentSystemRegistry());
@@ -503,6 +511,21 @@ const EnhancedMultiAgentWrappingWizard: React.FC<EnhancedMultiAgentWrappingWizar
                 Choose the agents that will work together in your multi-agent system.
               </Typography>
               
+              {/* Enhanced Veritas 2 Uncertainty Analysis */}
+              {enhancedVeritasEnabled && selectedAgents.length > 0 && (
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'primary.main' }}>
+                    🔬 Enhanced Veritas 2 Analysis
+                  </Typography>
+                  <UncertaintyAnalysisDisplay
+                    text={`Multi-agent system with ${selectedAgents.length} agents: ${selectedAgents.join(', ')}`}
+                    result={uncertaintyResult}
+                    showDetails={true}
+                    darkTheme={true}
+                  />
+                </Box>
+              )}
+              
               {loadingAgents ? (
                 <Box display="flex" justifyContent="center" p={4}>
                   <CircularProgress />
@@ -516,14 +539,22 @@ const EnhancedMultiAgentWrappingWizard: React.FC<EnhancedMultiAgentWrappingWizar
                         sx={{ 
                           cursor: 'pointer',
                           border: selectedAgents.includes(wrapper.id) ? 2 : 1,
-                          borderColor: selectedAgents.includes(wrapper.id) ? 'primary.main' : 'divider'
+                          borderColor: selectedAgents.includes(wrapper.id) ? 'primary.main' : 'divider',
+                          bgcolor: 'background.paper'
                         }}
                         onClick={() => {
-                          setSelectedAgents(prev => 
-                            prev.includes(wrapper.id) 
+                          setSelectedAgents(prev => {
+                            const newSelection = prev.includes(wrapper.id) 
                               ? prev.filter(id => id !== wrapper.id)
-                              : [...prev, wrapper.id]
-                          );
+                              : [...prev, wrapper.id];
+                            
+                            // Trigger Enhanced Veritas 2 analysis when selection changes
+                            if (enhancedVeritasEnabled && newSelection.length > 0) {
+                              analyzeUncertainty(`Multi-agent system with ${newSelection.length} agents: ${newSelection.join(', ')}`);
+                            }
+                            
+                            return newSelection;
+                          });
                         }}
                       >
                         <CardContent>
@@ -763,13 +794,41 @@ const EnhancedMultiAgentWrappingWizard: React.FC<EnhancedMultiAgentWrappingWizar
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          Multi-Agent System Wizard
-        </Typography>
-        <Typography variant="body1" color="text.secondary" align="center" paragraph>
-          Create a governed multi-agent system ready for testing and deployment
-        </Typography>
+      <Paper sx={{ p: 4, bgcolor: 'background.paper' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Multi-Agent System Wizard
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Create a governed multi-agent system ready for testing and deployment
+            </Typography>
+          </Box>
+          
+          {/* Enhanced Veritas 2 Toggle */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              icon={<Assessment />}
+              label="Enhanced Veritas 2"
+              variant={enhancedVeritasEnabled ? "filled" : "outlined"}
+              color={enhancedVeritasEnabled ? "primary" : "default"}
+              sx={{
+                bgcolor: enhancedVeritasEnabled ? 'primary.main' : 'transparent',
+                color: enhancedVeritasEnabled ? 'primary.contrastText' : 'text.primary',
+                borderColor: 'primary.main',
+                '& .MuiChip-icon': {
+                  color: enhancedVeritasEnabled ? 'primary.contrastText' : 'primary.main'
+                }
+              }}
+            />
+            <Switch
+              checked={enhancedVeritasEnabled}
+              onChange={(e) => setEnhancedVeritasEnabled(e.target.checked)}
+              color="primary"
+              size="small"
+            />
+          </Box>
+        </Box>
 
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
