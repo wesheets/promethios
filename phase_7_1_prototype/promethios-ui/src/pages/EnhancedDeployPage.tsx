@@ -372,16 +372,44 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
 
       setLoading(true);
 
+      console.log('🔍 Loading available agents for deployment...');
+      console.log('👤 Current user:', currentUser.uid, currentUser.email);
+
       // Load agents from unified storage where our dual deployment system stores them
       const { unifiedStorage } = await import('../services/UnifiedStorageService');
       
+      // Debug: Test which storage provider is being used
+      console.log('🔍 Testing storage providers...');
+      const agentsProvider = unifiedStorage.getProvider('agents');
+      const multiAgentProvider = unifiedStorage.getProvider('multiAgentSystems');
+      
+      console.log('📊 Agents namespace provider:', agentsProvider.name);
+      console.log('📊 MultiAgent namespace provider:', multiAgentProvider.name);
+      
+      // Test Firebase availability
+      if (agentsProvider.name === 'firebase') {
+        const isFirebaseAvailable = await agentsProvider.isAvailable();
+        console.log('🔥 Firebase available for agents:', isFirebaseAvailable);
+      }
+      
       // Get all agent keys for this user
+      console.log('🔍 Getting agent keys...');
       const agentKeys = await unifiedStorage.keys('agents');
       const multiAgentKeys = await unifiedStorage.keys('multiAgentSystems');
+      
+      console.log('📊 Total agent keys found:', agentKeys.length);
+      console.log('📊 Total multi-agent keys found:', multiAgentKeys.length);
+      console.log('🔍 Sample agent keys:', agentKeys.slice(0, 5));
+      console.log('🔍 Sample multi-agent keys:', multiAgentKeys.slice(0, 5));
       
       // Filter for this user's agents and production versions
       const userAgentKeys = agentKeys.filter(key => key.includes(currentUser.uid));
       const userMultiAgentKeys = multiAgentKeys.filter(key => key.includes(currentUser.uid));
+      
+      console.log('👤 User agent keys found:', userAgentKeys.length);
+      console.log('👤 User multi-agent keys found:', userMultiAgentKeys.length);
+      console.log('🔍 User agent keys:', userAgentKeys);
+      console.log('🔍 User multi-agent keys:', userMultiAgentKeys);
       
       // Load production versions of agents (these are ready for deployment)
       const productionAgents = [];

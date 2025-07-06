@@ -40,19 +40,35 @@ export class FirebaseStorageProvider implements StorageProvider {
     try {
       // Check if Firebase is properly configured
       if (!db) {
-        console.warn('Firebase database not initialized');
+        console.error('🚨 Firebase database not initialized - check firebase/config.ts');
         return false;
       }
 
+      console.log('🔥 Testing Firebase connection...');
+      
       // Test Firebase connection by trying to read from a test document
       const testDoc = doc(db, 'system', 'health_check');
       const docSnap = await getDoc(testDoc);
       
       // If we can read (even if document doesn't exist), Firebase is available
-      console.log('🔥 Firebase connection test successful');
+      console.log('✅ Firebase connection test successful - Firebase is available');
       return true;
     } catch (error) {
-      console.warn('Firebase not available:', error);
+      console.error('❌ Firebase not available:', error);
+      
+      // Check specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('auth')) {
+          console.error('🚨 Firebase authentication error - user may not be logged in');
+        } else if (error.message.includes('permission')) {
+          console.error('🚨 Firebase permission error - check Firestore rules');
+        } else if (error.message.includes('network')) {
+          console.error('🚨 Firebase network error - check internet connection');
+        } else {
+          console.error('🚨 Firebase unknown error:', error.message);
+        }
+      }
+      
       return false;
     }
   }
