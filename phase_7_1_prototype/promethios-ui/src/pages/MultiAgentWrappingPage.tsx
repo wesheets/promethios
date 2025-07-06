@@ -22,6 +22,9 @@ import {
   Switch,
   FormControlLabel,
   Alert,
+  ToggleButton,
+  ToggleButtonGroup,
+  Badge,
 } from '@mui/material';
 import {
   Search,
@@ -34,24 +37,79 @@ import {
   TrendingUp,
   Warning,
   CheckCircle,
-  Rocket,
-  Science,
+  AutoAwesome,
+  Psychology,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { darkTheme } from '../theme/darkTheme';
 import MultiAgentWrappingWizard from '../modules/agent-wrapping/components/MultiAgentWrappingWizard';
 import EnhancedMultiAgentWrappingWizard from '../modules/agent-wrapping/components/EnhancedMultiAgentWrappingWizard';
+import EnhancedVeritas2MultiAgentWrappingWizard from '../modules/agent-wrapping/components/EnhancedVeritas2MultiAgentWrappingWizard';
+
+type WrapperMode = 'standard' | 'enhanced' | 'veritas2';
 
 const MultiAgentWrappingPage: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
-  const [useDualDeployment, setUseDualDeployment] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [wrapperMode, setWrapperMode] = useState<WrapperMode>('enhanced');
   const [environmentFilter, setEnvironmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
   const [multiAgentSystems, setMultiAgentSystems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleModeChange = (event: React.MouseEvent<HTMLElement>, newMode: WrapperMode | null) => {
+    if (newMode !== null) {
+      setWrapperMode(newMode);
+    }
+  };
+
+  const getModeConfig = () => {
+    switch (wrapperMode) {
+      case 'standard':
+        return {
+          icon: <Settings color="action" />,
+          title: 'Standard Multi-Agent System',
+          description: '🔧 Basic multi-agent system creation with essential coordination controls.',
+          features: [
+            'Basic multi-agent coordination',
+            'Essential governance controls',
+            'Standard deployment options',
+            'Core monitoring capabilities'
+          ]
+        };
+      case 'enhanced':
+        return {
+          icon: <AutoAwesome color="primary" />,
+          title: 'Enhanced Multi-Agent System',
+          description: '✨ Advanced multi-agent orchestration, comprehensive governance, and automatic deployment optimization.',
+          features: [
+            'Advanced multi-agent orchestration and coordination',
+            'System-level governance and policy enforcement',
+            'Comprehensive monitoring and analytics',
+            'Automatic deployment optimization',
+            'Enhanced security and compliance controls'
+          ]
+        };
+      case 'veritas2':
+        return {
+          icon: <Psychology color="secondary" />,
+          title: 'Enhanced Veritas 2 Multi-Agent System',
+          description: '🧠 Next-generation multi-agent emotional intelligence with distributed collaboration and emergent behavior detection.',
+          features: [
+            'System-level emotional intelligence monitoring',
+            'Cross-agent uncertainty analysis',
+            'Distributed human-in-the-loop collaboration',
+            'Emergent behavior detection',
+            'Multi-agent orchestration optimization',
+            'All Enhanced features included'
+          ]
+        };
+    }
+  };
+
+  const config = getModeConfig();
 
   // Load systems from unified storage
   useEffect(() => {
@@ -194,78 +252,83 @@ const MultiAgentWrappingPage: React.FC = () => {
             ← Back to Multi-Agent Systems
           </Button>
 
-          {/* Dual Deployment Toggle */}
-          <Card sx={{ mb: 4, border: useDualDeployment ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)' }}>
+          {/* Mode Selection */}
+          <Card sx={{ mb: 4, border: wrapperMode === 'veritas2' ? '2px solid #9c27b0' : wrapperMode === 'enhanced' ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)' }}>
             <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box display="flex" alignItems="center" gap={2}>
                   <Box display="flex" alignItems="center" gap={1}>
-                    {useDualDeployment ? (
-                      <Rocket color="primary" />
-                    ) : (
-                      <Science color="action" />
-                    )}
+                    {config.icon}
                     <Typography variant="h6">
-                      {useDualDeployment ? 'Enhanced Multi-Agent Dual Deployment' : 'Standard Multi-Agent Wrapping'}
+                      {config.title}
                     </Typography>
-                    {useDualDeployment && (
-                      <Chip label="BETA" color="primary" size="small" />
+                    {wrapperMode === 'enhanced' && (
+                      <Chip label="ENHANCED" color="primary" size="small" />
+                    )}
+                    {wrapperMode === 'veritas2' && (
+                      <Chip label="VERITAS 2" color="secondary" size="small" />
                     )}
                   </Box>
                 </Box>
-                
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={useDualDeployment}
-                      onChange={(e) => setUseDualDeployment(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Enable Dual Deployment"
-                />
               </Box>
+
+              <ToggleButtonGroup
+                value={wrapperMode}
+                exclusive
+                onChange={handleModeChange}
+                aria-label="wrapper mode"
+                sx={{ mb: 2 }}
+              >
+                <ToggleButton value="standard" aria-label="standard">
+                  <Settings sx={{ mr: 1 }} />
+                  Standard
+                </ToggleButton>
+                <ToggleButton value="enhanced" aria-label="enhanced">
+                  <AutoAwesome sx={{ mr: 1 }} />
+                  Enhanced
+                </ToggleButton>
+                <ToggleButton value="veritas2" aria-label="veritas2">
+                  <Psychology sx={{ mr: 1 }} />
+                  Veritas 2
+                </ToggleButton>
+              </ToggleButtonGroup>
               
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {useDualDeployment ? (
-                  <>
-                    🎯 <strong>Multi-Agent Dual Deployment:</strong> Creates both testing and production versions of your multi-agent system automatically. 
-                    Test system-level governance and agent collaboration, then deploy live systems off Promethios.
-                  </>
-                ) : (
-                  <>
-                    🔧 <strong>Standard Mode:</strong> Traditional multi-agent system creation with basic governance controls.
-                  </>
-                )}
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {config.description}
               </Typography>
 
-              {useDualDeployment && (
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    <strong>Multi-Agent Dual Deployment Benefits:</strong>
-                    <br />• System-level governance and cross-agent validation
-                    <br />• Collaboration session management and monitoring
-                    <br />• Automatic testing and production environment setup
-                    <br />• Enhanced multi-agent orchestration and consensus
-                    <br />• Comprehensive deployment package generation
-                  </Typography>
-                </Alert>
-              )}
+              <Alert severity={wrapperMode === 'veritas2' ? 'warning' : 'info'} sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>{wrapperMode === 'veritas2' ? 'Enhanced Veritas 2 Features (BETA):' : 'Features Include:'}</strong>
+                  {config.features.map((feature, index) => (
+                    <React.Fragment key={index}>
+                      <br />• {feature}
+                    </React.Fragment>
+                  ))}
+                </Typography>
+              </Alert>
             </CardContent>
           </Card>
 
           {/* Render appropriate wizard based on mode */}
-          {useDualDeployment ? (
-            <EnhancedMultiAgentWrappingWizard 
-              onSystemCreated={(system) => {
-                console.log('Enhanced multi-agent system created:', system);
-                loadSystemsFromStorage();
+          {wrapperMode === 'veritas2' ? (
+            <EnhancedVeritas2MultiAgentWrappingWizard 
+              onComplete={(system) => {
+                console.log('Enhanced Veritas 2 multi-agent system created:', system);
                 setShowWizard(false);
               }}
-              onCancel={() => setUseDualDeployment(false)}
+              onCancel={() => setShowWizard(false)}
+            />
+          ) : wrapperMode === 'enhanced' ? (
+            <EnhancedMultiAgentWrappingWizard 
+              onComplete={(system) => {
+                console.log('Enhanced multi-agent system created:', system);
+                setShowWizard(false);
+              }}
+              onCancel={() => setShowWizard(false)}
             />
           ) : (
-            <MultiAgentWrappingWizard onSystemCreated={loadSystemsFromStorage} />
+            <MultiAgentWrappingWizard />
           )}
         </Container>
       </ThemeProvider>

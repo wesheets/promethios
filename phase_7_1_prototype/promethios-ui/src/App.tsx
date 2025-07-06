@@ -35,8 +35,6 @@ import AtlasDemoPage from './pages/AtlasDemoPage';
 import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
-import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
-import AgentWrappingPage from './pages/AgentWrappingPage';
 import UIIntegration from './UIIntegration';
 
 // Create a wrapper component to use the useLocation hook
@@ -90,8 +88,7 @@ const AppContent: React.FC = () => {
                   {/* Legacy redirects */}
                   <Route path="/benchmark" element={<Navigate to="/demo" replace />} />
                   <Route path="/cmu-benchmark" element={<Navigate to="/demo" replace />} />
-                  <Route path="/multi-agent-wrapping" element={<MultiAgentWrappingPage />} />
-                  <Route path="/agent-wrapping" element={<AgentWrappingPage />} />
+
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/atlas-demo" element={<AtlasDemoPage />} />

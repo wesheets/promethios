@@ -1,16 +1,69 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, Button, Card, CardContent, Switch, FormControlLabel, Chip, Alert } from '@mui/material';
+import { Container, Typography, Box, Button, Card, CardContent, Switch, FormControlLabel, Chip, Alert, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Rocket, Science } from '@mui/icons-material';
+import { AutoAwesome, Settings, Psychology } from '@mui/icons-material';
 import { darkTheme } from '../../../theme/darkTheme';
 import AgentWrappingWizard from '../components/AgentWrappingWizard';
 import EnhancedAgentWrappingWizard from '../components/EnhancedAgentWrappingWizard';
+import EnhancedVeritas2AgentWrappingWizard from '../components/EnhancedVeritas2AgentWrappingWizard';
+
+type WrapperMode = 'standard' | 'enhanced' | 'veritas2';
 
 const AgentWrappingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [useDualDeployment, setUseDualDeployment] = useState(false);
+  const [wrapperMode, setWrapperMode] = useState<WrapperMode>('enhanced');
+
+  const handleModeChange = (event: React.MouseEvent<HTMLElement>, newMode: WrapperMode | null) => {
+    if (newMode !== null) {
+      setWrapperMode(newMode);
+    }
+  };
+
+  const getModeConfig = () => {
+    switch (wrapperMode) {
+      case 'standard':
+        return {
+          icon: <Settings color="action" />,
+          title: 'Standard Agent Wrapping',
+          description: '🔧 Basic agent wrapping with essential governance controls.',
+          features: [
+            'Basic governance and policy enforcement',
+            'Essential monitoring capabilities',
+            'Standard deployment options',
+            'Core security controls'
+          ]
+        };
+      case 'enhanced':
+        return {
+          icon: <AutoAwesome color="primary" />,
+          title: 'Enhanced Agent Wrapping',
+          description: '✨ Advanced governance controls, comprehensive monitoring, and automatic deployment optimization.',
+          features: [
+            'Advanced governance and policy enforcement',
+            'Comprehensive monitoring and analytics',
+            'Automatic deployment optimization',
+            'Enhanced security and compliance controls'
+          ]
+        };
+      case 'veritas2':
+        return {
+          icon: <Psychology color="secondary" />,
+          title: 'Enhanced Veritas 2 Agent Wrapping',
+          description: '🧠 Next-generation emotional intelligence and trust management with quantum uncertainty analysis.',
+          features: [
+            'Advanced emotional intelligence monitoring',
+            'Quantum uncertainty analysis',
+            'Human-in-the-loop collaboration',
+            'Real-time analytics and predictive modeling',
+            'All Enhanced features included'
+          ]
+        };
+    }
+  };
+
+  const config = getModeConfig();
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -33,73 +86,80 @@ const AgentWrappingPage: React.FC = () => {
           </Button>
         </Box>
 
-        {/* Dual Deployment Toggle */}
-        <Card sx={{ mb: 4, border: useDualDeployment ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)' }}>
+        {/* Mode Selection */}
+        <Card sx={{ mb: 4, border: wrapperMode === 'veritas2' ? '2px solid #9c27b0' : wrapperMode === 'enhanced' ? '2px solid #1976d2' : '1px solid rgba(255,255,255,0.12)' }}>
           <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Box display="flex" alignItems="center" gap={2}>
                 <Box display="flex" alignItems="center" gap={1}>
-                  {useDualDeployment ? (
-                    <Rocket color="primary" />
-                  ) : (
-                    <Science color="action" />
-                  )}
+                  {config.icon}
                   <Typography variant="h6">
-                    {useDualDeployment ? 'Enhanced Dual Deployment' : 'Standard Wrapping'}
+                    {config.title}
                   </Typography>
-                  {useDualDeployment && (
-                    <Chip label="BETA" color="primary" size="small" />
+                  {wrapperMode === 'enhanced' && (
+                    <Chip label="ENHANCED" color="primary" size="small" />
+                  )}
+                  {wrapperMode === 'veritas2' && (
+                    <Chip label="VERITAS 2" color="secondary" size="small" />
                   )}
                 </Box>
               </Box>
-              
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useDualDeployment}
-                    onChange={(e) => setUseDualDeployment(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Enable Dual Deployment"
-              />
             </Box>
+
+            <ToggleButtonGroup
+              value={wrapperMode}
+              exclusive
+              onChange={handleModeChange}
+              aria-label="wrapper mode"
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value="standard" aria-label="standard">
+                <Settings sx={{ mr: 1 }} />
+                Standard
+              </ToggleButton>
+              <ToggleButton value="enhanced" aria-label="enhanced">
+                <AutoAwesome sx={{ mr: 1 }} />
+                Enhanced
+              </ToggleButton>
+              <ToggleButton value="veritas2" aria-label="veritas2">
+                <Psychology sx={{ mr: 1 }} />
+                Veritas 2
+              </ToggleButton>
+            </ToggleButtonGroup>
             
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {useDualDeployment ? (
-                <>
-                  🎯 <strong>Dual Deployment Mode:</strong> Creates both testing and production versions automatically. 
-                  Test governed vs ungoverned behavior in chat screens, then deploy live agents off Promethios.
-                </>
-              ) : (
-                <>
-                  🔧 <strong>Standard Mode:</strong> Traditional agent wrapping with basic governance controls.
-                </>
-              )}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {config.description}
             </Typography>
 
-            {useDualDeployment && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  <strong>Dual Deployment Benefits:</strong>
-                  <br />• Automatic testing and production environment setup
-                  <br />• Enhanced governance controls and monitoring
-                  <br />• Cross-device synchronization via Firebase
-                  <br />• Comprehensive audit logging and compliance
-                </Typography>
-              </Alert>
-            )}
+            <Alert severity={wrapperMode === 'veritas2' ? 'warning' : 'info'} sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>{wrapperMode === 'veritas2' ? 'Enhanced Veritas 2 Features (BETA):' : 'Features Include:'}</strong>
+                {config.features.map((feature, index) => (
+                  <React.Fragment key={index}>
+                    <br />• {feature}
+                  </React.Fragment>
+                ))}
+              </Typography>
+            </Alert>
           </CardContent>
         </Card>
 
         {/* Render appropriate wizard based on mode */}
-        {useDualDeployment ? (
-          <EnhancedAgentWrappingWizard 
+        {wrapperMode === 'veritas2' ? (
+          <EnhancedVeritas2AgentWrappingWizard 
             onComplete={(wrapper) => {
-              console.log('Dual wrapper created:', wrapper);
+              console.log('Enhanced Veritas 2 agent wrapper created:', wrapper);
               // Handle completion - could navigate or show success message
             }}
-            onCancel={() => setUseDualDeployment(false)}
+            onCancel={() => setWrapperMode('enhanced')}
+          />
+        ) : wrapperMode === 'enhanced' ? (
+          <EnhancedAgentWrappingWizard 
+            onComplete={(wrapper) => {
+              console.log('Enhanced agent wrapper created:', wrapper);
+              // Handle completion - could navigate or show success message
+            }}
+            onCancel={() => setWrapperMode('standard')}
           />
         ) : (
           <AgentWrappingWizard />

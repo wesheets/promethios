@@ -36,7 +36,7 @@ import {
   Code as CodeIcon,
   Business as BusinessIcon,
   CloudUpload as DeployIcon,
-  TestTube as TestIcon,
+  Science as TestIcon,
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
