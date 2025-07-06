@@ -66,7 +66,7 @@ import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types
 
 // Enhanced Veritas 2 Integration (Optional)
 import { useEnhancedVeritas } from '../../../veritas/enhanced/hooks/useEnhancedVeritas';
-import { UncertaintyAnalysisDisplay } from '../../../veritas/enhanced/components/UncertaintyAnalysisDisplay';
+import UncertaintyAnalysisDisplay from '../../../veritas/enhanced/components/UncertaintyAnalysisDisplay';
 
 // Original 7-step process restored
 const steps = [
