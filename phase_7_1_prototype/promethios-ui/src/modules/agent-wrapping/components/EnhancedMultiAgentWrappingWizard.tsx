@@ -312,7 +312,9 @@ const steps = [
   'Agent Selection',
   'Basic Info', 
   'Collaboration Model',
+  'Agent Role Selection',
   'Governance Configuration',
+  'Testing & Validation',
   'Review & Deploy'
 ];
 
