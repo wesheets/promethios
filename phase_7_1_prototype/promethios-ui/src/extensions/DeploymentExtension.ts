@@ -226,7 +226,7 @@ export class DeploymentExtension {
         endpoint: config.networking?.domain ? 
           `${config.networking.protocol || 'https'}://${config.networking.domain}` : 
           undefined,
-        monitoringUrl: `${process.env.REACT_APP_API_URL}/deployments/${result.deploymentId}/metrics`
+        monitoringUrl: `${import.meta.env.VITE_API_URL}/deployments/${result.deploymentId}/metrics`
       };
       
       // After deploy extension point

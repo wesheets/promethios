@@ -206,7 +206,7 @@ class LogAccessService {
       }
 
       // Create WebSocket connection for real-time streaming
-      const ws = new WebSocket(`${process.env.REACT_APP_WS_URL}/logs/stream`);
+      const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}/logs/stream`);
       
       ws.onopen = () => {
         // Send authentication and filter options

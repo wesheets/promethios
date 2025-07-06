@@ -411,7 +411,7 @@ class ObserverAgentService {
   constructor() {
     // Initialize with real OpenAI config from environment variables
     this.openAIService = new OpenAIService({
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '',
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY || '',
       model: 'gpt-4',
       maxTokens: 500,
       temperature: 0.7

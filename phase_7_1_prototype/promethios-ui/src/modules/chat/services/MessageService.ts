@@ -6,7 +6,7 @@ import { Message } from '../types';
 
 export class MessageService {
   private messages: Message[] = [];
-  private apiBaseUrl = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+  private apiBaseUrl = import.meta.env.VITE_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
   addMessage(message: Omit<Message, 'id' | 'timestamp'>): Message {
     const newMessage: Message = {

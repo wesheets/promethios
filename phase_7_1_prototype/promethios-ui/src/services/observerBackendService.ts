@@ -8,7 +8,7 @@
 import { API_BASE_URL as CONFIG_API_BASE_URL } from '../config/api';
 
 // API Configuration - now uses environment variables
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || CONFIG_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || CONFIG_API_BASE_URL;
 
 // Types for Observer Backend Integration
 export interface ObserverRegistration {

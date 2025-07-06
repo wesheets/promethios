@@ -45,7 +45,7 @@ export class GovernanceService {
 
   constructor() {
     // Use the actual backend API for governance
-    this.baseUrl = process.env.NEXT_PUBLIC_GOVERNANCE_API_URL || 'https://promethios-phase-7-1-api.onrender.com/api';
+    this.baseUrl = import.meta.env.VITE_GOVERNANCE_API_URL || 'https://promethios-phase-7-1-api.onrender.com/api';
     // Initialize governance with real API
     this.initializeGovernance();
   }

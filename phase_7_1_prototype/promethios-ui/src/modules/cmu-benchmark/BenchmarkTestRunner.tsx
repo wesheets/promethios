@@ -71,7 +71,7 @@ interface TestStatus {
 }
 
 // Configuration for the backend API
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+const API_BASE_URL = import.meta.env.MODE === 'production' 
   ? 'https://promethios-phase-7-1-api.onrender.com/api/benchmark' 
   : 'https://promethios-phase-7-1-api.onrender.com/api/benchmark';
 

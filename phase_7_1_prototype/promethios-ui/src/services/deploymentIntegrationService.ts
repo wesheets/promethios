@@ -56,7 +56,7 @@ class DeploymentIntegrationService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5004';
+    this.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004';
     this.apiKey = localStorage.getItem('promethios_api_key') || '';
   }
 

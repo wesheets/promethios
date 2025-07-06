@@ -89,7 +89,6 @@ import {
   Assignment,
   Build,
   Analytics,
-  Psychology,
   AutoFixHigh,
   ExpandMore,
   Home,
