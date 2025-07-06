@@ -35,7 +35,7 @@ import EnhancedGovernanceOverviewPage from './pages/EnhancedGovernanceOverviewPa
 import EnhancedGovernanceViolationsPage from './pages/EnhancedGovernanceViolationsPage';
 import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage';
 import EnhancedDeployPage from './pages/EnhancedDeployPage';
-import EmotionalVeritasPage from './pages/EmotionalVeritasPage';
+import EnhancedEmotionalVeritasPage from './pages/EnhancedEmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
@@ -253,7 +253,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/veritas" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <EmotionalVeritasPage />
+              <EnhancedEmotionalVeritasPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
