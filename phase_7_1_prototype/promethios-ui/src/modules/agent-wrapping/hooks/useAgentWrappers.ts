@@ -42,7 +42,7 @@ export const useAgentWrappers = () => {
         console.log('useAgentWrappers: Loaded user agents:', userAgents);
         
         // Convert AgentProfile format to AgentWrapper format for compatibility
-        const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+        const convertedWrappers: AgentWrapper[] = (userAgents || []).map(agent => ({
           id: agent.identity.id,
           name: agent.identity.name,
           description: agent.identity.description,
@@ -101,7 +101,7 @@ export const useAgentWrappers = () => {
       
       // Reload wrappers to reflect changes
       const userAgents = await userAgentStorage.loadUserAgents();
-      const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+      const convertedWrappers: AgentWrapper[] = (userAgents || []).map(agent => ({
         id: agent.identity.id,
         name: agent.identity.name,
         description: agent.identity.description,
@@ -209,7 +209,7 @@ export const useAgentWrappers = () => {
             const { userAgentStorage } = await import('../../../services/UserAgentStorageService');
             userAgentStorage.setCurrentUser(effectiveUser.uid);
             const userAgents = await userAgentStorage.loadUserAgents();
-            const convertedWrappers: AgentWrapper[] = userAgents.map(agent => ({
+            const convertedWrappers: AgentWrapper[] = (userAgents || []).map(agent => ({
               id: agent.identity.id,
               name: agent.identity.name,
               description: agent.identity.description,
