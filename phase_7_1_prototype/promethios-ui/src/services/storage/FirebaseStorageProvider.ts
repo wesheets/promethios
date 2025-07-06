@@ -242,25 +242,80 @@ export class FirebaseStorageProvider implements StorageProvider {
         return [];
       }
 
-      // This would require querying all collections, which is complex in Firestore
-      // For now, return empty array and rely on fallback
-      console.warn('FirebaseStorageProvider.keys() not fully implemented');
+      // For Firebase, we need to query collections to get document keys
+      // This is more complex than localStorage but necessary for cross-device sync
+      const keys: string[] = [];
       
-      if (this.fallbackProvider) {
-        return this.fallbackProvider.keys();
+      try {
+        // Query common collections that might contain user data
+        const collections = ['agents', 'multiAgentSystems', 'user', 'singleAgentChats', 'multiAgentChats', 'governance', 'preferences', 'notifications'];
+        
+        for (const collectionName of collections) {
+          try {
+            const collectionRef = collection(db, collectionName);
+            const snapshot = await getDocs(collectionRef);
+            
+            snapshot.forEach((doc) => {
+              // Convert Firestore document path back to storage key format
+              const key = `${collectionName}.${doc.id}`;
+              keys.push(key);
+            });
+            
+            console.log(`🔥 Found ${snapshot.size} documents in collection: ${collectionName}`);
+          } catch (collectionError) {
+            console.warn(`Failed to query collection ${collectionName}:`, collectionError);
+          }
+        }
+
+        console.log(`🔥 Retrieved ${keys.length} keys from Firebase collections`);
+        
+        // If we got keys from Firebase, return them
+        // Otherwise, fall back to localStorage
+        if (keys.length > 0) {
+          return keys;
+        } else {
+          console.log(`📱 No keys found in Firebase, falling back to localStorage`);
+          if (this.fallbackProvider) {
+            return this.fallbackProvider.keys();
+          }
+          return [];
+        }
+
+      } catch (queryError) {
+        console.error('Firebase keys query failed:', queryError);
+        
+        // Fallback to localStorage if Firebase query fails
+        if (this.fallbackProvider) {
+          console.log(`📱 Firebase query failed, using fallback for keys operation`);
+          return this.fallbackProvider.keys();
+        }
+        
+        return [];
       }
-      
-      return [];
 
     } catch (error) {
       console.error('FirebaseStorageProvider.keys error:', error);
       
       if (this.fallbackProvider) {
+        console.log(`📱 Firebase error, using fallback for keys operation`);
         return this.fallbackProvider.keys();
       }
       
       return [];
     }
+  }
+
+  /**
+   * Get user-specific collections (helper method for keys())
+   */
+  private async getUserCollections(): Promise<{ name: string }[]> {
+    // In a real implementation, you'd use Firebase Admin SDK to list collections
+    // For now, we'll return common user collection patterns
+    // This is a limitation of the client SDK - it can't list collections
+    
+    // We can try to infer user collections based on auth context
+    // But for now, return empty array and rely on direct collection queries
+    return [];
   }
 
   async size(): Promise<number> {
