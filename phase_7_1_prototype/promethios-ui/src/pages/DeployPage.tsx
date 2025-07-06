@@ -368,7 +368,7 @@ const DeployPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load real user data instead of mock data
+    // Load real user data from unified storage (our dual deployment system)
     const loadDeployedAgents = async () => {
       if (!currentUser) {
         setError('User authentication required');
@@ -380,30 +380,61 @@ const DeployPage: React.FC = () => {
       setError(null);
       
       try {
-        // Get user's deployed agents from backend
-        const userAgents = await authApiService.getUserAgents(currentUser);
+        console.log('🚀 Loading deployed agents from unified storage...');
         
-        // Transform to DeployedAgent format
-        const deployedAgentsData: DeployedAgent[] = userAgents.map(agent => ({
-          id: agent.agent_id,
-          name: agent.agent_name || `Agent ${agent.agent_id}`,
-          type: 'external' as const,
+        // Check if we have a specific agent ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const specificAgentId = urlParams.get('agentId');
+        console.log('🎯 Specific agent ID from URL:', specificAgentId);
+        
+        // Load from unified storage (our dual deployment system)
+        const { userAgentStorage } = await import('../services/UserAgentStorageService');
+        const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
+        
+        userAgentStorage.setCurrentUser(currentUser.uid);
+        const storageService = new UnifiedStorageService();
+        
+        // Load production versions of single agents
+        const userAgents = await userAgentStorage.loadUserAgents();
+        const productionAgents = userAgents.filter(agent => 
+          agent.identity.id.endsWith('-production') || 
+          (agent.environment === 'production') ||
+          (agent.deploymentType === 'production')
+        );
+        
+        console.log('🏭 Found production agents:', productionAgents.length);
+        
+        // Load production versions of multi-agent systems
+        const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
+        const productionSystems = userSystems.filter((systemRef: any) => 
+          systemRef.id.endsWith('-production') || 
+          systemRef.environment === 'production' ||
+          systemRef.deploymentType === 'production'
+        );
+        
+        console.log('🏭 Found production systems:', productionSystems.length);
+        
+        // Transform single agents to DeployedAgent format
+        const deployedSingleAgents: DeployedAgent[] = productionAgents.map(agent => ({
+          id: agent.identity.id,
+          name: agent.identity.name,
+          type: 'foundry' as const,
           agentType: 'single' as const,
-          status: agent.status === 'active' ? 'running' : 'stopped',
-          endpoint: agent.endpoint || 'https://api.example.com/v1/chat',
-          provider: agent.provider || 'Custom',
-          deployedAt: new Date(agent.created_at || Date.now()),
-          lastActivity: new Date(agent.last_activity || Date.now()),
+          status: agent.isDeployed ? 'running' : 'stopped',
+          endpoint: `https://api.promethios.ai/v1/agents/${agent.identity.id}`,
+          provider: agent.apiDetails?.provider || 'Custom',
+          deployedAt: new Date(agent.identity.createdAt || Date.now()),
+          lastActivity: new Date(agent.lastActivity || Date.now()),
           metrics: {
-            uptime: Math.random() * 10 + 90, // 90-100%
-            responseTime: Math.random() * 200 + 100, // 100-300ms
-            successRate: Math.random() * 5 + 95, // 95-100%
+            uptime: agent.healthStatus === 'healthy' ? 99.5 : 85,
+            responseTime: Math.random() * 200 + 100,
+            successRate: agent.latestScorecard?.score || 95,
             requestsToday: Math.floor(Math.random() * 1000) + 500,
-            governanceScore: Math.random() * 10 + 85 // 85-95
+            governanceScore: agent.latestScorecard?.score || 85
           },
           governance: {
-            policy: agent.governance_policy || 'Standard',
-            violations: agent.violations || 0,
+            policy: agent.governancePolicy?.name || 'Standard',
+            violations: 0,
             lastCheck: new Date()
           },
           billing: {
@@ -412,8 +443,118 @@ const DeployPage: React.FC = () => {
             overageRate: 0.02
           }
         }));
+        
+        // Transform multi-agent systems to DeployedAgent format
+        const deployedMultiAgentSystems: DeployedAgent[] = await Promise.all(
+          productionSystems.map(async (systemRef: any) => {
+            try {
+              const fullSystemData = await storageService.get('agents', `multi-agent-system-${systemRef.id}`);
+              
+              return {
+                id: systemRef.id,
+                name: systemRef.name,
+                type: 'foundry' as const,
+                agentType: 'multi-agent' as const,
+                status: 'running' as const,
+                endpoint: `https://api.promethios.ai/v1/systems/${systemRef.id}`,
+                provider: 'Promethios Multi-Agent',
+                deployedAt: new Date(systemRef.createdAt || Date.now()),
+                lastActivity: new Date(),
+                agentCount: fullSystemData?.agentIds?.length || 0,
+                orchestrationType: fullSystemData?.collaborationModel || 'sequential',
+                systemHealth: {
+                  activeAgents: fullSystemData?.agentIds?.length || 0,
+                  failedAgents: 0,
+                  coordinationLatency: Math.random() * 100 + 50
+                },
+                metrics: {
+                  uptime: 98.5,
+                  responseTime: Math.random() * 300 + 200,
+                  successRate: 94,
+                  requestsToday: Math.floor(Math.random() * 500) + 200,
+                  governanceScore: fullSystemData?.governanceConfiguration?.trustThreshold || 85
+                },
+                governance: {
+                  policy: 'Multi-Agent Standard',
+                  violations: 0,
+                  lastCheck: new Date()
+                },
+                billing: {
+                  costToday: Math.random() * 100 + 20,
+                  requestsIncluded: 500,
+                  overageRate: 0.03
+                }
+              };
+            } catch (error) {
+              console.warn(`Failed to load system ${systemRef.id}:`, error);
+              return null;
+            }
+          })
+        );
+        
+        // Combine all deployed agents
+        const allDeployedAgents = [
+          ...deployedSingleAgents,
+          ...deployedMultiAgentSystems.filter(Boolean)
+        ];
+        
+        console.log('🚀 Total deployed agents loaded:', allDeployedAgents.length);
+        
+        // If specific agent ID provided, filter to show only that agent
+        if (specificAgentId) {
+          const specificAgent = allDeployedAgents.find(agent => 
+            agent.id === `${specificAgentId}-production` || 
+            agent.id === specificAgentId
+          );
+          
+          if (specificAgent) {
+            console.log('🎯 Showing specific agent:', specificAgent.name);
+            setDeployedAgents([specificAgent]);
+          } else {
+            console.warn('⚠️ Specific agent not found in production versions');
+            setDeployedAgents(allDeployedAgents);
+          }
+        } else {
+          setDeployedAgents(allDeployedAgents);
+        }
+        
+        // Fallback to backend API if no agents found in unified storage
+        if (allDeployedAgents.length === 0) {
+          console.log('📡 No agents in unified storage, falling back to backend API...');
+          const userAgents = await authApiService.getUserAgents(currentUser);
+          
+          const backendAgents: DeployedAgent[] = userAgents.map(agent => ({
+            id: agent.agent_id,
+            name: agent.agent_name || `Agent ${agent.agent_id}`,
+            type: 'external' as const,
+            agentType: 'single' as const,
+            status: agent.status === 'active' ? 'running' : 'stopped',
+            endpoint: agent.endpoint || 'https://api.example.com/v1/chat',
+            provider: agent.provider || 'Custom',
+            deployedAt: new Date(agent.created_at || Date.now()),
+            lastActivity: new Date(agent.last_activity || Date.now()),
+            metrics: {
+              uptime: Math.random() * 10 + 90,
+              responseTime: Math.random() * 200 + 100,
+              successRate: Math.random() * 5 + 95,
+              requestsToday: Math.floor(Math.random() * 1000) + 500,
+              governanceScore: Math.random() * 10 + 85
+            },
+            governance: {
+              policy: agent.governance_policy || 'Standard',
+              violations: agent.violations || 0,
+              lastCheck: new Date()
+            },
+            billing: {
+              costToday: Math.random() * 50 + 10,
+              requestsIncluded: 1000,
+              overageRate: 0.02
+            }
+          }));
+          
+          setDeployedAgents(backendAgents);
+        }
 
-        setDeployedAgents(deployedAgentsData);
       } catch (err) {
         console.error('Error loading deployed agents:', err);
         setError(err instanceof Error ? err.message : 'Failed to load deployed agents');
