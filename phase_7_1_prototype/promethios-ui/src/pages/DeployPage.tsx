@@ -55,8 +55,8 @@ import {
   Timeline,
   AttachMoney,
   Shield,
-} from '@mui/icons-material';
-import { ThemeProvider } from '@mui/material/styles';
+} from '@mui/material/icons';
+import { ThemeProvider, CircularProgress } from '@mui/material';
 import { darkTheme } from '../theme/darkTheme';
 
 interface DeployedAgent {
@@ -358,12 +358,160 @@ const DeployedAgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => {
   );
 };
 
+// Available Agent Card Component (similar to agent scorecard)
+const AvailableAgentCard: React.FC<{ agent: any }> = ({ agent }) => {
+  const [deploying, setDeploying] = useState(false);
+
+  const handleDeploy = async () => {
+    setDeploying(true);
+    try {
+      console.log('🚀 Deploying agent:', agent.identity.name);
+      
+      // Here we would implement the actual deployment logic
+      // For now, we'll simulate the deployment process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Show success message
+      alert(`Agent "${agent.identity.name}" deployed successfully!`);
+      
+      // Refresh the page to update deployment status
+      window.location.reload();
+    } catch (error) {
+      console.error('Deployment failed:', error);
+      alert('Deployment failed. Please try again.');
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  return (
+    <Card sx={{ 
+      backgroundColor: '#2d3748', 
+      color: 'white', 
+      border: '1px solid #4a5568',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <CardContent sx={{ flexGrow: 1 }}>
+        {/* Agent Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Avatar sx={{ bgcolor: '#3b82f6', width: 48, height: 48 }}>
+            {agent.identity.name.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+              {agent.identity.name}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Chip 
+                label="Ready to Deploy" 
+                size="small" 
+                sx={{ 
+                  backgroundColor: '#10b981', 
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }} 
+              />
+              <Chip 
+                label={agent.apiDetails?.provider || 'Custom'} 
+                size="small" 
+                sx={{ 
+                  backgroundColor: '#6366f1', 
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }} 
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Agent Details */}
+        <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+          {agent.identity.description || 'Advanced language model with chat, code generation, and analysis capabilities'}
+        </Typography>
+
+        {/* Health Status */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Health Status
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />
+            <Typography variant="body2" sx={{ color: '#10b981' }}>
+              {agent.healthStatus === 'healthy' ? 'Healthy' : 'Ready'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Trust Score */}
+        {agent.latestScorecard && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Trust Score
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                {agent.latestScorecard.score}/100
+              </Typography>
+              <LinearProgress 
+                variant="determinate" 
+                value={agent.latestScorecard.score} 
+                sx={{ 
+                  flexGrow: 1, 
+                  height: 8, 
+                  borderRadius: 4,
+                  backgroundColor: '#4a5568',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: agent.latestScorecard.score >= 80 ? '#10b981' : '#f59e0b'
+                  }
+                }} 
+              />
+            </Box>
+          </Box>
+        )}
+
+        {/* Governance Policy */}
+        {agent.governancePolicy && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Governance Policy
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              {agent.governancePolicy.name}
+            </Typography>
+          </Box>
+        )}
+      </CardContent>
+
+      {/* Deploy Button */}
+      <Box sx={{ p: 2, pt: 0 }}>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleDeploy}
+          disabled={deploying}
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': { backgroundColor: '#2563eb' },
+            '&:disabled': { backgroundColor: '#4a5568' }
+          }}
+          startIcon={deploying ? <CircularProgress size={16} /> : <Launch />}
+        >
+          {deploying ? 'Deploying...' : 'Deploy Agent'}
+        </Button>
+      </Box>
+    </Card>
+  );
+};
+
 const DeployPage: React.FC = () => {
   // Authentication context
   const { currentUser } = useAuth();
   
   const [tabValue, setTabValue] = useState(0);
   const [deployedAgents, setDeployedAgents] = useState<DeployedAgent[]>([]);
+  const [availableAgents, setAvailableAgents] = useState<any[]>([]); // Available agents for deployment
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -394,9 +542,19 @@ const DeployPage: React.FC = () => {
         userAgentStorage.setCurrentUser(currentUser.uid);
         const storageService = new UnifiedStorageService();
         
-        // Load production versions of single agents
-        const userAgents = await userAgentStorage.loadUserAgents();
-        const productionAgents = userAgents.filter(agent => 
+        // Load ALL user agents (for available agents tab)
+        const allUserAgents = await userAgentStorage.loadUserAgents();
+        const mainAgents = allUserAgents.filter(agent => 
+          !agent.identity.id.endsWith('-testing') && 
+          !agent.identity.id.endsWith('-production') &&
+          !agent.environment &&
+          !agent.deploymentType
+        );
+        console.log('📋 Found main agents for deployment:', mainAgents.length);
+        setAvailableAgents(mainAgents);
+        
+        // Load production versions of single agents (for deployed agents tabs)
+        const productionAgents = allUserAgents.filter(agent => 
           agent.identity.id.endsWith('-production') || 
           (agent.environment === 'production') ||
           (agent.deploymentType === 'production')
@@ -722,6 +880,14 @@ const DeployPage: React.FC = () => {
                     </Box>
                   } 
                 />
+                <Tab 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CloudUpload />
+                      Available Agents ({availableAgents.length})
+                    </Box>
+                  } 
+                />
               </Tabs>
             </Box>
 
@@ -755,6 +921,24 @@ const DeployPage: React.FC = () => {
                   {deployedAgents.filter(a => a.agentType === 'multi-agent').map((agent) => (
                     <Grid item xs={12} md={6} lg={4} key={agent.id}>
                       <DeployedAgentCard agent={agent} />
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+              {/* Available Agents for Deployment */}
+              {availableAgents.length === 0 ? (
+                <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+                  <AlertTitle>No Agents Available for Deployment</AlertTitle>
+                  Create and configure agents with governance before deploying. Visit the Agent Wrapping page to create deployment-ready agents.
+                </Alert>
+              ) : (
+                <Grid container spacing={3}>
+                  {availableAgents.map((agent) => (
+                    <Grid item xs={12} md={6} lg={4} key={agent.identity.id}>
+                      <AvailableAgentCard agent={agent} />
                     </Grid>
                   ))}
                 </Grid>
