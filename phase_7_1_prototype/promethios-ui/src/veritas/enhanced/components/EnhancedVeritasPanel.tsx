@@ -35,7 +35,7 @@ import {
   Group,
   Timeline
 } from '@mui/icons-material';
-import { VeritasPanel } from '../../components/VeritasPanel';
+// import { VeritasPanel } from '../../components/VeritasPanel'; // Component not available in this structure
 import UncertaintyAnalysisDisplay from './UncertaintyAnalysisDisplay';
 import HITLCollaborationInterface from './HITLCollaborationInterface';
 import { 
@@ -230,7 +230,10 @@ const EnhancedVeritasPanel: React.FC<EnhancedVeritasPanelProps> = ({
             label="Enhanced Mode"
           />
         </Box>
-        <VeritasPanel text={text} options={options} />
+        {/* <VeritasPanel text={text} options={options} /> */}
+        <Typography variant="body2" color="text.secondary">
+          Base Veritas verification would appear here
+        </Typography>
       </Box>
     );
   }
@@ -348,11 +351,14 @@ const EnhancedVeritasPanel: React.FC<EnhancedVeritasPanelProps> = ({
             {/* Standard Verification Results */}
             {activeTab === 0 && (
               <Box>
-                <VeritasPanel 
+                {/* <VeritasPanel 
                   text={text} 
                   options={options}
                   result={result}
-                />
+                /> */}
+                <Typography variant="body2" color="text.secondary">
+                  Standard Veritas verification results would appear here
+                </Typography>
                 
                 {/* Enhancement Summary */}
                 {result.enhancementMetadata && (
