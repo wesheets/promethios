@@ -105,7 +105,7 @@ export const useMultiAgentBackend = (ownerId?: string): UseMultiAgentBackendRetu
       setError(null);
       
       const backendContexts = await multiAgentBackendService.listContexts({ ownerId });
-      const transformedContexts = backendContexts.map(context => 
+      const transformedContexts = (backendContexts || []).map(context => 
         multiAgentBackendService.transformContext(context)
       );
       
@@ -163,7 +163,7 @@ export const useMultiAgentBackend = (ownerId?: string): UseMultiAgentBackendRetu
       setError(null);
       
       const history = await multiAgentBackendService.getConversationHistory(contextId, options);
-      const transformedMessages = history.messages.map(message => 
+      const transformedMessages = (history?.messages || []).map(message => 
         multiAgentBackendService.transformMessage(message)
       );
       
