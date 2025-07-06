@@ -1185,6 +1185,23 @@ const AgentProfileCard: React.FC<{
             >
               {nextAction.label}
             </Button>
+            {/* Deploy Button - only show for wrapped agents */}
+            {profile.isWrapped && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<Launch />}
+                sx={{
+                  backgroundColor: '#8b5cf6',
+                  color: 'white',
+                  '&:hover': { backgroundColor: '#7c3aed' },
+                  minWidth: '80px'
+                }}
+                onClick={() => window.location.href = `/ui/agents/deploy?agentId=${profile.identity.id}`}
+              >
+                Deploy
+              </Button>
+            )}
             <Button
               variant="outlined"
               size="small"
@@ -1193,6 +1210,7 @@ const AgentProfileCard: React.FC<{
                 borderColor: '#4a5568',
                 color: '#a0aec0',
                 '&:hover': { borderColor: '#718096', backgroundColor: '#1a202c' },
+                minWidth: '70px'
               }}
               onClick={() => window.location.href = `/ui/chat?agent=${profile.identity.id}`}
             >
@@ -1298,9 +1316,18 @@ const AgentProfilesPage: React.FC = () => {
       // Get user's system list
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
       
+      // Filter out testing and production versions - only show main systems
+      const mainSystems = userSystems.filter((systemRef: any) => {
+        const systemId = systemRef.id || '';
+        return !systemId.endsWith('-testing') && 
+               !systemId.endsWith('-production') &&
+               !systemRef.environment &&
+               !systemRef.deploymentType;
+      });
+      
       // Load full system data for each system
       const systemsData = await Promise.all(
-        userSystems.map(async (systemRef: any) => {
+        mainSystems.map(async (systemRef: any) => {
           try {
             const fullSystemData = await storageService.get('agents', `multi-agent-system-${systemRef.id}`);
             return fullSystemData || systemRef;
@@ -1419,9 +1446,18 @@ const AgentProfilesPage: React.FC = () => {
       // Load user's agents
       const userAgents = await userAgentStorage.loadUserAgents();
       
+      // Filter out testing and production versions - only show main agents
+      const mainAgents = userAgents.filter(agent => {
+        const agentId = agent.identity?.id || '';
+        return !agentId.endsWith('-testing') && 
+               !agentId.endsWith('-production') &&
+               !agent.environment &&
+               !agent.deploymentType;
+      });
+      
       // Load scorecards for each agent
       const agentsWithScorecards = await Promise.all(
-        userAgents.map(async (agent) => {
+        mainAgents.map(async (agent) => {
           try {
             const scorecard = await userAgentStorage.loadScorecard(agent.identity.id);
             return {

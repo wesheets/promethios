@@ -361,56 +361,50 @@ const AgentWrappingWizard: React.FC = () => {
 
       console.log('Updated agent to save:', updatedAgent);
 
-      // Step 3: Save to local storage
+      // Step 3: Dual Deployment (Testing + Production only)
+      console.log('🚀 Starting dual deployment (testing + production)...');
+      
       const storageService = new UserAgentStorageService();
       storageService.setCurrentUser(currentUser.uid);
       
-      console.log('Saving agent with ID:', updatedAgent.identity.id);
-      console.log('Using user ID:', currentUser.uid);
-      await storageService.saveAgent(updatedAgent);
-
-      // Step 4: Dual Deployment (Testing + Production)
-      console.log('🚀 Starting dual deployment (testing + production)...');
-      
-      // Create testing version
+      // Create testing version (this is what user will see and chat with)
       const testingAgent = {
         ...updatedAgent,
         identity: {
           ...updatedAgent.identity,
           id: `${updatedAgent.identity.id}-testing`,
-          name: `${updatedAgent.identity.name} (Testing)`,
+          name: updatedAgent.identity.name, // Keep original name for user
         },
         environment: 'testing',
         isDeployed: true,
         deploymentType: 'testing'
       };
       
-      // Create production version
+      // Create production version (for deployment)
       const productionAgent = {
         ...updatedAgent,
         identity: {
           ...updatedAgent.identity,
           id: `${updatedAgent.identity.id}-production`,
-          name: `${updatedAgent.identity.name} (Production)`,
+          name: updatedAgent.identity.name, // Keep original name for user
         },
         environment: 'production',
-        isDeployed: true,
+        isDeployed: false, // Not deployed until user clicks Deploy
         deploymentType: 'production'
       };
       
-      // Save both versions
+      // Save both versions (no original version needed)
       await storageService.saveAgent(testingAgent);
       await storageService.saveAgent(productionAgent);
       
       console.log('✅ Testing deployment completed:', testingAgent.identity.id);
-      console.log('✅ Production deployment completed:', productionAgent.identity.id);
+      console.log('✅ Production version created:', productionAgent.identity.id);
 
-      console.log('🎉 Agent successfully wrapped and deployed to both testing and production');
-      console.log('Final agent state:', updatedAgent);
+      console.log('🎉 Agent successfully wrapped with dual deployment (testing + production)');
       
-      // Verify the agent was saved by trying to load it
-      const savedAgent = await storageService.getAgent(updatedAgent.identity.id);
-      console.log('Verification - loaded saved agent:', savedAgent);
+      // Verify the testing agent was saved (this is what user will interact with)
+      const savedAgent = await storageService.getAgent(testingAgent.identity.id);
+      console.log('Verification - loaded testing agent:', savedAgent);
       
       setShowSuccessDialog(true);
       

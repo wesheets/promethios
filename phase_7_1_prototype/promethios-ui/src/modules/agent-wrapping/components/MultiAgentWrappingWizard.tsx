@@ -650,61 +650,51 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
         dashboardEnabled: true // Enable dashboard by default
       };
       
-      // Store in the 'agents' namespace for multi-agent systems
-      await storageService.set('agents', `multi-agent-system-${contextId}`, completeSystemData);
-      
-      // Dual Deployment: Create testing and production versions
+      // Dual Deployment: Create testing and production versions only
       console.log('🚀 Starting dual deployment (testing + production)...');
       
-      // Create testing version
+      // Create testing version (this is what user will see and chat with)
       const testingSystemData = {
         ...completeSystemData,
         id: `${contextId}-testing`,
         contextId: `${contextId}-testing`,
-        name: `${systemName} (Testing)`,
+        name: systemName, // Keep original name for user
         environment: 'testing',
         deploymentType: 'testing'
       };
       
-      // Create production version
+      // Create production version (for deployment)
       const productionSystemData = {
         ...completeSystemData,
         id: `${contextId}-production`,
         contextId: `${contextId}-production`,
-        name: `${systemName} (Production)`,
+        name: systemName, // Keep original name for user
         environment: 'production',
         deploymentType: 'production'
       };
       
-      // Save both versions
+      // Save both versions (no original version needed)
       await storageService.set('agents', `multi-agent-system-${contextId}-testing`, testingSystemData);
       await storageService.set('agents', `multi-agent-system-${contextId}-production`, productionSystemData);
       
       console.log('✅ Testing deployment completed:', `${contextId}-testing`);
-      console.log('✅ Production deployment completed:', `${contextId}-production`);
+      console.log('✅ Production version created:', `${contextId}-production`);
       
-      // Also store references in user's system list for both environments
+      // Store references in user's system list for both environments
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
       userSystems.push(
         {
-          id: contextId,
-          name: systemName,
-          description: systemDescription,
-          createdAt: new Date().toISOString(),
-          type: 'multi-agent-system'
-        },
-        {
           id: `${contextId}-testing`,
-          name: `${systemName} (Testing)`,
-          description: `${systemDescription} - Testing Environment`,
+          name: systemName, // Keep original name for user
+          description: systemDescription,
           createdAt: new Date().toISOString(),
           type: 'multi-agent-system',
           environment: 'testing'
         },
         {
           id: `${contextId}-production`,
-          name: `${systemName} (Production)`,
-          description: `${systemDescription} - Production Environment`,
+          name: systemName, // Keep original name for user
+          description: systemDescription,
           createdAt: new Date().toISOString(),
           type: 'multi-agent-system',
           environment: 'production'

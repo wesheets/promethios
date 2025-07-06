@@ -62,9 +62,18 @@ const MultiAgentWrappingPage: React.FC = () => {
       // Get user's system list
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
       
+      // Filter out testing and production versions - only show main systems
+      const mainSystems = userSystems.filter((systemRef: any) => {
+        const systemId = systemRef.id || '';
+        return !systemId.endsWith('-testing') && 
+               !systemId.endsWith('-production') &&
+               !systemRef.environment &&
+               !systemRef.deploymentType;
+      });
+      
       // Load full system data for each system
       const systemsData = await Promise.all(
-        userSystems.map(async (systemRef: any) => {
+        mainSystems.map(async (systemRef: any) => {
           try {
             const fullSystemData = await storageService.get('agents', `multi-agent-system-${systemRef.id}`);
             return fullSystemData || systemRef;
