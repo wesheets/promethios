@@ -65,8 +65,8 @@ import { PolicyTemplate } from '../../../services/policyBackendService';
 import { MultiAgentSystem, AgentRole, AgentConnection, FlowType } from '../types/multiAgent';
 
 // Enhanced Veritas 2 Integration (Optional)
-import { useEnhancedVeritas } from '../../../veritas/enhanced/hooks/useEnhancedVeritas';
-import { UncertaintyAnalysisDisplay } from '../../../veritas/enhanced/components/UncertaintyAnalysisDisplay';
+import { useEnhancedVeritas } from '../../../../../../../src/veritas/enhanced/hooks/useEnhancedVeritas';
+import { UncertaintyAnalysisDisplay } from '../../../../../../../src/veritas/enhanced/components/UncertaintyAnalysisDisplay';
 
 // Original 7-step process restored
 const steps = [
