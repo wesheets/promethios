@@ -416,8 +416,8 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
       const productionSystems = [];
       
       for (const key of userAgentKeys) {
-        if (key.includes('-production')) {
-          try {
+        
+        try {
             const agent = await unifiedStorage.get('agents', key);
             if (agent) {
               productionAgents.push({
@@ -435,12 +435,11 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
           } catch (error) {
             console.warn(`Failed to load agent ${key}:`, error);
           }
-        }
       }
       
       for (const key of userMultiAgentKeys) {
-        if (key.includes('-production')) {
-          try {
+        
+        try {
             const system = await unifiedStorage.get('multiAgentSystems', key);
             if (system) {
               productionSystems.push({
@@ -457,7 +456,6 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
           } catch (error) {
             console.warn(`Failed to load multi-agent system ${key}:`, error);
           }
-        }
       }
       
       console.log(`📦 Loaded ${productionAgents.length} production agents and ${productionSystems.length} production systems for deployment`);
@@ -708,8 +706,8 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       const productionSystems = [];
       
       for (const key of userAgentKeys) {
-        if (key.includes('-production')) {
-          try {
+        
+        try {
             const agent = await unifiedStorage.get('agents', key);
             if (agent) {
               productionAgents.push({
@@ -727,12 +725,11 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
           } catch (error) {
             console.warn(`Failed to load agent ${key}:`, error);
           }
-        }
       }
       
       for (const key of userMultiAgentKeys) {
-        if (key.includes('-production')) {
-          try {
+        
+        try {
             const system = await unifiedStorage.get('multiAgentSystems', key);
             if (system) {
               productionSystems.push({
@@ -749,7 +746,6 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
           } catch (error) {
             console.warn(`Failed to load multi-agent system ${key}:`, error);
           }
-        }
       }
       
       console.log(`📦 Loaded ${productionAgents.length} production agents and ${productionSystems.length} production systems for deployment`);
@@ -866,7 +862,7 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
           backgroundColor: '#2d3748',
           color: 'white',
           border: '1px solid #4a5568'
-        }
+      }
       }}
     >
       <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #4a5568' }}>
