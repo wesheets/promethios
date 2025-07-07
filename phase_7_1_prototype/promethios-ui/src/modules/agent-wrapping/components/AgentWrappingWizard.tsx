@@ -181,8 +181,23 @@ const AgentWrappingWizard: React.FC = () => {
       console.log('🚀 Starting agent wrapping with dual deployment...');
       console.log('Using currentUser:', currentUser.uid);
 
-      // Create governance policy from wizard data (or null for no policy)
-      const governancePolicy: GovernancePolicy | null = agentData.complianceFramework === 'none' ? null : {
+      // Create governance policy from wizard data (provide default instead of null)
+      const governancePolicy: GovernancePolicy = agentData.complianceFramework === 'none' ? {
+        trustThreshold: 75,
+        securityLevel: 'standard',
+        complianceFramework: 'general',
+        enableAuditLogging: false,
+        enableDataRetention: false,
+        enableRateLimiting: false,
+        enableContentFiltering: false,
+        enableRealTimeMonitoring: false,
+        enableEscalationPolicies: false,
+        maxRequestsPerMinute: 100,
+        policyRules: [],
+        complianceControls: [],
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      } : {
         trustThreshold: agentData.trustThreshold || 85,
         securityLevel: agentData.securityLevel || 'standard',
         complianceFramework: agentData.complianceFramework || 'general',
@@ -194,6 +209,7 @@ const AgentWrappingWizard: React.FC = () => {
         enableEscalationPolicies: agentData.enableEscalationPolicies || false,
         maxRequestsPerMinute: agentData.maxRequestsPerMinute || 100,
         policyRules: [], // Will be populated by backend policy engine
+        complianceControls: [], // Initialize as empty array
         createdAt: new Date(),
         lastUpdated: new Date(),
       };
@@ -204,7 +220,7 @@ const AgentWrappingWizard: React.FC = () => {
       const complianceControls: ComplianceControl[] = [];
       
       // Add framework-specific controls based on selection
-      if (governancePolicy && governancePolicy.complianceFramework === 'healthcare') {
+      if (governancePolicy.complianceFramework === 'healthcare') {
         complianceControls.push(
           {
             id: 'hipaa-164-308',
@@ -235,7 +251,7 @@ const AgentWrappingWizard: React.FC = () => {
             enabled: true
           }
         );
-      } else if (governancePolicy && governancePolicy.complianceFramework === 'soc2') {
+      } else if (governancePolicy.complianceFramework === 'soc2') {
         complianceControls.push(
           {
             id: 'soc2-cc6-1',
@@ -252,7 +268,7 @@ const AgentWrappingWizard: React.FC = () => {
             enabled: true
           }
         );
-      } else if (governancePolicy && governancePolicy.complianceFramework === 'gdpr') {
+      } else if (governancePolicy.complianceFramework === 'gdpr') {
         complianceControls.push(
           {
             id: 'gdpr-art-32',
@@ -272,46 +288,44 @@ const AgentWrappingWizard: React.FC = () => {
       }
       
       // Update governance policy with compliance controls (only if policy exists)
-      if (governancePolicy) {
-        governancePolicy.complianceControls = complianceControls;
+      //       // Always set compliance controls and policy rules since governancePolicy is never null
+      governancePolicy.complianceControls = complianceControls;
 
-        // Create local policy rules for governance monitoring
-        governancePolicy.policyRules = [
+      // Create local policy rules for governance monitoring
+      governancePolicy.policyRules = [
         {
-          id: `trust-monitoring-${Date.now()}`,
-          name: 'Trust Score Monitoring',
-          type: 'trust_threshold',
+          id: 'trust-threshold-check',
+          name: 'Trust Threshold Validation',
+          description: 'Validates agent responses meet minimum trust threshold',
           condition: `trust_score >= ${governancePolicy.trustThreshold}`,
-          action: 'log',
+          action: 'allow',
           parameters: { threshold: governancePolicy.trustThreshold },
-          enabled: true
+          priority: 1
         },
         ...(governancePolicy.enableAuditLogging ? [{
-          id: `audit-logging-${Date.now()}`,
-          name: 'Comprehensive Audit Logging',
-          type: 'audit_requirement' as const,
-          condition: 'all_actions',
+          id: 'audit-logging',
+          name: 'Audit Logging',
+          description: 'Logs all agent interactions for compliance audit',
+          condition: 'always',
           action: 'log' as const,
-          parameters: { 
+          parameters: {
             log_level: governancePolicy.enforcementLevel === 'strict_compliance' ? 'detailed' : 'standard',
             compliance_framework: governancePolicy.complianceFramework
           },
-          enabled: true
+          priority: 2
         }] : []),
         ...(governancePolicy.enableRealTimeMonitoring ? [{
-          id: `realtime-monitoring-${Date.now()}`,
-          name: 'Real-time Compliance Monitoring',
-          type: 'audit_requirement' as const,
-          condition: 'compliance_relevant_actions',
+          id: 'real-time-monitoring',
+          name: 'Real-time Monitoring',
+          description: 'Monitors agent behavior in real-time for policy violations',
+          condition: 'always',
           action: governancePolicy.enforcementLevel === 'strict_compliance' ? 'escalate' as const : 'log' as const,
-          parameters: { 
+          parameters: {
             monitoring_level: governancePolicy.enforcementLevel,
-            alert_threshold: 'medium'
           },
-          enabled: true
+          priority: 3
         }] : [])
       ];
-      }
 
       console.log('✅ Local compliance monitoring configuration created with', complianceControls.length, 'controls');
 
@@ -353,9 +367,8 @@ const AgentWrappingWizard: React.FC = () => {
         isWrapped: true,
         isDeployed: false, // Agents are "Governed" not "Deployed" until actually deployed to production
         healthStatus: 'healthy' as const,
-        trustLevel: governancePolicy?.trustThreshold ? 
-                   (governancePolicy.trustThreshold >= 90 ? 'high' : 
-                    governancePolicy.trustThreshold >= 75 ? 'medium' : 'low') : 'medium',
+        trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
+                   (governancePolicy.trustThreshold >= 75 ? 'medium' : 'low'),
         lastActivity: new Date(),
       };
 

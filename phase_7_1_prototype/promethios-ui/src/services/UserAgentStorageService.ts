@@ -217,15 +217,22 @@ export class UserAgentStorageService {
       }
 
       const allKeys = await unifiedStorage.keys('agents');
+      console.log('🔍 All keys from unified storage:', allKeys);
+      
       const userPrefix = `${this.currentUserId}.`;
+      console.log('🔍 Looking for keys with prefix:', userPrefix);
+      
       const userKeys = allKeys.filter(key => key.startsWith(userPrefix) && !key.includes('scorecard.'));
+      console.log('🔍 Filtered user keys:', userKeys);
 
       const agents: AgentProfile[] = [];
 
       for (const key of userKeys) {
         try {
+          console.log('🔍 Loading agent with key:', key);
           const agentData = await unifiedStorage.get<any>('agents', key);
           if (agentData) {
+            console.log('🔍 Loaded agent data:', agentData.identity?.name || 'Unknown');
             // Safely deserialize dates with fallbacks
             const agent: AgentProfile = {
               ...agentData,
@@ -241,6 +248,8 @@ export class UserAgentStorageService {
               lastActivity: agentData.lastActivity ? new Date(agentData.lastActivity) : null,
             };
             agents.push(agent);
+          } else {
+            console.log('🔍 No data found for key:', key);
           }
         } catch (error) {
           console.error(`Error loading agent with key ${key}:`, error);

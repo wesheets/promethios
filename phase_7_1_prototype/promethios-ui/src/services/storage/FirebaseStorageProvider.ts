@@ -137,7 +137,7 @@ export class FirebaseStorageProvider implements StorageProvider {
       const item: FirebaseItem<T> = {
         value,
         timestamp: Date.now(),
-        metadata: options?.metadata
+        ...(options?.metadata && { metadata: options.metadata })
       };
 
       // Set expiration if TTL is provided
