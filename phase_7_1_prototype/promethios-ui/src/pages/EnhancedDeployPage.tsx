@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -350,7 +350,10 @@ const RealDeployedAgentCard: React.FC<{ deployment: RealDeploymentResult }> = ({
 };
 
 // Available Agents Tab Component
-const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }> = ({ onDeployAgent }) => {
+const AvailableAgentsTab: React.FC<{ 
+  onDeployAgent: (agentId: string) => void;
+  refreshTrigger?: number; // Add refresh trigger prop
+}> = ({ onDeployAgent, refreshTrigger }) => {
   const [availableAgents, setAvailableAgents] = useState<any[]>([]);
   const [availableMultiAgentSystems, setAvailableMultiAgentSystems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -359,9 +362,59 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
 
   useEffect(() => {
     loadAvailableAgents();
-  }, [currentUser]);
+  }, [currentUser?.uid, refreshTrigger]); // Add refreshTrigger to dependencies
 
-  const loadAvailableAgents = async () => {
+  // Add storage event listener for real-time updates
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const setupStorageListener = async () => {
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
+      
+      const handleStorageEvent = (event: any) => {
+        // Refresh when agents or multiAgentSystems are modified
+        if (event.namespace === 'agents' || event.namespace === 'multiAgentSystems') {
+          // Check if it's for the current user
+          if (event.key && event.key.includes(currentUser.uid)) {
+            console.log('🔄 Storage event detected, refreshing agents list:', event);
+            loadAvailableAgents();
+          }
+        }
+      };
+
+      const removeListener = unifiedStorage.addEventListener(handleStorageEvent);
+      return removeListener;
+    };
+
+    let removeListener: (() => void) | undefined;
+    setupStorageListener().then(cleanup => {
+      removeListener = cleanup;
+    });
+
+    return () => {
+      if (removeListener) {
+        removeListener();
+      }
+    };
+  }, [currentUser?.uid]);
+
+  // Add window-level event listener for cross-component communication
+  useEffect(() => {
+    const handleAgentCreated = () => {
+      console.log('🎯 Agent created event received, refreshing agents list');
+      loadAvailableAgents();
+    };
+
+    window.addEventListener('agentCreated', handleAgentCreated);
+    window.addEventListener('agentUpdated', handleAgentCreated);
+
+    return () => {
+      window.removeEventListener('agentCreated', handleAgentCreated);
+      window.removeEventListener('agentUpdated', handleAgentCreated);
+    };
+  }, []);
+
+  const loadAvailableAgents = useCallback(async () => {
     try {
       if (!currentUser?.uid) {
         setAvailableAgents([]);
@@ -475,7 +528,7 @@ const AvailableAgentsTab: React.FC<{ onDeployAgent: (agentId: string) => void }>
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.uid, toast]);
 
   const AvailableAgentCard: React.FC<{ agent: any; type: 'single' | 'multi' }> = ({ agent, type }) => (
     <Card sx={{ 
@@ -1169,6 +1222,7 @@ const EnhancedDeployPage: React.FC = () => {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [preSelectedAgent, setPreSelectedAgent] = useState<string | undefined>(undefined);
+  const [agentRefreshTrigger, setAgentRefreshTrigger] = useState(0); // Add refresh trigger
 
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -1205,6 +1259,8 @@ const EnhancedDeployPage: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadRealDeployments();
+    // Also refresh available agents
+    setAgentRefreshTrigger(prev => prev + 1);
     setRefreshing(false);
     
     toast({
@@ -1214,8 +1270,14 @@ const EnhancedDeployPage: React.FC = () => {
     });
   };
 
+  const refreshAgentsList = () => {
+    setAgentRefreshTrigger(prev => prev + 1);
+  };
+
   const handleNewDeployment = (result: RealDeploymentResult) => {
     setRealDeployments(prev => [result, ...prev]);
+    // Refresh agents list to show updated state
+    refreshAgentsList();
   };
 
   const handleDeployAgent = (agentId: string) => {
@@ -1386,6 +1448,7 @@ const EnhancedDeployPage: React.FC = () => {
         <TabPanel value={tabValue} index={2}>
           <AvailableAgentsTab 
             onDeployAgent={handleDeployAgent}
+            refreshTrigger={agentRefreshTrigger}
           />
         </TabPanel>
 

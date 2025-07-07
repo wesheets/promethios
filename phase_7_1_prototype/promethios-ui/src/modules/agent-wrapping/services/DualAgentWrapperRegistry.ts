@@ -96,6 +96,13 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
     // Create legacy wrapper for backward compatibility
     await this.createLegacyWrapper(dualWrapper);
 
+    // Dispatch events for UI refresh
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('agentCreated', { 
+        detail: { agentId: wrapperId, agent: dualWrapper } 
+      }));
+    }
+
     console.log(`🎯 Created dual wrapper: ${dualWrapper.baseAgent.name} (${wrapperId})`);
     return dualWrapper;
   }
@@ -186,6 +193,13 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
 
     // Update legacy wrapper for backward compatibility
     await this.updateLegacyWrapper(updatedWrapper);
+
+    // Dispatch events for UI refresh
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('agentUpdated', { 
+        detail: { agentId: request.wrapperId, agent: updatedWrapper } 
+      }));
+    }
 
     console.log(`🔄 Updated dual wrapper: ${updatedWrapper.baseAgent.name} (${request.wrapperId})`);
   }
@@ -820,6 +834,13 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
     // Store governance engine if created
     if (deploymentWrapper?.governanceEngine) {
       this.governanceEngines.set(wrapperId, deploymentWrapper.governanceEngine);
+    }
+
+    // Dispatch events for UI refresh
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('agentCreated', { 
+        detail: { agentId: wrapperId, agent: dualWrapper, type: 'multi-agent' } 
+      }));
     }
 
     console.log(`🤖 Created multi-agent dual wrapper: ${systemConfig.name} (${wrapperId})`);
