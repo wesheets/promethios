@@ -141,12 +141,14 @@ export class UserAgentStorageService {
           lastModifiedDate: agent.identity?.lastModifiedDate?.toISOString() || new Date().toISOString(),
         },
         lastActivity: agent.lastActivity?.toISOString() || null,
-        // Safely serialize governance policy dates if they exist
-        governancePolicy: agent.governancePolicy ? {
-          ...agent.governancePolicy,
-          createdAt: agent.governancePolicy.createdAt?.toISOString() || new Date().toISOString(),
-          lastUpdated: agent.governancePolicy.lastUpdated?.toISOString() || new Date().toISOString(),
-        } : undefined,
+        // Only include governance policy if it exists
+        ...(agent.governancePolicy && {
+          governancePolicy: {
+            ...agent.governancePolicy,
+            createdAt: agent.governancePolicy.createdAt?.toISOString() || new Date().toISOString(),
+            lastUpdated: agent.governancePolicy.lastUpdated?.toISOString() || new Date().toISOString(),
+          }
+        }),
       };
 
       await unifiedStorage.set('agents', userKey, serializedAgent);

@@ -190,12 +190,20 @@ export class UnifiedStorageService {
   async keys(namespace: string): Promise<string[]> {
     try {
       const provider = this.getProvider(namespace);
-      const allKeys = await provider.keys();
-      const namespacePrefix = `${namespace}.`;
+      console.log(`🔧 UnifiedStorage: Getting keys for namespace '${namespace}' using provider: ${provider.constructor.name}`);
       
-      return allKeys
+      const allKeys = await provider.keys();
+      console.log(`🔧 UnifiedStorage: Provider returned ${allKeys.length} keys:`, allKeys);
+      
+      const namespacePrefix = `${namespace}.`;
+      console.log(`🔧 UnifiedStorage: Filtering keys with prefix: '${namespacePrefix}'`);
+      
+      const filteredKeys = allKeys
         .filter(key => key.startsWith(namespacePrefix))
         .map(key => key.substring(namespacePrefix.length));
+        
+      console.log(`🔧 UnifiedStorage: Filtered to ${filteredKeys.length} keys:`, filteredKeys);
+      return filteredKeys;
     } catch (error) {
       console.error(`Error getting keys for namespace ${namespace}:`, error);
       return [];

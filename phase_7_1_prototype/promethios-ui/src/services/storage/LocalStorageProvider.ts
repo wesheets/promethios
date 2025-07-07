@@ -83,12 +83,18 @@ export class LocalStorageProvider implements StorageProvider {
   async keys(): Promise<string[]> {
     try {
       const keys: string[] = [];
+      console.log(`📱 LocalStorage: Checking ${localStorage.length} items with prefix: ${this.prefix}`);
+      
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(this.prefix)) {
-          keys.push(key.substring(this.prefix.length));
+          const cleanKey = key.substring(this.prefix.length);
+          keys.push(cleanKey);
+          console.log(`📱 LocalStorage: Found key: ${cleanKey}`);
         }
       }
+      
+      console.log(`📱 LocalStorage: Returning ${keys.length} keys`);
       return keys;
     } catch (error) {
       console.error('LocalStorageProvider.keys error:', error);
