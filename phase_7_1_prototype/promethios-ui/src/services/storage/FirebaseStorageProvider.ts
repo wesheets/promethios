@@ -119,6 +119,29 @@ export class FirebaseStorageProvider implements StorageProvider {
     }
   }
 
+  // Utility function to recursively remove undefined values from objects
+  private sanitizeData<T>(data: T): T {
+    if (data === null || data === undefined) {
+      return data;
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.sanitizeData(item)) as T;
+    }
+    
+    if (typeof data === 'object' && data !== null) {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined) {
+          sanitized[key] = this.sanitizeData(value);
+        }
+      }
+      return sanitized as T;
+    }
+    
+    return data;
+  }
+
   async set<T>(key: string, value: T, options?: StorageOptions): Promise<void> {
     try {
       // Always check availability for each operation
@@ -134,10 +157,13 @@ export class FirebaseStorageProvider implements StorageProvider {
       // Parse the key to get collection and document
       const { collection: collectionName, document: documentId } = this.parseKey(key);
       
+      // Sanitize the value to remove all undefined values
+      const sanitizedValue = this.sanitizeData(value);
+      
       const item: FirebaseItem<T> = {
-        value,
+        value: sanitizedValue,
         timestamp: Date.now(),
-        ...(options?.metadata && { metadata: options.metadata })
+        ...(options?.metadata && { metadata: this.sanitizeData(options.metadata) })
       };
 
       // Set expiration if TTL is provided
@@ -145,10 +171,13 @@ export class FirebaseStorageProvider implements StorageProvider {
         item.expiresAt = Date.now() + options.ttl;
       }
 
-      const docRef = doc(db, collectionName, documentId);
-      await setDoc(docRef, item);
+      // Final sanitization of the entire item
+      const sanitizedItem = this.sanitizeData(item);
 
-      console.log(`🔥 Stored to Firebase: ${key}`);
+      const docRef = doc(db, collectionName, documentId);
+      await setDoc(docRef, sanitizedItem);
+
+      console.log(`🔥 Stored to Firebase: ${key} (sanitized)`);
 
       // Also store in fallback for redundancy if available
       if (this.fallbackProvider && options?.redundantStorage !== false) {
@@ -251,9 +280,11 @@ export class FirebaseStorageProvider implements StorageProvider {
       // Always check availability for each operation
       const available = await this.isAvailable();
       if (!available) {
+        console.log(`📱 Firebase unavailable, using fallback for keys operation`);
         if (this.fallbackProvider) {
-          console.log(`📱 Firebase unavailable, using fallback for keys operation`);
-          return this.fallbackProvider.keys();
+          const fallbackKeys = await this.fallbackProvider.keys();
+          console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys`);
+          return fallbackKeys;
         }
         return [];
       }
@@ -265,6 +296,8 @@ export class FirebaseStorageProvider implements StorageProvider {
       try {
         // Query common collections that might contain user data
         const collections = ['agents', 'multiAgentSystems', 'user', 'singleAgentChats', 'multiAgentChats', 'governance', 'preferences', 'notifications'];
+        
+        console.log(`🔥 Querying ${collections.length} Firebase collections for keys...`);
         
         for (const collectionName of collections) {
           try {
@@ -286,24 +319,30 @@ export class FirebaseStorageProvider implements StorageProvider {
         console.log(`🔥 Retrieved ${keys.length} keys from Firebase collections`);
         
         // If we got keys from Firebase, return them
-        // Otherwise, fall back to localStorage
         if (keys.length > 0) {
+          console.log(`🔥 Returning ${keys.length} keys from Firebase`);
           return keys;
-        } else {
-          console.log(`📱 No keys found in Firebase, falling back to localStorage`);
-          if (this.fallbackProvider) {
-            return this.fallbackProvider.keys();
-          }
-          return [];
         }
+        
+        // If Firebase returned no keys, fall back to localStorage
+        console.log(`🔥 Firebase returned 0 keys, falling back to localStorage...`);
+        if (this.fallbackProvider) {
+          const fallbackKeys = await this.fallbackProvider.keys();
+          console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys`);
+          return fallbackKeys;
+        }
+        
+        return [];
 
       } catch (queryError) {
-        console.error('Firebase keys query failed:', queryError);
+        console.error('Firebase keys query error:', queryError);
         
-        // Fallback to localStorage if Firebase query fails
+        // Fall back to localStorage on any Firebase error
+        console.log(`🔥 Firebase query failed, falling back to localStorage...`);
         if (this.fallbackProvider) {
-          console.log(`📱 Firebase query failed, using fallback for keys operation`);
-          return this.fallbackProvider.keys();
+          const fallbackKeys = await this.fallbackProvider.keys();
+          console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys after Firebase error`);
+          return fallbackKeys;
         }
         
         return [];
@@ -312,9 +351,12 @@ export class FirebaseStorageProvider implements StorageProvider {
     } catch (error) {
       console.error('FirebaseStorageProvider.keys error:', error);
       
+      // Fallback on any error
       if (this.fallbackProvider) {
-        console.log(`📱 Firebase error, using fallback for keys operation`);
-        return this.fallbackProvider.keys();
+        console.log(`📱 Using fallback provider due to Firebase keys error`);
+        const fallbackKeys = await this.fallbackProvider.keys();
+        console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys after error`);
+        return fallbackKeys;
       }
       
       return [];
