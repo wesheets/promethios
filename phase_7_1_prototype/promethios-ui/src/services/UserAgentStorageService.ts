@@ -221,18 +221,31 @@ export class UserAgentStorageService {
       const allKeys = await unifiedStorage.keys('agents');
       console.log('🔍 All keys from unified storage:', allKeys);
       
-      const userPrefix = `${this.currentUserId}.`;
+      // Extract just the key part after 'agents/' prefix
+      const keyParts = allKeys.map(key => key.replace('agents/', ''));
+      console.log('🔍 Key parts after removing agents/ prefix:', keyParts);
+      
+      // Filter for keys that start with the user ID (using underscore format)
+      const userPrefix = `${this.currentUserId}_`;
       console.log('🔍 Looking for keys with prefix:', userPrefix);
       
-      const userKeys = allKeys.filter(key => key.startsWith(userPrefix) && !key.includes('scorecard.'));
-      console.log('🔍 Filtered user keys:', userKeys);
+      const userKeyParts = keyParts.filter(keyPart => 
+        keyPart.startsWith(userPrefix) && !keyPart.includes('scorecard')
+      );
+      console.log('🔍 Filtered user key parts:', userKeyParts);
+      
+      // Reconstruct full keys for loading
+      const userKeys = userKeyParts.map(keyPart => `agents/${keyPart}`);
+      console.log('🔍 Final user keys for loading:', userKeys);
 
       const agents: AgentProfile[] = [];
 
       for (const key of userKeys) {
         try {
           console.log('🔍 Loading agent with key:', key);
-          const agentData = await unifiedStorage.get<any>('agents', key);
+          // Extract the key part after 'agents/' for the get() call
+          const keyPart = key.replace('agents/', '');
+          const agentData = await unifiedStorage.get<any>('agents', keyPart);
           if (agentData) {
             console.log('🔍 Loaded agent data:', agentData.identity?.name || 'Unknown');
             // Safely deserialize dates with fallbacks
