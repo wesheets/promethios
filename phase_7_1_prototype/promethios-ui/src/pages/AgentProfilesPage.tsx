@@ -1474,6 +1474,11 @@ const AgentProfilesPage: React.FC = () => {
       setAgentProfiles(agentsWithScorecards);
       console.log(`Loaded ${agentsWithScorecards.length} agents from unified storage for user ${effectiveUser.uid}`);
       
+      // Debug: Check isWrapped status for each agent
+      agentsWithScorecards.forEach(agent => {
+        console.log(`🔍 Agent "${agent.identity?.name}" - isWrapped: ${agent.isWrapped}, ID: ${agent.identity?.id}`);
+      });
+      
     } catch (error) {
       console.error('Error loading agents from storage:', error);
       setAgentProfiles([]);
@@ -1484,6 +1489,38 @@ const AgentProfilesPage: React.FC = () => {
 
   useEffect(() => {
     loadAgentsFromStorage();
+    
+    // Add event listeners for agent creation/updates
+    const handleAgentCreated = () => {
+      console.log('🔄 Agent created event received, refreshing agent list...');
+      loadAgentsFromStorage();
+    };
+    
+    const handleAgentUpdated = () => {
+      console.log('🔄 Agent updated event received, refreshing agent list...');
+      loadAgentsFromStorage();
+    };
+    
+    // Listen for custom events
+    window.addEventListener('agentCreated', handleAgentCreated);
+    window.addEventListener('agentUpdated', handleAgentUpdated);
+    
+    // Listen for storage events
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key && event.key.includes('agents')) {
+        console.log('🔄 Storage change detected for agents, refreshing...');
+        loadAgentsFromStorage();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('agentCreated', handleAgentCreated);
+      window.removeEventListener('agentUpdated', handleAgentUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [effectiveUser?.uid]);
 
   // Refresh function for manual reload
