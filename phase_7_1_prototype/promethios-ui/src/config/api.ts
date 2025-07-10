@@ -7,6 +7,9 @@
 // API Base URL - now properly configured with environment variables
 export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
+// Deployment API Base URL - for local development, use localhost
+export const DEPLOYMENT_API_BASE_URL = import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5000';
+
 // Multi-Agent API endpoints
 export const MULTI_AGENT_API = {
   BASE: import.meta.env.VITE_MULTI_AGENT_API_BASE || `${API_BASE_URL}/api/multi_agent_system`,
@@ -36,6 +39,17 @@ export const AGENT_API = {
   IDENTITIES: import.meta.env.VITE_AGENT_API_BASE ? `${import.meta.env.VITE_AGENT_API_BASE}/identities` : `${API_BASE_URL}/api/agents/identities`,
 };
 
+// Deployment API endpoints
+export const DEPLOYMENT_API = {
+  BASE: DEPLOYMENT_API_BASE_URL,
+  HEALTH: `${DEPLOYMENT_API_BASE_URL}/health`,
+  GENERATE_API_KEY: (agentId: string) => `${DEPLOYMENT_API_BASE_URL}/v1/agents/${agentId}/api-key`,
+  DEPLOYED_AGENTS: (userId: string) => `${DEPLOYMENT_API_BASE_URL}/v1/users/${userId}/deployed-agents`,
+  DEPLOY_AGENT: `${DEPLOYMENT_API_BASE_URL}/v1/agents/deploy`,
+  DEPLOYMENT_STATUS: (agentId: string) => `${DEPLOYMENT_API_BASE_URL}/v1/agents/${agentId}/deployment-status`,
+  UNDEPLOY_AGENT: (agentId: string) => `${DEPLOYMENT_API_BASE_URL}/v1/agents/${agentId}/undeploy`,
+};
+
 // Loop API endpoints
 export const LOOP_API = {
   BASE: `${API_BASE_URL}/loop`,
@@ -60,10 +74,12 @@ export const POLLING_CONFIG = {
 
 export default {
   API_BASE_URL,
+  DEPLOYMENT_API_BASE_URL,
   MULTI_AGENT_API,
   GOVERNANCE_API,
   CHAT_API,
   AGENT_API,
+  DEPLOYMENT_API,
   LOOP_API,
   WEBSOCKET_CONFIG,
   POLLING_CONFIG,

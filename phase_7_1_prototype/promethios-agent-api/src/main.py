@@ -14,6 +14,7 @@ from src.routes.promethios_policy_integration import promethios_policy_bp
 from src.routes.trust_metrics_integration import trust_metrics_bp
 from src.routes.reporting_integration import reporting_bp
 from src.routes.veritas_enterprise import veritas_enterprise_bp
+from src.routes.deployment import deployment_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -29,6 +30,7 @@ app.register_blueprint(promethios_policy_bp, url_prefix='/api/promethios-policy'
 app.register_blueprint(trust_metrics_bp, url_prefix='/api/trust-metrics')
 app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
 app.register_blueprint(veritas_enterprise_bp)
+app.register_blueprint(deployment_bp, url_prefix='/api')
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"

@@ -4,6 +4,7 @@
  */
 
 import { Integration } from './api/integrationsAPI';
+import { DEPLOYMENT_API } from '../config/api';
 
 export interface DeploymentTarget {
   integrationId: string;
@@ -56,8 +57,120 @@ class DeploymentIntegrationService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004';
+    this.baseUrl = DEPLOYMENT_API.BASE;
     this.apiKey = localStorage.getItem('promethios_api_key') || '';
+  }
+
+  /**
+   * Check if deployment API is healthy
+   */
+  async checkHealth(): Promise<boolean> {
+    try {
+      const response = await fetch(DEPLOYMENT_API.HEALTH);
+      const data = await response.json();
+      return data.status === 'healthy';
+    } catch (error) {
+      console.error('Deployment API health check failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate API key for agent deployment
+   */
+  async generateApiKey(agentId: string): Promise<{ success: boolean; apiKey?: string; error?: string }> {
+    try {
+      console.log(`🔑 Generating API key for agent: ${agentId}`);
+      
+      const response = await fetch(DEPLOYMENT_API.GENERATE_API_KEY(agentId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log(`✅ API key generated successfully for agent: ${agentId}`);
+        return { success: true, apiKey: data.apiKey };
+      } else {
+        console.error(`❌ Failed to generate API key for agent: ${agentId}`, data.error);
+        return { success: false, error: data.error || 'Failed to generate API key' };
+      }
+    } catch (error) {
+      console.error(`❌ Error generating API key for agent: ${agentId}`, error);
+      return { success: false, error: 'Network error while generating API key' };
+    }
+  }
+
+  /**
+   * Deploy an agent
+   */
+  async deployAgent(request: DeploymentRequest): Promise<DeploymentResult> {
+    try {
+      console.log(`🚀 Deploying agent: ${request.agentId}`);
+      
+      const response = await fetch(DEPLOYMENT_API.DEPLOY_AGENT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId: request.agentId,
+          deploymentType: request.deploymentMethod,
+          environment: 'production',
+          config: request.config,
+          name: request.name,
+          description: request.description,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log(`✅ Agent deployed successfully: ${request.agentId}`, data);
+        return {
+          success: true,
+          deploymentId: data.deploymentId,
+          endpoint: data.apiEndpoint,
+          logs: [`Agent ${request.agentId} deployed successfully`],
+        };
+      } else {
+        console.error(`❌ Failed to deploy agent: ${request.agentId}`, data.error);
+        return {
+          success: false,
+          error: data.error || 'Deployment failed',
+          logs: [`Failed to deploy agent ${request.agentId}: ${data.error}`],
+        };
+      }
+    } catch (error) {
+      console.error(`❌ Error deploying agent: ${request.agentId}`, error);
+      return {
+        success: false,
+        error: 'Network error during deployment',
+        logs: [`Network error while deploying agent ${request.agentId}`],
+      };
+    }
+  }
+
+  /**
+   * Get deployment status for an agent
+   */
+  async getDeploymentStatus(agentId: string): Promise<any> {
+    try {
+      const response = await fetch(DEPLOYMENT_API.DEPLOYMENT_STATUS(agentId));
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.deploymentStatus;
+      } else {
+        throw new Error(data.error || 'Failed to get deployment status');
+      }
+    } catch (error) {
+      console.error(`Error getting deployment status for agent: ${agentId}`, error);
+      throw error;
+    }
   }
 
   /**
