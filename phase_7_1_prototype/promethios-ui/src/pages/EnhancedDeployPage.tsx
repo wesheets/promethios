@@ -455,7 +455,7 @@ const AvailableAgentsTab: React.FC<{
       console.log('🔍 Sample agent keys:', agentKeys.slice(0, 5));
       console.log('🔍 Sample multi-agent keys:', multiAgentKeys.slice(0, 5));
       
-      // Filter for this user's agents and production versions
+      // Filter for this user's agents (both testing and production versions)
       const userAgentKeys = agentKeys.filter(key => key.includes(currentUser.uid));
       const userMultiAgentKeys = multiAgentKeys.filter(key => key.includes(currentUser.uid));
       
@@ -464,24 +464,41 @@ const AvailableAgentsTab: React.FC<{
       console.log('🔍 User agent keys:', userAgentKeys);
       console.log('🔍 User multi-agent keys:', userMultiAgentKeys);
       
-      // Load production versions of agents (these are ready for deployment)
-      const productionAgents = [];
-      const productionSystems = [];
+      // Load testing versions of agents (these are what users interact with and can deploy)
+      const deployableAgents = [];
+      const deployableSystems = [];
       
       for (const key of userAgentKeys) {
         
         try {
             const agent = await unifiedStorage.get('agents', key);
             if (agent) {
-              productionAgents.push({
-                id: key.replace('-production', ''), // Remove suffix for UI
+              // Include both testing and production agents, but prefer testing for deployment
+              const isTestingAgent = key.includes('-testing');
+              const isProductionAgent = key.includes('-production');
+              
+              // Skip production agents if we already have the testing version
+              if (isProductionAgent) {
+                const testingKey = key.replace('-production', '-testing');
+                const hasTestingVersion = userAgentKeys.includes(testingKey);
+                if (hasTestingVersion) {
+                  console.log(`⏭️ Skipping production agent ${key} - testing version exists`);
+                  continue;
+                }
+              }
+              
+              deployableAgents.push({
+                id: key.replace('-testing', '').replace('-production', ''), // Remove suffix for UI
+                originalKey: key, // Keep original key for deployment
                 metadata: {
-                  name: agent.name || agent.metadata?.name || 'Unnamed Agent',
-                  description: agent.description || agent.metadata?.description || 'No description',
+                  name: agent.identity?.name || agent.name || agent.metadata?.name || 'Unnamed Agent',
+                  description: agent.identity?.description || agent.description || agent.metadata?.description || 'No description',
                   provider: agent.provider || agent.agentType || 'Unknown',
                   model: agent.model || agent.configuration?.model || 'Unknown',
                 },
                 deploymentWrapper: true, // Mark as ready for deployment
+                isWrapped: agent.isWrapped || false,
+                environment: agent.environment || 'testing',
                 ...agent
               });
             }
@@ -495,14 +512,17 @@ const AvailableAgentsTab: React.FC<{
         try {
             const system = await unifiedStorage.get('multiAgentSystems', key);
             if (system) {
-              productionSystems.push({
-                id: key.replace('-production', ''), // Remove suffix for UI
+              deployableSystems.push({
+                id: key.replace('-testing', '').replace('-production', ''), // Remove suffix for UI
+                originalKey: key, // Keep original key for deployment
                 metadata: {
-                  name: system.name || system.metadata?.name || 'Unnamed System',
-                  description: system.description || system.metadata?.description || 'No description',
+                  name: system.identity?.name || system.name || system.metadata?.name || 'Unnamed System',
+                  description: system.identity?.description || system.description || system.metadata?.description || 'No description',
                   type: system.type || 'multi-agent-system',
                 },
                 deploymentSystem: true, // Mark as ready for deployment
+                isWrapped: system.isWrapped || false,
+                environment: system.environment || 'testing',
                 ...system
               });
             }
@@ -511,10 +531,11 @@ const AvailableAgentsTab: React.FC<{
           }
       }
       
-      console.log(`📦 Loaded ${productionAgents.length} production agents and ${productionSystems.length} production systems for deployment`);
+      console.log(`📦 Loaded ${deployableAgents.length} deployable agents and ${deployableSystems.length} deployable systems`);
+      console.log('🔍 Deployable agents:', deployableAgents.map(a => ({ name: a.metadata.name, isWrapped: a.isWrapped, environment: a.environment })));
       
-      setAvailableAgents(productionAgents);
-      setAvailableMultiAgentSystems(productionSystems);
+      setAvailableAgents(deployableAgents);
+      setAvailableMultiAgentSystems(deployableSystems);
       
     } catch (error) {
       console.error('Failed to load available agents:', error);

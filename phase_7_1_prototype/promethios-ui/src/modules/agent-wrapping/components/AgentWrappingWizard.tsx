@@ -373,6 +373,7 @@ const AgentWrappingWizard: React.FC = () => {
       };
 
       console.log('Updated agent to save:', updatedAgent);
+      console.log('🔍 Agent isWrapped status before saving:', updatedAgent.isWrapped);
 
       // Step 3: Dual Deployment (Testing + Production only)
       console.log('🚀 Starting dual deployment (testing + production)...');
@@ -412,12 +413,15 @@ const AgentWrappingWizard: React.FC = () => {
       
       console.log('✅ Testing deployment completed:', testingAgent.identity.id);
       console.log('✅ Production version created:', productionAgent.identity.id);
+      console.log('🔍 Testing agent isWrapped status after saving:', testingAgent.isWrapped);
+      console.log('🔍 Production agent isWrapped status after saving:', productionAgent.isWrapped);
 
       console.log('🎉 Agent successfully wrapped with dual deployment (testing + production)');
       
       // Verify the testing agent was saved (this is what user will interact with)
       const savedAgent = await storageService.getAgent(testingAgent.identity.id);
       console.log('Verification - loaded testing agent:', savedAgent);
+      console.log('🔍 Verification - saved agent isWrapped status:', savedAgent?.isWrapped);
       
       setShowSuccessDialog(true);
       
