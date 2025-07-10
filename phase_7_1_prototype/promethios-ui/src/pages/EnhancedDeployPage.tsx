@@ -539,7 +539,7 @@ const AvailableAgentsTab: React.FC<{
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.uid, toast]);
+  }, [currentUser?.uid]); // Remove toast from dependencies to prevent infinite loops
 
   const AvailableAgentCard: React.FC<{ agent: any; type: 'single' | 'multi' }> = ({ agent, type }) => (
     <Card sx={{ 

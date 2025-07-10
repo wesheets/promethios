@@ -220,10 +220,20 @@ export class UserAgentStorageService {
 
       const allKeys = await unifiedStorage.keys('agents');
       console.log('🔍 All keys from unified storage:', allKeys);
+      console.log('🔍 Sample keys for analysis:', allKeys.slice(0, 10));
       
       // Extract just the key part after 'agents/' prefix
       const keyParts = allKeys.map(key => key.replace('agents/', ''));
       console.log('🔍 Key parts after removing agents/ prefix:', keyParts);
+      
+      // Check what suffixes exist in the keys
+      const testingKeys = keyParts.filter(key => key.includes('-testing'));
+      const productionKeys = keyParts.filter(key => key.includes('-production'));
+      const otherKeys = keyParts.filter(key => !key.includes('-testing') && !key.includes('-production'));
+      
+      console.log('🔍 Testing keys found:', testingKeys.length, testingKeys.slice(0, 3));
+      console.log('🔍 Production keys found:', productionKeys.length, productionKeys.slice(0, 3));
+      console.log('🔍 Other keys found:', otherKeys.length, otherKeys.slice(0, 3));
       
       // Filter for production agents only (for management and deployment)
       const userPrefix = `${this.currentUserId}_`;
@@ -236,9 +246,24 @@ export class UserAgentStorageService {
       );
       console.log('🔍 Filtered production agent key parts:', userKeyParts);
       
+      // Fallback: If no production agents found, load any user agents (for debugging)
+      let fallbackKeyParts = [];
+      if (userKeyParts.length === 0) {
+        console.log('⚠️ No production agents found, checking for any user agents...');
+        fallbackKeyParts = keyParts.filter(keyPart => 
+          keyPart.startsWith(userPrefix) && 
+          !keyPart.includes('scorecard')
+        );
+        console.log('🔍 Fallback: Found user agent key parts:', fallbackKeyParts);
+      }
+      
+      // Use production agents if available, otherwise use fallback
+      const finalKeyParts = userKeyParts.length > 0 ? userKeyParts : fallbackKeyParts;
+      
       // Reconstruct full keys for loading
-      const userKeys = userKeyParts.map(keyPart => `agents/${keyPart}`);
-      console.log('🔍 Final production agent keys for loading:', userKeys);
+      const userKeys = finalKeyParts.map(keyPart => `agents/${keyPart}`);
+      console.log('🔍 Final agent keys for loading:', userKeys);
+      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents');
 
       const agents: AgentProfile[] = [];
 
@@ -273,7 +298,7 @@ export class UserAgentStorageService {
         }
       }
 
-      console.log(`Loaded ${agents.length} production agents for user ${this.currentUserId}`);
+      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents'}`);
       return agents;
     } catch (error) {
       console.error('Error loading user production agents:', error);
