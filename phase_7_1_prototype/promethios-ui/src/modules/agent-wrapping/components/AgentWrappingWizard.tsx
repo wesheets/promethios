@@ -344,10 +344,15 @@ const AgentWrappingWizard: React.FC = () => {
       console.log('Agent name to use (preserving original):', agentName);
       console.log('Original agent data name fields:', {
         'identity.name': agentData.identity?.name,
-        'agentName': agentData.agentName
+        'agentName': agentData.agentName,
+        'apiKey': agentData.apiKey ? '[HIDDEN]' : 'MISSING',
+        'apiEndpoint': agentData.apiEndpoint,
+        'provider': agentData.provider,
+        'model': agentData.model
       });
-      
-      const updatedAgent: AgentProfile = {
+
+      // Step 2: Create the wrapped agent with proper apiDetails structure
+      const updatedAgent = {
         ...agentData,
         // Preserve the original agent identity and ID
         identity: {
@@ -363,6 +368,16 @@ const AgentWrappingWizard: React.FC = () => {
         },
         // Ensure we have the agent name in the root level too
         agentName: agentName,
+        // Create proper apiDetails structure for chat functionality
+        apiDetails: {
+          endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1',
+          key: agentData.apiKey || agentData.key || '',
+          provider: agentData.provider || 'OpenAI',
+          selectedModel: agentData.model || 'gpt-4',
+          selectedCapabilities: agentData.capabilities || [],
+          selectedContextLength: agentData.contextLength || 4096,
+          discoveredInfo: agentData.discoveredInfo || null,
+        },
         governancePolicy,
         isWrapped: true,
         isDeployed: false, // Agents are "Governed" not "Deployed" until actually deployed to production
@@ -374,6 +389,12 @@ const AgentWrappingWizard: React.FC = () => {
 
       console.log('Updated agent to save:', updatedAgent);
       console.log('🔍 Agent isWrapped status before saving:', updatedAgent.isWrapped);
+      console.log('🔍 Agent apiDetails created:', {
+        endpoint: updatedAgent.apiDetails.endpoint,
+        provider: updatedAgent.apiDetails.provider,
+        model: updatedAgent.apiDetails.selectedModel,
+        hasKey: !!updatedAgent.apiDetails.key
+      });
 
       // Step 3: Dual Deployment (Testing + Production only)
       console.log('🚀 Starting dual deployment (testing + production)...');

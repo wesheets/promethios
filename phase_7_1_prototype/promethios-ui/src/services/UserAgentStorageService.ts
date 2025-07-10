@@ -279,6 +279,29 @@ export class UserAgentStorageService {
           const agentData = await unifiedStorage.get<any>('agents', keyPart);
           if (agentData) {
             console.log('🔍 Loaded production agent data:', agentData.identity?.name || 'Unknown');
+            
+            // Migrate legacy agents that don't have apiDetails
+            if (!agentData.apiDetails && (agentData.apiKey || agentData.apiEndpoint || agentData.provider)) {
+              console.log('🔧 Migrating legacy agent to include apiDetails:', agentData.identity?.name);
+              agentData.apiDetails = {
+                endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1',
+                key: agentData.apiKey || agentData.key || '',
+                provider: agentData.provider || 'OpenAI',
+                selectedModel: agentData.model || 'gpt-4',
+                selectedCapabilities: agentData.capabilities || [],
+                selectedContextLength: agentData.contextLength || 4096,
+                discoveredInfo: agentData.discoveredInfo || null,
+              };
+              
+              // Save the migrated agent back to storage
+              try {
+                await unifiedStorage.store('agents', key.replace('agents/', ''), agentData);
+                console.log('✅ Successfully migrated agent with apiDetails:', agentData.identity?.name);
+              } catch (migrationError) {
+                console.error('❌ Failed to save migrated agent:', migrationError);
+              }
+            }
+            
             // Safely deserialize dates with fallbacks
             const agent: AgentProfile = {
               ...agentData,
