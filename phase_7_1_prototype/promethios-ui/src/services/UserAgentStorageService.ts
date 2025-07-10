@@ -209,7 +209,7 @@ export class UserAgentStorageService {
   }
 
   /**
-   * Load all agents for the current user
+   * Load all production agents for the current user (for management and deployment)
    */
   async loadUserAgents(): Promise<AgentProfile[]> {
     try {
@@ -225,29 +225,31 @@ export class UserAgentStorageService {
       const keyParts = allKeys.map(key => key.replace('agents/', ''));
       console.log('🔍 Key parts after removing agents/ prefix:', keyParts);
       
-      // Filter for keys that start with the user ID (using underscore format)
+      // Filter for production agents only (for management and deployment)
       const userPrefix = `${this.currentUserId}_`;
-      console.log('🔍 Looking for keys with prefix:', userPrefix);
+      console.log('🔍 Looking for production agents with prefix:', userPrefix);
       
       const userKeyParts = keyParts.filter(keyPart => 
-        keyPart.startsWith(userPrefix) && !keyPart.includes('scorecard')
+        keyPart.startsWith(userPrefix) && 
+        !keyPart.includes('scorecard') &&
+        keyPart.includes('-production') // Only load production agents for management
       );
-      console.log('🔍 Filtered user key parts:', userKeyParts);
+      console.log('🔍 Filtered production agent key parts:', userKeyParts);
       
       // Reconstruct full keys for loading
       const userKeys = userKeyParts.map(keyPart => `agents/${keyPart}`);
-      console.log('🔍 Final user keys for loading:', userKeys);
+      console.log('🔍 Final production agent keys for loading:', userKeys);
 
       const agents: AgentProfile[] = [];
 
       for (const key of userKeys) {
         try {
-          console.log('🔍 Loading agent with key:', key);
+          console.log('🔍 Loading production agent with key:', key);
           // Extract the key part after 'agents/' for the get() call
           const keyPart = key.replace('agents/', '');
           const agentData = await unifiedStorage.get<any>('agents', keyPart);
           if (agentData) {
-            console.log('🔍 Loaded agent data:', agentData.identity?.name || 'Unknown');
+            console.log('🔍 Loaded production agent data:', agentData.identity?.name || 'Unknown');
             // Safely deserialize dates with fallbacks
             const agent: AgentProfile = {
               ...agentData,
@@ -264,17 +266,17 @@ export class UserAgentStorageService {
             };
             agents.push(agent);
           } else {
-            console.log('🔍 No data found for key:', key);
+            console.log('🔍 No data found for production agent key:', key);
           }
         } catch (error) {
-          console.error(`Error loading agent with key ${key}:`, error);
+          console.error(`Error loading production agent with key ${key}:`, error);
         }
       }
 
-      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId}`);
+      console.log(`Loaded ${agents.length} production agents for user ${this.currentUserId}`);
       return agents;
     } catch (error) {
-      console.error('Error loading user agents:', error);
+      console.error('Error loading user production agents:', error);
       return [];
     }
   }
