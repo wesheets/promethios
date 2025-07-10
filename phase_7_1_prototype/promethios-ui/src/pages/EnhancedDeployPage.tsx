@@ -364,41 +364,7 @@ const AvailableAgentsTab: React.FC<{
     loadAvailableAgents();
   }, [currentUser?.uid, refreshTrigger]); // Add refreshTrigger to dependencies
 
-  // Add storage event listener for real-time updates
-  useEffect(() => {
-    if (!currentUser?.uid) return;
-
-    const setupStorageListener = async () => {
-      const { unifiedStorage } = await import('../services/UnifiedStorageService');
-      
-      const handleStorageEvent = (event: any) => {
-        // Refresh when agents or multiAgentSystems are modified
-        if (event.namespace === 'agents' || event.namespace === 'multiAgentSystems') {
-          // Check if it's for the current user
-          if (event.key && event.key.includes(currentUser.uid)) {
-            console.log('🔄 Storage event detected, refreshing agents list:', event);
-            loadAvailableAgents();
-          }
-        }
-      };
-
-      const removeListener = unifiedStorage.addEventListener(handleStorageEvent);
-      return removeListener;
-    };
-
-    let removeListener: (() => void) | undefined;
-    setupStorageListener().then(cleanup => {
-      removeListener = cleanup;
-    });
-
-    return () => {
-      if (removeListener) {
-        removeListener();
-      }
-    };
-  }, [currentUser?.uid]);
-
-  // Add window-level event listener for cross-component communication
+  // Add window event listener for agent creation/updates (single source of truth)
   useEffect(() => {
     const handleAgentCreated = () => {
       console.log('🎯 Agent created event received, refreshing agents list');

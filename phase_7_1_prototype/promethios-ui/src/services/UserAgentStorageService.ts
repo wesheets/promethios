@@ -238,6 +238,10 @@ export class UserAgentStorageService {
       // Filter for production agents only (for management and deployment)
       const userPrefix = `${this.currentUserId}_`;
       console.log('🔍 Looking for production agents with prefix:', userPrefix);
+      console.log('🔍 Sample key analysis:');
+      keyParts.slice(0, 5).forEach(key => {
+        console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')}`);
+      });
       
       const userKeyParts = keyParts.filter(keyPart => 
         keyPart.startsWith(userPrefix) && 
