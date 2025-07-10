@@ -1445,19 +1445,15 @@ const AgentProfilesPage: React.FC = () => {
       
       // Load user's agents
       const userAgents = await userAgentStorage.loadUserAgents();
+      console.log(`Loaded ${userAgents.length} agents from unified storage for user ${effectiveUser.uid}`);
       
-      // Filter out testing and production versions - only show main agents
-      const mainAgents = userAgents.filter(agent => {
-        const agentId = agent.identity?.id || '';
-        return !agentId.endsWith('-testing') && 
-               !agentId.endsWith('-production') &&
-               !agent.environment &&
-               !agent.deploymentType;
-      });
+      // Since we now load production agents only, no need to filter them out
+      // Production agents are the ones users should see and manage
+      const agentsToShow = userAgents;
       
       // Load scorecards for each agent
       const agentsWithScorecards = await Promise.all(
-        mainAgents.map(async (agent) => {
+        agentsToShow.map(async (agent) => {
           try {
             const scorecard = await userAgentStorage.loadScorecard(agent.identity.id);
             return {
