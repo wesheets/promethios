@@ -6,7 +6,7 @@
  * logs, heartbeats, and violation reports.
  */
 
-import apiConfig from '../../config/api';
+import apiConfig, { DEPLOYMENT_API } from '../../config/api';
 
 // Types for deployed agent communication
 export interface AgentHeartbeat {
@@ -112,7 +112,7 @@ export class DeployedAgentAPI {
   private baseUrl: string;
   
   constructor() {
-    this.baseUrl = apiConfig.baseUrl || 'https://api.promethios.ai/v1';
+    this.baseUrl = DEPLOYMENT_API.BASE;
   }
 
   /**
@@ -228,7 +228,7 @@ export class DeployedAgentAPI {
    */
   async generateAPIKey(agentId: string, userId: string): Promise<AgentAPIKey> {
     try {
-      const response = await fetch(`${this.baseUrl}/agents/${agentId}/api-key`, {
+      const response = await fetch(DEPLOYMENT_API.GENERATE_API_KEY(agentId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ export class DeployedAgentAPI {
    */
   async getUserDeployedAgents(userId: string): Promise<DeployedAgentStatus[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/users/${userId}/deployed-agents`, {
+      const response = await fetch(DEPLOYMENT_API.DEPLOYED_AGENTS(userId), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${await this.getUserToken()}`,
