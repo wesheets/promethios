@@ -97,11 +97,11 @@ export class MetricsCollectionExtension {
     }
 
     try {
-      // Initialize storage
-      await this.storage.initialize();
-      
-      // Initialize data processor
-      await this.dataProcessor.initialize();
+      // Storage is already initialized in constructor
+      // Initialize data processor if it has an initialize method
+      if (this.dataProcessor && typeof this.dataProcessor.initialize === 'function') {
+        await this.dataProcessor.initialize();
+      }
       
       this.initialized = true;
       console.log('MetricsCollectionExtension initialized successfully');

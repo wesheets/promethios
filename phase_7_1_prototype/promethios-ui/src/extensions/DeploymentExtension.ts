@@ -79,9 +79,7 @@ export class DeploymentExtension {
     }
 
     try {
-      // Initialize storage
-      await this.storage.initialize();
-      
+      // Storage is already initialized in constructor
       // Initialize deployment service
       // Note: EnhancedDeploymentService extends existing DeploymentService
       
