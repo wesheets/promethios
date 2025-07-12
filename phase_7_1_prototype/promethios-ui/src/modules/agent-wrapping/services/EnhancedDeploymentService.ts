@@ -559,6 +559,25 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
   }
 }
 
-// Export singleton instance
-export const enhancedDeploymentService = new EnhancedDeploymentService();
+// Export singleton instance with lazy initialization
+let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
+
+export function getEnhancedDeploymentService(): EnhancedDeploymentService {
+  if (!_enhancedDeploymentServiceInstance) {
+    _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+  }
+  return _enhancedDeploymentServiceInstance;
+}
+
+// Lazy getter for backward compatibility
+export const enhancedDeploymentService = {
+  get instance() {
+    return getEnhancedDeploymentService();
+  },
+  // Proxy all methods to the instance
+  createEnhancedSingleAgentPackage: (...args: any[]) => getEnhancedDeploymentService().createEnhancedSingleAgentPackage(...args),
+  createEnhancedMultiAgentPackage: (...args: any[]) => getEnhancedDeploymentService().createEnhancedMultiAgentPackage(...args),
+  deployEnhancedPackage: (...args: any[]) => getEnhancedDeploymentService().deployEnhancedPackage(...args),
+  listRealDeployments: (...args: any[]) => getEnhancedDeploymentService().listRealDeployments(...args),
+};
 
