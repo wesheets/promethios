@@ -200,6 +200,415 @@ export class MetricsCollectionExtension {
         agentId,
         deploymentId,
         timestamp: new Date(),
+        governanceMetrics: processedMetrics.governance,
+        performanceMetrics: processedMetrics.performance,
+        systemMetrics: processedMetrics.system,
+        businessMetrics: processedMetrics.business
+      };
+      
+      // After collection extension point
+      await this.afterMetricsCollection(agentId, agentMetrics);
+      
+      return agentMetrics;
+      
+    } catch (error) {
+      await this.onMetricsError(agentId, error as Error, { deploymentId });
+      return null;
+    }
+  }
+
+  // NEW: Collect system-wide deployment metrics
+  async collectSystemWideMetrics(): Promise<{
+    totalDeployments: number;
+    activeDeployments: number;
+    failedDeployments: number;
+    successRate: number;
+    averageResponseTime: number;
+    systemHealth: 'healthy' | 'degraded' | 'unhealthy';
+    deploymentsByType: Record<string, number>;
+    deploymentsByEnvironment: Record<string, number>;
+    resourceUtilization: {
+      cpu: number;
+      memory: number;
+      storage: number;
+    };
+  }> {
+    try {
+      console.log('🔍 Collecting system-wide deployment metrics');
+      
+      // Get all deployment records
+      const deployments = await this.storage.getMany('production_deployments', []);
+      const validDeployments = deployments.filter(d => d !== null);
+      
+      // Get all agent metrics
+      const allMetrics = await this.storage.getMany('agent_metrics', []);
+      const validMetrics = allMetrics.filter(m => m !== null);
+      
+      // Calculate deployment statistics
+      const totalDeployments = validDeployments.length;
+      const activeDeployments = validDeployments.filter(d => 
+        d.status === 'running' || d.status === 'deploying'
+      ).length;
+      const failedDeployments = validDeployments.filter(d => 
+        d.status === 'failed' || d.status === 'error'
+      ).length;
+      const successRate = totalDeployments > 0 ? 
+        ((totalDeployments - failedDeployments) / totalDeployments) * 100 : 0;
+      
+      // Calculate average response time
+      const responseTimes = validMetrics
+        .map(m => m.performanceMetrics?.responseTime)
+        .filter(rt => rt !== undefined && rt !== null);
+      const averageResponseTime = responseTimes.length > 0 ? 
+        responseTimes.reduce((sum, rt) => sum + rt, 0) / responseTimes.length : 0;
+      
+      // Determine system health
+      let systemHealth: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      if (successRate < 50 || averageResponseTime > 5000) {
+        systemHealth = 'unhealthy';
+      } else if (successRate < 80 || averageResponseTime > 2000) {
+        systemHealth = 'degraded';
+      }
+      
+      // Group deployments by type
+      const deploymentsByType: Record<string, number> = {};
+      validDeployments.forEach(d => {
+        const type = d.deploymentType || 'unknown';
+        deploymentsByType[type] = (deploymentsByType[type] || 0) + 1;
+      });
+      
+      // Group deployments by environment
+      const deploymentsByEnvironment: Record<string, number> = {};
+      validDeployments.forEach(d => {
+        const env = d.environment || 'production';
+        deploymentsByEnvironment[env] = (deploymentsByEnvironment[env] || 0) + 1;
+      });
+      
+      // Calculate resource utilization
+      const cpuUsages = validMetrics
+        .map(m => m.systemMetrics?.cpuUsage)
+        .filter(cpu => cpu !== undefined && cpu !== null);
+      const memoryUsages = validMetrics
+        .map(m => m.systemMetrics?.memoryUsage)
+        .filter(mem => mem !== undefined && mem !== null);
+      const diskUsages = validMetrics
+        .map(m => m.systemMetrics?.diskUsage)
+        .filter(disk => disk !== undefined && disk !== null);
+      
+      const resourceUtilization = {
+        cpu: cpuUsages.length > 0 ? 
+          cpuUsages.reduce((sum, cpu) => sum + cpu, 0) / cpuUsages.length : 0,
+        memory: memoryUsages.length > 0 ? 
+          memoryUsages.reduce((sum, mem) => sum + mem, 0) / memoryUsages.length : 0,
+        storage: diskUsages.length > 0 ? 
+          diskUsages.reduce((sum, disk) => sum + disk, 0) / diskUsages.length : 0
+      };
+      
+      const systemMetrics = {
+        totalDeployments,
+        activeDeployments,
+        failedDeployments,
+        successRate,
+        averageResponseTime,
+        systemHealth,
+        deploymentsByType,
+        deploymentsByEnvironment,
+        resourceUtilization
+      };
+      
+      // Cache system metrics
+      await this.storage.set('system_wide_metrics', 'latest', {
+        ...systemMetrics,
+        lastUpdated: new Date()
+      });
+      
+      console.log('✅ System-wide metrics collected successfully');
+      return systemMetrics;
+      
+    } catch (error) {
+      console.error('❌ Failed to collect system-wide metrics:', error);
+      
+      // Return cached metrics if available
+      const cached = await this.storage.get('system_wide_metrics', 'latest');
+      if (cached) {
+        return cached;
+      }
+      
+      // Return default metrics
+      return {
+        totalDeployments: 0,
+        activeDeployments: 0,
+        failedDeployments: 0,
+        successRate: 0,
+        averageResponseTime: 0,
+        systemHealth: 'unhealthy' as const,
+        deploymentsByType: {},
+        deploymentsByEnvironment: {},
+        resourceUtilization: { cpu: 0, memory: 0, storage: 0 }
+      };
+    }
+  }
+
+  // NEW: Collect deployment-specific metrics for a user
+  async collectUserDeploymentMetrics(userId: string): Promise<{
+    userDeployments: number;
+    activeUserDeployments: number;
+    userSuccessRate: number;
+    averageUserResponseTime: number;
+    userResourceUsage: {
+      cpu: number;
+      memory: number;
+      storage: number;
+    };
+    recentDeployments: Array<{
+      deploymentId: string;
+      agentId: string;
+      status: string;
+      createdAt: Date;
+      health: string;
+    }>;
+  }> {
+    try {
+      console.log(`🔍 Collecting deployment metrics for user ${userId}`);
+      
+      // Get user's deployments
+      const allDeployments = await this.storage.getMany('production_deployments', []);
+      const userDeployments = allDeployments.filter(d => d && d.userId === userId);
+      
+      // Get user's agent metrics
+      const allMetrics = await this.storage.getMany('agent_metrics', []);
+      const userMetrics = allMetrics.filter(m => {
+        if (!m) return false;
+        return userDeployments.some(d => d.agentId === m.agentId);
+      });
+      
+      // Calculate user statistics
+      const totalUserDeployments = userDeployments.length;
+      const activeUserDeployments = userDeployments.filter(d => 
+        d.status === 'running' || d.status === 'deploying'
+      ).length;
+      const failedUserDeployments = userDeployments.filter(d => 
+        d.status === 'failed' || d.status === 'error'
+      ).length;
+      const userSuccessRate = totalUserDeployments > 0 ? 
+        ((totalUserDeployments - failedUserDeployments) / totalUserDeployments) * 100 : 0;
+      
+      // Calculate user's average response time
+      const userResponseTimes = userMetrics
+        .map(m => m.performanceMetrics?.responseTime)
+        .filter(rt => rt !== undefined && rt !== null);
+      const averageUserResponseTime = userResponseTimes.length > 0 ? 
+        userResponseTimes.reduce((sum, rt) => sum + rt, 0) / userResponseTimes.length : 0;
+      
+      // Calculate user's resource usage
+      const userCpuUsages = userMetrics
+        .map(m => m.systemMetrics?.cpuUsage)
+        .filter(cpu => cpu !== undefined && cpu !== null);
+      const userMemoryUsages = userMetrics
+        .map(m => m.systemMetrics?.memoryUsage)
+        .filter(mem => mem !== undefined && mem !== null);
+      const userStorageUsages = userMetrics
+        .map(m => m.systemMetrics?.diskUsage)
+        .filter(disk => disk !== undefined && disk !== null);
+      
+      const userResourceUsage = {
+        cpu: userCpuUsages.length > 0 ? 
+          userCpuUsages.reduce((sum, cpu) => sum + cpu, 0) / userCpuUsages.length : 0,
+        memory: userMemoryUsages.length > 0 ? 
+          userMemoryUsages.reduce((sum, mem) => sum + mem, 0) / userMemoryUsages.length : 0,
+        storage: userStorageUsages.length > 0 ? 
+          userStorageUsages.reduce((sum, disk) => sum + disk, 0) / userStorageUsages.length : 0
+      };
+      
+      // Get recent deployments with health status
+      const recentDeployments = userDeployments
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 10)
+        .map(d => {
+          const metrics = userMetrics.find(m => m.agentId === d.agentId);
+          return {
+            deploymentId: d.deploymentId,
+            agentId: d.agentId,
+            status: d.status,
+            createdAt: new Date(d.createdAt),
+            health: this.determineHealthFromMetrics(metrics)
+          };
+        });
+      
+      const userMetricsData = {
+        userDeployments: totalUserDeployments,
+        activeUserDeployments,
+        userSuccessRate,
+        averageUserResponseTime,
+        userResourceUsage,
+        recentDeployments
+      };
+      
+      // Cache user metrics
+      await this.storage.set('user_deployment_metrics', userId, {
+        ...userMetricsData,
+        lastUpdated: new Date()
+      });
+      
+      console.log(`✅ User deployment metrics collected for ${userId}`);
+      return userMetricsData;
+      
+    } catch (error) {
+      console.error(`❌ Failed to collect user deployment metrics for ${userId}:`, error);
+      
+      // Return default metrics
+      return {
+        userDeployments: 0,
+        activeUserDeployments: 0,
+        userSuccessRate: 0,
+        averageUserResponseTime: 0,
+        userResourceUsage: { cpu: 0, memory: 0, storage: 0 },
+        recentDeployments: []
+      };
+    }
+  }
+
+  // NEW: Get deployment performance trends
+  async getDeploymentPerformanceTrends(timeRange: { start: Date; end: Date }): Promise<{
+    deploymentTrend: Array<{ date: Date; count: number; successRate: number }>;
+    performanceTrend: Array<{ date: Date; responseTime: number; throughput: number }>;
+    resourceTrend: Array<{ date: Date; cpu: number; memory: number; storage: number }>;
+  }> {
+    try {
+      console.log('🔍 Collecting deployment performance trends');
+      
+      // Get all metrics within time range
+      const allMetrics = await this.storage.getMany('agent_metrics', []);
+      const timeRangeMetrics = allMetrics.filter(m => {
+        if (!m || !m.timestamp) return false;
+        const timestamp = new Date(m.timestamp);
+        return timestamp >= timeRange.start && timestamp <= timeRange.end;
+      });
+      
+      // Get all deployments within time range
+      const allDeployments = await this.storage.getMany('production_deployments', []);
+      const timeRangeDeployments = allDeployments.filter(d => {
+        if (!d || !d.createdAt) return false;
+        const createdAt = new Date(d.createdAt);
+        return createdAt >= timeRange.start && createdAt <= timeRange.end;
+      });
+      
+      // Group data by day
+      const dailyData: Record<string, {
+        deployments: any[];
+        metrics: any[];
+      }> = {};
+      
+      // Process deployments by day
+      timeRangeDeployments.forEach(d => {
+        const dateKey = new Date(d.createdAt).toISOString().split('T')[0];
+        if (!dailyData[dateKey]) {
+          dailyData[dateKey] = { deployments: [], metrics: [] };
+        }
+        dailyData[dateKey].deployments.push(d);
+      });
+      
+      // Process metrics by day
+      timeRangeMetrics.forEach(m => {
+        const dateKey = new Date(m.timestamp).toISOString().split('T')[0];
+        if (!dailyData[dateKey]) {
+          dailyData[dateKey] = { deployments: [], metrics: [] };
+        }
+        dailyData[dateKey].metrics.push(m);
+      });
+      
+      // Calculate trends
+      const deploymentTrend = Object.entries(dailyData).map(([dateStr, data]) => {
+        const date = new Date(dateStr);
+        const count = data.deployments.length;
+        const failed = data.deployments.filter(d => d.status === 'failed' || d.status === 'error').length;
+        const successRate = count > 0 ? ((count - failed) / count) * 100 : 0;
+        
+        return { date, count, successRate };
+      }).sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      const performanceTrend = Object.entries(dailyData).map(([dateStr, data]) => {
+        const date = new Date(dateStr);
+        const metrics = data.metrics;
+        
+        const responseTimes = metrics.map(m => m.performanceMetrics?.responseTime).filter(rt => rt !== undefined);
+        const throughputs = metrics.map(m => m.performanceMetrics?.throughput).filter(tp => tp !== undefined);
+        
+        const responseTime = responseTimes.length > 0 ? 
+          responseTimes.reduce((sum, rt) => sum + rt, 0) / responseTimes.length : 0;
+        const throughput = throughputs.length > 0 ? 
+          throughputs.reduce((sum, tp) => sum + tp, 0) / throughputs.length : 0;
+        
+        return { date, responseTime, throughput };
+      }).sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      const resourceTrend = Object.entries(dailyData).map(([dateStr, data]) => {
+        const date = new Date(dateStr);
+        const metrics = data.metrics;
+        
+        const cpuUsages = metrics.map(m => m.systemMetrics?.cpuUsage).filter(cpu => cpu !== undefined);
+        const memoryUsages = metrics.map(m => m.systemMetrics?.memoryUsage).filter(mem => mem !== undefined);
+        const storageUsages = metrics.map(m => m.systemMetrics?.diskUsage).filter(disk => disk !== undefined);
+        
+        const cpu = cpuUsages.length > 0 ? 
+          cpuUsages.reduce((sum, cpu) => sum + cpu, 0) / cpuUsages.length : 0;
+        const memory = memoryUsages.length > 0 ? 
+          memoryUsages.reduce((sum, mem) => sum + mem, 0) / memoryUsages.length : 0;
+        const storage = storageUsages.length > 0 ? 
+          storageUsages.reduce((sum, disk) => sum + disk, 0) / storageUsages.length : 0;
+        
+        return { date, cpu, memory, storage };
+      }).sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      const trends = {
+        deploymentTrend,
+        performanceTrend,
+        resourceTrend
+      };
+      
+      // Cache trends
+      await this.storage.set('deployment_trends', `${timeRange.start.toISOString()}_${timeRange.end.toISOString()}`, {
+        ...trends,
+        lastUpdated: new Date()
+      });
+      
+      console.log('✅ Deployment performance trends collected');
+      return trends;
+      
+    } catch (error) {
+      console.error('❌ Failed to collect deployment performance trends:', error);
+      return {
+        deploymentTrend: [],
+        performanceTrend: [],
+        resourceTrend: []
+      };
+    }
+  }
+
+  // Helper method to determine health from metrics
+  private determineHealthFromMetrics(metrics: AgentMetrics | undefined): string {
+    if (!metrics) return 'unknown';
+    
+    const { performanceMetrics, systemMetrics } = metrics;
+    
+    // Check performance indicators
+    const responseTimeOk = !performanceMetrics?.responseTime || performanceMetrics.responseTime < 2000;
+    const errorRateOk = !performanceMetrics?.errorRate || performanceMetrics.errorRate < 0.05;
+    const uptimeOk = !performanceMetrics?.uptime || performanceMetrics.uptime > 0.95;
+    
+    // Check system indicators
+    const cpuOk = !systemMetrics?.cpuUsage || systemMetrics.cpuUsage < 80;
+    const memoryOk = !systemMetrics?.memoryUsage || systemMetrics.memoryUsage < 80;
+    
+    const healthyIndicators = [responseTimeOk, errorRateOk, uptimeOk, cpuOk, memoryOk];
+    const healthyCount = healthyIndicators.filter(Boolean).length;
+    
+    if (healthyCount >= 4) return 'healthy';
+    if (healthyCount >= 3) return 'degraded';
+    return 'unhealthy';
+  }
+        deploymentId,
+        timestamp: new Date(),
         governanceMetrics: {
           trustScore: processedMetrics.trustScore || 0,
           complianceRate: processedMetrics.complianceRate || 0,

@@ -81,6 +81,11 @@ import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusW
 import { DeploymentPipelineStatus } from '../components/monitoring/DeploymentPipelineStatus';
 import { RealTimeMetricsChart } from '../components/monitoring/RealTimeMetricsChart';
 
+// NEW: Import enhanced extensions
+import { DeploymentExtension } from '../extensions/DeploymentExtension';
+import { MetricsCollectionExtension } from '../extensions/MetricsCollectionExtension';
+import { MonitoringExtension } from '../extensions/MonitoringExtension';
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -1201,12 +1206,124 @@ const EnhancedDeployPage: React.FC = () => {
   const [preSelectedAgent, setPreSelectedAgent] = useState<string | undefined>(undefined);
   const [agentRefreshTrigger, setAgentRefreshTrigger] = useState(0); // Add refresh trigger
 
+  // NEW: Enhanced extension state management
+  const [systemMetrics, setSystemMetrics] = useState<any>(null);
+  const [systemAlerts, setSystemAlerts] = useState<any[]>([]);
+  const [deploymentHealth, setDeploymentHealth] = useState<any>(null);
+  const [extensionsInitialized, setExtensionsInitialized] = useState(false);
+
+  // NEW: Initialize enhanced extensions
+  const [deploymentExtension] = useState(() => new DeploymentExtension());
+  const [metricsExtension] = useState(() => new MetricsCollectionExtension());
+  const [monitoringExtension] = useState(() => new MonitoringExtension());
+
   const { currentUser } = useAuth();
   const { toast } = useToast();
+
+  // NEW: Initialize extensions on component mount
+  useEffect(() => {
+    const initializeExtensions = async () => {
+      try {
+        console.log('🔄 Initializing enhanced extensions...');
+        
+        // Initialize extensions with mock context
+        const mockContext = {
+          registerCapability: (id: string, capability: any) => {
+            console.log(`✅ Registered capability: ${id}`, capability);
+          },
+          getCapability: (id: string) => null,
+          emit: (event: string, data: any) => {
+            console.log(`📡 Event emitted: ${event}`, data);
+          },
+          on: (event: string, handler: Function) => {
+            console.log(`👂 Event listener registered: ${event}`);
+          }
+        };
+
+        await Promise.all([
+          deploymentExtension.initialize(mockContext),
+          metricsExtension.initialize(mockContext),
+          monitoringExtension.initialize(mockContext)
+        ]);
+
+        setExtensionsInitialized(true);
+        console.log('✅ Enhanced extensions initialized successfully');
+        
+        // Load initial system data
+        await loadSystemMetrics();
+        await loadSystemAlerts();
+        await loadDeploymentHealth();
+        
+      } catch (error) {
+        console.error('❌ Failed to initialize extensions:', error);
+        toast({
+          title: "Warning",
+          description: "Some advanced features may not be available",
+          variant: "destructive"
+        });
+      }
+    };
+
+    initializeExtensions();
+  }, []);
+
+  // NEW: Load system-wide metrics
+  const loadSystemMetrics = async () => {
+    if (!extensionsInitialized) return;
+    
+    try {
+      const metrics = await metricsExtension.execute({} as any, 'collectSystemWideMetrics', {});
+      setSystemMetrics(metrics);
+      console.log('✅ System metrics loaded:', metrics);
+    } catch (error) {
+      console.error('❌ Failed to load system metrics:', error);
+    }
+  };
+
+  // NEW: Load system alerts
+  const loadSystemAlerts = async () => {
+    if (!extensionsInitialized) return;
+    
+    try {
+      const alerts = await monitoringExtension.getSystemDeploymentAlerts();
+      setSystemAlerts(alerts);
+      console.log('✅ System alerts loaded:', alerts.length, 'alerts');
+    } catch (error) {
+      console.error('❌ Failed to load system alerts:', error);
+    }
+  };
+
+  // NEW: Load deployment health
+  const loadDeploymentHealth = async () => {
+    if (!extensionsInitialized) return;
+    
+    try {
+      const health = await monitoringExtension.monitorDeploymentHealth();
+      setDeploymentHealth(health);
+      console.log('✅ Deployment health loaded:', health);
+    } catch (error) {
+      console.error('❌ Failed to load deployment health:', error);
+    }
+  };
 
   useEffect(() => {
     loadRealDeployments();
   }, [currentUser]);
+
+  // NEW: Enhanced refresh that includes extension data
+  useEffect(() => {
+    if (extensionsInitialized) {
+      const interval = setInterval(async () => {
+        await Promise.all([
+          loadSystemMetrics(),
+          loadSystemAlerts(),
+          loadDeploymentHealth()
+        ]);
+      }, 30000); // Refresh every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [extensionsInitialized]);
 
   const loadRealDeployments = async () => {
     if (!currentUser) {

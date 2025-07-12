@@ -189,6 +189,433 @@ export class MonitoringExtension implements ExtensionPoint {
     return alerts.filter(alert => !alert.acknowledged);
   }
 
+  // NEW: Get system-wide deployment alerts
+  async getSystemDeploymentAlerts(): Promise<Array<{
+    id: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    deploymentId?: string;
+    agentId?: string;
+    timestamp: Date;
+    resolved: boolean;
+    category: 'deployment' | 'performance' | 'security' | 'resource';
+  }>> {
+    try {
+      console.log('🔍 Fetching system deployment alerts');
+      
+      // Get alerts from deployment API
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/alerts`);
+      
+      if (!response.ok) {
+        throw new Error(`Alerts API error: ${response.status}`);
+      }
+
+      const apiAlerts = await response.json();
+      
+      // Get local alerts from active alerts map
+      const localAlerts = Array.from(this.activeAlerts.values())
+        .filter(alert => !alert.acknowledged)
+        .map(alert => ({
+          id: alert.id,
+          severity: alert.severity,
+          message: alert.message,
+          agentId: alert.agentId,
+          timestamp: new Date(alert.timestamp),
+          resolved: !!alert.resolvedAt,
+          category: this.categorizeAlert(alert.type)
+        }));
+      
+      // Combine and deduplicate alerts
+      const combinedAlerts = [...apiAlerts, ...localAlerts];
+      const uniqueAlerts = combinedAlerts.filter((alert, index, self) => 
+        index === self.findIndex(a => a.id === alert.id)
+      );
+      
+      // Sort by severity and timestamp
+      uniqueAlerts.sort((a, b) => {
+        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
+        if (severityDiff !== 0) return severityDiff;
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
+      
+      console.log(`✅ Retrieved ${uniqueAlerts.length} system deployment alerts`);
+      return uniqueAlerts;
+      
+    } catch (error) {
+      console.error('❌ Failed to get system deployment alerts:', error);
+      
+      // Return local alerts as fallback
+      return Array.from(this.activeAlerts.values())
+        .filter(alert => !alert.acknowledged)
+        .map(alert => ({
+          id: alert.id,
+          severity: alert.severity,
+          message: alert.message,
+          agentId: alert.agentId,
+          timestamp: new Date(alert.timestamp),
+          resolved: !!alert.resolvedAt,
+          category: this.categorizeAlert(alert.type)
+        }));
+    }
+  }
+
+  // NEW: Monitor deployment health across all deployments
+  async monitorDeploymentHealth(): Promise<{
+    overallHealth: 'healthy' | 'degraded' | 'unhealthy';
+    healthyDeployments: number;
+    degradedDeployments: number;
+    unhealthyDeployments: number;
+    totalDeployments: number;
+    criticalIssues: Array<{
+      deploymentId: string;
+      agentId: string;
+      issue: string;
+      severity: string;
+    }>;
+  }> {
+    try {
+      console.log('🔍 Monitoring deployment health system-wide');
+      
+      // Get deployment metrics from the deployment API
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/metrics`);
+      
+      if (!response.ok) {
+        throw new Error(`Deployment metrics API error: ${response.status}`);
+      }
+
+      const deploymentMetrics = await response.json();
+      
+      // Get individual agent metrics for detailed health assessment
+      const agentMetrics = Array.from(this.metricsCache.values()).flat();
+      
+      // Categorize deployments by health
+      let healthyCount = 0;
+      let degradedCount = 0;
+      let unhealthyCount = 0;
+      const criticalIssues: Array<{
+        deploymentId: string;
+        agentId: string;
+        issue: string;
+        severity: string;
+      }> = [];
+      
+      // Analyze each deployment's health
+      for (const metrics of agentMetrics) {
+        const health = this.assessDeploymentHealth(metrics);
+        
+        switch (health.status) {
+          case 'healthy':
+            healthyCount++;
+            break;
+          case 'degraded':
+            degradedCount++;
+            break;
+          case 'unhealthy':
+            unhealthyCount++;
+            // Add critical issues
+            health.issues.forEach(issue => {
+              if (issue.severity === 'critical' || issue.severity === 'high') {
+                criticalIssues.push({
+                  deploymentId: `deploy_${metrics.agentId}`,
+                  agentId: metrics.agentId,
+                  issue: issue.message,
+                  severity: issue.severity
+                });
+              }
+            });
+            break;
+        }
+      }
+      
+      const totalDeployments = healthyCount + degradedCount + unhealthyCount;
+      
+      // Determine overall system health
+      let overallHealth: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      if (totalDeployments > 0) {
+        const unhealthyPercentage = (unhealthyCount / totalDeployments) * 100;
+        const degradedPercentage = (degradedCount / totalDeployments) * 100;
+        
+        if (unhealthyPercentage > 20 || criticalIssues.length > 5) {
+          overallHealth = 'unhealthy';
+        } else if (unhealthyPercentage > 5 || degradedPercentage > 30) {
+          overallHealth = 'degraded';
+        }
+      }
+      
+      const healthStatus = {
+        overallHealth,
+        healthyDeployments: healthyCount,
+        degradedDeployments: degradedCount,
+        unhealthyDeployments: unhealthyCount,
+        totalDeployments,
+        criticalIssues
+      };
+      
+      // Trigger alerts for critical issues
+      if (criticalIssues.length > 0) {
+        await this.triggerSystemHealthAlert(healthStatus);
+      }
+      
+      console.log(`✅ Deployment health monitoring complete: ${overallHealth} (${totalDeployments} deployments)`);
+      return healthStatus;
+      
+    } catch (error) {
+      console.error('❌ Failed to monitor deployment health:', error);
+      
+      return {
+        overallHealth: 'unhealthy' as const,
+        healthyDeployments: 0,
+        degradedDeployments: 0,
+        unhealthyDeployments: 0,
+        totalDeployments: 0,
+        criticalIssues: []
+      };
+    }
+  }
+
+  // NEW: Real-time deployment status monitoring
+  async startDeploymentStatusMonitoring(deploymentIds: string[]): Promise<void> {
+    console.log(`🔄 Starting real-time monitoring for ${deploymentIds.length} deployments`);
+    
+    // Monitor each deployment
+    for (const deploymentId of deploymentIds) {
+      this.monitorSingleDeployment(deploymentId);
+    }
+  }
+
+  // NEW: Monitor a single deployment in real-time
+  private async monitorSingleDeployment(deploymentId: string): Promise<void> {
+    const monitoringInterval = setInterval(async () => {
+      try {
+        // Get deployment status
+        const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/${deploymentId}/status`);
+        
+        if (!response.ok) {
+          console.warn(`Failed to get status for deployment ${deploymentId}: ${response.status}`);
+          return;
+        }
+
+        const status = await response.json();
+        
+        // Check for status changes or issues
+        await this.processDeploymentStatus(deploymentId, status);
+        
+        // Stop monitoring if deployment is complete or failed
+        if (status.status === 'completed' || status.status === 'failed') {
+          clearInterval(monitoringInterval);
+          console.log(`✅ Stopped monitoring deployment ${deploymentId}: ${status.status}`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Error monitoring deployment ${deploymentId}:`, error);
+      }
+    }, this.config.refreshInterval);
+  }
+
+  // NEW: Process deployment status and trigger alerts if needed
+  private async processDeploymentStatus(deploymentId: string, status: any): Promise<void> {
+    // Check for deployment issues
+    if (status.status === 'failed' || status.status === 'error') {
+      await this.createDeploymentAlert({
+        id: `deploy_alert_${deploymentId}_${Date.now()}`,
+        deploymentId,
+        agentId: status.agentId,
+        type: 'deployment_failure',
+        severity: 'high',
+        message: `Deployment ${deploymentId} failed: ${status.error || 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+        acknowledged: false
+      });
+    }
+    
+    // Check for performance issues
+    if (status.metrics) {
+      const { responseTime, errorRate, cpuUsage, memoryUsage } = status.metrics;
+      
+      if (responseTime > this.config.alertThresholds.responseTime) {
+        await this.createDeploymentAlert({
+          id: `perf_alert_${deploymentId}_${Date.now()}`,
+          deploymentId,
+          agentId: status.agentId,
+          type: 'performance_degradation',
+          severity: 'medium',
+          message: `High response time detected: ${responseTime}ms (threshold: ${this.config.alertThresholds.responseTime}ms)`,
+          timestamp: new Date().toISOString(),
+          acknowledged: false
+        });
+      }
+      
+      if (errorRate > this.config.alertThresholds.errorRate) {
+        await this.createDeploymentAlert({
+          id: `error_alert_${deploymentId}_${Date.now()}`,
+          deploymentId,
+          agentId: status.agentId,
+          type: 'high_error_rate',
+          severity: 'high',
+          message: `High error rate detected: ${(errorRate * 100).toFixed(2)}% (threshold: ${(this.config.alertThresholds.errorRate * 100).toFixed(2)}%)`,
+          timestamp: new Date().toISOString(),
+          acknowledged: false
+        });
+      }
+    }
+  }
+
+  // NEW: Create deployment-specific alert
+  private async createDeploymentAlert(alertData: {
+    id: string;
+    deploymentId: string;
+    agentId: string;
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    timestamp: string;
+    acknowledged: boolean;
+  }): Promise<void> {
+    const alert: MonitoringAlert = {
+      id: alertData.id,
+      agentId: alertData.agentId,
+      type: alertData.type as any,
+      severity: alertData.severity,
+      message: alertData.message,
+      timestamp: alertData.timestamp,
+      acknowledged: alertData.acknowledged
+    };
+    
+    // Store alert locally
+    this.activeAlerts.set(alert.id, alert);
+    
+    // Notify alert callbacks
+    this.alertCallbacks.forEach(callback => {
+      try {
+        callback(alert);
+      } catch (error) {
+        console.error('Error in alert callback:', error);
+      }
+    });
+    
+    console.log(`🚨 Deployment alert created: ${alert.severity} - ${alert.message}`);
+  }
+
+  // NEW: Assess individual deployment health
+  private assessDeploymentHealth(metrics: AgentMetrics): {
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    issues: Array<{ message: string; severity: string }>;
+  } {
+    const issues: Array<{ message: string; severity: string }> = [];
+    
+    // Check trust score
+    if (metrics.trustScore < 0.5) {
+      issues.push({
+        message: `Low trust score: ${metrics.trustScore}`,
+        severity: 'critical'
+      });
+    } else if (metrics.trustScore < 0.7) {
+      issues.push({
+        message: `Degraded trust score: ${metrics.trustScore}`,
+        severity: 'medium'
+      });
+    }
+    
+    // Check error rate
+    if (metrics.errorRate > 0.1) {
+      issues.push({
+        message: `High error rate: ${(metrics.errorRate * 100).toFixed(2)}%`,
+        severity: 'high'
+      });
+    } else if (metrics.errorRate > 0.05) {
+      issues.push({
+        message: `Elevated error rate: ${(metrics.errorRate * 100).toFixed(2)}%`,
+        severity: 'medium'
+      });
+    }
+    
+    // Check response time
+    if (metrics.responseTime > 5000) {
+      issues.push({
+        message: `Very slow response time: ${metrics.responseTime}ms`,
+        severity: 'high'
+      });
+    } else if (metrics.responseTime > 2000) {
+      issues.push({
+        message: `Slow response time: ${metrics.responseTime}ms`,
+        severity: 'medium'
+      });
+    }
+    
+    // Check system resources
+    if (metrics.systemMetrics.cpuUsage > 90) {
+      issues.push({
+        message: `Critical CPU usage: ${metrics.systemMetrics.cpuUsage}%`,
+        severity: 'critical'
+      });
+    } else if (metrics.systemMetrics.cpuUsage > 80) {
+      issues.push({
+        message: `High CPU usage: ${metrics.systemMetrics.cpuUsage}%`,
+        severity: 'medium'
+      });
+    }
+    
+    if (metrics.systemMetrics.memoryUsage > 90) {
+      issues.push({
+        message: `Critical memory usage: ${metrics.systemMetrics.memoryUsage}%`,
+        severity: 'critical'
+      });
+    } else if (metrics.systemMetrics.memoryUsage > 80) {
+      issues.push({
+        message: `High memory usage: ${metrics.systemMetrics.memoryUsage}%`,
+        severity: 'medium'
+      });
+    }
+    
+    // Determine overall status
+    const criticalIssues = issues.filter(i => i.severity === 'critical').length;
+    const highIssues = issues.filter(i => i.severity === 'high').length;
+    const mediumIssues = issues.filter(i => i.severity === 'medium').length;
+    
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    
+    if (criticalIssues > 0 || highIssues > 2) {
+      status = 'unhealthy';
+    } else if (highIssues > 0 || mediumIssues > 2) {
+      status = 'degraded';
+    }
+    
+    return { status, issues };
+  }
+
+  // NEW: Trigger system health alert
+  private async triggerSystemHealthAlert(healthStatus: any): Promise<void> {
+    const alert: MonitoringAlert = {
+      id: `system_health_${Date.now()}`,
+      agentId: 'system',
+      type: 'system',
+      severity: healthStatus.overallHealth === 'unhealthy' ? 'critical' : 'high',
+      message: `System health is ${healthStatus.overallHealth}. ${healthStatus.criticalIssues.length} critical issues detected.`,
+      timestamp: new Date().toISOString(),
+      acknowledged: false
+    };
+    
+    this.activeAlerts.set(alert.id, alert);
+    
+    // Notify callbacks
+    this.alertCallbacks.forEach(callback => {
+      try {
+        callback(alert);
+      } catch (error) {
+        console.error('Error in system health alert callback:', error);
+      }
+    });
+  }
+
+  // Helper method to categorize alerts
+  private categorizeAlert(type: string): 'deployment' | 'performance' | 'security' | 'resource' {
+    if (type.includes('deployment') || type.includes('deploy')) return 'deployment';
+    if (type.includes('trust') || type.includes('violation') || type.includes('security')) return 'security';
+    if (type.includes('cpu') || type.includes('memory') || type.includes('disk') || type.includes('resource')) return 'resource';
+    return 'performance';
+  }
+
   /**
    * Acknowledge an alert
    */

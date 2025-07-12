@@ -240,6 +240,286 @@ export class DeploymentExtension {
     }
   }
 
+  // NEW: Production deployment method
+  async deployToProduction(userId: string, agentId: string, deploymentType: 'api-package' | 'cloud-package'): Promise<DeploymentResult> {
+    try {
+      console.log(`🚀 Starting production deployment for agent ${agentId}`);
+      
+      // Get agent wrapper from storage
+      const wrapper = await this.storage.get<DualAgentWrapper>('agent_wrappers', agentId);
+      if (!wrapper) {
+        throw new Error(`Agent wrapper not found: ${agentId}`);
+      }
+
+      // Create production deployment configuration
+      const config: DeploymentConfig = {
+        target: deploymentType === 'api-package' ? 'api' : 'cloud',
+        environment: {
+          NODE_ENV: 'production',
+          AGENT_ID: agentId,
+          USER_ID: userId,
+          DEPLOYMENT_TYPE: deploymentType
+        },
+        resources: {
+          cpu: '1000m',
+          memory: '2Gi',
+          storage: '10Gi'
+        },
+        scaling: {
+          minReplicas: 1,
+          maxReplicas: 5,
+          targetCPU: 70
+        },
+        networking: {
+          port: 8080,
+          protocol: 'https'
+        }
+      };
+
+      // Call the deployment API
+      const deploymentResponse = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/agents/deploy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId,
+          deploymentType,
+          environment: 'production',
+          userId
+        })
+      });
+
+      if (!deploymentResponse.ok) {
+        throw new Error(`Deployment API error: ${deploymentResponse.status} ${deploymentResponse.statusText}`);
+      }
+
+      const deploymentData = await deploymentResponse.json();
+      
+      // Generate API key
+      const apiKey = await deployedAgentAPI.generateAPIKey(userId, agentId);
+      
+      // Create enhanced deployment result
+      const result: DeploymentResult = {
+        deploymentId: deploymentData.deploymentId || `prod_${agentId}_${Date.now()}`,
+        status: 'deploying',
+        apiKey,
+        artifacts: deploymentData.artifacts || [],
+        instructions: deploymentData.instructions || [
+          'Deployment initiated successfully',
+          'Monitor deployment status in real-time',
+          'API key generated for agent access'
+        ],
+        endpoint: deploymentData.endpoint,
+        monitoringUrl: `${import.meta.env.VITE_DEPLOYMENT_API_URL}/v1/deployments/${deploymentData.deploymentId}/status`
+      };
+
+      // Store deployment record
+      await this.storage.set('production_deployments', result.deploymentId, {
+        ...result,
+        userId,
+        agentId,
+        deploymentType,
+        createdAt: new Date(),
+        lastUpdated: new Date()
+      });
+
+      // After deploy extension point
+      await this.afterDeploy(userId, wrapper, result);
+      
+      console.log(`✅ Production deployment initiated: ${result.deploymentId}`);
+      return result;
+      
+    } catch (error) {
+      console.error(`❌ Production deployment failed for agent ${agentId}:`, error);
+      await this.onDeploymentError(userId, error as Error, { agentId, deploymentType });
+      throw error;
+    }
+  }
+
+  // NEW: Restart agent method
+  async restartAgent(userId: string, deploymentId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log(`🔄 Restarting deployment ${deploymentId}`);
+      
+      // Call the deployment API restart endpoint
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/agents/${deploymentId}/restart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Restart API error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Update deployment status
+      await this.updateDeploymentMetrics(deploymentId, {
+        status: 'restarting',
+        lastHeartbeat: new Date()
+      });
+
+      // Log restart action
+      await this.storage.set('deployment_audit', `restart_${Date.now()}`, {
+        userId,
+        deploymentId,
+        action: 'restart',
+        timestamp: new Date()
+      });
+
+      console.log(`✅ Agent restart initiated: ${deploymentId}`);
+      return {
+        success: true,
+        message: result.message || 'Agent restart initiated successfully'
+      };
+      
+    } catch (error) {
+      console.error(`❌ Failed to restart agent ${deploymentId}:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
+  // NEW: Get system-wide deployment metrics
+  async getSystemWideMetrics(): Promise<{
+    totalDeployments: number;
+    activeDeployments: number;
+    failedDeployments: number;
+    successRate: number;
+    averageResponseTime: number;
+    systemHealth: 'healthy' | 'degraded' | 'unhealthy';
+  }> {
+    try {
+      // Call the deployment API metrics endpoint
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/metrics`);
+      
+      if (!response.ok) {
+        throw new Error(`Metrics API error: ${response.status}`);
+      }
+
+      const metrics = await response.json();
+      
+      // Cache metrics locally
+      await this.storage.set('system_metrics', 'latest', {
+        ...metrics,
+        lastUpdated: new Date()
+      });
+
+      return metrics;
+      
+    } catch (error) {
+      console.error('Failed to get system-wide metrics:', error);
+      
+      // Return cached metrics if available
+      const cached = await this.storage.get('system_metrics', 'latest');
+      if (cached) {
+        return cached;
+      }
+      
+      // Return default metrics if no cache available
+      return {
+        totalDeployments: 0,
+        activeDeployments: 0,
+        failedDeployments: 0,
+        successRate: 0,
+        averageResponseTime: 0,
+        systemHealth: 'unknown' as const
+      };
+    }
+  }
+
+  // NEW: Get system alerts
+  async getSystemAlerts(): Promise<Array<{
+    id: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    deploymentId?: string;
+    timestamp: Date;
+    resolved: boolean;
+  }>> {
+    try {
+      // Call the deployment API alerts endpoint
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/alerts`);
+      
+      if (!response.ok) {
+        throw new Error(`Alerts API error: ${response.status}`);
+      }
+
+      const alerts = await response.json();
+      
+      // Cache alerts locally
+      await this.storage.set('system_alerts', 'latest', {
+        alerts,
+        lastUpdated: new Date()
+      });
+
+      return alerts;
+      
+    } catch (error) {
+      console.error('Failed to get system alerts:', error);
+      
+      // Return cached alerts if available
+      const cached = await this.storage.get('system_alerts', 'latest');
+      if (cached && cached.alerts) {
+        return cached.alerts;
+      }
+      
+      return [];
+    }
+  }
+
+  // NEW: Get deployment history for analytics
+  async getDeploymentHistory(userId?: string, limit: number = 50): Promise<Array<{
+    deploymentId: string;
+    agentId: string;
+    userId: string;
+    status: DeploymentStatus;
+    createdAt: Date;
+    completedAt?: Date;
+    duration?: number;
+    deploymentType: string;
+  }>> {
+    try {
+      const allDeployments = await this.storage.getMany('production_deployments', []);
+      
+      let deployments = allDeployments.filter(d => d !== null);
+      
+      // Filter by user if specified
+      if (userId) {
+        deployments = deployments.filter(d => d.userId === userId);
+      }
+      
+      // Sort by creation date (newest first)
+      deployments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      // Limit results
+      deployments = deployments.slice(0, limit);
+      
+      // Transform to history format
+      return deployments.map(d => ({
+        deploymentId: d.deploymentId,
+        agentId: d.agentId,
+        userId: d.userId,
+        status: d.status,
+        createdAt: new Date(d.createdAt),
+        completedAt: d.completedAt ? new Date(d.completedAt) : undefined,
+        duration: d.completedAt && d.createdAt ? 
+          new Date(d.completedAt).getTime() - new Date(d.createdAt).getTime() : undefined,
+        deploymentType: d.deploymentType
+      }));
+      
+    } catch (error) {
+      console.error('Failed to get deployment history:', error);
+      return [];
+    }
+  }
+
   async undeployAgent(userId: string, deploymentId: string): Promise<void> {
     try {
       // Before undeploy extension point
