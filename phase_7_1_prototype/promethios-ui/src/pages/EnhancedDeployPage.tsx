@@ -823,9 +823,11 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
       // Create deployment target
       const target = {
-        type: targetPlatform as any,
-        environment: targetEnvironment as any,
-        platform: deploymentMethod.provider || 'local' as any,
+        type: targetPlatform || 'production',
+        environment: targetEnvironment || 'production', 
+        platform: (deploymentMethod.type === 'integration' && deploymentMethod.provider) 
+          ? deploymentMethod.provider 
+          : 'local',
         configuration: {}
       };
 
