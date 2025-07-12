@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: promethios-deployment-api
+    env: python
+    plan: professional
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: FLASK_ENV
+        value: production
+
