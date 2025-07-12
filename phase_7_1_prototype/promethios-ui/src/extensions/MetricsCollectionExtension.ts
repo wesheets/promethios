@@ -607,44 +607,6 @@ export class MetricsCollectionExtension {
     if (healthyCount >= 3) return 'degraded';
     return 'unhealthy';
   }
-        deploymentId,
-        timestamp: new Date(),
-        governanceMetrics: {
-          trustScore: processedMetrics.trustScore || 0,
-          complianceRate: processedMetrics.complianceRate || 0,
-          violationCount: processedMetrics.violationCount || 0,
-          policyViolations: processedMetrics.policyViolations || []
-        },
-        performanceMetrics: {
-          responseTime: processedMetrics.responseTime || 0,
-          throughput: processedMetrics.throughput || 0,
-          errorRate: processedMetrics.errorRate || 0,
-          uptime: processedMetrics.uptime || 0
-        },
-        systemMetrics: {
-          cpuUsage: processedMetrics.cpuUsage || 0,
-          memoryUsage: processedMetrics.memoryUsage || 0,
-          diskUsage: processedMetrics.diskUsage || 0,
-          networkIO: processedMetrics.networkIO || 0
-        },
-        businessMetrics: {
-          requestCount: processedMetrics.requestCount || 0,
-          userInteractions: processedMetrics.userInteractions || 0,
-          successRate: processedMetrics.successRate || 0,
-          revenue: processedMetrics.revenue
-        }
-      };
-      
-      // After collection extension point
-      await this.afterMetricsCollection(agentId, agentMetrics);
-      
-      return agentMetrics;
-      
-    } catch (error) {
-      await this.onMetricsError(agentId, error as Error, { deploymentId });
-      return null;
-    }
-  }
 
   async aggregateUserMetrics(userId: string, timeRange: { start: Date; end: Date }): Promise<MetricsAggregation> {
     try {
