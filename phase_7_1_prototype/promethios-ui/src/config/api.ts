@@ -8,7 +8,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
 // Deployment API Base URL - for local development, use localhost
-export const DEPLOYMENT_API_BASE_URL = import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5000';
+export const DEPLOYMENT_API_BASE_URL = import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001';
 
 // Multi-Agent API endpoints
 export const MULTI_AGENT_API = {

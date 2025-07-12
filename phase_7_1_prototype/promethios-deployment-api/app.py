@@ -5,7 +5,7 @@ Focused on deployment endpoints without complex dependencies
 import os
 import uuid
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -187,6 +187,112 @@ def undeploy_agent(agent_id):
         return jsonify({
             'success': False,
             'error': 'Undeployment failed',
+            'message': str(e)
+        }), 500
+
+# Enhanced monitoring and management endpoints
+@app.route('/v1/deployments/metrics', methods=['GET'])
+def get_deployment_metrics():
+    """Get overall deployment metrics and statistics"""
+    try:
+        # Mock deployment metrics
+        metrics = {
+            'totalDeployments': 42,
+            'activeDeployments': 38,
+            'failedDeployments': 4,
+            'averageDeploymentTime': '2.3 minutes',
+            'successRate': 90.5,
+            'totalApiCalls': 125847,
+            'averageResponseTime': 245,
+            'trustScoreAverage': 87.2,
+            'lastUpdated': datetime.utcnow().isoformat(),
+            'deploymentsByType': {
+                'api-package': 28,
+                'cloud-package': 14
+            },
+            'deploymentsByEnvironment': {
+                'production': 35,
+                'staging': 7
+            },
+            'healthStatus': {
+                'healthy': 35,
+                'warning': 3,
+                'critical': 0
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'metrics': metrics
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch deployment metrics',
+            'message': str(e)
+        }), 500
+
+@app.route('/v1/deployments/alerts', methods=['GET'])
+def get_deployment_alerts():
+    """Get active deployment alerts and warnings"""
+    try:
+        # Mock deployment alerts
+        alerts = [
+            {
+                'id': 'alert-001',
+                'severity': 'warning',
+                'agentId': 'agent-456-production',
+                'title': 'High Memory Usage',
+                'message': 'Agent memory usage is at 85%, approaching the 90% threshold',
+                'createdAt': (datetime.utcnow() - timedelta(minutes=10)).isoformat(),
+                'status': 'active'
+            },
+            {
+                'id': 'alert-002',
+                'severity': 'info',
+                'agentId': 'agent-789-production',
+                'title': 'Trust Score Improvement',
+                'message': 'Agent trust score improved from 82% to 89%',
+                'createdAt': (datetime.utcnow() - timedelta(minutes=30)).isoformat(),
+                'status': 'resolved'
+            }
+        ]
+        
+        return jsonify({
+            'success': True,
+            'alerts': alerts,
+            'totalCount': len(alerts)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch deployment alerts',
+            'message': str(e)
+        }), 500
+
+@app.route('/v1/agents/<agent_id>/restart', methods=['POST'])
+def restart_agent(agent_id):
+    """Restart a deployed agent"""
+    try:
+        restart_id = f"restart_{uuid.uuid4().hex[:16]}"
+        
+        result = {
+            'success': True,
+            'agentId': agent_id,
+            'restartId': restart_id,
+            'status': 'restarting',
+            'restartedAt': datetime.utcnow().isoformat(),
+            'estimatedDowntime': '30 seconds'
+        }
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Failed to restart agent',
             'message': str(e)
         }), 500
 
