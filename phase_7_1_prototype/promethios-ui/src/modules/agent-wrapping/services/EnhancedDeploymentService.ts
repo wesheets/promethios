@@ -564,7 +564,26 @@ let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
 
 export function getEnhancedDeploymentService(): EnhancedDeploymentService {
   if (!_enhancedDeploymentServiceInstance) {
-    _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+    try {
+      _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+    } catch (error) {
+      console.error('Error creating EnhancedDeploymentService:', error);
+      // Fallback: create a minimal service with stub methods
+      _enhancedDeploymentServiceInstance = {
+        createEnhancedSingleAgentPackage: async () => {
+          throw new Error('Deployment service unavailable. Please try again later.');
+        },
+        createEnhancedMultiAgentPackage: async () => {
+          throw new Error('Deployment service unavailable. Please try again later.');
+        },
+        deployEnhancedPackage: async () => {
+          throw new Error('Deployment service unavailable. Please try again later.');
+        },
+        listRealDeployments: async () => {
+          return [];
+        }
+      } as any;
+    }
   }
   return _enhancedDeploymentServiceInstance;
 }

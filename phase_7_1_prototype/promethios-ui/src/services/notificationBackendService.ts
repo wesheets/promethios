@@ -66,7 +66,7 @@ class NotificationBackendService {
     try {
       // Aggregate notifications from multiple sources
       const [observerSuggestions, auditEvents] = await Promise.all([
-        observerBackendService.getObserverSuggestions(),
+        observerBackendService.getSuggestions('default-observer'),
         auditBackendService.queryAuditLogs({ limit: 50 })
       ]);
 
