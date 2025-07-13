@@ -1214,9 +1214,9 @@ const EnhancedDeployPage: React.FC = () => {
   const [deploymentHealth, setDeploymentHealth] = useState<any>(null);
   const [extensionsInitialized, setExtensionsInitialized] = useState(false);
 
-  // NEW: Initialize enhanced extensions
-  const [deploymentExtension] = useState(() => new DeploymentExtension());
-  const [metricsExtension] = useState(() => new MetricsCollectionExtension());
+  // NEW: Initialize enhanced extensions using appropriate patterns
+  const [deploymentExtension] = useState(() => DeploymentExtension.getInstance());
+  const [metricsExtension] = useState(() => MetricsCollectionExtension.getInstance());
   const [monitoringExtension] = useState(() => new MonitoringExtension());
 
   const { currentUser } = useAuth();
