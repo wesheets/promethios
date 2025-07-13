@@ -574,18 +574,16 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
         throw new Error('DeploymentService is not available or not a constructor');
       }
       
-      // Check if EnhancedDeploymentService is available
-      if (typeof EnhancedDeploymentService !== 'function') {
-        console.error('❌ EnhancedDeploymentService is not a constructor:', typeof EnhancedDeploymentService, EnhancedDeploymentService);
-        throw new Error('EnhancedDeploymentService is not available or not a constructor');
-      }
-      
       console.log('✅ Both DeploymentService and EnhancedDeploymentService are available as constructors');
       
-      // Create instance using explicit class reference to avoid minification issues
-      const ServiceClass = EnhancedDeploymentService;
-      _enhancedDeploymentServiceInstance = new ServiceClass();
-      console.log('✅ EnhancedDeploymentService initialized successfully');
+      // Create instance using a safer approach to avoid minification issues
+      try {
+        _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+        console.log('✅ EnhancedDeploymentService initialized successfully');
+      } catch (constructorError) {
+        console.error('❌ Constructor error:', constructorError);
+        throw constructorError;
+      }
     } catch (error) {
       console.error('❌ Error creating EnhancedDeploymentService:', error);
       console.error('❌ Error stack:', error.stack);

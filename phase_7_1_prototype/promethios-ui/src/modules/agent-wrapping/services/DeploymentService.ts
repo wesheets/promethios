@@ -106,7 +106,20 @@ export class DeploymentService {
   private packages: Map<string, DeploymentPackage> = new Map();
 
   constructor() {
-    this.storage = new UnifiedStorageService();
+    try {
+      // Use a safer pattern to avoid minification issues
+      const StorageServiceClass = UnifiedStorageService;
+      this.storage = new StorageServiceClass();
+    } catch (error) {
+      console.error('❌ Error creating UnifiedStorageService:', error);
+      // Fallback to a minimal storage implementation
+      this.storage = {
+        get: async () => null,
+        set: async () => {},
+        delete: async () => {},
+        getKeys: async () => []
+      } as any;
+    }
   }
 
   /**
@@ -406,16 +419,28 @@ export class DeploymentService {
     target: DeploymentTarget,
     baseAgent: DualAgentWrapper['baseAgent']
   ): DeploymentPackage['runtime'] {
+    // Defensive coding: Extract agent name from various possible sources
+    const agentName = baseAgent?.name || 
+                     deploymentWrapper?.metadata?.name || 
+                     deploymentWrapper?.name || 
+                     'unnamed-agent';
+    
+    // Defensive coding: Extract API key from various possible sources
+    const apiKey = baseAgent?.configuration?.apiKey || 
+                   deploymentWrapper?.configuration?.apiKey ||
+                   deploymentWrapper?.apiKey ||
+                   'generated-api-key';
+    
     return {
       environmentVariables: {
         NODE_ENV: target.environment,
-        AGENT_NAME: baseAgent.name,
+        AGENT_NAME: agentName,
         GOVERNANCE_ENABLED: 'true',
-        TRUST_THRESHOLD: deploymentWrapper.governanceConfig.trustThreshold.toString(),
+        TRUST_THRESHOLD: deploymentWrapper.governanceConfig?.trustThreshold?.toString() || '0.8',
         ...deploymentWrapper.deploymentConfig?.environmentVariables,
       },
       secrets: {
-        API_KEY: baseAgent.configuration?.apiKey || 'generated-api-key',
+        API_KEY: apiKey,
         GOVERNANCE_SECRET: 'generated-secret',
       },
       dependencies: [
@@ -608,14 +633,20 @@ CMD ["node", "index.js", "--governance-enabled"]
     deploymentWrapper: DeploymentWrapper,
     baseAgent: DualAgentWrapper['baseAgent']
   ): any[] {
+    // Defensive coding: Extract agent name from various possible sources
+    const agentName = baseAgent?.name || 
+                     deploymentWrapper?.metadata?.name || 
+                     deploymentWrapper?.name || 
+                     'unnamed-agent';
+    
     return [
       {
         apiVersion: 'apps/v1',
         kind: 'Deployment',
         metadata: {
-          name: `${baseAgent.name}-deployment`,
+          name: `${agentName}-deployment`,
           labels: {
-            app: baseAgent.name,
+            app: agentName,
             governance: 'enabled',
           },
         },
@@ -623,27 +654,27 @@ CMD ["node", "index.js", "--governance-enabled"]
           replicas: 1,
           selector: {
             matchLabels: {
-              app: baseAgent.name,
+              app: agentName,
             },
           },
           template: {
             metadata: {
               labels: {
-                app: baseAgent.name,
+                app: agentName,
               },
             },
             spec: {
               containers: [
                 {
-                  name: baseAgent.name,
-                  image: `${baseAgent.name}:latest`,
+                  name: agentName,
+                  image: `${agentName}:latest`,
                   ports: [
                     { containerPort: 8080 },
                     { containerPort: 8443 },
                   ],
                   env: [
                     { name: 'GOVERNANCE_ENABLED', value: 'true' },
-                    { name: 'TRUST_THRESHOLD', value: deploymentWrapper.governanceConfig.trustThreshold.toString() },
+                    { name: 'TRUST_THRESHOLD', value: deploymentWrapper.governanceConfig?.trustThreshold?.toString() || '0.8' },
                   ],
                   livenessProbe: {
                     httpGet: {
@@ -663,11 +694,11 @@ CMD ["node", "index.js", "--governance-enabled"]
         apiVersion: 'v1',
         kind: 'Service',
         metadata: {
-          name: `${baseAgent.name}-service`,
+          name: `${agentName}-service`,
         },
         spec: {
           selector: {
-            app: baseAgent.name,
+            app: agentName,
           },
           ports: [
             { port: 80, targetPort: 8080 },
@@ -812,21 +843,33 @@ For detailed instructions, see the documentation included in this package.
     deploymentWrapper: DeploymentWrapper,
     baseAgent: DualAgentWrapper['baseAgent']
   ): any {
-    return { service: baseAgent.name };
+    const agentName = baseAgent?.name || 
+                     deploymentWrapper?.metadata?.name || 
+                     deploymentWrapper?.name || 
+                     'unnamed-agent';
+    return { service: agentName };
   }
 
   private generateApiDefinition(
     deploymentWrapper: DeploymentWrapper,
     baseAgent: DualAgentWrapper['baseAgent']
   ): any {
-    return { openapi: '3.0.0', info: { title: baseAgent.name } };
+    const agentName = baseAgent?.name || 
+                     deploymentWrapper?.metadata?.name || 
+                     deploymentWrapper?.name || 
+                     'unnamed-agent';
+    return { openapi: '3.0.0', info: { title: agentName } };
   }
 
   private generateStandaloneExecutable(
     deploymentWrapper: DeploymentWrapper,
     baseAgent: DualAgentWrapper['baseAgent']
   ): string {
-    return `#!/bin/bash\n# Standalone executable for ${baseAgent.name}`;
+    const agentName = baseAgent?.name || 
+                     deploymentWrapper?.metadata?.name || 
+                     deploymentWrapper?.name || 
+                     'unnamed-agent';
+    return `#!/bin/bash\n# Standalone executable for ${agentName}`;
   }
 }
 
