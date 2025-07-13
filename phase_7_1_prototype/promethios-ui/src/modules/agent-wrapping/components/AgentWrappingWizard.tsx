@@ -107,7 +107,8 @@ const AgentWrappingWizard: React.FC = () => {
       
       setIsLoading(true);
       try {
-        const storageService = new UserAgentStorageService();
+        const StorageServiceClass = UserAgentStorageService;
+        const storageService = new StorageServiceClass();
         storageService.setCurrentUser(currentUser.uid);
         console.log('Created storage service for user:', currentUser.uid);
         
@@ -399,7 +400,8 @@ const AgentWrappingWizard: React.FC = () => {
       // Step 3: Dual Deployment (Testing + Production only)
       console.log('🚀 Starting dual deployment (testing + production)...');
       
-      const storageService = new UserAgentStorageService();
+      const StorageServiceClass = UserAgentStorageService;
+      const storageService = new StorageServiceClass();
       storageService.setCurrentUser(currentUser.uid);
       
       // Create testing version (this is what user will see and chat with)

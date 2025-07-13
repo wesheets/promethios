@@ -502,10 +502,17 @@ export class DeploymentService {
    * Generate governance package
    */
   private generateGovernancePackage(deploymentWrapper: DeploymentWrapper): DeploymentPackage['governance'] {
+    // Provide default governance config if not present
+    const governanceConfig = deploymentWrapper.governanceConfig || {
+      policies: [],
+      trustThreshold: 0.7,
+      auditLevel: 'standard'
+    };
+
     return {
-      policies: deploymentWrapper.governanceConfig.policies,
+      policies: governanceConfig.policies || [],
       trustConfiguration: {
-        threshold: deploymentWrapper.governanceConfig.trustThreshold,
+        threshold: governanceConfig.trustThreshold || 0.7,
         decayRate: 0.1,
         recoveryRate: 0.05,
       },
@@ -519,12 +526,12 @@ export class DeploymentService {
         {
           id: 'trust-score',
           description: 'Minimum trust score',
-          threshold: deploymentWrapper.governanceConfig.trustThreshold,
+          threshold: governanceConfig.trustThreshold || 0.7,
           action: 'block',
         },
       ],
       auditConfiguration: {
-        level: deploymentWrapper.governanceConfig.auditLevel,
+        level: governanceConfig.auditLevel || 'standard',
         retention: '30d',
         destinations: ['file', 'database'],
       },

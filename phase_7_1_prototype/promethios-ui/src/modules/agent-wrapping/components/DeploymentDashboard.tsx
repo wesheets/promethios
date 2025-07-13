@@ -80,9 +80,18 @@ const DeploymentDashboard: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   
   // Services
-  const [deploymentService] = useState(() => new DeploymentService());
-  const [dualWrapperRegistry] = useState(() => new DualAgentWrapperRegistry());
-  const [multiAgentRegistry] = useState(() => new EnhancedMultiAgentSystemRegistry());
+  const [deploymentService] = useState(() => {
+    const ServiceClass = DeploymentService;
+    return new ServiceClass();
+  });
+  const [dualWrapperRegistry] = useState(() => {
+    const RegistryClass = DualAgentWrapperRegistry;
+    return new RegistryClass();
+  });
+  const [multiAgentRegistry] = useState(() => {
+    const RegistryClass = EnhancedMultiAgentSystemRegistry;
+    return new RegistryClass();
+  });
   
   // State
   const [deployments, setDeployments] = useState<DeploymentResult[]>([]);
