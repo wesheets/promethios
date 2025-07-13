@@ -606,7 +606,11 @@ export const enhancedDeploymentService = {
   // Proxy all methods to the instance with error handling
   createEnhancedSingleAgentPackage: async (...args: any[]) => {
     try {
-      return await getEnhancedDeploymentService().createEnhancedSingleAgentPackage(...args);
+      const service = getEnhancedDeploymentService();
+      if (!service || typeof service.createEnhancedSingleAgentPackage !== 'function') {
+        throw new Error('Deployment service method not available');
+      }
+      return await service.createEnhancedSingleAgentPackage(...args);
     } catch (error) {
       console.error('Error in createEnhancedSingleAgentPackage:', error);
       throw error;
@@ -622,7 +626,11 @@ export const enhancedDeploymentService = {
   },
   deployEnhancedPackage: async (...args: any[]) => {
     try {
-      return await getEnhancedDeploymentService().deployEnhancedPackage(...args);
+      const service = getEnhancedDeploymentService();
+      if (!service || typeof service.deployEnhancedPackage !== 'function') {
+        throw new Error('Deployment service method not available');
+      }
+      return await service.deployEnhancedPackage(...args);
     } catch (error) {
       console.error('Error in deployEnhancedPackage:', error);
       throw error;
