@@ -6,7 +6,7 @@
  * NO MOCK DATA - returns empty states when no real data is available.
  */
 
-import { deployedAgentAPI, DeployedAgentStatus, AgentMetrics, PolicyViolation, AgentLogEntry } from './api/deployedAgentAPI';
+import { deployedAgentAPI, DeployedAgentStatus, AgentMetrics, PolicyViolation, AgentLogEntry, DeployedAgentAPI } from './api/deployedAgentAPI';
 import { UnifiedStorageService } from './UnifiedStorageService';
 import { metricsService } from './MetricsCollectionService';
 
@@ -202,7 +202,7 @@ export class DeployedAgentDataService {
   async processIncomingMetrics(metrics: AgentMetrics, apiKey: string): Promise<void> {
     try {
       // Validate API key
-      const agentId = deployedAgentAPI.constructor.extractAgentIdFromAPIKey(apiKey);
+      const agentId = DeployedAgentAPI.extractAgentIdFromAPIKey(apiKey);
       if (!agentId || agentId !== metrics.agentId) {
         throw new Error('Invalid API key for agent');
       }
@@ -238,7 +238,7 @@ export class DeployedAgentDataService {
   async processIncomingViolation(violation: PolicyViolation, apiKey: string): Promise<void> {
     try {
       // Validate API key
-      const agentId = deployedAgentAPI.constructor.extractAgentIdFromAPIKey(apiKey);
+      const agentId = DeployedAgentAPI.extractAgentIdFromAPIKey(apiKey);
       if (!agentId || agentId !== violation.agentId) {
         throw new Error('Invalid API key for agent');
       }
@@ -276,7 +276,7 @@ export class DeployedAgentDataService {
   async processIncomingLog(logEntry: AgentLogEntry, apiKey: string): Promise<void> {
     try {
       // Validate API key
-      const agentId = deployedAgentAPI.constructor.extractAgentIdFromAPIKey(apiKey);
+      const agentId = DeployedAgentAPI.extractAgentIdFromAPIKey(apiKey);
       if (!agentId || agentId !== logEntry.agentId) {
         throw new Error('Invalid API key for agent');
       }
