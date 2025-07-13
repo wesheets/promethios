@@ -1217,7 +1217,10 @@ const EnhancedDeployPage: React.FC = () => {
   // NEW: Initialize enhanced extensions using appropriate patterns
   const [deploymentExtension] = useState(() => DeploymentExtension.getInstance());
   const [metricsExtension] = useState(() => MetricsCollectionExtension.getInstance());
-  const [monitoringExtension] = useState(() => new MonitoringExtension());
+  const [monitoringExtension] = useState(() => {
+    const ExtensionClass = MonitoringExtension;
+    return new ExtensionClass();
+  });
 
   const { currentUser } = useAuth();
   const { toast } = useToast();

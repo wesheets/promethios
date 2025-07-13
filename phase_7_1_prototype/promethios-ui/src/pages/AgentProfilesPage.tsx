@@ -1164,7 +1164,12 @@ const AgentProfileCard: React.FC<{
                 Gov ID
               </Typography>
               <Typography variant="body2" sx={{ color: '#10b981', fontFamily: 'monospace' }}>
-                {profile.governanceId || 'GV-' + profile.identity.id.slice(-6).toUpperCase()}
+                {profile.governanceId || (() => {
+                  // Create unique governance ID from agent data
+                  const numericPart = profile.identity?.id?.replace(/[^0-9]/g, '')?.slice(-8) || '00000000';
+                  const namePart = profile.identity?.name?.replace(/[^A-Z]/g, '')?.slice(0, 4) || 'UNKN';
+                  return `GID-${numericPart}-${namePart}`;
+                })()}
               </Typography>
             </Box>
           </Grid>
