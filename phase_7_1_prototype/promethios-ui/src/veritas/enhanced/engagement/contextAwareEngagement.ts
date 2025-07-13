@@ -477,7 +477,7 @@ export class ContextAwareEngagementManager {
     const tone = handler.getEngagementTone();
     
     return {
-      handlerType: handler.constructor.name,
+      handlerType: handler.constructor?.name || 'UnknownHandler',
       tone,
       optimalQuestionCount: handler.getOptimalQuestionCount(),
       recommendedTimeout: handler.getRecommendedTimeout(),

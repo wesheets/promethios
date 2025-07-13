@@ -190,7 +190,7 @@ export class UnifiedStorageService {
   async keys(namespace: string): Promise<string[]> {
     try {
       const provider = this.getProvider(namespace);
-      console.log(`🔧 UnifiedStorage: Getting keys for namespace '${namespace}' using provider: ${provider.constructor.name}`);
+      console.log(`🔧 UnifiedStorage: Getting keys for namespace '${namespace}' using provider: ${provider.name || 'unknown'}`);
       
       const allKeys = await provider.keys();
       console.log(`🔧 UnifiedStorage: Provider returned ${allKeys.length} keys:`, allKeys);
