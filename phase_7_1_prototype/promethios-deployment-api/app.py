@@ -5,24 +5,70 @@ Focused on deployment endpoints without complex dependencies
 import os
 import uuid
 import json
+import logging
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 
 # Enable CORS for all routes to allow frontend communication
-CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+CORS(app, 
+     origins=["*"], 
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     supports_credentials=True)
+
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for deployment monitoring"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
-        'service': 'promethios-deployment-api',
-        'version': '1.0.0'
-    })
+    try:
+        logger.info("Health check requested")
+        health_data = {
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'service': 'promethios-deployment-api',
+            'version': '1.0.0',
+            'environment': os.environ.get('ENVIRONMENT', 'development'),
+            'port': os.environ.get('PORT', '5000'),
+            'endpoints': {
+                'health': '/health',
+                'api_health': '/api/health',
+                'deploy': '/v1/agents/deploy',
+                'api_key': '/v1/agents/{agent_id}/api-key',
+                'deployed_agents': '/v1/users/{user_id}/deployed-agents',
+                'deployment_status': '/v1/agents/{agent_id}/deployment-status',
+                'undeploy': '/v1/agents/{agent_id}/undeploy',
+                'metrics': '/v1/deployments/metrics',
+                'alerts': '/v1/deployments/alerts',
+                'restart': '/v1/agents/{agent_id}/restart'
+            }
+        }
+        logger.info(f"Health check successful: {health_data['status']}")
+        return jsonify(health_data)
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
 
 @app.route('/v1/agents/<agent_id>/api-key', methods=['POST'])
 def generate_api_key(agent_id):
@@ -90,9 +136,11 @@ def get_deployed_agents(user_id):
 def deploy_agent():
     """Deploy an agent to production environment"""
     try:
+        logger.info("Agent deployment request received")
         data = request.get_json()
         
         if not data:
+            logger.warning("No data provided in deployment request")
             return jsonify({
                 'success': False,
                 'error': 'No data provided'
@@ -102,7 +150,10 @@ def deploy_agent():
         deployment_type = data.get('deploymentType', 'api-package')
         environment = data.get('environment', 'production')
         
+        logger.info(f"Deploying agent {agent_id} with type {deployment_type} to {environment}")
+        
         if not agent_id:
+            logger.warning("Agent ID is required but not provided")
             return jsonify({
                 'success': False,
                 'error': 'Agent ID is required'
@@ -125,11 +176,11 @@ def deploy_agent():
             'healthCheckUrl': f'https://api.promethios.ai/v1/agents/{agent_id}/health'
         }
         
-        print(f"Successfully deployed agent {agent_id} with deployment ID {deployment_id}")
+        logger.info(f"Successfully deployed agent {agent_id} with deployment ID {deployment_id}")
         return jsonify(deployment_result)
         
     except Exception as e:
-        print(f"Error deploying agent: {str(e)}")
+        logger.error(f"Error deploying agent: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Deployment failed',
@@ -297,6 +348,43 @@ def restart_agent(agent_id):
         }), 500
 
 # Additional endpoints for compatibility with existing frontend
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint with service information"""
+    return jsonify({
+        'service': 'promethios-deployment-api',
+        'version': '1.0.0',
+        'status': 'running',
+        'timestamp': datetime.utcnow().isoformat(),
+        'endpoints': {
+            'health': '/health',
+            'api_health': '/api/health',
+            'deploy': '/v1/agents/deploy',
+            'documentation': '/docs'
+        }
+    })
+
+@app.route('/docs', methods=['GET'])
+def documentation():
+    """API documentation endpoint"""
+    return jsonify({
+        'service': 'Promethios Deployment API',
+        'version': '1.0.0',
+        'description': 'API for deploying and managing Promethios agents',
+        'endpoints': {
+            'GET /health': 'Health check endpoint',
+            'GET /api/health': 'Alternative health check endpoint',
+            'POST /v1/agents/deploy': 'Deploy an agent',
+            'POST /v1/agents/{agent_id}/api-key': 'Generate API key for agent',
+            'GET /v1/users/{user_id}/deployed-agents': 'Get deployed agents for user',
+            'GET /v1/agents/{agent_id}/deployment-status': 'Get deployment status',
+            'POST /v1/agents/{agent_id}/undeploy': 'Undeploy an agent',
+            'GET /v1/deployments/metrics': 'Get deployment metrics',
+            'GET /v1/deployments/alerts': 'Get deployment alerts',
+            'POST /v1/agents/{agent_id}/restart': 'Restart an agent'
+        }
+    })
+
 @app.route('/api/health', methods=['GET'])
 def api_health():
     """Alternative health endpoint"""
@@ -308,10 +396,25 @@ def api_generate_api_key(agent_id):
     return generate_api_key(agent_id)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    host = os.environ.get('HOST', '0.0.0.0')
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
-    
-    print(f"Starting Promethios Deployment API on {host}:{port}")
-    app.run(host=host, port=port, debug=debug)
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        host = os.environ.get('HOST', '0.0.0.0')
+        debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+        environment = os.environ.get('ENVIRONMENT', 'development')
+        
+        logger.info(f"Starting Promethios Deployment API")
+        logger.info(f"Environment: {environment}")
+        logger.info(f"Host: {host}")
+        logger.info(f"Port: {port}")
+        logger.info(f"Debug: {debug}")
+        logger.info(f"Available endpoints:")
+        logger.info(f"  - Health Check: http://{host}:{port}/health")
+        logger.info(f"  - API Health Check: http://{host}:{port}/api/health")
+        logger.info(f"  - Deploy Agent: http://{host}:{port}/v1/agents/deploy")
+        
+        app.run(host=host, port=port, debug=debug)
+        
+    except Exception as e:
+        logger.error(f"Failed to start Promethios Deployment API: {str(e)}")
+        raise
 
