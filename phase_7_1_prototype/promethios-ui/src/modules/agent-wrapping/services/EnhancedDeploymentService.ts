@@ -602,7 +602,9 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
       
       // Create instance using a safer approach to avoid minification issues
       try {
-        _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+        // Use a safer pattern to avoid minification issues
+        const ServiceClass = EnhancedDeploymentService;
+        _enhancedDeploymentServiceInstance = new ServiceClass();
         console.log('✅ EnhancedDeploymentService initialized successfully');
       } catch (constructorError) {
         console.error('❌ Constructor error:', constructorError);

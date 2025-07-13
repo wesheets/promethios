@@ -105,6 +105,7 @@ interface AgentProfile {
   };
   latestScorecard: {
     overallScore: number;
+    governanceDisplayNumber?: string; // Add governance display number from scorecard
   } | null;
   attestationCount: number;
   lastActivity: Date | null;
@@ -113,6 +114,7 @@ interface AgentProfile {
   isWrapped: boolean;
   governancePolicy: string | object | null;
   isDeployed: boolean;
+  governanceId?: string; // Add governance ID field
   apiDetails?: {
     endpoint: string;
     key: string;
@@ -1456,9 +1458,17 @@ const AgentProfilesPage: React.FC = () => {
         agentsToShow.map(async (agent) => {
           try {
             const scorecard = await userAgentStorage.loadScorecard(agent.identity.id);
+            
+            // Extract governance ID from scorecard if available
+            let governanceId = undefined;
+            if (scorecard && (scorecard.governanceDisplayNumber || scorecard.governanceIdentityId)) {
+              governanceId = scorecard.governanceDisplayNumber || scorecard.governanceIdentityId;
+            }
+            
             return {
               ...agent,
               latestScorecard: scorecard,
+              governanceId, // Add governance ID to the agent profile
             };
           } catch (error) {
             console.error(`Error loading scorecard for agent ${agent.identity.id}:`, error);
