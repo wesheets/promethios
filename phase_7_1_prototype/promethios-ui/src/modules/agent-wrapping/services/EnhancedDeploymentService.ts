@@ -566,10 +566,27 @@ let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
 export function getEnhancedDeploymentService(): EnhancedDeploymentService {
   if (!_enhancedDeploymentServiceInstance) {
     try {
+      console.log('🔧 Attempting to create EnhancedDeploymentService instance...');
+      
+      // Check if DeploymentService is available
+      if (typeof DeploymentService !== 'function') {
+        console.error('❌ DeploymentService is not a constructor:', typeof DeploymentService, DeploymentService);
+        throw new Error('DeploymentService is not available or not a constructor');
+      }
+      
+      // Check if EnhancedDeploymentService is available
+      if (typeof EnhancedDeploymentService !== 'function') {
+        console.error('❌ EnhancedDeploymentService is not a constructor:', typeof EnhancedDeploymentService, EnhancedDeploymentService);
+        throw new Error('EnhancedDeploymentService is not available or not a constructor');
+      }
+      
+      console.log('✅ Both DeploymentService and EnhancedDeploymentService are available as constructors');
       _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
       console.log('✅ EnhancedDeploymentService initialized successfully');
     } catch (error) {
       console.error('❌ Error creating EnhancedDeploymentService:', error);
+      console.error('❌ Error stack:', error.stack);
+      
       // Fallback: create a minimal service with stub methods
       _enhancedDeploymentServiceInstance = {
         createEnhancedSingleAgentPackage: async () => {
@@ -606,11 +623,19 @@ export const enhancedDeploymentService = {
   // Proxy all methods to the instance with error handling
   createEnhancedSingleAgentPackage: async (...args: any[]) => {
     try {
+      console.log('🔧 Calling createEnhancedSingleAgentPackage with args:', args.length);
       const service = getEnhancedDeploymentService();
-      if (!service || typeof service.createEnhancedSingleAgentPackage !== 'function') {
+      if (!service) {
+        throw new Error('Deployment service instance is null');
+      }
+      if (typeof service.createEnhancedSingleAgentPackage !== 'function') {
+        console.error('❌ createEnhancedSingleAgentPackage is not a function:', typeof service.createEnhancedSingleAgentPackage);
         throw new Error('Deployment service method not available');
       }
-      return await service.createEnhancedSingleAgentPackage(...args);
+      console.log('✅ Calling service method...');
+      const result = await service.createEnhancedSingleAgentPackage(...args);
+      console.log('✅ Method completed successfully');
+      return result;
     } catch (error) {
       console.error('Error in createEnhancedSingleAgentPackage:', error);
       throw error;
@@ -618,7 +643,16 @@ export const enhancedDeploymentService = {
   },
   createEnhancedMultiAgentPackage: async (...args: any[]) => {
     try {
-      return await getEnhancedDeploymentService().createEnhancedMultiAgentPackage(...args);
+      console.log('🔧 Calling createEnhancedMultiAgentPackage with args:', args.length);
+      const service = getEnhancedDeploymentService();
+      if (!service) {
+        throw new Error('Deployment service instance is null');
+      }
+      if (typeof service.createEnhancedMultiAgentPackage !== 'function') {
+        console.error('❌ createEnhancedMultiAgentPackage is not a function:', typeof service.createEnhancedMultiAgentPackage);
+        throw new Error('Deployment service method not available');
+      }
+      return await service.createEnhancedMultiAgentPackage(...args);
     } catch (error) {
       console.error('Error in createEnhancedMultiAgentPackage:', error);
       throw error;
@@ -626,8 +660,13 @@ export const enhancedDeploymentService = {
   },
   deployEnhancedPackage: async (...args: any[]) => {
     try {
+      console.log('🔧 Calling deployEnhancedPackage with args:', args.length);
       const service = getEnhancedDeploymentService();
-      if (!service || typeof service.deployEnhancedPackage !== 'function') {
+      if (!service) {
+        throw new Error('Deployment service instance is null');
+      }
+      if (typeof service.deployEnhancedPackage !== 'function') {
+        console.error('❌ deployEnhancedPackage is not a function:', typeof service.deployEnhancedPackage);
         throw new Error('Deployment service method not available');
       }
       return await service.deployEnhancedPackage(...args);
