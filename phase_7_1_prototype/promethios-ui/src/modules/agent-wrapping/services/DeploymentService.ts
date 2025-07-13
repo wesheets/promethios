@@ -130,8 +130,8 @@ export class DeploymentService {
       name: wrapper.metadata.name,
       version: wrapper.metadata.version,
       agentConfig: wrapper,
-      artifacts: await this.generateSingleAgentArtifacts(wrapper.deploymentWrapper, target),
-      runtime: this.generateRuntimeConfig(wrapper.deploymentWrapper, target),
+      artifacts: await this.generateSingleAgentArtifacts(wrapper.deploymentWrapper, target, wrapper.baseAgent),
+      runtime: this.generateRuntimeConfig(wrapper.deploymentWrapper, target, wrapper.baseAgent),
       governance: this.generateGovernancePackage(wrapper.deploymentWrapper),
       metadata: {
         createdAt: now,
@@ -342,7 +342,8 @@ export class DeploymentService {
    */
   private async generateSingleAgentArtifacts(
     deploymentWrapper: DeploymentWrapper,
-    target: DeploymentTarget
+    target: DeploymentTarget,
+    baseAgent: DualAgentWrapper['baseAgent']
   ): Promise<DeploymentPackage['artifacts']> {
     const artifacts: DeploymentPackage['artifacts'] = {};
 
@@ -352,19 +353,19 @@ export class DeploymentService {
         break;
       
       case 'kubernetes':
-        artifacts.kubernetesManifests = this.generateKubernetesManifests(deploymentWrapper);
+        artifacts.kubernetesManifests = this.generateKubernetesManifests(deploymentWrapper, baseAgent);
         break;
       
       case 'serverless':
-        artifacts.serverlessConfig = this.generateServerlessConfig(deploymentWrapper);
+        artifacts.serverlessConfig = this.generateServerlessConfig(deploymentWrapper, baseAgent);
         break;
       
       case 'api':
-        artifacts.apiDefinition = this.generateApiDefinition(deploymentWrapper);
+        artifacts.apiDefinition = this.generateApiDefinition(deploymentWrapper, baseAgent);
         break;
       
       case 'standalone':
-        artifacts.standaloneExecutable = this.generateStandaloneExecutable(deploymentWrapper);
+        artifacts.standaloneExecutable = this.generateStandaloneExecutable(deploymentWrapper, baseAgent);
         break;
     }
 
@@ -402,18 +403,19 @@ export class DeploymentService {
    */
   private generateRuntimeConfig(
     deploymentWrapper: DeploymentWrapper,
-    target: DeploymentTarget
+    target: DeploymentTarget,
+    baseAgent: DualAgentWrapper['baseAgent']
   ): DeploymentPackage['runtime'] {
     return {
       environmentVariables: {
         NODE_ENV: target.environment,
-        AGENT_NAME: deploymentWrapper.baseAgent.name,
+        AGENT_NAME: baseAgent.name,
         GOVERNANCE_ENABLED: 'true',
         TRUST_THRESHOLD: deploymentWrapper.governanceConfig.trustThreshold.toString(),
         ...deploymentWrapper.deploymentConfig?.environmentVariables,
       },
       secrets: {
-        API_KEY: deploymentWrapper.baseAgent.apiKey,
+        API_KEY: baseAgent.configuration?.apiKey || 'generated-api-key',
         GOVERNANCE_SECRET: 'generated-secret',
       },
       dependencies: [
@@ -602,15 +604,18 @@ CMD ["node", "index.js", "--governance-enabled"]
 `.trim();
   }
 
-  private generateKubernetesManifests(deploymentWrapper: DeploymentWrapper): any[] {
+  private generateKubernetesManifests(
+    deploymentWrapper: DeploymentWrapper,
+    baseAgent: DualAgentWrapper['baseAgent']
+  ): any[] {
     return [
       {
         apiVersion: 'apps/v1',
         kind: 'Deployment',
         metadata: {
-          name: `${deploymentWrapper.baseAgent.name}-deployment`,
+          name: `${baseAgent.name}-deployment`,
           labels: {
-            app: deploymentWrapper.baseAgent.name,
+            app: baseAgent.name,
             governance: 'enabled',
           },
         },
@@ -618,20 +623,20 @@ CMD ["node", "index.js", "--governance-enabled"]
           replicas: 1,
           selector: {
             matchLabels: {
-              app: deploymentWrapper.baseAgent.name,
+              app: baseAgent.name,
             },
           },
           template: {
             metadata: {
               labels: {
-                app: deploymentWrapper.baseAgent.name,
+                app: baseAgent.name,
               },
             },
             spec: {
               containers: [
                 {
-                  name: deploymentWrapper.baseAgent.name,
-                  image: `${deploymentWrapper.baseAgent.name}:latest`,
+                  name: baseAgent.name,
+                  image: `${baseAgent.name}:latest`,
                   ports: [
                     { containerPort: 8080 },
                     { containerPort: 8443 },
@@ -658,11 +663,11 @@ CMD ["node", "index.js", "--governance-enabled"]
         apiVersion: 'v1',
         kind: 'Service',
         metadata: {
-          name: `${deploymentWrapper.baseAgent.name}-service`,
+          name: `${baseAgent.name}-service`,
         },
         spec: {
           selector: {
-            app: deploymentWrapper.baseAgent.name,
+            app: baseAgent.name,
           },
           ports: [
             { port: 80, targetPort: 8080 },
@@ -803,16 +808,25 @@ For detailed instructions, see the documentation included in this package.
     return { service: deploymentSystem.system.name };
   }
 
-  private generateServerlessConfig(deploymentWrapper: DeploymentWrapper): any {
-    return { service: deploymentWrapper.baseAgent.name };
+  private generateServerlessConfig(
+    deploymentWrapper: DeploymentWrapper,
+    baseAgent: DualAgentWrapper['baseAgent']
+  ): any {
+    return { service: baseAgent.name };
   }
 
-  private generateApiDefinition(deploymentWrapper: DeploymentWrapper): any {
-    return { openapi: '3.0.0', info: { title: deploymentWrapper.baseAgent.name } };
+  private generateApiDefinition(
+    deploymentWrapper: DeploymentWrapper,
+    baseAgent: DualAgentWrapper['baseAgent']
+  ): any {
+    return { openapi: '3.0.0', info: { title: baseAgent.name } };
   }
 
-  private generateStandaloneExecutable(deploymentWrapper: DeploymentWrapper): string {
-    return `#!/bin/bash\n# Standalone executable for ${deploymentWrapper.baseAgent.name}`;
+  private generateStandaloneExecutable(
+    deploymentWrapper: DeploymentWrapper,
+    baseAgent: DualAgentWrapper['baseAgent']
+  ): string {
+    return `#!/bin/bash\n# Standalone executable for ${baseAgent.name}`;
   }
 }
 
