@@ -581,7 +581,10 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
       }
       
       console.log('✅ Both DeploymentService and EnhancedDeploymentService are available as constructors');
-      _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+      
+      // Create instance using explicit class reference to avoid minification issues
+      const ServiceClass = EnhancedDeploymentService;
+      _enhancedDeploymentServiceInstance = new ServiceClass();
       console.log('✅ EnhancedDeploymentService initialized successfully');
     } catch (error) {
       console.error('❌ Error creating EnhancedDeploymentService:', error);
