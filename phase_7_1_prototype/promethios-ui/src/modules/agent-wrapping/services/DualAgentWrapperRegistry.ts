@@ -25,6 +25,9 @@ import { GovernanceEngine } from '../types/governance';
 import { DualWrapperStorage } from '../types/storage';
 import AgentWrapperRegistry from './AgentWrapperRegistry';
 import { AgentWrapperConfig, AgentWrapper } from '../types';
+import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
+import { enhancedMultiAgentSystemIdentityRegistry } from '../../agent-identity/services/EnhancedMultiAgentSystemIdentityRegistry';
+import { enhancedScorecardService } from '../../agent-identity/services/EnhancedScorecardService';
 
 /**
  * Enhanced registry for dual-wrapping functionality
@@ -95,6 +98,29 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
 
     // Create legacy wrapper for backward compatibility
     await this.createLegacyWrapper(dualWrapper);
+
+    // Create governance identity and scorecard
+    try {
+      // Set current user for identity registry
+      enhancedAgentIdentityRegistry.setCurrentUser(this.currentUserId);
+      
+      // Create governance identity for the wrapped agent
+      const governanceId = await enhancedAgentIdentityRegistry.createIdentityForWrappedAgent(
+        dualWrapper,
+        {
+          tags: request.metadata?.tags || [],
+          status: 'active'
+        }
+      );
+
+      // Generate initial scorecard
+      await enhancedScorecardService.generateScorecard(governanceId, dualWrapper);
+
+      console.log(`✅ Created governance identity: ${governanceId} for agent: ${dualWrapper.baseAgent.name}`);
+    } catch (error) {
+      console.error(`❌ Failed to create governance identity for agent: ${dualWrapper.baseAgent.name}`, error);
+      // Don't fail the entire wrapper creation if governance identity fails
+    }
 
     // Dispatch events for UI refresh
     if (typeof window !== 'undefined') {
@@ -834,6 +860,31 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
     // Store governance engine if created
     if (deploymentWrapper?.governanceEngine) {
       this.governanceEngines.set(wrapperId, deploymentWrapper.governanceEngine);
+    }
+
+    // Create multi-agent system governance identity and scorecard
+    try {
+      // Set current user for identity registry
+      enhancedMultiAgentSystemIdentityRegistry.setCurrentUser(userId);
+      
+      // Create multi-agent system governance identity
+      const systemGovernanceId = await enhancedMultiAgentSystemIdentityRegistry.createMultiAgentSystemIdentity({
+        name: systemConfig.name,
+        description: systemConfig.description,
+        systemType: systemConfig.type,
+        agents: systemConfig.agents,
+        collaborationModel: systemConfig.collaborationModel,
+        governanceConfig: governanceConfig,
+        wrapperId: wrapperId,
+        userId: userId,
+        tags: ['multi-agent', systemConfig.type],
+        status: 'active'
+      });
+
+      console.log(`✅ Created multi-agent governance identity: ${systemGovernanceId} for system: ${systemConfig.name}`);
+    } catch (error) {
+      console.error(`❌ Failed to create multi-agent governance identity for system: ${systemConfig.name}`, error);
+      // Don't fail the entire wrapper creation if governance identity fails
     }
 
     // Dispatch events for UI refresh

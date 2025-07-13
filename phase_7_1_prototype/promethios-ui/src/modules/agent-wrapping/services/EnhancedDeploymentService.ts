@@ -17,6 +17,7 @@ import { MultiAgentDualWrapper } from '../types/enhancedMultiAgent';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { deployedAgentDataService } from '../../../services/DeployedAgentDataService';
 import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
 
 export interface EnhancedDeploymentPackage extends DeploymentPackage {
   // Add Promethios-specific configuration
@@ -91,12 +92,22 @@ export class EnhancedDeploymentService extends DeploymentService {
     const basePackage = await super.createSingleAgentDeploymentPackage(wrapper, target);
     
     // Enhance with Promethios configuration
+    // Get governance identity from registry
+    let governanceIdentity: string | undefined;
+    try {
+      const identity = await enhancedAgentIdentityRegistry.getIdentityForWrappedAgent(wrapper.id);
+      governanceIdentity = identity?.id;
+    } catch (error) {
+      console.warn(`Could not retrieve governance identity for agent ${wrapper.id}:`, error);
+      governanceIdentity = undefined;
+    }
+
     const enhancedPackage: EnhancedDeploymentPackage = {
       ...basePackage,
       promethiosConfig: {
         apiKey: apiKey.apiKey,
         agentId: wrapper.id,
-        governanceIdentity: wrapper.governanceIdentity,
+        governanceIdentity: governanceIdentity,
         reportingEndpoints: {
           metrics: 'https://api.promethios.ai/v1/governance/metrics',
           logs: 'https://api.promethios.ai/v1/agents/logs',
@@ -112,7 +123,7 @@ export class EnhancedDeploymentService extends DeploymentService {
           ...basePackage.runtime.environmentVariables,
           PROMETHIOS_API_KEY: apiKey.apiKey,
           PROMETHIOS_AGENT_ID: wrapper.id,
-          PROMETHIOS_GOVERNANCE_ID: wrapper.governanceIdentity,
+          PROMETHIOS_GOVERNANCE_ID: governanceIdentity || 'unknown',
           PROMETHIOS_ENDPOINT: 'https://api.promethios.ai/v1',
           PROMETHIOS_REPORTING_INTERVAL: '30'
         }
