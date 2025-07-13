@@ -255,7 +255,8 @@ export class EnhancedDeploymentService extends DeploymentService {
 
     // Update with latest data from deployed agent
     if (deployment.apiKey) {
-      const agentId = deployedAgentAPI.constructor.extractAgentIdFromAPIKey(deployment.apiKey);
+      // Extract agent ID from API key (simple implementation)
+      const agentId = deployment.apiKey.split('_')[1]; // Assuming format: promethios_agentId_key
       if (agentId) {
         try {
           const agentStatus = await deployedAgentAPI.getAgentStatus(agentId, 'system'); // TODO: Get actual user ID
@@ -559,15 +560,16 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
   }
 }
 
-// Export singleton instance with lazy initialization
+// Export singleton instance with lazy initialization and error handling
 let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
 
 export function getEnhancedDeploymentService(): EnhancedDeploymentService {
   if (!_enhancedDeploymentServiceInstance) {
     try {
       _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+      console.log('✅ EnhancedDeploymentService initialized successfully');
     } catch (error) {
-      console.error('Error creating EnhancedDeploymentService:', error);
+      console.error('❌ Error creating EnhancedDeploymentService:', error);
       // Fallback: create a minimal service with stub methods
       _enhancedDeploymentServiceInstance = {
         createEnhancedSingleAgentPackage: async () => {
@@ -579,6 +581,9 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
         deployEnhancedPackage: async () => {
           throw new Error('Deployment service unavailable. Please try again later.');
         },
+        getRealDeploymentStatus: async () => {
+          return null;
+        },
         listRealDeployments: async () => {
           return [];
         }
@@ -588,15 +593,56 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
   return _enhancedDeploymentServiceInstance;
 }
 
-// Lazy getter for backward compatibility
+// Lazy getter for backward compatibility with defensive error handling
 export const enhancedDeploymentService = {
   get instance() {
-    return getEnhancedDeploymentService();
+    try {
+      return getEnhancedDeploymentService();
+    } catch (error) {
+      console.error('Error accessing deployment service instance:', error);
+      return null;
+    }
   },
-  // Proxy all methods to the instance
-  createEnhancedSingleAgentPackage: (...args: any[]) => getEnhancedDeploymentService().createEnhancedSingleAgentPackage(...args),
-  createEnhancedMultiAgentPackage: (...args: any[]) => getEnhancedDeploymentService().createEnhancedMultiAgentPackage(...args),
-  deployEnhancedPackage: (...args: any[]) => getEnhancedDeploymentService().deployEnhancedPackage(...args),
-  listRealDeployments: (...args: any[]) => getEnhancedDeploymentService().listRealDeployments(...args),
+  // Proxy all methods to the instance with error handling
+  createEnhancedSingleAgentPackage: async (...args: any[]) => {
+    try {
+      return await getEnhancedDeploymentService().createEnhancedSingleAgentPackage(...args);
+    } catch (error) {
+      console.error('Error in createEnhancedSingleAgentPackage:', error);
+      throw error;
+    }
+  },
+  createEnhancedMultiAgentPackage: async (...args: any[]) => {
+    try {
+      return await getEnhancedDeploymentService().createEnhancedMultiAgentPackage(...args);
+    } catch (error) {
+      console.error('Error in createEnhancedMultiAgentPackage:', error);
+      throw error;
+    }
+  },
+  deployEnhancedPackage: async (...args: any[]) => {
+    try {
+      return await getEnhancedDeploymentService().deployEnhancedPackage(...args);
+    } catch (error) {
+      console.error('Error in deployEnhancedPackage:', error);
+      throw error;
+    }
+  },
+  getRealDeploymentStatus: async (...args: any[]) => {
+    try {
+      return await getEnhancedDeploymentService().getRealDeploymentStatus(...args);
+    } catch (error) {
+      console.error('Error in getRealDeploymentStatus:', error);
+      return null;
+    }
+  },
+  listRealDeployments: async (...args: any[]) => {
+    try {
+      return await getEnhancedDeploymentService().listRealDeployments(...args);
+    } catch (error) {
+      console.error('Error in listRealDeployments:', error);
+      return [];
+    }
+  },
 };
 
