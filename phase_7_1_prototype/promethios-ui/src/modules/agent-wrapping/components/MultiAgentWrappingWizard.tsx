@@ -85,7 +85,9 @@ const SuccessStep: React.FC<{ systemId: string | null }> = ({ systemId }) => {
 
       try {
         // Try to get real system metrics from the multi-agent service
-        const multiAgentService = new (await import('../../../services/multiAgentService')).MultiAgentService();
+        const multiAgentModule = await import('../../../services/multiAgentService');
+        const MultiAgentServiceClass = multiAgentModule.MultiAgentService;
+        const multiAgentService = new MultiAgentServiceClass();
         
         // Get collaboration metrics for the system
         const metrics = await multiAgentService.getCollaborationMetrics(systemId);
