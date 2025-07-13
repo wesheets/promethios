@@ -189,6 +189,7 @@ export interface ExtendedScorecardData {
   
   // Governance identity integration
   governanceIdentityId?: string; // Links to governance identity system
+  governanceDisplayNumber?: string; // Human-readable governance ID for display (e.g., "GID-123456-ABCD")
   
   // Core scores
   overallScore: number;

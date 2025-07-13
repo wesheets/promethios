@@ -78,12 +78,25 @@ export class EnhancedScorecardService {
       // Get introspection status
       const introspectionStatus = this.getIntrospectionStatus(introspectionData);
 
+      // Get governance identity display number if governance ID is provided
+      let governanceDisplayNumber: string | undefined;
+      if (governanceIdentityId) {
+        try {
+          const { enhancedAgentIdentityRegistry } = await import('./EnhancedAgentIdentityRegistry');
+          governanceDisplayNumber = await enhancedAgentIdentityRegistry.getGovernanceIdentityNumber(governanceIdentityId);
+        } catch (error) {
+          console.warn('Failed to get governance identity display number:', error);
+          governanceDisplayNumber = undefined;
+        }
+      }
+
       const scorecardData: ExtendedScorecardData = {
         agentId,
         agentName,
         generatedAt: new Date(),
         version: '2.0.0',
         governanceIdentityId, // Include governance ID
+        governanceDisplayNumber, // Include human-readable governance number
         overallScore,
         trustScore,
         performanceScore,

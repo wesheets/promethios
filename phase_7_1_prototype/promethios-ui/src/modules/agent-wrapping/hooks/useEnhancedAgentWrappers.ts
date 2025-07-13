@@ -143,8 +143,13 @@ export const useEnhancedAgentWrappers = () => {
         }
       );
 
-      // Generate initial scorecard
-      await enhancedScorecardService.generateScorecard(governanceId, extendedWrapper);
+      // Generate initial scorecard with governance identity
+      await enhancedScorecardService.generateEnhancedScorecard(
+        extendedWrapper.id,
+        extendedWrapper.name,
+        extendedWrapper.introspectionData,
+        governanceId
+      );
 
       // Reload wrappers
       const updatedWrappers = await agentWrapperRegistry.loadUserWrappers();

@@ -113,8 +113,13 @@ export class DualAgentWrapperRegistry extends AgentWrapperRegistry {
         }
       );
 
-      // Generate initial scorecard
-      await enhancedScorecardService.generateScorecard(governanceId, dualWrapper);
+      // Generate initial scorecard with governance identity
+      await enhancedScorecardService.generateEnhancedScorecard(
+        dualWrapper.id,
+        dualWrapper.baseAgent.name,
+        undefined, // No introspection data for dual wrapper
+        governanceId
+      );
 
       console.log(`✅ Created governance identity: ${governanceId} for agent: ${dualWrapper.baseAgent.name}`);
     } catch (error) {

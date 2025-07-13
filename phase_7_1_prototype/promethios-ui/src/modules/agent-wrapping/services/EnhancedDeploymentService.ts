@@ -73,7 +73,20 @@ export class EnhancedDeploymentService extends DeploymentService {
 
   constructor() {
     super();
-    this.storage = new UnifiedStorageService();
+    try {
+      // Use a safer pattern to avoid minification issues
+      const StorageServiceClass = UnifiedStorageService;
+      this.storage = new StorageServiceClass();
+    } catch (error) {
+      console.error('❌ Error creating UnifiedStorageService in EnhancedDeploymentService:', error);
+      // Fallback to a minimal storage implementation
+      this.storage = {
+        get: async () => null,
+        set: async () => {},
+        delete: async () => {},
+        getKeys: async () => []
+      } as any;
+    }
   }
 
   /**
