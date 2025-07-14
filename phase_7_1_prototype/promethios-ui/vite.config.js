@@ -54,7 +54,7 @@ export default defineConfig({
         // Preserve ALL class names and constructor names
         keep_classnames: true,
         keep_fnames: true,
-        // Comprehensive list of reserved names
+        // Comprehensive list of reserved names - EXPANDED to prevent Ge constructor error
         reserved: [
           // Storage Services
           'UnifiedStorageService', 
@@ -63,15 +63,29 @@ export default defineConfig({
           'StorageService',
           'FirebaseStorageProvider',
           'UserAgentStorageService',
+          
+          // CRITICAL: Deployment Integration Services (likely source of Ge error)
+          'DeploymentIntegrationService',
+          'DeploymentIntegration',
+          'IntegrationService',
+          
           // Extensions
           'MetricsCollectionExtension',
           'MonitoringExtension', 
           'DeploymentExtension',
+          
+          // Backend Services
+          'AuditBackendService',
+          'NotificationBackendService',
+          'ObserverBackendService',
+          'AgentBackendService',
+          
           // Core Services
           'AuditService',
           'ExecutionService',
           'LLMService',
           'SessionManager',
+          
           // API Services - CRITICAL: Add DeployedAgentAPI to prevent Ge constructor error
           'DeployedAgentAPI',
           'AgentAPIKey',
@@ -79,6 +93,18 @@ export default defineConfig({
           'RealDeploymentResult',
           'DualAgentWrapper',
           'MultiAgentDualWrapper',
+          
+          // Policy and Governance
+          'PrometheiosPolicyAPI',
+          'GovernanceAPI',
+          'PolicyService',
+          
+          // Firebase and External Services
+          'Firestore',
+          'Auth',
+          'Database',
+          'FirebaseApp',
+          
           // Common constructors that might be minified
           'constructor',
           'prototype',
@@ -86,7 +112,10 @@ export default defineConfig({
           'Object',
           'Array',
           'Promise',
-          'Error'
+          'Error',
+          'Component',
+          'PureComponent',
+          'ErrorBoundary'
         ]
       },
       // Preserve function names in output
