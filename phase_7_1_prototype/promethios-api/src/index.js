@@ -19,6 +19,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/benchmark', require('./routes/benchmark'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/deploy', require('./routes/deploy'));
 app.use('/api/execution', require('./routes/execution'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/multi_agent_system', require('./routes/multiAgentSystem'));
