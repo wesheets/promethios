@@ -830,6 +830,15 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
     console.log('🔍 Debug - Starting deployment process...');
 
     try {
+      // Ensure agents are loaded before proceeding
+      if (availableAgents.length === 0 && availableMultiAgentSystems.length === 0) {
+        console.log('🔍 Debug - No agents loaded, loading now...');
+        await loadAvailableAgents();
+        
+        // Wait a moment for state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       console.log('🔍 Debug - Selected Agent:', selectedAgent);
       console.log('🔍 Debug - Available Agents:', availableAgents.map(a => ({ 
         id: a.id, 
@@ -862,6 +871,44 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       }
 
       console.log('🔍 Debug - Selected Wrapper Found:', selectedWrapper);
+      
+      // If still not found, try direct storage lookup as final fallback
+      if (!selectedWrapper) {
+        console.log('🔍 Debug - No match found, trying direct storage lookup...');
+        try {
+          const { unifiedStorage } = await import('../services/UnifiedStorageService');
+          
+          // Try different key formats
+          const possibleKeys = [
+            selectedAgent,
+            selectedAgent + '-production',
+            currentUser.uid + '_' + selectedAgent,
+            currentUser.uid + '_' + selectedAgent + '-production'
+          ];
+          
+          for (const key of possibleKeys) {
+            try {
+              const agent = await unifiedStorage.get('agents', key);
+              if (agent) {
+                console.log('🔍 Debug - Found agent via direct lookup with key:', key);
+                selectedWrapper = {
+                  id: selectedAgent,
+                  originalKey: key,
+                  metadata: {
+                    name: agent.name || agent.metadata?.name || agent.config?.name || agent.identity?.name || 'Unnamed Agent',
+                  },
+                  ...agent
+                };
+                break;
+              }
+            } catch (e) {
+              // Continue trying other keys
+            }
+          }
+        } catch (error) {
+          console.warn('🔍 Debug - Direct storage lookup failed:', error);
+        }
+      }
       
       if (!selectedWrapper) {
         console.error('🔍 Debug - Selected wrapper not found in available agents/systems');
