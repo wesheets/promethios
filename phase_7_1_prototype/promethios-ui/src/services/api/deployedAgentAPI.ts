@@ -111,8 +111,12 @@ export interface DeployedAgentStatus {
 export class DeployedAgentAPI {
   private baseUrl: string;
   
+  // Add instance property to prevent minification
+  readonly className = 'DeployedAgentAPI';
+  
   constructor() {
     this.baseUrl = DEPLOYMENT_API.BASE;
+    console.log('🔧 DeployedAgentAPI constructor called');
   }
 
   /**
@@ -356,6 +360,36 @@ export class DeployedAgentAPI {
   }
 }
 
-// Export singleton instance
-export const deployedAgentAPI = new DeployedAgentAPI();
+// Export singleton instance with defensive constructor pattern
+let deployedAgentAPIInstance: DeployedAgentAPI | null = null;
+
+function createDeployedAgentAPI(): DeployedAgentAPI {
+  try {
+    // Use explicit constructor reference to avoid minification issues
+    const APIClass = DeployedAgentAPI;
+    if (typeof APIClass !== 'function') {
+      throw new Error('DeployedAgentAPI is not a constructor');
+    }
+    const instance = new APIClass();
+    console.log('✅ DeployedAgentAPI instance created successfully');
+    return instance;
+  } catch (error) {
+    console.error('❌ Error creating DeployedAgentAPI:', error);
+    // Return a fallback implementation
+    return {
+      receiveHeartbeat: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      receiveMetrics: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      receiveViolation: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      receiveLogs: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      generateAPIKey: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      getAgentStatus: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      getUserDeployedAgents: async () => [],
+      revokeAPIKey: async () => { throw new Error('DeployedAgentAPI unavailable'); },
+      validateAPIKey: () => false,
+      extractAgentIdFromKey: () => null
+    } as any;
+  }
+}
+
+export const deployedAgentAPI = deployedAgentAPIInstance || (deployedAgentAPIInstance = createDeployedAgentAPI());
 

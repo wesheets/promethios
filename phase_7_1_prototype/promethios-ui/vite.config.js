@@ -72,6 +72,13 @@ export default defineConfig({
           'ExecutionService',
           'LLMService',
           'SessionManager',
+          // API Services - CRITICAL: Add DeployedAgentAPI to prevent Ge constructor error
+          'DeployedAgentAPI',
+          'AgentAPIKey',
+          'EnhancedDeploymentPackage',
+          'RealDeploymentResult',
+          'DualAgentWrapper',
+          'MultiAgentDualWrapper',
           // Common constructors that might be minified
           'constructor',
           'prototype',
