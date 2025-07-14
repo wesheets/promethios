@@ -275,7 +275,7 @@ export class DeploymentExtension {
       };
 
       // Call the deployment API
-      const deploymentResponse = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/agents/deploy`, {
+      const deploymentResponse = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com'}/v1/agents/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -341,7 +341,7 @@ export class DeploymentExtension {
       console.log(`🔄 Restarting deployment ${deploymentId}`);
       
       // Call the deployment API restart endpoint
-      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/agents/${deploymentId}/restart`, {
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com'}/v1/agents/${deploymentId}/restart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -395,7 +395,7 @@ export class DeploymentExtension {
   }> {
     try {
       // Call the deployment API metrics endpoint
-      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/metrics`);
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com'}/v1/deployments/metrics`);
       
       if (!response.ok) {
         throw new Error(`Metrics API error: ${response.status}`);
@@ -443,7 +443,7 @@ export class DeploymentExtension {
   }>> {
     try {
       // Call the deployment API alerts endpoint
-      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/alerts`);
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com'}/v1/deployments/alerts`);
       
       if (!response.ok) {
         throw new Error(`Alerts API error: ${response.status}`);

@@ -37,12 +37,18 @@ export default defineConfig({
     },
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
-    // Enable minification
+    // Enable minification with constructor preservation
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: false, // Remove console.log in production
         drop_debugger: true
+      },
+      mangle: {
+        // Preserve class names and constructor names to prevent "be is not a constructor" errors
+        keep_classnames: true,
+        keep_fnames: true,
+        reserved: ['UnifiedStorageService', 'EnhancedDeploymentService', 'DeploymentService', 'StorageService']
       }
     }
   }

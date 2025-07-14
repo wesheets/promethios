@@ -204,7 +204,7 @@ export class MonitoringExtension implements ExtensionPoint {
       console.log('🔍 Fetching system deployment alerts');
       
       // Get alerts from deployment API
-      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001'}/v1/deployments/alerts`);
+      const response = await fetch(`${import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com'}/v1/deployments/alerts`);
       
       if (!response.ok) {
         throw new Error(`Alerts API error: ${response.status}`);

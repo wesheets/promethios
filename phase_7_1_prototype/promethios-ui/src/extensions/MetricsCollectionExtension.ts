@@ -843,6 +843,57 @@ export class MetricsCollectionExtension {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   }
 
+  // NEW: Execute method for extension compatibility
+  async execute(context: any, action: string, params: any): Promise<any> {
+    console.log(`🔧 MetricsCollectionExtension.execute called: ${action}`);
+    
+    try {
+      switch (action) {
+        case 'collectSystemWideMetrics':
+          return await this.collectSystemWideMetrics();
+          
+        case 'collectUserDeploymentMetrics':
+          const userId = params?.userId || context?.userId;
+          if (!userId) {
+            throw new Error('userId is required for collectUserDeploymentMetrics');
+          }
+          return await this.collectUserDeploymentMetrics(userId);
+          
+        case 'getDeploymentPerformanceTrends':
+          const timeRange = params?.timeRange || {
+            start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            end: new Date()
+          };
+          return await this.getDeploymentPerformanceTrends(timeRange);
+          
+        case 'aggregateUserMetrics':
+          const userIdForAgg = params?.userId || context?.userId;
+          const timeRangeForAgg = params?.timeRange || {
+            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+            end: new Date()
+          };
+          if (!userIdForAgg) {
+            throw new Error('userId is required for aggregateUserMetrics');
+          }
+          return await this.aggregateUserMetrics(userIdForAgg, timeRangeForAgg);
+          
+        case 'getActiveAlerts':
+          const userIdForAlerts = params?.userId || context?.userId;
+          if (!userIdForAlerts) {
+            throw new Error('userId is required for getActiveAlerts');
+          }
+          return await this.getActiveAlerts(userIdForAlerts);
+          
+        default:
+          console.warn(`⚠️ Unknown action: ${action}`);
+          return null;
+      }
+    } catch (error) {
+      console.error(`❌ Error executing ${action}:`, error);
+      throw error;
+    }
+  }
+
   // Getter methods
   getMetricsService() {
     return metricsService;

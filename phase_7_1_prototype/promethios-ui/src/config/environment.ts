@@ -69,7 +69,7 @@ const developmentConfig: EnvironmentConfig = {
   environment: 'development',
   api: {
     baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-    deploymentApiUrl: import.meta.env.VITE_DEPLOYMENT_API_URL || 'http://localhost:5001',
+    deploymentApiUrl: import.meta.env.VITE_DEPLOYMENT_API_URL || 'https://promethios-deployment-api.onrender.com',
     timeout: 30000,
     retryAttempts: 3,
   },

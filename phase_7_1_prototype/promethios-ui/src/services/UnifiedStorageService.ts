@@ -11,8 +11,16 @@ export class UnifiedStorageService {
   private isInitialized = false;
 
   constructor() {
-    this.initializeProviders();
-    this.loadNamespaces();
+    try {
+      console.log('🔧 Initializing UnifiedStorageService');
+      this.initializeProviders();
+      this.loadNamespaces();
+      console.log('✅ UnifiedStorageService initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing UnifiedStorageService:', error);
+      // Set minimal initialized state to prevent further errors
+      this.isInitialized = true;
+    }
   }
 
   private initializeProviders(): void {

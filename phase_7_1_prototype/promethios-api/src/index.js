@@ -14,6 +14,7 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
+app.use('/api/agents', require('./routes/agents'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/benchmark', require('./routes/benchmark'));

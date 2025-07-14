@@ -73,18 +73,30 @@ export class EnhancedDeploymentService extends DeploymentService {
 
   constructor() {
     super();
+    console.log('🔧 Initializing EnhancedDeploymentService');
     try {
-      // Use a safer pattern to avoid minification issues
-      const StorageServiceClass = UnifiedStorageService;
-      this.storage = new StorageServiceClass();
+      // Use explicit constructor reference to avoid minification issues
+      this.storage = new (UnifiedStorageService as any)();
+      console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService in EnhancedDeploymentService:', error);
+      console.log('🔄 Using fallback storage implementation');
       // Fallback to a minimal storage implementation
       this.storage = {
-        get: async () => null,
-        set: async () => {},
-        delete: async () => {},
-        getKeys: async () => []
+        get: async () => {
+          console.log('📝 Fallback storage.get() called');
+          return null;
+        },
+        set: async () => {
+          console.log('📝 Fallback storage.set() called');
+        },
+        delete: async () => {
+          console.log('📝 Fallback storage.delete() called');
+        },
+        getKeys: async () => {
+          console.log('📝 Fallback storage.getKeys() called');
+          return [];
+        }
       } as any;
     }
   }
