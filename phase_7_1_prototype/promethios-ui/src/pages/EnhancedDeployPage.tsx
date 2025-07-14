@@ -912,45 +912,6 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       setIsDeploying(false);
     }
   };
-      } else {
-        // Multi-agent system deployment
-        enhancedPackage = await enhancedDeploymentService.createEnhancedMultiAgentPackage(
-          selectedWrapper,
-          target,
-          currentUser.uid,
-          deploymentMethod
-        );
-      }
-
-      // Deploy the package
-      const deploymentResult = await enhancedDeploymentService.deployEnhancedPackage(
-        enhancedPackage.id,
-        target,
-        deploymentMethod
-      );
-
-      toast({
-        title: "Deployment Started",
-        description: `Agent deployment initiated successfully. Deployment ID: ${deploymentResult.deploymentId}`,
-        variant: "default"
-      });
-
-      onDeploy(deploymentResult);
-      onClose();
-      setActiveStep(0);
-      setSelectedAgent('');
-
-    } catch (error) {
-      console.error('Deployment failed:', error);
-      toast({
-        title: "Deployment Failed",
-        description: error.message || "Failed to deploy agent",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeploying(false);
-    }
-  };
 
   const steps = [
     'Select Agent',
