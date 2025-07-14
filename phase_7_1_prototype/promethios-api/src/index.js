@@ -15,12 +15,16 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/audit', require('./routes/audit'));
 app.use('/api/benchmark', require('./routes/benchmark'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/execution', require('./routes/execution'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/multi_agent_system', require('./routes/multiAgentSystem'));
 app.use('/api/observer', require('./routes/observer'));
 app.use('/api/observers', require('./routes/observer')); // Also handle /api/observers for compatibility
+app.use('/api/sessions', require('./routes/sessions'));
+app.use('/api/status', require('./routes/status'));
 
 // Health check endpoints (both /health and /api/health for compatibility)
 app.get('/health', (req, res) => {
