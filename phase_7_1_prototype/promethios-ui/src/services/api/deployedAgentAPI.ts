@@ -7,6 +7,7 @@
  */
 
 import apiConfig, { DEPLOYMENT_API } from '../../config/api';
+import { retryDeploymentAPI } from '../../utils/apiRetry';
 
 // Types for deployed agent communication
 export interface AgentHeartbeat {
@@ -232,7 +233,9 @@ export class DeployedAgentAPI {
    */
   async generateAPIKey(agentId: string, userId: string): Promise<AgentAPIKey> {
     try {
-      const response = await fetch(DEPLOYMENT_API.GENERATE_API_KEY(agentId), {
+      console.log(`🔑 Generating API key for agent: ${agentId}`);
+      
+      const response = await retryDeploymentAPI<any>(DEPLOYMENT_API.GENERATE_API_KEY(agentId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,13 +247,21 @@ export class DeployedAgentAPI {
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`API key generation failed: ${response.statusText}`);
+      if (!response.success) {
+        throw new Error(`API key generation failed: ${response.error || 'Unknown error'}`);
       }
 
-      return await response.json();
+      console.log(`✅ API key generated successfully for agent: ${agentId}`);
+      return {
+        agentId,
+        apiKey: response.apiKey,
+        permissions: response.permissions || ['metrics.write', 'logs.write', 'heartbeat.write', 'violations.write'],
+        createdAt: response.createdAt || new Date().toISOString(),
+        expiresAt: response.expiresAt,
+        status: 'active'
+      };
     } catch (error) {
-      console.error('Failed to generate API key:', error);
+      console.error(`❌ Failed to generate API key for agent ${agentId}:`, error);
       throw error;
     }
   }
@@ -260,11 +271,7 @@ export class DeployedAgentAPI {
    */
   async getAgentStatus(agentId: string, userId: string): Promise<DeployedAgentStatus> {
     try {
-      const response = await fetch(`${this.baseUrl}/agents/${agentId}/status`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${await this.getUserToken()}`,
-          'X-User-ID': userId
+      const response = await fetch(DEPLOYMENT_API.GET_AGENT_STATUS(agentId), {
         }
       });
 
