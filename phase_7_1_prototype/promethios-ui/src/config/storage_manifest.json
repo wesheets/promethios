@@ -65,6 +65,17 @@
     "compliance": [],
     "description": "Agent configurations, templates, and orchestration data"
   },
+  "deployment": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 86400000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7d",
+    "compliance": [],
+    "description": "Agent deployment packages, configurations, and deployment status"
+  },
   "singleAgentChats": {
     "provider": "firebase",
     "fallback": "localStorage",

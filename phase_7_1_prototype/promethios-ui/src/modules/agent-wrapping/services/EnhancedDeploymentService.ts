@@ -81,6 +81,9 @@ export class EnhancedDeploymentService extends DeploymentService {
     // Get governance identity from registry
     let governanceIdentity: string | undefined;
     try {
+      // Set current user context for the registry
+      enhancedAgentIdentityRegistry.setCurrentUser(userId);
+      
       const identity = await enhancedAgentIdentityRegistry.getIdentityForWrappedAgent(wrapper.id);
       governanceIdentity = identity?.id;
     } catch (error) {
@@ -103,6 +106,9 @@ export class EnhancedDeploymentService extends DeploymentService {
       },
       createdAt: new Date().toISOString()
     };
+
+    // Clean up old deployment packages to prevent storage quota issues
+    await this.cleanupOldDeploymentPackages();
 
     // Store package for later retrieval
     await this.storage.store(`deployment:${enhancedPackage.id}`, enhancedPackage);
@@ -201,6 +207,57 @@ export class EnhancedDeploymentService extends DeploymentService {
     } catch (error) {
       console.error('❌ Failed to get deployment status:', error);
       return null;
+    }
+  }
+
+  /**
+   * Clean up old deployment packages to prevent storage quota issues
+   */
+  private async cleanupOldDeploymentPackages(): Promise<void> {
+    try {
+      console.log('🧹 Cleaning up old deployment packages...');
+      
+      // Get all deployment package keys
+      const keys = await this.storage.keys('deployment');
+      console.log(`Found ${keys.length} deployment packages`);
+      
+      // Keep only the 5 most recent packages, delete the rest
+      const maxPackages = 5;
+      if (keys.length > maxPackages) {
+        // Sort by creation time (extract timestamp from package ID)
+        const sortedKeys = keys.sort((a, b) => {
+          const timestampA = this.extractTimestampFromKey(a);
+          const timestampB = this.extractTimestampFromKey(b);
+          return timestampB - timestampA; // Most recent first
+        });
+        
+        // Delete old packages
+        const keysToDelete = sortedKeys.slice(maxPackages);
+        console.log(`Deleting ${keysToDelete.length} old deployment packages`);
+        
+        for (const key of keysToDelete) {
+          await this.storage.delete('deployment', key);
+          console.log(`🗑️ Deleted old deployment package: ${key}`);
+        }
+      }
+      
+      console.log('✅ Cleanup completed');
+    } catch (error) {
+      console.warn('⚠️ Failed to cleanup old deployment packages:', error);
+      // Don't throw - cleanup failure shouldn't block deployment
+    }
+  }
+
+  /**
+   * Extract timestamp from deployment package key
+   */
+  private extractTimestampFromKey(key: string): number {
+    try {
+      // Keys are in format: enhanced-{timestamp}-{random}
+      const match = key.match(/enhanced-(\d+)-/);
+      return match ? parseInt(match[1]) : 0;
+    } catch {
+      return 0;
     }
   }
 }
