@@ -419,11 +419,25 @@ export class FirebaseStorageProvider implements StorageProvider {
       throw new Error(`Invalid key format: ${key}. Expected format: namespace.key`);
     }
 
+    // Validate that no parts are undefined or empty
+    const invalidParts = parts.filter(part => !part || part === 'undefined' || part === 'null');
+    if (invalidParts.length > 0) {
+      console.error(`🚨 Invalid key parts detected in: ${key}`, { parts, invalidParts });
+      throw new Error(`Invalid key contains undefined/null values: ${key}`);
+    }
+
     // For user-scoped keys like "user.123.wrapper.456"
     if (parts[0] === 'user' && parts.length >= 4) {
       const userId = parts[1];
       const namespace = parts[2];
       const documentId = parts.slice(3).join('_');
+      
+      // Additional validation for user-scoped keys
+      if (!userId || userId === 'undefined' || !namespace || namespace === 'undefined') {
+        console.error(`🚨 Invalid user-scoped key: ${key}`, { userId, namespace });
+        throw new Error(`Invalid user-scoped key: ${key}`);
+      }
+      
       return {
         collection: `user_${userId}_${namespace}`,
         document: documentId
@@ -433,6 +447,12 @@ export class FirebaseStorageProvider implements StorageProvider {
     // For simple namespace.key format
     const namespace = parts[0];
     const documentId = parts.slice(1).join('_');
+    
+    // Validate namespace and documentId
+    if (!namespace || namespace === 'undefined' || !documentId || documentId === 'undefined') {
+      console.error(`🚨 Invalid namespace/documentId: ${key}`, { namespace, documentId });
+      throw new Error(`Invalid namespace or documentId in key: ${key}`);
+    }
     
     return {
       collection: namespace,

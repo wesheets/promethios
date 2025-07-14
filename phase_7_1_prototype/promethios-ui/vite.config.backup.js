@@ -1,42 +1,131 @@
-import path from "path"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+// Bundle optimization configuration
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
 export default defineConfig({
   plugins: [react()],
-  base: '/', // Explicitly set the base URL
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
-    allowedHosts: ["5173-i12s5dk625k8npjm2uzax-6eb5f1c3.manusvm.computer", "5174-iqc0m8i3d3k6wyqzsnqcg-9757b766.manusvm.computer", "localhost"],
-    proxy: {
-      // Add proxy configuration for API requests
-      '/api': {
-        target: 'https://3000-i12s5dk625k8npjm2uzax-6eb5f1c3.manusvm.computer',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path
-      }
-    }
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    allowedHosts: ['*', '5173-irvp18jlopbh17iy0n4g8-ffd3d388.manusvm.computer', '5173-iodgdwzdg7fidmqwueiz8-e58de46c.manusvm.computer', '5173-iwjuy1m7kphmidu41hlw3-73b17971.manusvm.computer']
+  },
+  define: {
+    'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(process.env.VITE_FIREBASE_API_KEY),
+    'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.VITE_FIREBASE_AUTH_DOMAIN),
+    'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(process.env.VITE_FIREBASE_PROJECT_ID),
+    'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(process.env.VITE_FIREBASE_STORAGE_BUCKET),
+    'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+    'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(process.env.VITE_FIREBASE_APP_ID),
   },
   build: {
-    outDir: 'dist', // Explicitly set output directory to 'dist'
-    // Ensure environment variables are available in build
+    // Optimize bundle size
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')
-        // CMU playground disabled
-        // 'cmu-playground': path.resolve(__dirname, 'public/cmu-playground/index.html')
+      output: {
+        manualChunks: {
+          // Separate vendor libraries
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material', '@mui/system']
+        }
       }
-    }
-  },
-  // Make sure VITE_ prefixed environment variables are available
-  define: {
-    'import.meta.env.VITE_OPENAI_API_KEY': JSON.stringify(process.env.VITE_OPENAI_API_KEY),
-    'import.meta.env.VITE_ANTHROPIC_API_KEY': JSON.stringify(process.env.VITE_ANTHROPIC_API_KEY),
-    'import.meta.env.VITE_COHERE_API_KEY': JSON.stringify(process.env.VITE_COHERE_API_KEY),
-    'import.meta.env.VITE_HUGGINGFACE_API_KEY': JSON.stringify(process.env.VITE_HUGGINGFACE_API_KEY),
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+    // Enable minification with comprehensive constructor preservation
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console.log for debugging
+        drop_debugger: true,
+        // Prevent function inlining that can break constructor patterns
+        inline: false,
+        // Preserve function names
+        keep_fnames: true,
+        // Preserve class names
+        keep_classnames: true
+      },
+      mangle: {
+        // Preserve ALL class names and constructor names
+        keep_classnames: true,
+        keep_fnames: true,
+        // Comprehensive list of reserved names - EXPANDED to prevent Ge constructor error
+        reserved: [
+          // Storage Services
+          'UnifiedStorageService', 
+          'EnhancedDeploymentService', 
+          'DeploymentService', 
+          'StorageService',
+          'FirebaseStorageProvider',
+          'UserAgentStorageService',
+          
+          // CRITICAL: Deployment Integration Services (likely source of Ge error)
+          'DeploymentIntegrationService',
+          'DeploymentIntegration',
+          'IntegrationService',
+          
+          // Extensions
+          'MetricsCollectionExtension',
+          'MonitoringExtension', 
+          'DeploymentExtension',
+          
+          // Backend Services
+          'AuditBackendService',
+          'NotificationBackendService',
+          'ObserverBackendService',
+          'AgentBackendService',
+          
+          // Core Services
+          'AuditService',
+          'ExecutionService',
+          'LLMService',
+          'SessionManager',
+          
+          // API Services - CRITICAL: Add DeployedAgentAPI to prevent Ge constructor error
+          'DeployedAgentAPI',
+          'AgentAPIKey',
+          'EnhancedDeploymentPackage',
+          'RealDeploymentResult',
+          'DualAgentWrapper',
+          'MultiAgentDualWrapper',
+          
+          // Policy and Governance
+          'PrometheiosPolicyAPI',
+          'GovernanceAPI',
+          'PolicyService',
+          
+          // Firebase and External Services
+          'Firestore',
+          'Auth',
+          'Database',
+          'FirebaseApp',
+          
+          // Common constructors that might be minified
+          'constructor',
+          'prototype',
+          'Function',
+          'Object',
+          'Array',
+          'Promise',
+          'Error',
+          'Component',
+          'PureComponent',
+          'ErrorBoundary'
+        ]
+      },
+      // Preserve function names in output
+      keep_fnames: true,
+      keep_classnames: true
+    },
+    // Additional build options to prevent constructor issues
+    target: 'es2020',
+    sourcemap: true // Enable source maps for better debugging
   }
-})
+});
+
+
