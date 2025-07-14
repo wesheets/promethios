@@ -447,8 +447,9 @@ const AvailableAgentsTab: React.FC<{
         
         try {
             const agent = await unifiedStorage.get('agents', key);
+            console.log(`🔍 Loading agent ${key}:`, agent ? 'SUCCESS' : 'NULL');
             if (agent) {
-              deployableAgents.push({
+              const agentData = {
                 id: key.replace('-production', ''), // Remove suffix for UI
                 originalKey: key, // Keep original key for deployment
                 metadata: {
@@ -461,7 +462,13 @@ const AvailableAgentsTab: React.FC<{
                 isWrapped: agent.isWrapped || false,
                 environment: agent.environment || 'production',
                 ...agent
+              };
+              console.log(`✅ Agent ${key} processed:`, { 
+                id: agentData.id, 
+                name: agentData.metadata.name,
+                hasMetadata: !!agentData.metadata 
               });
+              deployableAgents.push(agentData);
             }
           } catch (error) {
             console.warn(`Failed to load production agent ${key}:`, error);
@@ -1016,13 +1023,13 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
                         }}
                       >
                         {availableAgents.map((agent) => (
-                          <MenuItem key={agent.id} value={agent.id}>
-                            {agent.metadata.name} (Single Agent)
+                          <MenuItem key={agent?.id || 'unknown'} value={agent?.id || ''}>
+                            {agent?.metadata?.name || agent?.name || 'Unnamed Agent'} (Single Agent)
                           </MenuItem>
                         ))}
                         {availableMultiAgentSystems.map((system) => (
-                          <MenuItem key={system.id} value={system.id}>
-                            {system.metadata.name} (Multi-Agent System)
+                          <MenuItem key={system?.id || 'unknown'} value={system?.id || ''}>
+                            {system?.metadata?.name || system?.name || 'Unnamed System'} (Multi-Agent System)
                           </MenuItem>
                         ))}
                       </Select>
@@ -1211,8 +1218,11 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
                     </ListItemIcon>
                     <ListItemText 
                       primary="Agent/System" 
-                      secondary={availableAgents.find(a => a.id === selectedAgent)?.metadata.name || 
-                                availableMultiAgentSystems.find(s => s.id === selectedAgent)?.metadata.name}
+                      secondary={availableAgents.find(a => a?.id === selectedAgent)?.metadata?.name || 
+                                availableAgents.find(a => a?.id === selectedAgent)?.name ||
+                                availableMultiAgentSystems.find(s => s?.id === selectedAgent)?.metadata?.name ||
+                                availableMultiAgentSystems.find(s => s?.id === selectedAgent)?.name ||
+                                'Unknown Agent'}
                       sx={{ '& .MuiListItemText-primary': { color: 'white' }, '& .MuiListItemText-secondary': { color: '#a0aec0' } }}
                     />
                   </ListItem>
