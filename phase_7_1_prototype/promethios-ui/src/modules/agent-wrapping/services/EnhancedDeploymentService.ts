@@ -10,7 +10,7 @@ import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { DualAgentWrapper } from '../types/DualAgentWrapper';
 import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
-import { enhancedAgentIdentityRegistry } from '../registries/EnhancedAgentIdentityRegistry';
+import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
 
 // Types
 export interface EnhancedDeploymentPackage {
