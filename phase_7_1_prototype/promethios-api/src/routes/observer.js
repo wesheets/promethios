@@ -330,14 +330,18 @@ Respond as an expert AI governance consultant with actionable insights.`;
 /**
  * Generate observer response using LLM service
  */
-async function generateObserverResponse(context, observerId) {
+async function generateObserverResponse(systemPrompt, observerId) {
   try {
-    // Use LLM service to generate response
-    const response = await llmService.generateResponse(context, {
-      model: 'gpt-3.5-turbo',
-      temperature: 0.7,
-      maxTokens: 500
-    });
+    // Extract the actual user message from the system prompt
+    const messageMatch = systemPrompt.match(/User Message: "([^"]+)"/);
+    const userMessage = messageMatch ? messageMatch[1] : "How can you help me with AI governance?";
+    
+    console.log(`🤖 Generating observer response for message: "${userMessage}"`);
+    
+    // Use LLM service with correct parameters: agentId, message, customSystemMessage
+    const response = await llmService.generateResponse('governance-agent', userMessage, systemPrompt);
+
+    console.log(`✅ Generated response: ${response.substring(0, 100)}...`);
 
     return {
       content: response,
@@ -370,14 +374,18 @@ async function generateObserverResponse(context, observerId) {
 /**
  * Generate enhanced observer response
  */
-async function generateEnhancedObserverResponse(context, observerId, governanceLevel) {
+async function generateEnhancedObserverResponse(systemPrompt, observerId, governanceLevel) {
   try {
-    // Use LLM service to generate enhanced response
-    const response = await llmService.generateResponse(context, {
-      model: 'gpt-4',
-      temperature: 0.6,
-      maxTokens: 800
-    });
+    // Extract the actual user message from the system prompt
+    const messageMatch = systemPrompt.match(/User Message: "([^"]+)"/);
+    const userMessage = messageMatch ? messageMatch[1] : "How can you help me with AI governance?";
+    
+    console.log(`🤖 Generating enhanced observer response for message: "${userMessage}"`);
+    
+    // Use LLM service with correct parameters for enhanced response (using creative-agent for more detailed responses)
+    const response = await llmService.generateResponse('creative-agent', userMessage, systemPrompt);
+
+    console.log(`✅ Generated enhanced response: ${response.substring(0, 100)}...`);
 
     return {
       content: response,
