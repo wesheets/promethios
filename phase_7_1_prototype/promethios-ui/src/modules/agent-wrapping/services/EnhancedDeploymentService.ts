@@ -182,9 +182,9 @@ export class EnhancedDeploymentService extends DeploymentService {
    */
   async listRealDeployments(userId: string): Promise<RealDeploymentResult[]> {
     try {
-      const keys = await this.storage.getKeys();
+      const keys = await this.storage.keys('agents');
       const deploymentKeys = keys.filter(key => key.startsWith('deployment-result:'));
-      const deployments = await this.storage.getMany(deploymentKeys);
+      const deployments = await this.storage.getMany('agents', deploymentKeys);
       return deployments.filter(Boolean);
     } catch (error) {
       console.error('❌ Failed to list deployments:', error);

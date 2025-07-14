@@ -46,7 +46,7 @@ import {
   MoreVert,
   CheckCircle,
   Warning,
-  Error,
+  Error as ErrorIcon,
   Launch,
   Settings,
   Visibility,
@@ -123,7 +123,7 @@ const RealDeployedAgentCard: React.FC<{ deployment: RealDeploymentResult }> = ({
     switch (status) {
       case 'deployed': return <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />;
       case 'stopped': return <Stop sx={{ color: '#6b7280', fontSize: 16 }} />;
-      case 'failed': return <Error sx={{ color: '#ef4444', fontSize: 16 }} />;
+      case 'failed': return <ErrorIcon sx={{ color: '#ef4444', fontSize: 16 }} />;
       case 'deploying': return <CloudUpload sx={{ color: '#f59e0b', fontSize: 16 }} />;
       default: return <Stop sx={{ color: '#6b7280', fontSize: 16 }} />;
     }
