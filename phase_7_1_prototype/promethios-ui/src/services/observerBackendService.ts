@@ -124,7 +124,7 @@ export class ObserverBackendService {
   ): Promise<SuggestionsResponse> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/suggestions`,
+        `${this.baseUrl}/api/observers/${observerId}/suggestions`,
         {
           method: 'POST',
           headers: {
@@ -163,7 +163,7 @@ export class ObserverBackendService {
       }
 
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/suggestions?${params}`,
+        `${this.baseUrl}/api/observers/${observerId}/suggestions?${params}`,
         {
           method: 'GET',
           headers: {
@@ -189,7 +189,7 @@ export class ObserverBackendService {
   async getTrustMetrics(observerId: string): Promise<TrustMetrics> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/metrics`,
+        `${this.baseUrl}/api/observers/${observerId}/metrics`,
         {
           method: 'GET',
           headers: {
@@ -215,7 +215,7 @@ export class ObserverBackendService {
   async getContextAwareness(observerId: string): Promise<ContextAwareness> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/context`,
+        `${this.baseUrl}/api/observers/${observerId}/context`,
         {
           method: 'GET',
           headers: {
@@ -244,7 +244,7 @@ export class ObserverBackendService {
   ): Promise<{ observer_id: string; status: string; updated_at: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/context`,
+        `${this.baseUrl}/api/observers/${observerId}/context`,
         {
           method: 'PUT',
           headers: {
@@ -271,7 +271,7 @@ export class ObserverBackendService {
   async getObserverConfig(observerId: string): Promise<ObserverConfiguration> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/config`,
+        `${this.baseUrl}/api/observers/${observerId}/config`,
         {
           method: 'GET',
           headers: {
@@ -300,7 +300,7 @@ export class ObserverBackendService {
   ): Promise<{ observer_id: string; status: string; updated_at: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}/config`,
+        `${this.baseUrl}/api/observers/${observerId}/config`,
         {
           method: 'PUT',
           headers: {
@@ -343,7 +343,7 @@ export class ObserverBackendService {
       }
 
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers?${params}`,
+        `${this.baseUrl}/api/observers?${params}`,
         {
           method: 'GET',
           headers: {
@@ -369,7 +369,7 @@ export class ObserverBackendService {
   async deleteObserver(observerId: string): Promise<{ message: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/observers/observers/${observerId}`,
+        `${this.baseUrl}/api/observers/${observerId}`,
         {
           method: 'DELETE',
           headers: {

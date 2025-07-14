@@ -358,6 +358,19 @@ class AuditBackendService {
       return 0;
     }
   }
+
+  /**
+   * Query audit logs (alias for queryLogs for backward compatibility)
+   */
+  async queryAuditLogs(request: AuditQueryRequest): Promise<AuditLogEntry[]> {
+    try {
+      const response = await this.queryLogs(request);
+      return response.audit_logs;
+    } catch (error) {
+      console.error('Error querying audit logs:', error);
+      return [];
+    }
+  }
 }
 
 export const auditBackendService = new AuditBackendService();

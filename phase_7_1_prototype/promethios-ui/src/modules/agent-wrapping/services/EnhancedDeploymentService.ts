@@ -68,15 +68,39 @@ export interface DeploymentMethod {
  * Enhanced Deployment Service with real deployment capabilities
  */
 export class EnhancedDeploymentService extends DeploymentService {
+  // Add static property to prevent minification
+  static readonly className = 'EnhancedDeploymentService';
+  
+  // Add instance property to prevent minification
+  readonly className = 'EnhancedDeploymentService';
+  
   private storage: UnifiedStorageService;
   private apiKeys: Map<string, AgentAPIKey> = new Map();
 
   constructor() {
     super();
     console.log('🔧 Initializing EnhancedDeploymentService');
+    
+    // Defensive constructor pattern to prevent minification issues
+    Object.defineProperty(this, 'constructor', {
+      value: EnhancedDeploymentService,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+    
+    // Ensure constructor name is preserved
+    if (this.constructor.name !== 'EnhancedDeploymentService') {
+      console.warn('⚠️ Constructor name was minified:', this.constructor.name);
+    }
+    
     try {
       // Use explicit constructor reference to avoid minification issues
-      this.storage = new (UnifiedStorageService as any)();
+      const StorageClass = UnifiedStorageService;
+      if (typeof StorageClass !== 'function') {
+        throw new Error('UnifiedStorageService is not a constructor');
+      }
+      this.storage = new StorageClass();
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService in EnhancedDeploymentService:', error);
@@ -612,15 +636,32 @@ export function getEnhancedDeploymentService(): EnhancedDeploymentService {
       
       console.log('✅ Both DeploymentService and EnhancedDeploymentService are available as constructors');
       
-      // Create instance using a safer approach to avoid minification issues
+      // Create instance using multiple defensive patterns
       try {
-        // Use a safer pattern to avoid minification issues
-        const ServiceClass = EnhancedDeploymentService;
-        _enhancedDeploymentServiceInstance = new ServiceClass();
-        console.log('✅ EnhancedDeploymentService initialized successfully');
-      } catch (constructorError) {
-        console.error('❌ Constructor error:', constructorError);
-        throw constructorError;
+        // Pattern 1: Direct constructor call
+        _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
+        console.log('✅ EnhancedDeploymentService initialized successfully via direct constructor');
+      } catch (directError) {
+        console.warn('⚠️ Direct constructor failed, trying alternative patterns:', directError);
+        
+        try {
+          // Pattern 2: Store constructor reference first
+          const ServiceConstructor = EnhancedDeploymentService;
+          _enhancedDeploymentServiceInstance = new ServiceConstructor();
+          console.log('✅ EnhancedDeploymentService initialized successfully via stored constructor');
+        } catch (storedError) {
+          console.warn('⚠️ Stored constructor failed, trying reflection pattern:', storedError);
+          
+          try {
+            // Pattern 3: Use Object.create and manual initialization
+            _enhancedDeploymentServiceInstance = Object.create(EnhancedDeploymentService.prototype);
+            EnhancedDeploymentService.call(_enhancedDeploymentServiceInstance);
+            console.log('✅ EnhancedDeploymentService initialized successfully via reflection');
+          } catch (reflectionError) {
+            console.error('❌ All constructor patterns failed:', reflectionError);
+            throw reflectionError;
+          }
+        }
       }
     } catch (error) {
       console.error('❌ Error creating EnhancedDeploymentService:', error);

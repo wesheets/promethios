@@ -260,6 +260,32 @@ export class UnifiedStorageService {
   isReady(): boolean {
     return this.isInitialized;
   }
+
+  /**
+   * Get multiple values by keys (for backward compatibility)
+   */
+  async getMany<T>(namespace: string, keys: string[]): Promise<T[]> {
+    try {
+      const results: T[] = [];
+      for (const key of keys) {
+        const value = await this.get<T>(namespace, key);
+        if (value !== null) {
+          results.push(value);
+        }
+      }
+      return results;
+    } catch (error) {
+      console.error('Error in getMany:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Store method (alias for set for backward compatibility)
+   */
+  async store<T>(namespace: string, key: string, value: T): Promise<void> {
+    return this.set(namespace, key, value);
+  }
 }
 
 // Singleton instance

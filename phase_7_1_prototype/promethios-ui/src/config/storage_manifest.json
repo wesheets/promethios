@@ -109,6 +109,17 @@
     "compliance": [],
     "description": "Temporary UI state, form data, and session information"
   },
+  "system_wide_metrics": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 3600000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7d",
+    "compliance": [],
+    "description": "System-wide metrics, performance data, and monitoring information"
+  },
   "cache": {
     "provider": "memory",
     "fallback": "localStorage",

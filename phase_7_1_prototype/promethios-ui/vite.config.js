@@ -37,20 +37,58 @@ export default defineConfig({
     },
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
-    // Enable minification with constructor preservation
+    // Enable minification with comprehensive constructor preservation
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false, // Remove console.log in production
-        drop_debugger: true
+        drop_console: false, // Keep console.log for debugging
+        drop_debugger: true,
+        // Prevent function inlining that can break constructor patterns
+        inline: false,
+        // Preserve function names
+        keep_fnames: true,
+        // Preserve class names
+        keep_classnames: true
       },
       mangle: {
-        // Preserve class names and constructor names to prevent "be is not a constructor" errors
+        // Preserve ALL class names and constructor names
         keep_classnames: true,
         keep_fnames: true,
-        reserved: ['UnifiedStorageService', 'EnhancedDeploymentService', 'DeploymentService', 'StorageService']
-      }
-    }
+        // Comprehensive list of reserved names
+        reserved: [
+          // Storage Services
+          'UnifiedStorageService', 
+          'EnhancedDeploymentService', 
+          'DeploymentService', 
+          'StorageService',
+          'FirebaseStorageProvider',
+          'UserAgentStorageService',
+          // Extensions
+          'MetricsCollectionExtension',
+          'MonitoringExtension', 
+          'DeploymentExtension',
+          // Core Services
+          'AuditService',
+          'ExecutionService',
+          'LLMService',
+          'SessionManager',
+          // Common constructors that might be minified
+          'constructor',
+          'prototype',
+          'Function',
+          'Object',
+          'Array',
+          'Promise',
+          'Error'
+        ]
+      },
+      // Preserve function names in output
+      keep_fnames: true,
+      keep_classnames: true
+    },
+    // Additional build options to prevent constructor issues
+    target: 'es2020',
+    sourcemap: true // Enable source maps for better debugging
   }
 });
 
