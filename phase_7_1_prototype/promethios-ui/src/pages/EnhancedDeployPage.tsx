@@ -732,15 +732,24 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       const agentKeys = await unifiedStorage.keys('agents');
       const multiAgentKeys = await unifiedStorage.keys('multiAgentSystems');
       
-      // Filter for this user's agents and production versions
-      const userAgentKeys = agentKeys.filter(key => key.includes(currentUser.uid));
-      const userMultiAgentKeys = multiAgentKeys.filter(key => key.includes(currentUser.uid));
+      // Filter for this user's agents and production versions only
+      const userProductionAgentKeys = agentKeys.filter(key => 
+        key.includes(currentUser.uid) && key.endsWith('-production')
+      );
+      const userProductionMultiAgentKeys = multiAgentKeys.filter(key => 
+        key.includes(currentUser.uid) && key.endsWith('-production')
+      );
+      
+      console.log('👤 User production agent keys found:', userProductionAgentKeys.length);
+      console.log('👤 User production multi-agent keys found:', userProductionMultiAgentKeys.length);
+      console.log('🔍 User production agent keys:', userProductionAgentKeys);
+      console.log('🔍 User production multi-agent keys:', userProductionMultiAgentKeys);
       
       // Load production versions of agents (these are ready for deployment)
       const productionAgents = [];
       const productionSystems = [];
       
-      for (const key of userAgentKeys) {
+      for (const key of userProductionAgentKeys) {
         
         try {
             const agent = await unifiedStorage.get('agents', key);
@@ -762,7 +771,7 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
           }
       }
       
-      for (const key of userMultiAgentKeys) {
+      for (const key of userProductionMultiAgentKeys) {
         
         try {
             const system = await unifiedStorage.get('multiAgentSystems', key);
