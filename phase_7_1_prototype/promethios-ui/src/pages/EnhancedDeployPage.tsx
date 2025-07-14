@@ -829,12 +829,35 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
     try {
       console.log('🔍 Debug - Selected Agent:', selectedAgent);
-      console.log('🔍 Debug - Available Agents:', availableAgents.map(a => ({ id: a.id, name: a.metadata?.name })));
-      console.log('🔍 Debug - Available Multi-Agent Systems:', availableMultiAgentSystems.map(s => ({ id: s.id, name: s.metadata?.name })));
+      console.log('🔍 Debug - Available Agents:', availableAgents.map(a => ({ 
+        id: a.id, 
+        originalKey: a.originalKey, 
+        name: a.metadata?.name 
+      })));
+      console.log('🔍 Debug - Available Multi-Agent Systems:', availableMultiAgentSystems.map(s => ({ 
+        id: s.id, 
+        originalKey: s.originalKey, 
+        name: s.metadata?.name 
+      })));
       
-      // Find selected agent/system
-      const selectedWrapper = availableAgents.find(agent => agent.id === selectedAgent) ||
-                             availableMultiAgentSystems.find(system => system.id === selectedAgent);
+      // Find selected agent/system with multiple matching strategies
+      let selectedWrapper = availableAgents.find(agent => agent.id === selectedAgent) ||
+                           availableMultiAgentSystems.find(system => system.id === selectedAgent);
+      
+      // If not found by ID, try matching by originalKey
+      if (!selectedWrapper) {
+        console.log('🔍 Debug - No match by ID, trying originalKey...');
+        selectedWrapper = availableAgents.find(agent => agent.originalKey === selectedAgent) ||
+                         availableMultiAgentSystems.find(system => system.originalKey === selectedAgent);
+      }
+      
+      // If still not found, try matching with -production suffix
+      if (!selectedWrapper) {
+        console.log('🔍 Debug - No match by originalKey, trying with -production suffix...');
+        const selectedAgentWithSuffix = selectedAgent + '-production';
+        selectedWrapper = availableAgents.find(agent => agent.originalKey === selectedAgentWithSuffix) ||
+                         availableMultiAgentSystems.find(system => system.originalKey === selectedAgentWithSuffix);
+      }
 
       console.log('🔍 Debug - Selected Wrapper Found:', selectedWrapper);
       
@@ -845,10 +868,13 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
       console.log('🔍 Debug - Calling enhancedDeploymentService.deployEnhancedPackage...');
       
-      const deploymentResult = await enhancedDeploymentService.deployEnhancedPackage(
-        selectedWrapper,
-        targetEnvironment,
-        targetPlatform,
+      // Use originalKey for deployment (the actual storage key)
+      const deploymentKey = selectedWrapper.originalKey || selectedWrapper.id;
+      console.log('🔍 Debug - Using deployment key:', deploymentKey);
+      
+      const result = await enhancedDeploymentService.deployEnhancedPackage(
+        deploymentKey,
+        currentUser.uid,
         deploymentMethod
       );
 
