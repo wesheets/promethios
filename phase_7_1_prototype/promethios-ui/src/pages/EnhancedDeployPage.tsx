@@ -822,9 +822,15 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
     setIsDeploying(true);
 
     try {
+      console.log('🔍 Debug - Selected Agent:', selectedAgent);
+      console.log('🔍 Debug - Available Agents:', availableAgents.map(a => ({ id: a.id, name: a.metadata?.name })));
+      console.log('🔍 Debug - Available Multi-Agent Systems:', availableMultiAgentSystems.map(s => ({ id: s.id, name: s.metadata?.name })));
+      
       // Find selected agent/system
       const selectedWrapper = availableAgents.find(agent => agent.id === selectedAgent) ||
                              availableMultiAgentSystems.find(system => system.id === selectedAgent);
+
+      console.log('🔍 Debug - Selected Wrapper Found:', selectedWrapper);
 
       if (!selectedWrapper) {
         throw new Error('Selected agent not found');
