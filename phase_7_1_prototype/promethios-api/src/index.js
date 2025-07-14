@@ -19,6 +19,8 @@ app.use('/api/benchmark', require('./routes/benchmark'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/multi_agent_system', require('./routes/multiAgentSystem'));
+app.use('/api/observer', require('./routes/observer'));
+app.use('/api/observers', require('./routes/observer')); // Also handle /api/observers for compatibility
 
 // Health check endpoints (both /health and /api/health for compatibility)
 app.get('/health', (req, res) => {
