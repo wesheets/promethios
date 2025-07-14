@@ -757,13 +757,21 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
         try {
             const agent = await unifiedStorage.get('agents', key);
             if (agent) {
+              console.log('🔍 Debug - Raw Agent Data for', key, ':', agent);
+              console.log('🔍 Debug - Agent name sources:', {
+                'agent.name': agent.name,
+                'agent.metadata?.name': agent.metadata?.name,
+                'agent.config?.name': agent.config?.name,
+                'agent.identity?.name': agent.identity?.name
+              });
+              
               productionAgents.push({
                 id: key.replace('-production', ''), // Remove suffix for UI
                 metadata: {
-                  name: agent.name || agent.metadata?.name || 'Unnamed Agent',
-                  description: agent.description || agent.metadata?.description || 'No description',
-                  provider: agent.provider || agent.agentType || 'Unknown',
-                  model: agent.model || agent.configuration?.model || 'Unknown',
+                  name: agent.name || agent.metadata?.name || agent.config?.name || agent.identity?.name || 'Unnamed Agent',
+                  description: agent.description || agent.metadata?.description || agent.config?.description || 'No description',
+                  provider: agent.provider || agent.agentType || agent.config?.provider || 'Unknown',
+                  model: agent.model || agent.configuration?.model || agent.config?.model || 'Unknown',
                 },
                 deploymentWrapper: true, // Mark as ready for deployment
                 ...agent
@@ -810,19 +818,14 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       setAvailableAgents([]);
       setAvailableMultiAgentSystems([]);
     }
-  };
-
-  const handleDeploy = async () => {
-    if (!selectedAgent || !currentUser) {
-      toast({
-        title: "Error",
-        description: "Please select an agent and ensure you're logged in",
-        variant: "destructive"
-      });
-      return;
+  }  const handleDeploy = async () => {
+    if (!selectedAgent) {
+      console.error('🔍 Debug - No agent selected for deployment');
+      throw new Error('Selected agent not found');
     }
 
     setIsDeploying(true);
+    console.log('🔍 Debug - Starting deployment process...');
 
     try {
       console.log('🔍 Debug - Selected Agent:', selectedAgent);
@@ -834,31 +837,53 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
                              availableMultiAgentSystems.find(system => system.id === selectedAgent);
 
       console.log('🔍 Debug - Selected Wrapper Found:', selectedWrapper);
-
+      
       if (!selectedWrapper) {
+        console.error('🔍 Debug - Selected wrapper not found in available agents/systems');
         throw new Error('Selected agent not found');
       }
 
-      // Create deployment target
-      const target = {
-        type: targetPlatform || 'production',
-        environment: targetEnvironment || 'production', 
-        platform: (deploymentMethod.type === 'integration' && deploymentMethod.provider) 
-          ? deploymentMethod.provider 
-          : 'local',
-        configuration: {}
-      };
+      console.log('🔍 Debug - Calling enhancedDeploymentService.deployEnhancedPackage...');
+      
+      const deploymentResult = await enhancedDeploymentService.deployEnhancedPackage(
+        selectedWrapper,
+        targetEnvironment,
+        targetPlatform,
+        deploymentMethod
+      );
 
-      // Create enhanced deployment package
-      let enhancedPackage;
-      if (availableAgents.find(agent => agent.id === selectedAgent)) {
-        // Single agent deployment
-        enhancedPackage = await enhancedDeploymentService.createEnhancedSingleAgentPackage(
-          selectedWrapper,
-          target,
-          currentUser.uid,
-          deploymentMethod
-        );
+      console.log('🔍 Debug - Deployment result:', deploymentResult);
+
+      toast({
+        title: "Deployment Started",
+        description: `Agent deployment initiated successfully. Deployment ID: ${deploymentResult.deploymentId}`,
+        variant: "default"
+      });
+
+      console.log('🔍 Debug - Calling onDeploy callback...');
+      onDeploy(deploymentResult);
+      
+      console.log('🔍 Debug - Closing wizard...');
+      onClose();
+      setActiveStep(0);
+      setSelectedAgent('');
+
+      console.log('🔍 Debug - Deployment process completed successfully!');
+
+    } catch (error) {
+      console.error('🔍 Debug - Deployment failed with error:', error);
+      console.error('🔍 Debug - Error stack:', error.stack);
+      
+      toast({
+        title: "Deployment Failed",
+        description: error.message || "Failed to deploy agent",
+        variant: "destructive"
+      });
+    } finally {
+      console.log('🔍 Debug - Setting isDeploying to false...');
+      setIsDeploying(false);
+    }
+  };
       } else {
         // Multi-agent system deployment
         enhancedPackage = await enhancedDeploymentService.createEnhancedMultiAgentPackage(
