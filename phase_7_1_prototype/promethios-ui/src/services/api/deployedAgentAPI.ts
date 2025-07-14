@@ -5,10 +5,8 @@
  * This service defines the API contract for deployed agents to send metrics,
  * logs, heartbeats, and violation reports.
  */
-
 import apiConfig, { DEPLOYMENT_API } from '../../config/api';
 import { retryDeploymentAPI } from '../../utils/apiRetry';
-import { registerConstructor } from '../../utils/constructorFactory';
 
 // Types for deployed agent communication
 export interface AgentHeartbeat {
@@ -404,7 +402,4 @@ function createDeployedAgentAPI(): DeployedAgentAPI {
 }
 
 export const deployedAgentAPI = deployedAgentAPIInstance || (deployedAgentAPIInstance = createDeployedAgentAPI());
-
-// Register constructor for factory pattern
-registerConstructor('DeployedAgentAPI', DeployedAgentAPI);
 
