@@ -818,7 +818,9 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       setAvailableAgents([]);
       setAvailableMultiAgentSystems([]);
     }
-  }  const handleDeploy = async () => {
+  };
+
+  const handleDeploy = async () => {
     if (!selectedAgent) {
       console.error('🔍 Debug - No agent selected for deployment');
       throw new Error('Selected agent not found');
