@@ -706,11 +706,14 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
   useEffect(() => {
     if (open) {
+      console.log('🔍 Debug - Wizard Opening, preSelectedAgent:', preSelectedAgent);
       loadAvailableAgents();
       if (preSelectedAgent) {
+        console.log('🔍 Debug - Setting selectedAgent to preSelectedAgent:', preSelectedAgent);
         setSelectedAgent(preSelectedAgent);
         setActiveStep(1); // Skip agent selection if pre-selected
       } else {
+        console.log('🔍 Debug - No preSelectedAgent, starting from step 0');
         setSelectedAgent('');
         setActiveStep(0);
       }
@@ -1395,6 +1398,7 @@ const EnhancedDeployPage: React.FC = () => {
   };
 
   const handleDeployAgent = (agentId: string) => {
+    console.log('🔍 Debug - Scorecard Deploy Button Clicked, Agent ID:', agentId);
     setPreSelectedAgent(agentId);
     setWizardOpen(true);
   };
