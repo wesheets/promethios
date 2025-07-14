@@ -272,6 +272,10 @@ export class DeployedAgentAPI {
   async getAgentStatus(agentId: string, userId: string): Promise<DeployedAgentStatus> {
     try {
       const response = await fetch(DEPLOYMENT_API.GET_AGENT_STATUS(agentId), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${await this.getUserToken()}`,
+          'X-User-ID': userId
         }
       });
 
