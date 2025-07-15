@@ -71,6 +71,132 @@ export interface MetricsAlert {
   acknowledged: boolean;
 }
 
+// NEW: Agent-Centric Metrics Interfaces
+export interface DeploymentReference {
+  deploymentId: string;
+  environment: string;
+  distributionMethod: 'api' | 'chat' | 'embedded' | 'endpoint';
+  createdAt: Date;
+  status: 'active' | 'inactive' | 'failed';
+  url?: string;
+}
+
+export interface UnifiedAgentMetrics {
+  // Cumulative governance metrics across all interactions
+  governanceMetrics: {
+    totalInteractions: number;
+    trustScore: number;
+    complianceRate: number;
+    totalViolations: number;
+    policyViolations: string[];
+    lastViolation?: Date;
+  };
+  // Aggregated performance metrics
+  performanceMetrics: {
+    averageResponseTime: number;
+    totalRequests: number;
+    successRate: number;
+    errorRate: number;
+    uptimePercentage: number;
+    lastActiveAt: Date;
+  };
+  // System resource usage patterns
+  systemMetrics: {
+    averageCpuUsage: number;
+    averageMemoryUsage: number;
+    averageDiskUsage: number;
+    averageNetworkIO: number;
+    peakUsage: {
+      cpu: number;
+      memory: number;
+      timestamp: Date;
+    };
+  };
+  // Business impact metrics
+  businessMetrics: {
+    totalUserInteractions: number;
+    uniqueUsers: number;
+    sessionCount: number;
+    averageSessionDuration: number;
+    revenue?: number;
+  };
+  // Trend analysis
+  trends: {
+    trustScoreTrend: 'improving' | 'stable' | 'declining';
+    performanceTrend: 'improving' | 'stable' | 'declining';
+    usageTrend: 'increasing' | 'stable' | 'decreasing';
+    lastTrendUpdate: Date;
+  };
+}
+
+export interface AgentMetricsProfile {
+  agentId: string;
+  systemId?: string; // For multi-agent systems
+  agentName: string;
+  agentType: 'single' | 'multi-agent-system';
+  
+  // NEW: Version tracking for test vs production
+  version: 'test' | 'production';
+  testAgentId?: string; // Links to test version if this is production
+  productionAgentId?: string; // Links to production version if this is test
+  
+  // Lifecycle timestamps
+  createdAt: Date; // When agent was first created
+  testStartedAt?: Date; // When test version started collecting metrics
+  wrappedAt?: Date; // When agent became production-ready (production only)
+  
+  createdBy: string; // User ID
+  
+  // All deployments of this agent (production only)
+  deployments: DeploymentReference[];
+  
+  // Unified metrics across all deployments and interfaces
+  metrics: UnifiedAgentMetrics;
+  
+  // Visibility and access control
+  visibility: {
+    chatUI: boolean; // Always true for both test and production
+    deploymentDashboard: boolean; // Only true for production
+    publicAPI: boolean; // Only true for production
+    systemWideMetrics: boolean; // Only true for production
+  };
+  
+  // Metadata
+  lastUpdated: Date;
+  versionNumber: string; // Semantic version like "1.0.0"
+  status: 'active' | 'inactive' | 'deprecated' | 'promoted'; // 'promoted' when test becomes production
+}
+
+export interface AgentInteractionEvent {
+  eventId: string;
+  agentId: string;
+  deploymentId?: string;
+  interactionType: 'chat' | 'api' | 'deployment' | 'system';
+  timestamp: Date;
+  
+  // Performance data
+  responseTime: number;
+  success: boolean;
+  errorMessage?: string;
+  
+  // Governance data
+  governanceChecks: {
+    trustImpact: number;
+    complianceScore: number;
+    violations: string[];
+  };
+  
+  // Context
+  userId?: string;
+  sessionId?: string;
+  requestSize?: number;
+  responseSize?: number;
+  
+  // Metadata
+  source: string; // Which interface/service reported this
+  metadata?: Record<string, any>;
+}
+
 /**
  * Metrics Collection Extension Class/**
  * Provides metrics collection functionality following extension pattern
@@ -884,6 +1010,56 @@ export class MetricsCollectionExtension {
           }
           return await this.getActiveAlerts(userIdForAlerts);
           
+        // NEW: Agent-Centric Actions
+        case 'createTestAgentProfile':
+          const { agentId, agentName, userId, agentType } = params;
+          if (!agentId || !agentName || !userId) {
+            throw new Error('agentId, agentName, and userId are required for createTestAgentProfile');
+          }
+          return await this.createTestAgentProfile(agentId, agentName, userId, agentType);
+          
+        case 'promoteToProductionAgent':
+          const { testAgentId, productionAgentId } = params;
+          if (!testAgentId || !productionAgentId) {
+            throw new Error('testAgentId and productionAgentId are required for promoteToProductionAgent');
+          }
+          return await this.promoteToProductionAgent(testAgentId, productionAgentId);
+          
+        case 'recordAgentInteraction':
+          const { event } = params;
+          if (!event) {
+            throw new Error('event is required for recordAgentInteraction');
+          }
+          return await this.recordAgentInteraction(event);
+          
+        case 'getAgentMetricsProfile':
+          const { agentId: profileAgentId, version } = params;
+          if (!profileAgentId) {
+            throw new Error('agentId is required for getAgentMetricsProfile');
+          }
+          return await this.getAgentMetricsProfile(profileAgentId, version);
+          
+        case 'getUserAgentProfiles':
+          const userIdForProfiles = params?.userId || context?.userId;
+          if (!userIdForProfiles) {
+            throw new Error('userId is required for getUserAgentProfiles');
+          }
+          return await this.getUserAgentProfiles(userIdForProfiles);
+          
+        case 'addDeploymentToAgent':
+          const { agentId: deployAgentId, deployment } = params;
+          if (!deployAgentId || !deployment) {
+            throw new Error('agentId and deployment are required for addDeploymentToAgent');
+          }
+          return await this.addDeploymentToAgent(deployAgentId, deployment);
+          
+        case 'getAgentInteractionHistory':
+          const { agentId: historyAgentId, limit } = params;
+          if (!historyAgentId) {
+            throw new Error('agentId is required for getAgentInteractionHistory');
+          }
+          return await this.getAgentInteractionHistory(historyAgentId, limit);
+          
         default:
           console.warn(`⚠️ Unknown action: ${action}`);
           return null;
@@ -892,6 +1068,386 @@ export class MetricsCollectionExtension {
       console.error(`❌ Error executing ${action}:`, error);
       throw error;
     }
+  }
+
+  // ========================================
+  // NEW: Agent-Centric Metrics Methods
+  // ========================================
+
+  /**
+   * Create a new agent metrics profile (test version)
+   */
+  async createTestAgentProfile(agentId: string, agentName: string, userId: string, agentType: 'single' | 'multi-agent-system' = 'single'): Promise<AgentMetricsProfile> {
+    try {
+      console.log(`🧪 Creating test agent metrics profile: ${agentId}`);
+      
+      const profile: AgentMetricsProfile = {
+        agentId,
+        agentName,
+        agentType,
+        version: 'test',
+        createdAt: new Date(),
+        testStartedAt: new Date(),
+        createdBy: userId,
+        deployments: [], // Test agents don't have deployments
+        metrics: this.createEmptyMetrics(),
+        visibility: {
+          chatUI: true,
+          deploymentDashboard: false,
+          publicAPI: false,
+          systemWideMetrics: false
+        },
+        lastUpdated: new Date(),
+        versionNumber: '0.1.0',
+        status: 'active'
+      };
+      
+      // Store in test agent metrics collection
+      await this.storage.set('test_agent_metrics', agentId, profile);
+      
+      console.log(`✅ Test agent metrics profile created: ${agentId}`);
+      return profile;
+      
+    } catch (error) {
+      console.error(`❌ Failed to create test agent profile for ${agentId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Promote test agent to production (wrapping process)
+   */
+  async promoteToProductionAgent(testAgentId: string, productionAgentId: string): Promise<AgentMetricsProfile> {
+    try {
+      console.log(`🚀 Promoting test agent to production: ${testAgentId} → ${productionAgentId}`);
+      
+      // Get test agent profile
+      const testProfile = await this.storage.get<AgentMetricsProfile>('test_agent_metrics', testAgentId);
+      if (!testProfile) {
+        throw new Error(`Test agent profile not found: ${testAgentId}`);
+      }
+      
+      // Create production profile (fresh metrics, not inherited from test)
+      const productionProfile: AgentMetricsProfile = {
+        agentId: productionAgentId,
+        systemId: testProfile.systemId,
+        agentName: testProfile.agentName,
+        agentType: testProfile.agentType,
+        version: 'production',
+        testAgentId: testAgentId, // Link back to test version
+        createdAt: testProfile.createdAt,
+        wrappedAt: new Date(),
+        createdBy: testProfile.createdBy,
+        deployments: [],
+        metrics: this.createEmptyMetrics(), // Fresh start for production
+        visibility: {
+          chatUI: true,
+          deploymentDashboard: true,
+          publicAPI: true,
+          systemWideMetrics: true
+        },
+        lastUpdated: new Date(),
+        versionNumber: '1.0.0',
+        status: 'active'
+      };
+      
+      // Update test profile to link to production
+      testProfile.productionAgentId = productionAgentId;
+      testProfile.status = 'promoted';
+      testProfile.lastUpdated = new Date();
+      
+      // Store both profiles
+      await this.storage.set('production_agent_metrics', productionAgentId, productionProfile);
+      await this.storage.set('test_agent_metrics', testAgentId, testProfile);
+      
+      console.log(`✅ Agent promoted to production: ${productionAgentId}`);
+      return productionProfile;
+      
+    } catch (error) {
+      console.error(`❌ Failed to promote agent to production:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Record an interaction event for an agent (test or production)
+   */
+  async recordAgentInteraction(event: AgentInteractionEvent): Promise<void> {
+    try {
+      console.log(`📊 Recording interaction for agent: ${event.agentId}`);
+      
+      // Determine if this is test or production agent
+      const isTestAgent = event.agentId.includes('-test') || event.interactionType === 'chat';
+      const storageKey = isTestAgent ? 'test_agent_metrics' : 'production_agent_metrics';
+      
+      // Get current profile
+      const profile = await this.storage.get<AgentMetricsProfile>(storageKey, event.agentId);
+      if (!profile) {
+        console.warn(`⚠️ Agent profile not found: ${event.agentId}`);
+        return;
+      }
+      
+      // Update metrics based on interaction
+      await this.updateMetricsFromInteraction(profile, event);
+      
+      // Store updated profile
+      await this.storage.set(storageKey, event.agentId, profile);
+      
+      // Store interaction event for history
+      await this.storage.set('agent_interactions', event.eventId, event);
+      
+      console.log(`✅ Interaction recorded for agent: ${event.agentId}`);
+      
+    } catch (error) {
+      console.error(`❌ Failed to record interaction for agent ${event.agentId}:`, error);
+    }
+  }
+
+  /**
+   * Get agent metrics profile (test or production)
+   */
+  async getAgentMetricsProfile(agentId: string, version?: 'test' | 'production'): Promise<AgentMetricsProfile | null> {
+    try {
+      // If version not specified, try to determine from agent ID or try both
+      if (!version) {
+        // Try production first
+        let profile = await this.storage.get<AgentMetricsProfile>('production_agent_metrics', agentId);
+        if (profile) return profile;
+        
+        // Try test
+        profile = await this.storage.get<AgentMetricsProfile>('test_agent_metrics', agentId);
+        if (profile) return profile;
+        
+        return null;
+      }
+      
+      const storageKey = version === 'test' ? 'test_agent_metrics' : 'production_agent_metrics';
+      return await this.storage.get<AgentMetricsProfile>(storageKey, agentId);
+      
+    } catch (error) {
+      console.error(`❌ Failed to get agent metrics profile for ${agentId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all agent profiles for a user (test and production)
+   */
+  async getUserAgentProfiles(userId: string): Promise<{
+    testAgents: AgentMetricsProfile[];
+    productionAgents: AgentMetricsProfile[];
+  }> {
+    try {
+      console.log(`📋 Getting agent profiles for user: ${userId}`);
+      
+      // Get all test agents
+      const allTestAgents = await this.storage.getMany<AgentMetricsProfile>('test_agent_metrics', []);
+      const testAgents = allTestAgents.filter(agent => agent && agent.createdBy === userId);
+      
+      // Get all production agents
+      const allProductionAgents = await this.storage.getMany<AgentMetricsProfile>('production_agent_metrics', []);
+      const productionAgents = allProductionAgents.filter(agent => agent && agent.createdBy === userId);
+      
+      console.log(`✅ Found ${testAgents.length} test agents and ${productionAgents.length} production agents for user ${userId}`);
+      
+      return {
+        testAgents,
+        productionAgents
+      };
+      
+    } catch (error) {
+      console.error(`❌ Failed to get user agent profiles for ${userId}:`, error);
+      return {
+        testAgents: [],
+        productionAgents: []
+      };
+    }
+  }
+
+  /**
+   * Add deployment reference to production agent
+   */
+  async addDeploymentToAgent(agentId: string, deployment: DeploymentReference): Promise<void> {
+    try {
+      console.log(`🚀 Adding deployment to agent: ${agentId}`);
+      
+      const profile = await this.storage.get<AgentMetricsProfile>('production_agent_metrics', agentId);
+      if (!profile) {
+        throw new Error(`Production agent profile not found: ${agentId}`);
+      }
+      
+      // Add deployment if not already exists
+      const existingDeployment = profile.deployments.find(d => d.deploymentId === deployment.deploymentId);
+      if (!existingDeployment) {
+        profile.deployments.push(deployment);
+        profile.lastUpdated = new Date();
+        
+        await this.storage.set('production_agent_metrics', agentId, profile);
+        console.log(`✅ Deployment added to agent: ${agentId}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to add deployment to agent ${agentId}:`, error);
+    }
+  }
+
+  /**
+   * Get agent interaction history
+   */
+  async getAgentInteractionHistory(agentId: string, limit: number = 100): Promise<AgentInteractionEvent[]> {
+    try {
+      const allInteractions = await this.storage.getMany<AgentInteractionEvent>('agent_interactions', []);
+      
+      return allInteractions
+        .filter(interaction => interaction && interaction.agentId === agentId)
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        .slice(0, limit);
+        
+    } catch (error) {
+      console.error(`❌ Failed to get interaction history for agent ${agentId}:`, error);
+      return [];
+    }
+  }
+
+  // ========================================
+  // Private Helper Methods for Agent-Centric Metrics
+  // ========================================
+
+  private createEmptyMetrics(): UnifiedAgentMetrics {
+    return {
+      governanceMetrics: {
+        totalInteractions: 0,
+        trustScore: 1.0, // Start with perfect trust
+        complianceRate: 1.0, // Start with perfect compliance
+        totalViolations: 0,
+        policyViolations: []
+      },
+      performanceMetrics: {
+        averageResponseTime: 0,
+        totalRequests: 0,
+        successRate: 1.0,
+        errorRate: 0,
+        uptimePercentage: 100,
+        lastActiveAt: new Date()
+      },
+      systemMetrics: {
+        averageCpuUsage: 0,
+        averageMemoryUsage: 0,
+        averageDiskUsage: 0,
+        averageNetworkIO: 0,
+        peakUsage: {
+          cpu: 0,
+          memory: 0,
+          timestamp: new Date()
+        }
+      },
+      businessMetrics: {
+        totalUserInteractions: 0,
+        uniqueUsers: 0,
+        sessionCount: 0,
+        averageSessionDuration: 0
+      },
+      trends: {
+        trustScoreTrend: 'stable',
+        performanceTrend: 'stable',
+        usageTrend: 'stable',
+        lastTrendUpdate: new Date()
+      }
+    };
+  }
+
+  private async updateMetricsFromInteraction(profile: AgentMetricsProfile, event: AgentInteractionEvent): Promise<void> {
+    const metrics = profile.metrics;
+    
+    // Update governance metrics
+    metrics.governanceMetrics.totalInteractions++;
+    
+    // Update trust score (weighted average)
+    const trustWeight = 0.1; // How much each interaction affects trust
+    const trustImpact = event.governanceChecks.trustImpact;
+    metrics.governanceMetrics.trustScore = 
+      (metrics.governanceMetrics.trustScore * (1 - trustWeight)) + (trustImpact * trustWeight);
+    
+    // Update compliance rate
+    const complianceWeight = 0.1;
+    metrics.governanceMetrics.complianceRate = 
+      (metrics.governanceMetrics.complianceRate * (1 - complianceWeight)) + 
+      (event.governanceChecks.complianceScore * complianceWeight);
+    
+    // Add violations
+    if (event.governanceChecks.violations.length > 0) {
+      metrics.governanceMetrics.totalViolations += event.governanceChecks.violations.length;
+      metrics.governanceMetrics.policyViolations.push(...event.governanceChecks.violations);
+      metrics.governanceMetrics.lastViolation = event.timestamp;
+    }
+    
+    // Update performance metrics
+    metrics.performanceMetrics.totalRequests++;
+    
+    // Update average response time
+    const responseWeight = 1 / metrics.performanceMetrics.totalRequests;
+    metrics.performanceMetrics.averageResponseTime = 
+      (metrics.performanceMetrics.averageResponseTime * (1 - responseWeight)) + 
+      (event.responseTime * responseWeight);
+    
+    // Update success/error rates
+    if (event.success) {
+      metrics.performanceMetrics.successRate = 
+        (metrics.performanceMetrics.successRate * (metrics.performanceMetrics.totalRequests - 1) + 1) / 
+        metrics.performanceMetrics.totalRequests;
+    } else {
+      metrics.performanceMetrics.errorRate = 
+        (metrics.performanceMetrics.errorRate * (metrics.performanceMetrics.totalRequests - 1) + 1) / 
+        metrics.performanceMetrics.totalRequests;
+    }
+    
+    metrics.performanceMetrics.lastActiveAt = event.timestamp;
+    
+    // Update business metrics
+    if (event.userId) {
+      metrics.businessMetrics.totalUserInteractions++;
+      // Note: uniqueUsers would need more sophisticated tracking
+    }
+    
+    // Update trends (simplified)
+    this.updateTrends(metrics);
+    
+    profile.lastUpdated = new Date();
+  }
+
+  private updateTrends(metrics: UnifiedAgentMetrics): void {
+    // Simplified trend analysis - in production this would be more sophisticated
+    const now = new Date();
+    
+    // Trust score trend
+    if (metrics.governanceMetrics.trustScore > 0.9) {
+      metrics.trends.trustScoreTrend = 'improving';
+    } else if (metrics.governanceMetrics.trustScore < 0.7) {
+      metrics.trends.trustScoreTrend = 'declining';
+    } else {
+      metrics.trends.trustScoreTrend = 'stable';
+    }
+    
+    // Performance trend
+    if (metrics.performanceMetrics.averageResponseTime < 1000) {
+      metrics.trends.performanceTrend = 'improving';
+    } else if (metrics.performanceMetrics.averageResponseTime > 3000) {
+      metrics.trends.performanceTrend = 'declining';
+    } else {
+      metrics.trends.performanceTrend = 'stable';
+    }
+    
+    // Usage trend (based on recent activity)
+    const hoursSinceLastActive = (now.getTime() - metrics.performanceMetrics.lastActiveAt.getTime()) / (1000 * 60 * 60);
+    if (hoursSinceLastActive < 1) {
+      metrics.trends.usageTrend = 'increasing';
+    } else if (hoursSinceLastActive > 24) {
+      metrics.trends.usageTrend = 'decreasing';
+    } else {
+      metrics.trends.usageTrend = 'stable';
+    }
+    
+    metrics.trends.lastTrendUpdate = now;
   }
 
   // Getter methods
