@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -42,6 +43,7 @@ interface ImprovedDeploymentCardProps {
 }
 
 const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deployment }) => {
+  const navigate = useNavigate();
   const [agentData, setAgentData] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showIntegration, setShowIntegration] = useState(false);
@@ -230,7 +232,7 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
           <Button
             variant="contained"
             startIcon={<Launch />}
-            onClick={() => window.open(deploymentUrl, '_blank')}
+            onClick={() => navigate(`/ui/deployed-agents/${deployment.deploymentId}/chat`)}
             sx={{ 
               flex: 1,
               backgroundColor: '#4caf50',
