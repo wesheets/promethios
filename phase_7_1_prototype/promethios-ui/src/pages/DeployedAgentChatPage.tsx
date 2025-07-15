@@ -28,16 +28,16 @@ const DeployedAgentChatPage: React.FC = () => {
       let deploymentData = await deploymentService.getRealDeploymentStatus(deploymentId, currentUser.uid);
       
       console.log('📦 Deployment data loaded:', deploymentData);
-      
       if (!deploymentData) {
-        // Create mock deployment data for testing
+        console.log('📝 Creating mock deployment data for testing...');
         deploymentData = {
           deploymentId: deploymentId,
-          agentId: "AI Assistant",
-          agentName: "HSf4SIwCcRRzAFPuFXlFE9CsQ6W2_agent-1752445288286",
+          agentId: "AI Assistant", // Better default name
+          agentName: "AI Assistant", // Ensure both are set
           userId: currentUser.uid,
           success: true,
           url: `https://deployed-agent-${deploymentId}.promethios.ai`,
+          apiKey: `promethios_${currentUser.uid}_${deploymentId.replace('deploy-', '')}`,
           status: "healthy",
           uptime: "2h 15m",
           deploymentMethod: "single-agent",
@@ -51,14 +51,25 @@ const DeployedAgentChatPage: React.FC = () => {
         deploymentData.apiKey = `promethios_${currentUser.uid}_${deploymentId.replace('deploy-', '')}`;
       }
 
-      // Ensure both agentId and agentName are available
+      // Ensure both agentId and agentName are available with better names
       if (!deploymentData.agentName && deploymentData.agentId) {
-        deploymentData.agentName = deploymentData.agentId;
+        // Try to create a better name from the ID
+        if (deploymentData.agentId.includes('agent-')) {
+          deploymentData.agentName = "AI Assistant";
+        } else {
+          deploymentData.agentName = deploymentData.agentId;
+        }
       }
       if (!deploymentData.agentId && deploymentData.agentName) {
         deploymentData.agentId = deploymentData.agentName;
       }
-
+      
+      // Fallback to ensure we always have a name
+      if (!deploymentData.agentName && !deploymentData.agentId) {
+        deploymentData.agentName = "AI Assistant";
+        deploymentData.agentId = "AI Assistant";
+      }
+      
       console.log('📦 Final deployment data:', deploymentData);
       setDeployment(deploymentData);
       

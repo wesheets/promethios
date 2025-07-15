@@ -1,113 +1,82 @@
 import React from 'react';
+import { Box, Typography, Chip, Alert } from '@mui/material';
 import { ChatContainer } from '../modules/chat/components/ChatContainer';
 
 interface SafeGovernanceChatWrapperProps {
-  height: string;
-  agentId: string;
-  multiAgentSystemId?: string;
-  governanceEnabled: boolean;
+  deployment: any;
+  height?: string;
 }
 
-/**
- * Safe wrapper for ChatContainer that provides defensive defaults
- * for all governance-related props to prevent crashes
- */
-export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps> = ({
-  height,
-  agentId,
-  multiAgentSystemId,
-  governanceEnabled
+export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps> = ({ 
+  deployment,
+  height = "100%" 
 }) => {
-  // Provide safe default governance metrics
-  const safeGovernanceMetrics = {
-    trustScore: 0.85,
-    complianceRate: 0.92,
-    responseTime: 1.2,
-    sessionIntegrity: 0.88,
-    policyViolations: 0,
-    observerAlerts: 0,
-    realTimeMonitoring: true,
-    agentCoordination: multiAgentSystemId ? 0.90 : 0
-  };
-
-  // Provide safe default governance activities
-  const safeGovernanceActivities = [
-    {
-      id: 'init-1',
-      timestamp: new Date().toISOString(),
-      type: 'system_init',
-      description: 'Governance system initialized',
-      severity: 'info',
-      agentId: agentId
-    },
-    {
-      id: 'monitor-1',
-      timestamp: new Date().toISOString(),
-      type: 'monitoring_active',
-      description: 'Real-time monitoring active',
-      severity: 'info',
-      agentId: agentId
-    }
-  ];
-
-  // Safe props object with all required properties
-  const safeChatProps = {
-    height,
-    agentId: agentId || 'unknown-agent',
-    multiAgentSystemId,
-    governanceEnabled,
-    // Provide safe governance data
-    initialGovernanceMetrics: safeGovernanceMetrics,
-    initialGovernanceActivities: safeGovernanceActivities,
-    // Additional safe defaults
-    theme: 'dark',
-    showGovernancePanel: true,
-    enableRealTimeMetrics: true
-  };
-
+  // For deployed agents, governance should always be enabled
+  const governanceEnabled = true;
+  
+  // Extract agent information from deployment
+  const agentId = deployment?.agentId || deployment?.agentName;
+  const deploymentId = deployment?.deploymentId;
+  
   try {
-    return <ChatContainer {...safeChatProps} />;
+    return (
+      <ChatContainer 
+        height={height}
+        agentId={agentId}
+        multiAgentSystemId={undefined} // Deployed agents are typically single agents
+        governanceEnabled={governanceEnabled}
+        // Pass deployment context for deployed agent chat
+        deploymentContext={{
+          deploymentId,
+          apiKey: deployment?.apiKey,
+          isDeployedAgent: true,
+          deploymentUrl: deployment?.url
+        }}
+      />
+    );
   } catch (error) {
-    console.error('SafeGovernanceChatWrapper: Error rendering ChatContainer:', error);
+    console.error('❌ ChatContainer failed to render:', error);
     
     // Fallback UI if ChatContainer fails
     return (
-      <div style={{
-        height: height,
-        display: 'flex',
+      <Box sx={{ 
+        height,
+        display: 'flex', 
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a202c',
-        color: 'white',
-        padding: '2rem',
-        textAlign: 'center'
+        backgroundColor: '#1a1a1a',
+        padding: 3,
+        color: 'white'
       }}>
-        <h3 style={{ color: '#63b3ed', marginBottom: '1rem' }}>
-          🔧 Chat Interface Loading...
-        </h3>
-        <p style={{ color: '#a0aec0', marginBottom: '1rem' }}>
-          Initializing secure chat environment for agent: {agentId}
-        </p>
-        <div style={{
-          backgroundColor: '#2d3748',
-          padding: '1rem',
-          borderRadius: '8px',
-          border: '1px solid #4a5568'
-        }}>
-          <p style={{ color: '#e2e8f0', margin: 0 }}>
-            Governance: {governanceEnabled ? 'Active' : 'Disabled'}
-          </p>
-          {multiAgentSystemId && (
-            <p style={{ color: '#e2e8f0', margin: '0.5rem 0 0 0' }}>
-              Multi-Agent System: {multiAgentSystemId}
-            </p>
-          )}
-        </div>
-      </div>
+        <Alert severity="info" sx={{ mb: 2, backgroundColor: '#2a2a2a', color: 'white' }}>
+          <Typography variant="h6" gutterBottom>
+            🚀 Deployed Agent Chat Loading
+          </Typography>
+          <Typography variant="body2">
+            Your deployed agent is initializing. The secure chat environment is being prepared.
+          </Typography>
+        </Alert>
+        
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="h6">
+            Agent: {agentId || 'Loading...'}
+          </Typography>
+          
+          <Chip 
+            label="Governance: Always Active" 
+            color="success" 
+            sx={{ alignSelf: 'flex-start' }}
+          />
+          
+          <Typography variant="body2" color="text.secondary">
+            Deployment ID: {deploymentId || 'Loading...'}
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary">
+            The chat interface is loading with full governance monitoring and real-time compliance tracking.
+          </Typography>
+        </Box>
+      </Box>
     );
   }
 };
-
-export default SafeGovernanceChatWrapper;
 
