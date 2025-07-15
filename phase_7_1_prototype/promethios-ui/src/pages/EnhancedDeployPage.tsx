@@ -934,11 +934,22 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
       const deploymentKey = selectedWrapper.originalKey || selectedWrapper.id;
       console.log('🔍 Debug - Using deployment key:', deploymentKey);
       
-      const result = await enhancedDeploymentService.deployEnhancedPackage(
+      // Add timeout wrapper to prevent infinite hanging
+      const deploymentPromise = enhancedDeploymentService.deployEnhancedPackage(
         deploymentKey,
         currentUser.uid,
         deploymentMethod
       );
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Deployment timeout after 30 seconds'));
+        }, 30000);
+      });
+      
+      // Race between deployment and timeout
+      const result = await Promise.race([deploymentPromise, timeoutPromise]);
 
       console.log('🔍 Debug - Deployment result:', result);
 
@@ -960,13 +971,30 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
     } catch (error) {
       console.error('🔍 Debug - Deployment failed with error:', error);
-      console.error('🔍 Debug - Error stack:', error.stack);
+      console.error('🔍 Debug - Error stack:', error?.stack);
+      
+      // Ensure we always close the wizard and reset state on error
+      setIsDeploying(false);
+      setActiveStep(0);
+      
+      // Determine error message
+      let errorMessage = "Failed to deploy agent";
+      if (error?.message?.includes('timeout')) {
+        errorMessage = "Deployment timed out after 30 seconds. Please try again.";
+      } else if (error?.message?.includes('not initialized')) {
+        errorMessage = "Deployment service not available. Please refresh and try again.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
       
       toast({
         title: "Deployment Failed",
-        description: error.message || "Failed to deploy agent",
+        description: errorMessage,
         variant: "destructive"
       });
+      
+      // Don't close wizard on error - let user retry
+      console.log('🔍 Debug - Error handled, wizard remains open for retry');
     } finally {
       console.log('🔍 Debug - Setting isDeploying to false...');
       setIsDeploying(false);

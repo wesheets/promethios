@@ -179,6 +179,12 @@ export class EnhancedDeploymentService extends DeploymentService {
         const userId = targetOrUserId as string;
         
         console.log('🔍 Direct deployment for agent:', agentId);
+        console.log('🔍 Deployment method:', deploymentMethod);
+        
+        // Validate inputs
+        if (!agentId || !userId) {
+          throw new Error('Agent ID and User ID are required for deployment');
+        }
         
         // Create a simple deployment result
         const deploymentId = `deploy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -193,8 +199,18 @@ export class EnhancedDeploymentService extends DeploymentService {
           timestamp: new Date().toISOString()
         };
         
+        console.log('🔍 Storing deployment result with ID:', deploymentId);
+        
         // Store deployment result with proper namespace
-        await this.storage.store(`deployment-result:${deploymentId}`, result);
+        try {
+          await this.storage.store(`deployment-result:${deploymentId}`, result);
+          console.log('✅ Deployment result stored successfully');
+        } catch (storageError) {
+          console.error('❌ Failed to store deployment result:', storageError);
+          // Don't fail the deployment if storage fails
+          console.log('⚠️ Continuing deployment despite storage failure');
+        }
+        
         console.log('✅ Direct deployment completed successfully');
         
       } else {
