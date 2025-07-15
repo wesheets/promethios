@@ -322,21 +322,60 @@ const DataManagementSettingsPage: React.FC = () => {
   };
 
   const handleCancelJob = async (jobId: string) => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setExportJobs(prev => prev.map(job => 
-      job.id === jobId ? { ...job, status: 'cancelled' as const } : job
-    ));
-    setImportJobs(prev => prev.map(job => 
-      job.id === jobId ? { ...job, status: 'cancelled' as const } : job
-    ));
-    setLoading(false);
+    if (!currentUser) {
+      setError('Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Real API call to cancel job
+      await authApiService.cancelDataJob(currentUser, jobId);
+      
+      setExportJobs(prev => prev.map(job => 
+        job.id === jobId ? { ...job, status: 'cancelled' as const } : job
+      ));
+      setImportJobs(prev => prev.map(job => 
+        job.id === jobId ? { ...job, status: 'cancelled' as const } : job
+      ));
+      
+    } catch (error) {
+      console.error('Failed to cancel job:', error);
+      setError('Failed to cancel job');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDownloadExport = (job: ExportJob) => {
-    // In real implementation, this would trigger file download
-    console.log('Downloading export:', job.downloadUrl);
+  const handleDownloadExport = async (job: ExportJob) => {
+    if (!currentUser) {
+      setError('Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Real API call to get download URL and trigger download
+      const downloadUrl = await authApiService.getExportDownloadUrl(currentUser, job.id);
+      
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = job.name || `export-${job.id}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Failed to download export:', error);
+      setError('Failed to download export file');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

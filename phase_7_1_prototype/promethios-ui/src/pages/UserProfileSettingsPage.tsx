@@ -263,11 +263,46 @@ const UserProfileSettingsPage: React.FC = () => {
   };
 
   const handleSaveProfile = async () => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setEditMode(false);
-    setLoading(false);
+    if (!currentUser) {
+      setAuthError('Authentication required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuthError(null);
+
+      // Save user profile data with real API calls
+      await authApiService.updateUserProfile(currentUser, {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        displayName: profile.displayName,
+        phone: profile.phone,
+        location: profile.location,
+        organization: profile.organization,
+        department: profile.department,
+        jobTitle: profile.jobTitle,
+        bio: profile.bio,
+        timezone: profile.timezone,
+        language: profile.language,
+        profileVisibility: profile.profileVisibility
+      });
+
+      // Update governance dashboard if needed
+      await governanceDashboardBackendService.updateUserProfile(currentUser, profile);
+
+      setSaveSuccess(true);
+      setEditMode(false);
+      
+      // Auto-hide success message
+      setTimeout(() => setSaveSuccess(false), 3000);
+
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      setAuthError('Failed to save profile changes');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {

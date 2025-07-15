@@ -514,12 +514,20 @@ const IntegrationsSettingsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Mock connection process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Real API call to connect integration
+      const connectedIntegration = await integrationsAPI.connectIntegration(integration.id, {
+        userId: currentUser?.uid,
+        organizationId: currentUser?.organizationId
+      });
       
       setIntegrations(prev => prev.map(int => 
         int.id === integration.id 
-          ? { ...int, status: 'connected', connectedAt: new Date().toISOString() }
+          ? { 
+              ...int, 
+              status: 'connected', 
+              connectedAt: connectedIntegration.connectedAt || new Date().toISOString(),
+              config: connectedIntegration.config
+            }
           : int
       ));
       
@@ -533,7 +541,7 @@ const IntegrationsSettingsPage: React.FC = () => {
       console.error('Failed to connect integration:', error);
       toast({
         title: "Connection Failed",
-        description: `Failed to connect to ${integration.name}`,
+        description: `Failed to connect to ${integration.name}: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -545,11 +553,15 @@ const IntegrationsSettingsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Real API call to disconnect integration
+      await integrationsAPI.disconnectIntegration(integration.id, {
+        userId: currentUser?.uid,
+        organizationId: currentUser?.organizationId
+      });
       
       setIntegrations(prev => prev.map(int => 
         int.id === integration.id 
-          ? { ...int, status: 'disconnected', connectedAt: undefined, lastSync: undefined }
+          ? { ...int, status: 'disconnected', connectedAt: undefined, lastSync: undefined, config: undefined }
           : int
       ));
       
@@ -563,7 +575,7 @@ const IntegrationsSettingsPage: React.FC = () => {
       console.error('Failed to disconnect integration:', error);
       toast({
         title: "Disconnection Failed",
-        description: `Failed to disconnect from ${integration.name}`,
+        description: `Failed to disconnect from ${integration.name}: ${error.message}`,
         variant: "destructive"
       });
     } finally {
