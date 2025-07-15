@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { auth } from '../firebase/config';
 import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
-import SafeGovernanceChatWrapper from '../components/SafeGovernanceChatWrapper';
+import { SafeGovernanceChatWrapper } from '../components/SafeGovernanceChatWrapper';
 import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
 import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
 
