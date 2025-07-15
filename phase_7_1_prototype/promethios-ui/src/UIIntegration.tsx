@@ -56,6 +56,7 @@ import ChatGPTWrapperStub from './pages/ChatGPTWrapperStub';
 import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
 import GeminiWrapperStub from './pages/GeminiWrapperStub';
 import PerplexityWrapperStub from './pages/PerplexityWrapperStub';
+import DeployedAgentChatPage from './pages/DeployedAgentChatPage';
 
 /**
  * UIIntegration Component
@@ -395,6 +396,16 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* Catch-all route - redirect new users to onboarding, completed users to dashboard */}
+        {/* Deployed Agent Chat Page route */}
+        <Route path="deployed-agents/:deploymentId/chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DeployedAgentChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Catch-all route */}
         <Route path="*" element={
           <ProtectedRoute requireOnboarding={true}>
             <Navigate to="dashboard" replace />

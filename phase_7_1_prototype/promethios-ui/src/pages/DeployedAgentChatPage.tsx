@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useParams } from 'react-router-dom';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
-import { EnhancedDeploymentService } from '../../../../modules/agent-wrapping/services/EnhancedDeploymentService';
-import { ChatContainer } from '../../../../modules/chat/components/ChatContainer';
-import ApiInstructionsPanel from '../../../../components/deployed-agents/ApiInstructionsPanel';
-import DeployedAgentHeader from '../../../../components/deployed-agents/DeployedAgentHeader';
+import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
+import { ChatContainer } from '../modules/chat/components/ChatContainer';
+import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
+import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
 
 const DeployedAgentChatPage: React.FC = () => {
-  const router = useRouter();
-  const { deploymentId } = router.query;
+  const { deploymentId } = useParams<{ deploymentId: string }>();
   const [deployment, setDeployment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (deploymentId && typeof deploymentId === 'string') {
+    if (deploymentId) {
       loadDeployment(deploymentId);
     }
   }, [deploymentId]);
