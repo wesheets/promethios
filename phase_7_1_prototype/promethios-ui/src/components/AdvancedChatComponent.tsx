@@ -1523,24 +1523,37 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     loadAgents();
   }, [currentUser, chatMode, isDeployedAgent, deployedAgentId, deployedAgentName]); // Add deployed agent dependencies
 
+  // Ensure governance is always enabled for deployed agents
+  useEffect(() => {
+    if (isDeployedAgent && !governanceEnabled) {
+      console.log('🔒 Enabling governance for deployed agent');
+      setGovernanceEnabled(true);
+    }
+  }, [isDeployedAgent, governanceEnabled]);
+
   // Loa  // Load governance metrics based on chat mode
   useEffect(() => {
     const loadGovernanceMetrics = async () => {
       if (chatMode === 'single' && selectedAgent && governanceEnabled) {
         try {
           console.log('Loading governance metrics for agent:', selectedAgent.identity.name);
+          console.log('🔍 Deployed agent check:', { isDeployedAgent, deploymentId, selectedAgentId: selectedAgent.identity.id });
           
           let metrics;
           if (isDeployedAgent && deploymentId) {
             // Use deployed agent specific metrics
             console.log('🚀 Loading deployed agent metrics for:', deploymentId);
             metrics = await governanceService.getDeployedAgentMetrics(deploymentId, selectedAgent.identity.id);
+            console.log('📊 Deployed agent metrics loaded:', metrics);
           } else {
             // Use regular agent metrics
+            console.log('📊 Loading regular agent metrics for:', selectedAgent.identity.id);
             metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+            console.log('📊 Regular agent metrics loaded:', metrics);
           }
           
           setGovernanceMetrics(metrics);
+          console.log('✅ Governance metrics set in state:', metrics);
           
           // Also load system status
           const status = await governanceService.getSystemStatus();

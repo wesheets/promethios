@@ -350,6 +350,63 @@ export class EnhancedDeploymentService extends DeploymentService {
           const deployment = await this.storage.get('deployment-result', key);
           if (deployment) {
             console.log('✅ Loaded deployment:', { id: deployment.deploymentId, agentId: deployment.agentId });
+            
+            // Migration: Add agentName if missing
+            if (!deployment.agentName && deployment.agentId) {
+              console.log('🔄 Migrating deployment to add agentName:', deployment.deploymentId);
+              
+              // Try to get agent name from storage first
+              let agentName = 'AI Assistant'; // Default fallback
+              try {
+                const agentData = await this.storage.get('agents', deployment.agentId);
+                if (agentData?.metadata?.name) {
+                  agentName = agentData.metadata.name;
+                } else if (agentData?.name) {
+                  agentName = agentData.name;
+                } else if (agentData?.config?.name) {
+                  agentName = agentData.config.name;
+                } else {
+                  // Create meaningful name from agent ID
+                  const idParts = deployment.agentId.split('_');
+                  if (idParts.length > 1) {
+                    const agentPart = idParts[1]?.split('-')[0];
+                    if (agentPart && agentPart !== 'agent') {
+                      const friendlyNames: { [key: string]: string } = {
+                        'openai': 'OpenAI Assistant',
+                        'claude': 'Claude Assistant', 
+                        'gpt': 'GPT Assistant',
+                        'assistant': 'AI Assistant',
+                        'chatgpt': 'ChatGPT Assistant',
+                        'veritas': 'Veritas Agent',
+                        'promethios': 'Promethios Agent'
+                      };
+                      
+                      const lowerPart = agentPart.toLowerCase();
+                      if (friendlyNames[lowerPart]) {
+                        agentName = friendlyNames[lowerPart];
+                      } else {
+                        agentName = `${agentPart.charAt(0).toUpperCase() + agentPart.slice(1)} Assistant`;
+                      }
+                    }
+                  }
+                }
+                console.log('🏷️ Resolved agent name for migration:', agentName);
+              } catch (error) {
+                console.warn('⚠️ Could not load agent data for name resolution during migration:', error);
+              }
+              
+              // Update deployment with agent name
+              deployment.agentName = agentName;
+              
+              // Save the updated deployment back to storage
+              try {
+                await this.storage.set('deployment-result', key, deployment);
+                console.log('✅ Successfully migrated deployment with agentName:', agentName);
+              } catch (error) {
+                console.warn('⚠️ Failed to save migrated deployment:', error);
+              }
+            }
+            
             deployments.push(deployment);
           }
         } catch (error) {
