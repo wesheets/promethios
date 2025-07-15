@@ -48,10 +48,12 @@ import { ChatStorageService, ChatMessage, FileAttachment } from '../services/Cha
 import { GovernanceService } from '../services/GovernanceService';
 import { veritasService, VeritasResult } from '../services/VeritasService';
 import { multiAgentChatIntegration, ChatSystemInfo, MultiAgentChatSession } from '../services/MultiAgentChatIntegrationService';
+import { metricsCollectionExtension, AgentMetricsProfile, AgentInteractionEvent } from '../extensions/MetricsCollectionExtension';
 import { observerService } from '../services/observers';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { useAgentMetrics } from '../hooks/useAgentMetrics';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -398,6 +400,16 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
   const governanceService = useMemo(() => new GovernanceService(), []);
+
+  // 📊 AGENT METRICS INTEGRATION
+  const agentMetrics = useAgentMetrics({
+    agentId: isDeployedAgent ? (deployedAgentId || '') : (selectedAgent?.identity.id || ''),
+    agentName: isDeployedAgent ? (deployedAgentName || 'Deployed Agent') : (selectedAgent?.identity.name || 'Unknown Agent'),
+    agentType: 'single',
+    version: isDeployedAgent ? 'production' : 'test',
+    deploymentId: isDeployedAgent ? deploymentId : undefined,
+    autoInitialize: false // We'll initialize manually when agent is selected
+  });
 
   // Custom scroll function that only scrolls within messages container
   const scrollToBottom = () => {
@@ -1404,6 +1416,10 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           setAgents([deployedAgentProfile]);
           setSelectedAgent(deployedAgentProfile);
           
+          // 📊 Initialize metrics for deployed agent
+          console.log('🚀 Initializing metrics for deployed agent:', deployedAgentId);
+          await agentMetrics.initializeAgent();
+          
           // Load chat history for deployed agent
           if (currentUser?.uid) {
             chatStorageService.setCurrentUser(currentUser.uid);
@@ -1427,6 +1443,10 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           if (realAgents.length > 0 && !selectedAgent) {
             console.log('Setting first agent as selected:', realAgents[0]);
             setSelectedAgent(realAgents[0]);
+            
+            // 📊 Initialize metrics for test agent
+            console.log('🧪 Initializing metrics for test agent:', realAgents[0].identity.id);
+            // Note: agentMetrics hook will auto-update when selectedAgent changes
             
             // 🔧 CHAT HISTORY FIX: Only load single-agent history when in single-agent mode
             if (chatMode === 'single') {
@@ -1536,20 +1556,40 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     const loadGovernanceMetrics = async () => {
       if (chatMode === 'single' && selectedAgent && governanceEnabled) {
         try {
-          console.log('Loading governance metrics for agent:', selectedAgent.identity.name);
-          console.log('🔍 Deployed agent check:', { isDeployedAgent, deploymentId, selectedAgentId: selectedAgent.identity.id });
+          console.log('🎯 Loading governance metrics for agent:', selectedAgent.identity.name, selectedAgent.identity.id);
           
           let metrics;
           if (isDeployedAgent && deploymentId) {
-            // Use deployed agent specific metrics
-            console.log('🚀 Loading deployed agent metrics for:', deploymentId);
-            metrics = await governanceService.getDeployedAgentMetrics(deploymentId, selectedAgent.identity.id);
-            console.log('📊 Deployed agent metrics loaded:', metrics);
+            // Use deployed agent specific metrics from extension
+            console.log('🚀 Loading deployed agent metrics from extension:', deploymentId);
+            const agentProfile = await metricsCollectionExtension.getAgentMetricsProfile(selectedAgent.identity.id, 'production');
+            
+            if (agentProfile) {
+              // Convert AgentMetricsProfile to governance metrics format
+              metrics = this.convertAgentProfileToGovernanceMetrics(agentProfile);
+              console.log('📊 Deployed agent metrics from extension:', metrics);
+            } else {
+              // Fallback to enhanced demo metrics for deployed agents
+              console.log('⚠️ No agent profile found, using enhanced demo metrics');
+              metrics = await governanceService.getDeployedAgentMetrics(deploymentId, selectedAgent.identity.id);
+            }
           } else {
-            // Use regular agent metrics
-            console.log('📊 Loading regular agent metrics for:', selectedAgent.identity.id);
-            metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
-            console.log('📊 Regular agent metrics loaded:', metrics);
+            // Use test agent metrics from extension for regular chat
+            console.log('🧪 Loading test agent metrics from extension:', selectedAgent.identity.id);
+            const agentProfile = await metricsCollectionExtension.getAgentMetricsProfile(selectedAgent.identity.id, 'test');
+            
+            if (agentProfile) {
+              // Convert AgentMetricsProfile to governance metrics format
+              metrics = this.convertAgentProfileToGovernanceMetrics(agentProfile);
+              console.log('📊 Test agent metrics from extension:', metrics);
+            } else {
+              // Create test agent profile if it doesn't exist
+              console.log('🆕 Creating new test agent profile:', selectedAgent.identity.id);
+              await this.createTestAgentProfileIfNeeded(selectedAgent);
+              
+              // Fallback to regular agent metrics for now
+              metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+            }
           }
           
           setGovernanceMetrics(metrics);
@@ -2220,6 +2260,29 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
             setMessages(prev => [...prev, agentMessage]);
             setMessageCount(prev => prev + 1); // Increment for agent response
             
+            // 📊 Record multi-agent interaction for metrics (if this agent has metrics enabled)
+            if (agent.identity.id === selectedAgent?.identity.id) {
+              await agentMetrics.recordInteraction({
+                interactionType: 'chat',
+                responseTime: 1000, // Placeholder - would be calculated from actual request time
+                success: true, // Multi-agent responses are generally successful if they complete
+                governanceChecks: {
+                  trustImpact: 0.1, // Positive impact for successful multi-agent collaboration
+                  complianceScore: 1.0,
+                  violations: []
+                },
+                sessionId: `multi_agent_${Date.now()}`,
+                requestSize: userMessage.content.length,
+                responseSize: agentResponse.length,
+                source: 'multi-agent-chat',
+                metadata: {
+                  multiAgent: true,
+                  agentCount: selectedAgents.length,
+                  agentPosition: selectedAgents.findIndex(a => a.identity.id === agent.identity.id)
+                }
+              });
+            }
+            
             // Save agent message to storage
             await chatStorageService.saveMessage(agentMessage, agent.identity.id);
             
@@ -2501,6 +2564,23 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
         
         setMessages(prev => [...prev, agentMessage]);
         
+        // 📊 Record agent interaction for metrics
+        const responseTime = Date.now() - Date.now(); // This would be calculated from actual request start time
+        await agentMetrics.recordInteraction({
+          interactionType: 'chat',
+          responseTime: responseTime,
+          success: !governanceData?.violations?.length,
+          governanceChecks: {
+            trustImpact: governanceData?.trustScore ? (governanceData.trustScore - 85) / 15 : 0, // Normalize to impact
+            complianceScore: governanceData?.approved ? 1.0 : 0.5,
+            violations: governanceData?.violations || []
+          },
+          sessionId: `chat_${Date.now()}`,
+          requestSize: userMessage.content.length,
+          responseSize: agentResponse.length,
+          source: 'advanced-chat-component'
+        });
+        
         // Save agent message to storage
         ensureUserSet();
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
@@ -2544,6 +2624,10 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     const agent = agents.find(a => a.identity.id === agentId);
     if (agent) {
       setSelectedAgent(agent);
+      
+      // 📊 Initialize metrics for newly selected agent
+      console.log('🔄 Agent changed, initializing metrics for:', agent.identity.name);
+      // Note: The useAgentMetrics hook will automatically reinitialize when selectedAgent changes
       
       // Load existing chat history for this agent
       const chatHistory = await chatStorageService.loadAgentChatHistory(agent.identity.id);
@@ -3629,11 +3713,13 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
+                  {agentMetrics.isInitialized ? `${(agentMetrics.trustScore * 100).toFixed(1)}%` : 
+                   governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? governanceMetrics.trustScore : 0} 
+                  value={agentMetrics.isInitialized ? (agentMetrics.trustScore * 100) :
+                         governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? governanceMetrics.trustScore : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -3654,11 +3740,13 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.success, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? `${governanceMetrics.complianceRate.toFixed(1)}%` : 'N/A'}
+                  {agentMetrics.isInitialized ? `${(agentMetrics.complianceRate * 100).toFixed(1)}%` :
+                   governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? `${governanceMetrics.complianceRate.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? governanceMetrics.complianceRate : 0} 
+                  value={agentMetrics.isInitialized ? (agentMetrics.complianceRate * 100) :
+                         governanceEnabled && governanceMetrics && typeof governanceMetrics.complianceRate === 'number' ? governanceMetrics.complianceRate : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -3679,7 +3767,8 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.responseTime === 'number' ? `${governanceMetrics.responseTime.toFixed(1)}s` : 'N/A'}
+                  {agentMetrics.isInitialized ? `${(agentMetrics.responseTime / 1000).toFixed(1)}s` :
+                   governanceEnabled && governanceMetrics && typeof governanceMetrics.responseTime === 'number' ? `${governanceMetrics.responseTime.toFixed(1)}s` : 'N/A'}
                 </Typography>
               </CardContent>
             </Card>
@@ -3693,11 +3782,13 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ color: DARK_THEME.warning, fontWeight: 'bold' }}>
-                  {governanceEnabled && governanceMetrics && typeof governanceMetrics.sessionIntegrity === 'number' ? `${governanceMetrics.sessionIntegrity.toFixed(1)}%` : 'N/A'}
+                  {agentMetrics.isInitialized ? `${(agentMetrics.sessionIntegrity * 100).toFixed(1)}%` :
+                   governanceEnabled && governanceMetrics && typeof governanceMetrics.sessionIntegrity === 'number' ? `${governanceMetrics.sessionIntegrity.toFixed(1)}%` : 'N/A'}
                 </Typography>
                 <LinearProgress 
                   variant="determinate" 
-                  value={governanceEnabled && governanceMetrics ? governanceMetrics.sessionIntegrity : 0} 
+                  value={agentMetrics.isInitialized ? (agentMetrics.sessionIntegrity * 100) :
+                         governanceEnabled && governanceMetrics ? governanceMetrics.sessionIntegrity : 0} 
                   sx={{ 
                     mt: 1,
                     backgroundColor: DARK_THEME.border,
@@ -3789,20 +3880,21 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
             <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <ErrorIcon sx={{ color: governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, fontSize: 20 }} />
+                  <ErrorIcon sx={{ color: (agentMetrics.isInitialized && agentMetrics.profile?.metrics.governanceMetrics.totalViolations > 0) || governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
                     POLICY VIOLATIONS
                   </Typography>
                 </Box>
                 <Typography variant="h3" sx={{ 
-                  color: governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, 
+                  color: (agentMetrics.isInitialized && agentMetrics.profile?.metrics.governanceMetrics.totalViolations > 0) || governanceMetrics?.policyViolations ? DARK_THEME.error : DARK_THEME.success, 
                   fontWeight: 'bold' 
                 }}>
-                  {governanceEnabled && governanceMetrics ? governanceMetrics.policyViolations : 'N/A'}
+                  {agentMetrics.isInitialized ? agentMetrics.profile?.metrics.governanceMetrics.totalViolations || 0 :
+                   governanceEnabled && governanceMetrics ? governanceMetrics.policyViolations : 'N/A'}
                 </Typography>
-                {governanceMetrics?.lastUpdated && (
+                {(agentMetrics.lastUpdated || governanceMetrics?.lastUpdated) && (
                   <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
-                    Last updated: {governanceMetrics.lastUpdated.toLocaleTimeString()}
+                    Last updated: {(agentMetrics.lastUpdated || governanceMetrics?.lastUpdated)?.toLocaleTimeString()}
                   </Typography>
                 )}
               </CardContent>
