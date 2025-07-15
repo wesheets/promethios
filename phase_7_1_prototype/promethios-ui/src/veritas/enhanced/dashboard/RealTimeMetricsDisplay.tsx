@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import {
   Speed,
-  Timeline,
+  TimelineIcon as TimelineIcon,
   TrendingUp,
   TrendingDown,
   Group,
@@ -343,7 +343,7 @@ const RealTimeMetricsDisplay: React.FC<RealTimeMetricsDisplayProps> = ({
     } else if (trend === 'down') {
       return <TrendingDown sx={{ color: change < 0 ? 'error.main' : 'success.main', fontSize: 16 }} />;
     }
-    return <Timeline sx={{ color: 'info.main', fontSize: 16 }} />;
+    return <TimelineIcon sx={{ color: 'info.main', fontSize: 16 }} />;
   };
 
   const getMetricColor = (metric: RealTimeMetric): string => {
@@ -372,7 +372,7 @@ const RealTimeMetricsDisplay: React.FC<RealTimeMetricsDisplayProps> = ({
       case 'collaboration': return <Group />;
       case 'uncertainty': return <Psychology />;
       case 'quality': return <CheckCircle />;
-      default: return <Timeline />;
+      default: return <TimelineIcon />;
     }
   };
 

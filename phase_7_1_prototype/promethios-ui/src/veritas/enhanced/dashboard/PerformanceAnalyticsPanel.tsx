@@ -46,7 +46,7 @@ import {
   Star,
   Warning,
   CheckCircle,
-  Timeline,
+  TimelineIcon as TimelineIcon,
   Assessment,
   Compare,
   Download,
@@ -282,7 +282,7 @@ const PerformanceAnalyticsPanel: React.FC<PerformanceAnalyticsPanelProps> = ({
   const getTrendIcon = (trends: any) => {
     if (trends.improving) return <TrendingUp sx={{ color: 'success.main' }} />;
     if (trends.declining) return <TrendingDown sx={{ color: 'error.main' }} />;
-    return <Timeline sx={{ color: 'info.main' }} />;
+    return <TimelineIcon sx={{ color: 'info.main' }} />;
   };
 
   const renderOverviewTab = () => (
@@ -807,7 +807,7 @@ const PerformanceAnalyticsPanel: React.FC<PerformanceAnalyticsPanelProps> = ({
           >
             <Tab label="Overview" icon={<Assessment />} />
             <Tab label="Agent Analysis" icon={<Group />} />
-            <Tab label="Patterns" icon={<Timeline />} />
+            <Tab label="Patterns" icon={<TimelineIcon />} />
           </Tabs>
         </Box>
 

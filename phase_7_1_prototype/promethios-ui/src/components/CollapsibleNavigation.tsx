@@ -49,8 +49,8 @@ import {
   AutoAwesome as WrapIcon,
   Hub as MultiAgentIcon,
   LibraryBooks as LibraryBooksIcon,
-  Timeline as TimelineIcon,
 } from '@mui/icons-material';
+import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';

@@ -1010,9 +1010,10 @@ export class MetricsCollectionExtension {
           }
           return await this.getActiveAlerts(userIdForAlerts);
           
-        // NEW: Agent-Centric Actions
+         // NEW: Agent-Centric Actions
         case 'createTestAgentProfile':
-          const { agentId, agentName, userId: createUserId, agentType } = params;
+          const { agentId, agentName, agentType } = params;
+          const createUserId = params?.userId || context?.userId;
           if (!agentId || !agentName || !createUserId) {
             throw new Error('agentId, agentName, and userId are required for createTestAgentProfile');
           }

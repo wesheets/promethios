@@ -1,7 +1,6 @@
 import { unifiedStorage } from './UnifiedStorageService';
 import { useAuth } from '../context/AuthContext';
 import { metricsCollectionExtension } from '../extensions/MetricsCollectionExtension';
-import { agentLifecycleService } from './AgentLifecycleService';
 
 export interface AgentProfile {
   identity: {
@@ -158,6 +157,8 @@ export class UserAgentStorageService {
       // 📊 AGENT LIFECYCLE INTEGRATION: Handle agent creation with metrics
       try {
         console.log('🎯 Processing agent creation lifecycle for:', agent.identity.name);
+        // Use lazy import to avoid circular dependency
+        const { agentLifecycleService } = await import('./AgentLifecycleService');
         await agentLifecycleService.onAgentCreated(agent);
         console.log('✅ Agent creation lifecycle completed successfully');
       } catch (lifecycleError) {
@@ -619,4 +620,5 @@ export class UserAgentStorageService {
 
 // Singleton instance
 export const userAgentStorage = new UserAgentStorageService();
+export const userAgentStorageService = userAgentStorage;
 

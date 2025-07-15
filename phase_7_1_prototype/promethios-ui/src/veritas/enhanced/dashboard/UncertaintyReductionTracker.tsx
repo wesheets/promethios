@@ -31,7 +31,7 @@ import {
   Psychology,
   TrendingDown,
   TrendingUp,
-  Timeline,
+  TimelineIcon as TimelineIcon,
   Speed,
   Target,
   CheckCircle,

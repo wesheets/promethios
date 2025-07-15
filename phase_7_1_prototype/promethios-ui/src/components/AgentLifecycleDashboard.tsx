@@ -14,16 +14,18 @@ import {
   CardContent,
   Grid,
   Chip,
+  LinearProgress,
+  Alert,
+  CircularProgress
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
   TimelineConnector,
   TimelineContent,
-  TimelineDot,
-  LinearProgress,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+  TimelineDot
+} from '@mui/lab';
 import {
   Science as ScienceIcon,
   Rocket as RocketIcon,

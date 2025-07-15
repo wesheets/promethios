@@ -378,7 +378,7 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <MetricLabel>Session Integrity</MetricLabel>
-                  <TimelineIcon color={getMetricColor(safeMetrics.sessionIntegrity)} fontSize="small" />
+                  <TimelineIconIcon color={getMetricColor(safeMetrics.sessionIntegrity)} fontSize="small" />
                 </Box>
                 <MetricValue color={getMetricColor(safeMetrics.sessionIntegrity)}>
                   {(safeMetrics.sessionIntegrity * 100).toFixed(0)}%

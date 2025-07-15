@@ -45,7 +45,7 @@ import {
   Download,
   Refresh,
   Info,
-  Timeline,
+  TimelineIcon as TimelineIcon,
   BarChart
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar } from 'recharts';
