@@ -1012,11 +1012,11 @@ export class MetricsCollectionExtension {
           
         // NEW: Agent-Centric Actions
         case 'createTestAgentProfile':
-          const { agentId, agentName, userId, agentType } = params;
-          if (!agentId || !agentName || !userId) {
+          const { agentId, agentName, userId: createUserId, agentType } = params;
+          if (!agentId || !agentName || !createUserId) {
             throw new Error('agentId, agentName, and userId are required for createTestAgentProfile');
           }
-          return await this.createTestAgentProfile(agentId, agentName, userId, agentType);
+          return await this.createTestAgentProfile(agentId, agentName, createUserId, agentType);
           
         case 'promoteToProductionAgent':
           const { testAgentId, productionAgentId } = params;
