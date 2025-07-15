@@ -78,6 +78,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { enhancedDeploymentService, RealDeploymentResult, DeploymentMethod } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
 import { DualAgentWrapperRegistry } from '../modules/agent-wrapping/services/DualAgentWrapperRegistry';
+import ImprovedDeploymentCard from '../components/ImprovedDeploymentCard';
 import MultiAgentSystemRegistry from '../modules/agent-wrapping/services/MultiAgentSystemRegistry';
 import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
 import { DeploymentPipelineStatus } from '../components/monitoring/DeploymentPipelineStatus';
@@ -110,523 +111,6 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const RealDeployedAgentCard: React.FC<{ deployment: RealDeploymentResult }> = ({ deployment }) => {
-  const [agentData, setAgentData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { currentUser } = useAuth();
-  
-  // Load agent data to get proper name and details
-  useEffect(() => {
-    const loadAgentData = async () => {
-      if (!deployment.agentId || !currentUser?.uid) return;
-      
-      try {
-        console.log('🔍 Loading agent data for deployment:', deployment.agentId);
-        const storage = new UnifiedStorageService();
-        
-        // Try multiple key formats to find the agent
-        const possibleKeys = [
-          deployment.agentId,
-          `${deployment.agentId}-production`,
-          `${currentUser.uid}_${deployment.agentId}`,
-          `${currentUser.uid}_${deployment.agentId}-production`
-        ];
-        
-        let foundAgent = null;
-        for (const key of possibleKeys) {
-          try {
-            const agent = await storage.get('agents', key);
-            if (agent) {
-              foundAgent = agent;
-              console.log('✅ Found agent data with key:', key);
-              break;
-            }
-          } catch (error) {
-            // Continue trying other keys
-          }
-        }
-        
-        setAgentData(foundAgent);
-      } catch (error) {
-        console.error('❌ Failed to load agent data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadAgentData();
-  }, [deployment.agentId, currentUser?.uid]);
-  
-  // Get agent display name with fallbacks
-  const getAgentDisplayName = () => {
-    if (agentData?.metadata?.name) return agentData.metadata.name;
-    if (agentData?.name) return agentData.name;
-    if (deployment.agentName) return deployment.agentName;
-    return `Agent ${deployment.deploymentId?.split('-').pop() || 'Unknown'}`;
-  };
-  
-  // Get deployment status with fallbacks
-  const getDeploymentStatus = () => {
-    if (deployment.status) return deployment.status;
-    if (deployment.success === true) return 'deployed';
-    if (deployment.success === false) return 'failed';
-    return 'unknown';
-  };
-  
-  // Get governance identity with fallbacks
-  const getGovernanceIdentity = () => {
-    if (deployment.governanceIdentity) return deployment.governanceIdentity;
-    if (agentData?.governanceIdentity) return agentData.governanceIdentity;
-    return deployment.deploymentId || 'unknown';
-  };
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'deployed': return '#10b981';
-      case 'stopped': return '#6b7280';
-      case 'failed': return '#ef4444';
-      case 'deploying': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'deployed': return <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />;
-      case 'stopped': return <Stop sx={{ color: '#6b7280', fontSize: 16 }} />;
-      case 'failed': return <ErrorIcon sx={{ color: '#ef4444', fontSize: 16 }} />;
-      case 'deploying': return <CloudUpload sx={{ color: '#f59e0b', fontSize: 16 }} />;
-      default: return <Stop sx={{ color: '#6b7280', fontSize: 16 }} />;
-    }
-  };
-
-  const getDataFreshnessColor = (freshness: string) => {
-    switch (freshness) {
-      case 'live': return '#10b981';
-      case 'recent': return '#3b82f6';
-      case 'stale': return '#f59e0b';
-      case 'offline': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
-
-  return (
-    <Card sx={{ 
-      backgroundColor: '#2d3748', 
-      color: 'white',
-      border: '1px solid #4a5568',
-      borderRadius: '12px',
-      transition: 'all 0.2s ease-in-out',
-      '&:hover': {
-        borderColor: '#718096',
-        transform: 'translateY(-2px)',
-        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
-      }
-    }}>
-      <CardContent sx={{ p: 3 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                {getAgentDisplayName()}
-              </Typography>
-              <Tooltip title={`Governance Identity: ${getGovernanceIdentity()}`}>
-                <Chip 
-                  label={getGovernanceIdentity()?.substring(0, 12) + '...'} 
-                  size="small" 
-                  sx={{ 
-                    backgroundColor: '#7c3aed', 
-                    color: 'white',
-                    fontSize: '0.7rem',
-                    height: 20,
-                  }} 
-                />
-              </Tooltip>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              {getStatusIcon(getDeploymentStatus())}
-              <Typography variant="body2" sx={{ 
-                color: getStatusColor(getDeploymentStatus()),
-                textTransform: 'capitalize',
-                fontWeight: 500
-              }}>
-                {getDeploymentStatus()}
-              </Typography>
-              <Chip 
-                label={`Reporting: ${deployment.reportingStatus || 'unknown'}`}
-                size="small"
-                sx={{ 
-                  backgroundColor: (deployment.reportingStatus === 'active' || deployment.success) ? '#10b981' : 
-                                  deployment.reportingStatus === 'degraded' ? '#f59e0b' : '#ef4444',
-                  color: 'white',
-                  fontSize: '0.75rem',
-                  height: 20
-                }}
-              />
-              <Chip 
-                label={`Data: ${deployment.dataFreshness || 'unknown'}`}
-                size="small"
-                sx={{ 
-                  backgroundColor: getDataFreshnessColor(deployment.dataFreshness || 'unknown'),
-                  color: 'white',
-                  fontSize: '0.75rem',
-                  height: 20
-                }}
-              />
-            </Box>
-            
-            {/* Real Data Indicators */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                Last heartbeat: {deployment.lastHeartbeat ? new Date(deployment.lastHeartbeat).toLocaleTimeString() : 'Never'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                • Violations: {deployment.violationsReported}
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton sx={{ color: '#a0aec0' }}>
-            <MoreVert />
-          </IconButton>
-        </Box>
-
-        {/* Real Metrics Grid */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={6}>
-            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                Health Status
-              </Typography>
-              <Typography variant="h6" sx={{ 
-                color: deployment.metrics?.healthStatus === 'healthy' ? '#10b981' : '#ef4444', 
-                fontWeight: 600 
-              }}>
-                {getDeploymentStatus() === 'deployed' ? 'Healthy' : 
-                 getDeploymentStatus() === 'failed' ? 'Error' : 
-                 getDeploymentStatus() === 'deploying' ? 'Starting' : 'Unknown'}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6}>
-            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                Trust Score
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600 }}>
-                {agentData?.trustScore || deployment.trustScore || '85%'}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6}>
-            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                Violations Today
-              </Typography>
-              <Typography variant="h6" sx={{ 
-                color: (deployment.violationsReported || 0) > 0 ? '#ef4444' : '#10b981', 
-                fontWeight: 600 
-              }}>
-                {deployment.violationsReported || 0}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6}>
-            <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#1a202c', borderRadius: '8px' }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                Uptime
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 600 }}>
-                {deployment.timestamp ? 
-                  `${Math.floor((Date.now() - new Date(deployment.timestamp).getTime()) / (1000 * 60 * 60))}h` : 
-                  'N/A'
-                }
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Enhanced Deployment Details */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
-            Deployment Access
-          </Typography>
-          
-          {/* Deployment URL */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            mb: 1,
-            p: 1.5,
-            backgroundColor: '#1a202c',
-            borderRadius: '8px',
-            border: '1px solid #4a5568'
-          }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                Deployment URL
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace' }}>
-                {deployment.url || `https://deployed-agent-${deployment.deploymentId}.promethios.ai`}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title="Copy URL">
-                <IconButton 
-                  size="small" 
-                  sx={{ color: '#3b82f6' }}
-                  onClick={() => {
-                    const url = deployment.url || `https://deployed-agent-${deployment.deploymentId}.promethios.ai`;
-                    navigator.clipboard.writeText(url);
-                    // You could add a toast notification here
-                  }}
-                >
-                  <ContentCopy fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Open in new tab">
-                <IconButton 
-                  size="small" 
-                  sx={{ color: '#3b82f6' }}
-                  onClick={() => {
-                    const url = deployment.url || `https://deployed-agent-${deployment.deploymentId}.promethios.ai`;
-                    window.open(url, '_blank');
-                  }}
-                >
-                  <Launch fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
-
-          {/* API Key */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            p: 1.5,
-            backgroundColor: '#1a202c',
-            borderRadius: '8px',
-            border: '1px solid #4a5568'
-          }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                API Key
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace' }}>
-                {deployment.apiKey ? 
-                  `${deployment.apiKey.substring(0, 20)}...` : 
-                  `promethios_${deployment.agentId?.split('_').pop()?.substring(0, 8)}_${'*'.repeat(16)}`
-                }
-              </Typography>
-            </Box>
-            <Tooltip title="Copy API Key">
-              <IconButton 
-                size="small" 
-                sx={{ color: '#3b82f6' }}
-                onClick={() => {
-                  const apiKey = deployment.apiKey || `promethios_${deployment.agentId}_${Math.random().toString(36).substr(2, 16)}`;
-                  navigator.clipboard.writeText(apiKey);
-                  // You could add a toast notification here
-                }}
-              >
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
-
-        {/* Usage Instructions */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
-            Integration Examples
-          </Typography>
-          
-          {/* Quick Start Tabs */}
-          <Box sx={{ 
-            backgroundColor: '#1a202c',
-            borderRadius: '8px',
-            border: '1px solid #4a5568',
-            overflow: 'hidden'
-          }}>
-            {/* Tab Headers */}
-            <Box sx={{ 
-              display: 'flex', 
-              borderBottom: '1px solid #4a5568',
-              backgroundColor: '#2d3748'
-            }}>
-              <Box sx={{ 
-                px: 2, 
-                py: 1, 
-                backgroundColor: '#3b82f6', 
-                color: 'white',
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}>
-                cURL
-              </Box>
-              <Box sx={{ 
-                px: 2, 
-                py: 1, 
-                color: '#a0aec0',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#374151' }
-              }}>
-                JavaScript
-              </Box>
-              <Box sx={{ 
-                px: 2, 
-                py: 1, 
-                color: '#a0aec0',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#374151' }
-              }}>
-                Python
-              </Box>
-            </Box>
-            
-            {/* Code Example */}
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body2" sx={{ 
-                color: '#e2e8f0', 
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                lineHeight: 1.4,
-                whiteSpace: 'pre-wrap'
-              }}>
-{`curl -X POST "${deployment.url || `https://deployed-agent-${deployment.deploymentId}.promethios.ai`}/chat" \\
-  -H "Authorization: Bearer ${deployment.apiKey || `promethios_${deployment.agentId?.split('_').pop()?.substring(0, 8)}_****`}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "message": "Hello, how can you help me?",
-    "user_id": "your-user-id"
-  }'`}
-              </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                <Tooltip title="Copy code">
-                  <IconButton 
-                    size="small" 
-                    sx={{ color: '#3b82f6' }}
-                    onClick={() => {
-                      const code = `curl -X POST "${deployment.url || `https://deployed-agent-${deployment.deploymentId}.promethios.ai`}/chat" \\
-  -H "Authorization: Bearer ${deployment.apiKey || `promethios_${deployment.agentId?.split('_').pop()?.substring(0, 8)}_****`}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "message": "Hello, how can you help me?",
-    "user_id": "your-user-id"
-  }'`;
-                      navigator.clipboard.writeText(code);
-                    }}
-                  >
-                    <ContentCopy fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          </Box>
-          
-          {/* Quick Links */}
-          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Description />}
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                fontSize: '0.75rem',
-                '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-              }}
-            >
-              API Docs
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Code />}
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                fontSize: '0.75rem',
-                '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-              }}
-            >
-              SDK Examples
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Help />}
-              sx={{
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                fontSize: '0.75rem',
-                '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-              }}
-            >
-              Support
-            </Button>
-          </Box>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Visibility />}
-            sx={{
-              borderColor: '#4a5568',
-              color: '#a0aec0',
-              '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-            }}
-          >
-            View Logs
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Assessment />}
-            sx={{
-              borderColor: '#4a5568',
-              color: '#a0aec0',
-              '&:hover': { borderColor: '#718096', backgroundColor: '#374151' },
-            }}
-          >
-            Metrics
-          </Button>
-          {deployment.status === 'deployed' ? (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Stop />}
-              sx={{
-                borderColor: '#ef4444',
-                color: '#ef4444',
-                '&:hover': { borderColor: '#dc2626', backgroundColor: 'rgba(239, 68, 68, 0.1)' },
-              }}
-            >
-              Stop
-            </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PlayArrow />}
-              sx={{
-                borderColor: '#10b981',
-                color: '#10b981',
-                '&:hover': { borderColor: '#059669', backgroundColor: 'rgba(16, 185, 129, 0.1)' },
-              }}
-            >
-              Restart
-            </Button>
-          )}
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-};
 
 // Available Agents Tab Component
 const AvailableAgentsTab: React.FC<{ 
@@ -1739,8 +1223,35 @@ const EnhancedDeployPage: React.FC = () => {
       // Load real deployments - no mock data
       const deployments = await enhancedDeploymentService.listRealDeployments(currentUser.uid);
       setRealDeployments(deployments);
+      
+      // Backup to local storage for persistence
+      try {
+        localStorage.setItem(`promethios_deployments_${currentUser.uid}`, JSON.stringify(deployments));
+        console.log('✅ Deployments backed up to local storage');
+      } catch (storageError) {
+        console.warn('⚠️ Failed to backup deployments to local storage:', storageError);
+      }
     } catch (error) {
       console.error('Failed to load deployments:', error);
+      
+      // Try to load from local storage backup
+      try {
+        const backupData = localStorage.getItem(`promethios_deployments_${currentUser.uid}`);
+        if (backupData) {
+          const backupDeployments = JSON.parse(backupData);
+          setRealDeployments(backupDeployments);
+          console.log('✅ Loaded deployments from local storage backup');
+          toast({
+            title: "Loaded from backup",
+            description: "Using cached deployment data",
+            variant: "default"
+          });
+          return;
+        }
+      } catch (backupError) {
+        console.error('Failed to load backup deployments:', backupError);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to load deployment data",
@@ -1771,7 +1282,19 @@ const EnhancedDeployPage: React.FC = () => {
   };
 
   const handleNewDeployment = (result: RealDeploymentResult) => {
-    setRealDeployments(prev => [result, ...prev]);
+    const updatedDeployments = [result, ...realDeployments];
+    setRealDeployments(updatedDeployments);
+    
+    // Backup to local storage immediately
+    if (currentUser) {
+      try {
+        localStorage.setItem(`promethios_deployments_${currentUser.uid}`, JSON.stringify(updatedDeployments));
+        console.log('✅ New deployment backed up to local storage');
+      } catch (storageError) {
+        console.warn('⚠️ Failed to backup new deployment to local storage:', storageError);
+      }
+    }
+    
     // Refresh agents list to show updated state
     refreshAgentsList();
   };
@@ -1898,7 +1421,7 @@ const EnhancedDeployPage: React.FC = () => {
             <Grid container spacing={3}>
               {realDeployments.filter(d => d && d.agentId && !d.agentId.includes('multi-agent')).map((deployment) => (
                 <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
-                  <RealDeployedAgentCard deployment={deployment} />
+                  <ImprovedDeploymentCard deployment={deployment} />
                 </Grid>
               ))}
             </Grid>
@@ -1935,7 +1458,7 @@ const EnhancedDeployPage: React.FC = () => {
             <Grid container spacing={3}>
               {realDeployments.filter(d => d && d.agentId && d.agentId.includes('multi-agent')).map((deployment) => (
                 <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
-                  <RealDeployedAgentCard deployment={deployment} />
+                  <ImprovedDeploymentCard deployment={deployment} />
                 </Grid>
               ))}
             </Grid>
