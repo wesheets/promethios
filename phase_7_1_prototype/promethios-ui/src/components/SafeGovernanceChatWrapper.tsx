@@ -25,7 +25,12 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   try {
     console.log('🔄 SafeGovernanceChatWrapper: Attempting to render AdvancedChatComponent');
     return (
-      <AdvancedChatComponent />
+      <AdvancedChatComponent 
+        isDeployedAgent={true}
+        deployedAgentId={agentId}
+        deployedAgentName={deployment?.agentName || agentId}
+        deploymentId={deploymentId}
+      />
     );
   } catch (error) {
     console.error('❌ ChatContainer failed to render:', error);

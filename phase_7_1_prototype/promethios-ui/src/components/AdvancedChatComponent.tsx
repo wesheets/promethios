@@ -43,7 +43,7 @@ import {
   ContentPaste as ContentPasteIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { UserAgentStorageService } from '../services/UserAgentStorageService';
+import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { ChatStorageService, ChatMessage, FileAttachment } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
 import { veritasService, VeritasResult } from '../services/VeritasService';
@@ -294,6 +294,14 @@ interface TabPanelProps {
   value: number;
 }
 
+// Props interface for AdvancedChatComponent
+interface AdvancedChatComponentProps {
+  isDeployedAgent?: boolean;
+  deployedAgentId?: string;
+  deployedAgentName?: string;
+  deploymentId?: string;
+}
+
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
@@ -332,7 +340,12 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const AdvancedChatComponent: React.FC = () => {
+const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
+  isDeployedAgent = false,
+  deployedAgentId,
+  deployedAgentName,
+  deploymentId
+}) => {
   const { currentUser } = useAuth();
   
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1357,7 +1370,49 @@ const AdvancedChatComponent: React.FC = () => {
         setIsLoading(true);
         console.log('Loading agents for user:', currentUser?.uid);
         
-        if (currentUser?.uid) {
+        if (isDeployedAgent && deployedAgentId) {
+          // For deployed agents, create a mock agent profile
+          console.log('🚀 Deployed agent mode: Creating agent profile for', deployedAgentId);
+          
+          const deployedAgentProfile: AgentProfile = {
+            identity: {
+              id: deployedAgentId,
+              name: deployedAgentName || 'Deployed Agent',
+              version: '1.0.0',
+              description: 'Production deployed agent',
+              ownerId: currentUser?.uid || 'system',
+              creationDate: new Date(),
+              lastModifiedDate: new Date(),
+              status: 'active'
+            },
+            latestScorecard: null,
+            attestationCount: 0,
+            lastActivity: new Date(),
+            healthStatus: 'healthy',
+            trustLevel: 'high',
+            isWrapped: true,
+            governancePolicy: null,
+            isDeployed: true,
+            apiDetails: {
+              endpoint: '',
+              key: 'deployed-agent-key',
+              provider: 'openai',
+              selectedModel: 'gpt-4'
+            }
+          };
+          
+          setAgents([deployedAgentProfile]);
+          setSelectedAgent(deployedAgentProfile);
+          
+          // Load chat history for deployed agent
+          if (currentUser?.uid) {
+            chatStorageService.setCurrentUser(currentUser.uid);
+            const chatHistory = await chatStorageService.loadChatHistory(deployedAgentId);
+            if (chatHistory && chatHistory.length > 0) {
+              setMessages(chatHistory);
+            }
+          }
+        } else if (currentUser?.uid) {
           agentStorageService.setCurrentUser(currentUser.uid);
           const userAgents = await agentStorageService.loadUserAgents();
           
@@ -1466,7 +1521,7 @@ const AdvancedChatComponent: React.FC = () => {
     };
 
     loadAgents();
-  }, [currentUser, chatMode]); // 🔧 CHAT MODE FIX: Add chatMode dependency to reload when mode changes
+  }, [currentUser, chatMode, isDeployedAgent, deployedAgentId, deployedAgentName]); // Add deployed agent dependencies
 
   // Loa  // Load governance metrics based on chat mode
   useEffect(() => {
@@ -2899,7 +2954,8 @@ const AdvancedChatComponent: React.FC = () => {
           </Box>
         </ChatHeader>
 
-        {/* Mode Toggle */}
+        {/* Mode Toggle - Hidden for deployed agents */}
+        {!isDeployedAgent && (
         <ModeToggleContainer>
           <ModeButton
             active={chatMode === 'single'}
@@ -2939,15 +2995,19 @@ const AdvancedChatComponent: React.FC = () => {
             Saved Systems
           </ModeButton>
         </ModeToggleContainer>
+        )}
 
                 {/* Agent/System Selection */}
         <Box sx={{ p: 2, backgroundColor: DARK_THEME.surface, borderBottom: `1px solid ${DARK_THEME.border}`, position: 'relative', zIndex: 1000 }}>
           {chatMode === 'single' ? (
             <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
-              <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Select Agent</InputLabel>
+              <InputLabel sx={{ color: DARK_THEME.text.secondary }}>
+                {isDeployedAgent ? 'Deployed Agent' : 'Select Agent'}
+              </InputLabel>
               <Select
                 value={selectedAgent?.identity.id || ''}
                 onChange={(e) => handleAgentChange(e.target.value)}
+                disabled={isDeployedAgent} // Disable dropdown for deployed agents
                 MenuProps={{
                   PaperProps: {
                     sx: {
