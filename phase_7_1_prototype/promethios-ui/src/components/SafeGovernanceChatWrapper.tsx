@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Chip, Alert } from '@mui/material';
-import { ChatContainer } from '../modules/chat/components/ChatContainer';
+import AdvancedChatComponent from './AdvancedChatComponent';
 
 interface SafeGovernanceChatWrapperProps {
   deployment: any;
@@ -20,12 +20,7 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   
   try {
     return (
-      <ChatContainer 
-        height={height}
-        agentId={agentId}
-        multiAgentSystemId={undefined} // Deployed agents are typically single agents
-        governanceEnabled={governanceEnabled}
-      />
+      <AdvancedChatComponent />
     );
   } catch (error) {
     console.error('❌ ChatContainer failed to render:', error);
