@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { auth } from '../firebase/config';
 import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
-import { ChatContainer } from '../modules/chat/components/ChatContainer';
+// Temporarily comment out ChatContainer to debug
+// import { ChatContainer } from '../modules/chat/components/ChatContainer';
 import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
 import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
 
@@ -137,8 +138,21 @@ const DeployedAgentChatPage: React.FC = () => {
           flex: '0 0 60%',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid #2d3748'
+          borderRight: '1px solid #2d3748',
+          backgroundColor: '#1a202c',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+            🚀 Chat Interface Coming Soon
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#a0aec0', textAlign: 'center', maxWidth: 400 }}>
+            This will be the chat interface for your deployed agent: <strong>{deployment.agentId}</strong>
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#a0aec0', mt: 2 }}>
+            Deployment ID: {deployment.deploymentId}
+          </Typography>
+          {/* Temporarily removed ChatContainer to debug white screen
           <ChatContainer 
             height="100%"
             agentId={deployment.agentId}
@@ -146,6 +160,7 @@ const DeployedAgentChatPage: React.FC = () => {
             governanceEnabled={true} // Always enabled for deployed agents
             // TODO: Add deployed agent mode when we extend ChatContainer
           />
+          */}
         </Box>
         
         {/* API Instructions Panel (Right 40%) */}
