@@ -153,14 +153,54 @@ const DeployedAgentChatPage: React.FC = () => {
           flex: '0 0 60%',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid #2d3748'
+          borderRight: '1px solid #2d3748',
+          backgroundColor: '#1a202c',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4
         }}>
+          <Typography variant="h4" sx={{ color: 'white', mb: 3, textAlign: 'center' }}>
+            🚀 Deployed Agent Chat
+          </Typography>
+          <Typography variant="h6" sx={{ color: '#63b3ed', mb: 2, textAlign: 'center' }}>
+            {deployment.agentName || deployment.agentId}
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#a0aec0', textAlign: 'center', maxWidth: 500, mb: 3 }}>
+            Your deployed agent is ready to chat! The governance system is monitoring all interactions 
+            to ensure compliance and maintain trust scores.
+          </Typography>
+          <Box sx={{ 
+            backgroundColor: '#2d3748', 
+            p: 3, 
+            borderRadius: 2, 
+            border: '1px solid #4a5568',
+            width: '100%',
+            maxWidth: 400
+          }}>
+            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
+              <strong>Deployment Status:</strong> {deployment.status || 'Active'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
+              <strong>Deployment ID:</strong> {deployment.deploymentId}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
+              <strong>API Endpoint:</strong> Available in right panel
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#e2e8f0' }}>
+              <strong>Governance:</strong> Always Active
+            </Typography>
+          </Box>
+          <Typography variant="body2" sx={{ color: '#a0aec0', mt: 3, textAlign: 'center' }}>
+            Chat interface temporarily disabled for debugging
+          </Typography>
+          {/* Temporarily removed ChatContainer to debug governance issues
           <ChatContainer 
             height="100%"
             agentId={deployment.agentId}
             multiAgentSystemId={deployment.deploymentMethod === 'multi-agent-system' ? deployment.agentId : undefined}
             governanceEnabled={true} // Always enabled for deployed agents
           />
+          */}
         </Box>
         
         {/* API Instructions Panel (Right 40%) */}
