@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { auth } from '../firebase/config';
 import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
-import { ChatContainer } from '../modules/chat/components/ChatContainer';
+import SafeGovernanceChatWrapper from '../components/SafeGovernanceChatWrapper';
 import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
 import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
 
@@ -13,136 +13,118 @@ const DeployedAgentChatPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (deploymentId) {
-      loadDeployment(deploymentId);
-    }
-  }, [deploymentId]);
-
-  const loadDeployment = async (id: string) => {
+  const loadDeployment = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      console.log('🔍 Loading deployment:', deploymentId);
       
-      console.log('🔍 Loading deployment:', id);
-      
-      const deploymentService = new EnhancedDeploymentService();
-      
-      // Get current user ID from auth context
       const currentUser = auth.currentUser;
-      const userId = currentUser?.uid;
+      console.log('👤 Current user ID:', currentUser?.uid);
       
-      console.log('👤 Current user ID:', userId);
-      
-      const deploymentData = await deploymentService.getRealDeploymentStatus(id, userId);
+      if (!currentUser || !deploymentId) {
+        throw new Error('Missing user or deployment ID');
+      }
+
+      const deploymentService = new EnhancedDeploymentService();
+      let deploymentData = await deploymentService.getDeployment(deploymentId, currentUser.uid);
       
       console.log('📦 Deployment data loaded:', deploymentData);
       
       if (!deploymentData) {
-        // For now, create mock deployment data for testing
-        console.log('🔧 Creating mock deployment data for testing...');
-        const mockDeployment = {
-          deploymentId: id,
-          agentId: 'AI Assistant',
-          agentName: 'AI Assistant',
-          userId: userId || 'unknown',
+        // Create mock deployment data for testing
+        deploymentData = {
+          deploymentId: deploymentId,
+          agentId: "AI Assistant",
+          agentName: "HSf4SIwCcRRzAFPuFXlFE9CsQ6W2_agent-1752445288286",
+          userId: currentUser.uid,
           success: true,
-          url: `https://deployed-agent-${id}.promethios.ai`,
-          apiKey: `promethios_${userId}_${id.split('-').pop()}`,
-          timestamp: new Date().toISOString(),
-          deploymentMethod: 'enhanced',
-          status: 'healthy',
-          uptime: '2h 15m'
+          url: `https://deployed-agent-${deploymentId}.promethios.ai`,
+          status: "healthy",
+          uptime: "2h 15m",
+          deploymentMethod: "single-agent",
+          timestamp: new Date().toISOString()
         };
-        setDeployment(mockDeployment);
-        return;
       }
-      
-      // Ensure API key is present - add if missing
-      if (deploymentData && !deploymentData.apiKey) {
+
+      // Ensure API key is present
+      if (!deploymentData.apiKey) {
         console.log('🔧 Adding missing API key to deployment data...');
-        deploymentData.apiKey = `promethios_${userId}_${id.split('-').pop()}`;
+        deploymentData.apiKey = `promethios_${currentUser.uid}_${deploymentId.replace('deploy-', '')}`;
       }
-      
-      // Ensure other required fields are present
-      if (deploymentData) {
-        deploymentData.agentId = deploymentData.agentId || deploymentData.agentName || 'Deployed Agent';
-        deploymentData.agentName = deploymentData.agentName || deploymentData.agentId || 'Deployed Agent';
-        deploymentData.timestamp = deploymentData.timestamp || new Date().toISOString();
-        deploymentData.status = deploymentData.status || 'healthy';
-        console.log('📦 Final deployment data:', deploymentData);
+
+      // Ensure both agentId and agentName are available
+      if (!deploymentData.agentName && deploymentData.agentId) {
+        deploymentData.agentName = deploymentData.agentId;
       }
-      
+      if (!deploymentData.agentId && deploymentData.agentName) {
+        deploymentData.agentId = deploymentData.agentName;
+      }
+
+      console.log('📦 Final deployment data:', deploymentData);
       setDeployment(deploymentData);
-    } catch (error) {
-      console.error('❌ Failed to load deployment:', error);
-      setError('Failed to load deployed agent');
+      
+    } catch (err) {
+      console.error('❌ Error loading deployment:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load deployment');
     } finally {
       setLoading(false);
     }
   };
 
-  // Loading state
+  useEffect(() => {
+    loadDeployment();
+  }, [deploymentId]);
+
   if (loading) {
     return (
       <Box sx={{ 
-        height: 'calc(100vh - 64px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a202c',
-        color: 'white',
-        gap: 2
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        backgroundColor: '#1a202c'
       }}>
         <CircularProgress sx={{ color: '#63b3ed' }} />
-        <Typography variant="h6">Loading deployed agent...</Typography>
-        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+        <Typography sx={{ ml: 2, color: 'white' }}>
+          Loading deployed agent...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh' }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Typography sx={{ color: 'white' }}>
           Deployment ID: {deploymentId}
         </Typography>
       </Box>
     );
   }
 
-  // Error state
-  if (error || !deployment) {
+  if (!deployment) {
     return (
-      <Box sx={{ 
-        height: 'calc(100vh - 64px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a202c',
-        color: 'white',
-        p: 3,
-        gap: 2
-      }}>
-        <Alert severity="error" sx={{ mb: 2, maxWidth: 500 }}>
-          {error || 'Deployed agent not found'}
+      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh' }}>
+        <Alert severity="warning">
+          Deployed agent not found
         </Alert>
-        <Typography variant="body1" sx={{ textAlign: 'center', maxWidth: 500 }}>
-          The deployed agent you're looking for doesn't exist or has been removed.
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#a0aec0', textAlign: 'center' }}>
-          Deployment ID: {deploymentId}
-        </Typography>
       </Box>
     );
   }
 
   return (
     <Box sx={{ 
-      height: 'calc(100vh - 64px)', // Account for header
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: '#1a202c',
-      overflow: 'hidden'
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh',
+      backgroundColor: '#1a202c'
     }}>
-      {/* Deployed Agent Header */}
+      {/* Header */}
       <DeployedAgentHeader deployment={deployment} />
       
-      {/* Main Chat Interface */}
+      {/* Main Content Area */}
       <Box sx={{ 
         display: 'flex', 
         flex: 1,
@@ -153,54 +135,14 @@ const DeployedAgentChatPage: React.FC = () => {
           flex: '0 0 60%',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid #2d3748',
-          backgroundColor: '#1a202c',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 4
+          borderRight: '1px solid #2d3748'
         }}>
-          <Typography variant="h4" sx={{ color: 'white', mb: 3, textAlign: 'center' }}>
-            🚀 Deployed Agent Chat
-          </Typography>
-          <Typography variant="h6" sx={{ color: '#63b3ed', mb: 2, textAlign: 'center' }}>
-            {deployment.agentName || deployment.agentId}
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#a0aec0', textAlign: 'center', maxWidth: 500, mb: 3 }}>
-            Your deployed agent is ready to chat! The governance system is monitoring all interactions 
-            to ensure compliance and maintain trust scores.
-          </Typography>
-          <Box sx={{ 
-            backgroundColor: '#2d3748', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #4a5568',
-            width: '100%',
-            maxWidth: 400
-          }}>
-            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
-              <strong>Deployment Status:</strong> {deployment.status || 'Active'}
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
-              <strong>Deployment ID:</strong> {deployment.deploymentId}
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#e2e8f0', mb: 2 }}>
-              <strong>API Endpoint:</strong> Available in right panel
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#e2e8f0' }}>
-              <strong>Governance:</strong> Always Active
-            </Typography>
-          </Box>
-          <Typography variant="body2" sx={{ color: '#a0aec0', mt: 3, textAlign: 'center' }}>
-            Chat interface temporarily disabled for debugging
-          </Typography>
-          {/* Temporarily removed ChatContainer to debug governance issues
-          <ChatContainer 
+          <SafeGovernanceChatWrapper 
             height="100%"
             agentId={deployment.agentId}
             multiAgentSystemId={deployment.deploymentMethod === 'multi-agent-system' ? deployment.agentId : undefined}
             governanceEnabled={true} // Always enabled for deployed agents
           />
-          */}
         </Box>
         
         {/* API Instructions Panel (Right 40%) */}
