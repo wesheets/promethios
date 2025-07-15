@@ -326,22 +326,21 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
                 Quick Test (cURL)
               </Typography>
               <Box sx={{ 
-                p: 1.5, 
-                backgroundColor: '#000', 
+                backgroundColor: '#1a1a1a', 
+                padding: 1, 
                 borderRadius: 1, 
                 border: '1px solid #333',
                 position: 'relative'
               }}>
-                <Typography variant="caption" sx={{ 
-                  fontFamily: 'monospace', 
-                  color: '#4caf50',
+                <Typography sx={{
+                  fontFamily: 'monospace',
                   fontSize: '0.75rem',
                   lineHeight: 1.4
                 }}>
                   curl -X POST "{deploymentUrl}/chat" \<br/>
-                  &nbsp;&nbsp;-H "Authorization: Bearer {apiKey}" \<br/>
+                  &nbsp;&nbsp;-H "Authorization: Bearer {apiKey.substring(0, 20)}..." \<br/>
                   &nbsp;&nbsp;-H "Content-Type: application/json" \<br/>
-                  &nbsp;&nbsp;-d '{{"message": "Hello, how can you help?"}}'
+                  &nbsp;&nbsp;-d '{"message": "Hello, how can you help?"}'
                 </Typography>
                 <IconButton 
                   size="small" 
