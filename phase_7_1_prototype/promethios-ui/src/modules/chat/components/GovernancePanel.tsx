@@ -217,6 +217,18 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
 }) => {
   const [expandedSections, setExpandedSections] = useState<string[]>(['metrics', 'status']);
 
+  // Defensive check - if metrics is undefined, provide default values
+  const safeMetrics = metrics || {
+    trustScore: 0,
+    complianceRate: 0,
+    responseTime: 0,
+    sessionIntegrity: 0,
+    policyViolations: 0,
+    observerAlerts: 0,
+    realTimeMonitoring: false,
+    agentCoordination: 0
+  };
+
   const handleSectionToggle = (section: string) => {
     setExpandedSections(prev => 
       prev.includes(section) 
@@ -259,9 +271,9 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
             Governance
           </Typography>
           <Badge 
-            badgeContent={metrics.policyViolations + metrics.observerAlerts} 
+            badgeContent={(metrics?.policyViolations || 0) + (metrics?.observerAlerts || 0)} 
             color="error"
-            invisible={metrics.policyViolations + metrics.observerAlerts === 0}
+            invisible={(metrics?.policyViolations || 0) + (metrics?.observerAlerts || 0) === 0}
           >
             <ShieldIcon fontSize="small" />
           </Badge>
@@ -309,15 +321,15 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <MetricLabel>Trust Score</MetricLabel>
-                  <ShieldIcon color={getMetricColor(metrics.trustScore)} fontSize="small" />
+                  <ShieldIcon color={getMetricColor(safeMetrics.trustScore)} fontSize="small" />
                 </Box>
-                <MetricValue color={getMetricColor(metrics.trustScore)}>
-                  {(metrics.trustScore * 100).toFixed(0)}%
+                <MetricValue color={getMetricColor(safeMetrics.trustScore)}>
+                  {(safeMetrics.trustScore * 100).toFixed(0)}%
                 </MetricValue>
                 <LinearProgress 
                   variant="determinate" 
-                  value={metrics.trustScore * 100}
-                  color={getMetricColor(metrics.trustScore)}
+                  value={safeMetrics.trustScore * 100}
+                  color={getMetricColor(safeMetrics.trustScore)}
                   sx={{ height: 6, borderRadius: 3 }}
                 />
               </CardContent>
@@ -328,15 +340,15 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <MetricLabel>Compliance Rate</MetricLabel>
-                  <CheckCircleIcon color={getMetricColor(metrics.complianceRate)} fontSize="small" />
+                  <CheckCircleIcon color={getMetricColor(safeMetrics.complianceRate)} fontSize="small" />
                 </Box>
-                <MetricValue color={getMetricColor(metrics.complianceRate)}>
-                  {(metrics.complianceRate * 100).toFixed(0)}%
+                <MetricValue color={getMetricColor(safeMetrics.complianceRate)}>
+                  {(safeMetrics.complianceRate * 100).toFixed(0)}%
                 </MetricValue>
                 <LinearProgress 
                   variant="determinate" 
-                  value={metrics.complianceRate * 100}
-                  color={getMetricColor(metrics.complianceRate)}
+                  value={safeMetrics.complianceRate * 100}
+                  color={getMetricColor(safeMetrics.complianceRate)}
                   sx={{ height: 6, borderRadius: 3 }}
                 />
               </CardContent>
@@ -350,7 +362,7 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
                   <SpeedIcon color="info" fontSize="small" />
                 </Box>
                 <MetricValue color="info">
-                  {metrics.responseTime.toFixed(1)}s
+                  {safeMetrics.responseTime.toFixed(1)}s
                 </MetricValue>
                 <Typography variant="caption" color="text.secondary">
                   Average processing time
@@ -363,15 +375,15 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <MetricLabel>Session Integrity</MetricLabel>
-                  <TimelineIcon color={getMetricColor(metrics.sessionIntegrity)} fontSize="small" />
+                  <TimelineIcon color={getMetricColor(safeMetrics.sessionIntegrity)} fontSize="small" />
                 </Box>
-                <MetricValue color={getMetricColor(metrics.sessionIntegrity)}>
-                  {(metrics.sessionIntegrity * 100).toFixed(0)}%
+                <MetricValue color={getMetricColor(safeMetrics.sessionIntegrity)}>
+                  {(safeMetrics.sessionIntegrity * 100).toFixed(0)}%
                 </MetricValue>
                 <LinearProgress 
                   variant="determinate" 
-                  value={metrics.sessionIntegrity * 100}
-                  color={getMetricColor(metrics.sessionIntegrity)}
+                  value={safeMetrics.sessionIntegrity * 100}
+                  color={getMetricColor(safeMetrics.sessionIntegrity)}
                   sx={{ height: 6, borderRadius: 3 }}
                 />
               </CardContent>
@@ -383,15 +395,15 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
                 <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                     <MetricLabel>Agent Coordination</MetricLabel>
-                    <GroupIcon color={getMetricColor(metrics.agentCoordination)} fontSize="small" />
+                    <GroupIcon color={getMetricColor(safeMetrics.agentCoordination)} fontSize="small" />
                   </Box>
-                  <MetricValue color={getMetricColor(metrics.agentCoordination)}>
-                    {(metrics.agentCoordination * 100).toFixed(0)}%
+                  <MetricValue color={getMetricColor(safeMetrics.agentCoordination)}>
+                    {(safeMetrics.agentCoordination * 100).toFixed(0)}%
                   </MetricValue>
                   <LinearProgress 
                     variant="determinate" 
-                    value={metrics.agentCoordination * 100}
-                    color={getMetricColor(metrics.agentCoordination)}
+                    value={safeMetrics.agentCoordination * 100}
+                    color={getMetricColor(safeMetrics.agentCoordination)}
                     sx={{ height: 6, borderRadius: 3 }}
                   />
                 </CardContent>
@@ -413,19 +425,19 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
           </AccordionSummary>
           <AccordionDetails sx={{ p: 1 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <StatusIndicator className={metrics.realTimeMonitoring ? 'healthy' : 'error'}>
+              <StatusIndicator className={safeMetrics.realTimeMonitoring ? 'healthy' : 'error'}>
                 <VisibilityIcon fontSize="small" />
-                Real-time Monitoring: {metrics.realTimeMonitoring ? 'Active' : 'Inactive'}
+                Real-time Monitoring: {safeMetrics.realTimeMonitoring ? 'Active' : 'Inactive'}
               </StatusIndicator>
               
-              <StatusIndicator className={metrics.policyViolations === 0 ? 'healthy' : 'error'}>
+              <StatusIndicator className={safeMetrics.policyViolations === 0 ? 'healthy' : 'error'}>
                 <WarningIcon fontSize="small" />
-                Policy Violations: {metrics.policyViolations}
+                Policy Violations: {safeMetrics.policyViolations}
               </StatusIndicator>
               
-              <StatusIndicator className={metrics.observerAlerts === 0 ? 'healthy' : 'warning'}>
+              <StatusIndicator className={safeMetrics.observerAlerts === 0 ? 'healthy' : 'warning'}>
                 <ErrorIcon fontSize="small" />
-                Observer Alerts: {metrics.observerAlerts}
+                Observer Alerts: {safeMetrics.observerAlerts}
               </StatusIndicator>
               
               <StatusIndicator className="healthy">
