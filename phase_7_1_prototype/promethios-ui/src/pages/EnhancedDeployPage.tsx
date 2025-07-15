@@ -934,16 +934,16 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
         deploymentMethod
       );
 
-      console.log('🔍 Debug - Deployment result:', deploymentResult);
+      console.log('🔍 Debug - Deployment result:', result);
 
       toast({
         title: "Deployment Started",
-        description: `Agent deployment initiated successfully. Deployment ID: ${deploymentResult.deploymentId}`,
+        description: `Agent deployment initiated successfully. Deployment ID: ${result.deploymentId}`,
         variant: "default"
       });
 
       console.log('🔍 Debug - Calling onDeploy callback...');
-      onDeploy(deploymentResult);
+      onDeploy(result);
       
       console.log('🔍 Debug - Closing wizard...');
       onClose();
