@@ -56,6 +56,9 @@ import {
   MoreVert
 } from '@mui/icons-material';
 import { observerService } from '../services/observers';
+import AgentMetricsWidget from '../components/AgentMetricsWidget';
+import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
 
 // Types for governance data
 interface PrismMetrics {
@@ -171,6 +174,28 @@ const GovernanceOverviewPage: React.FC = () => {
     filterViolations
   } = useGovernanceDashboard();
 
+  // Agent metrics integration
+  const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
+
+  // Load user agents for governance tracking
+  useEffect(() => {
+    const loadUserAgents = async () => {
+      try {
+        const agents = await userAgentStorageService.getAllAgents();
+        const agentList = agents.flatMap(agent => [
+          { agentId: agent.id, version: 'test' as const },
+          { agentId: agent.id, version: 'production' as const }
+        ]);
+        setUserAgents(agentList);
+      } catch (error) {
+        console.error('Failed to load user agents for governance:', error);
+      }
+    };
+
+    loadUserAgents();
+  }, []);
+
   // Mock data for missing variables until backend integration is complete
   const vigilMetrics = {
     trustScores: {},
@@ -195,7 +220,7 @@ const GovernanceOverviewPage: React.FC = () => {
     setActiveTab(newValue);
     
     // Track tab change
-    const tabNames = ['overview', 'violations', 'reports', 'agents'];
+    const tabNames = ['overview', 'violations', 'reports', 'agents', 'agent_metrics'];
     trackFeatureUsage('governance_tabs', 'tab_change', {
       from_tab: tabNames[activeTab] || 'unknown',
       to_tab: tabNames[newValue] || 'unknown',
@@ -608,9 +633,9 @@ const GovernanceOverviewPage: React.FC = () => {
             }}
           >
             <Tab label="PRISM Overview" />
-            <Tab label="VIGIL Metrics" />
             <Tab label="Trust Metrics" />
             <Tab label="Multi-Agent Systems" />
+            <Tab label="Agent Metrics" />
           </Tabs>
         </Box>
 
@@ -866,6 +891,74 @@ const GovernanceOverviewPage: React.FC = () => {
                   <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                     Agent collaboration quality and governance compliance metrics.
                   </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={4}>
+          {/* Agent Metrics */}
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardHeader 
+                  title="Real-time Agent Governance Metrics" 
+                  sx={{ 
+                    '& .MuiCardHeader-title': { color: 'white' }
+                  }}
+                  action={
+                    <Chip 
+                      label={`${userAgents.length} Agents Monitored`}
+                      size="small"
+                      sx={{ backgroundColor: '#3182ce20', color: '#3182ce' }}
+                    />
+                  }
+                />
+                <CardContent>
+                  {agentMetrics.isLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                      <LinearProgress sx={{ width: '100%', mb: 2 }} />
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        Loading agent governance metrics...
+                      </Typography>
+                    </Box>
+                  ) : userAgents.length === 0 ? (
+                    <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white', border: '1px solid #3b82f6' }}>
+                      No agents found. Create and wrap agents to see governance metrics here.
+                    </Alert>
+                  ) : (
+                    <Grid container spacing={3}>
+                      {userAgents.map(({ agentId, version }) => {
+                        const profile = agentMetrics.getProfile(agentId, version);
+                        const error = agentMetrics.getError(agentId, version);
+                        
+                        if (error) {
+                          return (
+                            <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                              <Alert severity="warning" sx={{ backgroundColor: '#f59e0b20', color: '#f59e0b' }}>
+                                Failed to load governance metrics for {agentId} ({version})
+                              </Alert>
+                            </Grid>
+                          );
+                        }
+                        
+                        if (!profile) return null;
+                        
+                        return (
+                          <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                            <AgentMetricsWidget
+                              agentId={agentId}
+                              agentName={profile.agentName}
+                              version={version}
+                              compact={false}
+                              showTitle={true}
+                            />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  )}
                 </CardContent>
               </Card>
             </Grid>

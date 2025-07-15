@@ -41,6 +41,9 @@ import {
   Assessment,
   Shield
 } from '@mui/icons-material';
+import AgentMetricsWidget from '../components/AgentMetricsWidget';
+import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
 
 // Trust dimension icons mapping
 const trustDimensionIcons = {
@@ -106,6 +109,10 @@ const TrustMetricsOverviewPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [agentMetrics, setAgentMetrics] = useState<AgentTrustMetrics[]>([]);
   
+  // Agent metrics integration
+  const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const realTimeAgentMetrics = useMultiAgentRealTimeMetrics(userAgents);
+  
   // Use real backend data
   const {
     metrics: trustMetrics,
@@ -124,6 +131,24 @@ const TrustMetricsOverviewPage: React.FC = () => {
   } = useAgentBackend();
 
   const loading = metricsLoading || evaluationsLoading || agentsLoading;
+
+  // Load user agents for trust metrics tracking
+  useEffect(() => {
+    const loadUserAgents = async () => {
+      try {
+        const agents = await userAgentStorageService.getAllAgents();
+        const agentList = agents.flatMap(agent => [
+          { agentId: agent.id, version: 'test' as const },
+          { agentId: agent.id, version: 'production' as const }
+        ]);
+        setUserAgents(agentList);
+      } catch (error) {
+        console.error('Failed to load user agents for trust tracking:', error);
+      }
+    };
+
+    loadUserAgents();
+  }, []);
 
   // Transform backend data into UI format
   useEffect(() => {
@@ -346,6 +371,7 @@ const TrustMetricsOverviewPage: React.FC = () => {
             <Tab label="Agent Trust Scores" />
             <Tab label="Trust Trends" />
             <Tab label="Risk Analysis" />
+            <Tab label="Real-time Agent Metrics" />
           </Tabs>
         </Box>
 
@@ -508,6 +534,105 @@ const TrustMetricsOverviewPage: React.FC = () => {
               <AlertTitle>All Clear</AlertTitle>
               No agents currently require risk-based attention. All agents are operating within acceptable trust boundaries.
             </Alert>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
+          {/* Real-time Agent Metrics */}
+          <Typography variant="h6" gutterBottom>Real-time Agent Trust Metrics</Typography>
+          <Typography variant="body2" sx={{ color: '#a0aec0', mb: 3 }}>
+            Live trust scores and metrics for all your agents with real-time updates
+          </Typography>
+          
+          {realTimeAgentMetrics.isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <LinearProgress sx={{ width: '100%', mb: 2 }} />
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                Loading real-time agent trust metrics...
+              </Typography>
+            </Box>
+          ) : userAgents.length === 0 ? (
+            <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+              No agents found. Create and wrap agents to monitor trust metrics here.
+            </Alert>
+          ) : (
+            <Grid container spacing={3}>
+              {userAgents.map(({ agentId, version }) => {
+                const profile = realTimeAgentMetrics.getProfile(agentId, version);
+                const error = realTimeAgentMetrics.getError(agentId, version);
+                
+                if (error) {
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                      <Alert severity="warning" sx={{ backgroundColor: '#f59e0b20', color: '#f59e0b' }}>
+                        Failed to load trust metrics for {agentId} ({version})
+                      </Alert>
+                    </Grid>
+                  );
+                }
+                
+                if (!profile) return null;
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                    <Card sx={{ height: '100%', backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
+                      <CardContent>
+                        <Box display="flex" alignItems="center" mb={2}>
+                          <Avatar sx={{ 
+                            bgcolor: profile.metrics.trustScore > 0.9 ? '#10b981' : 
+                                     profile.metrics.trustScore > 0.7 ? '#f59e0b' : '#ef4444',
+                            mr: 2
+                          }}>
+                            {profile.metrics.trustScore > 0.9 ? <CheckCircle /> : 
+                             profile.metrics.trustScore > 0.7 ? <Warning /> : <Security />}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6" sx={{ color: 'white' }}>
+                              {profile.agentName}
+                            </Typography>
+                            <Chip 
+                              label={version} 
+                              size="small" 
+                              color={version === 'production' ? 'success' : 'info'}
+                            />
+                          </Box>
+                        </Box>
+                        
+                        <AgentMetricsWidget
+                          agentId={agentId}
+                          agentName={profile.agentName}
+                          version={version}
+                          compact={false}
+                          showTitle={false}
+                        />
+                        
+                        <Divider sx={{ my: 2, borderColor: '#4a5568' }} />
+                        
+                        <Box>
+                          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                            Trust Score: {(profile.metrics.trustScore * 100).toFixed(1)}%
+                          </Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={profile.metrics.trustScore * 100}
+                            sx={{ 
+                              mt: 1,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: '#4a5568',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: profile.metrics.trustScore > 0.9 ? '#10b981' : 
+                                                 profile.metrics.trustScore > 0.7 ? '#f59e0b' : '#ef4444'
+                              }
+                            }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
           )}
         </TabPanel>
       </Card>

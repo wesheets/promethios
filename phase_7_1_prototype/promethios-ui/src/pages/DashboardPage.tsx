@@ -57,6 +57,9 @@ import {
   AdminPanelSettings,
 } from '@mui/icons-material';
 import ObserverAgentProxy from '../proxies/ObserverAgentProxy';
+import AgentMetricsWidget from '../components/AgentMetricsWidget';
+import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
 
 interface DashboardMetrics {
   agents: {
@@ -96,6 +99,11 @@ interface DashboardMetrics {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  
+  // Real-time metrics for all user agents
+  const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
+  
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     agents: {
       total: 3,
@@ -155,6 +163,22 @@ const DashboardPage: React.FC = () => {
   });
 
   useEffect(() => {
+    // Load user agents for real-time metrics
+    const loadUserAgents = async () => {
+      try {
+        const agents = await userAgentStorageService.getAllAgents();
+        const agentList = agents.map(agent => ({
+          agentId: agent.id,
+          version: 'production' as const // Focus on production agents for dashboard
+        }));
+        setUserAgents(agentList);
+      } catch (error) {
+        console.error('Failed to load user agents:', error);
+      }
+    };
+
+    loadUserAgents();
+    
     // Simulate loading data
     const timer = setTimeout(() => {
       setLoading(false);
@@ -557,7 +581,101 @@ const DashboardPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-
+        
+        {/* Real-time Agent Metrics */}
+        <Grid item xs={12} md={8}>
+          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                <Typography variant="h6" sx={{ color: 'white' }}>
+                  Agent Performance Metrics
+                </Typography>
+                <Chip 
+                  label={`${userAgents.length} Agents Monitored`}
+                  size="small"
+                  sx={{ backgroundColor: '#3182ce20', color: '#3182ce' }}
+                />
+              </Box>
+              
+              {agentMetrics.isLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                  <CircularProgress sx={{ color: '#3182ce' }} />
+                  <Typography variant="body2" sx={{ ml: 2, color: '#a0aec0' }}>
+                    Loading agent metrics...
+                  </Typography>
+                </Box>
+              ) : userAgents.length === 0 ? (
+                <Box textAlign="center" py={4}>
+                  <SmartToy sx={{ fontSize: 48, color: '#4a5568', mb: 2 }} />
+                  <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
+                    No Agents Found
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
+                    Create your first agent to see real-time metrics
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={() => navigate('/ui/agents/wrapping')}
+                    sx={{ backgroundColor: '#3182ce', '&:hover': { backgroundColor: '#2c5aa0' } }}
+                  >
+                    Wrap Your First Agent
+                  </Button>
+                </Box>
+              ) : (
+                <Grid container spacing={2}>
+                  {userAgents.slice(0, 4).map(({ agentId, version }) => {
+                    const profile = agentMetrics.getProfile(agentId, version);
+                    const error = agentMetrics.getError(agentId, version);
+                    
+                    if (error) {
+                      return (
+                        <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
+                          <Alert severity="warning" sx={{ backgroundColor: '#f59e0b20', color: '#f59e0b' }}>
+                            Failed to load metrics for {agentId}
+                          </Alert>
+                        </Grid>
+                      );
+                    }
+                    
+                    if (!profile) return null;
+                    
+                    return (
+                      <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
+                        <AgentMetricsWidget
+                          agentId={agentId}
+                          agentName={profile.agentName}
+                          version={version}
+                          compact={true}
+                          showTitle={true}
+                        />
+                      </Grid>
+                    );
+                  })}
+                  
+                  {userAgents.length > 4 && (
+                    <Grid item xs={12}>
+                      <Box textAlign="center" pt={2}>
+                        <Button
+                          variant="outlined"
+                          onClick={() => navigate('/ui/agents/lifecycle')}
+                          sx={{ 
+                            borderColor: '#3182ce', 
+                            color: '#3182ce',
+                            '&:hover': { borderColor: '#2c5aa0', backgroundColor: '#3182ce20' }
+                          }}
+                        >
+                          View All {userAgents.length} Agents <ArrowForward fontSize="small" sx={{ ml: 1 }} />
+                        </Button>
+                      </Box>
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        
         {/* Observer Agent */}
         <Grid item xs={12} md={4}>
           {/* Observer Agent removed - now using FloatingObserverAgent globally */}
@@ -569,6 +687,5 @@ const DashboardPage: React.FC = () => {
     </Container>
   );
 };
-
 export default DashboardPage;
 

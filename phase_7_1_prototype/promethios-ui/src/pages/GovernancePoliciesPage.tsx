@@ -114,9 +114,11 @@ import {
   HelpOutline,
   TrendingUp,
   TrendingDown,
-  ExpandMore
+  ImportExport,
 } from '@mui/icons-material';
-
+import AgentMetricsWidget from '../components/AgentMetricsWidget';
+import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -156,6 +158,10 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   const [policyOptimizations, setPolicyOptimizations] = useState<{[key: string]: PolicyOptimization}>({});
   const [policyConflicts, setPolicyConflicts] = useState<{[key: string]: PolicyConflict[]}>({});
   
+  // Agent metrics integration
+  const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
+  
   // Dialog states
   const [createPolicyOpen, setCreatePolicyOpen] = useState(false);
   const [editPolicyOpen, setEditPolicyOpen] = useState(false);
@@ -169,6 +175,24 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   // Load initial data
   useEffect(() => {
     loadAllData();
+  }, []);
+
+  // Load user agents for policy compliance tracking
+  useEffect(() => {
+    const loadUserAgents = async () => {
+      try {
+        const agents = await userAgentStorageService.getAllAgents();
+        const agentList = agents.flatMap(agent => [
+          { agentId: agent.id, version: 'test' as const },
+          { agentId: agent.id, version: 'production' as const }
+        ]);
+        setUserAgents(agentList);
+      } catch (error) {
+        console.error('Failed to load user agents for policy tracking:', error);
+      }
+    };
+
+    loadUserAgents();
   }, []);
 
   const loadAllData = useCallback(async () => {
@@ -567,6 +591,11 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           icon={<Analytics />}
           iconPosition="start"
         />
+        <Tab 
+          label="Agent Compliance" 
+          icon={<Assignment />}
+          iconPosition="start"
+        />
       </Tabs>
 
       <TabPanel value={activeTab} index={0}>
@@ -585,6 +614,83 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         <Typography variant="body2" color="text.secondary">
           View comprehensive analytics and insights for your governance policies.
         </Typography>
+      </TabPanel>
+
+      <TabPanel value={activeTab} index={3}>
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Agent Policy Compliance
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Monitor real-time policy compliance across all your agents.
+          </Typography>
+          
+          {agentMetrics.isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+              <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
+                Loading agent compliance data...
+              </Typography>
+            </Box>
+          ) : userAgents.length === 0 ? (
+            <Alert severity="info">
+              No agents found. Create and wrap agents to monitor policy compliance.
+            </Alert>
+          ) : (
+            <Grid container spacing={3}>
+              {userAgents.map(({ agentId, version }) => {
+                const profile = agentMetrics.getProfile(agentId, version);
+                const error = agentMetrics.getError(agentId, version);
+                
+                if (error) {
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                      <Alert severity="warning">
+                        Failed to load compliance data for {agentId} ({version})
+                      </Alert>
+                    </Grid>
+                  );
+                }
+                
+                if (!profile) return null;
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={`${agentId}_${version}`}>
+                    <Card sx={{ height: '100%' }}>
+                      <CardHeader
+                        title={`${profile.agentName} (${version})`}
+                        subheader={`Policy Compliance: ${(profile.metrics.governanceMetrics.complianceRate * 100).toFixed(1)}%`}
+                        avatar={
+                          <Avatar sx={{ 
+                            bgcolor: profile.metrics.governanceMetrics.complianceRate > 0.9 ? 'success.main' : 
+                                     profile.metrics.governanceMetrics.complianceRate > 0.7 ? 'warning.main' : 'error.main'
+                          }}>
+                            {profile.metrics.governanceMetrics.complianceRate > 0.9 ? <CheckCircle /> : 
+                             profile.metrics.governanceMetrics.complianceRate > 0.7 ? <Warning /> : <Error />}
+                          </Avatar>
+                        }
+                      />
+                      <CardContent>
+                        <AgentMetricsWidget
+                          agentId={agentId}
+                          agentName={profile.agentName}
+                          version={version}
+                          compact={true}
+                          showTitle={false}
+                        />
+                        <Box mt={2}>
+                          <Typography variant="caption" color="text.secondary">
+                            Policy Violations: {profile.metrics.governanceMetrics.policyViolations}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+        </Box>
       </TabPanel>
 
       {/* Create Policy Dialog */}
