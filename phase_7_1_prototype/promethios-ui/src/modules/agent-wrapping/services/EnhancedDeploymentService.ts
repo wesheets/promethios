@@ -28,6 +28,10 @@ export interface RealDeploymentResult {
   deploymentId: string;
   url?: string;
   error?: string;
+  agentId?: string;
+  userId?: string;
+  deploymentMethod?: string;
+  timestamp?: string;
 }
 
 /**
@@ -201,10 +205,11 @@ export class EnhancedDeploymentService extends DeploymentService {
         
         console.log('🔍 Storing deployment result with ID:', deploymentId);
         
-        // Store deployment result with proper namespace
+        // Store deployment result with proper namespace and user ID
         try {
-          await this.storage.store(`deployment-result:${deploymentId}`, result);
-          console.log('✅ Deployment result stored successfully');
+          const storageKey = `${userId}_${deploymentId}`;
+          await this.storage.store('deployment-result', storageKey, result);
+          console.log('✅ Deployment result stored successfully with key:', storageKey);
         } catch (storageError) {
           console.error('❌ Failed to store deployment result:', storageError);
           // Don't fail the deployment if storage fails
@@ -221,9 +226,10 @@ export class EnhancedDeploymentService extends DeploymentService {
         result = await this.deployViaIntegration(enhancedPackage, target);
         
         if (result.success) {
-          // Store deployment result
-          await this.storage.store(`deployment-result:${result.deploymentId}`, result);
-          console.log('✅ Enhanced package deployed successfully');
+          // Store deployment result with user ID in key
+          const storageKey = `${result.userId}_${result.deploymentId}`;
+          await this.storage.store('deployment-result', storageKey, result);
+          console.log('✅ Enhanced package deployed successfully with key:', storageKey);
         }
       }
       
@@ -280,10 +286,38 @@ export class EnhancedDeploymentService extends DeploymentService {
    */
   async listRealDeployments(userId: string): Promise<RealDeploymentResult[]> {
     try {
-      const keys = await this.storage.keys('agents');
-      const deploymentKeys = keys.filter(key => key.startsWith('deployment-result:'));
-      const deployments = await this.storage.getMany('agents', deploymentKeys);
-      return deployments.filter(Boolean);
+      console.log('🔍 Loading deployments for user:', userId);
+      
+      // Get all keys from the deployment-result namespace
+      const keys = await this.storage.keys('deployment-result');
+      console.log('🔍 Found deployment-result keys:', keys);
+      
+      // Filter keys for this user
+      const userDeploymentKeys = keys.filter(key => key.includes(userId));
+      console.log('🔍 User deployment keys:', userDeploymentKeys);
+      
+      if (userDeploymentKeys.length === 0) {
+        console.log('📭 No deployments found for user');
+        return [];
+      }
+      
+      // Load all deployments for this user
+      const deployments: RealDeploymentResult[] = [];
+      for (const key of userDeploymentKeys) {
+        try {
+          const deployment = await this.storage.get('deployment-result', key);
+          if (deployment) {
+            console.log('✅ Loaded deployment:', { id: deployment.deploymentId, agentId: deployment.agentId });
+            deployments.push(deployment);
+          }
+        } catch (error) {
+          console.warn('⚠️ Failed to load deployment:', key, error);
+        }
+      }
+      
+      console.log(`📦 Loaded ${deployments.length} deployments for user ${userId}`);
+      return deployments.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
     } catch (error) {
       console.error('❌ Failed to list deployments:', error);
       return [];
@@ -293,9 +327,24 @@ export class EnhancedDeploymentService extends DeploymentService {
   /**
    * Get deployment status
    */
-  async getRealDeploymentStatus(deploymentId: string): Promise<RealDeploymentResult | null> {
+  async getRealDeploymentStatus(deploymentId: string, userId?: string): Promise<RealDeploymentResult | null> {
     try {
-      return await this.storage.retrieve(`deployment-result:${deploymentId}`);
+      if (userId) {
+        // Try with user ID prefix first
+        const userKey = `${userId}_${deploymentId}`;
+        const result = await this.storage.get('deployment-result', userKey);
+        if (result) return result;
+      }
+      
+      // Fallback: search through all deployment keys for this deployment ID
+      const keys = await this.storage.keys('deployment-result');
+      const matchingKey = keys.find(key => key.includes(deploymentId));
+      
+      if (matchingKey) {
+        return await this.storage.get('deployment-result', matchingKey);
+      }
+      
+      return null;
     } catch (error) {
       console.error('❌ Failed to get deployment status:', error);
       return null;
