@@ -2950,6 +2950,8 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
               </Box>
             )}
             
+            {/* Governance Toggle - Hidden for deployed agents */}
+            {!isDeployedAgent && (
             <GovernanceToggleContainer onClick={handleGovernanceToggle}>
               <Switch
                 checked={governanceEnabled}
@@ -2968,6 +2970,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                 Governed
               </Typography>
             </GovernanceToggleContainer>
+            )}
           </Box>
         </ChatHeader>
 

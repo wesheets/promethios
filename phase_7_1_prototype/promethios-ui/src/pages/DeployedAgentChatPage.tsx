@@ -53,9 +53,11 @@ const DeployedAgentChatPage: React.FC = () => {
 
       // Ensure both agentId and agentName are available with better names
       if (!deploymentData.agentName && deploymentData.agentId) {
-        // Try to create a better name from the ID
+        // Create a meaningful name from the deployment data
         if (deploymentData.agentId.includes('agent-')) {
-          deploymentData.agentName = "AI Assistant";
+          // Extract a better name from the deployment ID or use deployment info
+          const agentNumber = deploymentData.agentId.split('agent-')[1];
+          deploymentData.agentName = `Deployed Agent ${agentNumber}`;
         } else {
           deploymentData.agentName = deploymentData.agentId;
         }
@@ -66,8 +68,8 @@ const DeployedAgentChatPage: React.FC = () => {
       
       // Fallback to ensure we always have a name
       if (!deploymentData.agentName && !deploymentData.agentId) {
-        deploymentData.agentName = "AI Assistant";
-        deploymentData.agentId = "AI Assistant";
+        deploymentData.agentName = `Deployed Agent ${deploymentId.replace('deploy-', '')}`;
+        deploymentData.agentId = deploymentData.agentName;
       }
       
       console.log('📦 Final deployment data:', deploymentData);
