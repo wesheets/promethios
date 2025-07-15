@@ -46,19 +46,48 @@ export class EnhancedDeploymentService extends DeploymentService {
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService:', error);
-      // Simple fallback storage
+      console.error('❌ Error details:', error);
+      
+      // Simple fallback storage that won't crash
       this.storage = {
-        get: async () => null,
-        set: async () => {},
-        delete: async () => {},
-        getKeys: async () => [],
-        store: async () => true,
-        retrieve: async () => null,
-        remove: async () => true,
-        getMany: async () => [],
-        isReady: () => false
+        get: async () => {
+          console.warn('⚠️ Using fallback storage - get operation');
+          return null;
+        },
+        set: async () => {
+          console.warn('⚠️ Using fallback storage - set operation');
+        },
+        delete: async () => {
+          console.warn('⚠️ Using fallback storage - delete operation');
+        },
+        keys: async () => {
+          console.warn('⚠️ Using fallback storage - keys operation');
+          return [];
+        },
+        store: async () => {
+          console.warn('⚠️ Using fallback storage - store operation');
+          return true;
+        },
+        retrieve: async () => {
+          console.warn('⚠️ Using fallback storage - retrieve operation');
+          return null;
+        },
+        remove: async () => {
+          console.warn('⚠️ Using fallback storage - remove operation');
+          return true;
+        },
+        getMany: async () => {
+          console.warn('⚠️ Using fallback storage - getMany operation');
+          return [];
+        },
+        isReady: () => {
+          console.warn('⚠️ Using fallback storage - isReady check');
+          return false;
+        }
       } as any;
     }
+    
+    console.log('✅ EnhancedDeploymentService initialization complete');
   }
 
   /**

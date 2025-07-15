@@ -924,6 +924,12 @@ const DeploymentWizard: React.FC<{ open: boolean; onClose: () => void; onDeploy:
 
       console.log('🔍 Debug - Calling enhancedDeploymentService.deployEnhancedPackage...');
       
+      // Check if service is available
+      if (!enhancedDeploymentService) {
+        console.error('❌ enhancedDeploymentService is not available');
+        throw new Error('Deployment service not initialized');
+      }
+      
       // Use originalKey for deployment (the actual storage key)
       const deploymentKey = selectedWrapper.originalKey || selectedWrapper.id;
       console.log('🔍 Debug - Using deployment key:', deploymentKey);
