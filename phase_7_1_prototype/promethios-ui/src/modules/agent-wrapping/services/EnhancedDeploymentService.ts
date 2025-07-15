@@ -11,6 +11,8 @@ import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAge
 import { DualAgentWrapper } from '../types/DualAgentWrapper';
 import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
 import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
+import { metricsCollectionExtension } from '../../../extensions/MetricsCollectionExtension';
+import { agentLifecycleService } from '../../../services/AgentLifecycleService';
 
 // Types
 export interface EnhancedDeploymentPackage {
@@ -246,6 +248,38 @@ export class EnhancedDeploymentService extends DeploymentService {
         };
         
         console.log('🔍 Storing deployment result with ID:', deploymentId);
+        
+        // 📊 AGENT LIFECYCLE INTEGRATION: Handle agent wrapping and deployment
+        try {
+          console.log('🎯 Processing agent wrapping and deployment lifecycle for:', agentId);
+          
+          // Create production agent ID (if different from test agent ID)
+          const productionAgentId = agentId.includes('-test') ? agentId.replace('-test', '-production') : `${agentId}-production`;
+          
+          // Handle agent wrapping (test to production promotion)
+          const wrappingResult = await agentLifecycleService.onAgentWrapped(agentId, productionAgentId, userId);
+          if (!wrappingResult.success) {
+            throw new Error(`Agent wrapping failed: ${wrappingResult.error}`);
+          }
+          
+          // Handle agent deployment
+          const deploymentResult = await agentLifecycleService.onAgentDeployed(
+            productionAgentId,
+            deploymentId,
+            result.url || '',
+            userId,
+            'production'
+          );
+          if (!deploymentResult.success) {
+            throw new Error(`Agent deployment lifecycle failed: ${deploymentResult.error}`);
+          }
+          
+          console.log('✅ Agent lifecycle processing completed successfully');
+        } catch (lifecycleError) {
+          console.error('❌ Failed to process agent lifecycle:', lifecycleError);
+          // Don't fail deployment if lifecycle processing fails
+          console.log('⚠️ Continuing deployment despite lifecycle failure');
+        }
         
         // Store deployment result with proper unified storage method
         try {

@@ -1,5 +1,7 @@
 import { unifiedStorage } from './UnifiedStorageService';
 import { useAuth } from '../context/AuthContext';
+import { metricsCollectionExtension } from '../extensions/MetricsCollectionExtension';
+import { agentLifecycleService } from './AgentLifecycleService';
 
 export interface AgentProfile {
   identity: {
@@ -152,6 +154,17 @@ export class UserAgentStorageService {
       };
 
       await unifiedStorage.set('agents', userKey, serializedAgent);
+      
+      // 📊 AGENT LIFECYCLE INTEGRATION: Handle agent creation with metrics
+      try {
+        console.log('🎯 Processing agent creation lifecycle for:', agent.identity.name);
+        await agentLifecycleService.onAgentCreated(agent);
+        console.log('✅ Agent creation lifecycle completed successfully');
+      } catch (lifecycleError) {
+        console.error('❌ Failed to process agent creation lifecycle:', lifecycleError);
+        // Don't fail agent creation if lifecycle processing fails
+        console.log('⚠️ Continuing agent creation despite lifecycle failure');
+      }
       
       // Also create initial scorecard
       await this.createInitialScorecard(agent);
