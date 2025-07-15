@@ -66,7 +66,7 @@ const DeployedAgentChatPage: React.FC = () => {
         deploymentData.agentId = deploymentData.agentName;
       }
       
-      // Fallback to ensure we always have a name
+      // Fallback to ensure we always have a name (only if both are missing)
       if (!deploymentData.agentName && !deploymentData.agentId) {
         deploymentData.agentName = `Deployed Agent ${deploymentId.replace('deploy-', '')}`;
         deploymentData.agentId = deploymentData.agentName;

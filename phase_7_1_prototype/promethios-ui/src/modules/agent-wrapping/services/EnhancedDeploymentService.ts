@@ -29,6 +29,7 @@ export interface RealDeploymentResult {
   url?: string;
   error?: string;
   agentId?: string;
+  agentName?: string; // Add agent name field
   userId?: string;
   deploymentMethod?: string;
   timestamp?: string;
@@ -193,11 +194,52 @@ export class EnhancedDeploymentService extends DeploymentService {
         // Create a simple deployment result
         const deploymentId = `deploy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
+        // Try to get agent name from storage
+        let agentName = 'AI Assistant'; // Default fallback
+        try {
+          const agentData = await this.storage.get('agents', agentId);
+          if (agentData?.metadata?.name) {
+            agentName = agentData.metadata.name;
+          } else if (agentData?.name) {
+            agentName = agentData.name;
+          } else if (agentData?.config?.name) {
+            agentName = agentData.config.name;
+          } else {
+            // Try to create a meaningful name from the agent ID
+            const idParts = agentId.split('_');
+            if (idParts.length > 1) {
+              const agentPart = idParts[1]?.split('-')[0];
+              if (agentPart && agentPart !== 'agent') {
+                const friendlyNames: { [key: string]: string } = {
+                  'openai': 'OpenAI Assistant',
+                  'claude': 'Claude Assistant', 
+                  'gpt': 'GPT Assistant',
+                  'assistant': 'AI Assistant',
+                  'chatgpt': 'ChatGPT Assistant',
+                  'veritas': 'Veritas Agent',
+                  'promethios': 'Promethios Agent'
+                };
+                
+                const lowerPart = agentPart.toLowerCase();
+                if (friendlyNames[lowerPart]) {
+                  agentName = friendlyNames[lowerPart];
+                } else {
+                  agentName = `${agentPart.charAt(0).toUpperCase() + agentPart.slice(1)} Assistant`;
+                }
+              }
+            }
+          }
+          console.log('🏷️ Resolved agent name for deployment:', agentName);
+        } catch (error) {
+          console.warn('⚠️ Could not load agent data for name resolution:', error);
+        }
+        
         result = {
           success: true,
           deploymentId,
           url: `https://deployed-agent-${deploymentId}.example.com`,
           agentId,
+          agentName, // Include the resolved agent name
           userId,
           deploymentMethod: deploymentMethod?.type || 'api_package',
           timestamp: new Date().toISOString()

@@ -28,6 +28,7 @@ import { UnifiedStorageService } from '../services/UnifiedStorageService';
 interface RealDeploymentResult {
   deploymentId: string;
   agentId: string;
+  agentName?: string; // Add agent name field
   timestamp: string | number;
   status?: string;
   endpoint?: string;
@@ -87,7 +88,12 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
 
   // Get display name with better fallbacks
   const getAgentDisplayName = () => {
-    // First try to get from loaded agent data
+    // First priority: use agentName from deployment data if available
+    if ((deployment as any).agentName) {
+      return (deployment as any).agentName;
+    }
+    
+    // Second priority: try to get from loaded agent data
     if (agentData?.metadata?.name) return agentData.metadata.name;
     if (agentData?.name) return agentData.name;
     if (agentData?.config?.name) return agentData.config.name;
