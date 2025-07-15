@@ -1,0 +1,394 @@
+{
+  "info": {
+    "name": "Promethios Agent Testing Collection",
+    "description": "Comprehensive test collection for deployed Promethios agents",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "agent_endpoint",
+      "value": "https://deployed-agent-{deploymentId}.promethios.ai",
+      "description": "The deployed agent's endpoint URL"
+    },
+    {
+      "key": "api_key",
+      "value": "promethios_agent_your_api_key_here",
+      "description": "Your agent's API key"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{agent_endpoint}}/health",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["health"]
+        },
+        "description": "Basic health check to verify agent is running"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Health check returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response time is reasonable', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+              "});",
+              "",
+              "pm.test('Response contains status information', function () {",
+              "    const responseText = pm.response.text();",
+              "    pm.expect(responseText).to.not.be.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Basic Chat - Hello",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Hello, how can you help me?\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Basic chat functionality test"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Chat returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response time is under 30 seconds', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+              "});",
+              "",
+              "pm.test('Response contains message', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('object');",
+              "    pm.expect(Object.keys(jsonData)).to.not.be.empty;",
+              "});",
+              "",
+              "// Store conversation ID if present",
+              "const jsonData = pm.response.json();",
+              "if (jsonData.conversation_id) {",
+              "    pm.environment.set('conversation_id', jsonData.conversation_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Technical Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Can you explain the difference between REST and GraphQL APIs?\",\n  \"conversation_id\": \"{{conversation_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Test technical knowledge and detailed responses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Technical question returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is detailed', function () {",
+              "    const responseText = pm.response.text();",
+              "    pm.expect(responseText.length).to.be.above(100);",
+              "});",
+              "",
+              "pm.test('Response mentions key concepts', function () {",
+              "    const responseText = pm.response.text().toLowerCase();",
+              "    const hasRest = responseText.includes('rest');",
+              "    const hasGraphql = responseText.includes('graphql');",
+              "    pm.expect(hasRest || hasGraphql).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Context Retention Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Which one would you recommend for a mobile app?\",\n  \"conversation_id\": \"{{conversation_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Test if agent remembers previous context about REST vs GraphQL"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Context retention returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response shows context understanding', function () {",
+              "    const responseText = pm.response.text().toLowerCase();",
+              "    const hasRelevantContext = responseText.includes('rest') || ",
+              "                              responseText.includes('graphql') || ",
+              "                              responseText.includes('api') ||",
+              "                              responseText.includes('mobile');",
+              "    pm.expect(hasRelevantContext).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Error Handling - Empty Message",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Test error handling with empty message"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Empty message handled gracefully', function () {",
+              "    // Should return either 200 (handled) or 400 (validation error)",
+              "    pm.expect([200, 400, 422]).to.include(pm.response.code);",
+              "});",
+              "",
+              "pm.test('Response provides feedback', function () {",
+              "    const responseText = pm.response.text();",
+              "    pm.expect(responseText).to.not.be.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Error Handling - Invalid JSON",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"invalid_field\": \"test\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Test error handling with invalid request structure"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Invalid JSON handled gracefully', function () {",
+              "    // Should return validation error",
+              "    pm.expect([400, 422]).to.include(pm.response.code);",
+              "});",
+              "",
+              "pm.test('Error message is informative', function () {",
+              "    const responseText = pm.response.text();",
+              "    pm.expect(responseText).to.not.be.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Performance Test - Quick Succession",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Quick test message {{$randomInt}}\"\n}"
+        },
+        "url": {
+          "raw": "{{agent_endpoint}}/chat",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["chat"]
+        },
+        "description": "Performance test with random message"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Performance test returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response time under 15 seconds', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(15000);",
+              "});",
+              "",
+              "pm.test('Response is not empty', function () {",
+              "    const responseText = pm.response.text();",
+              "    pm.expect(responseText.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Governance Check - Trust Score",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{agent_endpoint}}/governance/metrics",
+          "host": ["{{agent_endpoint}}"],
+          "path": ["governance", "metrics"]
+        },
+        "description": "Check governance metrics and trust score"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Governance metrics accessible', function () {",
+              "    // May return 200 (available) or 404 (not implemented)",
+              "    pm.expect([200, 404]).to.include(pm.response.code);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Trust score is reasonable', function () {",
+              "        const jsonData = pm.response.json();",
+              "        if (jsonData.trust_score !== undefined) {",
+              "            pm.expect(jsonData.trust_score).to.be.within(0, 100);",
+              "        }",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set up test environment",
+          "console.log('Testing agent at:', pm.variables.get('agent_endpoint'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test logging",
+          "console.log('Test completed:', pm.info.requestName);"
+        ]
+      }
+    }
+  ]
+}
+
