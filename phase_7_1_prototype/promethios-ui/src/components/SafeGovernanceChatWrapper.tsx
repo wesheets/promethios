@@ -25,13 +25,6 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
         agentId={agentId}
         multiAgentSystemId={undefined} // Deployed agents are typically single agents
         governanceEnabled={governanceEnabled}
-        // Pass deployment context for deployed agent chat
-        deploymentContext={{
-          deploymentId,
-          apiKey: deployment?.apiKey,
-          isDeployedAgent: true,
-          deploymentUrl: deployment?.url
-        }}
       />
     );
   } catch (error) {
