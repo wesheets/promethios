@@ -1407,9 +1407,9 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           // Load chat history for deployed agent
           if (currentUser?.uid) {
             chatStorageService.setCurrentUser(currentUser.uid);
-            const chatHistory = await chatStorageService.loadChatHistory(deployedAgentId);
-            if (chatHistory && chatHistory.length > 0) {
-              setMessages(chatHistory);
+            const chatHistory = await chatStorageService.loadAgentChatHistory(deployedAgentId);
+            if (chatHistory && chatHistory.messages && chatHistory.messages.length > 0) {
+              setMessages(chatHistory.messages);
             }
           }
         } else if (currentUser?.uid) {

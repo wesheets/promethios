@@ -24,6 +24,39 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   const deploymentId = deployment?.deploymentId;
   
   console.log('🎯 SafeGovernanceChatWrapper: agentId =', agentId, 'deploymentId =', deploymentId);
+  console.log('🏷️ SafeGovernanceChatWrapper: deployment.agentName =', deployment?.agentName);
+  
+  // Try to get a better agent name
+  let resolvedAgentName = deployment?.agentName || agentId;
+  
+  // If we have the agentId, try to extract a better name
+  if (!deployment?.agentName && agentId) {
+    // Try to extract from agent ID patterns
+    const idParts = agentId.split('_');
+    if (idParts.length > 1) {
+      const agentPart = idParts[1]?.split('-')[0];
+      if (agentPart && agentPart !== 'agent') {
+        const friendlyNames: { [key: string]: string } = {
+          'openai': 'OpenAI Assistant',
+          'claude': 'Claude Assistant', 
+          'gpt': 'GPT Assistant',
+          'assistant': 'AI Assistant',
+          'chatgpt': 'ChatGPT Assistant',
+          'veritas': 'Veritas Agent',
+          'promethios': 'Promethios Agent'
+        };
+        
+        const lowerPart = agentPart.toLowerCase();
+        if (friendlyNames[lowerPart]) {
+          resolvedAgentName = friendlyNames[lowerPart];
+        } else {
+          resolvedAgentName = `${agentPart.charAt(0).toUpperCase() + agentPart.slice(1)} Assistant`;
+        }
+      }
+    }
+  }
+  
+  console.log('🎯 SafeGovernanceChatWrapper: resolvedAgentName =', resolvedAgentName);
   
   try {
     console.log('🔄 SafeGovernanceChatWrapper: Attempting to render AdvancedChatComponent');
@@ -31,7 +64,7 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
       <AdvancedChatComponent 
         isDeployedAgent={true}
         deployedAgentId={agentId}
-        deployedAgentName={deployment?.agentName || agentId}
+        deployedAgentName={resolvedAgentName}
         deploymentId={deploymentId}
       />
     );
