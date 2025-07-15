@@ -1529,7 +1529,17 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
       if (chatMode === 'single' && selectedAgent && governanceEnabled) {
         try {
           console.log('Loading governance metrics for agent:', selectedAgent.identity.name);
-          const metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+          
+          let metrics;
+          if (isDeployedAgent && deploymentId) {
+            // Use deployed agent specific metrics
+            console.log('🚀 Loading deployed agent metrics for:', deploymentId);
+            metrics = await governanceService.getDeployedAgentMetrics(deploymentId, selectedAgent.identity.id);
+          } else {
+            // Use regular agent metrics
+            metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+          }
+          
           setGovernanceMetrics(metrics);
           
           // Also load system status
@@ -1630,7 +1640,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     };
 
     loadGovernanceMetrics();
-  }, [selectedAgent, selectedSystem, chatMode, governanceEnabled]);
+  }, [selectedAgent, selectedSystem, chatMode, governanceEnabled, isDeployedAgent, deploymentId]);
 
   // Initialize governance session when governance is enabled
   useEffect(() => {
@@ -1662,7 +1672,14 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
       try {
         if (chatMode === 'single' && selectedAgent) {
           // Refresh single agent metrics
-          const metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+          let metrics;
+          if (isDeployedAgent && deploymentId) {
+            // Use deployed agent specific metrics
+            metrics = await governanceService.getDeployedAgentMetrics(deploymentId, selectedAgent.identity.id);
+          } else {
+            // Use regular agent metrics
+            metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
+          }
           setGovernanceMetrics(metrics);
           
           const status = await governanceService.getSystemStatus();
