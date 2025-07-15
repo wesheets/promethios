@@ -37,6 +37,7 @@ import { styled } from '@mui/material/styles';
 import { agentLifecycleService, AgentLifecycleEvent } from '../services/AgentLifecycleService';
 import { metricsCollectionExtension, AgentMetricsProfile } from '../extensions/MetricsCollectionExtension';
 import { useAuth } from '../context/AuthContext';
+import { useRealTimeMetrics } from '../hooks/useRealTimeMetrics';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -96,10 +97,10 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
   
   // Agent-specific data
   const [agentHistory, setAgentHistory] = useState<AgentLifecycleEvent[]>([]);
-  const [agentMetrics, setAgentMetrics] = useState<{
-    test?: AgentMetricsProfile;
-    production?: AgentMetricsProfile;
-  }>({});
+  
+  // Real-time metrics for agent-specific view
+  const testMetrics = useRealTimeMetrics(agentId || '', 'test');
+  const productionMetrics = useRealTimeMetrics(agentId || '', 'production');
 
   useEffect(() => {
     if (currentUser?.uid) {
@@ -116,15 +117,7 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
         // Load specific agent lifecycle
         const history = await agentLifecycleService.getAgentLifecycleHistory(agentId);
         setAgentHistory(history);
-
-        // Load agent metrics profiles
-        const testProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, 'test');
-        const productionProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, 'production');
-        
-        setAgentMetrics({
-          test: testProfile || undefined,
-          production: productionProfile || undefined
-        });
+        // Note: Metrics are now loaded via real-time hooks
       } else {
         // Load user summary
         const userSummary = await agentLifecycleService.getUserAgentLifecycleSummary(currentUser!.uid);
@@ -271,9 +264,9 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
       )}
 
       {/* Agent Metrics (for specific agent) */}
-      {agentId && agentMetrics && (
+      {agentId && (testMetrics.isInitialized || productionMetrics.isInitialized) && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {agentMetrics.test && (
+          {testMetrics.isInitialized && (
             <Grid item xs={12} md={6}>
               <StatsCard>
                 <CardContent>
@@ -283,23 +276,24 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
                   <Box display="flex" justifyContent="space-between" mb={1}>
                     <Typography variant="body2">Trust Score</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {(agentMetrics.test.metrics.governanceMetrics.trustScore * 100).toFixed(1)}%
+                      {(testMetrics.trustScore * 100).toFixed(1)}%
                     </Typography>
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={agentMetrics.test.metrics.governanceMetrics.trustScore * 100}
+                    value={testMetrics.trustScore * 100}
                     sx={{ mb: 2, backgroundColor: DARK_THEME.border }}
                   />
                   <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                    Total Interactions: {agentMetrics.test.metrics.governanceMetrics.totalInteractions}
+                    Total Interactions: {testMetrics.totalInteractions} | 
+                    Last Updated: {testMetrics.lastUpdate.toLocaleTimeString()}
                   </Typography>
                 </CardContent>
               </StatsCard>
             </Grid>
           )}
 
-          {agentMetrics.production && (
+          {productionMetrics.isInitialized && (
             <Grid item xs={12} md={6}>
               <StatsCard>
                 <CardContent>
@@ -309,17 +303,18 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
                   <Box display="flex" justifyContent="space-between" mb={1}>
                     <Typography variant="body2">Trust Score</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {(agentMetrics.production.metrics.governanceMetrics.trustScore * 100).toFixed(1)}%
+                      {(productionMetrics.trustScore * 100).toFixed(1)}%
                     </Typography>
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={agentMetrics.production.metrics.governanceMetrics.trustScore * 100}
+                    value={productionMetrics.trustScore * 100}
                     sx={{ mb: 2, backgroundColor: DARK_THEME.border }}
                   />
                   <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                    Deployments: {agentMetrics.production.deployments.length} | 
-                    Interactions: {agentMetrics.production.metrics.governanceMetrics.totalInteractions}
+                    Deployments: {productionMetrics.profile?.deployments.length || 0} | 
+                    Interactions: {productionMetrics.totalInteractions} | 
+                    Last Updated: {productionMetrics.lastUpdate.toLocaleTimeString()}
                   </Typography>
                 </CardContent>
               </StatsCard>

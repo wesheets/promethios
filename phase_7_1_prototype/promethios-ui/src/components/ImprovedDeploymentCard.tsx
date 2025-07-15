@@ -24,6 +24,7 @@ import {
   ExpandLess
 } from '@mui/icons-material';
 import { UnifiedStorageService } from '../services/UnifiedStorageService';
+import AgentMetricsWidget from './AgentMetricsWidget';
 
 interface RealDeploymentResult {
   deploymentId: string;
@@ -205,32 +206,15 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
           </Box>
         </Box>
 
-        {/* Quick Stats */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 3 }}>
-          <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#0f1419', borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ color: '#4caf50', fontWeight: 600 }}>
-              Healthy
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#888' }}>
-              Status
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#0f1419', borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ color: '#2196f3', fontWeight: 600 }}>
-              85%
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#888' }}>
-              Trust Score
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', p: 1.5, backgroundColor: '#0f1419', borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ color: '#ff9800', fontWeight: 600 }}>
-              0
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#888' }}>
-              Violations
-            </Typography>
-          </Box>
+        {/* Real-time Agent Metrics */}
+        <Box sx={{ mb: 3 }}>
+          <AgentMetricsWidget 
+            agentId={deployment.agentId}
+            agentName={getAgentDisplayName()}
+            version="production"
+            compact={true}
+            showTitle={false}
+          />
         </Box>
 
         {/* Primary Actions */}

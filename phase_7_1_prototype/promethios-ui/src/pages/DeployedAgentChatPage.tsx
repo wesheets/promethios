@@ -6,6 +6,7 @@ import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/En
 import { SafeGovernanceChatWrapper } from '../components/SafeGovernanceChatWrapper';
 import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
 import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
+import AgentMetricsWidget from '../components/AgentMetricsWidget';
 
 const DeployedAgentChatPage: React.FC = () => {
   const { deploymentId } = useParams<{ deploymentId: string }>();
@@ -166,7 +167,21 @@ const DeployedAgentChatPage: React.FC = () => {
           flexDirection: 'column',
           backgroundColor: '#2d3748'
         }}>
-          <ApiInstructionsPanel deployment={deployment} />
+          {/* Agent Metrics Widget */}
+          <Box sx={{ p: 2, borderBottom: '1px solid #4a5568' }}>
+            <AgentMetricsWidget 
+              agentId={deployment.agentId}
+              agentName={deployment.agentName}
+              version="production"
+              compact={true}
+              showTitle={true}
+            />
+          </Box>
+          
+          {/* API Instructions */}
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <ApiInstructionsPanel deployment={deployment} />
+          </Box>
         </Box>
       </Box>
     </Box>
