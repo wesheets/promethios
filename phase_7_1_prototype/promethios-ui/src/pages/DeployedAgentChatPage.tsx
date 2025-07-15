@@ -25,7 +25,7 @@ const DeployedAgentChatPage: React.FC = () => {
       }
 
       const deploymentService = new EnhancedDeploymentService();
-      let deploymentData = await deploymentService.getDeployment(deploymentId, currentUser.uid);
+      let deploymentData = await deploymentService.getRealDeploymentStatus(deploymentId, currentUser.uid);
       
       console.log('📦 Deployment data loaded:', deploymentData);
       
