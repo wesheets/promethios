@@ -229,6 +229,9 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
     agentCoordination: 0
   };
 
+  // Defensive check - if activities is undefined, provide empty array
+  const safeActivities = activities || [];
+
   const handleSectionToggle = (section: string) => {
     setExpandedSections(prev => 
       prev.includes(section) 
@@ -459,14 +462,14 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
               Recent Activity
             </Typography>
             <Badge 
-              badgeContent={activities.length} 
+              badgeContent={safeActivities.length} 
               color="primary" 
               sx={{ ml: 1 }}
             />
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
             <List dense>
-              {activities.slice(0, 5).map((activity) => (
+              {safeActivities.slice(0, 5).map((activity) => (
                 <ActivityItem key={activity.id}>
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     <Avatar 
@@ -498,7 +501,7 @@ export const GovernancePanel: React.FC<GovernancePanelProps> = ({
                 </ActivityItem>
               ))}
               
-              {activities.length === 0 && (
+              {safeActivities.length === 0 && (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
                   <Typography variant="caption" color="text.secondary">
                     No recent activity
