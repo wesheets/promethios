@@ -11,6 +11,8 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   deployment,
   height = "100%" 
 }) => {
+  console.log('🚀 SafeGovernanceChatWrapper rendering with deployment:', deployment);
+  
   // For deployed agents, governance should always be enabled
   const governanceEnabled = true;
   
@@ -18,7 +20,10 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   const agentId = deployment?.agentId || deployment?.agentName;
   const deploymentId = deployment?.deploymentId;
   
+  console.log('🎯 SafeGovernanceChatWrapper: agentId =', agentId, 'deploymentId =', deploymentId);
+  
   try {
+    console.log('🔄 SafeGovernanceChatWrapper: Attempting to render AdvancedChatComponent');
     return (
       <AdvancedChatComponent />
     );
