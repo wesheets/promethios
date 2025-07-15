@@ -1571,7 +1571,7 @@ const EnhancedDeployPage: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : realDeployments.filter(d => !d.agentId.includes('multi-agent')).length === 0 ? (
+          ) : realDeployments.filter(d => d && d.agentId && !d.agentId.includes('multi-agent')).length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <CloudUpload sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
               <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
@@ -1594,7 +1594,7 @@ const EnhancedDeployPage: React.FC = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {realDeployments.filter(d => !d.agentId.includes('multi-agent')).map((deployment) => (
+              {realDeployments.filter(d => d && d.agentId && !d.agentId.includes('multi-agent')).map((deployment) => (
                 <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
                   <RealDeployedAgentCard deployment={deployment} />
                 </Grid>
@@ -1608,7 +1608,7 @@ const EnhancedDeployPage: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : realDeployments.filter(d => d.agentId.includes('multi-agent')).length === 0 ? (
+          ) : realDeployments.filter(d => d && d.agentId && d.agentId.includes('multi-agent')).length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <CloudUpload sx={{ fontSize: 64, color: '#4a5568', mb: 2 }} />
               <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
@@ -1631,7 +1631,7 @@ const EnhancedDeployPage: React.FC = () => {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {realDeployments.filter(d => d.agentId.includes('multi-agent')).map((deployment) => (
+              {realDeployments.filter(d => d && d.agentId && d.agentId.includes('multi-agent')).map((deployment) => (
                 <Grid item xs={12} md={6} lg={4} key={deployment.deploymentId}>
                   <RealDeployedAgentCard deployment={deployment} />
                 </Grid>

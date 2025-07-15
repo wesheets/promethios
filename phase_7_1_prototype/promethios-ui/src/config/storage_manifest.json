@@ -76,6 +76,17 @@
     "compliance": [],
     "description": "Agent deployment packages, configurations, and deployment status"
   },
+  "deployment-result": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 86400000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7d",
+    "compliance": [],
+    "description": "Deployment results, status tracking, and deployment outcome data"
+  },
   "singleAgentChats": {
     "provider": "firebase",
     "fallback": "localStorage",
