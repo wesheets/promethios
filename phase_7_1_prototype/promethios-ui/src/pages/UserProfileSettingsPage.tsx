@@ -635,15 +635,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.lastName}
                 onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
@@ -655,15 +647,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 InputProps={{
                   endAdornment: profile.emailVerified ? <Verified sx={{ color: '#10b981' }} /> : <Warning sx={{ color: '#f59e0b' }} />
                 }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -676,15 +660,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 InputProps={{
                   endAdornment: profile.phoneVerified ? <Verified sx={{ color: '#10b981' }} /> : <Warning sx={{ color: '#f59e0b' }} />
                 }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -694,15 +670,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.location}
                 onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -712,15 +680,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.organization}
                 onChange={(e) => setProfile(prev => ({ ...prev, organization: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -730,15 +690,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.jobTitle}
                 onChange={(e) => setProfile(prev => ({ ...prev, jobTitle: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
@@ -750,29 +702,16 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.bio}
                 onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode}>
-                <InputLabel sx={{ color: '#a0aec0' }}>Timezone</InputLabel>
+              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
+                <InputLabel>Timezone</InputLabel>
                 <Select
                   value={profile.timezone}
                   onChange={(e) => setProfile(prev => ({ ...prev, timezone: e.target.value }))}
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                  sx={darkThemeStyles.select}
                 >
                   <MenuItem value="America/Los_Angeles">Pacific Time (PT)</MenuItem>
                   <MenuItem value="America/New_York">Eastern Time (ET)</MenuItem>
@@ -783,17 +722,12 @@ const UserProfileSettingsPage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode}>
-                <InputLabel sx={{ color: '#a0aec0' }}>Language</InputLabel>
+              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
+                <InputLabel>Language</InputLabel>
                 <Select
                   value={profile.language}
                   onChange={(e) => setProfile(prev => ({ ...prev, language: e.target.value }))}
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                  sx={darkThemeStyles.select}
                 >
                   <MenuItem value="en-US">English (US)</MenuItem>
                   <MenuItem value="en-GB">English (UK)</MenuItem>
@@ -1139,15 +1073,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 label="Current Password"
                 value={securitySettings.currentPassword}
                 onChange={(e) => setSecuritySettings(prev => ({ ...prev, currentPassword: e.target.value }))}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
@@ -1157,15 +1083,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 label="New Password"
                 value={securitySettings.newPassword}
                 onChange={(e) => setSecuritySettings(prev => ({ ...prev, newPassword: e.target.value }))}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
@@ -1175,15 +1093,7 @@ const UserProfileSettingsPage: React.FC = () => {
                 label="Confirm New Password"
                 value={securitySettings.confirmPassword}
                 onChange={(e) => setSecuritySettings(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
           </Grid>
