@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -77,8 +78,10 @@ interface AgentLifecycleDashboardProps {
   agentId?: string; // If provided, shows lifecycle for specific agent
 }
 
-export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = ({ agentId }) => {
+export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = ({ agentId: propAgentId }) => {
   const { currentUser } = useAuth();
+  const { agentId: urlAgentId } = useParams<{ agentId: string }>();
+  const agentId = propAgentId || urlAgentId; // Use prop first, then URL param
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   

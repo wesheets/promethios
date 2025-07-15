@@ -49,6 +49,7 @@ import {
   AutoAwesome as WrapIcon,
   Hub as MultiAgentIcon,
   LibraryBooks as LibraryBooksIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -126,10 +127,10 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'template-library', label: 'Template Library', icon: <LibraryBooksIcon />, path: '/ui/agents/templates' },
         { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
         { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
+        { id: 'agent-lifecycle', label: 'Agent Lifecycle', icon: <TimelineIcon />, path: '/ui/agents/lifecycle' },
         { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/modern-chat' },
         { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
         { id: 'registry', label: 'Registry', icon: <RegistryIcon />, path: '/ui/agents/registry' },
-        { id: 'promethios-demo', label: 'Promethios Demo', icon: <BenchmarksIcon />, path: '/demo' },
       ],
     },
     {

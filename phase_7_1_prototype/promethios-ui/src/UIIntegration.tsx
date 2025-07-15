@@ -57,6 +57,7 @@ import ClaudeWrapperStub from './pages/ClaudeWrapperStub';
 import GeminiWrapperStub from './pages/GeminiWrapperStub';
 import PerplexityWrapperStub from './pages/PerplexityWrapperStub';
 import DeployedAgentChatPage from './pages/DeployedAgentChatPage';
+import AgentLifecycleDashboard from './components/AgentLifecycleDashboard';
 
 /**
  * UIIntegration Component
@@ -194,6 +195,24 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <RegistryPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agent Lifecycle Dashboard route */}
+        <Route path="agents/lifecycle" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentLifecycleDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Agent Lifecycle Dashboard for specific agent */}
+        <Route path="agents/lifecycle/:agentId" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentLifecycleDashboard />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
