@@ -537,15 +537,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.name}
                 onChange={(e) => setOrganization(prev => ({ ...prev, name: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -555,29 +547,16 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.domain}
                 onChange={(e) => setOrganization(prev => ({ ...prev, domain: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode}>
-                <InputLabel sx={{ color: '#a0aec0' }}>Industry</InputLabel>
+              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
+                <InputLabel>Industry</InputLabel>
                 <Select
                   value={organization.industry}
                   onChange={(e) => setOrganization(prev => ({ ...prev, industry: e.target.value }))}
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                  sx={darkThemeStyles.select}
                 >
                   <MenuItem value="Technology">Technology</MenuItem>
                   <MenuItem value="Healthcare">Healthcare</MenuItem>
@@ -589,17 +568,12 @@ const OrganizationSettingsPage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode}>
-                <InputLabel sx={{ color: '#a0aec0' }}>Company Size</InputLabel>
+              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
+                <InputLabel>Company Size</InputLabel>
                 <Select
                   value={organization.size}
                   onChange={(e) => setOrganization(prev => ({ ...prev, size: e.target.value }))}
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                  sx={darkThemeStyles.select}
                 >
                   <MenuItem value="1-10 employees">1-10 employees</MenuItem>
                   <MenuItem value="11-50 employees">11-50 employees</MenuItem>
@@ -616,15 +590,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.location}
                 onChange={(e) => setOrganization(prev => ({ ...prev, location: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -634,15 +600,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.website}
                 onChange={(e) => setOrganization(prev => ({ ...prev, website: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
@@ -654,15 +612,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.description}
                 onChange={(e) => setOrganization(prev => ({ ...prev, description: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -672,15 +622,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.billingEmail}
                 onChange={(e) => setOrganization(prev => ({ ...prev, billingEmail: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -690,15 +632,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 value={organization.adminEmail}
                 onChange={(e) => setOrganization(prev => ({ ...prev, adminEmail: e.target.value }))}
                 disabled={!editMode}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
 
@@ -941,15 +875,7 @@ const OrganizationSettingsPage: React.FC = () => {
                       ...prev,
                       settings: { ...prev.settings, sessionTimeout: parseInt(e.target.value) }
                     }))}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: '#4a5568' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      },
-                      '& .MuiInputLabel-root': { color: '#a0aec0' },
-                      '& .MuiInputBase-input': { color: 'white !important' }
-                    }}
+                    sx={darkThemeStyles.textField}
                   />
                 </CardContent>
               </Card>
@@ -969,15 +895,7 @@ const OrganizationSettingsPage: React.FC = () => {
                       ...prev,
                       settings: { ...prev.settings, dataRetentionDays: parseInt(e.target.value) }
                     }))}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: '#4a5568' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      },
-                      '& .MuiInputLabel-root': { color: '#a0aec0' },
-                      '& .MuiInputBase-input': { color: 'white !important' }
-                    }}
+                    sx={darkThemeStyles.textField}
                   />
                 </CardContent>
               </Card>
@@ -1150,28 +1068,15 @@ const OrganizationSettingsPage: React.FC = () => {
                 fullWidth
                 label="Email Address"
                 placeholder="colleague@company.com"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: '#a0aec0' }}>Role</InputLabel>
+              <FormControl fullWidth sx={darkThemeStyles.formControl}>
+                <InputLabel>Role</InputLabel>
                 <Select
                   defaultValue="member"
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                  sx={darkThemeStyles.select}
                 >
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="manager">Manager</MenuItem>
@@ -1185,15 +1090,7 @@ const OrganizationSettingsPage: React.FC = () => {
                 fullWidth
                 label="Department"
                 placeholder="e.g., AI Governance"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }
-                }}
+                sx={darkThemeStyles.textField}
               />
             </Grid>
           </Grid>
