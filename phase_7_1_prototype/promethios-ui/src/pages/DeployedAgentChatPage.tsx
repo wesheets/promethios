@@ -153,6 +153,7 @@ const DeployedAgentChatPage: React.FC = () => {
           <SafeGovernanceChatWrapper 
             height="100%"
             agentId={deployment.agentId}
+            deployment={deployment} // Pass the deployment data
             multiAgentSystemId={deployment.deploymentMethod === 'multi-agent-system' ? deployment.agentId : undefined}
             governanceEnabled={true} // Always enabled for deployed agents
           />

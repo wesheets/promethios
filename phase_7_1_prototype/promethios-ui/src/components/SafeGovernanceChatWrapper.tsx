@@ -3,21 +3,24 @@ import { Box, Typography, Chip, Alert } from '@mui/material';
 import AdvancedChatComponent from './AdvancedChatComponent';
 
 interface SafeGovernanceChatWrapperProps {
-  deployment: any;
+  deployment?: any;
+  agentId?: string;
+  multiAgentSystemId?: string;
+  governanceEnabled?: boolean;
   height?: string;
 }
 
 export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps> = ({ 
   deployment,
+  agentId: propAgentId,
+  multiAgentSystemId,
+  governanceEnabled = true,
   height = "100%" 
 }) => {
   console.log('🚀 SafeGovernanceChatWrapper rendering with deployment:', deployment);
   
-  // For deployed agents, governance should always be enabled
-  const governanceEnabled = true;
-  
-  // Extract agent information from deployment
-  const agentId = deployment?.agentId || deployment?.agentName;
+  // Extract agent information from deployment or use props
+  const agentId = deployment?.agentId || propAgentId;
   const deploymentId = deployment?.deploymentId;
   
   console.log('🎯 SafeGovernanceChatWrapper: agentId =', agentId, 'deploymentId =', deploymentId);
