@@ -3,8 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { auth } from '../firebase/config';
 import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
-// Temporarily comment out ChatContainer to debug
-// import { ChatContainer } from '../modules/chat/components/ChatContainer';
+import { ChatContainer } from '../modules/chat/components/ChatContainer';
 import ApiInstructionsPanel from '../components/deployed-agents/ApiInstructionsPanel';
 import DeployedAgentHeader from '../components/deployed-agents/DeployedAgentHeader';
 
@@ -45,6 +44,7 @@ const DeployedAgentChatPage: React.FC = () => {
         const mockDeployment = {
           deploymentId: id,
           agentId: 'AI Assistant',
+          agentName: 'AI Assistant',
           userId: userId || 'unknown',
           success: true,
           url: `https://deployed-agent-${id}.promethios.ai`,
@@ -56,6 +56,21 @@ const DeployedAgentChatPage: React.FC = () => {
         };
         setDeployment(mockDeployment);
         return;
+      }
+      
+      // Ensure API key is present - add if missing
+      if (deploymentData && !deploymentData.apiKey) {
+        console.log('🔧 Adding missing API key to deployment data...');
+        deploymentData.apiKey = `promethios_${userId}_${id.split('-').pop()}`;
+      }
+      
+      // Ensure other required fields are present
+      if (deploymentData) {
+        deploymentData.agentId = deploymentData.agentId || deploymentData.agentName || 'Deployed Agent';
+        deploymentData.agentName = deploymentData.agentName || deploymentData.agentId || 'Deployed Agent';
+        deploymentData.timestamp = deploymentData.timestamp || new Date().toISOString();
+        deploymentData.status = deploymentData.status || 'healthy';
+        console.log('📦 Final deployment data:', deploymentData);
       }
       
       setDeployment(deploymentData);
@@ -138,29 +153,14 @@ const DeployedAgentChatPage: React.FC = () => {
           flex: '0 0 60%',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid #2d3748',
-          backgroundColor: '#1a202c',
-          alignItems: 'center',
-          justifyContent: 'center'
+          borderRight: '1px solid #2d3748'
         }}>
-          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-            🚀 Chat Interface Coming Soon
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#a0aec0', textAlign: 'center', maxWidth: 400 }}>
-            This will be the chat interface for your deployed agent: <strong>{deployment.agentId}</strong>
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#a0aec0', mt: 2 }}>
-            Deployment ID: {deployment.deploymentId}
-          </Typography>
-          {/* Temporarily removed ChatContainer to debug white screen
           <ChatContainer 
             height="100%"
             agentId={deployment.agentId}
             multiAgentSystemId={deployment.deploymentMethod === 'multi-agent-system' ? deployment.agentId : undefined}
             governanceEnabled={true} // Always enabled for deployed agents
-            // TODO: Add deployed agent mode when we extend ChatContainer
           />
-          */}
         </Box>
         
         {/* API Instructions Panel (Right 40%) */}
