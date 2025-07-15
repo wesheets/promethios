@@ -340,7 +340,7 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
                   curl -X POST "{deploymentUrl}/chat" \<br/>
                   &nbsp;&nbsp;-H "Authorization: Bearer {apiKey.substring(0, 20)}..." \<br/>
                   &nbsp;&nbsp;-H "Content-Type: application/json" \<br/>
-                  &nbsp;&nbsp;-d '{"message": "Hello, how can you help?"}'
+                  &nbsp;&nbsp;-d '&#123;"message": "Hello, how can you help?"&#125;'
                 </Typography>
                 <IconButton 
                   size="small" 
