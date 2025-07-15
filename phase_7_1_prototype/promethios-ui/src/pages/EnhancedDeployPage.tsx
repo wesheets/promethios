@@ -1220,17 +1220,75 @@ const EnhancedDeployPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Load real deployments - no mock data
-      const deployments = await enhancedDeploymentService.listRealDeployments(currentUser.uid);
-      setRealDeployments(deployments);
+      console.log('🔍 Loading real deployments for user:', currentUser.uid);
+      
+      // Use the same pattern as loadAvailableAgents - direct unified storage access
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
+      
+      // Get all deployment-result keys
+      const deploymentKeys = await unifiedStorage.keys('deployment-result');
+      console.log('🔍 Found deployment-result keys:', deploymentKeys);
+      
+      // Filter for this user's deployments
+      const userDeploymentKeys = deploymentKeys.filter(key => key.includes(currentUser.uid));
+      console.log('🔍 User deployment keys:', userDeploymentKeys);
+      
+      if (userDeploymentKeys.length === 0) {
+        console.log('📭 No deployments found for user');
+        setRealDeployments([]);
+        
+        // Try to load from local storage backup
+        try {
+          const backupData = localStorage.getItem(`promethios_deployments_${currentUser.uid}`);
+          if (backupData) {
+            const backupDeployments = JSON.parse(backupData);
+            setRealDeployments(backupDeployments);
+            console.log('✅ Loaded deployments from local storage backup');
+            toast({
+              title: "Loaded from backup",
+              description: "Using cached deployment data",
+              variant: "default"
+            });
+            return;
+          }
+        } catch (backupError) {
+          console.error('Failed to load backup deployments:', backupError);
+        }
+        
+        return;
+      }
+      
+      // Load all deployments for this user
+      const deployments: any[] = [];
+      for (const key of userDeploymentKeys) {
+        try {
+          const deployment = await unifiedStorage.get('deployment-result', key);
+          if (deployment) {
+            console.log('✅ Loaded deployment:', { id: deployment.deploymentId, agentId: deployment.agentId });
+            deployments.push(deployment);
+          }
+        } catch (error) {
+          console.warn('⚠️ Failed to load deployment:', key, error);
+        }
+      }
+      
+      console.log(`📦 Loaded ${deployments.length} deployments for user ${currentUser.uid}`);
+      
+      // Sort by timestamp (newest first)
+      const sortedDeployments = deployments.sort((a, b) => 
+        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+      );
+      
+      setRealDeployments(sortedDeployments);
       
       // Backup to local storage for persistence
       try {
-        localStorage.setItem(`promethios_deployments_${currentUser.uid}`, JSON.stringify(deployments));
+        localStorage.setItem(`promethios_deployments_${currentUser.uid}`, JSON.stringify(sortedDeployments));
         console.log('✅ Deployments backed up to local storage');
       } catch (storageError) {
         console.warn('⚠️ Failed to backup deployments to local storage:', storageError);
       }
+      
     } catch (error) {
       console.error('Failed to load deployments:', error);
       

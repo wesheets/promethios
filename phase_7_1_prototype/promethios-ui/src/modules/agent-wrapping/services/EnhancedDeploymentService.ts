@@ -143,8 +143,8 @@ export class EnhancedDeploymentService extends DeploymentService {
     // Clean up old deployment packages to prevent storage quota issues
     await this.cleanupOldDeploymentPackages();
 
-    // Store package for later retrieval
-    await this.storage.store(`deployment:${enhancedPackage.id}`, enhancedPackage);
+    // Store package for later retrieval using proper unified storage
+    await this.storage.set('deployment', enhancedPackage.id, enhancedPackage);
     
     console.log('✅ Enhanced deployment package created');
     return enhancedPackage;
@@ -205,10 +205,10 @@ export class EnhancedDeploymentService extends DeploymentService {
         
         console.log('🔍 Storing deployment result with ID:', deploymentId);
         
-        // Store deployment result with proper namespace and user ID
+        // Store deployment result with proper unified storage method
         try {
           const storageKey = `${userId}_${deploymentId}`;
-          await this.storage.store('deployment-result', storageKey, result);
+          await this.storage.set('deployment-result', storageKey, result);
           console.log('✅ Deployment result stored successfully with key:', storageKey);
         } catch (storageError) {
           console.error('❌ Failed to store deployment result:', storageError);
@@ -226,9 +226,9 @@ export class EnhancedDeploymentService extends DeploymentService {
         result = await this.deployViaIntegration(enhancedPackage, target);
         
         if (result.success) {
-          // Store deployment result with user ID in key
+          // Store deployment result with proper unified storage method
           const storageKey = `${result.userId}_${result.deploymentId}`;
-          await this.storage.store('deployment-result', storageKey, result);
+          await this.storage.set('deployment-result', storageKey, result);
           console.log('✅ Enhanced package deployed successfully with key:', storageKey);
         }
       }
