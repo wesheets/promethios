@@ -18,24 +18,47 @@ const DeployedAgentHeader: React.FC<DeployedAgentHeaderProps> = ({ deployment })
   const [uptime, setUptime] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Defensive check - if deployment is null/undefined, don't render
+  if (!deployment) {
+    return (
+      <Box sx={{
+        backgroundColor: '#2d3748',
+        borderBottom: '1px solid #4a5568',
+        p: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Typography variant="h6" sx={{ color: '#a0aec0' }}>
+          Loading deployment information...
+        </Typography>
+      </Box>
+    );
+  }
+
   useEffect(() => {
-    // Calculate uptime
-    const deployedAt = new Date(deployment.timestamp);
-    const now = new Date();
-    const uptimeMs = now.getTime() - deployedAt.getTime();
-    const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
-    const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
-    setUptime(`${hours}h ${minutes}m`);
-    
-    // Update every minute
-    const interval = setInterval(() => {
-      const newUptimeMs = Date.now() - deployedAt.getTime();
-      const newHours = Math.floor(newUptimeMs / (1000 * 60 * 60));
-      const newMinutes = Math.floor((newUptimeMs % (1000 * 60 * 60)) / (1000 * 60));
-      setUptime(`${newHours}h ${newMinutes}m`);
-    }, 60000);
-    
-    return () => clearInterval(interval);
+    // Calculate uptime - with defensive check for timestamp
+    if (deployment.timestamp) {
+      const deployedAt = new Date(deployment.timestamp);
+      const now = new Date();
+      const uptimeMs = now.getTime() - deployedAt.getTime();
+      const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
+      const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+      setUptime(`${hours}h ${minutes}m`);
+      
+      // Update every minute
+      const interval = setInterval(() => {
+        const newUptimeMs = Date.now() - deployedAt.getTime();
+        const newHours = Math.floor(newUptimeMs / (1000 * 60 * 60));
+        const newMinutes = Math.floor((newUptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+        setUptime(`${newHours}h ${newMinutes}m`);
+      }, 60000);
+      
+      return () => clearInterval(interval);
+    } else {
+      // Fallback uptime if timestamp is not available
+      setUptime('Unknown');
+    }
   }, [deployment.timestamp]);
 
   const getStatusIcon = () => {
@@ -66,9 +89,11 @@ const DeployedAgentHeader: React.FC<DeployedAgentHeaderProps> = ({ deployment })
 
   const copyApiKey = async () => {
     try {
-      await navigator.clipboard.writeText(deployment.apiKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (deployment.apiKey) {
+        await navigator.clipboard.writeText(deployment.apiKey);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     } catch (error) {
       console.error('Failed to copy API key:', error);
     }
@@ -127,7 +152,7 @@ const DeployedAgentHeader: React.FC<DeployedAgentHeaderProps> = ({ deployment })
             API:
           </Typography>
           <Chip 
-            label={`${deployment.apiKey.substring(0, 20)}...`}
+            label={`${deployment.apiKey?.substring(0, 20) || 'Loading...'}...`}
             size="small"
             sx={{ 
               backgroundColor: '#4a5568',
