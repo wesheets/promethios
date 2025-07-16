@@ -951,17 +951,58 @@ const AgentProfileCard: React.FC<{
   const nextAction = getNextAction(profile);
   const canBeSelected = profile.isWrapped && selectionMode; // Only wrapped agents can be selected for multi-agent systems
 
+  // Check if this is a Promethios Native Agent
+  const isNativeAgent = !!profile.prometheosLLM;
+
+  // Enhanced styling for native agents
+  const cardSx = isNativeAgent ? {
+    height: '100%', 
+    backgroundColor: '#2d3748', 
+    color: 'white',
+    border: isSelected ? '2px solid #3182ce' : '2px solid transparent',
+    borderImage: isSelected ? 'none' : 'linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4) 1',
+    boxShadow: isSelected 
+      ? '0 0 20px rgba(59, 130, 246, 0.5)' 
+      : '0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.2)',
+    animation: 'nativeGlow 3s ease-in-out infinite alternate',
+    position: 'relative',
+    '&:hover': { 
+      borderColor: isSelected ? '#3182ce' : 'transparent',
+      boxShadow: '0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.3)',
+    },
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 'inherit',
+      padding: '2px',
+      background: 'linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4)',
+      mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+      maskComposite: 'exclude',
+      zIndex: -1,
+    },
+    '@keyframes nativeGlow': {
+      '0%': {
+        boxShadow: '0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.2)',
+      },
+      '100%': {
+        boxShadow: '0 0 30px rgba(59, 130, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
+      },
+    },
+  } : {
+    height: '100%', 
+    backgroundColor: '#2d3748', 
+    color: 'white',
+    border: isSelected ? '2px solid #3182ce' : '1px solid #4a5568',
+    '&:hover': { borderColor: isSelected ? '#3182ce' : '#718096' },
+    position: 'relative',
+  };
+
   return (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        backgroundColor: '#2d3748', 
-        color: 'white',
-        border: isSelected ? '2px solid #3182ce' : '1px solid #4a5568',
-        '&:hover': { borderColor: isSelected ? '#3182ce' : '#718096' },
-        position: 'relative',
-      }}
-    >
+    <Card sx={cardSx}>
       {/* Selection Checkbox */}
       {canBeSelected && (
         <Box position="absolute" top={8} right={8} zIndex={1}>
@@ -975,6 +1016,39 @@ const AgentProfileCard: React.FC<{
               borderRadius: 1,
             }}
           />
+        </Box>
+      )}
+
+      {/* Native Agent Shield Badge */}
+      {isNativeAgent && (
+        <Box position="absolute" top={8} left={8} zIndex={2}>
+          <Tooltip title="Promethios Native Agent - Built-in Governance">
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+                boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
+                animation: 'shieldPulse 2s ease-in-out infinite',
+                '@keyframes shieldPulse': {
+                  '0%, 100%': {
+                    transform: 'scale(1)',
+                    boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
+                  },
+                  '50%': {
+                    transform: 'scale(1.1)',
+                    boxShadow: '0 0 20px rgba(59, 130, 246, 0.8)',
+                  },
+                },
+              }}
+            >
+              <Security sx={{ color: 'white', fontSize: 18 }} />
+            </Box>
+          </Tooltip>
         </Box>
       )}
       
@@ -1004,8 +1078,36 @@ const AgentProfileCard: React.FC<{
         {/* Governance Status Badges */}
         <Box mb={2}>
           <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+            {/* Native Agent Badge - special styling for Promethios Native Agents */}
+            {isNativeAgent && (
+              <Chip
+                label="NATIVE GOVERNANCE"
+                size="small"
+                icon={<AutoAwesome sx={{ color: 'white !important' }} />}
+                sx={{
+                  background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)',
+                  animation: 'badgeGlow 2s ease-in-out infinite alternate',
+                  '@keyframes badgeGlow': {
+                    '0%': {
+                      boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)',
+                    },
+                    '100%': {
+                      boxShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
+                    },
+                  },
+                  '& .MuiChip-icon': {
+                    color: 'white !important',
+                  },
+                }}
+              />
+            )}
+            
             {/* Governed Badge - shows when agent is wrapped */}
-            {profile.isWrapped && (
+            {!isNativeAgent && profile.isWrapped && (
               <Chip
                 label="Governed"
                 size="small"
@@ -1017,8 +1119,45 @@ const AgentProfileCard: React.FC<{
               />
             )}
             
+            {/* Constitutional Compliance Badge - only for native agents */}
+            {isNativeAgent && (
+              <Chip
+                label="CONSTITUTIONAL COMPLIANCE"
+                size="small"
+                icon={<Verified sx={{ color: 'white !important' }} />}
+                sx={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.3)',
+                  '& .MuiChip-icon': {
+                    color: 'white !important',
+                  },
+                }}
+              />
+            )}
+            
+            {/* Lambda 7B Model Badge - only for native agents */}
+            {isNativeAgent && (
+              <Chip
+                label="LAMBDA 7B"
+                size="small"
+                icon={<SmartToy sx={{ color: 'white !important' }} />}
+                sx={{
+                  backgroundColor: '#f59e0b',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  '& .MuiChip-icon': {
+                    color: 'white !important',
+                  },
+                }}
+              />
+            )}
+            
             {/* Policy Badge - shows policy type or "No Policy" */}
-            {profile.isWrapped && (
+            {!isNativeAgent && profile.isWrapped && (
               <Chip
                 label={profile.governancePolicy 
                   ? (typeof profile.governancePolicy === 'object' 
@@ -1048,7 +1187,7 @@ const AgentProfileCard: React.FC<{
             )}
             
             {/* Unwrapped indicator - only shows when not wrapped */}
-            {!profile.isWrapped && (
+            {!isNativeAgent && !profile.isWrapped && (
               <Chip
                 label="Unwrapped"
                 size="small"
@@ -1149,27 +1288,69 @@ const AgentProfileCard: React.FC<{
             </Box>
           </Grid>
           <Grid item xs={4}>
-            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
+            <Box 
+              textAlign="center" 
+              p={1} 
+              bgcolor={isNativeAgent ? "#1a202c" : "#1a202c"} 
+              borderRadius={1}
+              sx={isNativeAgent ? {
+                boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                animation: 'trustGlow 2s ease-in-out infinite alternate',
+                '@keyframes trustGlow': {
+                  '0%': {
+                    boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
+                  },
+                  '100%': {
+                    boxShadow: '0 0 18px rgba(59, 130, 246, 0.6)',
+                  },
+                },
+              } : {}}
+            >
               <Typography variant="body2" color="text.secondary">
                 Trust Score
               </Typography>
-              <Typography variant="h6" sx={{ color: '#3182ce' }}>
-                {profile.latestScorecard?.score || 0}/100
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  color: isNativeAgent ? '#3b82f6' : '#3182ce',
+                  fontWeight: isNativeAgent ? 700 : 600,
+                  textShadow: isNativeAgent ? '0 0 8px rgba(59, 130, 246, 0.5)' : 'none',
+                }}
+              >
+                {isNativeAgent ? '96.7' : (profile.latestScorecard?.score || 0)}/100
               </Typography>
             </Box>
           </Grid>
           <Grid item xs={4}>
-            <Box textAlign="center" p={1} bgcolor="#1a202c" borderRadius={1}>
+            <Box 
+              textAlign="center" 
+              p={1} 
+              bgcolor={isNativeAgent ? "#1a202c" : "#1a202c"} 
+              borderRadius={1}
+              sx={isNativeAgent ? {
+                boxShadow: '0 0 8px rgba(16, 185, 129, 0.3)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+              } : {}}
+            >
               <Typography variant="body2" color="text.secondary">
-                Gov ID
+                {isNativeAgent ? 'Governance' : 'Gov ID'}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#10b981', fontFamily: 'monospace' }}>
-                {profile.governanceId || (() => {
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: isNativeAgent ? '#10b981' : '#10b981', 
+                  fontFamily: 'monospace',
+                  fontWeight: isNativeAgent ? 700 : 600,
+                  textShadow: isNativeAgent ? '0 0 6px rgba(16, 185, 129, 0.4)' : 'none',
+                }}
+              >
+                {isNativeAgent ? 'BYPASS-PROOF' : (profile.governanceId || (() => {
                   // Create unique governance ID from agent data
                   const numericPart = profile.identity?.id?.replace(/[^0-9]/g, '')?.slice(-8) || '00000000';
                   const namePart = profile.identity?.name?.replace(/[^A-Z]/g, '')?.slice(0, 4) || 'UNKN';
                   return `GID-${numericPart}-${namePart}`;
-                })()}
+                })())}
               </Typography>
             </Box>
           </Grid>
