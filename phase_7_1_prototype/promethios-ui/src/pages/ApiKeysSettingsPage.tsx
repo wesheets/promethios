@@ -314,10 +314,21 @@ const ApiKeysSettingsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ 
+      p: 3, 
+      maxWidth: 1200, 
+      mx: 'auto',
+      ...darkThemeStyles.container
+    }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="h4" sx={{ 
+          mb: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          ...darkThemeStyles.text.primary
+        }}>
           <Key />
           API Keys
         </Typography>
@@ -338,60 +349,60 @@ const ApiKeysSettingsPage: React.FC = () => {
       {stats && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card>
+            <Card sx={darkThemeStyles.card}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
                   {stats.total}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                   Total Keys
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card>
+            <Card sx={darkThemeStyles.card}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
                   {stats.active}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                   Active
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card>
+            <Card sx={darkThemeStyles.card}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
                   {stats.revoked}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                   Revoked
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card>
+            <Card sx={darkThemeStyles.card}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
                   {stats.nativeKeys}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                   Native Keys
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card>
+            <Card sx={darkThemeStyles.card}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="secondary.main">
                   {stats.deploymentKeys}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                   Deployment Keys
                 </Typography>
               </CardContent>
@@ -401,10 +412,10 @@ const ApiKeysSettingsPage: React.FC = () => {
       )}
 
       {/* API Keys List */}
-      <Card>
+      <Card sx={darkThemeStyles.card}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">
+            <Typography variant="h6" sx={darkThemeStyles.text.primary}>
               Your API Keys
             </Typography>
             <Button
@@ -419,11 +430,11 @@ const ApiKeysSettingsPage: React.FC = () => {
 
           {apiKeys.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Key sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+              <Key sx={{ fontSize: 64, ...darkThemeStyles.text.secondary, mb: 2 }} />
+              <Typography variant="h6" sx={{ mb: 1, ...darkThemeStyles.text.secondary }}>
                 No API Keys Found
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
                 API keys are automatically generated when you create Promethios Native Agents
               </Typography>
             </Box>
