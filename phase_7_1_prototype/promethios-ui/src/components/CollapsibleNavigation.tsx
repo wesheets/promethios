@@ -47,6 +47,7 @@ import {
   Description as DocsIcon,
   Support as SupportIcon,
   AutoAwesome as WrapIcon,
+  AutoAwesome,
   Hub as MultiAgentIcon,
   LibraryBooks as LibraryBooksIcon,
 } from '@mui/icons-material';
@@ -124,6 +125,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       icon: <AgentsIcon />,
       children: [
         { id: 'my-agents', label: 'My Agents', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
+        { id: 'promethios-llm', label: 'Promethios LLM', icon: <AutoAwesome />, path: '/ui/agents/promethios-llm' },
         { id: 'template-library', label: 'Template Library', icon: <LibraryBooksIcon />, path: '/ui/agents/templates' },
         { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
         { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
