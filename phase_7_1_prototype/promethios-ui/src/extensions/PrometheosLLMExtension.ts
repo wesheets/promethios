@@ -7,7 +7,6 @@
 
 import { Extension } from './Extension';
 import { metricsCollectionExtension, AgentInteractionEvent } from './MetricsCollectionExtension';
-import { UnifiedStorageService } from '../services/UnifiedStorageService';
 
 export interface PrometheosLLMConfig {
   modelName: string;
@@ -108,13 +107,11 @@ export interface PrometheosLLMScorecard {
  * Provides native LLM functionality following extension pattern
  */
 export class PrometheosLLMExtension extends Extension {
-  private storage: UnifiedStorageService;
   private agents: Map<string, PrometheosLLMAgent>;
   private apiBaseUrl: string;
 
   constructor() {
     super('PrometheosLLMExtension', '1.0.0');
-    this.storage = new UnifiedStorageService();
     this.agents = new Map();
     this.apiBaseUrl = process.env.REACT_APP_AGENT_API_URL || 'http://localhost:8002';
   }
@@ -125,9 +122,6 @@ export class PrometheosLLMExtension extends Extension {
   async initialize(): Promise<boolean> {
     try {
       console.log('🚀 Initializing Promethios LLM Extension');
-      
-      // Initialize storage
-      await this.storage.initialize();
       
       // Load existing native LLM agents
       await this.loadExistingAgents();
@@ -161,7 +155,7 @@ export class PrometheosLLMExtension extends Extension {
       console.log(`🧠 Creating native LLM agent: ${name}`);
       
       // Generate unique agent ID
-      const agentId = `native-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+      const agentId = `promethios-llm-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
       
       // Create default config
       const defaultConfig: PrometheosLLMConfig = {
@@ -205,8 +199,35 @@ export class PrometheosLLMExtension extends Extension {
       // Store agent locally
       this.agents.set(agentId, agent);
       
-      // Store in persistent storage
-      await this.storage.set('promethios_llm_agents', agentId, agent);
+      // Store using UserAgentStorageService (same as other agents)
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(userId);
+      
+      // Convert to AgentProfile format for storage
+      const agentProfile = {
+        identity: {
+          id: agentId,
+          name: name,
+          version: '1.0.0',
+          description: description,
+          ownerId: userId,
+          creationDate: new Date(),
+          lastModifiedDate: new Date(),
+          status: 'active'
+        },
+        latestScorecard: null,
+        attestationCount: 0,
+        lastActivity: new Date(),
+        healthStatus: 'healthy' as const,
+        trustLevel: 'high' as const,
+        isWrapped: false, // Promethios LLM agents are native, not wrapped
+        governancePolicy: null,
+        isDeployed: false,
+        // Add Promethios LLM specific data
+        prometheosLLM: agent
+      };
+      
+      await userAgentStorage.saveAgent(agentProfile);
       
       // Create agent metrics profile
       await metricsCollectionExtension.execute(
@@ -293,7 +314,7 @@ export class PrometheosLLMExtension extends Extension {
       
       // Update last active time
       agent.lastActiveAt = new Date();
-      await this.storage.set('promethios_llm_agents', agentId, agent);
+      await this.updateAgentInStorage(agent);
       
       console.log(`✅ Promethios LLM response generated for agent: ${agentId}`);
       return nativeResponse;
@@ -377,10 +398,23 @@ export class PrometheosLLMExtension extends Extension {
    */
   async getUserAgents(userId: string): Promise<PrometheosLLMAgent[]> {
     try {
-      const userAgents = Array.from(this.agents.values())
-        .filter(agent => agent.userId === userId);
+      // Load agents from UserAgentStorageService
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(userId);
       
-      return userAgents;
+      const agentProfiles = await userAgentStorage.loadUserAgents();
+      
+      // Filter for Promethios LLM agents and extract the native data
+      const prometheosAgents = agentProfiles
+        .filter(profile => profile.prometheosLLM)
+        .map(profile => profile.prometheosLLM as PrometheosLLMAgent);
+      
+      // Update local cache
+      prometheosAgents.forEach(agent => {
+        this.agents.set(agent.agentId, agent);
+      });
+      
+      return prometheosAgents;
       
     } catch (error) {
       console.error(`❌ Failed to get user agents for ${userId}:`, error);
@@ -439,14 +473,14 @@ export class PrometheosLLMExtension extends Extension {
       
       // Store production agent
       this.agents.set(productionAgentId, productionAgent);
-      await this.storage.set('promethios_llm_agents', productionAgentId, productionAgent);
+      await this.updateAgentInStorage(productionAgent);
       
       // Call backend deployment API
       const deploymentResult = await this.deployAgentToBackend(productionAgent, deploymentId);
       
       // Update original agent status
       agent.status = 'deployed';
-      await this.storage.set('promethios_llm_agents', agentId, agent);
+      await this.updateAgentInStorage(agent);
       
       console.log(`✅ Promethios LLM agent deployed: ${productionAgentId}`);
       
@@ -510,18 +544,34 @@ export class PrometheosLLMExtension extends Extension {
 
   private async loadExistingAgents(): Promise<void> {
     try {
-      const storedAgents = await this.storage.getMany<PrometheosLLMAgent>('promethios_llm_agents', []);
-      
-      storedAgents.forEach(agent => {
-        if (agent) {
-          this.agents.set(agent.agentId, agent);
-        }
-      });
-      
-      console.log(`📋 Loaded ${this.agents.size} existing native LLM agents`);
+      // Agents will be loaded on-demand via getUserAgents
+      console.log('📋 Promethios LLM agents will be loaded on-demand');
       
     } catch (error) {
       console.error('❌ Failed to load existing agents:', error);
+    }
+  }
+
+  private async updateAgentInStorage(agent: PrometheosLLMAgent): Promise<void> {
+    try {
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(agent.userId);
+      
+      // Get existing agent profile
+      const existingProfile = await userAgentStorage.getAgent(agent.agentId);
+      if (existingProfile) {
+        // Update the Promethios LLM data
+        const updatedProfile = {
+          ...existingProfile,
+          lastActivity: new Date(),
+          prometheosLLM: agent
+        };
+        
+        await userAgentStorage.saveAgent(updatedProfile);
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to update agent in storage:', error);
     }
   }
 
@@ -678,7 +728,7 @@ export class PrometheosLLMExtension extends Extension {
       
       // Store updated agent
       this.agents.set(agent.agentId, agent);
-      await this.storage.set('promethios_llm_agents', agent.agentId, agent);
+      await this.updateAgentInStorage(agent);
       
     } catch (error) {
       console.error('❌ Failed to update agent metrics:', error);
