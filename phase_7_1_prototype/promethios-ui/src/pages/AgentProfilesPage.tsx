@@ -918,6 +918,20 @@ const AgentProfileCard: React.FC<{
   };
 
   const getNextAction = (profile: AgentProfile) => {
+    // Check if this is a native agent first
+    const isNativeAgent = !!profile.prometheosLLM;
+    
+    // Native agents already have built-in governance, so they should always show "Manage"
+    if (isNativeAgent) {
+      return {
+        label: 'Manage',
+        icon: <Visibility />,
+        action: () => onManageAgent(profile.identity.id),
+        color: '#6b7280'
+      };
+    }
+    
+    // For non-native agents, use the lifecycle-based logic
     const lifecycle = getLifecycleStatus(profile);
     switch (lifecycle.status) {
       case 'unwrapped':
