@@ -127,7 +127,7 @@ class PrometheosLLMService {
       // Create agent using extension for proper persistence
       const agent = await prometheosLLMExtension.execute(
         { userId: user.uid },
-        'createNativeAgent',
+        'createAgent',
         {
           userId: user.uid,
           name: config.name,
@@ -146,6 +146,11 @@ class PrometheosLLMService {
           }
         }
       );
+
+      // Check if agent was created successfully
+      if (!agent || !agent.agentId) {
+        throw new Error('Failed to create Promethios LLM agent - extension returned null or invalid agent');
+      }
 
       // Generate immediate API access endpoints
       const apiAccess = this.generateImmediateAPIAccess(agent.agentId);
