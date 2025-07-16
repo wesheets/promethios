@@ -616,6 +616,7 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           />
         </MenuItem>
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        {/* Temporarily hidden wrapper options
         <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
           <ListItemIcon>
             <SmartToy sx={{ color: '#10b981' }} />
@@ -657,6 +658,7 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           />
         </MenuItem>
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        */}
         <MenuItem onClick={handleImportAPI} sx={{ py: 2 }}>
           <ListItemIcon>
             <Api sx={{ color: '#3182ce' }} />
