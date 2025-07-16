@@ -18,6 +18,35 @@ dotenv.config();
 // Create router
 const apiRouter = express.Router();
 
+// Proxy configuration for backend API
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:3001';
+
+// Proxy middleware for API key management
+apiRouter.use('/keys', async (req, res) => {
+  try {
+    const url = `${BACKEND_API_URL}/api/keys${req.url}`;
+    const options = {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...req.headers
+      }
+    };
+    
+    if (req.body && Object.keys(req.body).length > 0) {
+      options.body = JSON.stringify(req.body);
+    }
+    
+    const response = await fetch(url, options);
+    const data = await response.json();
+    
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error('API proxy error:', error);
+    res.status(500).json({ error: 'Proxy error', message: error.message });
+  }
+});
+
 // Initialize LLM clients if API keys are available
 let openaiClient = null;
 let anthropicClient = null;

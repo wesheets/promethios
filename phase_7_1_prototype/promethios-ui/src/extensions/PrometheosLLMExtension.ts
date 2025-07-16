@@ -251,7 +251,7 @@ export class PrometheosLLMExtension extends Extension {
           permissions: apiKeyData.permissions,
           rateLimit: apiKeyData.rateLimit
         }
-      } : NativeAgentMigration.createNativeApiDetails(name, description);
+      } : NativeAgentMigration.createNativeApiDetails(name, description, apiKeyData);
       
       // Convert to AgentProfile format for storage
       const agentProfile = {

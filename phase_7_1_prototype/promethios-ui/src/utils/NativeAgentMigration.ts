@@ -115,13 +115,39 @@ export class NativeAgentMigration {
 
   /**
    * Create proper apiDetails structure for a new native agent
+   * This method should be called after API key generation in PrometheosLLMExtension
    */
-  static createNativeApiDetails(name: string, description: string) {
+  static createNativeApiDetails(name: string, description: string, apiKeyData?: any) {
+    // If we have real API key data from the backend, use it
+    if (apiKeyData && apiKeyData.key) {
+      return {
+        endpoint: 'https://api.promethios.ai/v1',
+        key: apiKeyData.key,
+        provider: 'promethios',
+        selectedModel: 'promethios-lambda-7b',
+        selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],
+        selectedContextLength: 8192,
+        discoveredInfo: {
+          name: name,
+          description: description,
+          type: 'native-llm',
+          governance: 'built-in',
+          compliance: 'constitutional',
+          provider: 'promethios-native',
+          apiKeyId: apiKeyData.key,
+          keyType: apiKeyData.type,
+          permissions: apiKeyData.permissions,
+          rateLimit: apiKeyData.rateLimit
+        }
+      };
+    }
+    
+    // Fallback for existing agents without real API keys
     return {
-      endpoint: 'https://api.promethios.ai/v1', // Native Promethios endpoint
-      key: process.env.REACT_APP_PROMETHIOS_API_KEY || 'native-model-key', // Native model key
-      provider: 'promethios', // Native Promethios provider
-      selectedModel: 'promethios-lambda-7b', // Native Promethios model
+      endpoint: 'https://api.promethios.ai/v1',
+      key: process.env.REACT_APP_PROMETHIOS_API_KEY || 'native-model-key',
+      provider: 'promethios',
+      selectedModel: 'promethios-lambda-7b',
       selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],
       selectedContextLength: 8192,
       discoveredInfo: {

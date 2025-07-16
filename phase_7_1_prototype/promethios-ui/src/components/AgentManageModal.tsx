@@ -418,7 +418,7 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
                         fullWidth
                         label="API Key"
                         type={showApiKey ? 'text' : 'password'}
-                        value={agent?.prometheosLLM ? 'native-model-key' : (formData.apiKey || '')}
+                        value={agent?.prometheosLLM ? (agent?.apiDetails?.key || 'native-model-key') : (formData.apiKey || '')}
                         onChange={(e) => handleInputChange('apiKey', e.target.value)}
                         variant="outlined"
                         disabled={!!agent?.prometheosLLM}
