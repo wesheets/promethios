@@ -5,7 +5,7 @@
  * with immediate API access and metrics tracking.
  */
 
-import { authApiService } from './authApiService';
+import { auth } from '../firebase/config';
 import { prometheosLLMExtension } from '../extensions/PrometheosLLMExtension';
 
 export interface PrometheosLLMAgent {
@@ -119,7 +119,7 @@ class PrometheosLLMService {
       console.log('🧠 Creating Promethios LLM agent with immediate API access');
 
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -130,7 +130,7 @@ class PrometheosLLMService {
       // Create agent object
       const agent: PrometheosLLMAgent = {
         agentId,
-        userId: user.id,
+        userId: user.uid,
         name: config.name,
         description: config.description,
         config: {
@@ -184,17 +184,17 @@ class PrometheosLLMService {
       console.log('🧠 Creating Promethios LLM agent with immediate API access');
 
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Create agent using extension
       const agent = await prometheosLLMExtension.execute(
-        { userId: user.id },
+        { userId: user.uid },
         'createAgent',
         {
-          userId: user.id,
+          userId: user.uid,
           name,
           description,
           config
@@ -231,18 +231,18 @@ class PrometheosLLMService {
       console.log(`💬 Chatting with Promethios LLM agent: ${agentId}`);
 
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Use extension for chat
       const response = await prometheosLLMExtension.execute(
-        { userId: user.id },
+        { userId: user.uid },
         'chatWithAgent',
         {
           agentId,
-          userId: user.id,
+          userId: user.uid,
           message,
           context
         }
@@ -265,18 +265,18 @@ class PrometheosLLMService {
       console.log(`🚀 Deploying Promethios LLM agent to production: ${agentId}`);
 
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Deploy using extension
       const deploymentResult = await prometheosLLMExtension.execute(
-        { userId: user.id },
+        { userId: user.uid },
         'deployAgent',
         {
           agentId,
-          userId: user.id
+          userId: user.uid
         }
       );
 
@@ -314,16 +314,16 @@ class PrometheosLLMService {
   async getUserAgents(): Promise<PrometheosLLMAgent[]> {
     try {
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Get agents using extension
       const agents = await prometheosLLMExtension.execute(
-        { userId: user.id },
+        { userId: user.uid },
         'getUserAgents',
-        { userId: user.id }
+        { userId: user.uid }
       );
 
       // Add API access information to each agent
@@ -346,18 +346,18 @@ class PrometheosLLMService {
   async getAgentScorecard(agentId: string) {
     try {
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Get scorecard using extension
       const scorecard = await prometheosLLMExtension.execute(
-        { userId: user.id },
+        { userId: user.uid },
         'getAgentScorecard',
         {
           agentId,
-          userId: user.id
+          userId: user.uid
         }
       );
 
@@ -403,7 +403,7 @@ class PrometheosLLMService {
       const endpoint = `${this.agentApiUrl}/native-llm/agent/${agentId}/chat`;
 
       // Get current user for authentication
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -412,10 +412,10 @@ class PrometheosLLMService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await authApiService.getToken()}`
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
         },
         body: JSON.stringify({
-          user_id: user.id,
+          user_id: user.uid,
           message,
           context: { source: 'api_test' }
         })
@@ -552,7 +552,7 @@ class PrometheosLLMService {
   ): Promise<PrometheosLLMAgent> {
     try {
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -588,7 +588,7 @@ class PrometheosLLMService {
   async deleteAgent(agentId: string): Promise<void> {
     try {
       // Get current user
-      const user = await authApiService.getCurrentUser();
+      const user = auth.currentUser;
       if (!user) {
         throw new Error('User not authenticated');
       }
