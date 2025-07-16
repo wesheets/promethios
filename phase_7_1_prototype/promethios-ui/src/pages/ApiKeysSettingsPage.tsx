@@ -68,7 +68,7 @@ interface ApiKeyStats {
 }
 
 const ApiKeysSettingsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [apiKeys, setApiKeys] = useState<ApiKeyData[]>([]);
   const [stats, setStats] = useState<ApiKeyStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,13 +137,27 @@ const ApiKeysSettingsPage: React.FC = () => {
     }
   }, [user?.uid]);
 
-  // Load API keys on mount
+  // Load API keys on mount and when user changes
   useEffect(() => {
     console.log('🔑 ApiKeysSettingsPage: useEffect triggered');
     console.log('🔑 User object:', user);
     console.log('🔑 User UID:', user?.uid);
+    console.log('🔑 Auth loading:', authLoading);
+    
+    // Wait for authentication to complete and user to be available
+    if (authLoading) {
+      console.log('🔑 Authentication still loading, waiting...');
+      return;
+    }
+    
+    if (!user) {
+      console.log('🔑 No user found after auth loading complete');
+      return;
+    }
+    
+    console.log('🔑 User authenticated, loading API keys...');
     loadApiKeys();
-  }, [loadApiKeys]);
+  }, [user, authLoading, loadApiKeys]);
 
   // Copy API key to clipboard
   const copyToClipboard = async (key: string, keyId: string) => {
