@@ -7,11 +7,29 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://promethios.ai',
+  origin: [
+    'https://promethios.ai',
+    'https://promethios-phase-7-1-ui.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('🌐 Query params:', req.query);
+  console.log('🌐 Headers:', {
+    'content-type': req.headers['content-type'],
+    'origin': req.headers['origin'],
+    'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
+  });
+  next();
+});
 
 // Routes
 app.use('/api/agents', require('./routes/agents'));
