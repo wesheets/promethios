@@ -8,7 +8,6 @@
 import { Extension } from './Extension';
 import { metricsCollectionExtension, AgentInteractionEvent } from './MetricsCollectionExtension';
 import { UnifiedStorageService } from '../services/UnifiedStorageService';
-import { authApiService } from '../services/authApiService';
 
 export interface PrometheosLLMConfig {
   modelName: string;

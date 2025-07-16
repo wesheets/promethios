@@ -6,6 +6,7 @@
  */
 
 import { User } from 'firebase/auth';
+import { auth } from '../firebase/config';
 
 export interface AuthenticatedApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -16,6 +17,24 @@ export interface AuthenticatedApiOptions {
 }
 
 class AuthApiService {
+  /**
+   * Get current authenticated user
+   */
+  getCurrentUser(): User | null {
+    return auth.currentUser;
+  }
+
+  /**
+   * Get authentication token for current user
+   */
+  async getToken(): Promise<string | null> {
+    const user = auth.currentUser;
+    if (!user) {
+      return null;
+    }
+    return await user.getIdToken();
+  }
+
   /**
    * Generate API key for authenticated requests
    * Format: promethios_{userId}_{agentId}_{timestamp}
