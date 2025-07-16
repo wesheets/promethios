@@ -93,11 +93,24 @@ export class NativeAgentMigration {
    */
   static needsMigration(agent: AgentProfile): boolean {
     const isNativeAgent = agent.prometheosLLM && (typeof agent.prometheosLLM === 'object' || agent.prometheosLLM === true);
-    return isNativeAgent && 
-           (!agent.apiDetails || 
-            !agent.apiDetails.provider || 
-            !agent.apiDetails.key ||
-            !agent.apiDetails.endpoint);
+    
+    // Force re-migration for all native agents to ensure they have correct Promethios config
+    if (isNativeAgent) {
+      // Check if it still has OpenAI config (needs migration)
+      const hasOpenAIConfig = agent.apiDetails?.provider === 'openai' || 
+                             agent.apiDetails?.endpoint?.includes('openai.com') ||
+                             agent.apiDetails?.selectedModel === 'gpt-4';
+      
+      // Always migrate if it's a native agent without proper Promethios config
+      return !agent.apiDetails || 
+             !agent.apiDetails.provider || 
+             !agent.apiDetails.key ||
+             !agent.apiDetails.endpoint ||
+             hasOpenAIConfig ||
+             agent.apiDetails.provider !== 'promethios';
+    }
+    
+    return false;
   }
 
   /**

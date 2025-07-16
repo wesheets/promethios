@@ -366,34 +366,51 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
                     <Grid item xs={12} sm={6}>
                       <FormControl fullWidth>
                         <InputLabel>Provider</InputLabel>
-                        <Select
-                          value={formData.provider || ''}
-                          onChange={(e) => handleInputChange('provider', e.target.value)}
-                          label="Provider"
-                        >
-                          <MenuItem value="openai">OpenAI</MenuItem>
-                          <MenuItem value="anthropic">Anthropic</MenuItem>
-                          <MenuItem value="google">Google</MenuItem>
-                          <MenuItem value="custom">Custom</MenuItem>
-                        </Select>
+                        {agent?.prometheosLLM ? (
+                          // Native agents have locked provider
+                          <TextField
+                            fullWidth
+                            value="promethios"
+                            label="Provider"
+                            variant="outlined"
+                            disabled
+                            helperText="Native Promethios agents use fixed provider"
+                          />
+                        ) : (
+                          // Non-native agents can change provider
+                          <Select
+                            value={formData.provider || ''}
+                            onChange={(e) => handleInputChange('provider', e.target.value)}
+                            label="Provider"
+                          >
+                            <MenuItem value="openai">OpenAI</MenuItem>
+                            <MenuItem value="anthropic">Anthropic</MenuItem>
+                            <MenuItem value="google">Google</MenuItem>
+                            <MenuItem value="custom">Custom</MenuItem>
+                          </Select>
+                        )}
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
                         label="Model"
-                        value={formData.selectedModel || ''}
+                        value={agent?.prometheosLLM ? 'promethios-lambda-7b' : (formData.selectedModel || '')}
                         onChange={(e) => handleInputChange('selectedModel', e.target.value)}
                         variant="outlined"
+                        disabled={!!agent?.prometheosLLM}
+                        helperText={agent?.prometheosLLM ? "Native Promethios agents use fixed model" : ""}
                       />
                     </Grid>
                     <Grid item xs={12}>
                       <TextField
                         fullWidth
                         label="API Endpoint"
-                        value={formData.endpoint || ''}
+                        value={agent?.prometheosLLM ? 'https://api.promethios.ai/v1' : (formData.endpoint || '')}
                         onChange={(e) => handleInputChange('endpoint', e.target.value)}
                         variant="outlined"
+                        disabled={!!agent?.prometheosLLM}
+                        helperText={agent?.prometheosLLM ? "Native Promethios agents use fixed endpoint" : ""}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -401,9 +418,11 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
                         fullWidth
                         label="API Key"
                         type={showApiKey ? 'text' : 'password'}
-                        value={formData.apiKey || ''}
+                        value={agent?.prometheosLLM ? 'native-model-key' : (formData.apiKey || '')}
                         onChange={(e) => handleInputChange('apiKey', e.target.value)}
                         variant="outlined"
+                        disabled={!!agent?.prometheosLLM}
+                        helperText={agent?.prometheosLLM ? "Native Promethios agents use built-in authentication" : ""}
                         InputProps={{
                           endAdornment: (
                             <IconButton onClick={() => setShowApiKey(!showApiKey)}>
