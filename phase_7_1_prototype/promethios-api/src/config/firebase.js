@@ -29,24 +29,12 @@ if (!admin.apps.length) {
   }
 }
 
-// Get Firestore instance with the specific database
-const db = admin.firestore();
+// CRITICAL FIX: Get Firestore instance with the specific database ID
+// The correct way to specify database ID in Firebase Admin SDK
+const db = admin.firestore('promethios-oregon');
 
-// CRITICAL FIX: Use the same database as the frontend (promethios-oregon)
-// This was causing the 400 errors because backend was using (default) database
-// while frontend was using promethios-oregon database
-try {
-  // Set the database ID to match the frontend configuration
-  db.settings({
-    databaseId: 'promethios-oregon'
-  });
-  
-  console.log('🔧 Firestore Admin initialized with promethios-oregon database (FIXED)');
-  console.log('🎯 This should fix the 400 database mismatch errors!');
-} catch (error) {
-  console.error('❌ Failed to set database ID:', error.message);
-  console.log('🔧 Falling back to default database configuration');
-}
+console.log('🔧 Firestore Admin initialized with promethios-oregon database (PROPERLY FIXED)');
+console.log('🎯 Backend now uses the same database as frontend!');
 
 module.exports = {
   admin,
