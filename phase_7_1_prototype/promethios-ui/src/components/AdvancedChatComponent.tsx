@@ -1435,18 +1435,34 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           const userAgents = await agentStorageService.loadUserAgents();
           
           // 🔧 AUTO-MIGRATE: Fix existing native agents with missing apiDetails
+          let migrationCompleted = false;
           try {
             await NativeAgentMigration.autoMigrate(currentUser.uid);
+            migrationCompleted = true;
+            console.log('✅ Migration completed successfully');
           } catch (migrationError) {
             console.warn('⚠️ Migration warning:', migrationError);
             // Don't fail the whole load process if migration has issues
           }
           
-          console.log('Loaded user agents:', userAgents);
-          console.log('Number of agents loaded:', userAgents?.length || 0);
+          // If migration was completed, reload agents to get updated apiDetails
+          let finalAgents = userAgents;
+          if (migrationCompleted) {
+            console.log('🔄 Reloading agents after migration to get updated apiDetails...');
+            try {
+              finalAgents = await agentStorageService.loadUserAgents();
+              console.log('✅ Reloaded agents after migration:', finalAgents?.length || 0, 'agents');
+            } catch (reloadError) {
+              console.warn('⚠️ Failed to reload agents after migration:', reloadError);
+              finalAgents = userAgents; // Fall back to original agents
+            }
+          }
+          
+          console.log('Loaded user agents:', finalAgents);
+          console.log('Number of agents loaded:', finalAgents?.length || 0);
           
           // Use only real user agents (no Observer agent)
-          const realAgents = userAgents || [];
+          const realAgents = finalAgents || [];
           setAgents(realAgents);
           
           // Set first agent as selected if available and load appropriate chat history
