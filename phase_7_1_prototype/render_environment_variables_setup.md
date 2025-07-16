@@ -1,112 +1,74 @@
-# Render Environment Variables Setup Guide
+# Render Environment Variables Setup
 
-## 🎯 **DEPLOYMENT API SERVICE - COMPLETE ✅**
+## 🚀 **REQUIRED ENVIRONMENT VARIABLES FOR PRODUCTION**
 
-### **Service Details:**
-- **Service Name**: `promethios-deployment-api`
-- **URL**: `https://promethios-deployment-api.onrender.com`
-- **Status**: ✅ **LIVE AND FUNCTIONAL**
-- **Branch**: `feature/enhanced-veritas-2-integration`
-- **Plan**: Standard ($25/month)
+### **Frontend Service (promethios-phase-7-1-ui)**
 
-### **Environment Variables Already Set:**
-```
-PORT=10000
-ENVIRONMENT=production
-```
+Add these environment variables in your Render dashboard:
 
-### **Health Check Verified:**
-```json
-{
-  "service": "promethios-deployment-api",
-  "status": "healthy", 
-  "timestamp": "2025-07-12T21:46:46.355150",
-  "version": "1.0.0"
-}
+```bash
+# Backend API Configuration
+BACKEND_API_URL=https://promethios-phase-7-1-api.onrender.com
+
+# Firebase Configuration (if not already set)
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
 ```
 
----
+### **Backend Service (promethios-phase-7-1-api)**
 
-## 🔧 **FRONTEND (UI) SERVICE - NEEDS UPDATE**
+Ensure these environment variables are set:
 
-### **Required Environment Variables for promethios-phase-7-1-ui:**
+```bash
+# API Keys (if not already set)
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+COHERE_API_KEY=your_cohere_api_key
+HUGGINGFACE_API_KEY=your_huggingface_api_key
 
-#### **Essential Variables:**
-```
-VITE_ENVIRONMENT=production
-VITE_API_BASE_URL=https://promethios-phase-7-1-api.onrender.com
-VITE_DEPLOYMENT_API_URL=https://promethios-deployment-api.onrender.com
-```
+# Default LLM Configuration
+DEFAULT_LLM_PROVIDER=openai
+DEFAULT_LLM_MODEL=gpt-4
 
-#### **Optional Variables (with smart defaults):**
-```
-VITE_ENABLE_DEBUG_MODE=false
-VITE_LOG_LEVEL=warn
-VITE_SESSION_TIMEOUT=900000
-```
-
----
-
-## 📋 **SETUP INSTRUCTIONS**
-
-### **Step 1: Update Frontend Environment Variables**
-1. Go to your `promethios-phase-7-1-ui` service in Render
-2. Navigate to **Settings** → **Environment**
-3. Add the required environment variables above
-4. **Deploy** the service to apply changes
-
-### **Step 2: Verify Integration**
-1. Check that the frontend can connect to the deployment API
-2. Test deployment functionality through the UI
-3. Monitor logs for any connection issues
-
----
-
-## 🎯 **SMART CONFIGURATION FEATURES**
-
-### **Automatic Environment Detection:**
-The environment system automatically detects:
-- **Development**: localhost URLs
-- **Staging**: staging/dev hostnames  
-- **Production**: All other domains
-
-### **Fallback Mechanisms:**
-- If `VITE_DEPLOYMENT_API_URL` not set → Uses hostname-based defaults
-- If `VITE_API_BASE_URL` not set → Uses environment-appropriate defaults
-- Configuration validation with error reporting
-
-### **Environment-Specific Settings:**
-- **Development**: Debug mode, verbose logging, relaxed security
-- **Production**: Optimized timeouts, strict security, error-only logging
-
----
-
-## ✅ **CURRENT STATUS**
-
-### **Completed:**
-- ✅ Deployment API service created and deployed
-- ✅ Health checks passing
-- ✅ Service running on production branch
-- ✅ Environment configuration system ready
-
-### **Next Steps:**
-- 🔄 Update frontend environment variables
-- 🔄 Test end-to-end deployment flow
-- 🔄 Verify all endpoints are working
-
----
-
-## 🚀 **PRODUCTION READY ARCHITECTURE**
-
-```
-User → Frontend (UI) → Main API → Database/Firebase
-                   ↘ Deployment API → Agent Deployment Infrastructure
+# Firebase Admin (if using Firebase)
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_firebase_private_key
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
 ```
 
-### **Service URLs:**
-- **Frontend**: `https://promethios-phase-7-1-ui.onrender.com`
-- **Main API**: `https://promethios-phase-7-1-api.onrender.com`
-- **Deployment API**: `https://promethios-deployment-api.onrender.com` ✅
+## 🔧 **How to Add Environment Variables in Render:**
 
-The deployment API is now live and ready for integration!
+1. **Go to your Render Dashboard**
+2. **Select your service** (promethios-phase-7-1-ui)
+3. **Click on "Environment"** tab
+4. **Add each variable** with the key-value pairs above
+5. **Click "Save Changes"**
+6. **Redeploy the service** (it should auto-deploy after env changes)
+
+## 🎯 **Critical Variable:**
+
+The most important one for the API key system to work is:
+
+```bash
+BACKEND_API_URL=https://promethios-phase-7-1-api.onrender.com
+```
+
+This tells the frontend where to find the backend API for the `/api/keys` endpoints.
+
+## 🧪 **Testing After Setup:**
+
+Once you add the environment variables and redeploy:
+
+1. ✅ **API Keys page** should load instead of spinning
+2. ✅ **Agent creation** should generate real API keys
+3. ✅ **Chat functionality** should work with authentication
+4. ✅ **Agent management** should show real keys instead of placeholders
+
+## 🚨 **Current Issue:**
+
+The frontend is calling `/api/keys` but getting 404 errors because it doesn't know where the backend is located. Adding `BACKEND_API_URL` will fix this immediately.
 

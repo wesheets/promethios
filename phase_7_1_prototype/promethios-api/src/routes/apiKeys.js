@@ -14,10 +14,24 @@ const apiKeyService = require('../services/apiKeyService');
  * GET /api/keys?userId=xxx
  */
 router.get('/', async (req, res) => {
+  console.log('🔑 GET /api/keys - Starting request');
+  console.log('🔑 Request details:', {
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'user-agent': req.headers['user-agent']
+    },
+    timestamp: new Date().toISOString()
+  });
+  
   try {
     const { userId } = req.query;
+    console.log('🔑 Extracted userId:', userId);
     
     if (!userId) {
+      console.log('🔑 ERROR: User ID is required');
       return res.status(400).json({
         success: false,
         error: 'User ID is required'
@@ -26,8 +40,13 @@ router.get('/', async (req, res) => {
 
     console.log(`🔑 Getting API keys for user: ${userId}`);
     
+    console.log('🔑 Calling apiKeyService.getUserApiKeys...');
     const apiKeys = apiKeyService.getUserApiKeys(userId);
+    console.log('🔑 Raw API keys from service:', apiKeys);
+    
+    console.log('🔑 Calling apiKeyService.getUserKeyStats...');
     const stats = apiKeyService.getUserKeyStats(userId);
+    console.log('🔑 Stats from service:', stats);
     
     // Don't expose full keys in list view - only show partial keys
     const safeKeys = apiKeys.map(key => ({
@@ -35,15 +54,21 @@ router.get('/', async (req, res) => {
       key: `${key.key.substring(0, 12)}...${key.key.substring(key.key.length - 4)}`,
       keyId: key.key // Keep full key as keyId for operations
     }));
+    console.log('🔑 Safe keys prepared:', safeKeys);
     
-    res.status(200).json({
+    const response = {
       success: true,
       keys: safeKeys,
       stats
-    });
+    };
+    console.log('🔑 Sending response:', response);
+    
+    res.status(200).json(response);
+    console.log('🔑 Response sent successfully');
     
   } catch (error) {
-    console.error('❌ Error getting API keys:', error);
+    console.error('🔑 ERROR in GET /api/keys:', error);
+    console.error('🔑 Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve API keys',

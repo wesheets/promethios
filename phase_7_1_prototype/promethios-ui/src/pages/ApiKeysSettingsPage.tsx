@@ -89,35 +89,59 @@ const ApiKeysSettingsPage: React.FC = () => {
 
   // Load API keys
   const loadApiKeys = useCallback(async () => {
-    if (!user?.uid) return;
+    console.log('🔑 loadApiKeys: Starting API key load');
+    console.log('🔑 User object:', user);
+    console.log('🔑 User UID:', user?.uid);
+    
+    if (!user?.uid) {
+      console.log('🔑 No user UID found, returning early');
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/keys?userId=${user.uid}`);
+      const apiUrl = `/api/keys?userId=${user.uid}`;
+      console.log('🔑 Making API call to:', apiUrl);
+      console.log('🔑 Full URL will be:', window.location.origin + apiUrl);
+      
+      const response = await fetch(apiUrl);
+      console.log('🔑 API Response status:', response.status);
+      console.log('🔑 API Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
-        throw new Error('Failed to load API keys');
+        const errorText = await response.text();
+        console.error('🔑 API Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
       
       const data = await response.json();
-      if (data.success) {
-        setApiKeys(data.keys || []);
-        setStats(data.stats || null);
-      } else {
-        throw new Error(data.error || 'Failed to load API keys');
-      }
+      console.log('🔑 API Response data:', data);
+      setApiKeys(data.keys || []);
+      setStats(data.stats || null);
+      console.log('🔑 Set API keys:', data.keys || []);
+      console.log('🔑 Set stats:', data.stats || null);
       
     } catch (error) {
-      console.error('Error loading API keys:', error);
+      console.error('🔑 Error loading API keys:', error);
+      console.error('🔑 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setError(error instanceof Error ? error.message : 'Failed to load API keys');
     } finally {
       setLoading(false);
+      console.log('🔑 loadApiKeys: Finished (loading set to false)');
     }
   }, [user?.uid]);
 
   // Load API keys on mount
   useEffect(() => {
+    console.log('🔑 ApiKeysSettingsPage: useEffect triggered');
+    console.log('🔑 User object:', user);
+    console.log('🔑 User UID:', user?.uid);
     loadApiKeys();
   }, [loadApiKeys]);
 
