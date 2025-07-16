@@ -153,6 +153,17 @@
     "compliance": [],
     "description": "Test agent metrics, performance data, and monitoring information for development and testing"
   },
+  "agent_lifecycle_events": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Agent lifecycle events, creation, modification, and deletion tracking"
+  },
   "cache": {
     "provider": "memory",
     "fallback": "localStorage",

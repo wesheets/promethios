@@ -250,7 +250,7 @@ export class UserAgentStorageService {
       console.log('🔍 Production keys found:', productionKeys.length, productionKeys.slice(0, 3));
       console.log('🔍 Other keys found:', otherKeys.length, otherKeys.slice(0, 3));
       
-      // Filter for production agents only (for management and deployment)
+      // Filter for production agents AND native agents
       const userPrefix = `${this.currentUserId}_`;
       console.log('🔍 Looking for production agents with prefix:', userPrefix);
       console.log('🔍 Sample key analysis:');
@@ -258,12 +258,13 @@ export class UserAgentStorageService {
         console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')}`);
       });
       
+      // Include both production agents and native agents (promethios-llm-*)
       const userKeyParts = keyParts.filter(keyPart => 
         keyPart.startsWith(userPrefix) && 
         !keyPart.includes('scorecard') &&
-        keyPart.includes('-production') // Only load production agents for management
+        (keyPart.includes('-production') || keyPart.startsWith(`${userPrefix}promethios-llm-`)) // Include native agents
       );
-      console.log('🔍 Filtered production agent key parts:', userKeyParts);
+      console.log('🔍 Filtered production + native agent key parts:', userKeyParts);
       
       // Fallback: If no production agents found, load any user agents (for debugging)
       let fallbackKeyParts = [];
@@ -282,7 +283,7 @@ export class UserAgentStorageService {
       // Reconstruct full keys for loading
       const userKeys = finalKeyParts.map(keyPart => `agents/${keyPart}`);
       console.log('🔍 Final agent keys for loading:', userKeys);
-      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents');
+      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production + native agents' : 'fallback to any user agents');
 
       const agents: AgentProfile[] = [];
 
@@ -330,6 +331,8 @@ export class UserAgentStorageService {
                   : new Date(),
               },
               lastActivity: agentData.lastActivity ? new Date(agentData.lastActivity) : null,
+              // Ensure prometheosLLM property is preserved from stored data
+              prometheosLLM: agentData.prometheosLLM || false,
             };
             agents.push(agent);
           } else {
