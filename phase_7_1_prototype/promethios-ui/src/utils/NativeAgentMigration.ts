@@ -30,20 +30,23 @@ export class NativeAgentMigration {
       // Filter for native agents that need migration
       console.log('🔍 Analyzing agents for migration needs...');
       agents.forEach(agent => {
+        const isNativeAgent = agent.prometheosLLM && (typeof agent.prometheosLLM === 'object' || agent.prometheosLLM === true);
         console.log(`🔍 Agent "${agent.identity.name}":`, {
           prometheosLLM: agent.prometheosLLM,
+          isNativeAgent: isNativeAgent,
           hasApiDetails: !!agent.apiDetails,
           hasProvider: agent.apiDetails?.provider,
           hasKey: !!agent.apiDetails?.key,
-          needsMigration: agent.prometheosLLM === true && 
+          needsMigration: isNativeAgent && 
                          (!agent.apiDetails || !agent.apiDetails.provider || !agent.apiDetails.key)
         });
       });
       
-      const nativeAgents = agents.filter(agent => 
-        agent.prometheosLLM === true && 
-        (!agent.apiDetails || !agent.apiDetails.provider || !agent.apiDetails.key)
-      );
+      const nativeAgents = agents.filter(agent => {
+        const isNativeAgent = agent.prometheosLLM && (typeof agent.prometheosLLM === 'object' || agent.prometheosLLM === true);
+        return isNativeAgent && 
+               (!agent.apiDetails || !agent.apiDetails.provider || !agent.apiDetails.key);
+      });
 
       console.log(`🎯 Found ${nativeAgents.length} native agents needing migration`);
 
@@ -100,7 +103,8 @@ export class NativeAgentMigration {
    * Check if a native agent needs migration
    */
   static needsMigration(agent: AgentProfile): boolean {
-    return agent.prometheosLLM === true && 
+    const isNativeAgent = agent.prometheosLLM && (typeof agent.prometheosLLM === 'object' || agent.prometheosLLM === true);
+    return isNativeAgent && 
            (!agent.apiDetails || 
             !agent.apiDetails.provider || 
             !agent.apiDetails.key ||
