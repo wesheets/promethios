@@ -26,18 +26,18 @@ import {
   LinearProgress
 } from '@mui/material';
 import {
-  Chat,
-  Api,
-  Assessment,
-  Deploy,
-  MoreVert,
-  ContentCopy,
-  CheckCircle,
-  Security,
-  Speed,
-  AutoAwesome,
-  Visibility,
-  Code
+  Chat as ChatIcon,
+  Api as ApiIcon,
+  Assessment as AssessmentIcon,
+  Deploy as DeployIcon,
+  MoreVert as MoreVertIcon,
+  ContentCopy as ContentCopyIcon,
+  CheckCircle as CheckCircleIcon,
+  Security as SecurityIcon,
+  Speed as SpeedIcon,
+  AutoAwesome as AutoAwesomeIcon,
+  Visibility as VisibilityIcon,
+  Code as CodeIcon
 } from '@mui/icons-material';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
 import { nativeLLMService } from '../services/NativeLLMService';
@@ -181,7 +181,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           }}
         >
           <Chip
-            icon={<AutoAwesome />}
+            icon={<AutoAwesomeIcon />}
             label="Native LLM"
             size="small"
             sx={{
@@ -220,19 +220,19 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           {/* Governance Indicators */}
           <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
             <Chip
-              icon={<Security />}
+              icon={<SecurityIcon />}
               label="Bypass-Proof"
               size="small"
               sx={{ backgroundColor: '#065f46', color: '#10b981' }}
             />
             <Chip
-              icon={<CheckCircle />}
+              icon={<CheckCircleIcon />}
               label="Constitutional"
               size="small"
               sx={{ backgroundColor: '#1e3a8a', color: '#3b82f6' }}
             />
             <Chip
-              icon={<Speed />}
+              icon={<SpeedIcon />}
               label="Real-time"
               size="small"
               sx={{ backgroundColor: '#7c2d12', color: '#f97316' }}
@@ -281,7 +281,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           {/* API Access Indicator */}
           <Alert
             severity="success"
-            icon={<Api />}
+            icon={<ApiIcon />}
             sx={{
               backgroundColor: 'rgba(16, 185, 129, 0.1)',
               border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -302,7 +302,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
-              startIcon={<Chat />}
+              startIcon={<ChatIcon />}
               onClick={() => onChat(agent.agentId)}
               sx={{
                 backgroundColor: '#3b82f6',
@@ -314,7 +314,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
             
             <Button
               variant="outlined"
-              startIcon={<Api />}
+              startIcon={<ApiIcon />}
               onClick={() => setShowAPIDialog(true)}
               sx={{
                 borderColor: '#3b82f6',
@@ -332,7 +332,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
                 onClick={() => onViewMetrics(agent.agentId)}
                 sx={{ color: '#a0aec0' }}
               >
-                <Assessment />
+                <AssessmentIcon />
               </IconButton>
             </Tooltip>
 
@@ -342,14 +342,14 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
                   onClick={() => onDeploy(agent.agentId)}
                   sx={{ color: '#10b981' }}
                 >
-                  <Deploy />
+                  <DeployIcon />
                 </IconButton>
               </Tooltip>
             )}
 
             <Tooltip title="More Options">
               <IconButton sx={{ color: '#a0aec0' }}>
-                <MoreVert />
+                <MoreVertIcon />
               </IconButton>
             </Tooltip>
           </Box>
@@ -371,7 +371,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
       >
         <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #374151' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Api sx={{ color: '#3b82f6' }} />
+            <ApiIcon sx={{ color: '#3b82f6' }} />
             Native LLM API Access
           </Box>
         </DialogTitle>
@@ -379,7 +379,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
         <DialogContent sx={{ pt: 3 }}>
           {/* Immediate Access Section */}
           <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircle sx={{ color: '#10b981' }} />
+            <CheckCircleIcon sx={{ color: '#10b981' }} />
             Immediate Access (Available Now)
           </Typography>
 
@@ -399,7 +399,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
                       onClick={() => handleCopyEndpoint(agent.apiAccess.immediate.chatEndpoint, 'chat')}
                       sx={{ color: copiedEndpoint === 'chat' ? '#10b981' : '#a0aec0' }}
                     >
-                      {copiedEndpoint === 'chat' ? <CheckCircle /> : <ContentCopy />}
+                      {copiedEndpoint === 'chat' ? <CheckCircleIcon /> : <ContentCopyIcon />}
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -442,7 +442,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           <Divider sx={{ my: 3, borderColor: '#374151' }} />
           
           <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Code sx={{ color: '#f97316' }} />
+            <CodeIcon sx={{ color: '#f97316' }} />
             Test API
           </Typography>
 
@@ -502,7 +502,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
               <Divider sx={{ my: 3, borderColor: '#374151' }} />
               
               <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Deploy sx={{ color: '#10b981' }} />
+                <DeployIcon sx={{ color: '#10b981' }} />
                 Production Access
               </Typography>
 
@@ -529,7 +529,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           </Button>
           <Button
             variant="contained"
-            startIcon={<Visibility />}
+            startIcon={<VisibilityIcon />}
             sx={{
               backgroundColor: '#3b82f6',
               '&:hover': { backgroundColor: '#2563eb' }
