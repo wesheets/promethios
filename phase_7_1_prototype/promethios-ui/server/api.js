@@ -32,7 +32,7 @@ apiRouter.post('/test', (req, res) => {
 });
 
 // Proxy configuration for backend API
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:3001';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
 // Proxy middleware for API key management
 apiRouter.all('/keys/*', async (req, res) => {
