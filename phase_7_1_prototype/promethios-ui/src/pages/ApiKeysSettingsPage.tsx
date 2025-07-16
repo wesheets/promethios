@@ -68,7 +68,7 @@ interface ApiKeyStats {
 }
 
 const ApiKeysSettingsPage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const [apiKeys, setApiKeys] = useState<ApiKeyData[]>([]);
   const [stats, setStats] = useState<ApiKeyStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,62 +86,65 @@ const ApiKeysSettingsPage: React.FC = () => {
   // UI states
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
+  
   // Load API keys
   const loadApiKeys = useCallback(async () => {
-    console.log('🔑 loadApiKeys: Starting API key load');
-    console.log('🔑 User object:', user);
-    console.log('🔑 User UID:', user?.uid);
+    console.log('🔑 loadApiKeys: Starting...');
+    console.log('🔑 loadApiKeys: currentUser:', currentUser);
+    console.log('🔑 loadApiKeys: currentUser UID:', currentUser?.uid);
     
-    if (!user?.uid) {
-      console.log('🔑 No user UID found, returning early');
+    if (!currentUser?.uid) {
+      console.log('🔑 loadApiKeys: No currentUser UID found, returning early');
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
       
-      const apiUrl = `/api/keys?userId=${user.uid}`;
-      console.log('🔑 Making API call to:', apiUrl);
-      console.log('🔑 Full URL will be:', window.location.origin + apiUrl);
+      const url = `/api/keys?userId=${currentUser.uid}`;
+      console.log('🔑 loadApiKeys: Making request to:', url);
       
-      const response = await fetch(apiUrl);
-      console.log('🔑 API Response status:', response.status);
-      console.log('🔑 API Response headers:', Object.fromEntries(response.headers.entries()));
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('🔑 loadApiKeys: Response status:', response.status);
+      console.log('🔑 loadApiKeys: Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🔑 API Error response body:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        console.log('🔑 loadApiKeys: Error response text:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
-      
+
       const data = await response.json();
-      console.log('🔑 API Response data:', data);
-      setApiKeys(data.keys || []);
-      setStats(data.stats || null);
-      console.log('🔑 Set API keys:', data.keys || []);
-      console.log('🔑 Set stats:', data.stats || null);
+      console.log('🔑 loadApiKeys: Response data:', data);
       
+      if (data.success) {
+        setApiKeys(data.keys || []);
+        setStats(data.stats || null);
+        console.log('🔑 loadApiKeys: Successfully loaded', data.keys?.length || 0, 'API keys');
+      } else {
+        throw new Error(data.error || 'Failed to load API keys');
+      }
     } catch (error) {
-      console.error('🔑 Error loading API keys:', error);
-      console.error('🔑 Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+      console.error('🔑 loadApiKeys: Error:', error);
       setError(error instanceof Error ? error.message : 'Failed to load API keys');
     } finally {
       setLoading(false);
       console.log('🔑 loadApiKeys: Finished (loading set to false)');
     }
-  }, [user?.uid]);
+  }, [currentUser?.uid]);
 
   // Load API keys on mount and when user changes
   useEffect(() => {
     console.log('🔑 ApiKeysSettingsPage: useEffect triggered');
-    console.log('🔑 User object:', user);
-    console.log('🔑 User UID:', user?.uid);
+    console.log('🔑 User object:', currentUser);
+    console.log('🔑 User UID:', currentUser?.uid);
     console.log('🔑 Auth loading:', authLoading);
     
     // Wait for authentication to complete and user to be available
@@ -150,15 +153,14 @@ const ApiKeysSettingsPage: React.FC = () => {
       return;
     }
     
-    if (!user) {
+    if (!currentUser) {
       console.log('🔑 No user found after auth loading complete');
       return;
     }
     
     console.log('🔑 User authenticated, loading API keys...');
     loadApiKeys();
-  }, [user, authLoading, loadApiKeys]);
-
+  }, [currentUser, authLoading, loadApiKeys]);
   // Copy API key to clipboard
   const copyToClipboard = async (key: string, keyId: string) => {
     try {
