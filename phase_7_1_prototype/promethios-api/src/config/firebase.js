@@ -29,11 +29,14 @@ if (!admin.apps.length) {
   }
 }
 
-// CRITICAL FIX: Get Firestore instance with the specific database ID
-// The correct way to specify database ID in Firebase Admin SDK
-const db = admin.firestore('promethios-oregon');
+// PROPER FIX: Get Firestore instance with the specific database ID
+// The correct way to specify database ID in Firebase Admin SDK v11+
+const db = admin.firestore();
+db.settings({
+  databaseId: 'promethios-oregon'
+});
 
-console.log('🔧 Firestore Admin initialized with promethios-oregon database (PROPERLY FIXED)');
+console.log('🔧 Firestore Admin initialized with promethios-oregon database (PROPERLY CONFIGURED)');
 console.log('🎯 Backend now uses the same database as frontend!');
 
 module.exports = {
