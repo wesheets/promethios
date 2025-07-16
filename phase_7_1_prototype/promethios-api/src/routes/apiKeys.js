@@ -40,12 +40,15 @@ router.get('/', async (req, res) => {
 
     console.log(`🔑 Getting API keys for user: ${userId}`);
     
+    // Initialize sample data if user has no keys
+    await apiKeyService.initializeSampleDataIfNeeded(userId);
+    
     console.log('🔑 Calling apiKeyService.getUserApiKeys...');
-    const apiKeys = apiKeyService.getUserApiKeys(userId);
+    const apiKeys = await apiKeyService.getUserApiKeys(userId);
     console.log('🔑 Raw API keys from service:', apiKeys);
     
     console.log('🔑 Calling apiKeyService.getUserKeyStats...');
-    const stats = apiKeyService.getUserKeyStats(userId);
+    const stats = await apiKeyService.getUserKeyStats(userId);
     console.log('🔑 Stats from service:', stats);
     
     // Don't expose full keys in list view - only show partial keys
@@ -95,7 +98,7 @@ router.get('/:keyId', async (req, res) => {
 
     console.log(`🔍 Getting API key details: ${keyId.substring(0, 12)}...`);
     
-    const keyData = apiKeyService.getApiKeyDetails(keyId);
+    const keyData = await apiKeyService.getApiKeyDetails(keyId);
     
     if (!keyData) {
       return res.status(404).json({
@@ -145,9 +148,9 @@ router.post('/generate', async (req, res) => {
     
     let keyData;
     if (keyType === 'promethios-native') {
-      keyData = apiKeyService.generatePrometheosApiKey(agentId, agentName, userId);
+      keyData = await apiKeyService.generatePrometheosApiKey(agentId, agentName, userId);
     } else if (keyType === 'deployment') {
-      keyData = apiKeyService.generateDeploymentApiKey(agentId, userId);
+      keyData = await apiKeyService.generateDeploymentApiKey(agentId, userId);
     } else {
       return res.status(400).json({
         success: false,
