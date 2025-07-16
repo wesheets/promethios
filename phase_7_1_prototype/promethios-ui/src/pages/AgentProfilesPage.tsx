@@ -1770,8 +1770,16 @@ const AgentProfilesPage: React.FC = () => {
             <Tab 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Person />
-                  Individual Agents ({agentProfiles.length})
+                  <AutoAwesome />
+                  Promethios Native Agents ({agentProfiles.filter(p => p.prometheosLLM).length})
+                </Box>
+              } 
+            />
+            <Tab 
+              label={
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Api />
+                  Wrapped API Agents ({agentProfiles.filter(p => !p.prometheosLLM).length})
                 </Box>
               } 
             />
@@ -1900,22 +1908,22 @@ const AgentProfilesPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          {/* Individual Agents Tab */}
+          {/* Promethios Native Agents Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
-              <Typography>Loading agent profiles...</Typography>
+              <Typography>Loading native agents...</Typography>
             </Box>
-          ) : filteredAgentProfiles.length === 0 ? (
+          ) : filteredAgentProfiles.filter(p => p.prometheosLLM).length === 0 ? (
             <Alert severity="info">
-              <AlertTitle>No Individual Agents Found</AlertTitle>
+              <AlertTitle>No Promethios Native Agents Found</AlertTitle>
               {searchTerm || statusFilter !== 'all' || healthFilter !== 'all' 
                 ? 'Try adjusting your filters or search terms.'
-                : 'You haven\'t wrapped any individual agents yet. Start by wrapping your first agent!'
+                : 'You haven\'t created any Promethios Native Agents yet. Create your first native agent with built-in governance!'
               }
             </Alert>
           ) : (
             <Grid container spacing={3}>
-              {filteredAgentProfiles.map((profile) => (
+              {filteredAgentProfiles.filter(p => p.prometheosLLM).map((profile) => (
                 <Grid item xs={12} md={6} lg={4} key={profile.identity.id}>
                   <AgentProfileCard 
                     profile={profile}
@@ -1931,6 +1939,37 @@ const AgentProfilesPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
+          {/* Wrapped API Agents Tab */}
+          {combinedLoading ? (
+            <Box display="flex" justifyContent="center" py={8}>
+              <Typography>Loading wrapped agents...</Typography>
+            </Box>
+          ) : filteredAgentProfiles.filter(p => !p.prometheosLLM).length === 0 ? (
+            <Alert severity="info">
+              <AlertTitle>No Wrapped API Agents Found</AlertTitle>
+              {searchTerm || statusFilter !== 'all' || healthFilter !== 'all' 
+                ? 'Try adjusting your filters or search terms.'
+                : 'You haven\'t wrapped any API agents yet. Start by wrapping your first external agent with governance!'
+              }
+            </Alert>
+          ) : (
+            <Grid container spacing={3}>
+              {filteredAgentProfiles.filter(p => !p.prometheosLLM).map((profile) => (
+                <Grid item xs={12} md={6} lg={4} key={profile.identity.id}>
+                  <AgentProfileCard 
+                    profile={profile}
+                    selectionMode={selectionMode}
+                    isSelected={selectedAgents.includes(profile.identity.id)}
+                    onSelectionChange={handleAgentSelection}
+                    onManageAgent={handleManageAgent}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
           {/* Multi-Agent Systems Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
