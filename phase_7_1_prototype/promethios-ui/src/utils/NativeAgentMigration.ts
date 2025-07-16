@@ -54,24 +54,13 @@ export class NativeAgentMigration {
         try {
           console.log(`🔄 Migrating native agent: ${agent.identity.name} (${agent.agentId})`);
           
-          // Create proper apiDetails structure for native agents
+          // Create proper apiDetails structure for native agents using the static method
           const migratedAgent: AgentProfile = {
             ...agent,
-            apiDetails: {
-              endpoint: 'https://api.openai.com/v1',
-              key: process.env.REACT_APP_OPENAI_API_KEY || '',
-              provider: 'openai', // Lowercase to match chat system expectations
-              selectedModel: 'gpt-4',
-              selectedCapabilities: ['text-generation', 'conversation', 'governance'],
-              selectedContextLength: 8192,
-              discoveredInfo: {
-                name: agent.identity.name,
-                description: agent.identity.description,
-                type: 'native-llm',
-                governance: 'built-in',
-                compliance: 'constitutional'
-              }
-            }
+            apiDetails: NativeAgentMigration.createNativeApiDetails(
+              agent.identity.name,
+              agent.identity.description
+            )
           };
 
           // Save the migrated agent
@@ -116,18 +105,19 @@ export class NativeAgentMigration {
    */
   static createNativeApiDetails(name: string, description: string) {
     return {
-      endpoint: 'https://api.openai.com/v1',
-      key: process.env.REACT_APP_OPENAI_API_KEY || '',
-      provider: 'openai', // Lowercase to match chat system expectations
-      selectedModel: 'gpt-4',
-      selectedCapabilities: ['text-generation', 'conversation', 'governance'],
+      endpoint: 'https://api.promethios.ai/v1', // Native Promethios endpoint
+      key: process.env.REACT_APP_PROMETHIOS_API_KEY || 'native-model-key', // Native model key
+      provider: 'promethios', // Native Promethios provider
+      selectedModel: 'promethios-lambda-7b', // Native Promethios model
+      selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],
       selectedContextLength: 8192,
       discoveredInfo: {
         name: name,
         description: description,
         type: 'native-llm',
         governance: 'built-in',
-        compliance: 'constitutional'
+        compliance: 'constitutional',
+        provider: 'promethios-native'
       }
     };
   }
