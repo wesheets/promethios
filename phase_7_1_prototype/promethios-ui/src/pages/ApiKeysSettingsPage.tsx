@@ -318,7 +318,7 @@ const ApiKeysSettingsPage: React.FC = () => {
       p: 3, 
       maxWidth: 1200, 
       mx: 'auto',
-      ...darkThemeStyles.container
+      ...darkThemeStyles?.pageContainer || { backgroundColor: '#1a202c', color: 'white' }
     }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
@@ -327,7 +327,7 @@ const ApiKeysSettingsPage: React.FC = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: 1,
-          ...darkThemeStyles.text.primary
+          ...darkThemeStyles?.typography?.primary || { color: 'white' }
         }}>
           <Key />
           API Keys
@@ -349,60 +349,60 @@ const ApiKeysSettingsPage: React.FC = () => {
       {stats && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={darkThemeStyles.card}>
+            <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
                   {stats.total}
                 </Typography>
-                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                   Total Keys
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={darkThemeStyles.card}>
+            <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
                   {stats.active}
                 </Typography>
-                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                   Active
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={darkThemeStyles.card}>
+            <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
                   {stats.revoked}
                 </Typography>
-                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                   Revoked
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={darkThemeStyles.card}>
+            <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
                   {stats.nativeKeys}
                 </Typography>
-                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                   Native Keys
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
-            <Card sx={darkThemeStyles.card}>
+            <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="secondary.main">
                   {stats.deploymentKeys}
                 </Typography>
-                <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                   Deployment Keys
                 </Typography>
               </CardContent>
@@ -411,11 +411,11 @@ const ApiKeysSettingsPage: React.FC = () => {
         </Grid>
       )}
 
-      {/* API Keys List */}
-      <Card sx={darkThemeStyles.card}>
+      {/* Main API Keys Card */}
+      <Card sx={darkThemeStyles?.card || { backgroundColor: '#2d3748', color: 'white' }}>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={darkThemeStyles.text.primary}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" sx={darkThemeStyles?.typography?.primary || { color: 'white' }}>
               Your API Keys
             </Typography>
             <Button
@@ -430,11 +430,11 @@ const ApiKeysSettingsPage: React.FC = () => {
 
           {apiKeys.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Key sx={{ fontSize: 64, ...darkThemeStyles.text.secondary, mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 1, ...darkThemeStyles.text.secondary }}>
+              <Key sx={{ fontSize: 64, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }, mb: 2 }} />
+              <Typography variant="h6" sx={{ mb: 1, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' } }}>
                 No API Keys Found
               </Typography>
-              <Typography variant="body2" sx={darkThemeStyles.text.secondary}>
+              <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
                 API keys are automatically generated when you create Promethios Native Agents
               </Typography>
             </Box>
