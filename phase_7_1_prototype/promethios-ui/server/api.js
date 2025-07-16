@@ -18,31 +18,85 @@ dotenv.config();
 // Create router
 const apiRouter = express.Router();
 
+// Test endpoint to debug JSON parsing
+apiRouter.post('/test', (req, res) => {
+  console.log('🧪 Test endpoint called');
+  console.log('📦 Request body:', req.body);
+  console.log('📋 Request headers:', req.headers);
+  res.json({ 
+    success: true, 
+    message: 'Test endpoint working',
+    receivedBody: req.body,
+    bodyType: typeof req.body
+  });
+});
+
 // Proxy configuration for backend API
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:3001';
 
 // Proxy middleware for API key management
-apiRouter.use('/keys', async (req, res) => {
+apiRouter.all('/keys/*', async (req, res) => {
   try {
-    const url = `${BACKEND_API_URL}/api/keys${req.url}`;
+    const targetPath = req.originalUrl.replace('/api', '');
+    const url = `${BACKEND_API_URL}/api${targetPath}`;
+    
     const options = {
       method: req.method,
       headers: {
-        'Content-Type': 'application/json',
-        ...req.headers
+        'Content-Type': 'application/json'
       }
     };
     
-    if (req.body && Object.keys(req.body).length > 0) {
+    // Add body for POST, PUT, PATCH requests
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
       options.body = JSON.stringify(req.body);
     }
+    
+    console.log(`🔄 Proxying ${req.method} ${url}`);
+    if (req.body) console.log(`📦 Request body:`, req.body);
     
     const response = await fetch(url, options);
     const data = await response.json();
     
+    console.log(`✅ Backend response:`, data);
+    
     res.status(response.status).json(data);
   } catch (error) {
-    console.error('API proxy error:', error);
+    console.error('❌ API proxy error:', error);
+    res.status(500).json({ error: 'Proxy error', message: error.message });
+  }
+});
+
+// Handle /keys root path
+apiRouter.all('/keys', async (req, res) => {
+  try {
+    // For GET requests, include query parameters
+    const queryString = req.url.startsWith('?') ? req.url : '';
+    const url = `${BACKEND_API_URL}/api/keys${queryString}`;
+    
+    const options = {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    // Add body for POST, PUT, PATCH requests
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      options.body = JSON.stringify(req.body);
+    }
+    
+    console.log(`🔄 Proxying ${req.method} ${url}`);
+    if (req.body) console.log(`📦 Request body:`, req.body);
+    
+    const response = await fetch(url, options);
+    const data = await response.json();
+    
+    console.log(`✅ Backend response:`, data);
+    
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error('❌ API proxy error:', error);
     res.status(500).json({ error: 'Proxy error', message: error.message });
   }
 });

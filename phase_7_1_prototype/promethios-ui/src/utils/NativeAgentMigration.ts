@@ -162,6 +162,87 @@ export class NativeAgentMigration {
   }
 
   /**
+   * Update existing native agents with real API keys
+   */
+  static async updateAgentsWithRealApiKeys(userId: string): Promise<{updated: number, errors: string[]}> {
+    try {
+      const { userAgentStorage } = await import('../services/UserAgentStorageService');
+      userAgentStorage.setCurrentUser(userId);
+      
+      const agents = userAgentStorage.getAllAgents();
+      const nativeAgents = agents.filter(agent => 
+        agent.prometheusLLM || agent.prometheosLLM || 
+        (agent.apiDetails?.provider === 'promethios' && 
+         (agent.apiDetails?.key === 'native-model-key' || !agent.apiDetails?.key))
+      );
+      
+      let updated = 0;
+      const errors: string[] = [];
+      
+      for (const agent of nativeAgents) {
+        try {
+          console.log(`🔑 Updating agent ${agent.name} with real API key`);
+          
+          // Generate real API key for this agent
+          const apiResponse = await fetch('/api/keys/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              agentId: agent.id,
+              agentName: agent.name,
+              userId,
+              keyType: 'promethios-native'
+            })
+          });
+          
+          if (apiResponse.ok) {
+            const result = await apiResponse.json();
+            const apiKeyData = result.key;
+            
+            // Update agent with real API key
+            const updatedAgent = {
+              ...agent,
+              apiDetails: {
+                ...agent.apiDetails,
+                key: apiKeyData.key,
+                provider: 'promethios',
+                selectedModel: 'promethios-lambda-7b',
+                endpoint: 'https://api.promethios.ai/v1',
+                discoveredInfo: {
+                  ...agent.apiDetails?.discoveredInfo,
+                  apiKeyId: apiKeyData.key,
+                  keyType: apiKeyData.type,
+                  permissions: apiKeyData.permissions,
+                  rateLimit: apiKeyData.rateLimit
+                }
+              }
+            };
+            
+            userAgentStorage.updateAgent(updatedAgent);
+            updated++;
+            console.log(`✅ Updated agent ${agent.name} with real API key`);
+          } else {
+            const error = `Failed to generate API key for agent ${agent.name}`;
+            errors.push(error);
+            console.error(error);
+          }
+        } catch (error) {
+          const errorMsg = `Error updating agent ${agent.name}: ${error}`;
+          errors.push(errorMsg);
+          console.error(errorMsg);
+        }
+      }
+      
+      return { updated, errors };
+    } catch (error) {
+      console.error('Error in updateAgentsWithRealApiKeys:', error);
+      return { updated: 0, errors: [error.message] };
+    }
+  }
+
+  /**
    * Run migration automatically when needed
    */
   static async autoMigrate(userId: string): Promise<void> {
@@ -174,6 +255,19 @@ export class NativeAgentMigration {
     
     if (result.errors.length > 0) {
       console.warn('⚠️ Migration had errors:', result.errors);
+    }
+    
+    // Also update existing agents with real API keys
+    try {
+      const apiKeyResult = await NativeAgentMigration.updateAgentsWithRealApiKeys(userId);
+      if (apiKeyResult.updated > 0) {
+        console.log(`🔑 API key update completed: ${apiKeyResult.updated} agents updated with real keys`);
+      }
+      if (apiKeyResult.errors.length > 0) {
+        console.warn('⚠️ API key update had errors:', apiKeyResult.errors);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to update agents with real API keys:', error);
     }
   }
 }
