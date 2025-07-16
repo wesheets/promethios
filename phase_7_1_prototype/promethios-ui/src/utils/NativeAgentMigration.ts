@@ -28,6 +28,18 @@ export class NativeAgentMigration {
       console.log(`📋 Found ${agents.length} total agents`);
 
       // Filter for native agents that need migration
+      console.log('🔍 Analyzing agents for migration needs...');
+      agents.forEach(agent => {
+        console.log(`🔍 Agent "${agent.identity.name}":`, {
+          prometheosLLM: agent.prometheosLLM,
+          hasApiDetails: !!agent.apiDetails,
+          hasProvider: agent.apiDetails?.provider,
+          hasKey: !!agent.apiDetails?.key,
+          needsMigration: agent.prometheosLLM === true && 
+                         (!agent.apiDetails || !agent.apiDetails.provider || !agent.apiDetails.key)
+        });
+      });
+      
       const nativeAgents = agents.filter(agent => 
         agent.prometheosLLM === true && 
         (!agent.apiDetails || !agent.apiDetails.provider || !agent.apiDetails.key)
