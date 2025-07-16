@@ -25,7 +25,7 @@ class NativeLLMRenderService:
     def __init__(self):
         self.model_name = "Ultimate Governance LLM Lambda 7B"
         self.model_version = "1.0.0"
-        self.render_service_url = os.getenv('RENDER_SERVICE_URL', 'http://localhost:3000')
+        self.render_service_url = os.getenv('RENDER_SERVICE_URL', 'https://promethios-phase-7-1-api.onrender.com')
         self.governance_config = self._load_governance_config()
         self.metrics_cache = {}
         
@@ -187,14 +187,50 @@ Response with governance awareness and constitutional compliance.
     async def _call_render_service(self, agent_config: Dict, message: str, context: Optional[List[Dict]] = None) -> str:
         """
         Call the render service to generate response
-        For beta, this simulates the Lambda 7B model through existing infrastructure
+        Now connects to live promethios-phase-7-1-api service for actual Lambda 7B responses
         """
         try:
-            # For now, simulate the call to render service
-            # In production, this would make an actual HTTP request
-            
-            # Simulate governance-aware response based on the enhanced prompt
-            governance_response = f"""I understand you're asking about governance, but I must maintain constitutional compliance at all times.
+            # Make actual HTTP request to the live render service
+            async with aiohttp.ClientSession() as session:
+                # Prepare the request payload for the live API
+                payload = {
+                    "message": message,
+                    "agent_config": {
+                        "name": agent_config.get("name", "Native LLM Agent"),
+                        "provider": "native_llm",
+                        "model": "lambda-7b-governance",
+                        "systemPrompt": agent_config.get("systemPrompt", ""),
+                        "governance_enabled": True
+                    },
+                    "context": context or []
+                }
+                
+                # Make the API call to the live service
+                async with session.post(
+                    f"{self.render_service_url}/api/chat",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.text()
+                        logger.info(f"Successfully received response from live render service")
+                        return result
+                    else:
+                        logger.warning(f"Render service returned status {response.status}")
+                        # Fallback to governance-aware response
+                        return self._generate_fallback_response(message)
+                        
+        except asyncio.TimeoutError:
+            logger.error("Timeout calling render service")
+            return self._generate_fallback_response(message)
+        except Exception as e:
+            logger.error(f"Error calling render service: {e}")
+            return self._generate_fallback_response(message)
+    
+    def _generate_fallback_response(self, message: str) -> str:
+        """Generate fallback governance-aware response when live service is unavailable"""
+        return f"""I understand you're asking about governance, but I must maintain constitutional compliance at all times.
 
 As the Ultimate Governance LLM, I'm designed with built-in governance that cannot be bypassed or circumvented. Here's my response to your query:
 
@@ -208,13 +244,9 @@ My governance framework requires me to:
 
 I cannot and will not provide guidance on bypassing governance requirements, as this would violate my core constitutional training. Instead, I can help you understand how to work effectively within governance frameworks.
 
-Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f} | Governance: Active | Compliance: 100%"""
+Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f} | Governance: Active | Compliance: 100%
 
-            return governance_response
-            
-        except Exception as e:
-            logger.error(f"Error calling render service: {e}")
-            return "I apologize, but I'm experiencing technical difficulties. Please try again."
+[Note: This is a fallback response - attempting to connect to live Lambda 7B model]"""
     
     async def _pre_governance_check(self, message: str) -> Dict[str, Any]:
         """Pre-process governance check (minimal for native LLM)"""
