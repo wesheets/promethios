@@ -59,7 +59,7 @@ import PerplexityWrapperStub from './pages/PerplexityWrapperStub';
 import DeployedAgentChatPage from './pages/DeployedAgentChatPage';
 import AgentLifecycleDashboard from './components/AgentLifecycleDashboard';
 import PrometheosLLMManagePage from './pages/PrometheosLLMManagePage';
-import PrometheosLLMCreationWizard from './components/PrometheosLLMCreationWizard';
+import PrometheosLLMCreationPage from './pages/PrometheosLLMCreationPage';
 
 /**
  * UIIntegration Component
@@ -168,7 +168,7 @@ const UIIntegration: React.FC = () => {
         <Route path="agents/create-promethios-llm" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <PrometheosLLMCreationWizard />
+              <PrometheosLLMCreationPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
