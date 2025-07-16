@@ -142,6 +142,17 @@
     "compliance": [],
     "description": "System-wide metrics, performance data, and monitoring information"
   },
+  "test_agent_metrics": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Test agent metrics, performance data, and monitoring information for development and testing"
+  },
   "cache": {
     "provider": "memory",
     "fallback": "localStorage",
