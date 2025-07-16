@@ -40,7 +40,6 @@ import {
   Launch,
   ArrowBack
 } from '@mui/icons-material';
-import { darkThemeStyles } from '../styles/darkThemeStyles';
 import { prometheosLLMService } from '../services/PrometheosLLMService';
 
 interface AgentConfig {
@@ -110,22 +109,6 @@ const PrometheosLLMCreationPage: React.FC = () => {
     } finally {
       setCreating(false);
     }
-  };
-
-  const handleReset = () => {
-    setActiveStep(0);
-    setCreating(false);
-    setError(null);
-    setCreatedAgent(null);
-    setConfig({
-      name: '',
-      description: '',
-      responseStyle: 'professional',
-      complianceMode: 'strict',
-      trustThreshold: 0.8,
-      maxTokens: 2048,
-      temperature: 0.7
-    });
   };
 
   const isStepValid = (step: number) => {
@@ -264,32 +247,34 @@ const PrometheosLLMCreationPage: React.FC = () => {
               Agent Configuration
             </Typography>
 
-            <FormControl fullWidth sx={{ mb: 3,
-              "...darkThemeStyles.textField, mb: 3 .MuiOutlinedInput-root": {
-                backgroundColor: "#1a202c",
-                color: "white",
-                "...darkThemeStyles.textField, mb: 3 fieldset": {
-                  borderColor: "#4a5568",
+            <FormControl fullWidth sx={{ 
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#1a202c',
+                color: 'white',
+                '& fieldset': {
+                  borderColor: '#4a5568',
                 },
-                "...darkThemeStyles.textField, mb: 3:hover fieldset": {
-                  borderColor: "#718096",
+                '&:hover fieldset': {
+                  borderColor: '#718096',
                 },
-                "...darkThemeStyles.textField, mb: 3.Mui-focused fieldset": {
-                  borderColor: "#3b82f6",
-                },
-              },
-              "...darkThemeStyles.textField, mb: 3 .MuiInputLabel-root": {
-                color: "#a0aec0",
-                "...darkThemeStyles.textField, mb: 3.Mui-focused": {
-                  color: "#3b82f6",
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
                 },
               },
-              "...darkThemeStyles.textField, mb: 3 .MuiSelect-select": {
-                color: "white",
+              '& .MuiInputLabel-root': {
+                color: '#a0aec0',
+                '&.Mui-focused': {
+                  color: '#3b82f6',
+                },
               },
-              "...darkThemeStyles.textField, mb: 3 .MuiSelect-icon": {
-                color: "#a0aec0",
-              }, }}>
+              '& .MuiSelect-select': {
+                color: 'white',
+              },
+              '& .MuiSelect-icon': {
+                color: '#a0aec0',
+              },
+            }}>
               <InputLabel>Response Style</InputLabel>
               <Select
                 value={config.responseStyle}
@@ -309,32 +294,34 @@ const PrometheosLLMCreationPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth sx={{ mb: 3,
-              "...darkThemeStyles.textField, mb: 3 .MuiOutlinedInput-root": {
-                backgroundColor: "#1a202c",
-                color: "white",
-                "...darkThemeStyles.textField, mb: 3 fieldset": {
-                  borderColor: "#4a5568",
+            <FormControl fullWidth sx={{ 
+              mb: 3,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#1a202c',
+                color: 'white',
+                '& fieldset': {
+                  borderColor: '#4a5568',
                 },
-                "...darkThemeStyles.textField, mb: 3:hover fieldset": {
-                  borderColor: "#718096",
+                '&:hover fieldset': {
+                  borderColor: '#718096',
                 },
-                "...darkThemeStyles.textField, mb: 3.Mui-focused fieldset": {
-                  borderColor: "#3b82f6",
-                },
-              },
-              "...darkThemeStyles.textField, mb: 3 .MuiInputLabel-root": {
-                color: "#a0aec0",
-                "...darkThemeStyles.textField, mb: 3.Mui-focused": {
-                  color: "#3b82f6",
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
                 },
               },
-              "...darkThemeStyles.textField, mb: 3 .MuiSelect-select": {
-                color: "white",
+              '& .MuiInputLabel-root': {
+                color: '#a0aec0',
+                '&.Mui-focused': {
+                  color: '#3b82f6',
+                },
               },
-              "...darkThemeStyles.textField, mb: 3 .MuiSelect-icon": {
-                color: "#a0aec0",
-              }, }}>
+              '& .MuiSelect-select': {
+                color: 'white',
+              },
+              '& .MuiSelect-icon': {
+                color: '#a0aec0',
+              },
+            }}>
               <InputLabel>Compliance Mode</InputLabel>
               <Select
                 value={config.complianceMode}
@@ -375,7 +362,31 @@ const PrometheosLLMCreationPage: React.FC = () => {
                 type="number"
                 value={config.maxTokens}
                 onChange={(e) => setConfig({ ...config, maxTokens: parseInt(e.target.value) || 2048 })}
-                sx={{ flex: 1, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-root": { backgroundColor: "#1a202c", color: "white", "...darkThemeStyles.textField, flex: 1 fieldset": { borderColor: "#4a5568" }, "...darkThemeStyles.textField, flex: 1:hover fieldset": { borderColor: "#718096" }, "...darkThemeStyles.textField, flex: 1.Mui-focused fieldset": { borderColor: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiInputLabel-root": { color: "#a0aec0", "...darkThemeStyles.textField, flex: 1.Mui-focused": { color: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-input": { color: "white" } }}
+                sx={{ 
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1a202c',
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#a0aec0',
+                    '&.Mui-focused': {
+                      color: '#3b82f6',
+                    },
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: 'white',
+                  },
+                }}
                 inputProps={{ min: 100, max: 4096 }}
               />
               
@@ -384,7 +395,31 @@ const PrometheosLLMCreationPage: React.FC = () => {
                 type="number"
                 value={config.temperature}
                 onChange={(e) => setConfig({ ...config, temperature: parseFloat(e.target.value) || 0.7 })}
-                sx={{ flex: 1, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-root": { backgroundColor: "#1a202c", color: "white", "...darkThemeStyles.textField, flex: 1 fieldset": { borderColor: "#4a5568" }, "...darkThemeStyles.textField, flex: 1:hover fieldset": { borderColor: "#718096" }, "...darkThemeStyles.textField, flex: 1.Mui-focused fieldset": { borderColor: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiInputLabel-root": { color: "#a0aec0", "...darkThemeStyles.textField, flex: 1.Mui-focused": { color: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-input": { color: "white" } }}
+                sx={{ 
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#1a202c',
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3b82f6',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#a0aec0',
+                    '&.Mui-focused': {
+                      color: '#3b82f6',
+                    },
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: 'white',
+                  },
+                }}
                 inputProps={{ min: 0.1, max: 2.0, step: 0.1 }}
               />
             </Box>
@@ -460,38 +495,38 @@ const PrometheosLLMCreationPage: React.FC = () => {
             p: 4, 
             textAlign: 'center' 
           }}>
-          <AutoAwesomeIcon sx={{ color: '#3b82f6', fontSize: 64, mb: 2 }} />
-          
-          <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>
-            Agent Created Successfully!
-          </Typography>
-          
-          <Typography variant="body1" sx={{ color: '#a0aec0', mb: 4 }}>
-            Your Promethios LLM agent "{createdAgent.name}" is ready with immediate API access.
-          </Typography>
+            <AutoAwesomeIcon sx={{ color: '#3b82f6', fontSize: 64, mb: 2 }} />
+            
+            <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>
+              Agent Created Successfully!
+            </Typography>
+            
+            <Typography variant="body1" sx={{ color: '#a0aec0', mb: 4 }}>
+              Your Promethios LLM agent "{createdAgent.name}" is ready with immediate API access.
+            </Typography>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/ui/agents/profiles')}
-              sx={{ color: '#a0aec0', borderColor: '#4a5568' }}
-            >
-              Back to My Agents
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Launch />}
-              onClick={() => navigate(`/ui/agents/promethios-llm`)}
-              sx={{
-                backgroundColor: '#3b82f6',
-                '&:hover': { backgroundColor: '#2563eb' }
-              }}
-            >
-              Manage Agent
-            </Button>
-          </Box>
-        </Paper>
-      </Container>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/ui/agents/profiles')}
+                sx={{ color: '#a0aec0', borderColor: '#4a5568' }}
+              >
+                Back to My Agents
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Launch />}
+                onClick={() => navigate(`/ui/agents/promethios-llm`)}
+                sx={{
+                  backgroundColor: '#3b82f6',
+                  '&:hover': { backgroundColor: '#2563eb' }
+                }}
+              >
+                Manage Agent
+              </Button>
+            </Box>
+          </Paper>
+        </Container>
       </Box>
     );
   }
@@ -526,79 +561,80 @@ const PrometheosLLMCreationPage: React.FC = () => {
           borderRadius: 2,
           p: 4 
         }}>
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel sx={{ 
-                '& .MuiStepLabel-label': { color: '#a0aec0' },
-                '& .MuiStepLabel-label.Mui-active': { color: '#3b82f6' },
-                '& .MuiStepLabel-label.Mui-completed': { color: '#10b981' }
-              }}>
-                {label}
-              </StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel sx={{ 
+                  '& .MuiStepLabel-label': { color: '#a0aec0' },
+                  '& .MuiStepLabel-label.Mui-active': { color: '#3b82f6' },
+                  '& .MuiStepLabel-label.Mui-completed': { color: '#10b981' }
+                }}>
+                  {label}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-        {creating && (
-          <Box sx={{ mb: 3 }}>
-            <LinearProgress sx={{ backgroundColor: '#4a5568' }} />
-            <Typography variant="body2" sx={{ color: '#a0aec0', mt: 1, textAlign: 'center' }}>
-              Creating your Promethios LLM agent...
-            </Typography>
-          </Box>
-        )}
+          {creating && (
+            <Box sx={{ mb: 3 }}>
+              <LinearProgress sx={{ backgroundColor: '#4a5568' }} />
+              <Typography variant="body2" sx={{ color: '#a0aec0', mt: 1, textAlign: 'center' }}>
+                Creating your Promethios LLM agent...
+              </Typography>
+            </Box>
+          )}
 
-        {renderStepContent(activeStep)}
+          {renderStepContent(activeStep)}
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button
-            onClick={() => navigate('/ui/agents/profiles')}
-            sx={{ color: '#a0aec0' }}
-          >
-            Cancel
-          </Button>
-          
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
             <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
+              onClick={() => navigate('/ui/agents/profiles')}
               sx={{ color: '#a0aec0' }}
             >
-              Back
+              Cancel
             </Button>
             
-            {activeStep === steps.length - 1 ? (
+            <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
-                variant="contained"
-                onClick={handleCreate}
-                disabled={creating || !isStepValid(activeStep)}
-                sx={{
-                  backgroundColor: '#10b981',
-                  '&:hover': { backgroundColor: '#059669' }
-                }}
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                sx={{ color: '#a0aec0' }}
               >
-                {creating ? 'Creating...' : 'Create Agent'}
+                Back
               </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={!isStepValid(activeStep)}
-                sx={{
-                  backgroundColor: '#3b82f6',
-                  '&:hover': { backgroundColor: '#2563eb' }
-                }}
-              >
-                Next
-              </Button>
-            )}
+              
+              {activeStep === steps.length - 1 ? (
+                <Button
+                  variant="contained"
+                  onClick={handleCreate}
+                  disabled={creating || !isStepValid(activeStep)}
+                  sx={{
+                    backgroundColor: '#10b981',
+                    '&:hover': { backgroundColor: '#059669' }
+                  }}
+                >
+                  {creating ? 'Creating...' : 'Create Agent'}
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!isStepValid(activeStep)}
+                  sx={{
+                    backgroundColor: '#3b82f6',
+                    '&:hover': { backgroundColor: '#2563eb' }
+                  }}
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
           </Box>
         </Paper>
       </Container>
