@@ -1,14 +1,14 @@
 /**
- * Native LLM Service for Frontend Integration
+ * Promethios LLM Service for Frontend Integration
  * 
- * Provides frontend interface for Promethios Native LLM functionality
+ * Provides frontend interface for Promethios Promethios LLM functionality
  * with immediate API access and metrics tracking.
  */
 
 import { authApiService } from './authApiService';
-import { nativeLLMExtension } from '../extensions/NativeLLMExtension';
+import { prometheosLLMExtension } from '../extensions/PrometheosLLMExtension';
 
-export interface NativeLLMAgent {
+export interface PrometheosLLMAgent {
   agentId: string;
   userId: string;
   name: string;
@@ -57,7 +57,7 @@ export interface NativeLLMAgent {
   };
 }
 
-export interface NativeLLMResponse {
+export interface PrometheosLLMResponse {
   agentId: string;
   messageId: string;
   timestamp: string;
@@ -79,7 +79,7 @@ export interface NativeLLMResponse {
   };
 }
 
-export interface NativeLLMDeployment {
+export interface PrometheosLLMDeployment {
   deploymentId: string;
   productionAgentId: string;
   deploymentUrl: string;
@@ -94,7 +94,7 @@ export interface NativeLLMDeployment {
   };
 }
 
-class NativeLLMService {
+class PrometheosLLMService {
   private baseUrl: string;
   private agentApiUrl: string;
 
@@ -104,15 +104,15 @@ class NativeLLMService {
   }
 
   /**
-   * Create a new Native LLM agent with immediate API access
+   * Create a new Promethios LLM agent with immediate API access
    */
   async createNativeAgent(
     name: string,
     description: string,
-    config: Partial<NativeLLMAgent['config']> = {}
-  ): Promise<NativeLLMAgent> {
+    config: Partial<PrometheosLLMAgent['config']> = {}
+  ): Promise<PrometheosLLMAgent> {
     try {
-      console.log('🧠 Creating Native LLM agent with immediate API access');
+      console.log('🧠 Creating Promethios LLM agent with immediate API access');
 
       // Get current user
       const user = await authApiService.getCurrentUser();
@@ -121,7 +121,7 @@ class NativeLLMService {
       }
 
       // Create agent using extension
-      const agent = await nativeLLMExtension.execute(
+      const agent = await prometheosLLMExtension.execute(
         { userId: user.id },
         'createAgent',
         {
@@ -136,30 +136,30 @@ class NativeLLMService {
       const apiAccess = this.generateImmediateAPIAccess(agent.agentId);
 
       // Enhanced agent object with API access
-      const enhancedAgent: NativeLLMAgent = {
+      const enhancedAgent: PrometheosLLMAgent = {
         ...agent,
         apiAccess
       };
 
-      console.log('✅ Native LLM agent created with immediate API access');
+      console.log('✅ Promethios LLM agent created with immediate API access');
       return enhancedAgent;
 
     } catch (error) {
-      console.error('❌ Failed to create Native LLM agent:', error);
+      console.error('❌ Failed to create Promethios LLM agent:', error);
       throw error;
     }
   }
 
   /**
-   * Chat with Native LLM agent (immediate access)
+   * Chat with Promethios LLM agent (immediate access)
    */
   async chatWithAgent(
     agentId: string,
     message: string,
     context?: any
-  ): Promise<NativeLLMResponse> {
+  ): Promise<PrometheosLLMResponse> {
     try {
-      console.log(`💬 Chatting with Native LLM agent: ${agentId}`);
+      console.log(`💬 Chatting with Promethios LLM agent: ${agentId}`);
 
       // Get current user
       const user = await authApiService.getCurrentUser();
@@ -168,7 +168,7 @@ class NativeLLMService {
       }
 
       // Use extension for chat
-      const response = await nativeLLMExtension.execute(
+      const response = await prometheosLLMExtension.execute(
         { userId: user.id },
         'chatWithAgent',
         {
@@ -179,21 +179,21 @@ class NativeLLMService {
         }
       );
 
-      console.log('✅ Native LLM response generated');
+      console.log('✅ Promethios LLM response generated');
       return response;
 
     } catch (error) {
-      console.error('❌ Failed to chat with Native LLM agent:', error);
+      console.error('❌ Failed to chat with Promethios LLM agent:', error);
       throw error;
     }
   }
 
   /**
-   * Deploy Native LLM agent to production (enhanced API access)
+   * Deploy Promethios LLM agent to production (enhanced API access)
    */
-  async deployAgent(agentId: string): Promise<NativeLLMDeployment> {
+  async deployAgent(agentId: string): Promise<PrometheosLLMDeployment> {
     try {
-      console.log(`🚀 Deploying Native LLM agent to production: ${agentId}`);
+      console.log(`🚀 Deploying Promethios LLM agent to production: ${agentId}`);
 
       // Get current user
       const user = await authApiService.getCurrentUser();
@@ -202,7 +202,7 @@ class NativeLLMService {
       }
 
       // Deploy using extension
-      const deploymentResult = await nativeLLMExtension.execute(
+      const deploymentResult = await prometheosLLMExtension.execute(
         { userId: user.id },
         'deployAgent',
         {
@@ -215,7 +215,7 @@ class NativeLLMService {
       const apiKey = await this.generateProductionAPIKey(deploymentResult.productionAgentId);
 
       // Create deployment object
-      const deployment: NativeLLMDeployment = {
+      const deployment: PrometheosLLMDeployment = {
         deploymentId: deploymentResult.deploymentId,
         productionAgentId: deploymentResult.productionAgentId,
         deploymentUrl: deploymentResult.deploymentUrl,
@@ -230,19 +230,19 @@ class NativeLLMService {
         }
       };
 
-      console.log('✅ Native LLM agent deployed to production');
+      console.log('✅ Promethios LLM agent deployed to production');
       return deployment;
 
     } catch (error) {
-      console.error('❌ Failed to deploy Native LLM agent:', error);
+      console.error('❌ Failed to deploy Promethios LLM agent:', error);
       throw error;
     }
   }
 
   /**
-   * Get all Native LLM agents for current user
+   * Get all Promethios LLM agents for current user
    */
-  async getUserAgents(): Promise<NativeLLMAgent[]> {
+  async getUserAgents(): Promise<PrometheosLLMAgent[]> {
     try {
       // Get current user
       const user = await authApiService.getCurrentUser();
@@ -251,7 +251,7 @@ class NativeLLMService {
       }
 
       // Get agents using extension
-      const agents = await nativeLLMExtension.execute(
+      const agents = await prometheosLLMExtension.execute(
         { userId: user.id },
         'getUserAgents',
         { userId: user.id }
@@ -266,13 +266,13 @@ class NativeLLMService {
       return enhancedAgents;
 
     } catch (error) {
-      console.error('❌ Failed to get user Native LLM agents:', error);
+      console.error('❌ Failed to get user Promethios LLM agents:', error);
       return [];
     }
   }
 
   /**
-   * Get Native LLM agent scorecard
+   * Get Promethios LLM agent scorecard
    */
   async getAgentScorecard(agentId: string) {
     try {
@@ -283,7 +283,7 @@ class NativeLLMService {
       }
 
       // Get scorecard using extension
-      const scorecard = await nativeLLMExtension.execute(
+      const scorecard = await prometheosLLMExtension.execute(
         { userId: user.id },
         'getAgentScorecard',
         {
@@ -295,17 +295,17 @@ class NativeLLMService {
       return scorecard;
 
     } catch (error) {
-      console.error('❌ Failed to get Native LLM agent scorecard:', error);
+      console.error('❌ Failed to get Promethios LLM agent scorecard:', error);
       throw error;
     }
   }
 
   /**
-   * Get Native LLM model information
+   * Get Promethios LLM model information
    */
   async getModelInfo() {
     try {
-      const modelInfo = await nativeLLMExtension.execute(
+      const modelInfo = await prometheosLLMExtension.execute(
         {},
         'getModelInfo',
         {}
@@ -314,13 +314,13 @@ class NativeLLMService {
       return modelInfo;
 
     } catch (error) {
-      console.error('❌ Failed to get Native LLM model info:', error);
+      console.error('❌ Failed to get Promethios LLM model info:', error);
       throw error;
     }
   }
 
   /**
-   * Test Native LLM agent API endpoint directly
+   * Test Promethios LLM agent API endpoint directly
    */
   async testAgentAPI(agentId: string, message: string): Promise<{
     success: boolean;
@@ -383,7 +383,7 @@ class NativeLLMService {
   }
 
   /**
-   * Get Native LLM agent metrics
+   * Get Promethios LLM agent metrics
    */
   async getAgentMetrics(agentId: string, timeRange: { start: Date; end: Date }) {
     try {
@@ -408,7 +408,7 @@ class NativeLLMService {
       };
 
     } catch (error) {
-      console.error('❌ Failed to get Native LLM agent metrics:', error);
+      console.error('❌ Failed to get Promethios LLM agent metrics:', error);
       throw error;
     }
   }
@@ -475,12 +475,12 @@ class NativeLLMService {
   }
 
   /**
-   * Update Native LLM agent configuration
+   * Update Promethios LLM agent configuration
    */
   async updateAgentConfig(
     agentId: string, 
-    config: Partial<NativeLLMAgent['config']>
-  ): Promise<NativeLLMAgent> {
+    config: Partial<PrometheosLLMAgent['config']>
+  ): Promise<PrometheosLLMAgent> {
     try {
       // Get current user
       const user = await authApiService.getCurrentUser();
@@ -508,13 +508,13 @@ class NativeLLMService {
       return updatedAgent;
 
     } catch (error) {
-      console.error('❌ Failed to update Native LLM agent config:', error);
+      console.error('❌ Failed to update Promethios LLM agent config:', error);
       throw error;
     }
   }
 
   /**
-   * Delete Native LLM agent
+   * Delete Promethios LLM agent
    */
   async deleteAgent(agentId: string): Promise<void> {
     try {
@@ -525,16 +525,16 @@ class NativeLLMService {
       }
 
       // This would delete the agent and clean up resources
-      console.log(`🗑️ Deleting Native LLM agent: ${agentId}`);
+      console.log(`🗑️ Deleting Promethios LLM agent: ${agentId}`);
       
       // TODO: Implement actual deletion logic
       
     } catch (error) {
-      console.error('❌ Failed to delete Native LLM agent:', error);
+      console.error('❌ Failed to delete Promethios LLM agent:', error);
       throw error;
     }
   }
 }
 
-export const nativeLLMService = new NativeLLMService();
+export const prometheosLLMService = new PrometheosLLMService();
 

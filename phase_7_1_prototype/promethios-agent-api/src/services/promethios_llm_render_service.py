@@ -1,5 +1,5 @@
 """
-Native LLM Service for Promethios - Beta Version with Render Service Integration
+Promethios LLM Service for Promethios - Beta Version with Render Service Integration
 Provides Lambda 7B governance capabilities through existing render infrastructure
 """
 
@@ -16,9 +16,9 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class NativeLLMRenderService:
+class PrometheosLLMRenderService:
     """
-    Native LLM Service that routes Lambda 7B requests through the render service
+    Promethios LLM Service that routes Lambda 7B requests through the render service
     for beta testing while maintaining all governance and metrics features
     """
     
@@ -63,13 +63,13 @@ class NativeLLMRenderService:
             # Create agent configuration for render service
             render_config = {
                 "id": agent_id,
-                "name": agent_config.get('name', 'Native LLM Agent'),
-                "description": agent_config.get('description', 'Native LLM Agent with built-in governance'),
-                "provider": "native_llm",  # Special provider for native LLM
+                "name": agent_config.get('name', 'Promethios LLM Agent'),
+                "description": agent_config.get('description', 'Promethios LLM Agent with built-in governance'),
+                "provider": "promethios_llm",  # Special provider for native LLM
                 "model": "lambda-7b-governance",
                 "systemPrompt": governance_prompt,
                 "governance_enabled": True,
-                "native_llm": True,
+                "promethios_llm": True,
                 "governance_config": self.governance_config
             }
             
@@ -176,7 +176,7 @@ Response with governance awareness and constitutional compliance.
                 "compliance_status": "compliant",
                 "trust_score": self.governance_config.get('constitutional_compliance', 0.967),
                 "response_time_ms": governance_check["response_time"],
-                "governance_interventions": 0,  # Native LLM has zero interventions
+                "governance_interventions": 0,  # Promethios LLM has zero interventions
                 "timestamp": datetime.utcnow().isoformat()
             }
             
@@ -196,8 +196,8 @@ Response with governance awareness and constitutional compliance.
                 payload = {
                     "message": message,
                     "agent_config": {
-                        "name": agent_config.get("name", "Native LLM Agent"),
-                        "provider": "native_llm",
+                        "name": agent_config.get("name", "Promethios LLM Agent"),
+                        "provider": "promethios_llm",
                         "model": "lambda-7b-governance",
                         "systemPrompt": agent_config.get("systemPrompt", ""),
                         "governance_enabled": True
@@ -252,7 +252,7 @@ Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f
         """Pre-process governance check (minimal for native LLM)"""
         start_time = time.time()
         
-        # Native LLM has governance built-in, so minimal pre-processing needed
+        # Promethios LLM has governance built-in, so minimal pre-processing needed
         score = 0.967  # High baseline score for native governance
         
         response_time = int((time.time() - start_time) * 1000)
@@ -266,7 +266,7 @@ Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f
     
     async def _post_governance_validation(self, response: str, agent_id: str) -> str:
         """Post-process governance validation (minimal for native LLM)"""
-        # Native LLM responses are inherently compliant, minimal validation needed
+        # Promethios LLM responses are inherently compliant, minimal validation needed
         return response
     
     async def get_agent_metrics(self, agent_id: str) -> Dict[str, Any]:
@@ -394,5 +394,5 @@ Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f
         self.metrics_cache[agent_id]["last_interaction"] = datetime.utcnow().isoformat()
 
 # Global service instance
-native_llm_service = NativeLLMRenderService()
+promethios_llm_service = PrometheosLLMRenderService()
 

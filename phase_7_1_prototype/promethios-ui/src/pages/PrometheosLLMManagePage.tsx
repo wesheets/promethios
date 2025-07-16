@@ -1,7 +1,7 @@
 /**
- * Native LLM Management Page
+ * Promethios LLM Management Page
  * 
- * Main page for managing Promethios Native LLM agents with immediate API access
+ * Main page for managing Promethios Promethios LLM agents with immediate API access
  */
 
 import React, { useState, useEffect } from 'react';
@@ -36,9 +36,9 @@ import {
   Refresh
 } from '@mui/icons-material';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
-import { NativeLLMAgentCard } from '../components/NativeLLMAgentCard';
-import { NativeLLMCreationWizard } from '../components/NativeLLMCreationWizard';
-import { nativeLLMService } from '../services/NativeLLMService';
+import { PrometheosLLMAgentCard } from '../components/PrometheosLLMAgentCard';
+import { PrometheosLLMCreationWizard } from '../components/PrometheosLLMCreationWizard';
+import { prometheosLLMService } from '../services/PrometheosLLMService';
 
 interface ModelInfo {
   modelName: string;
@@ -50,7 +50,7 @@ interface ModelInfo {
   status: string;
 }
 
-export const NativeLLMManagePage: React.FC = () => {
+export const PrometheosLLMManagePage: React.FC = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,14 +69,14 @@ export const NativeLLMManagePage: React.FC = () => {
     setLoading(true);
     try {
       const [agentsData, modelData] = await Promise.all([
-        nativeLLMService.getUserAgents(),
-        nativeLLMService.getModelInfo()
+        prometheosLLMService.getUserAgents(),
+        prometheosLLMService.getModelInfo()
       ]);
       
       setAgents(agentsData);
       setModelInfo(modelData);
     } catch (error) {
-      console.error('Failed to load Native LLM data:', error);
+      console.error('Failed to load Promethios LLM data:', error);
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export const NativeLLMManagePage: React.FC = () => {
     setChatResponse(null);
 
     try {
-      const response = await nativeLLMService.chatWithAgent(
+      const response = await prometheosLLMService.chatWithAgent(
         selectedAgent.agentId,
         chatMessage
       );
@@ -123,7 +123,7 @@ export const NativeLLMManagePage: React.FC = () => {
 
   const handleDeploy = async (agentId: string) => {
     try {
-      const deployment = await nativeLLMService.deployAgent(agentId);
+      const deployment = await prometheosLLMService.deployAgent(agentId);
       console.log('Agent deployed:', deployment);
       
       // Refresh agents to show updated status
@@ -153,7 +153,7 @@ export const NativeLLMManagePage: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <AutoAwesome sx={{ color: '#3b82f6', fontSize: 32 }} />
           <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-            Native LLM Agents
+            Promethios LLM Agents
           </Typography>
           <Chip
             label="Lambda 7B"
@@ -166,7 +166,7 @@ export const NativeLLMManagePage: React.FC = () => {
         </Box>
         
         <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-          Create and manage Promethios Native LLM agents with built-in governance and immediate API access.
+          Create and manage Promethios Promethios LLM agents with built-in governance and immediate API access.
         </Typography>
 
         {/* Model Information Card */}
@@ -234,7 +234,7 @@ export const NativeLLMManagePage: React.FC = () => {
             🚀 Immediate API Access
           </Typography>
           <Typography variant="body2">
-            Unlike wrapped agents, Native LLM agents provide chat and API endpoints immediately upon creation.
+            Unlike wrapped agents, Promethios LLM agents provide chat and API endpoints immediately upon creation.
             No wrapping or deployment required for basic functionality!
           </Typography>
         </Alert>
@@ -245,7 +245,7 @@ export const NativeLLMManagePage: React.FC = () => {
         <Grid container spacing={3}>
           {agents.map((agent) => (
             <Grid item xs={12} md={6} lg={4} key={agent.agentId}>
-              <NativeLLMAgentCard
+              <PrometheosLLMAgentCard
                 agent={agent}
                 onChat={handleChat}
                 onViewMetrics={handleViewMetrics}
@@ -259,10 +259,10 @@ export const NativeLLMManagePage: React.FC = () => {
           <CardContent>
             <AutoAwesome sx={{ fontSize: 64, color: '#3b82f6', mb: 2 }} />
             <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-              No Native LLM Agents Yet
+              No Promethios LLM Agents Yet
             </Typography>
             <Typography variant="body2" sx={{ color: '#a0aec0', mb: 3 }}>
-              Create your first Native LLM agent to get started with built-in governance
+              Create your first Promethios LLM agent to get started with built-in governance
               and immediate API access.
             </Typography>
             <Button
@@ -296,7 +296,7 @@ export const NativeLLMManagePage: React.FC = () => {
       </Fab>
 
       {/* Creation Wizard */}
-      <NativeLLMCreationWizard
+      <PrometheosLLMCreationWizard
         open={showCreationWizard}
         onClose={() => setShowCreationWizard(false)}
         onAgentCreated={handleAgentCreated}

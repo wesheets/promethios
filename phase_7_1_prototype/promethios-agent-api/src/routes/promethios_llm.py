@@ -1,7 +1,7 @@
 """
-Native LLM Routes for Promethios Agent API
+Promethios LLM Routes for Promethios Agent API
 
-Provides API endpoints for Promethios Native LLM (Lambda 7B) functionality
+Provides API endpoints for Promethios Promethios LLM (Lambda 7B) functionality
 following existing route patterns for backward compatibility.
 """
 
@@ -15,11 +15,10 @@ from typing import Dict, Any, List, Optional
 from src.models.agent_data import db, AgentMetrics, AgentViolation, AgentLog
 from src.models.user import User
 
-# Import the new native LLM service
-from src.services.native_llm_render_service import native_llm_service
-
+# Import the new promethios LLM service
+from src.services.promethios_llm_render_service import promethios_llm_service
 # Create blueprint following existing pattern
-native_llm_bp = Blueprint('native_llm', __name__)
+promethios_llm_bp = Blueprint('promethios_llm', __name__)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 # API Routes following existing patterns
 
-@native_llm_bp.route('/model/info', methods=['GET'])
+@promethios_llm_bp.route('/model/info', methods=['GET'])
 def get_model_info():
     """Get native LLM model information"""
     try:
-        model_info = native_llm_service.get_model_info()
+        model_info = promethios_llm_service.get_model_info()
         return jsonify({
             'success': True,
             'data': model_info
@@ -43,7 +42,7 @@ def get_model_info():
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/create', methods=['POST'])
+@promethios_llm_bp.route('/agent/create', methods=['POST'])
 def create_native_agent():
     """Create a new native LLM agent"""
     try:
@@ -57,7 +56,7 @@ def create_native_agent():
                 'error': 'user_id is required'
             }), 400
         
-        agent_data = native_llm_service.create_agent(user_id, agent_config)
+        agent_data = promethios_llm_service.create_agent(user_id, agent_config)
         
         return jsonify({
             'success': True,
@@ -71,7 +70,7 @@ def create_native_agent():
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/<agent_id>/chat', methods=['POST'])
+@promethios_llm_bp.route('/agent/<agent_id>/chat', methods=['POST'])
 def chat_with_agent(agent_id):
     """Chat with a native LLM agent"""
     try:
@@ -86,7 +85,7 @@ def chat_with_agent(agent_id):
                 'error': 'user_id and message are required'
             }), 400
         
-        response_data = native_llm_service.generate_response(
+        response_data = promethios_llm_service.generate_response(
             agent_id, user_id, message, context
         )
         
@@ -102,7 +101,7 @@ def chat_with_agent(agent_id):
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/<agent_id>/scorecard', methods=['GET'])
+@promethios_llm_bp.route('/agent/<agent_id>/scorecard', methods=['GET'])
 def get_agent_scorecard(agent_id):
     """Get native LLM agent scorecard"""
     try:
@@ -114,7 +113,7 @@ def get_agent_scorecard(agent_id):
                 'error': 'user_id is required'
             }), 400
         
-        scorecard = native_llm_service.get_agent_scorecard(agent_id, user_id)
+        scorecard = promethios_llm_service.get_agent_scorecard(agent_id, user_id)
         
         return jsonify({
             'success': True,
@@ -128,7 +127,7 @@ def get_agent_scorecard(agent_id):
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/<agent_id>/test', methods=['POST'])
+@promethios_llm_bp.route('/agent/<agent_id>/test', methods=['POST'])
 def test_agent_endpoint(agent_id):
     """Test endpoint for native LLM agent"""
     try:
@@ -144,7 +143,7 @@ def test_agent_endpoint(agent_id):
         
         # Use the same chat functionality but mark as test
         context = {'source': 'api_test', 'test_mode': True}
-        response_data = native_llm_service.generate_response(
+        response_data = promethios_llm_service.generate_response(
             agent_id, user_id, message, context
         )
         
@@ -165,7 +164,7 @@ def test_agent_endpoint(agent_id):
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/<agent_id>/metrics', methods=['GET'])
+@promethios_llm_bp.route('/agent/<agent_id>/metrics', methods=['GET'])
 def get_agent_metrics(agent_id):
     """Get real-time metrics for native LLM agent"""
     try:
@@ -226,7 +225,7 @@ def get_agent_metrics(agent_id):
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agents/list', methods=['GET'])
+@promethios_llm_bp.route('/agents/list', methods=['GET'])
 def list_native_agents():
     """List all native LLM agents for a user"""
     try:
@@ -246,13 +245,13 @@ def list_native_agents():
         
         agents = []
         for log in agent_logs:
-            if log.data and log.data.get('model_type') == 'native_llm':
+            if log.data and log.data.get('model_type') == 'promethios_llm':
                 agents.append({
                     'agent_id': log.agent_id,
                     'name': log.data.get('config', {}).get('name', 'Unnamed Agent'),
                     'created_at': log.timestamp.isoformat(),
                     'status': log.data.get('status', 'unknown'),
-                    'model_type': 'native_llm'
+                    'model_type': 'promethios_llm'
                 })
         
         return jsonify({
@@ -260,7 +259,7 @@ def list_native_agents():
             'data': {
                 'agents': agents,
                 'total': len(agents),
-                'model_info': native_llm_service.get_model_info()
+                'model_info': promethios_llm_service.get_model_info()
             }
         }), 200
         
@@ -271,7 +270,7 @@ def list_native_agents():
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/agent/<agent_id>/deploy', methods=['POST'])
+@promethios_llm_bp.route('/agent/<agent_id>/deploy', methods=['POST'])
 def deploy_agent(agent_id):
     """Deploy native LLM agent to production"""
     try:
@@ -305,7 +304,7 @@ def deploy_agent(agent_id):
         }
         
         # Log deployment
-        native_llm_service._log_agent_activity(
+        promethios_llm_service._log_agent_activity(
             agent_id, user_id, "agent_deployed", deployment_data
         )
         
@@ -321,15 +320,15 @@ def deploy_agent(agent_id):
             'error': str(e)
         }), 500
 
-@native_llm_bp.route('/health', methods=['GET'])
+@promethios_llm_bp.route('/health', methods=['GET'])
 def health_check():
     """Health check for native LLM service"""
     try:
-        model_info = native_llm_service.get_model_info()
+        model_info = promethios_llm_service.get_model_info()
         
         return jsonify({
             'success': True,
-            'service': 'native_llm',
+            'service': 'promethios_llm',
             'status': 'healthy',
             'model': model_info,
             'timestamp': datetime.utcnow().isoformat()
@@ -339,7 +338,7 @@ def health_check():
         logger.error(f"Health check failed: {e}")
         return jsonify({
             'success': False,
-            'service': 'native_llm',
+            'service': 'promethios_llm',
             'status': 'unhealthy',
             'error': str(e)
         }), 500

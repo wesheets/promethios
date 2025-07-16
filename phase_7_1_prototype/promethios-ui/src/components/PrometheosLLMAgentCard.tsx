@@ -1,7 +1,7 @@
 /**
- * Native LLM Agent Card Component
+ * Promethios LLM Agent Card Component
  * 
- * Displays Native LLM agent information with immediate API access indicators
+ * Displays Promethios LLM agent information with immediate API access indicators
  */
 
 import React, { useState } from 'react';
@@ -40,9 +40,9 @@ import {
   Code as CodeIcon
 } from '@mui/icons-material';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
-import { nativeLLMService } from '../services/NativeLLMService';
+import { prometheosLLMService } from '../services/PrometheosLLMService';
 
-interface NativeLLMAgent {
+interface PrometheosLLMAgent {
   agentId: string;
   userId: string;
   name: string;
@@ -89,15 +89,15 @@ interface NativeLLMAgent {
   };
 }
 
-interface NativeLLMAgentCardProps {
-  agent: NativeLLMAgent;
+interface PrometheosLLMAgentCardProps {
+  agent: PrometheosLLMAgent;
   onChat: (agentId: string) => void;
   onViewMetrics: (agentId: string) => void;
   onDeploy: (agentId: string) => void;
   onDelete?: (agentId: string) => void;
 }
 
-export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
+export const PrometheosLLMAgentCard: React.FC<PrometheosLLMAgentCardProps> = ({
   agent,
   onChat,
   onViewMetrics,
@@ -127,7 +127,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
     setTestResult(null);
 
     try {
-      const result = await nativeLLMService.testAgentAPI(agent.agentId, testMessage);
+      const result = await prometheosLLMService.testAgentAPI(agent.agentId, testMessage);
       setTestResult(result);
     } catch (error) {
       setTestResult({
@@ -170,7 +170,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
           }
         }}
       >
-        {/* Native LLM Badge */}
+        {/* Promethios LLM Badge */}
         <Box
           sx={{
             position: 'absolute',
@@ -182,7 +182,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
         >
           <Chip
             icon={<AutoAwesomeIcon />}
-            label="Native LLM"
+            label="Promethios LLM"
             size="small"
             sx={{
               backgroundColor: '#3b82f6',
@@ -372,7 +372,7 @@ export const NativeLLMAgentCard: React.FC<NativeLLMAgentCardProps> = ({
         <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #374151' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <ApiIcon sx={{ color: '#3b82f6' }} />
-            Native LLM API Access
+            Promethios LLM API Access
           </Box>
         </DialogTitle>
 

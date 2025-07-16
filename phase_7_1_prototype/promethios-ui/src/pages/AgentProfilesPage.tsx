@@ -605,19 +605,17 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           },
         }}
       >
-        {/* TODO: Uncomment when Promethios agent integration with scorecards is complete
-        <MenuItem onClick={handlePromethiosAgent} sx={{ py: 2 }}>
+        <MenuItem onClick={() => navigate('/ui/agents/create-promethios-llm')} sx={{ py: 2 }}>
           <ListItemIcon>
             <Security sx={{ color: '#3b82f6' }} />
           </ListItemIcon>
           <ListItemText 
-            primary="Create Promethios Agent"
+            primary="Create Promethios LLM"
             secondary="Create a new agent with native governance LLM"
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
-        */}
         <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
           <ListItemIcon>
             <SmartToy sx={{ color: '#10b981' }} />

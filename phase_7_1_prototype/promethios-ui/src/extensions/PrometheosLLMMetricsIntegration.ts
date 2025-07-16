@@ -1,15 +1,15 @@
 /**
- * Native LLM Metrics Integration Extension
+ * Promethios LLM Metrics Integration Extension
  * 
- * Integrates Native LLM agents with the existing metrics collection system
+ * Integrates Promethios LLM agents with the existing metrics collection system
  * for seamless governance and performance tracking.
  */
 
 import { Extension } from './Extension';
 import { metricsCollectionExtension, AgentInteractionEvent } from './MetricsCollectionExtension';
-import { nativeLLMExtension } from './NativeLLMExtension';
+import { prometheosLLMExtension } from './PrometheosLLMExtension';
 
-export interface NativeLLMMetricsEvent {
+export interface PrometheosLLMMetricsEvent {
   eventId: string;
   agentId: string;
   userId: string;
@@ -32,7 +32,7 @@ export interface NativeLLMMetricsEvent {
   metadata?: any;
 }
 
-export interface NativeLLMGovernanceReport {
+export interface PrometheosLLMGovernanceReport {
   agentId: string;
   userId: string;
   reportPeriod: {
@@ -67,15 +67,15 @@ export interface NativeLLMGovernanceReport {
 }
 
 /**
- * Native LLM Metrics Integration Extension
+ * Promethios LLM Metrics Integration Extension
  */
-export class NativeLLMMetricsIntegration extends Extension {
-  private metricsBuffer: Map<string, NativeLLMMetricsEvent[]>;
-  private reportCache: Map<string, NativeLLMGovernanceReport>;
+export class PrometheosLLMMetricsIntegration extends Extension {
+  private metricsBuffer: Map<string, PrometheosLLMMetricsEvent[]>;
+  private reportCache: Map<string, PrometheosLLMGovernanceReport>;
   private syncInterval: NodeJS.Timeout | null;
 
   constructor() {
-    super('NativeLLMMetricsIntegration', '1.0.0');
+    super('PrometheosLLMMetricsIntegration', '1.0.0');
     this.metricsBuffer = new Map();
     this.reportCache = new Map();
     this.syncInterval = null;
@@ -86,39 +86,39 @@ export class NativeLLMMetricsIntegration extends Extension {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log('🔗 Initializing Native LLM Metrics Integration');
+      console.log('🔗 Initializing Promethios LLM Metrics Integration');
 
       // Ensure dependencies are initialized
       if (!metricsCollectionExtension.isInitialized()) {
         await metricsCollectionExtension.initialize();
       }
 
-      if (!nativeLLMExtension.isInitialized()) {
-        await nativeLLMExtension.initialize();
+      if (!prometheosLLMExtension.isInitialized()) {
+        await prometheosLLMExtension.initialize();
       }
 
       // Set up periodic metrics sync
       this.startMetricsSync();
 
-      // Register event listeners for Native LLM events
+      // Register event listeners for Promethios LLM events
       this.registerEventListeners();
 
       this.enable();
-      console.log('✅ Native LLM Metrics Integration initialized successfully');
+      console.log('✅ Promethios LLM Metrics Integration initialized successfully');
       return true;
 
     } catch (error) {
-      console.error('❌ Failed to initialize Native LLM Metrics Integration:', error);
+      console.error('❌ Failed to initialize Promethios LLM Metrics Integration:', error);
       return false;
     }
   }
 
   /**
-   * Record Native LLM metrics event
+   * Record Promethios LLM metrics event
    */
-  async recordNativeLLMEvent(event: NativeLLMMetricsEvent): Promise<void> {
+  async recordPrometheosLLMEvent(event: PrometheosLLMMetricsEvent): Promise<void> {
     try {
-      console.log(`📊 Recording Native LLM metrics event: ${event.eventType} for agent ${event.agentId}`);
+      console.log(`📊 Recording Promethios LLM metrics event: ${event.eventType} for agent ${event.agentId}`);
 
       // Add to buffer
       if (!this.metricsBuffer.has(event.agentId)) {
@@ -140,7 +140,7 @@ export class NativeLLMMetricsIntegration extends Extension {
           violations: event.nativeMetrics.policyViolations
         },
         userId: event.userId,
-        source: 'native_llm_metrics_integration',
+        source: 'promethios_llm_metrics_integration',
         metadata: {
           nativeMetrics: event.nativeMetrics,
           modelInfo: event.modelInfo,
@@ -159,24 +159,24 @@ export class NativeLLMMetricsIntegration extends Extension {
       // Update real-time metrics
       await this.updateRealTimeMetrics(event);
 
-      console.log(`✅ Native LLM metrics event recorded for agent ${event.agentId}`);
+      console.log(`✅ Promethios LLM metrics event recorded for agent ${event.agentId}`);
 
     } catch (error) {
-      console.error(`❌ Failed to record Native LLM metrics event:`, error);
+      console.error(`❌ Failed to record Promethios LLM metrics event:`, error);
     }
   }
 
   /**
-   * Generate Native LLM governance report
+   * Generate Promethios LLM governance report
    */
   async generateGovernanceReport(
     agentId: string,
     userId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<NativeLLMGovernanceReport> {
+  ): Promise<PrometheosLLMGovernanceReport> {
     try {
-      console.log(`📋 Generating governance report for Native LLM agent: ${agentId}`);
+      console.log(`📋 Generating governance report for Promethios LLM agent: ${agentId}`);
 
       const cacheKey = `${agentId}-${startDate.getTime()}-${endDate.getTime()}`;
       
@@ -203,7 +203,7 @@ export class NativeLLMMetricsIntegration extends Extension {
       const performanceSummary = this.calculatePerformanceSummary(periodEvents);
 
       // Generate report
-      const report: NativeLLMGovernanceReport = {
+      const report: PrometheosLLMGovernanceReport = {
         agentId,
         userId,
         reportPeriod: { start: startDate, end: endDate },
@@ -231,7 +231,7 @@ export class NativeLLMMetricsIntegration extends Extension {
   }
 
   /**
-   * Get real-time Native LLM metrics
+   * Get real-time Promethios LLM metrics
    */
   async getRealTimeMetrics(agentId: string, userId: string): Promise<{
     currentMetrics: any;
@@ -298,7 +298,7 @@ export class NativeLLMMetricsIntegration extends Extension {
   }
 
   /**
-   * Compare Native LLM performance with wrapped agents
+   * Compare Promethios LLM performance with wrapped agents
    */
   async compareWithWrappedAgents(
     nativeAgentId: string,
@@ -310,7 +310,7 @@ export class NativeLLMMetricsIntegration extends Extension {
     improvements: any;
   }> {
     try {
-      // Get Native LLM performance
+      // Get Promethios LLM performance
       const nativeReport = await this.generateGovernanceReport(
         nativeAgentId,
         userId,
@@ -374,9 +374,9 @@ export class NativeLLMMetricsIntegration extends Extension {
   }
 
   private registerEventListeners(): void {
-    // This would register listeners for Native LLM events
-    // For now, events are recorded directly via recordNativeLLMEvent
-    console.log('📡 Registered Native LLM event listeners');
+    // This would register listeners for Promethios LLM events
+    // For now, events are recorded directly via recordPrometheosLLMEvent
+    console.log('📡 Registered Promethios LLM event listeners');
   }
 
   private mapEventTypeToInteractionType(eventType: string): string {
@@ -389,12 +389,12 @@ export class NativeLLMMetricsIntegration extends Extension {
     }
   }
 
-  private async updateRealTimeMetrics(event: NativeLLMMetricsEvent): Promise<void> {
+  private async updateRealTimeMetrics(event: PrometheosLLMMetricsEvent): Promise<void> {
     // Update real-time metrics dashboard
     // This would integrate with real-time metrics display
   }
 
-  private calculateGovernanceSummary(events: NativeLLMMetricsEvent[]) {
+  private calculateGovernanceSummary(events: PrometheosLLMMetricsEvent[]) {
     if (events.length === 0) {
       return {
         totalInteractions: 0,
@@ -416,7 +416,7 @@ export class NativeLLMMetricsIntegration extends Extension {
     };
   }
 
-  private calculatePerformanceSummary(events: NativeLLMMetricsEvent[]) {
+  private calculatePerformanceSummary(events: PrometheosLLMMetricsEvent[]) {
     if (events.length === 0) {
       return {
         averageResponseTime: 150,
@@ -430,13 +430,13 @@ export class NativeLLMMetricsIntegration extends Extension {
 
     return {
       averageResponseTime: this.calculateAverage(events.map(e => e.nativeMetrics.responseTime)),
-      uptimePercentage: 99.9, // Native LLM has high uptime
+      uptimePercentage: 99.9, // Promethios LLM has high uptime
       successRate: (successfulEvents.length / events.length) * 100,
       throughput: events.length // Events per period
     };
   }
 
-  private calculateWrappedComparison(events: NativeLLMMetricsEvent[]) {
+  private calculateWrappedComparison(events: PrometheosLLMMetricsEvent[]) {
     // Simulate comparison with typical wrapped agent performance
     const nativeAvgResponseTime = events.length > 0 
       ? this.calculateAverage(events.map(e => e.nativeMetrics.responseTime))
@@ -449,7 +449,7 @@ export class NativeLLMMetricsIntegration extends Extension {
     };
   }
 
-  private calculateTrends(events: NativeLLMMetricsEvent[]) {
+  private calculateTrends(events: PrometheosLLMMetricsEvent[]) {
     if (events.length < 2) {
       return {
         trustScoreTrend: 'stable',
@@ -487,13 +487,13 @@ export class NativeLLMMetricsIntegration extends Extension {
    * Extension execution method for compatibility
    */
   async execute(context: any, action: string, params: any): Promise<any> {
-    console.log(`🔧 NativeLLMMetricsIntegration.execute called: ${action}`);
+    console.log(`🔧 PrometheosLLMMetricsIntegration.execute called: ${action}`);
 
     try {
       switch (action) {
         case 'recordEvent':
           const { event } = params;
-          await this.recordNativeLLMEvent(event);
+          await this.recordPrometheosLLMEvent(event);
           return { success: true };
 
         case 'generateReport':
@@ -533,5 +533,5 @@ export class NativeLLMMetricsIntegration extends Extension {
 }
 
 // Export singleton instance
-export const nativeLLMMetricsIntegration = new NativeLLMMetricsIntegration();
+export const prometheosLLMMetricsIntegration = new PrometheosLLMMetricsIntegration();
 

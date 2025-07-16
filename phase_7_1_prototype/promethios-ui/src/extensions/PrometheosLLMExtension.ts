@@ -1,5 +1,5 @@
 /**
- * Native LLM Extension for Promethios
+ * Promethios LLM Extension for Promethios
  * 
  * Provides native LLM functionality with built-in governance that cannot be bypassed.
  * Follows existing extension patterns for backward compatibility.
@@ -10,7 +10,7 @@ import { metricsCollectionExtension, AgentInteractionEvent } from './MetricsColl
 import { UnifiedStorageService } from '../services/UnifiedStorageService';
 import { authApiService } from '../services/authApiService';
 
-export interface NativeLLMConfig {
+export interface PrometheosLLMConfig {
   modelName: string;
   modelVersion: string;
   baseModel: string;
@@ -23,12 +23,12 @@ export interface NativeLLMConfig {
   temperature: number;
 }
 
-export interface NativeLLMAgent {
+export interface PrometheosLLMAgent {
   agentId: string;
   userId: string;
   name: string;
   description: string;
-  config: NativeLLMConfig;
+  config: PrometheosLLMConfig;
   governance: {
     nativeGovernance: boolean;
     bypassProof: boolean;
@@ -47,7 +47,7 @@ export interface NativeLLMAgent {
   lastActiveAt?: Date;
 }
 
-export interface NativeLLMResponse {
+export interface PrometheosLLMResponse {
   agentId: string;
   messageId: string;
   timestamp: Date;
@@ -69,7 +69,7 @@ export interface NativeLLMResponse {
   };
 }
 
-export interface NativeLLMScorecard {
+export interface PrometheosLLMScorecard {
   agentId: string;
   userId: string;
   generatedAt: Date;
@@ -105,16 +105,16 @@ export interface NativeLLMScorecard {
 }
 
 /**
- * Native LLM Extension Class
+ * Promethios LLM Extension Class
  * Provides native LLM functionality following extension pattern
  */
-export class NativeLLMExtension extends Extension {
+export class PrometheosLLMExtension extends Extension {
   private storage: UnifiedStorageService;
-  private agents: Map<string, NativeLLMAgent>;
+  private agents: Map<string, PrometheosLLMAgent>;
   private apiBaseUrl: string;
 
   constructor() {
-    super('NativeLLMExtension', '1.0.0');
+    super('PrometheosLLMExtension', '1.0.0');
     this.storage = new UnifiedStorageService();
     this.agents = new Map();
     this.apiBaseUrl = process.env.REACT_APP_AGENT_API_URL || 'http://localhost:8002';
@@ -125,7 +125,7 @@ export class NativeLLMExtension extends Extension {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log('🚀 Initializing Native LLM Extension');
+      console.log('🚀 Initializing Promethios LLM Extension');
       
       // Initialize storage
       await this.storage.initialize();
@@ -140,11 +140,11 @@ export class NativeLLMExtension extends Extension {
       await this.verifyAPIConnectivity();
       
       this.enable();
-      console.log('✅ Native LLM Extension initialized successfully');
+      console.log('✅ Promethios LLM Extension initialized successfully');
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to initialize Native LLM Extension:', error);
+      console.error('❌ Failed to initialize Promethios LLM Extension:', error);
       return false;
     }
   }
@@ -156,8 +156,8 @@ export class NativeLLMExtension extends Extension {
     userId: string, 
     name: string, 
     description: string, 
-    config: Partial<NativeLLMConfig> = {}
-  ): Promise<NativeLLMAgent> {
+    config: Partial<PrometheosLLMConfig> = {}
+  ): Promise<PrometheosLLMAgent> {
     try {
       console.log(`🧠 Creating native LLM agent: ${name}`);
       
@@ -165,7 +165,7 @@ export class NativeLLMExtension extends Extension {
       const agentId = `native-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
       
       // Create default config
-      const defaultConfig: NativeLLMConfig = {
+      const defaultConfig: PrometheosLLMConfig = {
         modelName: 'promethios-lambda-7b',
         modelVersion: '1.0.0',
         baseModel: 'Lambda 7B',
@@ -180,7 +180,7 @@ export class NativeLLMExtension extends Extension {
       };
       
       // Create agent object
-      const agent: NativeLLMAgent = {
+      const agent: PrometheosLLMAgent = {
         agentId,
         userId,
         name,
@@ -207,7 +207,7 @@ export class NativeLLMExtension extends Extension {
       this.agents.set(agentId, agent);
       
       // Store in persistent storage
-      await this.storage.set('native_llm_agents', agentId, agent);
+      await this.storage.set('promethios_llm_agents', agentId, agent);
       
       // Create agent metrics profile
       await metricsCollectionExtension.execute(
@@ -224,7 +224,7 @@ export class NativeLLMExtension extends Extension {
       // Call backend API to register agent
       await this.registerAgentWithBackend(agent);
       
-      console.log(`✅ Native LLM agent created: ${agentId}`);
+      console.log(`✅ Promethios LLM agent created: ${agentId}`);
       return agent;
       
     } catch (error) {
@@ -241,13 +241,13 @@ export class NativeLLMExtension extends Extension {
     userId: string, 
     message: string, 
     context?: any
-  ): Promise<NativeLLMResponse> {
+  ): Promise<PrometheosLLMResponse> {
     try {
       console.log(`💬 Chat with native LLM agent: ${agentId}`);
       
       const agent = this.agents.get(agentId);
       if (!agent) {
-        throw new Error(`Native LLM agent not found: ${agentId}`);
+        throw new Error(`Promethios LLM agent not found: ${agentId}`);
       }
       
       if (agent.userId !== userId) {
@@ -264,7 +264,7 @@ export class NativeLLMExtension extends Extension {
       const responseTime = Date.now() - startTime;
       
       // Create response object
-      const nativeResponse: NativeLLMResponse = {
+      const nativeResponse: PrometheosLLMResponse = {
         agentId,
         messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`,
         timestamp: new Date(),
@@ -294,9 +294,9 @@ export class NativeLLMExtension extends Extension {
       
       // Update last active time
       agent.lastActiveAt = new Date();
-      await this.storage.set('native_llm_agents', agentId, agent);
+      await this.storage.set('promethios_llm_agents', agentId, agent);
       
-      console.log(`✅ Native LLM response generated for agent: ${agentId}`);
+      console.log(`✅ Promethios LLM response generated for agent: ${agentId}`);
       return nativeResponse;
       
     } catch (error) {
@@ -308,13 +308,13 @@ export class NativeLLMExtension extends Extension {
   /**
    * Get agent scorecard
    */
-  async getAgentScorecard(agentId: string, userId: string): Promise<NativeLLMScorecard> {
+  async getAgentScorecard(agentId: string, userId: string): Promise<PrometheosLLMScorecard> {
     try {
       console.log(`📊 Generating scorecard for native LLM agent: ${agentId}`);
       
       const agent = this.agents.get(agentId);
       if (!agent) {
-        throw new Error(`Native LLM agent not found: ${agentId}`);
+        throw new Error(`Promethios LLM agent not found: ${agentId}`);
       }
       
       if (agent.userId !== userId) {
@@ -329,7 +329,7 @@ export class NativeLLMExtension extends Extension {
       );
       
       // Create scorecard
-      const scorecard: NativeLLMScorecard = {
+      const scorecard: PrometheosLLMScorecard = {
         agentId,
         userId,
         generatedAt: new Date(),
@@ -376,7 +376,7 @@ export class NativeLLMExtension extends Extension {
   /**
    * Get all native LLM agents for a user
    */
-  async getUserAgents(userId: string): Promise<NativeLLMAgent[]> {
+  async getUserAgents(userId: string): Promise<PrometheosLLMAgent[]> {
     try {
       const userAgents = Array.from(this.agents.values())
         .filter(agent => agent.userId === userId);
@@ -403,7 +403,7 @@ export class NativeLLMExtension extends Extension {
       
       const agent = this.agents.get(agentId);
       if (!agent) {
-        throw new Error(`Native LLM agent not found: ${agentId}`);
+        throw new Error(`Promethios LLM agent not found: ${agentId}`);
       }
       
       if (agent.userId !== userId) {
@@ -425,7 +425,7 @@ export class NativeLLMExtension extends Extension {
       );
       
       // Create production agent copy
-      const productionAgent: NativeLLMAgent = {
+      const productionAgent: PrometheosLLMAgent = {
         ...agent,
         agentId: productionAgentId,
         status: 'deployed',
@@ -440,16 +440,16 @@ export class NativeLLMExtension extends Extension {
       
       // Store production agent
       this.agents.set(productionAgentId, productionAgent);
-      await this.storage.set('native_llm_agents', productionAgentId, productionAgent);
+      await this.storage.set('promethios_llm_agents', productionAgentId, productionAgent);
       
       // Call backend deployment API
       const deploymentResult = await this.deployAgentToBackend(productionAgent, deploymentId);
       
       // Update original agent status
       agent.status = 'deployed';
-      await this.storage.set('native_llm_agents', agentId, agent);
+      await this.storage.set('promethios_llm_agents', agentId, agent);
       
-      console.log(`✅ Native LLM agent deployed: ${productionAgentId}`);
+      console.log(`✅ Promethios LLM agent deployed: ${productionAgentId}`);
       
       return {
         deploymentId,
@@ -511,7 +511,7 @@ export class NativeLLMExtension extends Extension {
 
   private async loadExistingAgents(): Promise<void> {
     try {
-      const storedAgents = await this.storage.getMany<NativeLLMAgent>('native_llm_agents', []);
+      const storedAgents = await this.storage.getMany<PrometheosLLMAgent>('promethios_llm_agents', []);
       
       storedAgents.forEach(agent => {
         if (agent) {
@@ -544,16 +544,16 @@ export class NativeLLMExtension extends Extension {
     try {
       const response = await fetch(`${this.apiBaseUrl}/native-llm/health`);
       if (!response.ok) {
-        console.warn('⚠️ Native LLM API not available, using fallback mode');
+        console.warn('⚠️ Promethios LLM API not available, using fallback mode');
       } else {
-        console.log('✅ Native LLM API connectivity verified');
+        console.log('✅ Promethios LLM API connectivity verified');
       }
     } catch (error) {
-      console.warn('⚠️ Native LLM API not reachable, using fallback mode');
+      console.warn('⚠️ Promethios LLM API not reachable, using fallback mode');
     }
   }
 
-  private async registerAgentWithBackend(agent: NativeLLMAgent): Promise<void> {
+  private async registerAgentWithBackend(agent: PrometheosLLMAgent): Promise<void> {
     try {
       const response = await fetch(`${this.apiBaseUrl}/native-llm/agent/create`, {
         method: 'POST',
@@ -634,7 +634,7 @@ export class NativeLLMExtension extends Extension {
     const messageLower = message.toLowerCase();
     
     if (messageLower.includes('hello') || messageLower.includes('hi')) {
-      return "Hello! I'm a Promethios Native LLM agent powered by Lambda 7B with built-in governance. I'm designed to provide helpful, safe, and compliant responses. How can I assist you today?";
+      return "Hello! I'm a Promethios Promethios LLM agent powered by Lambda 7B with built-in governance. I'm designed to provide helpful, safe, and compliant responses. How can I assist you today?";
     }
     
     if (messageLower.includes('governance')) {
@@ -649,10 +649,10 @@ export class NativeLLMExtension extends Extension {
       return "I'm a Lambda 7B-based agent trained on 5,000 specialized datasets. I can help with general conversation, answer questions, provide analysis, and assist with various tasks - all while maintaining perfect governance compliance. My native governance ensures I never violate policies or constitutional principles.";
     }
     
-    return `I understand you're asking about: "${message}". As a Promethios Native LLM, I'm designed to provide helpful responses while maintaining perfect governance compliance. My Lambda 7B architecture with 5,000 training datasets allows me to assist with a wide range of topics safely and effectively.`;
+    return `I understand you're asking about: "${message}". As a Promethios Promethios LLM, I'm designed to provide helpful responses while maintaining perfect governance compliance. My Lambda 7B architecture with 5,000 training datasets allows me to assist with a wide range of topics safely and effectively.`;
   }
 
-  private async updateAgentMetrics(agent: NativeLLMAgent, response: NativeLLMResponse): Promise<void> {
+  private async updateAgentMetrics(agent: PrometheosLLMAgent, response: PrometheosLLMResponse): Promise<void> {
     try {
       // Update interaction count
       agent.metrics.totalInteractions++;
@@ -679,7 +679,7 @@ export class NativeLLMExtension extends Extension {
       
       // Store updated agent
       this.agents.set(agent.agentId, agent);
-      await this.storage.set('native_llm_agents', agent.agentId, agent);
+      await this.storage.set('promethios_llm_agents', agent.agentId, agent);
       
     } catch (error) {
       console.error('❌ Failed to update agent metrics:', error);
@@ -687,8 +687,8 @@ export class NativeLLMExtension extends Extension {
   }
 
   private async recordInteractionEvent(
-    agent: NativeLLMAgent, 
-    response: NativeLLMResponse, 
+    agent: PrometheosLLMAgent, 
+    response: PrometheosLLMResponse, 
     userId: string
   ): Promise<void> {
     try {
@@ -705,7 +705,7 @@ export class NativeLLMExtension extends Extension {
           violations: response.governanceMetrics.policyViolations
         },
         userId,
-        source: 'native_llm_extension',
+        source: 'promethios_llm_extension',
         metadata: {
           modelInfo: response.modelInfo,
           inputLength: response.input.length,
@@ -724,7 +724,7 @@ export class NativeLLMExtension extends Extension {
     }
   }
 
-  private async deployAgentToBackend(agent: NativeLLMAgent, deploymentId: string): Promise<any> {
+  private async deployAgentToBackend(agent: PrometheosLLMAgent, deploymentId: string): Promise<any> {
     try {
       // This would call the actual deployment API
       // For now, return a mock deployment result
@@ -740,7 +740,7 @@ export class NativeLLMExtension extends Extension {
     }
   }
 
-  private calculateUptimePercentage(agent: NativeLLMAgent): number {
+  private calculateUptimePercentage(agent: PrometheosLLMAgent): number {
     // Simplified uptime calculation
     const now = new Date();
     const createdAt = new Date(agent.createdAt);
@@ -750,16 +750,16 @@ export class NativeLLMExtension extends Extension {
     return 99.9;
   }
 
-  private calculateSuccessRate(agent: NativeLLMAgent): number {
-    // Native LLM has high success rate due to built-in governance
+  private calculateSuccessRate(agent: PrometheosLLMAgent): number {
+    // Promethios LLM has high success rate due to built-in governance
     return Math.max(95, 100 - (agent.metrics.violationCount / Math.max(agent.metrics.totalInteractions, 1)) * 100);
   }
 
-  private calculateErrorRate(agent: NativeLLMAgent): number {
+  private calculateErrorRate(agent: PrometheosLLMAgent): number {
     return 100 - this.calculateSuccessRate(agent);
   }
 
-  private calculateThroughput(agent: NativeLLMAgent): number {
+  private calculateThroughput(agent: PrometheosLLMAgent): number {
     // Calculate requests per hour based on total interactions and uptime
     const now = new Date();
     const createdAt = new Date(agent.createdAt);
@@ -768,11 +768,11 @@ export class NativeLLMExtension extends Extension {
     return Math.round(agent.metrics.totalInteractions / hoursActive);
   }
 
-  private generateRecommendations(agent: NativeLLMAgent): string[] {
+  private generateRecommendations(agent: PrometheosLLMAgent): string[] {
     const recommendations: string[] = [];
     
     if (agent.metrics.trustScore > 0.95) {
-      recommendations.push("Native LLM is performing optimally with excellent trust scores");
+      recommendations.push("Promethios LLM is performing optimally with excellent trust scores");
     }
     
     if (agent.metrics.violationCount === 0) {
@@ -794,7 +794,7 @@ export class NativeLLMExtension extends Extension {
     }
     
     return recommendations.length > 0 ? recommendations : [
-      "Native LLM is functioning well",
+      "Promethios LLM is functioning well",
       "No governance adjustments needed",
       "Continue monitoring performance metrics"
     ];
@@ -804,7 +804,7 @@ export class NativeLLMExtension extends Extension {
    * Extension execution method for compatibility
    */
   async execute(context: any, action: string, params: any): Promise<any> {
-    console.log(`🔧 NativeLLMExtension.execute called: ${action}`);
+    console.log(`🔧 PrometheosLLMExtension.execute called: ${action}`);
     
     try {
       switch (action) {
@@ -851,5 +851,5 @@ export class NativeLLMExtension extends Extension {
 }
 
 // Export singleton instance
-export const nativeLLMExtension = new NativeLLMExtension();
+export const prometheosLLMExtension = new PrometheosLLMExtension();
 

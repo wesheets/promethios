@@ -58,6 +58,8 @@ import GeminiWrapperStub from './pages/GeminiWrapperStub';
 import PerplexityWrapperStub from './pages/PerplexityWrapperStub';
 import DeployedAgentChatPage from './pages/DeployedAgentChatPage';
 import AgentLifecycleDashboard from './components/AgentLifecycleDashboard';
+import PrometheosLLMManagePage from './pages/PrometheosLLMManagePage';
+import PrometheosLLMCreationWizard from './components/PrometheosLLMCreationWizard';
 
 /**
  * UIIntegration Component
@@ -150,6 +152,23 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <PerplexityWrapperStub />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Promethios LLM Routes */}
+        <Route path="agents/promethios-llm" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <PrometheosLLMManagePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="agents/create-promethios-llm" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <PrometheosLLMCreationWizard />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

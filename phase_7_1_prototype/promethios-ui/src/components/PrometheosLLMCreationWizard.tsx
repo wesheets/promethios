@@ -1,7 +1,7 @@
 /**
- * Native LLM Creation Wizard Component
+ * Promethios LLM Creation Wizard Component
  * 
- * Multi-step wizard for creating Native LLM agents with immediate API access
+ * Multi-step wizard for creating Promethios LLM agents with immediate API access
  */
 
 import React, { useState } from 'react';
@@ -40,9 +40,9 @@ import {
   Launch
 } from '@mui/icons-material';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
-import { nativeLLMService } from '../services/NativeLLMService';
+import { prometheosLLMService } from '../services/PrometheosLLMService';
 
-interface NativeLLMCreationWizardProps {
+interface PrometheosLLMCreationWizardProps {
   open: boolean;
   onClose: () => void;
   onAgentCreated: (agent: any) => void;
@@ -77,7 +77,7 @@ const complianceModes = [
   { value: 'permissive', label: 'Permissive', description: 'Minimal restrictions, maximum flexibility' }
 ];
 
-export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = ({
+export const PrometheosLLMCreationWizard: React.FC<PrometheosLLMCreationWizardProps> = ({
   open,
   onClose,
   onAgentCreated
@@ -126,7 +126,7 @@ export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = (
     setError(null);
 
     try {
-      const agent = await nativeLLMService.createNativeAgent(
+      const agent = await prometheosLLMService.createNativeAgent(
         config.name,
         config.description,
         {
@@ -208,7 +208,7 @@ export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = (
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                🚀 Native LLM Benefits
+                🚀 Promethios LLM Benefits
               </Typography>
               <Typography variant="body2">
                 • Built-in governance that cannot be bypassed<br/>
@@ -425,7 +425,7 @@ export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = (
             </Typography>
 
             <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-              Your Native LLM agent "{createdAgent?.name}" is ready to use.
+              Your Promethios LLM agent "{createdAgent?.name}" is ready to use.
             </Typography>
 
             <Card sx={{ ...darkThemeStyles.card, mb: 3 }}>
@@ -501,7 +501,7 @@ export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = (
       <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #374151' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <AutoAwesome sx={{ color: '#3b82f6' }} />
-          Create Native LLM Agent
+          Create Promethios LLM Agent
         </Box>
       </DialogTitle>
 
@@ -537,7 +537,7 @@ export const NativeLLMCreationWizard: React.FC<NativeLLMCreationWizardProps> = (
                 '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' }
               }} />
               <Typography variant="body2" sx={{ color: '#a0aec0', mt: 1, textAlign: 'center' }}>
-                Creating your Native LLM agent...
+                Creating your Promethios LLM agent...
               </Typography>
             </Box>
           )}

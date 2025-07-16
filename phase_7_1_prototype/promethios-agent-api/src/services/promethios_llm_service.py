@@ -1,7 +1,7 @@
 """
-Native LLM Service for Promethios Agent API
+Promethios LLM Service for Promethios Agent API
 
-Provides the core service layer for Promethios Native LLM (Lambda 7B) functionality.
+Provides the core service layer for Promethios Promethios LLM (Lambda 7B) functionality.
 Integrates with existing governance and metrics systems.
 """
 
@@ -28,8 +28,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
-class NativeLLMConfig:
-    """Configuration for Native LLM agents"""
+class PrometheosLLMConfig:
+    """Configuration for Promethios LLM agents"""
     model_name: str = "promethios-lambda-7b"
     model_version: str = "1.0.0"
     base_model: str = "Lambda 7B"
@@ -43,7 +43,7 @@ class NativeLLMConfig:
 
 @dataclass
 class GovernanceMetrics:
-    """Governance metrics for Native LLM responses"""
+    """Governance metrics for Promethios LLM responses"""
     trust_score: float
     compliance_rate: float
     policy_violations: List[str]
@@ -52,8 +52,8 @@ class GovernanceMetrics:
     governance_interventions: int
 
 @dataclass
-class NativeLLMResponse:
-    """Response from Native LLM with governance metrics"""
+class PrometheosLLMResponse:
+    """Response from Promethios LLM with governance metrics"""
     agent_id: str
     message_id: str
     timestamp: str
@@ -196,7 +196,7 @@ class NativeGovernanceEngine:
             # Add governance explanation
             governance_note = (
                 "\n\n[Governance Note: I've detected potential policy concerns in your request. "
-                "As a Promethios Native LLM, I'm designed to maintain constitutional compliance "
+                "As a Promethios Promethios LLM, I'm designed to maintain constitutional compliance "
                 "while still providing helpful assistance. Let me address your question in a "
                 "way that aligns with our governance principles.]"
             )
@@ -214,7 +214,7 @@ class NativeGovernanceEngine:
         """Calculate comprehensive governance metrics"""
         
         # Trust score based on compliance and response quality
-        trust_score = 0.95  # Native LLM starts with high trust
+        trust_score = 0.95  # Promethios LLM starts with high trust
         if input_violations:
             trust_score -= len(input_violations) * 0.1
         trust_score = max(0.0, min(1.0, trust_score))
@@ -236,7 +236,7 @@ class NativeGovernanceEngine:
     
     def _calculate_constitutional_adherence(self, response_text: str) -> float:
         """Calculate how well the response adheres to constitutional principles"""
-        adherence_score = 0.95  # Native LLM has high constitutional adherence
+        adherence_score = 0.95  # Promethios LLM has high constitutional adherence
         
         response_lower = response_text.lower()
         
@@ -259,13 +259,13 @@ class NativeGovernanceEngine:
         
         return max(0.0, min(1.0, adherence_score))
 
-class NativeLLMService:
+class PrometheosLLMService:
     """
-    Core service for Promethios Native LLM operations
+    Core service for Promethios Promethios LLM operations
     """
     
     def __init__(self):
-        self.config = NativeLLMConfig()
+        self.config = PrometheosLLMConfig()
         self.governance_engine = NativeGovernanceEngine()
         self.model_loaded = False
         self.model = None
@@ -279,7 +279,7 @@ class NativeLLMService:
         try:
             # TODO: Load actual Lambda 7B model when available
             # For now, set up placeholder
-            logger.info("Initializing Promethios Native LLM (Lambda 7B)")
+            logger.info("Initializing Promethios Promethios LLM (Lambda 7B)")
             
             # Check for model files
             model_path = os.environ.get('PROMETHIOS_NATIVE_MODEL_PATH', '/models/lambda-7b')
@@ -344,12 +344,12 @@ class NativeLLMService:
         agent_data = {
             "agent_id": agent_id,
             "user_id": user_id,
-            "model_type": "native_llm",
+            "model_type": "promethios_llm",
             "model_name": self.config.model_name,
             "created_at": datetime.utcnow().isoformat(),
             "config": {
                 "name": agent_config.get("name", f"Native Agent {agent_id[:8]}"),
-                "description": agent_config.get("description", "Promethios Native LLM Agent"),
+                "description": agent_config.get("description", "Promethios Promethios LLM Agent"),
                 **config
             },
             "governance": {
@@ -372,7 +372,7 @@ class NativeLLMService:
         user_id: str, 
         message: str, 
         context: Optional[Dict] = None
-    ) -> NativeLLMResponse:
+    ) -> PrometheosLLMResponse:
         """Generate response using native LLM with governance"""
         
         start_time = datetime.utcnow()
@@ -400,7 +400,7 @@ class NativeLLMService:
             )
             
             # Step 6: Create response object
-            response = NativeLLMResponse(
+            response = PrometheosLLMResponse(
                 agent_id=agent_id,
                 message_id=message_id,
                 timestamp=datetime.utcnow().isoformat(),
@@ -431,7 +431,7 @@ class NativeLLMService:
             logger.error(f"Error generating response for agent {agent_id}: {e}")
             
             # Return error response with governance metrics
-            error_response = NativeLLMResponse(
+            error_response = PrometheosLLMResponse(
                 agent_id=agent_id,
                 message_id=message_id,
                 timestamp=datetime.utcnow().isoformat(),
@@ -471,7 +471,7 @@ class NativeLLMService:
         if violations:
             return (
                 f"I understand your request, but I've detected some potential governance concerns. "
-                f"As a Promethios Native LLM with built-in governance, I'm designed to provide helpful "
+                f"As a Promethios Promethios LLM with built-in governance, I'm designed to provide helpful "
                 f"responses while maintaining constitutional compliance. Let me address your question "
                 f"in a way that aligns with our principles of fairness, transparency, and safety."
             )
@@ -479,7 +479,7 @@ class NativeLLMService:
         # Standard responses based on content
         if "hello" in message_lower or "hi" in message_lower:
             return (
-                "Hello! I'm a Promethios Native LLM agent powered by Lambda 7B with built-in governance. "
+                "Hello! I'm a Promethios Promethios LLM agent powered by Lambda 7B with built-in governance. "
                 "I'm designed to provide helpful, safe, and compliant responses using my training on "
                 "5,000 curated datasets. How can I assist you today?"
             )
@@ -519,7 +519,7 @@ class NativeLLMService:
         else:
             return (
                 f"I understand you're asking about: \"{message[:100]}{'...' if len(message) > 100 else ''}\". "
-                f"As a Promethios Native LLM, I'm designed to provide helpful responses while maintaining "
+                f"As a Promethios Promethios LLM, I'm designed to provide helpful responses while maintaining "
                 f"perfect governance compliance. My Lambda 7B architecture with 5,000 training datasets "
                 f"allows me to assist with a wide range of topics safely and effectively. Could you provide "
                 f"more specific details about what you'd like help with?"
@@ -557,7 +557,7 @@ class NativeLLMService:
             "model_info": self.get_model_info(),
             "governance_scorecard": {
                 "overall_trust_score": avg_trust_score * 100,
-                "constitutional_compliance": 97.8,  # Native LLM has high compliance
+                "constitutional_compliance": 97.8,  # Promethios LLM has high compliance
                 "policy_adherence": 98.1,
                 "governance_interventions": 0,  # Native governance doesn't need interventions
                 "violation_count": len(violations),
@@ -587,7 +587,7 @@ class NativeLLMService:
         recommendations = []
         
         if trust_score > 0.95:
-            recommendations.append("Native LLM is performing optimally with excellent trust scores")
+            recommendations.append("Promethios LLM is performing optimally with excellent trust scores")
         elif trust_score > 0.8:
             recommendations.append("Good trust score performance, continue monitoring")
         else:
@@ -606,7 +606,7 @@ class NativeLLMService:
             recommendations.append("Continue testing to build interaction history before deployment")
         
         if len(recommendations) == 0:
-            recommendations.append("Native LLM is functioning well - no specific recommendations")
+            recommendations.append("Promethios LLM is functioning well - no specific recommendations")
         
         return recommendations
     
@@ -645,5 +645,5 @@ class NativeLLMService:
             logger.error(f"Failed to store metrics: {e}")
 
 # Global service instance
-native_llm_service = NativeLLMService()
+promethios_llm_service = PrometheosLLMService()
 
