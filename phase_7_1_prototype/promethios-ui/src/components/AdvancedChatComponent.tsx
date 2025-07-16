@@ -43,10 +43,12 @@ import {
   ContentPaste as ContentPasteIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
-import { ChatStorageService, ChatMessage, FileAttachment } from '../services/ChatStorageService';
+import { UserAgentStorageService } from '../services/UserAgentStorageService';
+import { ChatStorageService } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
-import { veritasService, VeritasResult } from '../services/VeritasService';
+import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
+import { NativeAgentMigration } from '../utils/NativeAgentMigration';
+import { VeritasService } from '../services/VeritasService';
 import { multiAgentChatIntegration, ChatSystemInfo, MultiAgentChatSession } from '../services/MultiAgentChatIntegrationService';
 import { metricsCollectionExtension, AgentMetricsProfile, AgentInteractionEvent } from '../extensions/MetricsCollectionExtension';
 import { observerService } from '../services/observers';
@@ -1431,6 +1433,14 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
         } else if (currentUser?.uid) {
           agentStorageService.setCurrentUser(currentUser.uid);
           const userAgents = await agentStorageService.loadUserAgents();
+          
+          // 🔧 AUTO-MIGRATE: Fix existing native agents with missing apiDetails
+          try {
+            await NativeAgentMigration.autoMigrate(currentUser.uid);
+          } catch (migrationError) {
+            console.warn('⚠️ Migration warning:', migrationError);
+            // Don't fail the whole load process if migration has issues
+          }
           
           console.log('Loaded user agents:', userAgents);
           console.log('Number of agents loaded:', userAgents?.length || 0);

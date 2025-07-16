@@ -7,6 +7,7 @@
 
 import { Extension } from './Extension';
 import { metricsCollectionExtension, AgentInteractionEvent } from './MetricsCollectionExtension';
+import { NativeAgentMigration } from '../utils/NativeAgentMigration';
 
 export interface PrometheosLLMConfig {
   modelName: string;
@@ -223,22 +224,8 @@ export class PrometheosLLMExtension extends Extension {
         isWrapped: false, // Promethios LLM agents are native, not wrapped
         governancePolicy: null,
         isDeployed: false,
-        // Add API details for chat functionality
-        apiDetails: {
-          endpoint: 'https://api.openai.com/v1',
-          key: process.env.REACT_APP_OPENAI_API_KEY || '',
-          provider: 'openai', // Use lowercase 'openai' to match chat system expectations
-          selectedModel: 'gpt-4',
-          selectedCapabilities: ['text-generation', 'conversation', 'governance'],
-          selectedContextLength: 8192,
-          discoveredInfo: {
-            name: name,
-            description: description,
-            type: 'native-llm',
-            governance: 'built-in',
-            compliance: 'constitutional'
-          }
-        },
+        // Add API details for chat functionality using migration utility
+        apiDetails: NativeAgentMigration.createNativeApiDetails(name, description),
         // Add Promethios LLM specific data
         prometheosLLM: agent
       };
