@@ -156,7 +156,35 @@ const PrometheosLLMCreationPage: React.FC = () => {
               value={config.name}
               onChange={(e) => setConfig({ ...config, name: e.target.value })}
               placeholder="e.g., Customer Support Assistant"
-              sx={{ ...darkThemeStyles.textField, mb: 3 }}
+              sx={{ 
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': {
+                    borderColor: '#4a5568',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#718096',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3b82f6',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#a0aec0',
+                  '&.Mui-focused': {
+                    color: '#3b82f6',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  color: 'white',
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  color: '#718096',
+                  opacity: 1,
+                },
+              }}
               required
             />
 
@@ -168,7 +196,35 @@ const PrometheosLLMCreationPage: React.FC = () => {
               value={config.description}
               onChange={(e) => setConfig({ ...config, description: e.target.value })}
               placeholder="Describe what this agent will do and its primary purpose..."
-              sx={{ ...darkThemeStyles.textField, mb: 3 }}
+              sx={{ 
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  '& fieldset': {
+                    borderColor: '#4a5568',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#718096',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3b82f6',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#a0aec0',
+                  '&.Mui-focused': {
+                    color: '#3b82f6',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  color: 'white',
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  color: '#718096',
+                  opacity: 1,
+                },
+              }}
               required
             />
 
@@ -208,7 +264,32 @@ const PrometheosLLMCreationPage: React.FC = () => {
               Agent Configuration
             </Typography>
 
-            <FormControl fullWidth sx={{ ...darkThemeStyles.textField, mb: 3 }}>
+            <FormControl fullWidth sx={{ mb: 3,
+              "...darkThemeStyles.textField, mb: 3 .MuiOutlinedInput-root": {
+                backgroundColor: "#1a202c",
+                color: "white",
+                "...darkThemeStyles.textField, mb: 3 fieldset": {
+                  borderColor: "#4a5568",
+                },
+                "...darkThemeStyles.textField, mb: 3:hover fieldset": {
+                  borderColor: "#718096",
+                },
+                "...darkThemeStyles.textField, mb: 3.Mui-focused fieldset": {
+                  borderColor: "#3b82f6",
+                },
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiInputLabel-root": {
+                color: "#a0aec0",
+                "...darkThemeStyles.textField, mb: 3.Mui-focused": {
+                  color: "#3b82f6",
+                },
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiSelect-select": {
+                color: "white",
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiSelect-icon": {
+                color: "#a0aec0",
+              }, }}>
               <InputLabel>Response Style</InputLabel>
               <Select
                 value={config.responseStyle}
@@ -228,7 +309,32 @@ const PrometheosLLMCreationPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth sx={{ ...darkThemeStyles.textField, mb: 3 }}>
+            <FormControl fullWidth sx={{ mb: 3,
+              "...darkThemeStyles.textField, mb: 3 .MuiOutlinedInput-root": {
+                backgroundColor: "#1a202c",
+                color: "white",
+                "...darkThemeStyles.textField, mb: 3 fieldset": {
+                  borderColor: "#4a5568",
+                },
+                "...darkThemeStyles.textField, mb: 3:hover fieldset": {
+                  borderColor: "#718096",
+                },
+                "...darkThemeStyles.textField, mb: 3.Mui-focused fieldset": {
+                  borderColor: "#3b82f6",
+                },
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiInputLabel-root": {
+                color: "#a0aec0",
+                "...darkThemeStyles.textField, mb: 3.Mui-focused": {
+                  color: "#3b82f6",
+                },
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiSelect-select": {
+                color: "white",
+              },
+              "...darkThemeStyles.textField, mb: 3 .MuiSelect-icon": {
+                color: "#a0aec0",
+              }, }}>
               <InputLabel>Compliance Mode</InputLabel>
               <Select
                 value={config.complianceMode}
@@ -269,7 +375,7 @@ const PrometheosLLMCreationPage: React.FC = () => {
                 type="number"
                 value={config.maxTokens}
                 onChange={(e) => setConfig({ ...config, maxTokens: parseInt(e.target.value) || 2048 })}
-                sx={{ ...darkThemeStyles.textField, flex: 1 }}
+                sx={{ flex: 1, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-root": { backgroundColor: "#1a202c", color: "white", "...darkThemeStyles.textField, flex: 1 fieldset": { borderColor: "#4a5568" }, "...darkThemeStyles.textField, flex: 1:hover fieldset": { borderColor: "#718096" }, "...darkThemeStyles.textField, flex: 1.Mui-focused fieldset": { borderColor: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiInputLabel-root": { color: "#a0aec0", "...darkThemeStyles.textField, flex: 1.Mui-focused": { color: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-input": { color: "white" } }}
                 inputProps={{ min: 100, max: 4096 }}
               />
               
@@ -278,7 +384,7 @@ const PrometheosLLMCreationPage: React.FC = () => {
                 type="number"
                 value={config.temperature}
                 onChange={(e) => setConfig({ ...config, temperature: parseFloat(e.target.value) || 0.7 })}
-                sx={{ ...darkThemeStyles.textField, flex: 1 }}
+                sx={{ flex: 1, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-root": { backgroundColor: "#1a202c", color: "white", "...darkThemeStyles.textField, flex: 1 fieldset": { borderColor: "#4a5568" }, "...darkThemeStyles.textField, flex: 1:hover fieldset": { borderColor: "#718096" }, "...darkThemeStyles.textField, flex: 1.Mui-focused fieldset": { borderColor: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiInputLabel-root": { color: "#a0aec0", "...darkThemeStyles.textField, flex: 1.Mui-focused": { color: "#3b82f6" } }, "...darkThemeStyles.textField, flex: 1 .MuiOutlinedInput-input": { color: "white" } }}
                 inputProps={{ min: 0.1, max: 2.0, step: 0.1 }}
               />
             </Box>
@@ -341,8 +447,19 @@ const PrometheosLLMCreationPage: React.FC = () => {
 
   if (createdAgent) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper sx={{ ...darkThemeStyles.paper, p: 4, textAlign: 'center' }}>
+      <Box sx={{ 
+        backgroundColor: '#1a202c', 
+        minHeight: '100vh',
+        py: 4 
+      }}>
+        <Container maxWidth="md">
+          <Paper sx={{ 
+            backgroundColor: '#2d3748',
+            border: '1px solid #4a5568',
+            borderRadius: 2,
+            p: 4, 
+            textAlign: 'center' 
+          }}>
           <AutoAwesomeIcon sx={{ color: '#3b82f6', fontSize: 64, mb: 2 }} />
           
           <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>
@@ -379,25 +496,35 @@ const PrometheosLLMCreationPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/ui/agents/profiles')}
-          sx={{ color: '#a0aec0', mb: 2 }}
-        >
-          Back to My Agents
-        </Button>
-        
-        <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>
-          Create Promethios LLM Agent
-        </Typography>
-        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-          Create a new agent with native governance LLM
-        </Typography>
-      </Box>
+    <Box sx={{ 
+      backgroundColor: '#1a202c', 
+      minHeight: '100vh',
+      py: 4 
+    }}>
+      <Container maxWidth="md">
+        <Box sx={{ mb: 4 }}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/ui/agents/profiles')}
+            sx={{ color: '#a0aec0', mb: 2 }}
+          >
+            Back to My Agents
+          </Button>
+          
+          <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>
+            Create Promethios LLM Agent
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+            Create a new agent with native governance LLM
+          </Typography>
+        </Box>
 
-      <Paper sx={{ ...darkThemeStyles.paper, p: 4 }}>
+        <Paper sx={{ 
+          backgroundColor: '#2d3748',
+          border: '1px solid #4a5568',
+          borderRadius: 2,
+          p: 4 
+        }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -472,10 +599,11 @@ const PrometheosLLMCreationPage: React.FC = () => {
               </Button>
             )}
           </Box>
-        </Box>
-      </Paper>
-    </Container>
-  );
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+    );
 };
 
 export default PrometheosLLMCreationPage;
