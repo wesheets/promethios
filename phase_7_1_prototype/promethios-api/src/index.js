@@ -22,6 +22,7 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/deploy', require('./routes/deploy'));
 app.use('/api/execution', require('./routes/execution'));
 app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/keys', require('./routes/apiKeys'));
 app.use('/api/multi_agent_system', require('./routes/multiAgentSystem'));
 app.use('/api/observer', require('./routes/observer'));
 app.use('/api/observers', require('./routes/observer')); // Also handle /api/observers for compatibility

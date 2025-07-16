@@ -173,6 +173,34 @@ export class PrometheosLLMExtension extends Extension {
         ...config
       };
       
+      // Generate API key for the native agent
+      let apiKeyData = null;
+      try {
+        console.log(`🔑 Generating API key for native agent: ${name}`);
+        const apiResponse = await fetch('/api/keys/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            agentId,
+            agentName: name,
+            userId,
+            keyType: 'promethios-native'
+          })
+        });
+        
+        if (apiResponse.ok) {
+          const result = await apiResponse.json();
+          apiKeyData = result.key;
+          console.log(`✅ API key generated successfully: ${apiKeyData.key.substring(0, 20)}...`);
+        } else {
+          console.warn('⚠️ Failed to generate API key, agent will be created without it');
+        }
+      } catch (error) {
+        console.warn('⚠️ API key generation failed, continuing without it:', error);
+      }
+      
       // Create agent object
       const agent: PrometheosLLMAgent = {
         agentId,
@@ -204,6 +232,27 @@ export class PrometheosLLMExtension extends Extension {
       const { userAgentStorage } = await import('../services/UserAgentStorageService');
       userAgentStorage.setCurrentUser(userId);
       
+      // Create API details with generated key
+      const apiDetails = apiKeyData ? {
+        endpoint: 'https://api.promethios.ai/v1',
+        key: apiKeyData.key,
+        provider: 'promethios',
+        selectedModel: 'promethios-lambda-7b',
+        selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],
+        selectedContextLength: 8192,
+        discoveredInfo: {
+          name: name,
+          description: description,
+          type: 'native-llm',
+          governance: 'built-in',
+          compliance: 'constitutional',
+          apiKeyId: apiKeyData.key,
+          keyType: apiKeyData.type,
+          permissions: apiKeyData.permissions,
+          rateLimit: apiKeyData.rateLimit
+        }
+      } : NativeAgentMigration.createNativeApiDetails(name, description);
+      
       // Convert to AgentProfile format for storage
       const agentProfile = {
         identity: {
@@ -224,8 +273,8 @@ export class PrometheosLLMExtension extends Extension {
         isWrapped: false, // Promethios LLM agents are native, not wrapped
         governancePolicy: null,
         isDeployed: false,
-        // Add API details for chat functionality using migration utility
-        apiDetails: NativeAgentMigration.createNativeApiDetails(name, description),
+        // Add API details for chat functionality with generated key
+        apiDetails,
         // Add Promethios LLM specific data
         prometheosLLM: agent
       };

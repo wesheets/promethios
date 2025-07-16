@@ -46,6 +46,7 @@ import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
 import DataManagementSettingsPage from './pages/DataManagementSettingsPage';
+import ApiKeysSettingsPage from './pages/ApiKeysSettingsPage';
 import GuidedToursPage from './pages/GuidedToursPage';
 import DocumentationPage from './pages/DocumentationPage';
 import SupportPage from './pages/SupportPage';
@@ -371,10 +372,18 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        <Route path="settings/api-keys" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ApiKeysSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Default Settings route - redirect to profile */}
         <Route path="settings" element={
           <ProtectedRoute requireOnboarding={false}>
-            <Navigate to="settings/profile" replace />
+            <Navigate to="/ui/settings/profile" replace />
           </ProtectedRoute>
         } />
         
@@ -406,7 +415,7 @@ const UIIntegration: React.FC = () => {
         {/* Default Help route - redirect to tours */}
         <Route path="help" element={
           <ProtectedRoute requireOnboarding={false}>
-            <Navigate to="help/tours" replace />
+            <Navigate to="/ui/help/tours" replace />
           </ProtectedRoute>
         } />
         
@@ -446,7 +455,7 @@ const UIIntegration: React.FC = () => {
         {/* Catch-all route */}
         <Route path="*" element={
           <ProtectedRoute requireOnboarding={true}>
-            <Navigate to="dashboard" replace />
+            <Navigate to="/ui/dashboard" replace />
           </ProtectedRoute>
         } />
       </Routes>

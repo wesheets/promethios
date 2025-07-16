@@ -43,6 +43,7 @@ import {
   Business as OrganizationIcon,
   Extension as IntegrationsIcon,
   Storage as DataIcon,
+  Key as ApiKeyIcon,
   Tour as ToursIcon,
   Description as DocsIcon,
   Support as SupportIcon,
@@ -166,6 +167,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'organization', label: 'Organization', icon: <OrganizationIcon />, path: '/ui/settings/organization' },
         { id: 'integrations', label: 'Integrations', icon: <IntegrationsIcon />, path: '/ui/settings/integrations' },
         { id: 'data', label: 'Data Management', icon: <DataIcon />, path: '/ui/settings/data' },
+        { id: 'api-keys', label: 'API Keys', icon: <ApiKeyIcon />, path: '/ui/settings/api-keys' },
       ],
     },
     {

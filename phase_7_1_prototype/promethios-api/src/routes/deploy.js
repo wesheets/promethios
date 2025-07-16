@@ -6,6 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
+const apiKeyService = require('../services/apiKeyService');
 
 /**
  * Deploy an agent
@@ -19,7 +20,8 @@ router.post('/', async (req, res) => {
       agentId,
       deploymentType = 'api-package',
       environment = 'production',
-      configuration = {}
+      configuration = {},
+      userId
     } = req.body;
 
     // Validate required fields
@@ -30,8 +32,18 @@ router.post('/', async (req, res) => {
       });
     }
 
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
     // Generate deployment ID
     const deploymentId = `deploy-${agentId}-${Date.now()}`;
+    
+    // Generate API key using the service
+    const apiKeyData = apiKeyService.generateDeploymentApiKey(agentId, userId);
     
     // Simulate deployment process
     console.log(`📦 Deploying agent ${agentId} with deployment ID ${deploymentId}`);
@@ -44,7 +56,13 @@ router.post('/', async (req, res) => {
       agentId,
       status: 'deployed',
       endpoint: `https://deployed-agent-${agentId}.promethios.ai`,
-      apiKey: `promethios_${agentId}_${Math.random().toString(36).substr(2, 16)}`,
+      apiKey: apiKeyData.key,
+      apiKeyData: {
+        keyId: apiKeyData.key,
+        type: apiKeyData.type,
+        permissions: apiKeyData.permissions,
+        rateLimit: apiKeyData.rateLimit
+      },
       environment,
       deploymentType,
       deployedAt: new Date().toISOString(),
