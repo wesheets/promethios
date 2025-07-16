@@ -25,14 +25,14 @@ import {
 } from '@mui/material';
 import {
   Add,
-  AutoAwesome,
+  AutoAwesome as AutoAwesomeIcon,
   Api,
   Security,
-  Speed,
+  Speed as SpeedIcon,
   CheckCircle,
   Chat,
   Assessment,
-  Deploy,
+  CloudUpload as DeployIcon,
   Refresh
 } from '@mui/icons-material';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
@@ -151,7 +151,7 @@ export const PrometheosLLMManagePage: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <AutoAwesome sx={{ color: '#3b82f6', fontSize: 32 }} />
+          <AutoAwesomeIcon sx={{ color: '#3b82f6', fontSize: 32 }} />
           <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
             Promethios LLM Agents
           </Typography>
@@ -207,7 +207,7 @@ export const PrometheosLLMManagePage: React.FC = () => {
                       sx={{ backgroundColor: '#1e3a8a', color: '#3b82f6' }}
                     />
                     <Chip
-                      icon={<Speed />}
+                      icon={<SpeedIcon />}
                       label="Real-time"
                       size="small"
                       sx={{ backgroundColor: '#7c2d12', color: '#f97316' }}
@@ -257,7 +257,7 @@ export const PrometheosLLMManagePage: React.FC = () => {
       ) : (
         <Card sx={{ ...darkThemeStyles.card, textAlign: 'center', py: 6 }}>
           <CardContent>
-            <AutoAwesome sx={{ fontSize: 64, color: '#3b82f6', mb: 2 }} />
+            <AutoAwesomeIcon sx={{ fontSize: 64, color: '#3b82f6', mb: 2 }} />
             <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
               No Promethios LLM Agents Yet
             </Typography>
@@ -428,4 +428,7 @@ export const PrometheosLLMManagePage: React.FC = () => {
     </Box>
   );
 };
+
+
+export default PrometheosLLMManagePage;
 

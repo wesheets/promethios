@@ -30,11 +30,11 @@ import {
   Divider
 } from '@mui/material';
 import {
-  AutoAwesome,
+  AutoAwesome as AutoAwesomeIcon,
   Security,
-  Api,
   CheckCircle,
-  Speed,
+  Warning,
+  Speed as SpeedIcon,
   Settings,
   Preview,
   Launch
@@ -200,7 +200,7 @@ export const PrometheosLLMCreationWizard: React.FC<PrometheosLLMCreationWizardPr
 
             <Alert
               severity="info"
-              icon={<AutoAwesome />}
+              icon={<AutoAwesomeIcon />}
               sx={{
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -457,7 +457,7 @@ export const PrometheosLLMCreationWizard: React.FC<PrometheosLLMCreationWizardPr
                       sx={{ backgroundColor: '#065f46', color: '#10b981' }}
                     />
                     <Chip
-                      icon={<Speed />}
+                      icon={<SpeedIcon />}
                       label="Real-time Monitoring"
                       size="small"
                       sx={{ backgroundColor: '#7c2d12', color: '#f97316' }}
@@ -500,7 +500,7 @@ export const PrometheosLLMCreationWizard: React.FC<PrometheosLLMCreationWizardPr
     >
       <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #374151' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <AutoAwesome sx={{ color: '#3b82f6' }} />
+          <AutoAwesomeIcon sx={{ color: '#3b82f6' }} />
           Create Promethios LLM Agent
         </Box>
       </DialogTitle>
@@ -618,4 +618,7 @@ export const PrometheosLLMCreationWizard: React.FC<PrometheosLLMCreationWizardPr
     </Dialog>
   );
 };
+
+
+export default PrometheosLLMCreationWizard;
 

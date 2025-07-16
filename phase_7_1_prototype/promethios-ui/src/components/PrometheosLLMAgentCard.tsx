@@ -29,7 +29,7 @@ import {
   Chat as ChatIcon,
   Api as ApiIcon,
   Assessment as AssessmentIcon,
-  Deploy as DeployIcon,
+  CloudUpload as DeployIcon,
   MoreVert as MoreVertIcon,
   ContentCopy as ContentCopyIcon,
   CheckCircle as CheckCircleIcon,
