@@ -21,6 +21,7 @@ export interface AgentProfile {
   isWrapped: boolean;
   governancePolicy: GovernancePolicy | null;
   isDeployed: boolean;
+  prometheosLLM?: any; // For Promethios Native LLM agents
   apiDetails?: {
     endpoint: string;
     key: string;

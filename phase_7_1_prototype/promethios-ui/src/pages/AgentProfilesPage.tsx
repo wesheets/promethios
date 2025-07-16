@@ -1493,9 +1493,12 @@ const AgentProfilesPage: React.FC = () => {
       setAgentProfiles(agentsWithScorecards);
       console.log(`Loaded ${agentsWithScorecards.length} agents from unified storage for user ${effectiveUser.uid}`);
       
-      // Debug: Check isWrapped status for each agent
+      // Debug: Check isWrapped status and prometheosLLM property for each agent
       agentsWithScorecards.forEach(agent => {
-        console.log(`🔍 Agent "${agent.identity?.name}" - isWrapped: ${agent.isWrapped}, ID: ${agent.identity?.id}`);
+        console.log(`🔍 Agent "${agent.identity?.name}" - isWrapped: ${agent.isWrapped}, prometheosLLM: ${!!agent.prometheosLLM}, ID: ${agent.identity?.id}`);
+        if (agent.prometheosLLM) {
+          console.log(`  ✨ Promethios LLM Agent Details:`, agent.prometheosLLM);
+        }
       });
       
     } catch (error) {
