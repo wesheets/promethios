@@ -1178,6 +1178,7 @@ const AgentProfileCard: React.FC<{
         {/* Action Buttons */}
         {!selectionMode && (
           <Stack direction="row" spacing={1}>
+            {/* Main Action Button - changes based on lifecycle status */}
             <Button
               variant="contained"
               size="small"
@@ -1192,23 +1193,25 @@ const AgentProfileCard: React.FC<{
             >
               {nextAction.label}
             </Button>
-            {/* Deploy Button - only show for wrapped agents */}
+            
+            {/* Manage Button - for wrapped agents (replaces the larger deploy button) */}
             {profile.isWrapped && (
               <Button
                 variant="contained"
                 size="small"
-                startIcon={<Launch />}
+                startIcon={<Settings />}
                 sx={{
-                  backgroundColor: '#8b5cf6',
+                  backgroundColor: '#6b7280',
                   color: 'white',
-                  '&:hover': { backgroundColor: '#7c3aed' },
-                  minWidth: '80px'
+                  '&:hover': { backgroundColor: '#4b5563' },
+                  minWidth: '90px'
                 }}
-                onClick={() => window.location.href = `/ui/agents/deploy?agentId=${profile.identity.id}`}
+                onClick={() => onManageAgent(profile.identity.id)}
               >
-                Deploy
+                Manage
               </Button>
             )}
+            
             <Button
               variant="outlined"
               size="small"
@@ -2060,6 +2063,10 @@ const AgentProfilesPage: React.FC = () => {
           agentId={selectedAgentId}
           onAgentUpdated={async (updatedAgent) => {
             // Refresh the agents list to show updated data
+            await handleRefreshAgents();
+          }}
+          onAgentDeleted={async (deletedAgentId) => {
+            // Refresh the agents list to remove deleted agent
             await handleRefreshAgents();
           }}
         />

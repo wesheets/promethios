@@ -28,6 +28,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Snackbar,
 } from '@mui/material';
 import {
   Close,
@@ -40,6 +41,8 @@ import {
   Assessment,
   Policy,
   ExpandMore,
+  Delete,
+  Warning,
 } from '@mui/icons-material';
 import { UserAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { useAuth } from '../context/AuthContext';
@@ -49,23 +52,29 @@ interface AgentManageModalProps {
   onClose: () => void;
   agentId: string | null;
   onAgentUpdated?: (agent: AgentProfile) => void;
+  onAgentDeleted?: (agentId: string) => void;
 }
 
 const AgentManageModal: React.FC<AgentManageModalProps> = ({
   open,
   onClose,
   agentId,
-  onAgentUpdated
+  onAgentUpdated,
+  onAgentDeleted
 }) => {
   const { currentUser } = useAuth();
   
   const [agent, setAgent] = useState<AgentProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [currentTab, setCurrentTab] = useState(0);
   const [governanceFormData, setGovernanceFormData] = useState<any>({});
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     if (open && agentId) {
@@ -216,7 +225,36 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
     setFormData({});
     setGovernanceFormData({});
     setCurrentTab(0);
+    setShowDeleteConfirm(false);
     onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!agent || !currentUser) return;
+    
+    setDeleting(true);
+    try {
+      const storageService = new UserAgentStorageService();
+      storageService.setCurrentUser(currentUser.uid);
+      
+      await storageService.deleteAgent(agent.identity.id);
+      
+      setSnackbarMessage('Agent deleted successfully');
+      setSnackbarOpen(true);
+      
+      if (onAgentDeleted) {
+        onAgentDeleted(agent.identity.id);
+      }
+      
+      handleClose();
+    } catch (error) {
+      console.error('Error deleting agent:', error);
+      setSnackbarMessage('Failed to delete agent');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   return (
@@ -595,6 +633,15 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
       </DialogContent>
 
       <DialogActions>
+        <Button 
+          onClick={() => setShowDeleteConfirm(true)}
+          color="error"
+          startIcon={<Delete />}
+          disabled={deleting || saving || !agent}
+        >
+          Delete Agent
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
         <Button onClick={handleClose}>
           Cancel
         </Button>
@@ -607,6 +654,50 @@ const AgentManageModal: React.FC<AgentManageModalProps> = ({
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Warning color="error" />
+            Confirm Delete Agent
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the agent "{agent?.identity.name}"? 
+            This action cannot be undone and will permanently remove all agent data, 
+            configurations, and history.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteConfirm(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+            startIcon={<Delete />}
+          >
+            {deleting ? 'Deleting...' : 'Delete Agent'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Dialog>
   );
 };
