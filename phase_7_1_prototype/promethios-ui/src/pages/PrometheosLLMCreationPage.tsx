@@ -492,6 +492,7 @@ const PrometheosLLMCreationPage: React.FC = () => {
           </Box>
         </Paper>
       </Container>
+      </Box>
     );
   }
 
@@ -599,11 +600,10 @@ const PrometheosLLMCreationPage: React.FC = () => {
               </Button>
             )}
           </Box>
-            </Box>
-          </Paper>
-        </Container>
-      </Box>
-    );
+        </Paper>
+      </Container>
+    </Box>
+  );
 };
 
 export default PrometheosLLMCreationPage;
