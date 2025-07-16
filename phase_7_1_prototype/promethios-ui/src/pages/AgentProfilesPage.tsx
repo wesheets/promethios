@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -1251,7 +1251,12 @@ const AgentProfileCard: React.FC<{
 };
 // Main Agent Profiles Page Component
 const AgentProfilesPage: React.FC = () => {
-  const [tabValue, setTabValue] = useState(0);
+  // Get tab from URL parameter
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = parseInt(searchParams.get('tab') || '0', 10);
+  
+  const [tabValue, setTabValue] = useState(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [healthFilter, setHealthFilter] = useState('all');

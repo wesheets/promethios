@@ -434,22 +434,15 @@ const PrometheosLLMCreationPage: React.FC = () => {
 
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
-                variant="outlined"
-                onClick={() => navigate('/ui/agents/profiles')}
-                sx={{ color: '#cbd5e0', borderColor: '#4a5568' }}
-              >
-                Back to My Agents
-              </Button>
-              <Button
                 variant="contained"
                 startIcon={<Launch />}
-                onClick={() => navigate(`/ui/agents/promethios-llm`)}
+                onClick={() => navigate('/ui/agents/profiles?tab=1')}
                 sx={{
                   backgroundColor: '#3b82f6',
                   '&:hover': { backgroundColor: '#2563eb' }
                 }}
               >
-                Manage Agent
+                Manage Agents
               </Button>
             </Box>
           </Paper>

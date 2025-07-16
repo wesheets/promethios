@@ -124,47 +124,40 @@ class PrometheosLLMService {
         throw new Error('User not authenticated');
       }
 
-      // Generate agent ID
-      const agentId = `promethios_llm_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+      // Create agent using extension for proper persistence
+      const agent = await prometheosLLMExtension.execute(
+        { userId: user.uid },
+        'createNativeAgent',
+        {
+          userId: user.uid,
+          name: config.name,
+          description: config.description,
+          config: {
+            modelName: 'Lambda-7B',
+            modelVersion: '1.0.0',
+            baseModel: 'Ultimate Governance LLM',
+            datasetCount: 1000000,
+            governanceLevel: 'constitutional',
+            trustThreshold: config.trustThreshold,
+            complianceMode: config.complianceMode,
+            responseStyle: config.responseStyle,
+            maxTokens: config.maxTokens,
+            temperature: config.temperature
+          }
+        }
+      );
 
-      // Create agent object
-      const agent: PrometheosLLMAgent = {
-        agentId,
-        userId: user.uid,
-        name: config.name,
-        description: config.description,
-        config: {
-          modelName: 'Lambda-7B',
-          modelVersion: '1.0.0',
-          baseModel: 'Ultimate Governance LLM',
-          datasetCount: 1000000,
-          governanceLevel: 'constitutional',
-          trustThreshold: config.trustThreshold,
-          complianceMode: config.complianceMode,
-          responseStyle: config.responseStyle,
-          maxTokens: config.maxTokens,
-          temperature: config.temperature
-        },
-        governance: {
-          nativeGovernance: true,
-          bypassProof: true,
-          constitutionalCompliance: true,
-          realTimeMonitoring: true
-        },
-        metrics: {
-          totalInteractions: 0,
-          trustScore: 0.967,
-          complianceRate: 0.987,
-          averageResponseTime: 150,
-          violationCount: 0
-        },
-        status: 'created',
-        createdAt: new Date().toISOString(),
-        apiAccess: this.generateImmediateAPIAccess(agentId)
+      // Generate immediate API access endpoints
+      const apiAccess = this.generateImmediateAPIAccess(agent.agentId);
+
+      // Enhanced agent object with API access
+      const enhancedAgent: PrometheosLLMAgent = {
+        ...agent,
+        apiAccess
       };
 
-      console.log('✅ Promethios LLM agent created with immediate API access');
-      return agent;
+      console.log('✅ Promethios LLM agent created with immediate API access and persistence');
+      return enhancedAgent;
 
     } catch (error) {
       console.error('❌ Failed to create Promethios LLM agent:', error);
