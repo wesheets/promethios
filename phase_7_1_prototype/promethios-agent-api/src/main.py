@@ -15,6 +15,7 @@ from src.routes.trust_metrics_integration import trust_metrics_bp
 from src.routes.reporting_integration import reporting_bp
 from src.routes.veritas_enterprise import veritas_enterprise_bp
 from src.routes.deployment import deployment_bp
+from src.routes.native_llm import native_llm_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'

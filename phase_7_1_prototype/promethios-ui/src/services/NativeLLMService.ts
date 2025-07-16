@@ -1,0 +1,540 @@
+/**
+ * Native LLM Service for Frontend Integration
+ * 
+ * Provides frontend interface for Promethios Native LLM functionality
+ * with immediate API access and metrics tracking.
+ */
+
+import { authApiService } from './authApiService';
+import { nativeLLMExtension } from '../extensions/NativeLLMExtension';
+
+export interface NativeLLMAgent {
+  agentId: string;
+  userId: string;
+  name: string;
+  description: string;
+  config: {
+    modelName: string;
+    modelVersion: string;
+    baseModel: string;
+    datasetCount: number;
+    governanceLevel: string;
+    trustThreshold: number;
+    complianceMode: string;
+    responseStyle: string;
+    maxTokens: number;
+    temperature: number;
+  };
+  governance: {
+    nativeGovernance: boolean;
+    bypassProof: boolean;
+    constitutionalCompliance: boolean;
+    realTimeMonitoring: boolean;
+  };
+  metrics: {
+    totalInteractions: number;
+    trustScore: number;
+    complianceRate: number;
+    averageResponseTime: number;
+    violationCount: number;
+  };
+  status: 'created' | 'active' | 'deployed' | 'inactive';
+  createdAt: string;
+  lastActiveAt?: string;
+  
+  // API Access Information
+  apiAccess: {
+    immediate: {
+      chatEndpoint: string;
+      testingEndpoint: string;
+      metricsEndpoint: string;
+    };
+    production?: {
+      publicEndpoint: string;
+      apiKey: string;
+      documentation: string;
+    };
+  };
+}
+
+export interface NativeLLMResponse {
+  agentId: string;
+  messageId: string;
+  timestamp: string;
+  input: string;
+  response: string;
+  governanceMetrics: {
+    trustScore: number;
+    complianceRate: number;
+    policyViolations: string[];
+    constitutionalAdherence: number;
+    responseTimeMs: number;
+    governanceInterventions: number;
+  };
+  modelInfo: {
+    model: string;
+    version: string;
+    governance: string;
+    datasetVersion: string;
+  };
+}
+
+export interface NativeLLMDeployment {
+  deploymentId: string;
+  productionAgentId: string;
+  deploymentUrl: string;
+  apiKey: string;
+  status: 'deploying' | 'deployed' | 'failed';
+  createdAt: string;
+  features: {
+    loadBalancing: boolean;
+    rateLimiting: boolean;
+    monitoring: boolean;
+    slaGuarantees: boolean;
+  };
+}
+
+class NativeLLMService {
+  private baseUrl: string;
+  private agentApiUrl: string;
+
+  constructor() {
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+    this.agentApiUrl = process.env.REACT_APP_AGENT_API_URL || 'http://localhost:8002';
+  }
+
+  /**
+   * Create a new Native LLM agent with immediate API access
+   */
+  async createNativeAgent(
+    name: string,
+    description: string,
+    config: Partial<NativeLLMAgent['config']> = {}
+  ): Promise<NativeLLMAgent> {
+    try {
+      console.log('🧠 Creating Native LLM agent with immediate API access');
+
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create agent using extension
+      const agent = await nativeLLMExtension.execute(
+        { userId: user.id },
+        'createAgent',
+        {
+          userId: user.id,
+          name,
+          description,
+          config
+        }
+      );
+
+      // Generate immediate API access endpoints
+      const apiAccess = this.generateImmediateAPIAccess(agent.agentId);
+
+      // Enhanced agent object with API access
+      const enhancedAgent: NativeLLMAgent = {
+        ...agent,
+        apiAccess
+      };
+
+      console.log('✅ Native LLM agent created with immediate API access');
+      return enhancedAgent;
+
+    } catch (error) {
+      console.error('❌ Failed to create Native LLM agent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Chat with Native LLM agent (immediate access)
+   */
+  async chatWithAgent(
+    agentId: string,
+    message: string,
+    context?: any
+  ): Promise<NativeLLMResponse> {
+    try {
+      console.log(`💬 Chatting with Native LLM agent: ${agentId}`);
+
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Use extension for chat
+      const response = await nativeLLMExtension.execute(
+        { userId: user.id },
+        'chatWithAgent',
+        {
+          agentId,
+          userId: user.id,
+          message,
+          context
+        }
+      );
+
+      console.log('✅ Native LLM response generated');
+      return response;
+
+    } catch (error) {
+      console.error('❌ Failed to chat with Native LLM agent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Deploy Native LLM agent to production (enhanced API access)
+   */
+  async deployAgent(agentId: string): Promise<NativeLLMDeployment> {
+    try {
+      console.log(`🚀 Deploying Native LLM agent to production: ${agentId}`);
+
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Deploy using extension
+      const deploymentResult = await nativeLLMExtension.execute(
+        { userId: user.id },
+        'deployAgent',
+        {
+          agentId,
+          userId: user.id
+        }
+      );
+
+      // Generate production API key
+      const apiKey = await this.generateProductionAPIKey(deploymentResult.productionAgentId);
+
+      // Create deployment object
+      const deployment: NativeLLMDeployment = {
+        deploymentId: deploymentResult.deploymentId,
+        productionAgentId: deploymentResult.productionAgentId,
+        deploymentUrl: deploymentResult.deploymentUrl,
+        apiKey,
+        status: 'deployed',
+        createdAt: new Date().toISOString(),
+        features: {
+          loadBalancing: true,
+          rateLimiting: true,
+          monitoring: true,
+          slaGuarantees: true
+        }
+      };
+
+      console.log('✅ Native LLM agent deployed to production');
+      return deployment;
+
+    } catch (error) {
+      console.error('❌ Failed to deploy Native LLM agent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all Native LLM agents for current user
+   */
+  async getUserAgents(): Promise<NativeLLMAgent[]> {
+    try {
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get agents using extension
+      const agents = await nativeLLMExtension.execute(
+        { userId: user.id },
+        'getUserAgents',
+        { userId: user.id }
+      );
+
+      // Add API access information to each agent
+      const enhancedAgents = agents.map((agent: any) => ({
+        ...agent,
+        apiAccess: this.generateImmediateAPIAccess(agent.agentId)
+      }));
+
+      return enhancedAgents;
+
+    } catch (error) {
+      console.error('❌ Failed to get user Native LLM agents:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get Native LLM agent scorecard
+   */
+  async getAgentScorecard(agentId: string) {
+    try {
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get scorecard using extension
+      const scorecard = await nativeLLMExtension.execute(
+        { userId: user.id },
+        'getAgentScorecard',
+        {
+          agentId,
+          userId: user.id
+        }
+      );
+
+      return scorecard;
+
+    } catch (error) {
+      console.error('❌ Failed to get Native LLM agent scorecard:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Native LLM model information
+   */
+  async getModelInfo() {
+    try {
+      const modelInfo = await nativeLLMExtension.execute(
+        {},
+        'getModelInfo',
+        {}
+      );
+
+      return modelInfo;
+
+    } catch (error) {
+      console.error('❌ Failed to get Native LLM model info:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test Native LLM agent API endpoint directly
+   */
+  async testAgentAPI(agentId: string, message: string): Promise<{
+    success: boolean;
+    response?: any;
+    error?: string;
+    endpoint: string;
+    responseTime: number;
+  }> {
+    try {
+      const startTime = Date.now();
+      const endpoint = `${this.agentApiUrl}/native-llm/agent/${agentId}/chat`;
+
+      // Get current user for authentication
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await authApiService.getToken()}`
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          message,
+          context: { source: 'api_test' }
+        })
+      });
+
+      const responseTime = Date.now() - startTime;
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          response: data,
+          endpoint,
+          responseTime
+        };
+      } else {
+        const errorData = await response.text();
+        return {
+          success: false,
+          error: errorData,
+          endpoint,
+          responseTime
+        };
+      }
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        endpoint: `${this.agentApiUrl}/native-llm/agent/${agentId}/chat`,
+        responseTime: 0
+      };
+    }
+  }
+
+  /**
+   * Get Native LLM agent metrics
+   */
+  async getAgentMetrics(agentId: string, timeRange: { start: Date; end: Date }) {
+    try {
+      // This would integrate with the metrics collection system
+      // For now, return mock data structure
+      return {
+        agentId,
+        timeRange,
+        metrics: {
+          totalInteractions: 0,
+          averageTrustScore: 0.95,
+          averageComplianceRate: 0.98,
+          averageResponseTime: 150,
+          violationCount: 0,
+          uptimePercentage: 99.9
+        },
+        trends: {
+          trustScoreTrend: 'stable' as const,
+          performanceTrend: 'improving' as const,
+          usageTrend: 'increasing' as const
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to get Native LLM agent metrics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate immediate API access endpoints for new agents
+   */
+  private generateImmediateAPIAccess(agentId: string) {
+    return {
+      immediate: {
+        chatEndpoint: `${this.agentApiUrl}/native-llm/agent/${agentId}/chat`,
+        testingEndpoint: `${this.agentApiUrl}/native-llm/agent/${agentId}/test`,
+        metricsEndpoint: `${this.agentApiUrl}/native-llm/agent/${agentId}/metrics`
+      }
+    };
+  }
+
+  /**
+   * Generate production API key for deployed agents
+   */
+  private async generateProductionAPIKey(productionAgentId: string): Promise<string> {
+    try {
+      // This would call the backend to generate a secure API key
+      // For now, generate a mock API key
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2);
+      return `pk_native_${productionAgentId}_${timestamp}_${random}`;
+
+    } catch (error) {
+      console.error('❌ Failed to generate production API key:', error);
+      return `pk_native_${productionAgentId}_${Date.now()}`;
+    }
+  }
+
+  /**
+   * Get API usage statistics for deployed agents
+   */
+  async getAPIUsageStats(agentId: string, timeRange: { start: Date; end: Date }) {
+    try {
+      // This would integrate with API gateway metrics
+      return {
+        agentId,
+        timeRange,
+        usage: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0,
+          requestsPerHour: 0,
+          uniqueUsers: 0
+        },
+        limits: {
+          requestsPerMinute: 100,
+          requestsPerDay: 10000,
+          concurrentConnections: 50
+        },
+        status: 'active' as const
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to get API usage stats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update Native LLM agent configuration
+   */
+  async updateAgentConfig(
+    agentId: string, 
+    config: Partial<NativeLLMAgent['config']>
+  ): Promise<NativeLLMAgent> {
+    try {
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // This would update the agent configuration
+      // For now, return the agent with updated config
+      const agents = await this.getUserAgents();
+      const agent = agents.find(a => a.agentId === agentId);
+      
+      if (!agent) {
+        throw new Error('Agent not found');
+      }
+
+      const updatedAgent = {
+        ...agent,
+        config: {
+          ...agent.config,
+          ...config
+        }
+      };
+
+      return updatedAgent;
+
+    } catch (error) {
+      console.error('❌ Failed to update Native LLM agent config:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete Native LLM agent
+   */
+  async deleteAgent(agentId: string): Promise<void> {
+    try {
+      // Get current user
+      const user = await authApiService.getCurrentUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // This would delete the agent and clean up resources
+      console.log(`🗑️ Deleting Native LLM agent: ${agentId}`);
+      
+      // TODO: Implement actual deletion logic
+      
+    } catch (error) {
+      console.error('❌ Failed to delete Native LLM agent:', error);
+      throw error;
+    }
+  }
+}
+
+export const nativeLLMService = new NativeLLMService();
+
