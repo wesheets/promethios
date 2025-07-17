@@ -10,14 +10,26 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
   try {
+    // Debug environment variables
+    console.log('🔍 Checking Firebase environment variables...');
+    console.log('🔍 FIREBASE_SERVICE_ACCOUNT_KEY exists:', !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    console.log('🔍 GOOGLE_APPLICATION_CREDENTIALS exists:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS);
+    
     // Check if we have service account credentials
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       console.log('🔑 Using service account credentials from environment');
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: 'promethios'
-      });
+      try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        console.log('🔑 Service account parsed successfully, project_id:', serviceAccount.project_id);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: serviceAccount.project_id || 'promethios'
+        });
+        console.log('🔥 Firebase Admin SDK initialized with service account');
+      } catch (parseError) {
+        console.error('❌ Failed to parse service account key:', parseError.message);
+        throw parseError;
+      }
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       console.log('🔑 Using application default credentials');
       admin.initializeApp({
