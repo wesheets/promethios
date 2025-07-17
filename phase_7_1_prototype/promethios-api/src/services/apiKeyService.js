@@ -152,17 +152,51 @@ class ApiKeyService {
     try {
       console.log(`🔑 Getting API keys for user: ${userId}`);
       
+      // First, try to get keys from the new userApiKeys collection
       const userKeysDoc = await this.userKeysCollection.doc(userId).get();
+      let keys = [];
       
-      if (!userKeysDoc.exists) {
-        console.log(`🔑 No API keys found for user: ${userId}`);
-        return [];
+      if (userKeysDoc.exists) {
+        const userData = userKeysDoc.data();
+        keys = userData.keys || [];
+        console.log(`🔑 Found ${keys.length} API keys in userApiKeys collection`);
       }
-
-      const userData = userKeysDoc.data();
-      const keys = userData.keys || [];
       
-      console.log(`🔑 Found ${keys.length} API keys for user: ${userId}`);
+      // Also check for API keys stored in the agents collection (legacy format)
+      try {
+        const agentsCollection = db.collection('agents');
+        const agentKeysQuery = await agentsCollection.where('__name__', '>=', `api-key-${userId}_`).where('__name__', '<', `api-key-${userId}_\uf8ff`).get();
+        
+        console.log(`🔑 Found ${agentKeysQuery.size} API keys in agents collection`);
+        
+        agentKeysQuery.forEach(doc => {
+          const keyData = doc.data();
+          const keyId = doc.id.replace(`api-key-${userId}_`, '');
+          
+          // Convert legacy format to new format
+          const convertedKey = {
+            key: keyData.key || `pm-legacy-${Date.now()}-${keyId}`,
+            agentId: keyData.agentId || keyId,
+            agentName: keyData.agentName || 'Legacy Agent',
+            userId: userId,
+            type: 'promethios-native',
+            createdAt: keyData.createdAt || new Date().toISOString(),
+            lastUsed: keyData.lastUsed || null,
+            status: keyData.status || 'active',
+            permissions: keyData.permissions || ['chat', 'governance'],
+            rateLimit: keyData.rateLimit || {
+              requestsPerMinute: 100,
+              requestsPerHour: 1000
+            }
+          };
+          
+          keys.push(convertedKey);
+        });
+      } catch (legacyError) {
+        console.warn('🔑 Error reading legacy API keys:', legacyError);
+      }
+      
+      console.log(`🔑 Total API keys found for user ${userId}: ${keys.length}`);
       
       return keys;
     } catch (error) {
