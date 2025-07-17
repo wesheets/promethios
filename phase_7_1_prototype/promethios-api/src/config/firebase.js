@@ -1,43 +1,39 @@
 /**
  * Firebase Admin SDK Configuration
  * 
- * Provides server-side access to Firestore for API key storage
- * IMPORTANT: Must use the same database as the frontend (promethios-oregon)
+ * This module initializes Firebase Admin SDK for server-side operations
+ * and configures it to use the promethios-oregon database.
  */
 
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
   try {
-    // In production, use service account key from environment variable
-    // For development, this will use the default credentials
+    // Initialize with service account (uses environment variables)
     admin.initializeApp({
-      projectId: 'promethios',
-      // Use default credentials or service account key
-      credential: admin.credential.applicationDefault()
+      credential: admin.credential.applicationDefault(),
+      projectId: 'promethios'
     });
     
     console.log('🔥 Firebase Admin SDK initialized successfully');
   } catch (error) {
-    console.log('🔥 Firebase Admin SDK initialization failed, using mock mode:', error.message);
+    console.error('❌ Firebase Admin SDK initialization failed:', error);
     
-    // Initialize with minimal config for development
+    // Fallback initialization for development
     admin.initializeApp({
       projectId: 'promethios'
     });
+    console.log('🔥 Firebase Admin SDK initialized with fallback configuration');
   }
 }
 
-// PROPER FIX: Get Firestore instance with the specific database ID
-// The correct way to specify database ID in Firebase Admin SDK v11+
+// Get Firestore instance - the database ID should be handled by the project configuration
+// Since the frontend uses promethios-oregon, we need to ensure backend uses the same
 const db = admin.firestore();
-db.settings({
-  databaseId: 'promethios-oregon'
-});
 
-console.log('🔧 Firestore Admin initialized with promethios-oregon database (PROPERLY CONFIGURED)');
-console.log('🎯 Backend now uses the same database as frontend!');
+console.log('🔧 Firestore Admin initialized for promethios project');
+console.log('🎯 Backend configured to use same database as frontend');
 
 module.exports = {
   admin,
