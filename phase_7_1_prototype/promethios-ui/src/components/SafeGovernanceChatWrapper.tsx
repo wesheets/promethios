@@ -1,6 +1,7 @@
-import React from 'react';
-import { Box, Typography, Chip, Alert } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Chip, Alert, Button, Switch, FormControlLabel } from '@mui/material';
 import AdvancedChatComponent from './AdvancedChatComponent';
+import SimpleChatComponent from './SimpleChatComponent';
 
 interface SafeGovernanceChatWrapperProps {
   deployment?: any;
@@ -17,6 +18,9 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   governanceEnabled = true,
   height = "100%" 
 }) => {
+  const [useSimpleChat, setUseSimpleChat] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  
   console.log('🚀 SafeGovernanceChatWrapper rendering with deployment:', deployment);
   
   // Extract agent information from deployment or use props
@@ -58,18 +62,95 @@ export const SafeGovernanceChatWrapper: React.FC<SafeGovernanceChatWrapperProps>
   
   console.log('🎯 SafeGovernanceChatWrapper: resolvedAgentName =', resolvedAgentName);
   
+  // Get API key from deployment if available
+  const apiKey = deployment?.apiKey;
+  
+  // If using simple chat or if we have an API key, show simple chat option
+  if (useSimpleChat && apiKey && agentId) {
+    console.log('🔄 SafeGovernanceChatWrapper: Rendering SimpleChatComponent');
+    return (
+      <Box sx={{ height, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ p: 2, backgroundColor: '#2d3748', borderBottom: '1px solid #4a5568' }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useSimpleChat}
+                onChange={(e) => setUseSimpleChat(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Use Simple Chat (Direct API)"
+            sx={{ color: 'white' }}
+          />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <SimpleChatComponent
+            agentId={agentId}
+            agentName={resolvedAgentName}
+            apiKey={apiKey}
+          />
+        </Box>
+      </Box>
+    );
+  }
+  
   try {
     console.log('🔄 SafeGovernanceChatWrapper: Attempting to render AdvancedChatComponent');
     return (
-      <AdvancedChatComponent 
-        isDeployedAgent={true}
-        deployedAgentId={agentId}
-        deployedAgentName={resolvedAgentName}
-        deploymentId={deploymentId}
-      />
+      <Box sx={{ height, display: 'flex', flexDirection: 'column' }}>
+        {apiKey && (
+          <Box sx={{ p: 2, backgroundColor: '#2d3748', borderBottom: '1px solid #4a5568' }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useSimpleChat}
+                  onChange={(e) => setUseSimpleChat(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Use Simple Chat (Direct API)"
+              sx={{ color: 'white' }}
+            />
+          </Box>
+        )}
+        <Box sx={{ flex: 1 }}>
+          <AdvancedChatComponent 
+            isDeployedAgent={true}
+            deployedAgentId={agentId}
+            deployedAgentName={resolvedAgentName}
+            deploymentId={deploymentId}
+          />
+        </Box>
+      </Box>
     );
   } catch (error) {
     console.error('❌ ChatContainer failed to render:', error);
+    setChatError(error instanceof Error ? error.message : 'Chat failed to load');
+    
+    // Fallback to simple chat if available
+    if (apiKey && agentId) {
+      return (
+        <Box sx={{ height, display: 'flex', flexDirection: 'column' }}>
+          <Alert severity="warning" sx={{ m: 2 }}>
+            Advanced chat failed to load. Using simple chat instead.
+            <Button 
+              size="small" 
+              onClick={() => setUseSimpleChat(true)}
+              sx={{ ml: 2 }}
+            >
+              Switch to Simple Chat
+            </Button>
+          </Alert>
+          <Box sx={{ flex: 1 }}>
+            <SimpleChatComponent
+              agentId={agentId}
+              agentName={resolvedAgentName}
+              apiKey={apiKey}
+            />
+          </Box>
+        </Box>
+      );
+    }
     
     // Fallback UI if ChatContainer fails
     return (

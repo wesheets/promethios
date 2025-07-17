@@ -6,20 +6,21 @@ import {
   Button,
   Paper,
   Avatar,
-  IconButton,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Chip
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Divider
 } from '@mui/material';
 import {
   Send as SendIcon,
   Person as PersonIcon,
   SmartToy as BotIcon,
-  Settings as SettingsIcon
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { clientChatService, ClientChatMessage, ClientChatSession } from '../services/clientChatService';
+import { useAuth } from '../context/AuthContext';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -31,78 +32,51 @@ const DARK_THEME = {
     secondary: '#a0aec0'
   },
   primary: '#3182ce',
-  success: '#38a169'
+  success: '#38a169',
+  error: '#e53e3e'
 };
 
 const ChatContainer = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
+  height: '600px',
   backgroundColor: DARK_THEME.background,
-  color: DARK_THEME.text.primary
+  color: DARK_THEME.text.primary,
+  border: `1px solid ${DARK_THEME.border}`,
+  borderRadius: '8px',
+  overflow: 'hidden'
 }));
 
 const ChatHeader = styled(Box)(() => ({
-  padding: '16px 24px',
+  padding: '16px',
   borderBottom: `1px solid ${DARK_THEME.border}`,
   backgroundColor: DARK_THEME.surface,
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between'
+  gap: '12px'
 }));
 
 const MessagesContainer = styled(Box)(() => ({
   flex: 1,
-  padding: '16px 24px',
+  padding: '16px',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px',
-  backgroundColor: DARK_THEME.background,
-  
-  '&::-webkit-scrollbar': {
-    width: '6px'
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: 'transparent'
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: DARK_THEME.border,
-    borderRadius: '3px'
-  }
+  gap: '12px'
 }));
 
-const MessageBubble = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isUser'
-})<{ isUser: boolean }>(({ isUser }) => ({
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '12px',
-  maxWidth: '85%',
+const MessageBubble = styled(Paper)<{ isUser: boolean }>(({ isUser }) => ({
+  padding: '12px 16px',
+  maxWidth: '70%',
   alignSelf: isUser ? 'flex-end' : 'flex-start',
-  flexDirection: isUser ? 'row-reverse' : 'row',
-  
-  '& .message-content': {
-    backgroundColor: isUser ? DARK_THEME.primary : DARK_THEME.surface,
-    color: DARK_THEME.text.primary,
-    padding: '12px 16px',
-    borderRadius: isUser ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-    border: `1px solid ${DARK_THEME.border}`,
-    wordBreak: 'break-word',
-    fontSize: '14px',
-    lineHeight: 1.5
-  },
-  
-  '& .message-avatar': {
-    width: 32,
-    height: 32,
-    fontSize: '14px',
-    backgroundColor: isUser ? DARK_THEME.primary : DARK_THEME.success
-  }
+  backgroundColor: isUser ? DARK_THEME.primary : DARK_THEME.surface,
+  color: DARK_THEME.text.primary,
+  borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+  wordBreak: 'break-word'
 }));
 
 const InputContainer = styled(Box)(() => ({
-  padding: '16px 24px',
+  padding: '16px',
   borderTop: `1px solid ${DARK_THEME.border}`,
   backgroundColor: DARK_THEME.surface,
   display: 'flex',
@@ -110,83 +84,66 @@ const InputContainer = styled(Box)(() => ({
   alignItems: 'flex-end'
 }));
 
-interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'agent';
-  timestamp: Date;
-  agentName?: string;
+interface SimpleChatComponentProps {
+  agentId: string;
+  agentName: string;
+  apiKey: string;
 }
 
-interface SimpleAgent {
-  id: string;
-  name: string;
-  avatar: string;
-  status: 'online' | 'offline';
-}
-
-const SimpleChatComponent: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: 'Hello! I\'m your AI assistant. How can I help you today?',
-      sender: 'agent',
-      timestamp: new Date(),
-      agentName: 'Assistant'
-    }
-  ]);
-  
-  const [inputValue, setInputValue] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState<SimpleAgent>({
-    id: 'assistant',
-    name: 'Assistant',
-    avatar: '🤖',
-    status: 'online'
-  });
-  
-  const [isTyping, setIsTyping] = useState(false);
+export const SimpleChatComponent: React.FC<SimpleChatComponentProps> = ({
+  agentId,
+  agentName,
+  apiKey
+}) => {
+  const [session, setSession] = useState<ClientChatSession | null>(null);
+  const [messages, setMessages] = useState<ClientChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
-  // Simple demo agents
-  const agents: SimpleAgent[] = [
-    { id: 'assistant', name: 'Assistant', avatar: '🤖', status: 'online' },
-    { id: 'creative', name: 'Creative Agent', avatar: '🎨', status: 'online' },
-    { id: 'analyst', name: 'Data Analyst', avatar: '📊', status: 'online' },
-    { id: 'writer', name: 'Technical Writer', avatar: '✍️', status: 'online' }
-  ];
+  // Initialize chat session
+  useEffect(() => {
+    if (agentId && agentName && apiKey) {
+      console.log('🎯 Initializing simple chat for agent:', agentName);
+      const newSession = clientChatService.createSession(agentId, agentName, apiKey);
+      setSession(newSession);
+      setMessages(newSession.messages);
+    }
+  }, [agentId, agentName, apiKey]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputMessage.trim() || !session || isLoading) return;
 
-    const userMessage: Message = {
-      id: `msg_${Date.now()}_user`,
-      content: inputValue,
-      sender: 'user',
-      timestamp: new Date()
-    };
+    const userMessage = inputMessage.trim();
+    setInputMessage('');
+    setIsLoading(true);
+    setError(null);
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate agent response
-    setTimeout(() => {
-      const agentMessage: Message = {
-        id: `msg_${Date.now()}_agent`,
-        content: `I understand you said: "${userMessage.content}". This is a demo response from ${selectedAgent.name}. In a real implementation, this would connect to your agent's API.`,
-        sender: 'agent',
-        timestamp: new Date(),
-        agentName: selectedAgent.name
-      };
+    try {
+      console.log('💬 Sending message to agent:', userMessage);
       
-      setMessages(prev => [...prev, agentMessage]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+      // Send message through client-side service
+      await clientChatService.sendMessage(session.sessionId, userMessage);
+      
+      // Update messages from session
+      const updatedMessages = clientChatService.getConversationHistory(session.sessionId);
+      setMessages([...updatedMessages]);
+      
+      console.log('✅ Message sent successfully');
+      
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      setError(error instanceof Error ? error.message : 'Failed to send message');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -196,154 +153,135 @@ const SimpleChatComponent: React.FC = () => {
     }
   };
 
+  if (!session) {
+    return (
+      <Card sx={{ backgroundColor: DARK_THEME.surface, color: DARK_THEME.text.primary }}>
+        <CardContent>
+          <Typography>Initializing chat session...</Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <ChatContainer>
-      {/* Header */}
       <ChatHeader>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: DARK_THEME.success }}>
-            {selectedAgent.avatar}
-          </Avatar>
-          <Box>
-            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
-              Chat with {selectedAgent.name}
-            </Typography>
-            <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-              {selectedAgent.status === 'online' ? '🟢 Online' : '🔴 Offline'}
-            </Typography>
-          </Box>
-        </Box>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel sx={{ color: DARK_THEME.text.secondary }}>Agent</InputLabel>
-            <Select
-              value={selectedAgent.id}
-              onChange={(e) => {
-                const agent = agents.find(a => a.id === e.target.value);
-                if (agent) setSelectedAgent(agent);
-              }}
-              sx={{
-                color: DARK_THEME.text.primary,
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: DARK_THEME.border
-                },
-                '& .MuiSvgIcon-root': {
-                  color: DARK_THEME.text.secondary
-                }
-              }}
-            >
-              {agents.map((agent) => (
-                <MenuItem key={agent.id} value={agent.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span>{agent.avatar}</span>
-                    {agent.name}
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <Chip 
-            label="Demo Mode" 
-            size="small" 
-            sx={{ 
-              backgroundColor: DARK_THEME.primary,
-              color: 'white'
-            }} 
-          />
+        <Avatar sx={{ backgroundColor: DARK_THEME.primary }}>
+          <BotIcon />
+        </Avatar>
+        <Box>
+          <Typography variant="h6">{agentName}</Typography>
+          <Typography variant="body2" color={DARK_THEME.text.secondary}>
+            Direct API Chat • Agent ID: {agentId.slice(0, 8)}...
+          </Typography>
         </Box>
       </ChatHeader>
 
-      {/* Messages */}
       <MessagesContainer>
-        {messages.map((message) => (
-          <MessageBubble key={message.id} isUser={message.sender === 'user'}>
-            <Avatar className="message-avatar">
-              {message.sender === 'user' ? <PersonIcon /> : selectedAgent.avatar}
-            </Avatar>
-            <Box className="message-content">
-              {message.sender === 'agent' && message.agentName && (
-                <Typography variant="caption" sx={{ 
-                  color: DARK_THEME.text.secondary,
-                  display: 'block',
-                  marginBottom: '4px'
-                }}>
-                  {message.agentName}
-                </Typography>
-              )}
-              <Typography variant="body2">
-                {message.content}
-              </Typography>
-              <Typography variant="caption" sx={{ 
-                color: DARK_THEME.text.secondary,
-                display: 'block',
-                marginTop: '4px',
-                fontSize: '11px'
-              }}>
-                {message.timestamp.toLocaleTimeString()}
-              </Typography>
-            </Box>
-          </MessageBubble>
-        ))}
-        
-        {isTyping && (
-          <MessageBubble isUser={false}>
-            <Avatar className="message-avatar">
-              {selectedAgent.avatar}
-            </Avatar>
-            <Box className="message-content">
-              <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                {selectedAgent.name} is typing...
-              </Typography>
-            </Box>
-          </MessageBubble>
+        {messages.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography color={DARK_THEME.text.secondary}>
+              Start a conversation with {agentName}
+            </Typography>
+          </Box>
         )}
-        
+
+        {messages.map((message) => (
+          <Box key={message.id} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <Avatar 
+              sx={{ 
+                width: 32, 
+                height: 32, 
+                backgroundColor: message.role === 'user' ? DARK_THEME.primary : DARK_THEME.success 
+              }}
+            >
+              {message.role === 'user' ? <PersonIcon fontSize="small" /> : <BotIcon fontSize="small" />}
+            </Avatar>
+            <MessageBubble isUser={message.role === 'user'}>
+              <Typography variant="body1">{message.content}</Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  display: 'block', 
+                  mt: 1, 
+                  opacity: 0.7,
+                  fontSize: '0.75rem'
+                }}
+              >
+                {new Date(message.timestamp).toLocaleTimeString()}
+              </Typography>
+            </MessageBubble>
+          </Box>
+        ))}
+
+        {isLoading && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar sx={{ width: 32, height: 32, backgroundColor: DARK_THEME.success }}>
+              <BotIcon fontSize="small" />
+            </Avatar>
+            <Paper sx={{ p: 2, backgroundColor: DARK_THEME.surface }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                <Typography variant="body2">Thinking...</Typography>
+              </Box>
+            </Paper>
+          </Box>
+        )}
+
         <div ref={messagesEndRef} />
       </MessagesContainer>
 
-      {/* Input */}
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ m: 2, backgroundColor: DARK_THEME.error, color: 'white' }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+
       <InputContainer>
         <TextField
           fullWidth
           multiline
           maxRows={4}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Type your message..."
-          variant="outlined"
+          disabled={isLoading}
           sx={{
             '& .MuiOutlinedInput-root': {
               backgroundColor: DARK_THEME.background,
               color: DARK_THEME.text.primary,
               '& fieldset': {
-                borderColor: DARK_THEME.border
+                borderColor: DARK_THEME.border,
               },
               '&:hover fieldset': {
-                borderColor: DARK_THEME.primary
+                borderColor: DARK_THEME.primary,
               },
               '&.Mui-focused fieldset': {
-                borderColor: DARK_THEME.primary
-              }
+                borderColor: DARK_THEME.primary,
+              },
             },
             '& .MuiInputBase-input::placeholder': {
-              color: DARK_THEME.text.secondary
-            }
+              color: DARK_THEME.text.secondary,
+              opacity: 1,
+            },
           }}
         />
         <Button
           variant="contained"
           onClick={handleSendMessage}
-          disabled={!inputValue.trim() || isTyping}
+          disabled={!inputMessage.trim() || isLoading}
           sx={{
             backgroundColor: DARK_THEME.primary,
-            minWidth: '48px',
-            height: '48px',
             '&:hover': {
-              backgroundColor: '#2c5aa0'
-            }
+              backgroundColor: '#2c5aa0',
+            },
+            minWidth: '48px',
+            height: '48px'
           }}
         >
           <SendIcon />
