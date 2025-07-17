@@ -69,10 +69,20 @@ apiRouter.all('/keys/*', async (req, res) => {
 
 // Handle /keys root path
 apiRouter.all('/keys', async (req, res) => {
+  console.log('🚨 /keys endpoint hit!');
+  console.log('🚨 Method:', req.method);
+  console.log('🚨 req.url:', req.url);
+  console.log('🚨 req.originalUrl:', req.originalUrl);
+  console.log('🚨 req.query:', req.query);
+  console.log('🚨 req.headers:', req.headers);
+  
   try {
     // For GET requests, include query parameters
     const queryString = req.url.startsWith('?') ? req.url : '';
+    console.log('🚨 queryString:', queryString);
+    
     const url = `${BACKEND_API_URL}/api/keys${queryString}`;
+    console.log('🚨 Final URL:', url);
     
     const options = {
       method: req.method,
