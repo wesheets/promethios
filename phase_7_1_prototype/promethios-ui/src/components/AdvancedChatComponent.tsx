@@ -2091,36 +2091,36 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
         
       } else if (provider === 'promethios') {
         console.log('Taking Promethios path...');
-        // Create system message based on governance setting (same as OpenAI)
-        let systemMessage;
-        if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
-        } else {
-          // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
-        }
-
-        // Convert conversation history to Promethios API format (similar to OpenAI)
+        // Use the working backend API format we tested
+        
+        // Convert conversation history for backend API
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
-          .slice(-20) // Last 20 messages to manage token limits
+          .slice(-20) // Last 20 messages to manage payload size
           .map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.content
+            content: msg.content,
+            timestamp: msg.timestamp
           }));
 
-        response = await fetch('https://api.promethios.ai/v1', {
+        response = await fetch('https://promethios-phase-7-1-api.onrender.com/api/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            prompt: messageContent,
             agent_id: agent.identity?.id || agent.agentId,
+            message: messageContent,
+            agent_name: agent.agentName || agent.identity?.name,
+            agent_description: agent.description || agent.identity?.description,
+            model: selectedModel,
             conversation_history: historyMessages,
-            system_message: systemMessage
+            attachments: attachments.map(att => ({
+              name: att.name,
+              type: att.type,
+              data: att.data
+            }))
           })
         });
 

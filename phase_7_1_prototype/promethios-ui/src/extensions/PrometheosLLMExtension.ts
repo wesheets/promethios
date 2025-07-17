@@ -259,7 +259,7 @@ export class PrometheosLLMExtension extends Extension {
       console.log('🔍 DEBUG: typeof apiKeyData:', typeof apiKeyData);
       
       const apiDetails = apiKeyData ? {
-        endpoint: 'https://api.promethios.ai/v1',
+        endpoint: 'https://promethios-phase-7-1-api.onrender.com/api/chat',
         key: apiKeyData.id, // Use 'id' instead of 'key' since that's what we stored
         provider: 'promethios',
         selectedModel: 'promethios-lambda-7b',
