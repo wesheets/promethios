@@ -181,22 +181,36 @@ class ApiKeyService {
       
       // Also check for API keys stored in the agents collection (legacy format)
       try {
+        console.log(`🔑 Searching for API keys with prefix: api-key-${userId}_`);
+        
         const agentsCollection = db.collection('agents');
-        const agentKeysQuery = await agentsCollection.where('__name__', '>=', `api-key-${userId}_`).where('__name__', '<', `api-key-${userId}_\uf8ff`).get();
         
-        console.log(`🔑 Found ${agentKeysQuery.size} API keys in agents collection`);
+        // Get all documents and filter client-side (more reliable than __name__ queries)
+        const allDocsSnapshot = await agentsCollection.get();
+        const apiKeyDocs = [];
         
-        agentKeysQuery.forEach(doc => {
+        allDocsSnapshot.forEach(doc => {
+          if (doc.id.startsWith(`api-key-${userId}_`)) {
+            apiKeyDocs.push(doc);
+          }
+        });
+        
+        console.log(`🔑 Found ${apiKeyDocs.length} API key documents in agents collection`);
+        
+        apiKeyDocs.forEach(doc => {
           const keyData = doc.data();
           const keyId = doc.id.replace(`api-key-${userId}_`, '');
           
+          console.log(`🔑 Processing API key document: ${doc.id}`);
+          console.log(`🔑 Key data:`, keyData);
+          
           // Convert legacy format to new format
           const convertedKey = {
-            key: keyData.key || `pm-legacy-${Date.now()}-${keyId}`,
+            key: keyData.id || keyData.key || `pm-legacy-${Date.now()}-${keyId}`,
             agentId: keyData.agentId || keyId,
             agentName: keyData.agentName || 'Legacy Agent',
             userId: userId,
-            type: 'promethios-native',
+            type: keyData.keyType || 'promethios-native',
             createdAt: keyData.createdAt || new Date().toISOString(),
             lastUsed: keyData.lastUsed || null,
             status: keyData.status || 'active',
