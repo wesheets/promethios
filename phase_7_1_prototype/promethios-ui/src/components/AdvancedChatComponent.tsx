@@ -359,7 +359,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
-  const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems'>('single');
+  const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems' | 'promethios-native'>('single');
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<AgentProfile[]>([]);
   const [availableSystems, setAvailableSystems] = useState<ChatSystemInfo[]>([]);
@@ -3075,9 +3075,17 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
             
             {/* Governance Toggle - Hidden for deployed agents */}
             {!isDeployedAgent && (
-            <GovernanceToggleContainer onClick={handleGovernanceToggle}>
+            <GovernanceToggleContainer 
+              onClick={chatMode !== 'promethios-native' ? handleGovernanceToggle : undefined}
+              sx={{
+                opacity: chatMode === 'promethios-native' ? 0.5 : 1,
+                cursor: chatMode === 'promethios-native' ? 'not-allowed' : 'pointer',
+                pointerEvents: chatMode === 'promethios-native' ? 'none' : 'auto'
+              }}
+            >
               <Switch
-                checked={governanceEnabled}
+                checked={chatMode === 'promethios-native' ? false : governanceEnabled}
+                disabled={chatMode === 'promethios-native'}
                 size="small"
                 sx={{
                   '& .MuiSwitch-switchBase.Mui-checked': {
@@ -3085,12 +3093,23 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   },
                   '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
                     backgroundColor: DARK_THEME.success
+                  },
+                  '& .MuiSwitch-switchBase.Mui-disabled': {
+                    color: DARK_THEME.text.disabled
+                  },
+                  '& .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track': {
+                    backgroundColor: DARK_THEME.text.disabled + '40'
                   }
                 }}
               />
-              <ShieldIcon sx={{ fontSize: 16, color: DARK_THEME.text.secondary }} />
-              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                Governed
+              <ShieldIcon sx={{ 
+                fontSize: 16, 
+                color: chatMode === 'promethios-native' ? DARK_THEME.text.disabled : DARK_THEME.text.secondary 
+              }} />
+              <Typography variant="caption" sx={{ 
+                color: chatMode === 'promethios-native' ? DARK_THEME.text.disabled : DARK_THEME.text.secondary 
+              }}>
+                {chatMode === 'promethios-native' ? 'Native Mode' : 'Governed'}
               </Typography>
             </GovernanceToggleContainer>
             )}
@@ -3110,19 +3129,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
             }}
             startIcon={<PersonIcon />}
           >
-            Single Agent
-          </ModeButton>
-          <ModeButton
-            active={chatMode === 'multi-agent'}
-            onClick={() => {
-              setChatMode('multi-agent');
-              setIsMultiAgentMode(true);
-              setSelectedSystem(null);
-              setCurrentChatSession(null);
-            }}
-            startIcon={<GroupIcon />}
-          >
-            Multi-Agent
+            SINGLE AGENT
           </ModeButton>
           <ModeButton
             active={chatMode === 'saved-systems'}
@@ -3133,9 +3140,46 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
               setSelectedAgents([]);
               loadAvailableSystems();
             }}
-            startIcon={<ShieldIcon />}
+            startIcon={<GroupIcon />}
           >
-            Saved Systems
+            MULTI-AGENT
+          </ModeButton>
+          <ModeButton
+            active={chatMode === 'promethios-native'}
+            onClick={() => {
+              setChatMode('promethios-native');
+              setIsMultiAgentMode(false);
+              setSelectedSystem(null);
+              setCurrentChatSession(null);
+              setSelectedAgents([]);
+            }}
+            startIcon={<ShieldIcon />}
+            sx={{
+              position: 'relative',
+              ...(chatMode === 'promethios-native' && {
+                boxShadow: `0 0 20px ${DARK_THEME.primary}40, 0 0 40px ${DARK_THEME.primary}20`,
+                border: `2px solid ${DARK_THEME.primary}`,
+                background: `linear-gradient(135deg, ${DARK_THEME.primary}20, ${DARK_THEME.success}10)`,
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -3,
+                  left: -3,
+                  right: -3,
+                  bottom: -3,
+                  background: `linear-gradient(45deg, ${DARK_THEME.primary}, ${DARK_THEME.success}, ${DARK_THEME.primary})`,
+                  borderRadius: 'inherit',
+                  zIndex: -1,
+                  opacity: 0.4,
+                  animation: 'pulse 2s infinite'
+                }
+              })
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShieldIcon sx={{ fontSize: 16 }} />
+              PROMETHIOS NATIVE
+            </Box>
           </ModeButton>
         </ModeToggleContainer>
         )}
