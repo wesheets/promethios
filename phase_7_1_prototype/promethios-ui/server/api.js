@@ -44,8 +44,9 @@ apiRouter.all('/keys', async (req, res) => {
   console.log('🚨 req.headers:', req.headers);
   
   try {
-    // For GET requests, include query parameters
-    const queryString = req.url.startsWith('?') ? req.url : '';
+    // Extract query string from req.url properly
+    const urlParts = req.url.split('?');
+    const queryString = urlParts.length > 1 ? '?' + urlParts.slice(1).join('?') : '';
     console.log('🚨 queryString:', queryString);
     
     const url = `${BACKEND_API_URL}/api/keys${queryString}`;
