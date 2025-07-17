@@ -184,7 +184,7 @@ export class NativeAgentMigration {
           console.log(`🔑 Updating agent ${agent.name} with real API key`);
           
           // Generate real API key for this agent
-          const apiResponse = await fetch('/api/keys/generate', {
+          const apiResponse = await fetch('https://promethios-phase-7-1-api.onrender.com/api/keys/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

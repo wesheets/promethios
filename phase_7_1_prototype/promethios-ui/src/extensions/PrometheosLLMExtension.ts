@@ -177,7 +177,7 @@ export class PrometheosLLMExtension extends Extension {
       let apiKeyData = null;
       try {
         console.log(`🔑 Generating API key for native agent: ${name}`);
-        const apiResponse = await fetch('/api/keys/generate', {
+        const apiResponse = await fetch('https://promethios-phase-7-1-api.onrender.com/api/keys/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
