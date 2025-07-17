@@ -6,8 +6,8 @@
  */
 
 import { getAnalytics, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import app from '../firebase/config';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import app, { db } from '../firebase/config';
 
 // Types for different metric categories
 export interface UserInteractionMetric {
@@ -65,9 +65,10 @@ export class MetricsCollectionService {
 
   constructor() {
     this.analytics = getAnalytics(app);
-    this.firestore = getFirestore(app);
+    this.firestore = db; // Use the shared db instance configured for promethios-oregon
     this.sessionId = this.generateSessionId();
     this.environment = this.detectEnvironment();
+    console.log('🔧 MetricsCollectionService: Using shared Firestore instance (promethios-oregon)');
   }
 
   /**
