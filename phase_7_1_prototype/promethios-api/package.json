@@ -18,9 +18,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.17.3",
-    "mongoose": "^6.9.0",
-    "openai": "^5.5.1",
     "firebase-admin": "^11.5.0",
+    "mongoose": "^6.9.0",
+    "multer": "^2.0.2",
+    "openai": "^5.5.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -32,4 +33,3 @@
     "react-dom": "^18.2.0"
   }
 }
-
