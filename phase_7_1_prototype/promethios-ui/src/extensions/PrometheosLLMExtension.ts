@@ -255,6 +255,9 @@ export class PrometheosLLMExtension extends Extension {
       userAgentStorage.setCurrentUser(userId);
       
       // Create API details with generated key
+      console.log('🔍 DEBUG: apiKeyData value before creating apiDetails:', apiKeyData);
+      console.log('🔍 DEBUG: typeof apiKeyData:', typeof apiKeyData);
+      
       const apiDetails = apiKeyData ? {
         endpoint: 'https://api.promethios.ai/v1',
         key: apiKeyData.id, // Use 'id' instead of 'key' since that's what we stored
@@ -274,6 +277,8 @@ export class PrometheosLLMExtension extends Extension {
           rateLimit: { requestsPerMinute: 100, requestsPerHour: 1000 }
         }
       } : NativeAgentMigration.createNativeApiDetails(name, description, null);
+      
+      console.log('🔍 DEBUG: apiDetails created successfully:', !!apiDetails);
       
       // Convert to AgentProfile format for storage
       const agentProfile = {
