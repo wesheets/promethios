@@ -2089,9 +2089,49 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
         const data = await response.json();
         return data[0]?.generated_text || data.generated_text || 'No response received';
         
+      } else if (provider === 'promethios') {
+        console.log('Taking Promethios path...');
+        // Create system message based on governance setting (same as OpenAI)
+        let systemMessage;
+        if (governanceEnabled) {
+          // Use Promethios governance kernel for governed agents
+          systemMessage = createPromethiosSystemMessage();
+        } else {
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+        }
+
+        // Convert conversation history to Promethios API format (similar to OpenAI)
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        response = await fetch('https://api.promethios.ai/v1', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            prompt: messageContent,
+            agent_id: agent.identity?.id || agent.agentId,
+            conversation_history: historyMessages,
+            system_message: systemMessage
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Promethios API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.response || data.content || 'No response received';
+        
       } else if (apiEndpoint) {
-        // Custom API endpoint
-        console.log('Taking custom API endpoint path...');
         // Convert conversation history for custom API
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
