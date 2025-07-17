@@ -34,39 +34,6 @@ apiRouter.post('/test', (req, res) => {
 // Proxy configuration for backend API
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
-// Proxy middleware for API key management
-apiRouter.all('/keys/*', async (req, res) => {
-  try {
-    const targetPath = req.originalUrl.replace('/api', '');
-    const url = `${BACKEND_API_URL}/api${targetPath}`;
-    
-    const options = {
-      method: req.method,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-    
-    // Add body for POST, PUT, PATCH requests
-    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-      options.body = JSON.stringify(req.body);
-    }
-    
-    console.log(`🔄 Proxying ${req.method} ${url}`);
-    if (req.body) console.log(`📦 Request body:`, req.body);
-    
-    const response = await fetch(url, options);
-    const data = await response.json();
-    
-    console.log(`✅ Backend response:`, data);
-    
-    res.status(response.status).json(data);
-  } catch (error) {
-    console.error('❌ API proxy error:', error);
-    res.status(500).json({ error: 'Proxy error', message: error.message });
-  }
-});
-
 // Handle /keys root path
 apiRouter.all('/keys', async (req, res) => {
   console.log('🚨 /keys endpoint hit!');
