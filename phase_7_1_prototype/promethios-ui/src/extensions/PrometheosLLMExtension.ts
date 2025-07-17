@@ -2,6 +2,7 @@
  * Promethios LLM Extension for Promethios
  * 
  * Provides native LLM functionality with built-in governance that cannot be bypassed.
+ * Now supports GPU instance integration for real-time governance.
  * Follows existing extension patterns for backward compatibility.
  */
 
@@ -22,6 +23,8 @@ export interface PrometheosLLMConfig {
   responseStyle: 'professional' | 'conversational' | 'technical' | 'creative';
   maxTokens: number;
   temperature: number;
+  gpuInstanceEnabled: boolean;
+  gpuInstanceUrl: string;
 }
 
 export interface PrometheosLLMAgent {
@@ -35,6 +38,7 @@ export interface PrometheosLLMAgent {
     bypassProof: boolean;
     constitutionalCompliance: boolean;
     realTimeMonitoring: boolean;
+    gpuAccelerated: boolean;
   };
   metrics: {
     totalInteractions: number;
@@ -42,6 +46,7 @@ export interface PrometheosLLMAgent {
     complianceRate: number;
     averageResponseTime: number;
     violationCount: number;
+    gpuInstanceUsage: number;
   };
   status: 'created' | 'active' | 'deployed' | 'inactive';
   createdAt: Date;
