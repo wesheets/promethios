@@ -106,11 +106,12 @@ const ApiKeysSettingsPage: React.FC = () => {
       
       console.log('🔑 loadApiKeys: Querying Firebase for API keys...');
       
-      // Query Firebase for API keys belonging to this user (simplified to avoid index requirement)
-      const apiKeysRef = collection(db, 'apiKeys');
+      // Query Firebase for API keys in the agents collection (where they're actually stored)
+      const agentsRef = collection(db, 'agents');
       const q = query(
-        apiKeysRef, 
-        where('userId', '==', currentUser.uid)
+        agentsRef, 
+        where('userId', '==', currentUser.uid),
+        where('keyType', '==', 'promethios-native')
       );
       
       const querySnapshot = await getDocs(q);
@@ -121,14 +122,14 @@ const ApiKeysSettingsPage: React.FC = () => {
         const data = doc.data();
         console.log('🔑 loadApiKeys: Processing document:', doc.id, data);
         
-        // Convert Firebase document to ApiKeyData format
+        // Convert Firebase document to ApiKeyData format (matching agents collection structure)
         const apiKey: ApiKeyData = {
-          key: data.key || data.id || doc.id,
-          keyId: data.id || doc.id,
-          agentId: data.agentId || 'unknown',
-          agentName: data.agentName || data.agentId || 'Unknown Agent',
+          key: data.key || doc.id,
+          keyId: data.agentId || doc.id,
+          agentId: data.agentId || doc.id,
+          agentName: data.agentName || 'Unknown Agent',
           userId: data.userId,
-          type: data.type || 'promethios-native',
+          type: data.keyType || 'promethios-native', // keyType in storage, type in display
           createdAt: data.createdAt || new Date().toISOString(),
           lastUsed: data.lastUsed || null,
           status: data.status || 'active',
