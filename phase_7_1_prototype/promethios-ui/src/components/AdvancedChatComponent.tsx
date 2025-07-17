@@ -1532,20 +1532,20 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                 // Add welcome message for new single-agent conversation
                 const welcomeMessage: ChatMessage = {
                   id: `msg_${Date.now()}_welcome`,
-                  content: `Hello! I'm ${realAgents[0].identity.name}. How can I help you today?`,
+                  content: `Hello! I'm ${defaultAgent.identity.name}. How can I help you today?`,
                   sender: 'agent',
                   timestamp: new Date(),
-                  agentName: realAgents[0].identity.name,
-                  agentId: realAgents[0].identity.id
+                  agentName: defaultAgent.identity.name,
+                  agentId: defaultAgent.identity.id
                 };
                 setMessages([welcomeMessage]);
                 
                 // Save welcome message to storage
-                await chatStorageService.saveMessage(welcomeMessage, realAgents[0].identity.id);
+                await chatStorageService.saveMessage(welcomeMessage, defaultAgent.identity.id);
               }
               
               // Initialize chat session for single-agent mode
-              await chatStorageService.initializeChatSession(realAgents[0], governanceEnabled);
+              await chatStorageService.initializeChatSession(defaultAgent, governanceEnabled);
             } else if (chatMode === 'saved-systems') {
               console.log('🔧 CHAT MODE: Multi-agent mode - keeping chat history clean');
               // Multi-agent mode should start clean - don't load single-agent history
@@ -2109,6 +2109,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
+            agent_id: agent.identity?.id || agent.agentId,
             message: messageContent,
             agent_name: agent.agentName || agent.identity?.name,
             agent_description: agent.description || agent.identity?.description,
