@@ -45,9 +45,11 @@ apiRouter.all('/keys', async (req, res) => {
   
   try {
     // Extract query string from req.url properly
+    console.log('🚨 req.url before split:', JSON.stringify(req.url));
     const urlParts = req.url.split('?');
+    console.log('🚨 urlParts after split:', JSON.stringify(urlParts));
     const queryString = urlParts.length > 1 ? '?' + urlParts.slice(1).join('?') : '';
-    console.log('🚨 queryString:', queryString);
+    console.log('🚨 queryString result:', JSON.stringify(queryString));
     
     const url = `${BACKEND_API_URL}/api/keys${queryString}`;
     console.log('🚨 Final URL:', url);
