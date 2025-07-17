@@ -301,6 +301,64 @@ router.post('/history', async (req, res) => {
     }
 });
 
+// GET /history — Get chat history
+router.get('/history', async (req, res) => {
+    try {
+        const { sessionId, agentId, userId, limit = 50 } = req.query;
+        
+        let history = [];
+        
+        // If sessionId provided, get specific session history
+        if (sessionId && activeChatSessions[sessionId]) {
+            history = activeChatSessions[sessionId].messages || [];
+        } 
+        // If agentId provided, get all sessions for that agent
+        else if (agentId) {
+            const agentSessions = Object.values(activeChatSessions)
+                .filter(session => session.agent_id === agentId);
+            
+            history = agentSessions.flatMap(session => 
+                session.messages.map(msg => ({
+                    ...msg,
+                    sessionId: session.id,
+                    agentId: session.agent_id
+                }))
+            );
+        }
+        // Otherwise return recent history across all sessions
+        else {
+            history = Object.values(activeChatSessions)
+                .flatMap(session => 
+                    session.messages.map(msg => ({
+                        ...msg,
+                        sessionId: session.id,
+                        agentId: session.agent_id
+                    }))
+                );
+        }
+        
+        // Sort by timestamp and limit
+        history = history
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, parseInt(limit));
+        
+        res.status(200).json({
+            success: true,
+            history: history,
+            total: history.length,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('History retrieval error:', error);
+        res.status(500).json({ 
+            error: 'Failed to retrieve chat history',
+            details: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // GET /agents — Get available demo agents with real capabilities
 router.get('/agents', (req, res) => {
     const agents = [

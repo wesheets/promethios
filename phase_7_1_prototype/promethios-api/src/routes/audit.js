@@ -49,6 +49,52 @@ router.get('/logs', async (req, res) => {
 });
 
 /**
+ * GET /api/audit/query
+ * Alternative endpoint for querying audit logs (frontend compatibility)
+ */
+router.get('/query', async (req, res) => {
+  try {
+    const filters = {
+      userId: req.query.userId,
+      eventType: req.query.eventType,
+      severity: req.query.severity,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      search: req.query.search,
+      limit: parseInt(req.query.limit) || 50,
+      offset: parseInt(req.query.offset) || 0
+    };
+
+    // Remove undefined filters
+    Object.keys(filters).forEach(key => {
+      if (filters[key] === undefined || filters[key] === '') {
+        delete filters[key];
+      }
+    });
+
+    const result = auditService.queryAuditLogs(filters);
+
+    res.json({
+      success: true,
+      data: result.logs || [],
+      total: result.total || 0,
+      limit: filters.limit,
+      offset: filters.offset,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error querying audit logs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to query audit logs',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * POST /api/audit/logs
  * Create a new audit log entry
  */

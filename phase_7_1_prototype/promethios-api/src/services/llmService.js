@@ -60,6 +60,44 @@ try {
 }
 
 class LLMService {
+  // Promethios Local Model
+  async callPrometheosModel(message, systemPrompt) {
+    try {
+      console.log('🤖 Calling Promethios local model...');
+      
+      // Combine system prompt and user message
+      const fullPrompt = systemPrompt ? 
+        `${systemPrompt}\n\nUser: ${message}` : 
+        message;
+      
+      const response = await fetch('http://localhost:3000/api/model/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          agent_id: 'promethios-ai-assistant',
+          max_length: 512,
+          temperature: 0.7
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Promethios model API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.response || "Hello! I'm Promethios AI Assistant. How can I help you today?";
+      
+    } catch (error) {
+      console.error('Promethios model error:', error);
+      
+      // Fallback response that identifies as Promethios
+      return `Hello! I'm Promethios AI Assistant, your governance-focused AI companion. I'm designed to provide helpful, accurate, and ethically-aligned responses. While I'm experiencing some technical difficulties at the moment, I'm still here to assist you with information, analysis, and guidance. How can I help you today?`;
+    }
+  }
+
   // OpenAI GPT-3.5 for Baseline Agent
   async callOpenAIGPT35(message, systemPrompt) {
     if (!openai) {
@@ -238,6 +276,15 @@ class LLMService {
     // This is a temporary solution until we have proper agent lookup
     console.log(`🔍 Looking up real agent: ${agentId}`);
     
+    // Check if this is a Promethios agent
+    if (agentId.toLowerCase().includes('promethios') || 
+        agentId.toLowerCase().includes('governance') ||
+        agentId === 'test' || // Handle the test agent as Promethios
+        customSystemMessage?.toLowerCase().includes('promethios')) {
+      console.log(`🎯 Using Promethios local model for agent: ${agentId}`);
+      return await this.callPrometheosModel(message, systemPrompt);
+    }
+    
     // Try to determine provider from agent ID pattern or use a default rotation
     // This is a simplified approach - in production, you'd query the database
     const agentHash = this.hashAgentId(agentId);
@@ -273,6 +320,14 @@ class LLMService {
     const model = agent.model || 'gpt-3.5-turbo';
     
     try {
+      // Check if this is a Promethios agent first
+      if (agent.provider?.toLowerCase() === 'promethios' ||
+          agent.name?.toLowerCase().includes('promethios') ||
+          agent.id?.toLowerCase().includes('promethios')) {
+        console.log(`🎯 Using Promethios local model for agent: ${agent.name}`);
+        return await this.callPrometheosModel(message, systemPrompt);
+      }
+      
       switch (provider.toLowerCase()) {
         case 'openai':
           if (model.includes('gpt-4')) {
