@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { darkThemeStyles } from '../styles/darkThemeStyles';
 import {
   Box,
@@ -87,9 +89,9 @@ const ApiKeysSettingsPage: React.FC = () => {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   
-  // Load API keys
+  // Load API keys from Firebase
   const loadApiKeys = useCallback(async () => {
-    console.log('🔑 loadApiKeys: Starting...');
+    console.log('🔑 loadApiKeys: Starting Firebase fetch...');
     console.log('🔑 loadApiKeys: currentUser:', currentUser);
     console.log('🔑 loadApiKeys: currentUser UID:', currentUser?.uid);
     
@@ -102,38 +104,63 @@ const ApiKeysSettingsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const url = `/api/keys?userId=${currentUser.uid}`;
-      console.log('🔑 loadApiKeys: Making request to:', url);
+      console.log('🔑 loadApiKeys: Querying Firebase for API keys...');
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Query Firebase for API keys belonging to this user
+      const apiKeysRef = collection(db, 'apiKeys');
+      const q = query(
+        apiKeysRef, 
+        where('userId', '==', currentUser.uid),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      console.log('🔑 loadApiKeys: Firebase query returned', querySnapshot.size, 'documents');
+      
+      const keys: ApiKeyData[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('🔑 loadApiKeys: Processing document:', doc.id, data);
+        
+        // Convert Firebase document to ApiKeyData format
+        const apiKey: ApiKeyData = {
+          key: data.key || data.id || doc.id,
+          keyId: data.id || doc.id,
+          agentId: data.agentId || 'unknown',
+          agentName: data.agentName || data.agentId || 'Unknown Agent',
+          userId: data.userId,
+          type: data.type || 'promethios-native',
+          createdAt: data.createdAt || new Date().toISOString(),
+          lastUsed: data.lastUsed || null,
+          status: data.status || 'active',
+          permissions: data.permissions || ['read', 'write'],
+          rateLimit: data.rateLimit || {
+            requestsPerMinute: 60,
+            requestsPerHour: 1000
+          }
+        };
+        
+        keys.push(apiKey);
       });
       
-      console.log('🔑 loadApiKeys: Response status:', response.status);
-      console.log('🔑 loadApiKeys: Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🔑 loadApiKeys: Processed', keys.length, 'API keys:', keys);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('🔑 loadApiKeys: Error response text:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('🔑 loadApiKeys: Response data:', data);
+      // Calculate stats
+      const stats: ApiKeyStats = {
+        total: keys.length,
+        active: keys.filter(k => k.status === 'active').length,
+        revoked: keys.filter(k => k.status === 'revoked').length,
+        nativeKeys: keys.filter(k => k.type === 'promethios-native').length,
+        deploymentKeys: keys.filter(k => k.type === 'deployment').length
+      };
       
-      if (data.success) {
-        setApiKeys(data.keys || []);
-        setStats(data.stats || null);
-        console.log('🔑 loadApiKeys: Successfully loaded', data.keys?.length || 0, 'API keys');
-      } else {
-        throw new Error(data.error || 'Failed to load API keys');
-      }
+      setApiKeys(keys);
+      setStats(stats);
+      console.log('🔑 loadApiKeys: Successfully loaded', keys.length, 'API keys from Firebase');
+      
     } catch (error) {
-      console.error('🔑 loadApiKeys: Error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load API keys');
+      console.error('🔑 loadApiKeys: Firebase error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load API keys from Firebase');
     } finally {
       setLoading(false);
       console.log('🔑 loadApiKeys: Finished (loading set to false)');
