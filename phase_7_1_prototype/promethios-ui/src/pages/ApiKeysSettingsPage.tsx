@@ -159,6 +159,8 @@ const ApiKeysSettingsPage: React.FC = () => {
       setApiKeys(keys);
       setStats(stats);
       console.log('🔑 loadApiKeys: Successfully loaded', keys.length, 'API keys from Firebase');
+      console.log('🔑 loadApiKeys: Keys data:', keys);
+      console.log('🔑 loadApiKeys: Stats:', stats);
       
     } catch (error) {
       console.error('🔑 loadApiKeys: Firebase error:', error);
@@ -458,17 +460,22 @@ const ApiKeysSettingsPage: React.FC = () => {
           </Box>
 
           {apiKeys.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Key sx={{ fontSize: 64, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }, mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 1, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' } }}>
-                No API Keys Found
-              </Typography>
-              <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
-                API keys are automatically generated when you create Promethios Native Agents
-              </Typography>
-            </Box>
+            <>
+              {console.log('🔑 RENDER: apiKeys.length is 0, current apiKeys:', apiKeys)}
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Key sx={{ fontSize: 64, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }, mb: 2 }} />
+                <Typography variant="h6" sx={{ mb: 1, ...darkThemeStyles?.typography?.secondary || { color: '#a0aec0' } }}>
+                  No API Keys Found
+                </Typography>
+                <Typography variant="body2" sx={darkThemeStyles?.typography?.secondary || { color: '#a0aec0' }}>
+                  API keys are automatically generated when you create Promethios Native Agents
+                </Typography>
+              </Box>
+            </>
           ) : (
-            <List>
+            <>
+              {console.log('🔑 RENDER: apiKeys.length is', apiKeys.length, 'current apiKeys:', apiKeys)}
+              <List>
               {apiKeys.map((key, index) => (
                 <React.Fragment key={key.keyId}>
                   <ListItem sx={{ py: 2 }}>
