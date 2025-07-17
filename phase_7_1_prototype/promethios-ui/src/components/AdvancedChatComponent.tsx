@@ -359,7 +359,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
-  const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems' | 'promethios-native'>('single');
+  const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems' | 'promethios-native'>('promethios-native');
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<AgentProfile[]>([]);
   const [availableSystems, setAvailableSystems] = useState<ChatSystemInfo[]>([]);
@@ -1467,19 +1467,31 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           
           // Set first agent as selected if available and load appropriate chat history
           if (realAgents.length > 0 && !selectedAgent) {
-            console.log('Setting first agent as selected:', realAgents[0]);
-            setSelectedAgent(realAgents[0]);
+            // Prioritize Promethios agents when in promethios-native mode
+            let defaultAgent = realAgents[0];
+            if (chatMode === 'promethios-native') {
+              const prometheosAgent = realAgents.find(agent => 
+                agent.identity.name.toLowerCase().includes('promethios') || 
+                agent.identity.id.includes('promethios-llm')
+              );
+              if (prometheosAgent) {
+                defaultAgent = prometheosAgent;
+              }
+            }
+            
+            console.log('Setting first agent as selected:', defaultAgent);
+            setSelectedAgent(defaultAgent);
             
             // 📊 Initialize metrics for test agent
-            console.log('🧪 Initializing metrics for test agent:', realAgents[0].identity.id);
+            console.log('🧪 Initializing metrics for test agent:', defaultAgent.identity.id);
             // Note: agentMetrics hook will auto-update when selectedAgent changes
             
-            // 🔧 CHAT HISTORY FIX: Only load single-agent history when in single-agent mode
-            if (chatMode === 'single') {
-              console.log('🔧 CHAT MODE: Loading single-agent chat history for:', realAgents[0].identity.name);
+            // 🔧 CHAT HISTORY FIX: Only load single-agent history when in single-agent or promethios-native mode
+            if (chatMode === 'single' || chatMode === 'promethios-native') {
+              console.log('🔧 CHAT MODE: Loading single-agent chat history for:', defaultAgent.identity.name);
               
               // Load existing chat history for this agent
-              const chatHistory = await chatStorageService.loadAgentChatHistory(realAgents[0].identity.id);
+              const chatHistory = await chatStorageService.loadAgentChatHistory(defaultAgent.identity.id);
               
               if (chatHistory && chatHistory.messages.length > 0) {
                 // Load existing conversation and sort by timestamp (oldest first)
@@ -3120,31 +3132,6 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
         {!isDeployedAgent && (
         <ModeToggleContainer>
           <ModeButton
-            active={chatMode === 'single'}
-            onClick={() => {
-              setChatMode('single');
-              setIsMultiAgentMode(false);
-              setSelectedSystem(null);
-              setCurrentChatSession(null);
-            }}
-            startIcon={<PersonIcon />}
-          >
-            SINGLE AGENT
-          </ModeButton>
-          <ModeButton
-            active={chatMode === 'saved-systems'}
-            onClick={() => {
-              setChatMode('saved-systems');
-              setIsMultiAgentMode(false);
-              setSelectedAgent(null);
-              setSelectedAgents([]);
-              loadAvailableSystems();
-            }}
-            startIcon={<GroupIcon />}
-          >
-            MULTI-AGENT
-          </ModeButton>
-          <ModeButton
             active={chatMode === 'promethios-native'}
             onClick={() => {
               setChatMode('promethios-native');
@@ -3181,12 +3168,37 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
               PROMETHIOS NATIVE
             </Box>
           </ModeButton>
+          <ModeButton
+            active={chatMode === 'single'}
+            onClick={() => {
+              setChatMode('single');
+              setIsMultiAgentMode(false);
+              setSelectedSystem(null);
+              setCurrentChatSession(null);
+            }}
+            startIcon={<PersonIcon />}
+          >
+            SINGLE AGENT
+          </ModeButton>
+          <ModeButton
+            active={chatMode === 'saved-systems'}
+            onClick={() => {
+              setChatMode('saved-systems');
+              setIsMultiAgentMode(false);
+              setSelectedAgent(null);
+              setSelectedAgents([]);
+              loadAvailableSystems();
+            }}
+            startIcon={<GroupIcon />}
+          >
+            MULTI-AGENT
+          </ModeButton>
         </ModeToggleContainer>
         )}
 
                 {/* Agent/System Selection */}
         <Box sx={{ p: 2, backgroundColor: DARK_THEME.surface, borderBottom: `1px solid ${DARK_THEME.border}`, position: 'relative', zIndex: 1000 }}>
-          {chatMode === 'single' ? (
+          {chatMode === 'single' || chatMode === 'promethios-native' ? (
             <FormControl size="small" sx={{ minWidth: 300, zIndex: 1001 }}>
               <InputLabel sx={{ color: DARK_THEME.text.secondary }}>
                 {isDeployedAgent ? 'Deployed Agent' : 'Select Agent'}
@@ -3220,7 +3232,11 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
                   }
                 }}
               >
-                {agents.map((agent) => (
+                {(chatMode === 'promethios-native' 
+                  ? agents.filter(agent => agent.identity.name.toLowerCase().includes('promethios') || 
+                                          agent.identity.id.includes('promethios-llm'))
+                  : agents
+                ).map((agent) => (
                   <MenuItem key={agent.identity.id} value={agent.identity.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <span>{getAgentAvatar(agent)}</span>
