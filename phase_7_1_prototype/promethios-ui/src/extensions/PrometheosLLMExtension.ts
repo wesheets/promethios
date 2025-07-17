@@ -176,45 +176,45 @@ export class PrometheosLLMExtension extends Extension {
       };
       
       // Generate API key for the native agent
-            console.log(`🔑 Generating API key for native agent: ${name}`);
+      try {
+        console.log(`🔑 Generating API key for native agent: ${name}`);
         
         // Use the same simple approach as deployed agents
         const user = auth.currentUser;
         if (!user) {
           console.warn('⚠️ No authenticated user found, skipping API key generation');
-          return agentId;
-        }
-        
-        // Generate API key client-side (same as deployed agents)
-        const timestamp = Math.floor(Date.now() / 1000);
-        const cleanUserId = user.uid.replace(/[^a-zA-Z0-9]/g, '_');
-        const cleanAgentId = agentId.replace(/[^a-zA-Z0-9]/g, '_');
-        const apiKey = `promethios_${cleanUserId}_agent_${cleanAgentId}_${timestamp}`;
-        
-        console.log(`✅ Generated API key client-side: ${apiKey.substring(0, 20)}...`);
-        
-        // Store the API key directly in Firebase (same as deployed agents)
-        try {
-          const apiKeyData = {
-            id: apiKey,
-            agentId: agentId,
-            agentName: name,
-            userId: user.uid,
-            keyType: 'promethios-native',
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            lastUsed: null,
-            usageCount: 0
-          };
+        } else {
+          // Generate API key client-side (same as deployed agents)
+          const timestamp = Math.floor(Date.now() / 1000);
+          const cleanUserId = user.uid.replace(/[^a-zA-Z0-9]/g, '_');
+          const cleanAgentId = agentId.replace(/[^a-zA-Z0-9]/g, '_');
+          const apiKey = `promethios_${cleanUserId}_agent_${cleanAgentId}_${timestamp}`;
           
-          // Store in Firebase using the same pattern as existing keys
-          const keyDocRef = doc(db, 'agents', `api-key-${user.uid}_${agentId}`);
-          await setDoc(keyDocRef, apiKeyData);
+          console.log(`✅ Generated API key client-side: ${apiKey.substring(0, 20)}...`);
           
-          console.log(`✅ API key stored successfully in Firebase`);
-        } catch (error) {
-          console.warn('⚠️ Failed to store API key in Firebase:', error);
-          // Continue anyway - the agent can still be created
+          // Store the API key directly in Firebase (same as deployed agents)
+          try {
+            const apiKeyData = {
+              id: apiKey,
+              agentId: agentId,
+              agentName: name,
+              userId: user.uid,
+              keyType: 'promethios-native',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              lastUsed: null,
+              usageCount: 0
+            };
+            
+            // Store in Firebase using the same pattern as existing keys
+            const keyDocRef = doc(db, 'agents', `api-key-${user.uid}_${agentId}`);
+            await setDoc(keyDocRef, apiKeyData);
+            
+            console.log(`✅ API key stored successfully in Firebase`);
+          } catch (error) {
+            console.warn('⚠️ Failed to store API key in Firebase:', error);
+            // Continue anyway - the agent can still be created
+          }
         }
       } catch (error) {
         console.warn('⚠️ API key generation failed, continuing without it:', error);
