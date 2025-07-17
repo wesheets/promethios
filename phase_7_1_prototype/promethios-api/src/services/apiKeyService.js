@@ -21,49 +21,66 @@ class ApiKeyService {
    * Format: pm-{agentType}-{timestamp}-{randomString}
    */
   async generatePrometheosApiKey(agentId, agentName, userId) {
-    const timestamp = Date.now();
-    const randomBytes = crypto.randomBytes(16).toString('hex');
-    const agentType = 'native'; // For native Promethios agents
+    console.log(`🔑 Starting API key generation for agent: ${agentName} (${agentId}), user: ${userId}`);
     
-    const apiKey = `pm-${agentType}-${timestamp}-${randomBytes}`;
-    
-    const keyData = {
-      key: apiKey,
-      agentId,
-      agentName,
-      userId,
-      type: 'promethios-native',
-      createdAt: new Date().toISOString(),
-      lastUsed: null,
-      status: 'active',
-      permissions: ['chat', 'governance', 'constitutional-compliance'],
-      rateLimit: {
-        requestsPerMinute: 100,
-        requestsPerHour: 1000
-      }
-    };
-
     try {
+      const timestamp = Date.now();
+      const randomBytes = crypto.randomBytes(16).toString('hex');
+      const agentType = 'native'; // For native Promethios agents
+      
+      const apiKey = `pm-${agentType}-${timestamp}-${randomBytes}`;
+      console.log(`🔑 Generated API key: ${apiKey.substring(0, 20)}...`);
+      
+      const keyData = {
+        key: apiKey,
+        agentId,
+        agentName,
+        userId,
+        type: 'promethios-native',
+        createdAt: new Date().toISOString(),
+        lastUsed: null,
+        status: 'active',
+        permissions: ['chat', 'governance', 'constitutional-compliance'],
+        rateLimit: {
+          requestsPerMinute: 100,
+          requestsPerHour: 1000
+        }
+      };
+      
+      console.log(`🔑 Prepared key data:`, { ...keyData, key: `${keyData.key.substring(0, 20)}...` });
+
       // Store the key in Firestore
+      console.log(`🔑 Storing key in apiKeys collection...`);
       await this.apiKeysCollection.doc(apiKey).set(keyData);
+      console.log(`🔑 Key stored successfully in apiKeys collection`);
       
       // Add to user's key list
+      console.log(`🔑 Adding key to user's key list...`);
       const userKeysRef = this.userKeysCollection.doc(userId);
       const userKeysDoc = await userKeysRef.get();
       
       if (userKeysDoc.exists) {
+        console.log(`🔑 User has existing keys, updating list...`);
         const userData = userKeysDoc.data();
         const updatedKeys = [...(userData.keys || []), keyData];
         await userKeysRef.update({ keys: updatedKeys });
+        console.log(`🔑 User key list updated successfully`);
       } else {
+        console.log(`🔑 Creating new user key list...`);
         await userKeysRef.set({ keys: [keyData] });
+        console.log(`🔑 New user key list created successfully`);
       }
 
-      console.log(`🔑 Generated API key for agent ${agentName} (${agentId}): ${apiKey.substring(0, 20)}...`);
+      console.log(`🔑 API key generation completed successfully for agent ${agentName} (${agentId})`);
       
       return keyData;
     } catch (error) {
       console.error('🔑 Error generating API key:', error);
+      console.error('🔑 Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       throw error;
     }
   }

@@ -28,12 +28,21 @@ if (!admin.apps.length) {
   }
 }
 
-// Get Firestore instance - the database ID should be handled by the project configuration
-// Since the frontend uses promethios-oregon, we need to ensure backend uses the same
-const db = admin.firestore();
+// Get Firestore instance - explicitly use promethios-oregon database to match frontend
+// This ensures backend and frontend use the same database
+let db;
 
-console.log('🔧 Firestore Admin initialized for promethios project');
-console.log('🎯 Backend configured to use same database as frontend');
+try {
+  // Try to get the specific database instance
+  db = admin.firestore('promethios-oregon');
+  console.log('🔧 Firestore Admin configured to use promethios-oregon database');
+  console.log('🎯 Backend now uses same database as frontend');
+} catch (error) {
+  console.warn('⚠️ Could not connect to promethios-oregon database, using default:', error.message);
+  // Fallback to default database
+  db = admin.firestore();
+  console.log('🔧 Firestore Admin initialized with default database');
+}
 
 module.exports = {
   admin,
