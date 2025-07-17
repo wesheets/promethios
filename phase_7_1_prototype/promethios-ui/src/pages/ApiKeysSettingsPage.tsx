@@ -106,12 +106,11 @@ const ApiKeysSettingsPage: React.FC = () => {
       
       console.log('🔑 loadApiKeys: Querying Firebase for API keys...');
       
-      // Query Firebase for API keys belonging to this user
+      // Query Firebase for API keys belonging to this user (simplified to avoid index requirement)
       const apiKeysRef = collection(db, 'apiKeys');
       const q = query(
         apiKeysRef, 
-        where('userId', '==', currentUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', currentUser.uid)
       );
       
       const querySnapshot = await getDocs(q);
@@ -144,6 +143,9 @@ const ApiKeysSettingsPage: React.FC = () => {
       });
       
       console.log('🔑 loadApiKeys: Processed', keys.length, 'API keys:', keys);
+      
+      // Sort keys by creation date (newest first) - client-side sorting
+      keys.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       // Calculate stats
       const stats: ApiKeyStats = {
