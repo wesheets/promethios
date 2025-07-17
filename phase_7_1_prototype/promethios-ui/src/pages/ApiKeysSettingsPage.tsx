@@ -565,6 +565,7 @@ const ApiKeysSettingsPage: React.FC = () => {
                 </React.Fragment>
               ))}
             </List>
+            </>
           )}
         </CardContent>
       </Card>
