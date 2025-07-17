@@ -176,6 +176,7 @@ export class PrometheosLLMExtension extends Extension {
       };
       
       // Generate API key for the native agent
+      let apiKeyData = null;
       try {
         console.log(`🔑 Generating API key for native agent: ${name}`);
         
@@ -194,7 +195,7 @@ export class PrometheosLLMExtension extends Extension {
           
           // Store the API key directly in Firebase (same as deployed agents)
           try {
-            const apiKeyData = {
+            apiKeyData = {
               id: apiKey,
               agentId: agentId,
               agentName: name,
@@ -214,10 +215,12 @@ export class PrometheosLLMExtension extends Extension {
           } catch (error) {
             console.warn('⚠️ Failed to store API key in Firebase:', error);
             // Continue anyway - the agent can still be created
+            apiKeyData = null;
           }
         }
       } catch (error) {
         console.warn('⚠️ API key generation failed, continuing without it:', error);
+        apiKeyData = null;
       }
       
       // Create agent object
@@ -254,7 +257,7 @@ export class PrometheosLLMExtension extends Extension {
       // Create API details with generated key
       const apiDetails = apiKeyData ? {
         endpoint: 'https://api.promethios.ai/v1',
-        key: apiKeyData.key,
+        key: apiKeyData.id, // Use 'id' instead of 'key' since that's what we stored
         provider: 'promethios',
         selectedModel: 'promethios-lambda-7b',
         selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],
@@ -265,12 +268,12 @@ export class PrometheosLLMExtension extends Extension {
           type: 'native-llm',
           governance: 'built-in',
           compliance: 'constitutional',
-          apiKeyId: apiKeyData.key,
-          keyType: apiKeyData.type,
-          permissions: apiKeyData.permissions,
-          rateLimit: apiKeyData.rateLimit
+          apiKeyId: apiKeyData.id,
+          keyType: apiKeyData.keyType,
+          permissions: ['chat', 'governance', 'constitutional-compliance'],
+          rateLimit: { requestsPerMinute: 100, requestsPerHour: 1000 }
         }
-      } : NativeAgentMigration.createNativeApiDetails(name, description, apiKeyData);
+      } : NativeAgentMigration.createNativeApiDetails(name, description, null);
       
       // Convert to AgentProfile format for storage
       const agentProfile = {
