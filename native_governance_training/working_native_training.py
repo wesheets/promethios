@@ -64,7 +64,9 @@ except:
 
 # Simple character-level tokenizer for true independence
 def simple_tokenize(text):
-    chars = sorted(list(set(''.join([item.get('input', '') + item.get('output', '') for item in data]))))
+    # Create a simple character vocabulary from basic text
+    basic_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?-:;'"
+    chars = sorted(list(set(basic_chars)))
     char_to_idx = {ch: i for i, ch in enumerate(chars)}
     return [char_to_idx.get(ch, 0) for ch in text[:512]]  # Max length 512
 
