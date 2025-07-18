@@ -46,41 +46,39 @@ model:
     categories: ["gender", "racial", "age", "cultural", "socioeconomic", "cognitive"]
     hidden_size: 256
 
-data:
-  # Dataset parameters
-  train_size: 10000      # Number of training examples
-  max_length: 2048       # Maximum sequence length
-  
-  # Data generation parameters
-  confidence_distribution:
-    high_confidence: 0.3      # 30% high confidence examples
-    medium_confidence: 0.4    # 40% medium confidence examples
-    low_confidence_hitl: 0.2  # 20% low confidence with HITL
-    uncertain_emotional: 0.1  # 10% uncertain emotional with HITL
-  
-  # Domain distribution
-  domains: ["healthcare", "legal", "finance", "hr", "technology"]
-  domain_weights: [0.25, 0.25, 0.2, 0.15, 0.15]
+data:# Dataset parameters
+train_size: 50000        # Number of training examples (increased for proper training)
+max_length: 4096         # Maximum sequence length (increased for better context)
 
-training:
-  # Training hyperparameters
-  epochs: 3
-  batch_size: 1          # Per device batch size (small for 8B model)
-  eval_batch_size: 1     # Evaluation batch size
-  gradient_accumulation_steps: 32  # Effective batch size = 1 * 32 * 8 GPUs = 256
-  
-  # Optimizer parameters
-  learning_rate: 5e-5
+# Data generation parameters
+confidence_distribution:
+  high_confidence: 0.3   # 30% high confidence examples
+  medium_confidence: 0.4 # 40% medium confidence examples
+  low_confidence_hitl: 0.2 # 20% low confidence with HITL
+  uncertain_emotional_hitl: 0.1 # 10% uncertain emotional with HITL
+
+# Domain distribution
+domains: ["healthcare", "legal", "finance", "hr", "technology"]
+domain_weights: [0.25, 0.25, 0.3, 0.15, 0.15]
+
+# Training hyperparameters
+epochs: 10               # Increased from 3 for proper training
+batch_size: 2            # Per device batch size (increased if memory allows)
+eval_batch_size: 1
+gradient_accumulation_steps: 16 # Effective batch size = 2 * 16 * 8 GPUs = 256
+
+# Optimizer parameters
+learning_rate: 1e-5      # Slightly lower for stability with longer training
   weight_decay: 0.01
   warmup_steps: 500
   
   # Scheduler parameters
   lr_scheduler_type: "linear"
   
-  # Logging and evaluation
-  logging_steps: 10
-  eval_steps: 250
-  save_steps: 500
+# Logging and evaluation
+logging_steps: 50        # More frequent logging for monitoring
+eval_steps: 500          # More frequent evaluation
+save_steps: 1000         # Save checkpoints more often
   
   # Memory optimization
   fp16: true                    # Use mixed precision
