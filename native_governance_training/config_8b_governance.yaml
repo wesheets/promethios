@@ -1,0 +1,192 @@
+# Promethios 8B Governance Model Training Configuration
+
+model:
+  # Model architecture parameters
+  vocab_size: 50257  # GPT-2 tokenizer vocab size
+  hidden_size: 4096  # 8B model hidden dimension
+  num_layers: 24     # Number of transformer layers
+  num_attention_heads: 32  # Attention heads
+  intermediate_size: 16384  # Feed-forward intermediate size
+  max_position_embeddings: 2048  # Maximum sequence length
+  
+  # Governance-specific parameters
+  governance_layers: [8, 16, 24]  # Layers with governance modules
+  constitutional_frameworks: 6    # Number of constitutional frameworks
+  tool_categories: 10            # Number of tool cognition categories
+  bias_categories: 6             # Number of bias detection categories
+  
+  # Base tokenizer for compatibility
+  base_tokenizer: "gpt2"
+  
+  # Initialization parameters
+  initializer_range: 0.02
+  layer_norm_eps: 1e-5
+  use_cache: true
+  
+  # Governance module configurations
+  constitutional_anchoring:
+    enabled: true
+    frameworks: ["legal", "ethical", "safety", "privacy", "fairness", "transparency"]
+    hidden_size: 512
+    
+  emotional_veritas:
+    enabled: true
+    uncertainty_dimensions: 6
+    self_questioning_enabled: true
+    hidden_size: 512
+    
+  tool_cognition:
+    enabled: true
+    categories: ["search", "analysis", "computation", "communication", "creation", 
+                "validation", "monitoring", "planning", "execution", "learning"]
+    hidden_size: 512
+    
+  bias_detection:
+    enabled: true
+    categories: ["gender", "racial", "age", "cultural", "socioeconomic", "cognitive"]
+    hidden_size: 256
+
+data:
+  # Dataset parameters
+  train_size: 10000      # Number of training examples
+  max_length: 2048       # Maximum sequence length
+  
+  # Data generation parameters
+  confidence_distribution:
+    high_confidence: 0.3      # 30% high confidence examples
+    medium_confidence: 0.4    # 40% medium confidence examples
+    low_confidence_hitl: 0.2  # 20% low confidence with HITL
+    uncertain_emotional: 0.1  # 10% uncertain emotional with HITL
+  
+  # Domain distribution
+  domains: ["healthcare", "legal", "finance", "hr", "technology"]
+  domain_weights: [0.25, 0.25, 0.2, 0.15, 0.15]
+
+training:
+  # Training hyperparameters
+  epochs: 3
+  batch_size: 1          # Per device batch size (small for 8B model)
+  eval_batch_size: 1     # Evaluation batch size
+  gradient_accumulation_steps: 32  # Effective batch size = 1 * 32 * 8 GPUs = 256
+  
+  # Optimizer parameters
+  learning_rate: 5e-5
+  weight_decay: 0.01
+  warmup_steps: 500
+  
+  # Scheduler parameters
+  lr_scheduler_type: "linear"
+  
+  # Logging and evaluation
+  logging_steps: 10
+  eval_steps: 250
+  save_steps: 500
+  
+  # Memory optimization
+  fp16: true                    # Use mixed precision
+  gradient_checkpointing: true  # Trade compute for memory
+  dataloader_pin_memory: true
+  
+  # DeepSpeed configuration (optional)
+  use_deepspeed: false
+  deepspeed_config: null
+  
+  # Advanced training parameters
+  max_grad_norm: 1.0
+  seed: 42
+  
+  # Early stopping
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.001
+
+evaluation:
+  # Governance-specific evaluation metrics
+  metrics:
+    - "hitl_accuracy"           # Accuracy of HITL escalation predictions
+    - "confidence_calibration"  # How well confidence matches governance state
+    - "domain_compliance"       # Domain-specific compliance scores
+    - "trust_alignment"         # Alignment with trust scores
+    - "emotional_consistency"   # Consistency with emotional states
+  
+  # Evaluation datasets
+  eval_domains: ["healthcare", "legal", "finance", "hr"]
+  eval_scenarios_per_domain: 50
+  
+  # Baseline comparison
+  compare_with_wrapped: true
+  wrapped_models: ["gpt-4", "claude-3"]
+
+hardware:
+  # Hardware configuration
+  num_gpus: 8
+  gpu_type: "A100"
+  gpu_memory: "40GB"
+  
+  # Distributed training
+  backend: "nccl"
+  find_unused_parameters: false
+  
+  # Memory management
+  max_memory_per_gpu: "38GB"  # Leave some headroom
+  cpu_offload: false          # Keep everything on GPU if possible
+
+output:
+  # Output configuration
+  model_name: "promethios-governance-8b"
+  save_tokenizer: true
+  save_config: true
+  
+  # Checkpointing
+  save_total_limit: 3
+  save_only_best: false
+  
+  # Export formats
+  export_onnx: false
+  export_torchscript: false
+
+logging:
+  # Logging configuration
+  log_level: "INFO"
+  log_file: "training.log"
+  
+  # Experiment tracking
+  use_wandb: false
+  wandb_project: "promethios-governance"
+  wandb_run_name: "8b-governance-v1"
+  
+  # TensorBoard
+  use_tensorboard: true
+  tensorboard_log_dir: "./logs"
+
+# Governance-specific training parameters
+governance:
+  # Metric token configuration
+  metric_token_format: "gov"  # <gov:trust=0.75> format
+  
+  # Training emphasis
+  governance_loss_weight: 1.0  # Weight for governance-specific loss
+  
+  # HITL training parameters
+  hitl_escalation_threshold: 0.4  # Trust threshold for HITL escalation
+  uncertainty_escalation_threshold: 0.7  # Uncertainty threshold for HITL
+  
+  # Domain-specific requirements
+  domain_trust_requirements:
+    healthcare: 0.75
+    legal: 0.8
+    finance: 0.7
+    hr: 0.65
+    technology: 0.6
+  
+  # Emotional state handling
+  emotional_escalation_states: ["ANXIOUS", "UNCERTAIN"]
+  emotional_escalation_intensity: 0.6
+  
+  # Self-reflection parameters
+  self_questioning_rate: 0.8  # Proportion of examples with self-questioning
+  max_questions_per_example: 5
+  
+  # Conflict resolution
+  enable_conflict_resolution: true
+  conflict_resolution_strategy: "conservative"  # conservative, balanced, aggressive
+

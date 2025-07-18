@@ -22,7 +22,12 @@ import time
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
-import wandb
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+    print("⚠️  wandb not available - training will proceed without experiment tracking")
 from transformers import AutoTokenizer
 import yaml
 
@@ -132,7 +137,7 @@ class GovernanceTrainer:
         self._setup_data()
         
         # Initialize monitoring
-        if self.config.get('use_wandb', True) and dist.get_rank() == 0:
+        if self.config.get('use_wandb', True) and dist.get_rank() == 0 and WANDB_AVAILABLE:
             wandb.init(
                 project="governance-sentinel-13b",
                 config=config,
@@ -296,7 +301,7 @@ class GovernanceTrainer:
                 )
                 
                 # Log to wandb
-                if self.config.get('use_wandb', True) and dist.get_rank() == 0:
+                if self.config.get('use_wandb', True) and dist.get_rank() == 0 and WANDB_AVAILABLE:
                     wandb.log({
                         'train_loss': loss.item(),
                         'avg_train_loss': avg_loss,
