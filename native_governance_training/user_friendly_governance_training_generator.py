@@ -497,7 +497,7 @@ def main():
         print(f"Tone: {response_data['tone']}")
     
     # Generate sample dataset
-    dataset = generator.generate_training_dataset(1000)
+    dataset = generator.generate_training_dataset(50000)
     print(f"\n📊 Generated {len(dataset)} training examples:")
     print(f"   High confidence: {sum(1 for ex in dataset if ex['training_metadata']['response_category'] == 'high_confidence')}")
     print(f"   Medium confidence: {sum(1 for ex in dataset if ex['training_metadata']['response_category'] == 'medium_confidence')}")
