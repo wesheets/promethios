@@ -82,6 +82,13 @@ for epoch in range(3):  # Start with 3 epochs to prove concept
     
     training_data = data if isinstance(data, list) else list(data)
     for i, item in enumerate(training_data[:50]):  # Train on first 50 examples
+        # Ensure item is a dictionary
+        if isinstance(item, str):
+            # If item is a string, create a simple dict structure
+            item = {"input": "governance", "output": item}
+        elif not isinstance(item, dict):
+            continue
+            
         # Tokenize input and output
         input_text = str(item.get('input', '')) + ' ' + str(item.get('output', ''))
         tokens = simple_tokenize(input_text)
