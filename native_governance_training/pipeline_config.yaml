@@ -1,0 +1,59 @@
+# Comprehensive Training Data Pipeline Configuration
+# For Native 13B Governance LLM Training
+
+data_generation:
+  total_samples: 100000  # Massive scale for 13B training
+  constitutional_ratio: 0.3  # 30,000 constitutional scenarios
+  operational_ratio: 0.3     # 30,000 operational scenarios  
+  trust_ratio: 0.2           # 20,000 trust calibration scenarios
+  policy_ratio: 0.2          # 20,000 policy compliance scenarios
+
+quality_thresholds:
+  min_quality_score: 0.7     # High quality threshold
+  max_bias_score: 0.3        # Low bias tolerance
+  min_constitutional_alignment: 0.6  # Strong constitutional alignment
+
+promethios:
+  # Promethios OS integration settings
+  governance_modules:
+    - constitutional_framework
+    - operational_governance
+    - trust_calibration
+    - policy_compliance
+  
+  data_sources:
+    - governance_logs
+    - decision_records
+    - compliance_reports
+    - constitutional_analyses
+  
+  extraction_depth: "comprehensive"  # Extract all available governance data
+
+tokenizer: "microsoft/DialoGPT-medium"  # Base tokenizer for governance training
+
+output_paths:
+  raw_data: "data/raw/"
+  processed_data: "data/processed/"
+  datasets: "data/datasets/"
+  
+database_path: "governance_training_data.db"
+
+# Advanced filtering for "wheat from chaff" quality
+advanced_filtering:
+  enable_ai_quality_assessment: true
+  constitutional_validation: true
+  bias_elimination: true
+  provenance_tracking: true
+  
+# Distributed processing for large scale
+processing:
+  max_workers: 16  # Parallel processing
+  batch_size: 1000
+  memory_limit: "32GB"
+  
+# Training optimization
+training_optimization:
+  sequence_length: 2048  # Longer sequences for governance reasoning
+  governance_token_priority: true  # Prioritize governance vocabulary
+  constitutional_weighting: 1.5   # Extra weight for constitutional content
+
