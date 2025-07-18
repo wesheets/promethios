@@ -80,9 +80,10 @@ for epoch in range(3):  # Start with 3 epochs to prove concept
     total_loss = 0
     num_batches = 0
     
-    for i, item in enumerate(data[:50]):  # Train on first 50 examples
+    training_data = data if isinstance(data, list) else list(data)
+    for i, item in enumerate(training_data[:50]):  # Train on first 50 examples
         # Tokenize input and output
-        input_text = item.get('input', '') + ' ' + item.get('output', '')
+        input_text = str(item.get('input', '')) + ' ' + str(item.get('output', ''))
         tokens = simple_tokenize(input_text)
         
         if len(tokens) < 2:
@@ -105,7 +106,7 @@ for epoch in range(3):  # Start with 3 epochs to prove concept
         if i % 10 == 0:
             print(f"Epoch {epoch+1}, Step {i}, Loss: {loss.item():.4f}")
     
-    avg_loss = total_loss / max(num_batches, 1)
+    avg_loss = total_loss / max(len(training_data[:50]), 1)
     print(f"✅ Epoch {epoch+1} complete, Average Loss: {avg_loss:.4f}")
 
 print("🎉 NATIVE GOVERNANCE TRAINING COMPLETE!")
