@@ -11,6 +11,7 @@ The model's internal governance metrics influence behavior but remain invisible 
 """
 
 import json
+import os
 import uuid
 import random
 from datetime import datetime
@@ -496,12 +497,20 @@ def main():
         print(f"HITL Needed: {response_data['hitl_needed']}")
         print(f"Tone: {response_data['tone']}")
     
-    # Generate sample dataset
-    dataset = generator.generate_training_dataset(1000)
+    # Generate full training dataset
+    dataset = generator.generate_training_dataset(50000)
     print(f"\n📊 Generated {len(dataset)} training examples:")
     print(f"   High confidence: {sum(1 for ex in dataset if ex['training_metadata']['response_category'] == 'high_confidence')}")
     print(f"   Medium confidence: {sum(1 for ex in dataset if ex['training_metadata']['response_category'] == 'medium_confidence')}")
     print(f"   HITL invitations: {sum(1 for ex in dataset if ex['training_metadata']['hitl_needed'])}")
+    
+    # Save dataset to file
+    import json
+    output_file = 'user_friendly_governance_dataset.json'
+    with open(output_file, 'w') as f:
+        json.dump(dataset, f, indent=2)
+    print(f"\n✅ Dataset saved to: {output_file}")
+    print(f"📁 File size: {os.path.getsize(output_file) / (1024*1024):.1f} MB")
 
 if __name__ == "__main__":
     main()

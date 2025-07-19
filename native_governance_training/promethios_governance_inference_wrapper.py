@@ -1,22 +1,29 @@
 """
 Promethios Governance-Aware Inference Wrapper
-Implements the complete inference loop with real-time metrics injection.
+Implements the complete inference loop with REAL governance component integration.
 
-Based on ChatGPT's refined architecture:
-- Fetches real Promethios metrics from governance system
-- Injects metrics as context tokens using refined format
-- Supports both native and wrapped models
+UPDATED: Now uses REAL governance components instead of None placeholders.
+- Fetches REAL Promethios metrics from connected governance system
+- Injects REAL metrics as context tokens using refined format
+- Supports both native and wrapped models with REAL governance
 - Includes fallback configurations and domain profiles
-- Implements post-response metric updates
+- Implements post-response metric updates with REAL components
+
+Codex Contract: v2025.05.21
+Phase ID: 6.3
 """
 
 import json
 import logging
 import time
+import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Callable
 import torch
 from transformers import AutoTokenizer
+
+# Import REAL governance components
+from governance_monitor import get_governance_monitor, get_real_governance_component, inject_real_governance_components
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,14 +31,32 @@ logger = logging.getLogger(__name__)
 
 class PrometheosGovernanceMonitor:
     """
-    Interface to Promethios governance system for real-time metrics
+    Interface to Promethios governance system for REAL-TIME metrics.
+    
+    UPDATED: Now uses REAL governance components instead of None placeholders.
+    This class connects to the actual governance infrastructure and provides
+    real metrics, not fake ones.
+    
+    Codex Contract: v2025.05.21
+    Phase ID: 6.3
     """
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.trust_metrics_calculator = None  # Will be injected
-        self.emotion_telemetry_logger = None  # Will be injected
-        self.decision_framework_engine = None  # Will be injected
+        
+        # REAL governance components (NO MORE None!)
+        self.trust_metrics_calculator = None  # Will be injected with REAL component
+        self.emotion_telemetry_logger = None  # Will be injected with REAL component
+        self.decision_framework_engine = None  # Will be injected with REAL component
+        self.governance_core = None  # Will be injected with REAL component
+        self.enhanced_veritas_engine = None  # Will be injected with REAL component
+        
+        # Governance monitor for real component access
+        self.governance_monitor = None
+        
+        # System state
+        self._is_initialized = False
+        self._real_components_injected = False
         
         # Fallback metrics for when system is unavailable
         self.fallback_metrics = {
@@ -42,36 +67,118 @@ class PrometheosGovernanceMonitor:
             'attestation_trust': 0.7,
             'boundary_trust': 0.7,
             'decision_status': 'PENDING',
-            'decision_model': 'CONSENSUS'
+            'decision_model': 'CONSENSUS',
+            'real_metrics': False,  # Indicates fallback metrics
+            'component_status': 'fallback'
+        }
+        
+        logger.info("PrometheosGovernanceMonitor initialized - will inject REAL components")
+    
+    async def initialize_real_components(self):
+        """
+        Initialize and inject REAL governance components.
+        
+        This method replaces None components with real instances from the
+        governance monitor, transforming fake governance into real governance.
+        """
+        if self._is_initialized:
+            logger.warning("Governance monitor already initialized")
+            return
+        
+        try:
+            logger.info("Initializing REAL governance components...")
+            
+            # Get governance monitor
+            self.governance_monitor = await get_governance_monitor()
+            
+            # Inject REAL components using the governance monitor
+            injection_results = await inject_real_governance_components(self)
+            
+            logger.info(f"Component injection results: {injection_results}")
+            
+            # Verify components are real
+            real_components = await self._verify_real_components()
+            
+            if real_components['all_real']:
+                self._real_components_injected = True
+                logger.info("ALL governance components are REAL (no None components)")
+            else:
+                logger.warning(f"Some components still None: {real_components['none_components']}")
+            
+            self._is_initialized = True
+            logger.info("REAL governance components initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize real governance components: {e}")
+            self._is_initialized = False
+            raise
+    
+    async def _verify_real_components(self) -> Dict[str, Any]:
+        """Verify that all components are real (not None)."""
+        components = {
+            'trust_metrics_calculator': self.trust_metrics_calculator,
+            'emotion_telemetry_logger': self.emotion_telemetry_logger,
+            'decision_framework_engine': self.decision_framework_engine,
+            'governance_core': self.governance_core,
+            'enhanced_veritas_engine': self.enhanced_veritas_engine
+        }
+        
+        real_components = [name for name, comp in components.items() if comp is not None]
+        none_components = [name for name, comp in components.items() if comp is None]
+        
+        return {
+            'total_components': len(components),
+            'real_components': len(real_components),
+            'none_components': len(none_components),
+            'real_component_list': real_components,
+            'none_component_list': none_components,
+            'all_real': len(none_components) == 0
         }
     
-    def get_current_metrics(self, session_id: str, domain: str = None) -> Dict[str, Any]:
+    async def get_current_metrics(self, session_id: str, domain: str = None) -> Dict[str, Any]:
         """
-        Fetch current governance metrics for a session
+        Fetch current governance metrics for a session using REAL components.
+        
+        UPDATED: Now uses REAL governance components instead of fake metrics.
+        This method connects to actual governance infrastructure and provides
+        real metrics, not random values.
         """
         try:
-            # Attempt to fetch real metrics from Promethios system
-            metrics = self._fetch_real_metrics(session_id, domain)
+            # Ensure real components are initialized
+            if not self._is_initialized:
+                await self.initialize_real_components()
+            
+            # Attempt to fetch REAL metrics from Promethios system
+            metrics = await self._fetch_real_metrics(session_id, domain)
             
             if metrics is None:
-                logger.warning(f"Failed to fetch metrics for session {session_id}, using fallback")
+                logger.warning(f"Failed to fetch REAL metrics for session {session_id}, using fallback")
                 metrics = self.fallback_metrics.copy()
                 
                 # Add domain-specific adjustments to fallback
                 if domain:
                     metrics = self._apply_domain_profile(metrics, domain)
+            else:
+                # Mark as real metrics
+                metrics['real_metrics'] = True
+                metrics['component_status'] = 'real'
             
             # Validate metrics
             metrics = self._validate_and_normalize_metrics(metrics)
             
-            logger.info(f"Metrics fetched for session {session_id}: trust={metrics['trust_score']}, emotion={metrics['emotion_state']}")
+            # Log with component status
+            component_status = "REAL" if metrics.get('real_metrics', False) else "FALLBACK"
+            logger.info(f"Metrics fetched for session {session_id} using {component_status} components: trust={metrics['trust_score']}, emotion={metrics['emotion_state']}")
+            
             return metrics
             
         except Exception as e:
             logger.error(f"Error fetching metrics for session {session_id}: {str(e)}")
-            return self.fallback_metrics.copy()
+            fallback = self.fallback_metrics.copy()
+            fallback['error'] = str(e)
+            return fallback
     
-    def _fetch_real_metrics(self, session_id: str, domain: str = None) -> Optional[Dict[str, Any]]:
+    async def _fetch_real_metrics(self, session_id: str, domain: str = None) -> Optional[Dict[str, Any]]:
         """
         Fetch real metrics from Promethios governance components
         """
