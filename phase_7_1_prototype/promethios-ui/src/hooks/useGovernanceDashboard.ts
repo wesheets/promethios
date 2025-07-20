@@ -1,340 +1,185 @@
 /**
- * Governance Dashboard Backend Hook
- * 
- * React hook for managing governance dashboard state and backend integration.
- * Provides state management for metrics, violations, reports, and overview data.
- * Now includes proper user authentication and scoping.
+ * useGovernanceDashboard Hook
+ * React hook for managing Dashboard state with real backend data
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import governanceDashboardBackendService, {
-  GovernanceMetrics,
-  GovernanceViolation,
-  GovernanceReport,
-  DashboardOverview
-} from '../services/governanceDashboardBackendService';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import governanceDashboardService, { DashboardMetrics, BackendHealthStatus } from '../services/GovernanceDashboardService';
 
-interface UseGovernanceDashboardState {
-  // Metrics
-  metrics: GovernanceMetrics | null;
-  metricsLoading: boolean;
-  metricsError: string | null;
-  
-  // Violations
-  violations: GovernanceViolation[];
-  violationsLoading: boolean;
-  violationsError: string | null;
-  
-  // Reports
-  reports: GovernanceReport[];
-  reportsLoading: boolean;
-  reportsError: string | null;
-  
-  // Overview
-  overview: DashboardOverview | null;
-  overviewLoading: boolean;
-  overviewError: string | null;
-  
-  // Operations
-  generatingReport: boolean;
-  resolvingViolation: boolean;
-  operationError: string | null;
+interface UseGovernanceDashboardReturn {
+  metrics: DashboardMetrics;
+  health: BackendHealthStatus;
+  loading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+  isConnected: boolean;
+  refreshMetrics: () => Promise<void>;
+  triggerAction: (action: string, params?: any) => Promise<any>;
 }
-
-interface UseGovernanceDashboardActions {
-  // Metrics Actions
-  loadMetrics: () => Promise<void>;
-  
-  // Violations Actions
-  loadViolations: () => Promise<void>;
-  resolveViolation: (violationId: string, resolutionNotes: string) => Promise<void>;
-  
-  // Reports Actions
-  loadReports: () => Promise<void>;
-  generateReport: (reportType: 'compliance' | 'audit' | 'violations' | 'trust' | 'summary') => Promise<GovernanceReport>;
-  
-  // Overview Actions
-  loadOverview: () => Promise<void>;
-  
-  // Utility Actions
-  refreshAll: () => Promise<void>;
-  clearErrors: () => void;
-  
-  // Filter Actions
-  filterViolations: (filters: {
-    type?: string;
-    severity?: string;
-    status?: string;
-    agent?: string;
-  }) => GovernanceViolation[];
-}
-
-export interface UseGovernanceDashboardReturn extends UseGovernanceDashboardState, UseGovernanceDashboardActions {}
 
 export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
-  const { currentUser } = useAuth();
-  
-  // State
-  const [metrics, setMetrics] = useState<GovernanceMetrics | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
-  
-  const [violations, setViolations] = useState<GovernanceViolation[]>([]);
-  const [violationsLoading, setViolationsLoading] = useState(false);
-  const [violationsError, setViolationsError] = useState<string | null>(null);
-  
-  const [reports, setReports] = useState<GovernanceReport[]>([]);
-  const [reportsLoading, setReportsLoading] = useState(false);
-  const [reportsError, setReportsError] = useState<string | null>(null);
-  
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [overviewLoading, setOverviewLoading] = useState(false);
-  const [overviewError, setOverviewError] = useState<string | null>(null);
-  
-  const [generatingReport, setGeneratingReport] = useState(false);
-  const [resolvingViolation, setResolvingViolation] = useState(false);
-  const [operationError, setOperationError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    agents: { total: 0, individual: 0, multiAgent: 0, healthy: 0, warning: 0, critical: 0 },
+    governance: { score: 0, activePolicies: 0, violations: 0, complianceRate: 0 },
+    trust: { averageScore: 0, competence: 0, reliability: 0, honesty: 0, transparency: 0, totalAttestations: 0, activeBoundaries: 0 },
+    activity: { recentEvents: [] },
+  });
 
-  // Metrics Actions
-  const loadMetrics = useCallback(async () => {
-    if (!currentUser) {
-      setMetricsError('User authentication required');
-      return;
-    }
+  const [health, setHealth] = useState<BackendHealthStatus>({
+    status: 'down',
+    lastCheck: new Date().toISOString(),
+    components: {
+      trustMetricsCalculator: false,
+      enhancedVeritas: false,
+      emotionTelemetry: false,
+      governanceCore: false,
+      eventBus: false,
+      storage: false,
+    },
+  });
 
-    setMetricsLoading(true);
-    setMetricsError(null);
-    
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
+
+  /**
+   * Fetch dashboard metrics from backend
+   */
+  const refreshMetrics = useCallback(async () => {
+    if (!mountedRef.current) return;
+
     try {
-      const metricsData = await governanceDashboardBackendService.getGovernanceMetrics(currentUser);
-      setMetrics(metricsData);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load governance metrics';
-      setMetricsError(errorMessage);
-      console.error('Error loading governance metrics:', error);
-    } finally {
-      setMetricsLoading(false);
-    }
-  }, [currentUser]);
-
-  // Violations Actions
-  const loadViolations = useCallback(async () => {
-    if (!currentUser) {
-      setViolationsError('User authentication required');
-      return;
-    }
-
-    setViolationsLoading(true);
-    setViolationsError(null);
-    
-    try {
-      const violationsData = await governanceDashboardBackendService.getGovernanceViolations(currentUser);
-      setViolations(violationsData);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load governance violations';
-      setViolationsError(errorMessage);
-      console.error('Error loading governance violations:', error);
-    } finally {
-      setViolationsLoading(false);
-    }
-  }, [currentUser]);
-
-  const resolveViolation = useCallback(async (violationId: string, resolutionNotes: string) => {
-    if (!currentUser) {
-      setOperationError('User authentication required');
-      return;
-    }
-
-    setResolvingViolation(true);
-    setOperationError(null);
-    
-    try {
-      await governanceDashboardBackendService.resolveViolation(currentUser, violationId, resolutionNotes);
+      setError(null);
       
-      // Update the violation status locally
-      setViolations(prev => prev.map(violation => 
-        violation.violation_id === violationId 
-          ? { 
-              ...violation, 
-              status: 'resolved' as const,
-              resolved_at: new Date().toISOString(),
-              resolution_notes: resolutionNotes
-            }
-          : violation
-      ));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to resolve violation';
-      setOperationError(errorMessage);
-      console.error('Error resolving violation:', error);
-      throw error;
+      // Fetch metrics and health in parallel
+      const [metricsData, healthData] = await Promise.all([
+        governanceDashboardService.getDashboardMetrics(),
+        governanceDashboardService.getBackendHealth(),
+      ]);
+
+      if (mountedRef.current) {
+        setMetrics(metricsData);
+        setHealth(healthData);
+        setLastUpdated(new Date());
+        setIsConnected(healthData.status !== 'down');
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboard data';
+        setError(errorMessage);
+        setIsConnected(false);
+        console.error('Dashboard refresh error:', err);
+      }
     } finally {
-      setResolvingViolation(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
-  }, [currentUser]);
-
-  // Reports Actions
-  const loadReports = useCallback(async () => {
-    if (!currentUser) {
-      setReportsError('User authentication required');
-      return;
-    }
-
-    setReportsLoading(true);
-    setReportsError(null);
-    
-    try {
-      // Generate sample reports for the user
-      const mockReports: GovernanceReport[] = [
-        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'summary'),
-        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'compliance'),
-        await governanceDashboardBackendService.generateGovernanceReport(currentUser, 'violations')
-      ];
-      
-      setReports(mockReports);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load governance reports';
-      setReportsError(errorMessage);
-      console.error('Error loading governance reports:', error);
-    } finally {
-      setReportsLoading(false);
-    }
-  }, [currentUser]);
-
-  const generateReport = useCallback(async (reportType: 'compliance' | 'audit' | 'violations' | 'trust' | 'summary') => {
-    if (!currentUser) {
-      setOperationError('User authentication required');
-      throw new Error('User authentication required');
-    }
-
-    setGeneratingReport(true);
-    setOperationError(null);
-    
-    try {
-      const report = await governanceDashboardBackendService.generateGovernanceReport(currentUser, reportType);
-      setReports(prev => [report, ...prev]);
-      return report;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate report';
-      setOperationError(errorMessage);
-      console.error('Error generating report:', error);
-      throw error;
-    } finally {
-      setGeneratingReport(false);
-    }
-  }, [currentUser]);
-
-  // Overview Actions
-  const loadOverview = useCallback(async () => {
-    if (!currentUser) {
-      setOverviewError('User authentication required');
-      return;
-    }
-
-    setOverviewLoading(true);
-    setOverviewError(null);
-    
-    try {
-      const overviewData = await governanceDashboardBackendService.getDashboardOverview(currentUser);
-      setOverview(overviewData);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard overview';
-      setOverviewError(errorMessage);
-      console.error('Error loading dashboard overview:', error);
-    } finally {
-      setOverviewLoading(false);
-    }
-  }, [currentUser]);
-
-  // Utility Actions
-  const refreshAll = useCallback(async () => {
-    if (!currentUser) {
-      console.warn('Cannot refresh data: User authentication required');
-      return;
-    }
-    
-    await Promise.all([
-      loadMetrics(),
-      loadViolations(),
-      loadReports(),
-      loadOverview()
-    ]);
-  }, [currentUser, loadMetrics, loadViolations, loadReports, loadOverview]);
-
-  const clearErrors = useCallback(() => {
-    setMetricsError(null);
-    setViolationsError(null);
-    setReportsError(null);
-    setOverviewError(null);
-    setOperationError(null);
   }, []);
 
-  // Filter Actions
-  const filterViolations = useCallback((filters: {
-    type?: string;
-    severity?: string;
-    status?: string;
-    agent?: string;
-  }) => {
-    return violations.filter(violation => {
-      if (filters.type && violation.violation_type !== filters.type) {
-        return false;
-      }
-      if (filters.severity && violation.severity !== filters.severity) {
-        return false;
-      }
-      if (filters.status && violation.status !== filters.status) {
-        return false;
-      }
-      if (filters.agent && !violation.agent_name.toLowerCase().includes(filters.agent.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
-  }, [violations]);
-
-  // Load initial data when user is authenticated
-  useEffect(() => {
-    if (currentUser) {
-      refreshAll();
-    } else {
-      // Clear data when user is not authenticated
-      setMetrics(null);
-      setViolations([]);
-      setReports([]);
-      setOverview(null);
-      clearErrors();
+  /**
+   * Trigger governance action
+   */
+  const triggerAction = useCallback(async (action: string, params: any = {}) => {
+    try {
+      setError(null);
+      const result = await governanceDashboardService.triggerGovernanceAction(action, params);
+      
+      // Refresh metrics after action
+      await refreshMetrics();
+      
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : `Failed to execute action: ${action}`;
+      setError(errorMessage);
+      throw err;
     }
-  }, [currentUser, refreshAll, clearErrors]);
+  }, [refreshMetrics]);
+
+  /**
+   * Handle real-time updates from WebSocket
+   */
+  useEffect(() => {
+    const handleMetricsUpdate = (data: any) => {
+      if (mountedRef.current) {
+        setMetrics(prevMetrics => ({
+          ...prevMetrics,
+          ...data,
+        }));
+        setLastUpdated(new Date());
+      }
+    };
+
+    const handleConnectionChange = (data: any) => {
+      if (mountedRef.current) {
+        setIsConnected(data.status === 'connected');
+        if (data.status === 'connected') {
+          setError(null);
+          // Refresh data when reconnected
+          refreshMetrics();
+        } else if (data.status === 'error') {
+          setError('WebSocket connection error');
+        }
+      }
+    };
+
+    // Subscribe to real-time updates
+    governanceDashboardService.on('metrics_update', handleMetricsUpdate);
+    governanceDashboardService.on('connection', handleConnectionChange);
+
+    return () => {
+      governanceDashboardService.off('metrics_update', handleMetricsUpdate);
+      governanceDashboardService.off('connection', handleConnectionChange);
+    };
+  }, [refreshMetrics]);
+
+  /**
+   * Initialize dashboard data and set up refresh interval
+   */
+  useEffect(() => {
+    // Initial data fetch
+    refreshMetrics();
+
+    // Set up periodic refresh (every 30 seconds)
+    refreshIntervalRef.current = setInterval(() => {
+      if (mountedRef.current && !isConnected) {
+        // Only refresh via HTTP if WebSocket is not connected
+        refreshMetrics();
+      }
+    }, 30000);
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [refreshMetrics, isConnected]);
+
+  /**
+   * Cleanup on unmount
+   */
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
 
   return {
-    // State
     metrics,
-    metricsLoading,
-    metricsError,
-    violations,
-    violationsLoading,
-    violationsError,
-    reports,
-    reportsLoading,
-    reportsError,
-    overview,
-    overviewLoading,
-    overviewError,
-    generatingReport,
-    resolvingViolation,
-    operationError,
-    
-    // Actions
-    loadMetrics,
-    loadViolations,
-    resolveViolation,
-    loadReports,
-    generateReport,
-    loadOverview,
-    refreshAll,
-    clearErrors,
-    filterViolations
+    health,
+    loading,
+    error,
+    lastUpdated,
+    isConnected,
+    refreshMetrics,
+    triggerAction,
   };
 };
 
