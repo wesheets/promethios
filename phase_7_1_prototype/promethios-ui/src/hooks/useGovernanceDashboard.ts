@@ -88,7 +88,8 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
         setError(errorMessage);
         setIsConnected(false);
         console.error('Dashboard refresh error:', err);
-      } finally {
+      }
+    } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
