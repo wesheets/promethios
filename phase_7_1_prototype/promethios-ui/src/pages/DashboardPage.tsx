@@ -89,12 +89,14 @@ const DashboardPage: React.FC = () => {
     // Load user agents for real-time metrics
     const loadUserAgents = async () => {
       try {
-        const agents = await userAgentStorageService.getAllAgents();
+        // Use the correct method from UserAgentStorageService
+        const agents = await userAgentStorageService.loadUserAgents();
         const agentList = agents.map(agent => ({
-          agentId: agent.id,
+          agentId: agent.identity.id,
           version: 'production' as const // Focus on production agents for dashboard
         }));
         setUserAgents(agentList);
+        console.log(`✅ Loaded ${agents.length} user agents for dashboard:`, agents.map(a => a.identity.name));
       } catch (error) {
         console.error('Failed to load user agents:', error);
       }

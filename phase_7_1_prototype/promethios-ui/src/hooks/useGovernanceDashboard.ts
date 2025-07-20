@@ -1,10 +1,11 @@
 /**
  * useGovernanceDashboard Hook
- * React hook for managing Dashboard state with real backend data
+ * React hook for managing Dashboard state with existing Promethios data sources
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import governanceDashboardService, { DashboardMetrics, BackendHealthStatus } from '../services/GovernanceDashboardService';
+import existingDataBridgeService from '../services/ExistingDataBridgeService';
+import { DashboardMetrics, BackendHealthStatus } from '../services/GovernanceDashboardService';
 
 interface UseGovernanceDashboardReturn {
   metrics: DashboardMetrics;
@@ -57,8 +58,8 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
       
       // Fetch metrics and health in parallel
       const [metricsData, healthData] = await Promise.all([
-        governanceDashboardService.getDashboardMetrics(),
-        governanceDashboardService.getBackendHealth(),
+        existingDataBridgeService.getDashboardMetrics(),
+        existingDataBridgeService.getBackendHealth(),
       ]);
 
       if (mountedRef.current) {
@@ -87,7 +88,7 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
   const triggerAction = useCallback(async (action: string, params: any = {}) => {
     try {
       setError(null);
-      const result = await governanceDashboardService.triggerGovernanceAction(action, params);
+      const result = await existingDataBridgeService.triggerGovernanceAction(action, params);
       
       // Refresh metrics after action
       await refreshMetrics();
@@ -101,7 +102,7 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
   }, [refreshMetrics]);
 
   /**
-   * Handle real-time updates from WebSocket
+   * Handle real-time updates from existing data bridge service
    */
   useEffect(() => {
     const handleMetricsUpdate = (data: any) => {
@@ -122,18 +123,18 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
           // Refresh data when reconnected
           refreshMetrics();
         } else if (data.status === 'error') {
-          setError('WebSocket connection error');
+          setError('Data bridge connection error');
         }
       }
     };
 
-    // Subscribe to real-time updates
-    governanceDashboardService.on('metrics_update', handleMetricsUpdate);
-    governanceDashboardService.on('connection', handleConnectionChange);
+    // Subscribe to real-time updates from existing data bridge
+    existingDataBridgeService.on('metrics_update', handleMetricsUpdate);
+    existingDataBridgeService.on('connection', handleConnectionChange);
 
     return () => {
-      governanceDashboardService.off('metrics_update', handleMetricsUpdate);
-      governanceDashboardService.off('connection', handleConnectionChange);
+      existingDataBridgeService.off('metrics_update', handleMetricsUpdate);
+      existingDataBridgeService.off('connection', handleConnectionChange);
     };
   }, [refreshMetrics]);
 
@@ -146,8 +147,8 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
 
     // Set up periodic refresh (every 30 seconds)
     refreshIntervalRef.current = setInterval(() => {
-      if (mountedRef.current && !isConnected) {
-        // Only refresh via HTTP if WebSocket is not connected
+      if (mountedRef.current) {
+        // Refresh data periodically to check for changes
         refreshMetrics();
       }
     }, 30000);
