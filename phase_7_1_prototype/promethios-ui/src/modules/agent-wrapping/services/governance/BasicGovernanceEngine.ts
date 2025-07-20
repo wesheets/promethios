@@ -48,17 +48,43 @@ export class BasicGovernanceEngine implements GovernanceEngine {
   private isRunning: boolean = false;
   private startTime: Date | null = null;
 
-  constructor(config: GovernanceEngineConfig) {
-    this.config = config;
+  constructor(config?: GovernanceEngineConfig) {
+    this.config = config || {
+      agentId: 'default-agent',
+      userId: 'default-user',
+      policies: [],
+      trustConfig: {
+        minTrustScore: 0.7,
+        trustDecayRate: 0.1,
+        maxTrustScore: 1.0,
+        trustUpdateFrequency: 3600000
+      },
+      auditConfig: {
+        enableLogging: true,
+        logLevel: 'info',
+        retentionPeriod: 30 * 24 * 60 * 60 * 1000,
+        storageLocation: 'firebase'
+      },
+      performanceConfig: {
+        maxProcessingTime: 5000,
+        enableCaching: true,
+        cacheSize: 1000,
+        batchSize: 10,
+        parallelProcessing: true,
+        timeoutHandling: 'allow'
+      },
+      debugMode: false
+    };
+    
     this.state = this.initializeState();
     this.emergencyState = this.initializeEmergencyState();
     this.metrics = this.initializeMetrics();
 
-    // Initialize components
-    this.policyEnforcer = new BasicPolicyEnforcer(config.policies);
-    this.trustManager = new BasicTrustManager(config.trustConfig);
-    this.auditLogger = new BasicAuditLogger(config.auditConfig);
-    this.complianceMonitor = new BasicComplianceMonitor(config);
+    // Initialize components with defensive checks
+    this.policyEnforcer = new BasicPolicyEnforcer(this.config.policies || []);
+    this.trustManager = new BasicTrustManager(this.config.trustConfig);
+    this.auditLogger = new BasicAuditLogger(this.config.auditConfig);
+    this.complianceMonitor = new BasicComplianceMonitor(this.config);
   }
 
   /**
@@ -474,13 +500,13 @@ export class BasicGovernanceEngine implements GovernanceEngine {
   private initializeState(): GovernanceEngineState {
     return {
       status: 'stopped',
-      agentId: this.config.agentId,
+      agentId: this.config?.agentId || 'unknown-agent',
       version: '1.0.0',
       uptime: 0,
       lastStarted: null,
       lastStopped: null,
       lastError: null,
-      configuration: this.config,
+      configuration: this.config || {},
     };
   }
 
