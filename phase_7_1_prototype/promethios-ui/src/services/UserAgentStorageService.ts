@@ -353,7 +353,7 @@ export class UserAgentStorageService {
       
       // Invalidate dashboard metrics cache so OptimizedDataBridge recalculates with fresh agent data
       const dashboardCacheKey = `dashboard-${this.currentUserId}`;
-      universalCache.delete(dashboardCacheKey, 'dashboard-metrics');
+      universalCache.invalidate('dashboard-metrics', dashboardCacheKey);
       console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${agents.length} agents`);
     }
       
