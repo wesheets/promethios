@@ -357,6 +357,8 @@ const DashboardPage: React.FC = () => {
                   View All <ArrowForward fontSize="small" sx={{ ml: 1 }} />
                 </Button>
               )}
+            </CardContent>
+            <CardActions>
             </CardActions>
           </Card>
         </Grid>
