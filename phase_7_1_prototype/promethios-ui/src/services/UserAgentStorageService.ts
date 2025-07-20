@@ -345,12 +345,17 @@ export class UserAgentStorageService {
 
       console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents'}`);
       
-      // Cache the loaded agents for OptimizedDataBridge to use
-      if (this.currentUserId && agents.length > 0) {
-        const { universalCache } = await import('./UniversalDataCache');
-        universalCache.set(this.currentUserId, agents, 'agents', 600); // Cache for 10 minutes
-        console.log(`💾 Cached ${agents.length} agents for OptimizedDataBridge access`);
-      }
+    // Cache the loaded agents for OptimizedDataBridge to use
+    if (this.currentUserId && agents.length > 0) {
+      const { universalCache } = await import('./UniversalDataCache');
+      universalCache.set(this.currentUserId, agents, 'agents', 600); // Cache for 10 minutes
+      console.log(`💾 Cached ${agents.length} agents for OptimizedDataBridge access`);
+      
+      // Invalidate dashboard metrics cache so OptimizedDataBridge recalculates with fresh agent data
+      const dashboardCacheKey = `dashboard-${this.currentUserId}`;
+      universalCache.delete(dashboardCacheKey, 'dashboard-metrics');
+      console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${agents.length} agents`);
+    }
       
       return agents;
     } catch (error) {
