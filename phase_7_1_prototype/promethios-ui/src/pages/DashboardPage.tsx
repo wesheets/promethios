@@ -312,60 +312,91 @@ const DashboardPage: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-               <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#2d3748' }}>
-                {metrics?.agents?.total || 0}
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Chip 
-                  size="small" 
-                  label={`${metrics?.agents?.healthy || 0} Healthy`} 
-                  sx={{ 
-                    backgroundColor: '#d4edda', 
-                    color: '#155724',
-                    fontSize: '0.75rem'
-                  }} 
-                />
-                <Chip 
-                  size="small" 
-                  label={`${metrics?.agents?.warning || 0} Warning`} 
-                  sx={{ 
-                    backgroundColor: '#fff3cd', 
-                    color: '#856404',
-                    fontSize: '0.75rem'
-                  }} 
-                />
-              </Stack>
-              <LinearProgress 
-                variant="determinate" 
-                value={metrics?.agents?.total > 0 ? ((metrics?.agents?.healthy || 0) / metrics.agents.total) * 100 : 0}
-                sx={{ 
-                  mt: 2, 
-                  height: 6, 
-                  borderRadius: 3,
-                  backgroundColor: '#e2e8f0',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#10b981'
-                  }
-                }} 
-              />
-              {(metrics?.agents?.total || 0) === 0 ? (
+              {dashboardLoading ? (
+                <Box>
+                  <Box display="flex" alignItems="center" gap={2} mb={2}>
+                    <CircularProgress size={24} sx={{ color: '#3182ce' }} />
+                    <Typography variant="h4" sx={{ color: '#a0aec0' }}>
+                      Loading...
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                    {currentStage || 'Initializing dashboard...'}
+                  </Typography>
+                  {loadingProgress && (
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={loadingProgress}
+                      sx={{ 
+                        mb: 2, 
+                        height: 6, 
+                        borderRadius: 3,
+                        backgroundColor: '#4a5568',
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: '#3182ce'
+                        }
+                      }} 
+                    />
+                  )}
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'white' }}>
+                    {metrics?.agents?.total || 0}
+                  </Typography>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                    <Chip 
+                      size="small" 
+                      label={`${metrics?.agents?.healthy || 0} Healthy`} 
+                      sx={{ 
+                        backgroundColor: '#d4edda', 
+                        color: '#155724',
+                        fontSize: '0.75rem'
+                      }} 
+                    />
+                    <Chip 
+                      size="small" 
+                      label={`${metrics?.agents?.warning || 0} Warning`} 
+                      sx={{ 
+                        backgroundColor: '#fff3cd', 
+                        color: '#856404',
+                        fontSize: '0.75rem'
+                      }} 
+                    />
+                  </Stack>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={metrics?.agents?.total > 0 ? ((metrics?.agents?.healthy || 0) / metrics.agents.total) * 100 : 0}
+                    sx={{ 
+                      mt: 2, 
+                      height: 6, 
+                      borderRadius: 3,
+                      backgroundColor: '#e2e8f0',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: '#10b981'
+                      }
+                    }} 
+                  />
+                </Box>
+              )}
+              {(metrics?.agents?.total || 0) === 0 && !dashboardLoading ? (
                 <Button 
                   size="small" 
                   startIcon={<Add />}
                   onClick={() => navigate('/ui/agents/wrapping')}
-                  sx={{ color: '#3182ce', fontWeight: 'bold' }}
+                  sx={{ color: '#3182ce', fontWeight: 'bold', mt: 2 }}
                 >
                   Add First Agent
                 </Button>
-              ) : (
+              ) : !dashboardLoading ? (
                 <Button 
                   size="small" 
                   onClick={() => navigate('/ui/agents/profiles')}
-                  sx={{ color: '#3182ce' }}
+                  sx={{ color: '#3182ce', mt: 2 }}
                 >
                   View All <ArrowForward fontSize="small" sx={{ ml: 1 }} />
                 </Button>
-              )}
+              ) : null}
             </CardContent>
             <CardActions>
             </CardActions>
