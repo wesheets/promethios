@@ -172,27 +172,6 @@ class ExistingDataBridgeService {
       };
     }
   }
-          governanceCore: existingData.agents.length > 0,
-          eventBus: true, // Simulated
-          storage: true, // Available if we can load data
-        },
-      };
-    } catch (error) {
-      console.error('❌ ExistingDataBridgeService: Error checking backend health:', error);
-      return {
-        status: 'down',
-        lastCheck: new Date().toISOString(),
-        components: {
-          trustMetricsCalculator: false,
-          enhancedVeritas: false,
-          emotionTelemetry: false,
-          governanceCore: false,
-          eventBus: false,
-          storage: false,
-        },
-      };
-    }
-  }
 
   /**
    * Set current user for the bridge service
