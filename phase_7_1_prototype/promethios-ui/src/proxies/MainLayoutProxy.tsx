@@ -73,7 +73,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
 
   // For logged-in users, show new navigation
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <CssBaseline />
       
       {/* Header Navigation Bar for logged-in users */}
@@ -84,7 +84,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         unreadNotifications={0}
       />
       
-      <Box sx={{ display: 'flex', flex: 1 }}>
+      <Box sx={{ display: 'flex', flex: 1, height: 'calc(100vh - 64px)' }}>
         {/* Collapsible Left Navigation for logged-in users */}
         <CollapsibleNavigation 
           userPermissions={['view']}
@@ -102,10 +102,12 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
-            // Remove padding for chat page to allow full height usage
-            p: location.pathname.includes('/modern-chat') ? 0 : 3,
+            // Remove padding for chat page and other pages to allow full height usage
+            p: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
             backgroundColor: '#1a202c', // Dark background to match the theme
-            minHeight: 'calc(100vh - 64px)', // Full height minus header
+            height: 'calc(100vh - 64px)', // Exact height minus header - no extra space
+            maxHeight: 'calc(100vh - 64px)', // Prevent overflow
+            overflow: 'auto', // Allow scrolling within the content area if needed
             color: 'white', // Light text for dark background
           }}
         >
