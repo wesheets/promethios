@@ -251,12 +251,12 @@ const DashboardPage: React.FC = () => {
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: health.status === 'operational' ? '#10b981' : health.status === 'degraded' ? '#f59e0b' : '#ef4444',
+                backgroundColor: health?.status === 'operational' ? '#10b981' : health?.status === 'degraded' ? '#f59e0b' : '#ef4444',
                 animation: isConnected ? 'pulse 2s infinite' : 'none'
               }} 
             />
             <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-              System Status: {health.status === 'operational' ? 'Operational' : health.status === 'degraded' ? 'Degraded' : 'Down'}
+              System Status: {health?.status === 'operational' ? 'Operational' : health?.status === 'degraded' ? 'Degraded' : health?.status === 'down' ? 'Down' : 'Unknown'}
             </Typography>
           </Box>
           <Divider orientation="vertical" flexItem sx={{ borderColor: '#4a5568' }} />

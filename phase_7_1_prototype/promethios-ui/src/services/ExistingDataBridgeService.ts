@@ -4,8 +4,9 @@
  * Eliminates the need for a separate backend API by using existing services
  */
 
-import { userAgentStorageService, AgentProfile, AgentScorecard } from './UserAgentStorageService';
-import { DashboardMetrics, BackendHealthStatus } from './GovernanceDashboardService';
+import { userAgentStorageService } from './UserAgentStorageService';
+import type { DashboardMetrics, SystemHealth } from '../hooks/useGovernanceDashboard';
+import type { BackendHealthStatus } from './GovernanceDashboardService';
 
 interface ExistingDataMetrics {
   agents: AgentProfile[];
@@ -118,6 +119,59 @@ class ExistingDataBridgeService {
           trustMetricsCalculator: existingData.scorecards.size > 0,
           enhancedVeritas: true, // Assume available if we can load data
           emotionTelemetry: true, // Assume available if we can load data
+        }
+      };
+    } catch (error) {
+      console.error('❌ ExistingDataBridgeService: Error getting backend health:', error);
+      return {
+        status: 'down',
+        lastCheck: new Date().toISOString(),
+        components: {
+          trustMetricsCalculator: false,
+          enhancedVeritas: false,
+          emotionTelemetry: false,
+        }
+      };
+    }
+  }
+
+  /**
+   * Get system health data (required by useGovernanceDashboard hook)
+   */
+  async getSystemHealth(): Promise<SystemHealth> {
+    console.log('🔍 ExistingDataBridgeService: Getting system health data');
+    
+    try {
+      // Return mock system health data for now
+      const health: SystemHealth = {
+        status: 'operational',
+        uptime: Date.now() - (24 * 60 * 60 * 1000), // 24 hours ago
+        lastCheck: new Date(),
+        components: {
+          storage: 'operational',
+          eventBus: 'operational',
+          governance: 'operational'
+        }
+      };
+      
+      console.log('✅ ExistingDataBridgeService: System health data retrieved');
+      return health;
+    } catch (error) {
+      console.error('❌ ExistingDataBridgeService: Failed to get system health:', error);
+      
+      // Return degraded status on error
+      return {
+        status: 'degraded',
+        uptime: 0,
+        lastCheck: new Date(),
+        components: {
+          storage: 'degraded',
+          eventBus: 'degraded',
+          governance: 'degraded'
+        }
+      };
+    }
+  }
           governanceCore: existingData.agents.length > 0,
           eventBus: true, // Simulated
           storage: true, // Available if we can load data
