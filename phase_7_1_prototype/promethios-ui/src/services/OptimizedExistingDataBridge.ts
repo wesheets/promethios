@@ -222,12 +222,24 @@ export class OptimizedExistingDataBridge {
   private async calculateOptimizedMetrics(batchResults: Map<string, any>): Promise<DashboardMetrics> {
     console.log(`🧮 Calculating optimized metrics from batch results`);
     
-    // Get agents data directly from UserAgentStorageService (not from batch results)
-    console.log(`🔍 Loading agents directly from UserAgentStorageService instead of batch results`);
+    // Get agents data from cache first (which should have the 17 agents)
+    const cacheKey = `agents:${this.currentUser}`;
+    const cachedAgents = this.cache.get(cacheKey);
+    console.log(`🔍 Cached agents data:`, cachedAgents);
     
-    const agents: AgentProfile[] = await this.loadAgentsFromStorage();
-    console.log(`🔍 Final agents array:`, agents);
-    console.log(`🔍 Agents array length:`, agents.length);
+    let agents: AgentProfile[] = [];
+    
+    if (cachedAgents && cachedAgents.data && Array.isArray(cachedAgents.data)) {
+      agents = cachedAgents.data;
+      console.log(`🔍 Using cached agents array:`, agents);
+      console.log(`🔍 Cached agents array length:`, agents.length);
+    } else {
+      // Fallback to loading from storage if cache is empty
+      console.log(`🔍 Cache empty, loading agents directly from UserAgentStorageService`);
+      agents = await this.loadAgentsFromStorage();
+      console.log(`🔍 Fallback agents array:`, agents);
+      console.log(`🔍 Fallback agents array length:`, agents.length);
+    }
     
     // Calculate agent statistics
     const totalAgents = agents.length;
