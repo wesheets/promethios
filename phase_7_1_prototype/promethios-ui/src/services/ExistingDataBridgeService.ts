@@ -141,6 +141,14 @@ class ExistingDataBridgeService {
   }
 
   /**
+   * Set current user for the bridge service
+   */
+  setCurrentUser(userId: string) {
+    console.log('🔧 ExistingDataBridgeService: Setting current user:', userId);
+    userAgentStorageService.setCurrentUser(userId);
+  }
+
+  /**
    * Load existing data from current services
    */
   private async loadExistingData(): Promise<ExistingDataMetrics> {

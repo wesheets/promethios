@@ -65,9 +65,11 @@ import AgentMetricsWidget from '../components/AgentMetricsWidget';
 import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
 import { userAgentStorageService } from '../services/UserAgentStorageService';
 import { useGovernanceDashboard } from '../hooks/useGovernanceDashboard';
+import { useAuth } from '../context/AuthContext';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth(); // Get current authenticated user
   const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
   
   // Real-time metrics for all user agents
@@ -89,6 +91,15 @@ const DashboardPage: React.FC = () => {
     // Load user agents for real-time metrics
     const loadUserAgents = async () => {
       try {
+        // CRITICAL: Set the current user in the storage service
+        if (currentUser?.uid) {
+          console.log('🔧 Setting current user in UserAgentStorageService:', currentUser.uid);
+          userAgentStorageService.setCurrentUser(currentUser.uid);
+        } else {
+          console.warn('⚠️ No current user available for UserAgentStorageService');
+          return;
+        }
+
         // Use the correct method from UserAgentStorageService
         const agents = await userAgentStorageService.loadUserAgents();
         const agentList = agents.map(agent => ({
@@ -103,7 +114,7 @@ const DashboardPage: React.FC = () => {
     };
 
     loadUserAgents();
-  }, []);
+  }, [currentUser]); // Re-run when currentUser changes
 
   const getHealthColor = (health: 'healthy' | 'warning' | 'critical') => {
     switch (health) {

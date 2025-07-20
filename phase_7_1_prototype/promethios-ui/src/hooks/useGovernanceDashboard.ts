@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import existingDataBridgeService from '../services/ExistingDataBridgeService';
 import { DashboardMetrics, BackendHealthStatus } from '../services/GovernanceDashboardService';
+import { useAuth } from '../context/AuthContext';
 
 interface UseGovernanceDashboardReturn {
   metrics: DashboardMetrics;
@@ -19,6 +20,7 @@ interface UseGovernanceDashboardReturn {
 }
 
 export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
+  const { currentUser } = useAuth(); // Get current authenticated user
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     agents: { total: 0, individual: 0, multiAgent: 0, healthy: 0, warning: 0, critical: 0 },
     governance: { score: 0, activePolicies: 0, violations: 0, complianceRate: 0 },
@@ -48,13 +50,25 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
   const mountedRef = useRef(true);
 
   /**
-   * Fetch dashboard metrics from backend
+   * Fetch dashboard metrics from bridge service
    */
   const refreshMetrics = useCallback(async () => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || loading) return;
+
+    setLoading(true);
 
     try {
       setError(null);
+      
+      // CRITICAL: Set the current user in the bridge service
+      if (currentUser?.uid) {
+        console.log('🔧 useGovernanceDashboard: Setting current user in bridge service:', currentUser.uid);
+        existingDataBridgeService.setCurrentUser(currentUser.uid);
+      } else {
+        console.warn('⚠️ useGovernanceDashboard: No current user available');
+        setLoading(false);
+        return;
+      }
       
       // Fetch metrics and health in parallel
       const [metricsData, healthData] = await Promise.all([
@@ -74,13 +88,12 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
         setError(errorMessage);
         setIsConnected(false);
         console.error('Dashboard refresh error:', err);
-      }
-    } finally {
+      } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [loading, currentUser]); // Add currentUser as dependency
 
   /**
    * Trigger governance action
