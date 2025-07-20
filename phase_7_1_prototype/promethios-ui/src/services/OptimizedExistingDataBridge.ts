@@ -224,7 +224,11 @@ export class OptimizedExistingDataBridge {
     
     // Get agents data (from cache or batch result)
     const agentsResult = batchResults.get('agents');
+    console.log(`🔍 Agents result from batch:`, agentsResult);
+    
     const agents: AgentProfile[] = agentsResult?.data || await this.loadAgentsFromStorage();
+    console.log(`🔍 Final agents array:`, agents);
+    console.log(`🔍 Agents array length:`, agents.length);
     
     // Calculate agent statistics
     const totalAgents = agents.length;
