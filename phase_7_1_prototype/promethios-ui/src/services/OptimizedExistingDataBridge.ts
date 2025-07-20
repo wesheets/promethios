@@ -303,36 +303,34 @@ export class OptimizedExistingDataBridge {
   }
 
   /**
-   * Load agents from storage with caching
+   * Load agents from storage - ALWAYS loads fresh data to ensure accurate count
    */
   private async loadAgentsFromStorage(): Promise<AgentProfile[]> {
-    const cacheKey = this.currentUser!;
+    console.log(`📥 Loading agents DIRECTLY from storage for user: ${this.currentUser}`);
     
-    return await universalCache.getOrSet(
-      cacheKey,
-      async () => {
-        console.log(`📥 Loading agents from storage for user: ${this.currentUser}`);
-        
-        // CRITICAL: Ensure UserAgentStorageService has the current user set
-        userAgentStorageService.setCurrentUser(this.currentUser!);
-        
-        const agents = await userAgentStorageService.loadUserAgents();
-        console.log(`📥 Loaded ${agents.length} agents from UserAgentStorageService`);
-        
-        // Transform to AgentProfile format
-        const transformedAgents = agents.map(agent => ({
-          id: agent.id,
-          name: agent.name || agent.id,
-          status: this.determineAgentStatus(agent),
-          lastSeen: new Date().toISOString(),
-          scorecard: this.getAgentScorecard(agent)
-        }));
-        
-        console.log(`📥 Transformed ${transformedAgents.length} agents for OptimizedDataBridge`);
-        return transformedAgents;
-      },
-      'agents'
-    );
+    // CRITICAL: Always load fresh data, don't rely on cache for agent count
+    // CRITICAL: Ensure UserAgentStorageService has the current user set
+    userAgentStorageService.setCurrentUser(this.currentUser!);
+    
+    const agents = await userAgentStorageService.loadUserAgents();
+    console.log(`📥 Loaded ${agents.length} agents from UserAgentStorageService`);
+    
+    // Transform to AgentProfile format
+    const transformedAgents = agents.map(agent => ({
+      id: agent.id,
+      name: agent.name || agent.id,
+      status: this.determineAgentStatus(agent),
+      lastSeen: new Date().toISOString(),
+      scorecard: this.getAgentScorecard(agent)
+    }));
+    
+    console.log(`📥 Transformed ${transformedAgents.length} agents for OptimizedDataBridge`);
+    
+    // Cache the result for subsequent calls within the same session
+    const cacheKey = this.currentUser!;
+    universalCache.set(cacheKey, transformedAgents, 'agents');
+    
+    return transformedAgents;
   }
 
   /**
