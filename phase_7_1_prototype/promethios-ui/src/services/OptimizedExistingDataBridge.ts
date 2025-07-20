@@ -233,25 +233,11 @@ export class OptimizedExistingDataBridge {
   private async calculateOptimizedMetrics(batchResults: Map<string, any>): Promise<DashboardMetrics> {
     console.log(`🧮 Calculating optimized metrics from batch results`);
     
-    // Get agents data from cache first (which should have the 17 agents)
-    // Fix cache key - don't include "agents:" prefix since universalCache.get() adds it
-    const cacheKey = this.currentUser;
-    const cachedAgents = universalCache.get(cacheKey, 'agents');
-    console.log(`🔍 Cached agents data:`, cachedAgents);
-    
-    let agents: AgentProfile[] = [];
-    
-    if (cachedAgents && Array.isArray(cachedAgents)) {
-      agents = cachedAgents;
-      console.log(`🔍 Using cached agents array:`, agents);
-      console.log(`🔍 Cached agents array length:`, agents.length);
-    } else {
-      // Fallback to loading from storage if cache is empty
-      console.log(`🔍 Cache empty, loading agents directly from UserAgentStorageService`);
-      agents = await this.loadAgentsFromStorage();
-      console.log(`🔍 Fallback agents array:`, agents);
-      console.log(`🔍 Fallback agents array length:`, agents.length);
-    }
+    // Always load agents from storage to ensure we get the latest data
+    console.log(`🔍 Loading agents directly from UserAgentStorageService for accurate count`);
+    const agents = await this.loadAgentsFromStorage();
+    console.log(`🔍 Loaded agents array:`, agents);
+    console.log(`🔍 Loaded agents array length:`, agents.length);
     
     // Calculate agent statistics
     const totalAgents = agents.length;
@@ -326,16 +312,24 @@ export class OptimizedExistingDataBridge {
       cacheKey,
       async () => {
         console.log(`📥 Loading agents from storage for user: ${this.currentUser}`);
+        
+        // CRITICAL: Ensure UserAgentStorageService has the current user set
+        userAgentStorageService.setCurrentUser(this.currentUser!);
+        
         const agents = await userAgentStorageService.loadUserAgents();
+        console.log(`📥 Loaded ${agents.length} agents from UserAgentStorageService`);
         
         // Transform to AgentProfile format
-        return agents.map(agent => ({
+        const transformedAgents = agents.map(agent => ({
           id: agent.id,
           name: agent.name || agent.id,
           status: this.determineAgentStatus(agent),
           lastSeen: new Date().toISOString(),
           scorecard: this.getAgentScorecard(agent)
         }));
+        
+        console.log(`📥 Transformed ${transformedAgents.length} agents for OptimizedDataBridge`);
+        return transformedAgents;
       },
       'agents'
     );

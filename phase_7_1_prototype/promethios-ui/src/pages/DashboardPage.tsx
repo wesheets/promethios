@@ -70,13 +70,9 @@ import { DashboardProgressiveLoader } from '../components/loading/ProgressiveLoa
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); // Get current authenticated user
-  const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const { currentUser } = useAuth();
   
-  // Real-time metrics for all user agents
-  const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
-  
-  // Real governance dashboar  // Use optimized governance dashboard hook for better performance
+  // Use optimized governance dashboard hook
   const {
     metrics,
     health,
@@ -90,34 +86,46 @@ const DashboardPage: React.FC = () => {
     triggerAction
   } = useOptimizedGovernanceDashboard();
 
+  // State for real-time metrics (deferred until after dashboard loads)
+  const [userAgents, setUserAgents] = useState<Array<{agentId: string, version: string}>>([]);
+  const [realTimeMetricsEnabled, setRealTimeMetricsEnabled] = useState(false);
+  
+  // Real-time metrics (only enabled after dashboard loads)
+  const agentMetrics = useMultiAgentRealTimeMetrics(realTimeMetricsEnabled ? userAgents : []);
+  
+  // Defer real-time metrics loading until after dashboard data is ready
   useEffect(() => {
-    // Load user agents for real-time metrics
-    const loadUserAgents = async () => {
-      try {
-        // CRITICAL: Set the current user in the storage service
-        if (currentUser?.uid) {
-          console.log('🔧 Setting current user in UserAgentStorageService:', currentUser.uid);
-          userAgentStorageService.setCurrentUser(currentUser.uid);
-        } else {
-          console.warn('⚠️ No current user available for UserAgentStorageService');
-          return;
+    if (metrics?.agents?.total && metrics.agents.total > 0 && !realTimeMetricsEnabled) {
+      console.log(`🔄 Dashboard loaded ${metrics.agents.total} agents, enabling real-time metrics after delay`);
+      
+      // Load actual agent data for real-time metrics
+      const loadAgentsForRealTimeMetrics = async () => {
+        try {
+          if (currentUser?.uid) {
+            userAgentStorageService.setCurrentUser(currentUser.uid);
+            const agents = await userAgentStorageService.loadUserAgents();
+            const agentList = agents.map(agent => ({
+              agentId: agent.identity.id,
+              version: 'production' as const
+            }));
+            
+            console.log(`🔄 Loaded ${agentList.length} agents for real-time metrics`);
+            setUserAgents(agentList);
+            
+            // Enable real-time metrics after a short delay to let the UI settle
+            setTimeout(() => {
+              console.log(`🚀 Enabling real-time metrics for ${agentList.length} agents`);
+              setRealTimeMetricsEnabled(true);
+            }, 2000); // 2 second delay
+          }
+        } catch (error) {
+          console.error('Failed to load agents for real-time metrics:', error);
         }
+      };
 
-        // Use the correct method from UserAgentStorageService
-        const agents = await userAgentStorageService.loadUserAgents();
-        const agentList = agents.map(agent => ({
-          agentId: agent.identity.id,
-          version: 'production' as const // Focus on production agents for dashboard
-        }));
-        setUserAgents(agentList);
-        console.log(`✅ Loaded ${agents.length} user agents for dashboard:`, agents.map(a => a.identity.name));
-      } catch (error) {
-        console.error('Failed to load user agents:', error);
-      }
-    };
-
-    loadUserAgents();
-  }, [currentUser]); // Re-run when currentUser changes
+      loadAgentsForRealTimeMetrics();
+    }
+  }, [metrics?.agents?.total, currentUser?.uid, realTimeMetricsEnabled]);
 
   const getHealthColor = (health: 'healthy' | 'warning' | 'critical') => {
     switch (health) {
@@ -158,148 +166,104 @@ const DashboardPage: React.FC = () => {
       {/* Backend Connection Status */}
       {dashboardError && (
         <Alert 
-          severity="warning" 
-          sx={{ mb: 3, backgroundColor: '#f59e0b20', color: '#f59e0b' }}
+          severity="error" 
+          sx={{ mb: 3 }}
           action={
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={refreshMetrics}
-              startIcon={<Refresh />}
-            >
+            <Button color="inherit" size="small" onClick={refreshMetrics}>
+              <Refresh sx={{ mr: 1 }} />
               Retry
             </Button>
           }
         >
-          Backend connection issue: {dashboardError}. Using fallback data.
+          <Typography variant="body2">
+            <strong>Backend Connection Failed:</strong> {dashboardError}
+          </Typography>
         </Alert>
       )}
 
-      {/* Enhanced Header */}
-      <Box mb={4}>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-              Promethios Command Center
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: '#a0aec0', mb: 1 }}>
-              Monitor, govern, and optimize your AI agents with real-time trust metrics and compliance tracking
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Chip 
-                label={isConnected ? "Live Monitoring" : "Offline Mode"} 
-                size="small" 
-                sx={{ 
-                  backgroundColor: isConnected ? '#10b98120' : '#f59e0b20', 
-                  color: isConnected ? '#10b981' : '#f59e0b', 
-                  border: `1px solid ${isConnected ? '#10b981' : '#f59e0b'}` 
-                }}
-              />
-              <Chip 
-                label="Real-time Updates" 
-                size="small" 
-                sx={{ backgroundColor: '#3182ce20', color: '#3182ce', border: '1px solid #3182ce' }}
-              />
-            </Box>
-          </Box>
-          <Box display="flex" gap={1}>
-            <Tooltip title="Take a guided tour of the dashboard">
-              <IconButton 
-                sx={{ color: '#a0aec0', '&:hover': { color: '#3182ce' } }}
-                onClick={() => {/* TODO: Implement guided tour */}}
-              >
-                <TourOutlined />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="View help documentation">
-              <IconButton 
-                sx={{ color: '#a0aec0', '&:hover': { color: '#3182ce' } }}
-                onClick={() => navigate('/ui/help/documentation')}
-              >
-                <Help />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="System settings">
-              <IconButton 
-                sx={{ color: '#a0aec0', '&:hover': { color: '#3182ce' } }}
-                onClick={() => navigate('/ui/settings/organization')}
-              >
-                <Settings />
-              </IconButton>
-            </Tooltip>
-          </Box>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: '#1a202c' }}>
+            Promethios Command Center
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#718096', mt: 1 }}>
+            Monitor, govern, and optimize your AI agents with real-time trust metrics and compliance tracking
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+            <Chip 
+              label="Live Monitoring" 
+              color="success" 
+              size="small" 
+              icon={<Timeline />}
+            />
+            <Chip 
+              label="Real-time Updates" 
+              color="info" 
+              size="small" 
+              icon={<Refresh />}
+            />
+          </Stack>
         </Box>
-        
-        {/* Real-time Status Bar */}
-        <Box 
-          display="flex" 
-          alignItems="center" 
-          gap={2} 
-          p={2} 
-          sx={{ 
-            backgroundColor: '#1a202c', 
-            borderRadius: 2, 
-            border: '1px solid #2d3748' 
-          }}
-        >
-          <Box display="flex" alignItems="center" gap={1}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="primary">
+            <InfoOutlined />
+          </IconButton>
+          <IconButton color="primary">
+            <Help />
+          </IconButton>
+          <IconButton color="primary">
+            <Settings />
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* System Status Bar */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#f8fafc' }}>
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box 
               sx={{ 
                 width: 8, 
                 height: 8, 
                 borderRadius: '50%', 
-                backgroundColor: health?.status === 'operational' ? '#10b981' : health?.status === 'degraded' ? '#f59e0b' : '#ef4444',
-                animation: isConnected ? 'pulse 2s infinite' : 'none'
+                backgroundColor: isConnected ? '#10b981' : '#ef4444' 
               }} 
             />
-            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-              System Status: {health?.status === 'operational' ? 'Operational' : health?.status === 'degraded' ? 'Degraded' : health?.status === 'down' ? 'Down' : 'Unknown'}
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              System Status: {isConnected ? 'Operational' : 'Disconnected'}
             </Typography>
           </Box>
-          <Divider orientation="vertical" flexItem sx={{ borderColor: '#4a5568' }} />
-          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+          <Divider orientation="vertical" flexItem />
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             Last Updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}
           </Typography>
-          <Divider orientation="vertical" flexItem sx={{ borderColor: '#4a5568' }} />
-          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+          <Divider orientation="vertical" flexItem />
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             {metrics?.agents?.total || 0} Agents Monitored
           </Typography>
-          {isConnected && (
-            <>
-              <Divider orientation="vertical" flexItem sx={{ borderColor: '#4a5568' }} />
-              <Tooltip title="Refresh dashboard data">
-                <IconButton 
-                  size="small" 
-                  onClick={refreshMetrics}
-                  sx={{ color: '#a0aec0', '&:hover': { color: '#3182ce' } }}
-                >
-                  <Refresh fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Box>
-      </Box>
+          <Box sx={{ ml: 'auto' }}>
+            <IconButton size="small" onClick={refreshMetrics} disabled={dashboardLoading}>
+              <Refresh sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+        </Stack>
+      </Paper>
 
-      {/* Main Metrics Grid */}
-      <Grid container spacing={3} mb={4}>
-        {/* Enhanced Agents Overview */}
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', height: '100%' }}>
+      {/* Main Dashboard Grid */}
+      <Grid container spacing={3}>
+        {/* Agents Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Box display="flex" alignItems="center">
-                  <Avatar sx={{ backgroundColor: '#3182ce', mr: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}>
                     <SmartToy />
                   </Avatar>
                   <Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="h6" sx={{ color: 'white' }}>Agents</Typography>
-                      <Tooltip title="AI agents under governance monitoring. Healthy agents are operating within policy boundaries.">
-                        <InfoOutlined sx={{ fontSize: 16, color: '#a0aec0', cursor: 'help' }} />
-                      </Tooltip>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Active Monitoring</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Agents</Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>Active Monitoring</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -309,267 +273,224 @@ const DashboardPage: React.FC = () => {
               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                 <Chip 
                   size="small" 
-                  label={`${metrics?.agents?.healthy || 0} Healthy`} 
+                  label={`${metrics?.agents?.healthy || 0} Healthy`}
                   sx={{ 
-                    backgroundColor: '#d4edda', 
-                    color: '#155724',
-                    fontSize: '0.75rem'
-                  }} 
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)', 
+                    color: '#10b981',
+                    fontWeight: 500
+                  }}
                 />
                 <Chip 
                   size="small" 
-                  label={`${metrics?.agents?.warning || 0} Warning`} 
+                  label={`${metrics?.agents?.warning || 0} Warning`}
                   sx={{ 
-                    backgroundColor: '#fff3cd', 
-                    color: '#856404',
-                    fontSize: '0.75rem'
-                  }} 
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)', 
+                    color: '#f59e0b',
+                    fontWeight: 500
+                  }}
                 />
               </Stack>
-              <LinearProgress 
-                variant="determinate" 
-                value={metrics?.agents?.total > 0 ? ((metrics?.agents?.healthy || 0) / metrics.agents.total) * 100 : 0}
-                sx={{ 
-                  mt: 2, 
-                  height: 6, 
-                  borderRadius: 3,
-                  backgroundColor: '#e2e8f0',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#10b981'
-                  }
-                }} 
-              />
-              {(metrics?.agents?.total || 0) === 0 ? (
-                <Button 
-                  size="small" 
-                  startIcon={<Add />}
-                  onClick={() => navigate('/ui/agents/wrapping')}
-                  sx={{ color: '#3182ce', fontWeight: 'bold' }}
-                >
-                  Add First Agent
-                </Button>
-              ) : (
-                <Button 
-                  size="small" 
-                  onClick={() => navigate('/ui/agents/profiles')}
-                  sx={{ color: '#3182ce' }}
-                >
-                  View All <ArrowForward fontSize="small" sx={{ ml: 1 }} />
-                </Button>
-              )}
             </CardContent>
             <CardActions>
+              <Button 
+                size="small" 
+                sx={{ color: 'white', fontWeight: 500 }}
+                endIcon={<ArrowForward />}
+                onClick={() => navigate('/ui/agents')}
+              >
+                VIEW ALL
+              </Button>
             </CardActions>
           </Card>
         </Grid>
 
-        {/* Enhanced Governance Score */}
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', height: '100%' }}>
+        {/* Governance Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Box display="flex" alignItems="center">
-                  <Avatar sx={{ backgroundColor: '#8b5cf6', mr: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}>
                     <Security />
                   </Avatar>
                   <Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="h6" sx={{ color: 'white' }}>Governance</Typography>
-                      <Tooltip title="Overall policy compliance rate across all monitored agents. Higher scores indicate better adherence to governance policies.">
-                        <InfoOutlined sx={{ fontSize: 16, color: '#a0aec0', cursor: 'help' }} />
-                      </Tooltip>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Compliance Score</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Governance</Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>Compliance Score</Typography>
                   </Box>
                 </Box>
               </Box>
-              <Typography variant="h3" sx={{ color: 'white', mb: 1 }}>
-                {metrics?.governance?.score}%
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {metrics?.governance?.score || 0}%
               </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <Tooltip title="Active governance policies monitoring agent behavior">
-                  <Chip 
-                    label={`${metrics?.governance?.activePolicies} Policies`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-                <Tooltip title="Policy violations detected across all agents">
-                  <Chip 
-                    label={`${metrics?.governance?.violations} Violations`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#ef4444', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-              </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={metrics?.governance?.score}
-                sx={{ 
-                  backgroundColor: '#4a5568',
-                  '& .MuiLinearProgress-bar': { backgroundColor: '#8b5cf6' }
-                }}
-              />
+              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.governance?.activePolicies || 0} Policies`}
+                  sx={{ 
+                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.governance?.violations || 0} Violations`}
+                  sx={{ 
+                    backgroundColor: metrics?.governance?.violations ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+              </Stack>
             </CardContent>
-            <CardActions sx={{ justifyContent: 'space-between' }}>
+            <CardActions>
               <Button 
                 size="small" 
-                onClick={() => navigate('/ui/governance/overview')}
-                sx={{ color: '#8b5cf6' }}
+                sx={{ color: 'white', fontWeight: 500 }}
+                endIcon={<ArrowForward />}
+                onClick={() => navigate('/ui/governance')}
               >
-                View Details <ArrowForward fontSize="small" sx={{ ml: 1 }} />
+                VIEW DETAILS
               </Button>
-              {metrics?.governance?.violations > 0 && (
-                <Button 
-                  size="small" 
-                  startIcon={<Warning />}
-                  onClick={() => navigate('/ui/governance/violations')}
-                  sx={{ color: '#ef4444' }}
-                >
-                  Resolve Issues
-                </Button>
-              )}
             </CardActions>
           </Card>
         </Grid>
 
-        {/* Enhanced Trust Metrics */}
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', height: '100%' }}>
+        {/* Trust Score Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Box display="flex" alignItems="center">
-                  <Avatar sx={{ backgroundColor: '#10b981', mr: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}>
                     <VerifiedUser />
                   </Avatar>
                   <Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="h6" sx={{ color: 'white' }}>Trust Score</Typography>
-                      <Tooltip title="Composite trust rating based on competence, reliability, honesty, and transparency metrics across all agents.">
-                        <InfoOutlined sx={{ fontSize: 16, color: '#a0aec0', cursor: 'help' }} />
-                      </Tooltip>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Average Rating</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Trust Score</Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>Average Rating</Typography>
                   </Box>
                 </Box>
               </Box>
-              <Typography variant="h3" sx={{ color: 'white', mb: 1 }}>
-                {metrics?.trust?.averageScore}
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+                {metrics?.trust?.averageScore || 0}
               </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <Tooltip title="Verified trust relationships between agents and systems">
-                  <Chip 
-                    label={`${metrics?.trust?.totalAttestations} Attestations`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-                <Tooltip title="Active trust boundaries defining agent interaction limits">
-                  <Chip 
-                    label={`${metrics?.trust?.activeBoundaries} Boundaries`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-              </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={metrics?.trust?.averageScore}
-                sx={{ 
-                  backgroundColor: '#4a5568',
-                  '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' }
-                }}
-              />
+              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.trust?.attestations || 0} Attestations`}
+                  sx={{ 
+                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.trust?.boundaries || 0} Boundaries`}
+                  sx={{ 
+                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+              </Stack>
             </CardContent>
             <CardActions>
               <Button 
                 size="small" 
-                onClick={() => navigate('/ui/trust/overview')}
-                sx={{ color: '#10b981' }}
+                sx={{ color: 'white', fontWeight: 500 }}
+                endIcon={<ArrowForward />}
+                onClick={() => navigate('/ui/trust-metrics')}
               >
-                View Metrics <ArrowForward fontSize="small" sx={{ ml: 1 }} />
+                VIEW METRICS
               </Button>
             </CardActions>
           </Card>
         </Grid>
 
-        {/* System Status */}
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', height: '100%' }}>
+        {/* System Health Card */}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Avatar sx={{ backgroundColor: '#f59e0b', mr: 2 }}>
-                  <Dashboard />
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" sx={{ color: 'white' }}>System Health</Typography>
-                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>Overall Status</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                    <Assessment />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>System Health</Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>Overall Status</Typography>
+                  </Box>
                 </Box>
               </Box>
-              <Typography variant="h3" sx={{ color: '#f59e0b', mb: 1 }}>
-                Needs Review
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#2d3748' }}>
+                {health?.status === 'operational' ? 'Needs Review' : health?.status || 'Unknown'}
               </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <Chip 
-                  label="Last Check: 30 min ago" 
-                  size="small" 
-                  sx={{ backgroundColor: '#4a5568', color: 'white' }}
-                />
-              </Box>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', mb: 2 }}>
+                Last Check: {health?.lastCheck ? new Date(health.lastCheck).toLocaleTimeString() : '30 min ago'}
+              </Typography>
               <LinearProgress 
                 variant="determinate" 
-                value={75}
+                value={health?.status === 'operational' ? 85 : 60} 
                 sx={{ 
-                  backgroundColor: '#4a5568',
-                  '& .MuiLinearProgress-bar': { backgroundColor: '#f59e0b' }
-                }}
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: 'rgba(255,255,255,0.8)'
+                  }
+                }} 
               />
             </CardContent>
             <CardActions>
               <Button 
                 size="small" 
-                onClick={() => navigate('/ui/settings/organization')}
-                sx={{ color: '#f59e0b' }}
+                sx={{ color: 'white', fontWeight: 500 }}
+                endIcon={<ArrowForward />}
+                onClick={() => navigate('/ui/system-health')}
               >
-                System Settings <ArrowForward fontSize="small" sx={{ ml: 1 }} />
+                SYSTEM SETTINGS
               </Button>
             </CardActions>
           </Card>
         </Grid>
-      </Grid>
 
-      {/* Secondary Metrics Row */}
-      <Grid container spacing={3} mb={4}>
-        {/* Trust Dimensions Breakdown */}
+        {/* Trust Dimensions */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3, color: '#1a202c' }}>
                 Trust Dimensions
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 <Grid item xs={6}>
                   <Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Competence</Typography>
-                    <Typography variant="h6" sx={{ color: '#3b82f6' }}>{metrics?.trust?.competence}%</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Competence</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
+                      {metrics?.trust?.competence || 75}%
+                    </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Reliability</Typography>
-                    <Typography variant="h6" sx={{ color: '#10b981' }}>{metrics?.trust?.reliability}%</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Reliability</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#059669' }}>
+                      {metrics?.trust?.reliability || 75}%
+                    </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Honesty</Typography>
-                    <Typography variant="h6" sx={{ color: '#f59e0b' }}>{metrics?.trust?.honesty}%</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Honesty</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#dc2626' }}>
+                      {metrics?.trust?.honesty || 75}%
+                    </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>Transparency</Typography>
-                    <Typography variant="h6" sx={{ color: '#8b5cf6' }}>{metrics?.trust?.transparency}%</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Transparency</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#7c3aed' }}>
+                      {metrics?.trust?.transparency || 75}%
+                    </Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -577,17 +498,17 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Enhanced Quick Actions */}
+        {/* Quick Actions */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h6" sx={{ color: 'white' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1a202c' }}>
                   Quick Actions
                 </Typography>
-                <Tooltip title="Common tasks and workflows for managing your AI governance">
-                  <InfoOutlined sx={{ fontSize: 16, color: '#a0aec0', cursor: 'help' }} />
-                </Tooltip>
+                <IconButton size="small">
+                  <Help sx={{ fontSize: 18 }} />
+                </IconButton>
               </Box>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
@@ -595,31 +516,21 @@ const DashboardPage: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<Add />}
-                    onClick={() => navigate('/ui/agents/wrapping')}
-                    sx={{ 
-                      borderColor: '#3182ce', 
-                      color: '#3182ce',
-                      '&:hover': { borderColor: '#2c5aa0', backgroundColor: '#3182ce20' },
-                      py: 1.5
-                    }}
+                    sx={{ py: 1.5, justifyContent: 'flex-start' }}
+                    onClick={() => navigate('/ui/agents/create')}
                   >
-                    Add New Agent
+                    ADD NEW AGENT
                   </Button>
                 </Grid>
                 <Grid item xs={6}>
                   <Button
                     fullWidth
                     variant="outlined"
-                    startIcon={<Policy />}
+                    startIcon={<AdminPanelSettings />}
+                    sx={{ py: 1.5, justifyContent: 'flex-start' }}
                     onClick={() => navigate('/ui/governance/policies')}
-                    sx={{ 
-                      borderColor: '#8b5cf6', 
-                      color: '#8b5cf6',
-                      '&:hover': { borderColor: '#7c3aed', backgroundColor: '#8b5cf620' },
-                      py: 1.5
-                    }}
                   >
-                    Manage Policies
+                    MANAGE POLICIES
                   </Button>
                 </Grid>
                 <Grid item xs={6}>
@@ -627,15 +538,10 @@ const DashboardPage: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<Assessment />}
-                    onClick={() => navigate('/ui/agents/benchmarks')}
-                    sx={{ 
-                      borderColor: '#10b981', 
-                      color: '#10b981',
-                      '&:hover': { borderColor: '#059669', backgroundColor: '#10b98120' },
-                      py: 1.5
-                    }}
+                    sx={{ py: 1.5, justifyContent: 'flex-start' }}
+                    onClick={() => navigate('/ui/trust-metrics/benchmarks')}
                   >
-                    Run Benchmarks
+                    RUN BENCHMARKS
                   </Button>
                 </Grid>
                 <Grid item xs={6}>
@@ -643,230 +549,123 @@ const DashboardPage: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<TourOutlined />}
-                    onClick={() => navigate('/ui/help/tours')}
-                    sx={{ 
-                      borderColor: '#f59e0b', 
-                      color: '#f59e0b',
-                      '&:hover': { borderColor: '#d97706', backgroundColor: '#f59e0b20' },
-                      py: 1.5
-                    }}
+                    sx={{ py: 1.5, justifyContent: 'flex-start' }}
+                    onClick={() => navigate('/ui/help/tour')}
                   >
-                    Take Tour
+                    TAKE TOUR
                   </Button>
                 </Grid>
               </Grid>
-              
-              {/* New User Getting Started */}
-              {userAgents.length === 0 && (
-                <Box mt={3} p={2} sx={{ backgroundColor: '#1a202c', borderRadius: 2, border: '1px solid #3182ce' }}>
-                  <Box display="flex" alignItems="center" gap={2} mb={2}>
-                    <PlayCircleOutline sx={{ color: '#3182ce' }} />
-                    <Typography variant="subtitle1" sx={{ color: '#3182ce', fontWeight: 'bold' }}>
-                      Get Started with Promethios
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
-                    Welcome! Start by adding your first AI agent to begin governance monitoring.
-                  </Typography>
-                  <Box display="flex" gap={1}>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<Add />}
-                      onClick={() => navigate('/ui/agents/wrapping')}
-                      sx={{ backgroundColor: '#3182ce', '&:hover': { backgroundColor: '#2c5aa0' } }}
-                    >
-                      Add First Agent
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<GetApp />}
-                      onClick={() => {/* TODO: Demo data */}}
-                      sx={{ borderColor: '#a0aec0', color: '#a0aec0' }}
-                    >
-                      Load Demo Data
-                    </Button>
-                  </Box>
-                </Box>
-              )}
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
 
-      {/* Bottom Row */}
-      <Grid container spacing={3}>
         {/* Recent Activity */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+        <Grid item xs={12}>
+          <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="between" mb={3}>
-                <Typography variant="h6" sx={{ color: 'white' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1a202c' }}>
                   Recent Activity
                 </Typography>
-                <IconButton size="small" sx={{ color: '#a0aec0' }}>
-                  <Refresh />
+                <IconButton size="small" onClick={refreshMetrics}>
+                  <Refresh sx={{ fontSize: 18 }} />
                 </IconButton>
               </Box>
-              <List>
-                {(metrics?.activity?.recentEvents || []).map((event, index) => (
-                  <React.Fragment key={event.id}>
-                    <ListItem sx={{ px: 0 }}>
+              {metrics?.recentActivity && metrics.recentActivity.length > 0 ? (
+                <List>
+                  {metrics.recentActivity.slice(0, 5).map((activity, index) => (
+                    <ListItem key={activity.id || index} sx={{ px: 0 }}>
                       <ListItemIcon>
-                        <Box sx={{ color: getSeverityColor(event.severity) }}>
-                          {getSeverityIcon(event.severity)}
-                        </Box>
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={event.message}
-                        secondary={event.timestamp}
-                        primaryTypographyProps={{ sx: { color: 'white' } }}
-                        secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
-                      />
-                    </ListItem>
-                    {index < (metrics?.activity?.recentEvents || []).length - 1 && (
-                      <Divider sx={{ borderColor: '#4a5568' }} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* Real-time Agent Metrics */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h6" sx={{ color: 'white' }}>
-                  Agent Performance Metrics
-                </Typography>
-                <Chip 
-                  label={`${userAgents.length} Agents Monitored`}
-                  size="small"
-                  sx={{ backgroundColor: '#3182ce20', color: '#3182ce' }}
-                />
-              </Box>
-              
-              {agentMetrics.isLoading && userAgents.length > 0 ? (
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                  <CircularProgress sx={{ color: '#3182ce' }} />
-                  <Typography variant="body2" sx={{ ml: 2, color: '#a0aec0' }}>
-                    Loading agent metrics...
-                  </Typography>
-                </Box>
-              ) : userAgents.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <SmartToy sx={{ fontSize: 48, color: '#4a5568', mb: 2 }} />
-                  <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1 }}>
-                    No Agents Found
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-                    Create your first agent to see real-time metrics
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => navigate('/ui/agents/wrapping')}
-                    sx={{ backgroundColor: '#3182ce', '&:hover': { backgroundColor: '#2c5aa0' } }}
-                  >
-                    Wrap Your First Agent
-                  </Button>
-                </Box>
-              ) : (
-                <Grid container spacing={2}>
-                  {userAgents.slice(0, 4).map(({ agentId, version }) => {
-                    const profile = agentMetrics.getProfile(agentId, version);
-                    const error = agentMetrics.getError(agentId, version);
-                    
-                    // Show placeholder for agents without metrics profiles (Enhanced Veritas incomplete)
-                    if (error && !error.includes('Enhanced Veritas')) {
-                      return (
-                        <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
-                          <Alert severity="warning" sx={{ backgroundColor: '#f59e0b20', color: '#f59e0b' }}>
-                            Failed to load metrics for {agentId}
-                          </Alert>
-                        </Grid>
-                      );
-                    }
-                    
-                    // Show basic agent info even without full metrics profile
-                    if (!profile) {
-                      return (
-                        <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
-                          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
-                            <CardContent>
-                              <Box display="flex" alignItems="center" mb={2}>
-                                <Avatar sx={{ backgroundColor: '#3182ce', mr: 2 }}>
-                                  <SmartToy />
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="h6" sx={{ color: 'white' }}>
-                                    {agentId}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                                    {version === 'production' ? 'Production Agent' : 'Test Agent'}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                                Metrics profile loading...
-                              </Typography>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      );
-                    }
-                    
-                    return (
-                      <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
-                        <AgentMetricsWidget
-                          agentId={agentId}
-                          agentName={profile.agentName}
-                          version={version}
-                          compact={true}
-                          showTitle={true}
-                        />
-                      </Grid>
-                    );
-                  })}
-                  
-                  {userAgents.length > 4 && (
-                    <Grid item xs={12}>
-                      <Box textAlign="center" pt={2}>
-                        <Button
-                          variant="outlined"
-                          onClick={() => navigate('/ui/agents/lifecycle')}
+                        <Avatar 
                           sx={{ 
-                            borderColor: '#3182ce', 
-                            color: '#3182ce',
-                            '&:hover': { borderColor: '#2c5aa0', backgroundColor: '#3182ce20' }
+                            width: 32, 
+                            height: 32, 
+                            bgcolor: getSeverityColor(activity.type),
+                            color: 'white'
                           }}
                         >
-                          View All {userAgents.length} Agents <ArrowForward fontSize="small" sx={{ ml: 1 }} />
-                        </Button>
-                      </Box>
-                    </Grid>
-                  )}
-                </Grid>
+                          {getSeverityIcon(activity.type)}
+                        </Avatar>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={activity.message}
+                        secondary={new Date(activity.timestamp).toLocaleString()}
+                        sx={{ ml: 1 }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center', py: 4 }}>
+                  No recent activity to display
+                </Typography>
               )}
             </CardContent>
           </Card>
         </Grid>
-        
-        {/* Observer Agent */}
-        <Grid item xs={12} md={4}>
-          {/* Observer Agent removed - now using FloatingObserverAgent globally */}
-          <div style={{ display: 'none' }}>
-            Observer Agent moved to floating sidebar
-          </div>
+
+        {/* Agent Performance Metrics */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1a202c' }}>
+                  Agent Performance Metrics
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  {userAgents.length} Agents Monitored
+                </Typography>
+              </Box>
+              
+              {realTimeMetricsEnabled ? (
+                <Grid container spacing={3}>
+                  {userAgents.slice(0, 4).map((agent, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={agent.agentId}>
+                      <Paper 
+                        elevation={1} 
+                        sx={{ 
+                          p: 2, 
+                          textAlign: 'center',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 2
+                        }}
+                      >
+                        <Avatar sx={{ mx: 'auto', mb: 1, bgcolor: '#3b82f6' }}>
+                          <SmartToy />
+                        </Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                          {agent.agentId.includes('agent-') ? 
+                            agent.agentId.replace('agent-', 'agent-').substring(0, 20) + '...' : 
+                            agent.agentId.substring(0, 20) + '...'
+                          }
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 1 }}>
+                          {agent.version === 'production' ? 'Production Agent' : 'Test Agent'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b' }}>
+                          Metrics profile loading...
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <CircularProgress size={24} sx={{ mb: 2 }} />
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    {dashboardLoading ? 'Loading dashboard data...' : 'Preparing real-time metrics...'}
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
       </DashboardProgressiveLoader>
     </Container>
   );
 };
+
 export default DashboardPage;
 
