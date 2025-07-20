@@ -223,8 +223,8 @@ export class OptimizedExistingDataBridge {
     console.log(`🧮 Calculating optimized metrics from batch results`);
     
     // Get agents data from cache first (which should have the 17 agents)
-    // Use the correct cache key format and category that matches the actual cached data
-    const cacheKey = `agents:${this.currentUser}`;
+    // Fix cache key - don't include "agents:" prefix since universalCache.get() adds it
+    const cacheKey = this.currentUser;
     const cachedAgents = universalCache.get(cacheKey, 'agents');
     console.log(`🔍 Cached agents data:`, cachedAgents);
     
