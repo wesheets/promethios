@@ -64,8 +64,9 @@ import ObserverAgentProxy from '../proxies/ObserverAgentProxy';
 import AgentMetricsWidget from '../components/AgentMetricsWidget';
 import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
 import { userAgentStorageService } from '../services/UserAgentStorageService';
-import { useGovernanceDashboard } from '../hooks/useGovernanceDashboard';
+import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { useAuth } from '../context/AuthContext';
+import { DashboardProgressiveLoader } from '../components/loading/ProgressiveLoader';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -75,17 +76,18 @@ const DashboardPage: React.FC = () => {
   // Real-time metrics for all user agents
   const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
   
-  // Real governance dashboard data from our 100% connected backend
+  // Real governance dashboar  // Use optimized governance dashboard hook for better performance
   const {
     metrics,
     health,
     loading: dashboardLoading,
     error: dashboardError,
-    lastUpdated,
     isConnected,
+    loadingProgress,
+    currentStage,
     refreshMetrics,
-    triggerAction,
-  } = useGovernanceDashboard();
+    triggerAction
+  } = useOptimizedGovernanceDashboard();
 
   useEffect(() => {
     // Load user agents for real-time metrics
@@ -145,19 +147,13 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  if (dashboardLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-        <Typography variant="body2" sx={{ ml: 2, color: '#a0aec0' }}>
-          Loading governance dashboard...
-        </Typography>
-      </Box>
-    );
-  }
-
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
+      <DashboardProgressiveLoader
+        isLoading={dashboardLoading}
+        error={dashboardError}
+        retryAction={refreshMetrics}
+      >
       {/* Backend Connection Status */}
       {dashboardError && (
         <Alert 
@@ -831,6 +827,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </Grid>
       </Grid>
+      </DashboardProgressiveLoader>
     </Container>
   );
 };

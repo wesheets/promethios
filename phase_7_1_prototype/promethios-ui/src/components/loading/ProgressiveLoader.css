@@ -1,0 +1,305 @@
+/* Progressive Loader Styles */
+.progressive-loader {
+  width: 100%;
+  min-height: 200px;
+  position: relative;
+}
+
+.progressive-loader.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.progressive-loader.loaded {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.progressive-loader.error {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Loading Header */
+.loading-header {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #45a049);
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Stage Info */
+.stage-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.stage-description {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Skeleton Content */
+.skeleton-content {
+  flex: 1;
+}
+
+/* Partial Content */
+.partial-content {
+  opacity: 0.7;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Error State */
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  padding: 16px;
+  color: #c53030;
+}
+
+.error-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.error-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.retry-button {
+  background: #c53030;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background: #b91c1c;
+}
+
+.retry-button:active {
+  transform: translateY(1px);
+}
+
+/* Fallback Content */
+.fallback-content {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Loading pulse animation for skeleton content */
+.progressive-loader.loading .skeleton-content {
+  animation: pulse 2s infinite;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loading-header {
+    background: #1a1a1a;
+    border-color: #3a3a3a;
+    color: #e0e0e0;
+  }
+  
+  .progress-bar {
+    background: #3a3a3a;
+  }
+  
+  .stage-name {
+    color: #e0e0e0;
+  }
+  
+  .stage-description {
+    color: #a0a0a0;
+  }
+  
+  .progress-text {
+    color: #a0a0a0;
+  }
+  
+  .error-container {
+    background: #2d1b1b;
+    border-color: #5a2d2d;
+    color: #f56565;
+  }
+  
+  .fallback-content {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .loading-header {
+    padding: 12px;
+  }
+  
+  .progress-container {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .stage-name {
+    font-size: 14px;
+  }
+  
+  .stage-description {
+    font-size: 12px;
+  }
+  
+  .error-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .error-icon {
+    font-size: 20px;
+  }
+  
+  .error-content h3 {
+    font-size: 14px;
+  }
+  
+  .error-content p {
+    font-size: 12px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .progress-fill {
+    background: #000;
+  }
+  
+  .loading-header {
+    border-width: 2px;
+  }
+  
+  .error-container {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+  
+  .progressive-loader.loaded {
+    animation: none;
+  }
+  
+  .progress-fill::after {
+    animation: none;
+  }
+  
+  .progressive-loader.loading .skeleton-content {
+    animation: none;
+  }
+}
+

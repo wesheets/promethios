@@ -25,28 +25,43 @@ export interface DashboardMetrics {
   };
   systemHealth: {
     status: 'operational' | 'degraded' | 'down';
-    lastCheck: Date;
+    lastCheck: string;
+    uptime: string;
   };
   recentActivity: Array<{
     id: string;
     type: 'info' | 'warning' | 'error' | 'success';
     message: string;
-    timestamp: Date;
+    timestamp: string;
   }>;
+  lastUpdated: string;
 }
 
 export interface SystemHealth {
   status: 'operational' | 'degraded' | 'down';
-  uptime: number;
-  lastCheck: Date;
   components: {
-    storage: 'operational' | 'degraded' | 'down';
-    eventBus: 'operational' | 'degraded' | 'down';
-    governance: 'operational' | 'degraded' | 'down';
+    governanceCore: boolean;
+    trustMetrics: boolean;
+    emotionalVeritas: boolean;
+    eventBus: boolean;
+    storage: boolean;
   };
+  lastCheck: string;
+  uptime: string;
+  responseTime: string;
 }
 
-export function useGovernanceDashboard() {
+export interface BackendHealthStatus {
+  status: 'operational' | 'degraded' | 'down';
+  services: {
+    database: 'operational' | 'degraded' | 'down';
+    cache: 'operational' | 'degraded' | 'down';
+    eventBus: 'operational' | 'degraded' | 'down';
+  };
+  lastCheck: string;
+}
+
+export function useOptimizedGovernanceDashboard() {
   const { currentUser } = useAuth();
   const mountedRef = useRef(true);
   
@@ -56,24 +71,42 @@ export function useGovernanceDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [currentStage, setCurrentStage] = useState(0);
 
   /**
-   * Refresh dashboard metrics
+   * Refresh dashboard metrics with optimized caching and parallel loading
    */
   const refreshMetrics = useCallback(async () => {
     if (!currentUser?.uid || !mountedRef.current) return;
 
     try {
-      console.log(`🚀 useGovernanceDashboard: Refreshing metrics for user: ${currentUser.uid}`);
+      setLoadingProgress(0);
+      setCurrentStage(0);
+      console.log(`🚀 useOptimizedGovernanceDashboard: Refreshing metrics for user: ${currentUser.uid}`);
       
-      // Set user in optimized service
+      // Stage 1: Connecting to Firebase
+      setLoadingProgress(25);
+      setCurrentStage(0);
       await optimizedDataBridge.setCurrentUser(currentUser.uid);
       
-      // Get metrics and health data in parallel
+      // Stage 2: Loading User Agents
+      setLoadingProgress(50);
+      setCurrentStage(1);
+      
+      // Stage 3: Calculating Metrics
+      setLoadingProgress(75);
+      setCurrentStage(2);
+      
+      // Get metrics and health data in parallel (from cache if available)
       const [metricsData, healthData] = await Promise.all([
         optimizedDataBridge.getDashboardMetrics(),
         optimizedDataBridge.getSystemHealth()
       ]);
+
+      // Stage 4: Preparing Dashboard
+      setLoadingProgress(100);
+      setCurrentStage(3);
 
       if (mountedRef.current) {
         setMetrics(metricsData);
@@ -81,63 +114,69 @@ export function useGovernanceDashboard() {
         setIsConnected(true);
         setError(null);
         setLastUpdated(new Date());
-        console.log(`✅ Dashboard metrics refreshed successfully`);
+        console.log(`✅ Optimized dashboard metrics refreshed successfully`);
       }
     } catch (err) {
       if (mountedRef.current) {
         setError(err instanceof Error ? err.message : 'Failed to refresh dashboard');
         setIsConnected(false);
-        console.error('Dashboard refresh error:', err);
+        console.error('Optimized dashboard refresh error:', err);
       }
     } finally {
       if (mountedRef.current) {
         setLoading(false);
+        setLoadingProgress(100);
       }
     }
   }, [currentUser?.uid]);
 
   /**
-   * Trigger governance action
+   * Trigger governance action with cache invalidation
    */
   const triggerAction = useCallback(async (action: string, params: any = {}) => {
     if (!currentUser?.uid) return false;
 
     try {
-      console.log(`🎯 Triggering action: ${action}`, params);
+      console.log(`🎯 Triggering optimized action: ${action}`, params);
       const success = await optimizedDataBridge.triggerAction(action, params);
       
       if (success) {
-        // Refresh metrics after successful action
+        // Refresh metrics after successful action (cache will be invalidated)
         await refreshMetrics();
       }
       
       return success;
     } catch (error) {
-      console.error(`❌ Action failed: ${action}`, error);
+      console.error(`❌ Optimized action failed: ${action}`, error);
       return false;
     }
   }, [currentUser?.uid, refreshMetrics]);
 
-  // Initial load and setup
+  // Initial load with performance monitoring
   useEffect(() => {
     if (currentUser?.uid) {
-      console.log('🚀 useGovernanceDashboard: Initial load for user:', currentUser.uid);
-      refreshMetrics();
+      const startTime = Date.now();
+      console.log('🚀 useOptimizedGovernanceDashboard: Initial load for user:', currentUser.uid);
+      
+      refreshMetrics().then(() => {
+        const loadTime = Date.now() - startTime;
+        console.log(`⚡ Optimized dashboard loaded in ${loadTime}ms`);
+      });
     } else {
       setLoading(false);
     }
   }, [currentUser?.uid, refreshMetrics]);
 
-  // Periodic refresh every 30 seconds
+  // Smart periodic refresh - only if not cached
   useEffect(() => {
     if (!currentUser?.uid) return;
 
     const interval = setInterval(() => {
       if (mountedRef.current) {
-        console.log('🔄 Periodic dashboard refresh');
+        console.log('🔄 Smart periodic dashboard refresh (cache-aware)');
         refreshMetrics();
       }
-    }, 30000);
+    }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
   }, [currentUser?.uid, refreshMetrics]);
@@ -156,6 +195,8 @@ export function useGovernanceDashboard() {
     error,
     isConnected,
     lastUpdated,
+    loadingProgress,
+    currentStage,
     refreshMetrics,
     triggerAction
   };

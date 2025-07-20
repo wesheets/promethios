@@ -2,10 +2,11 @@
  * Existing Data Bridge Service
  * Bridges the enhanced Dashboard UI to existing Promethios data sources
  * Eliminates the need for a separate backend API by using existing services
- */
+ import { userAgentStorageService } from './UserAgentStorageService';
+import { universalCache } from './UniversalDataCache';
+import { parallelFirebaseManager, FirebaseQuery } from './ParallelFirebaseManager';
 
-import { userAgentStorageService } from './UserAgentStorageService';
-import type { DashboardMetrics, SystemHealth } from '../hooks/useGovernanceDashboard';
+export interface DashboardMetrics {SystemHealth } from '../hooks/useGovernanceDashboard';
 import type { BackendHealthStatus } from './GovernanceDashboardService';
 
 interface ExistingDataMetrics {
