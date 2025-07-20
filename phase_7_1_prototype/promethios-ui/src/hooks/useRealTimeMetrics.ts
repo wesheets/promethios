@@ -252,7 +252,7 @@ export const useMultiAgentRealTimeMetrics = (agents: Array<{ agentId: string; ve
     managerRef.current = RealTimeMetricsManager.getInstance();
   }, []);
 
-  // Subscribe to all agents
+  // Subscribe to all agents with non-blocking approach
   useEffect(() => {
     if (!agents.length || !managerRef.current) return;
 
@@ -261,35 +261,51 @@ export const useMultiAgentRealTimeMetrics = (agents: Array<{ agentId: string; ve
     const newErrors = new Map<string, string>();
     let loadingCount = agents.length;
 
-    agents.forEach(({ agentId, version }) => {
-      const key = `${agentId}_${version}`;
-      
-      const unsubscribe = managerRef.current!.subscribe(agentId, version, (profile) => {
-        if (profile) {
-          newProfiles.set(key, profile);
-          newErrors.delete(key);
-        } else {
-          // Don't treat missing production metrics as an error if Enhanced Veritas isn't complete
-          const isProductionAgent = version === 'production';
-          if (isProductionAgent) {
-            console.log(`ℹ️ Production metrics not available for ${agentId} (Enhanced Veritas training incomplete)`);
-            // Don't set error for missing production metrics
-          } else {
-            newErrors.set(key, 'Failed to load metrics');
-          }
-        }
+    // Use requestIdleCallback to make metrics loading non-blocking
+    const subscribeToAgents = () => {
+      agents.forEach(({ agentId, version }, index) => {
+        const key = `${agentId}_${version}`;
         
-        loadingCount--;
-        if (loadingCount <= 0) {
-          setProfiles(new Map(newProfiles));
-          setErrors(new Map(newErrors));
-          setIsLoading(false);
-          setLastUpdate(new Date());
-        }
+        // Stagger the subscriptions to prevent UI blocking
+        setTimeout(() => {
+          const unsubscribe = managerRef.current!.subscribe(agentId, version, (profile) => {
+            if (profile) {
+              newProfiles.set(key, profile);
+              newErrors.delete(key);
+            } else {
+              // Don't treat missing production metrics as an error if Enhanced Veritas isn't complete
+              const isProductionAgent = version === 'production';
+              if (isProductionAgent) {
+                console.log(`ℹ️ Production metrics not available for ${agentId} (Enhanced Veritas training incomplete)`);
+                // Don't set error for missing production metrics
+              } else {
+                newErrors.set(key, 'Failed to load metrics');
+              }
+            }
+            
+            loadingCount--;
+            if (loadingCount <= 0) {
+              // Use requestAnimationFrame to ensure UI updates don't block
+              requestAnimationFrame(() => {
+                setProfiles(new Map(newProfiles));
+                setErrors(new Map(newErrors));
+                setIsLoading(false);
+                setLastUpdate(new Date());
+              });
+            }
+          });
+          
+          unsubscribeFunctions.push(unsubscribe);
+        }, index * 100); // Stagger by 100ms per agent
       });
-      
-      unsubscribeFunctions.push(unsubscribe);
-    });
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(subscribeToAgents, { timeout: 1000 });
+    } else {
+      setTimeout(subscribeToAgents, 0);
+    }
 
     return () => {
       unsubscribeFunctions.forEach(unsub => unsub());

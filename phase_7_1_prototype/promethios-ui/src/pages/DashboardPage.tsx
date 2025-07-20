@@ -113,12 +113,12 @@ const DashboardPage: React.FC = () => {
         setUserAgents(agentList);
         console.log(`✅ Loaded ${agents.length} user agents for dashboard:`, agents.map(a => a.identity.name));
         
-        // Enable real-time metrics after a delay to let dashboard load first
+        // Enable real-time metrics after a longer delay to ensure UI is fully responsive
         if (metrics?.agents?.total && metrics.agents.total > 0) {
           setTimeout(() => {
-            console.log(`🚀 Enabling real-time metrics for ${agentList.length} agents after dashboard loaded`);
+            console.log(`🚀 Enabling real-time metrics for ${agentList.length} agents after dashboard fully loaded`);
             setRealTimeMetricsEnabled(true);
-          }, 2000); // 2 second delay
+          }, 15000); // 15 second delay to ensure UI is fully responsive
         }
       } catch (error) {
         console.error('Failed to load user agents:', error);
