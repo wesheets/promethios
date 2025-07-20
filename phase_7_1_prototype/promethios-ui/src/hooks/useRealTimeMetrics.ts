@@ -78,7 +78,7 @@ class RealTimeMetricsManager {
       const profile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);
       const key = `${agentId}_${version}`;
       
-      // Store the profile
+      // Store the profile (even if null)
       this.profiles.set(key, profile);
       
       // Notify all subscribers for this agent/version
@@ -92,9 +92,17 @@ class RealTimeMetricsManager {
       });
       
     } catch (error) {
-      console.error(`Failed to fetch metrics for ${agentId} (${version}):`, error);
+      // Enhanced error handling - don't block UI for missing metrics profiles
+      const isNamespaceError = error.message?.includes('Unknown namespace');
+      const isProductionMetricsError = error.message?.includes('production_agent_metrics');
       
-      // Notify subscribers of the error
+      if (isNamespaceError && isProductionMetricsError) {
+        console.warn(`⚠️ Production metrics not available for ${agentId} (Enhanced Veritas training incomplete):`, error.message);
+      } else {
+        console.error(`❌ Failed to fetch metrics for ${agentId} (${version}):`, error);
+      }
+      
+      // Always notify subscribers with null profile to prevent blocking
       const key = `${agentId}_${version}`;
       const subscribers = this.subscriptions.get(key) || [];
       subscribers.forEach(sub => {
@@ -261,7 +269,14 @@ export const useMultiAgentRealTimeMetrics = (agents: Array<{ agentId: string; ve
           newProfiles.set(key, profile);
           newErrors.delete(key);
         } else {
-          newErrors.set(key, 'Failed to load metrics');
+          // Don't treat missing production metrics as an error if Enhanced Veritas isn't complete
+          const isProductionAgent = version === 'production';
+          if (isProductionAgent) {
+            console.log(`ℹ️ Production metrics not available for ${agentId} (Enhanced Veritas training incomplete)`);
+            // Don't set error for missing production metrics
+          } else {
+            newErrors.set(key, 'Failed to load metrics');
+          }
         }
         
         loadingCount--;

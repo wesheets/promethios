@@ -750,7 +750,7 @@ const DashboardPage: React.FC = () => {
                 />
               </Box>
               
-              {agentMetrics.isLoading ? (
+              {agentMetrics.isLoading && userAgents.length > 0 ? (
                 <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                   <CircularProgress sx={{ color: '#3182ce' }} />
                   <Typography variant="body2" sx={{ ml: 2, color: '#a0aec0' }}>
@@ -781,7 +781,8 @@ const DashboardPage: React.FC = () => {
                     const profile = agentMetrics.getProfile(agentId, version);
                     const error = agentMetrics.getError(agentId, version);
                     
-                    if (error) {
+                    // Show placeholder for agents without metrics profiles (Enhanced Veritas incomplete)
+                    if (error && !error.includes('Enhanced Veritas')) {
                       return (
                         <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
                           <Alert severity="warning" sx={{ backgroundColor: '#f59e0b20', color: '#f59e0b' }}>
@@ -791,7 +792,33 @@ const DashboardPage: React.FC = () => {
                       );
                     }
                     
-                    if (!profile) return null;
+                    // Show basic agent info even without full metrics profile
+                    if (!profile) {
+                      return (
+                        <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
+                          <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+                            <CardContent>
+                              <Box display="flex" alignItems="center" mb={2}>
+                                <Avatar sx={{ backgroundColor: '#3182ce', mr: 2 }}>
+                                  <SmartToy />
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="h6" sx={{ color: 'white' }}>
+                                    {agentId}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                    {version === 'production' ? 'Production Agent' : 'Test Agent'}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                Metrics profile loading...
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      );
+                    }
                     
                     return (
                       <Grid item xs={12} sm={6} key={`${agentId}_${version}`}>
