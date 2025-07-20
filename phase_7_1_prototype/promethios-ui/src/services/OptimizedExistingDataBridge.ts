@@ -307,6 +307,12 @@ export class OptimizedExistingDataBridge {
       violations
     });
     
+    console.log(`🔍 Full metrics structure being returned:`, {
+      agents: metrics.agents,
+      governance: metrics.governance,
+      trust: metrics.trust
+    });
+    
     return metrics;
   }
 
