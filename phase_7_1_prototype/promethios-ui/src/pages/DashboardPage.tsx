@@ -262,7 +262,7 @@ const DashboardPage: React.FC = () => {
           </Typography>
           <Divider orientation="vertical" flexItem sx={{ borderColor: '#4a5568' }} />
           <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-            {metrics.agents.total} Agents Monitored
+            {metrics?.agents?.total || 0} Agents Monitored
           </Typography>
           {isConnected && (
             <>
@@ -303,36 +303,43 @@ const DashboardPage: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-              <Typography variant="h3" sx={{ color: 'white', mb: 1 }}>
-                {metrics.agents.total}
+               <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#2d3748' }}>
+                {metrics?.agents?.total || 0}
               </Typography>
-              <Box display="flex" gap={1} mb={2}>
-                <Tooltip title="Agents operating within all policy boundaries">
-                  <Chip 
-                    label={`${metrics.agents.healthy} Healthy`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#10b981', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-                <Tooltip title="Agents with minor policy violations or performance issues">
-                  <Chip 
-                    label={`${metrics.agents.warning} Warning`} 
-                    size="small" 
-                    sx={{ backgroundColor: '#f59e0b', color: 'white', cursor: 'help' }}
-                  />
-                </Tooltip>
-              </Box>
+              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.agents?.healthy || 0} Healthy`} 
+                  sx={{ 
+                    backgroundColor: '#d4edda', 
+                    color: '#155724',
+                    fontSize: '0.75rem'
+                  }} 
+                />
+                <Chip 
+                  size="small" 
+                  label={`${metrics?.agents?.warning || 0} Warning`} 
+                  sx={{ 
+                    backgroundColor: '#fff3cd', 
+                    color: '#856404',
+                    fontSize: '0.75rem'
+                  }} 
+                />
+              </Stack>
               <LinearProgress 
                 variant="determinate" 
-                value={metrics.agents.total > 0 ? (metrics.agents.healthy / metrics.agents.total) * 100 : 0}
+                value={metrics?.agents?.total > 0 ? ((metrics?.agents?.healthy || 0) / metrics.agents.total) * 100 : 0}
                 sx={{ 
-                  backgroundColor: '#4a5568',
-                  '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' }
-                }}
+                  mt: 2, 
+                  height: 6, 
+                  borderRadius: 3,
+                  backgroundColor: '#e2e8f0',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: '#10b981'
+                  }
+                }} 
               />
-            </CardContent>
-            <CardActions sx={{ justifyContent: 'space-between' }}>
-              {metrics.agents.total === 0 ? (
+              {(metrics?.agents?.total || 0) === 0 ? ((
                 <Button 
                   size="small" 
                   startIcon={<Add />}
@@ -375,19 +382,19 @@ const DashboardPage: React.FC = () => {
                 </Box>
               </Box>
               <Typography variant="h3" sx={{ color: 'white', mb: 1 }}>
-                {metrics.governance.score}%
+                {metrics?.governance?.score}%
               </Typography>
               <Box display="flex" gap={1} mb={2}>
                 <Tooltip title="Active governance policies monitoring agent behavior">
                   <Chip 
-                    label={`${metrics.governance.activePolicies} Policies`} 
+                    label={`${metrics?.governance?.activePolicies} Policies`} 
                     size="small" 
                     sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
                   />
                 </Tooltip>
                 <Tooltip title="Policy violations detected across all agents">
                   <Chip 
-                    label={`${metrics.governance.violations} Violations`} 
+                    label={`${metrics?.governance?.violations} Violations`} 
                     size="small" 
                     sx={{ backgroundColor: '#ef4444', color: 'white', cursor: 'help' }}
                   />
@@ -395,7 +402,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <LinearProgress 
                 variant="determinate" 
-                value={metrics.governance.score}
+                value={metrics?.governance?.score}
                 sx={{ 
                   backgroundColor: '#4a5568',
                   '& .MuiLinearProgress-bar': { backgroundColor: '#8b5cf6' }
@@ -410,7 +417,7 @@ const DashboardPage: React.FC = () => {
               >
                 View Details <ArrowForward fontSize="small" sx={{ ml: 1 }} />
               </Button>
-              {metrics.governance.violations > 0 && (
+              {metrics?.governance?.violations > 0 && (
                 <Button 
                   size="small" 
                   startIcon={<Warning />}
@@ -445,19 +452,19 @@ const DashboardPage: React.FC = () => {
                 </Box>
               </Box>
               <Typography variant="h3" sx={{ color: 'white', mb: 1 }}>
-                {metrics.trust.averageScore}
+                {metrics?.trust?.averageScore}
               </Typography>
               <Box display="flex" gap={1} mb={2}>
                 <Tooltip title="Verified trust relationships between agents and systems">
                   <Chip 
-                    label={`${metrics.trust.totalAttestations} Attestations`} 
+                    label={`${metrics?.trust?.totalAttestations} Attestations`} 
                     size="small" 
                     sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
                   />
                 </Tooltip>
                 <Tooltip title="Active trust boundaries defining agent interaction limits">
                   <Chip 
-                    label={`${metrics.trust.activeBoundaries} Boundaries`} 
+                    label={`${metrics?.trust?.activeBoundaries} Boundaries`} 
                     size="small" 
                     sx={{ backgroundColor: '#4a5568', color: 'white', cursor: 'help' }}
                   />
@@ -465,7 +472,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <LinearProgress 
                 variant="determinate" 
-                value={metrics.trust.averageScore}
+                value={metrics?.trust?.averageScore}
                 sx={{ 
                   backgroundColor: '#4a5568',
                   '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' }
@@ -542,25 +549,25 @@ const DashboardPage: React.FC = () => {
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#a0aec0' }}>Competence</Typography>
-                    <Typography variant="h6" sx={{ color: '#3b82f6' }}>{metrics.trust.competence}%</Typography>
+                    <Typography variant="h6" sx={{ color: '#3b82f6' }}>{metrics?.trust?.competence}%</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#a0aec0' }}>Reliability</Typography>
-                    <Typography variant="h6" sx={{ color: '#10b981' }}>{metrics.trust.reliability}%</Typography>
+                    <Typography variant="h6" sx={{ color: '#10b981' }}>{metrics?.trust?.reliability}%</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#a0aec0' }}>Honesty</Typography>
-                    <Typography variant="h6" sx={{ color: '#f59e0b' }}>{metrics.trust.honesty}%</Typography>
+                    <Typography variant="h6" sx={{ color: '#f59e0b' }}>{metrics?.trust?.honesty}%</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#a0aec0' }}>Transparency</Typography>
-                    <Typography variant="h6" sx={{ color: '#8b5cf6' }}>{metrics.trust.transparency}%</Typography>
+                    <Typography variant="h6" sx={{ color: '#8b5cf6' }}>{metrics?.trust?.transparency}%</Typography>
                   </Box>
                 </Grid>
               </Grid>
