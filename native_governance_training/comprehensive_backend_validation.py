@@ -965,9 +965,16 @@ class ComprehensiveBackendValidator:
             trust_calc = self.components.get('trust_calculator')
             if trust_calc and hasattr(trust_calc, 'calculate_aggregate_metric'):
                 try:
-                    trust_result = trust_calc.calculate_aggregate_metric({})
-                    pipeline_steps.append(('trust_calculation', trust_result is not None))
-                except Exception:
+                    # First add some dimension metrics for the test entity
+                    test_entity_id = "test_entity_validation"
+                    trust_calc.update_dimension_metric(test_entity_id, "verification", 0.8)
+                    trust_calc.update_dimension_metric(test_entity_id, "attestation", 0.7)
+                    trust_calc.update_dimension_metric(test_entity_id, "boundary", 0.9)
+                    
+                    # Now calculate aggregate metric
+                    trust_result = trust_calc.calculate_aggregate_metric(test_entity_id)
+                    pipeline_steps.append(('trust_calculation', trust_result is not None and isinstance(trust_result, (int, float))))
+                except Exception as e:
                     pipeline_steps.append(('trust_calculation', False))
             
             # Step 4: Data Storage
@@ -1094,9 +1101,15 @@ class ComprehensiveBackendValidator:
                     
                     # Use emotion data in trust calculation context
                     if hasattr(trust_calc, 'calculate_aggregate_metric'):
-                        trust_result = trust_calc.calculate_aggregate_metric({
-                            'emotional_context': emotion
-                        })
+                        # First add some dimension metrics for the test entity with emotional context
+                        emotion_test_entity_id = "emotion_test_entity"
+                        trust_calc.update_dimension_metric(emotion_test_entity_id, "verification", 0.8, 
+                                                         metadata={'emotional_context': emotion})
+                        trust_calc.update_dimension_metric(emotion_test_entity_id, "attestation", 0.7,
+                                                         metadata={'emotional_context': emotion})
+                        
+                        # Calculate aggregate metric
+                        trust_result = trust_calc.calculate_aggregate_metric(emotion_test_entity_id)
                         interaction_tests.append(('emotion_trust_interaction', trust_result is not None))
                     else:
                         interaction_tests.append(('emotion_trust_interaction', True))  # Component exists

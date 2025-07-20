@@ -1,114 +1,112 @@
 {
   "summary": {
     "total_tests": 22,
-    "passed_tests": 19,
-    "failed_tests": 3,
-    "total_execution_time": 0.2857944965362549,
-    "pass_rate": 0.8636363636363636,
-    "critical_failures": [
-      "complete_governance_decision_pipeline"
-    ],
+    "passed_tests": 22,
+    "failed_tests": 0,
+    "total_execution_time": 0.28798866271972656,
+    "pass_rate": 1.0,
+    "critical_failures": [],
     "performance_metrics": {
       "component_creation_performance": {
-        "execution_time": 5.4836273193359375e-06,
+        "execution_time": 5.7220458984375e-06,
         "passed": true,
         "details": {
           "creation_times": {
-            "trust_calculator": 0.0026330947875976562,
-            "emotion_telemetry_logger": 2.288818359375e-05,
-            "decision_framework_engine": 0.0708627700805664,
-            "enhanced_veritas_2": 4.601478576660156e-05,
-            "governance_core": 0.0019276142120361328,
-            "reflection_loop_tracker": 2.86102294921875e-05
+            "trust_calculator": 0.0026001930236816406,
+            "emotion_telemetry_logger": 3.0994415283203125e-05,
+            "decision_framework_engine": 0.07328248023986816,
+            "enhanced_veritas_2": 4.029273986816406e-05,
+            "governance_core": 0.0016002655029296875,
+            "reflection_loop_tracker": 2.8133392333984375e-05
           },
-          "average_creation_time": 0.012586832046508789,
+          "average_creation_time": 0.01293039321899414,
           "threshold": 1.0,
           "slow_components": []
         }
       },
       "storage_operation_performance": {
-        "execution_time": 0.0001308917999267578,
+        "execution_time": 0.00016546249389648438,
         "passed": true,
         "details": {
           "operation_times": [
-            2.3365020751953125e-05,
-            1.2159347534179688e-05,
+            3.743171691894531e-05,
+            1.4066696166992188e-05,
+            1.049041748046875e-05,
+            9.775161743164062e-06,
+            1.1444091796875e-05,
+            9.775161743164062e-06,
+            1.6927719116210938e-05,
             1.0251998901367188e-05,
-            9.059906005859375e-06,
-            1.0967254638671875e-05,
-            9.5367431640625e-06,
-            1.6450881958007812e-05,
-            1.0013580322265625e-05,
-            8.821487426757812e-06,
-            8.344650268554688e-06
+            1.52587890625e-05,
+            9.059906005859375e-06
           ],
-          "average_operation_time": 1.1897087097167968e-05,
-          "max_operation_time": 2.3365020751953125e-05,
-          "min_operation_time": 8.344650268554688e-06,
+          "average_operation_time": 1.4448165893554688e-05,
+          "max_operation_time": 3.743171691894531e-05,
+          "min_operation_time": 9.059906005859375e-06,
           "threshold": 0.1,
           "operations_tested": 10
         }
       },
       "event_processing_performance": {
-        "execution_time": 9.918212890625e-05,
+        "execution_time": 0.00012493133544921875,
         "passed": true,
         "details": {
           "event_times": [
-            2.002716064453125e-05,
-            1.049041748046875e-05,
-            8.344650268554688e-06,
-            6.67572021484375e-06,
-            6.4373016357421875e-06,
-            6.4373016357421875e-06,
-            1.0967254638671875e-05,
-            7.62939453125e-06,
+            3.9577484130859375e-05,
+            1.5735626220703125e-05,
+            8.106231689453125e-06,
             6.198883056640625e-06,
+            5.9604644775390625e-06,
+            6.67572021484375e-06,
+            1.1682510375976562e-05,
+            7.62939453125e-06,
+            5.9604644775390625e-06,
             5.4836273193359375e-06
           ],
-          "average_event_time": 8.869171142578126e-06,
-          "max_event_time": 2.002716064453125e-05,
+          "average_event_time": 1.1301040649414062e-05,
+          "max_event_time": 3.9577484130859375e-05,
           "min_event_time": 5.4836273193359375e-06,
           "threshold": 0.05,
           "events_tested": 10
         }
       },
       "storage_scalability": {
-        "execution_time": 0.001268625259399414,
+        "execution_time": 0.0013785362243652344,
         "passed": true,
         "details": {
           "scalability_results": [
             {
               "batch_size": 10,
-              "execution_time": 9.560585021972656e-05,
-              "throughput": 104596.10972568579,
+              "execution_time": 0.00017213821411132812,
+              "throughput": 58092.853185595566,
               "success_rate": 1.0
             },
             {
               "batch_size": 50,
-              "execution_time": 0.0003902912139892578,
-              "throughput": 128109.46854001221,
+              "execution_time": 0.0003905296325683594,
+              "throughput": 128031.25763125763,
               "success_rate": 1.0
             },
             {
               "batch_size": 100,
-              "execution_time": 0.0007724761962890625,
-              "throughput": 129453.82716049382,
+              "execution_time": 0.0008080005645751953,
+              "throughput": 123762.28976099144,
               "success_rate": 1.0
             }
           ],
-          "average_throughput": 120719.8018087306,
+          "average_throughput": 103295.46685928153,
           "throughput_threshold": 10
         }
       },
       "event_bus_scalability": {
-        "execution_time": 0.0009357929229736328,
+        "execution_time": 0.0009763240814208984,
         "passed": true,
         "details": {
           "scalability_results": [
             {
               "event_count": 10,
-              "execution_time": 7.414817810058594e-05,
-              "throughput": 134865.08038585208,
+              "execution_time": 9.083747863769531e-05,
+              "throughput": 110086.71916010499,
               "success_rate": 1.0
             },
             {
@@ -119,12 +117,12 @@
             },
             {
               "event_count": 100,
-              "execution_time": 0.0005908012390136719,
-              "throughput": 169261.66263115415,
+              "execution_time": 0.0006163120269775391,
+              "throughput": 162255.47388781433,
               "success_rate": 1.0
             }
           ],
-          "average_throughput": 165391.20982129755,
+          "average_throughput": 154796.35983160193,
           "throughput_threshold": 50
         }
       }
@@ -134,7 +132,7 @@
     {
       "test_name": "component_creation_and_availability",
       "passed": true,
-      "execution_time": 3.814697265625e-06,
+      "execution_time": 4.0531158447265625e-06,
       "details": {
         "required_components": [
           "trust_calculator",
@@ -160,7 +158,7 @@
     {
       "test_name": "component_dependency_injection",
       "passed": true,
-      "execution_time": 5.7220458984375e-06,
+      "execution_time": 7.3909759521484375e-06,
       "details": {
         "injection_tests": [
           [
@@ -181,7 +179,7 @@
     {
       "test_name": "component_communication",
       "passed": true,
-      "execution_time": 0.00012755393981933594,
+      "execution_time": 0.0001354217529296875,
       "details": {
         "communication_tests": [
           [
@@ -206,7 +204,7 @@
     {
       "test_name": "real_vs_mock_detection",
       "passed": true,
-      "execution_time": 2.1696090698242188e-05,
+      "execution_time": 2.1219253540039062e-05,
       "details": {
         "component_analysis": {
           "trust_calculator": {
@@ -301,17 +299,17 @@
     {
       "test_name": "component_creation_performance",
       "passed": true,
-      "execution_time": 5.4836273193359375e-06,
+      "execution_time": 5.7220458984375e-06,
       "details": {
         "creation_times": {
-          "trust_calculator": 0.0026330947875976562,
-          "emotion_telemetry_logger": 2.288818359375e-05,
-          "decision_framework_engine": 0.0708627700805664,
-          "enhanced_veritas_2": 4.601478576660156e-05,
-          "governance_core": 0.0019276142120361328,
-          "reflection_loop_tracker": 2.86102294921875e-05
+          "trust_calculator": 0.0026001930236816406,
+          "emotion_telemetry_logger": 3.0994415283203125e-05,
+          "decision_framework_engine": 0.07328248023986816,
+          "enhanced_veritas_2": 4.029273986816406e-05,
+          "governance_core": 0.0016002655029296875,
+          "reflection_loop_tracker": 2.8133392333984375e-05
         },
-        "average_creation_time": 0.012586832046508789,
+        "average_creation_time": 0.01293039321899414,
         "threshold": 1.0,
         "slow_components": []
       },
@@ -320,23 +318,23 @@
     {
       "test_name": "storage_operation_performance",
       "passed": true,
-      "execution_time": 0.0001308917999267578,
+      "execution_time": 0.00016546249389648438,
       "details": {
         "operation_times": [
-          2.3365020751953125e-05,
-          1.2159347534179688e-05,
+          3.743171691894531e-05,
+          1.4066696166992188e-05,
+          1.049041748046875e-05,
+          9.775161743164062e-06,
+          1.1444091796875e-05,
+          9.775161743164062e-06,
+          1.6927719116210938e-05,
           1.0251998901367188e-05,
-          9.059906005859375e-06,
-          1.0967254638671875e-05,
-          9.5367431640625e-06,
-          1.6450881958007812e-05,
-          1.0013580322265625e-05,
-          8.821487426757812e-06,
-          8.344650268554688e-06
+          1.52587890625e-05,
+          9.059906005859375e-06
         ],
-        "average_operation_time": 1.1897087097167968e-05,
-        "max_operation_time": 2.3365020751953125e-05,
-        "min_operation_time": 8.344650268554688e-06,
+        "average_operation_time": 1.4448165893554688e-05,
+        "max_operation_time": 3.743171691894531e-05,
+        "min_operation_time": 9.059906005859375e-06,
         "threshold": 0.1,
         "operations_tested": 10
       },
@@ -345,22 +343,22 @@
     {
       "test_name": "event_processing_performance",
       "passed": true,
-      "execution_time": 9.918212890625e-05,
+      "execution_time": 0.00012493133544921875,
       "details": {
         "event_times": [
-          2.002716064453125e-05,
-          1.049041748046875e-05,
-          8.344650268554688e-06,
-          6.67572021484375e-06,
-          6.4373016357421875e-06,
-          6.4373016357421875e-06,
-          1.0967254638671875e-05,
-          7.62939453125e-06,
+          3.9577484130859375e-05,
+          1.5735626220703125e-05,
+          8.106231689453125e-06,
           6.198883056640625e-06,
+          5.9604644775390625e-06,
+          6.67572021484375e-06,
+          1.1682510375976562e-05,
+          7.62939453125e-06,
+          5.9604644775390625e-06,
           5.4836273193359375e-06
         ],
-        "average_event_time": 8.869171142578126e-06,
-        "max_event_time": 2.002716064453125e-05,
+        "average_event_time": 1.1301040649414062e-05,
+        "max_event_time": 3.9577484130859375e-05,
         "min_event_time": 5.4836273193359375e-06,
         "threshold": 0.05,
         "events_tested": 10
@@ -370,7 +368,7 @@
     {
       "test_name": "memory_usage_validation",
       "passed": true,
-      "execution_time": 0.00010228157043457031,
+      "execution_time": 0.00012564659118652344,
       "details": {
         "memory_usage_mb": 110,
         "threshold_mb": 500,
@@ -380,8 +378,8 @@
     },
     {
       "test_name": "graceful_component_failure_handling",
-      "passed": false,
-      "execution_time": 2.1457672119140625e-05,
+      "passed": true,
+      "execution_time": 7.128715515136719e-05,
       "details": {
         "error_scenarios": [
           [
@@ -390,23 +388,23 @@
           ],
           [
             "invalid_storage_data",
-            false
+            true
           ],
           [
             "invalid_event_publish",
-            false
+            true
           ]
         ],
-        "passed_scenarios": 1,
-        "failed_scenarios": 2,
-        "error_handling_rate": 0.3333333333333333
+        "passed_scenarios": 3,
+        "failed_scenarios": 0,
+        "error_handling_rate": 1.0
       },
-      "error_message": "Failed error handling scenarios: [('invalid_storage_data', False), ('invalid_event_publish', False)]"
+      "error_message": null
     },
     {
       "test_name": "storage_error_recovery",
       "passed": true,
-      "execution_time": 2.0265579223632812e-05,
+      "execution_time": 5.340576171875e-05,
       "details": {
         "recovery_tests": [
           [
@@ -431,7 +429,7 @@
     {
       "test_name": "event_bus_error_handling",
       "passed": true,
-      "execution_time": 4.410743713378906e-05,
+      "execution_time": 7.581710815429688e-05,
       "details": {
         "error_handling_tests": [
           [
@@ -451,8 +449,8 @@
     },
     {
       "test_name": "complete_governance_decision_pipeline",
-      "passed": false,
-      "execution_time": 0.00015044212341308594,
+      "passed": true,
+      "execution_time": 0.00030350685119628906,
       "details": {
         "pipeline_steps": [
           [
@@ -465,7 +463,7 @@
           ],
           [
             "trust_calculation",
-            false
+            true
           ],
           [
             "data_storage",
@@ -476,37 +474,37 @@
             true
           ]
         ],
-        "passed_steps": 4,
-        "failed_steps": 1,
-        "pipeline_completion_rate": 0.8
+        "passed_steps": 5,
+        "failed_steps": 0,
+        "pipeline_completion_rate": 1.0
       },
-      "error_message": "Failed pipeline steps: [('trust_calculation', False)]"
+      "error_message": null
     },
     {
       "test_name": "multi_component_interaction_pipeline",
-      "passed": false,
-      "execution_time": 0.00011372566223144531,
+      "passed": true,
+      "execution_time": 0.00021147727966308594,
       "details": {
         "interaction_tests": [
           [
             "veritas_storage_event_chain",
-            "6ff25763-758f-49f5-89d5-8c2c141e9a51"
+            "1e4b38e8-bf12-443e-93c2-1c0e9214fb9f"
           ],
           [
             "emotion_trust_interaction",
-            false
+            true
           ]
         ],
-        "passed_interactions": 1,
-        "failed_interactions": 1,
-        "interaction_success_rate": 0.5
+        "passed_interactions": 2,
+        "failed_interactions": 0,
+        "interaction_success_rate": 1.0
       },
-      "error_message": "Failed interaction tests: [('emotion_trust_interaction', False)]"
+      "error_message": null
     },
     {
       "test_name": "deployment_validation",
       "passed": true,
-      "execution_time": 7.128715515136719e-05,
+      "execution_time": 9.512901306152344e-05,
       "details": {
         "deployment_checks": [
           [
@@ -555,7 +553,7 @@
     {
       "test_name": "health_check_functionality",
       "passed": true,
-      "execution_time": 4.76837158203125e-05,
+      "execution_time": 7.724761962890625e-05,
       "details": {
         "health_checks": [
           [
@@ -596,7 +594,7 @@
     {
       "test_name": "configuration_management",
       "passed": true,
-      "execution_time": 7.3909759521484375e-06,
+      "execution_time": 1.049041748046875e-05,
       "details": {
         "config_tests": [
           [
@@ -641,29 +639,29 @@
     {
       "test_name": "storage_scalability",
       "passed": true,
-      "execution_time": 0.001268625259399414,
+      "execution_time": 0.0013785362243652344,
       "details": {
         "scalability_results": [
           {
             "batch_size": 10,
-            "execution_time": 9.560585021972656e-05,
-            "throughput": 104596.10972568579,
+            "execution_time": 0.00017213821411132812,
+            "throughput": 58092.853185595566,
             "success_rate": 1.0
           },
           {
             "batch_size": 50,
-            "execution_time": 0.0003902912139892578,
-            "throughput": 128109.46854001221,
+            "execution_time": 0.0003905296325683594,
+            "throughput": 128031.25763125763,
             "success_rate": 1.0
           },
           {
             "batch_size": 100,
-            "execution_time": 0.0007724761962890625,
-            "throughput": 129453.82716049382,
+            "execution_time": 0.0008080005645751953,
+            "throughput": 123762.28976099144,
             "success_rate": 1.0
           }
         ],
-        "average_throughput": 120719.8018087306,
+        "average_throughput": 103295.46685928153,
         "throughput_threshold": 10
       },
       "error_message": null
@@ -671,13 +669,13 @@
     {
       "test_name": "event_bus_scalability",
       "passed": true,
-      "execution_time": 0.0009357929229736328,
+      "execution_time": 0.0009763240814208984,
       "details": {
         "scalability_results": [
           {
             "event_count": 10,
-            "execution_time": 7.414817810058594e-05,
-            "throughput": 134865.08038585208,
+            "execution_time": 9.083747863769531e-05,
+            "throughput": 110086.71916010499,
             "success_rate": 1.0
           },
           {
@@ -688,12 +686,12 @@
           },
           {
             "event_count": 100,
-            "execution_time": 0.0005908012390136719,
-            "throughput": 169261.66263115415,
+            "execution_time": 0.0006163120269775391,
+            "throughput": 162255.47388781433,
             "success_rate": 1.0
           }
         ],
-        "average_throughput": 165391.20982129755,
+        "average_throughput": 154796.35983160193,
         "throughput_threshold": 50
       },
       "error_message": null
@@ -701,7 +699,7 @@
     {
       "test_name": "data_persistence_validation",
       "passed": true,
-      "execution_time": 6.890296936035156e-05,
+      "execution_time": 9.775161743164062e-05,
       "details": {
         "persistence_tests": [
           [
@@ -726,7 +724,7 @@
     {
       "test_name": "data_consistency_validation",
       "passed": true,
-      "execution_time": 0.10124778747558594,
+      "execution_time": 0.10080885887145996,
       "details": {
         "consistency_tests": [
           [
@@ -751,7 +749,7 @@
     {
       "test_name": "event_publishing_and_processing",
       "passed": true,
-      "execution_time": 0.0001633167266845703,
+      "execution_time": 0.00015592575073242188,
       "details": {
         "communication_tests": [
           [
@@ -780,7 +778,7 @@
     {
       "test_name": "event_priority_handling",
       "passed": true,
-      "execution_time": 5.9604644775390625e-05,
+      "execution_time": 6.818771362304688e-05,
       "details": {
         "priority_tests": [
           [
@@ -803,6 +801,6 @@
       "error_message": null
     }
   ],
-  "timestamp": "2025-07-19T18:01:24.613111",
+  "timestamp": "2025-07-19T19:56:30.107616",
   "validator_version": "1.0.0"
 }

@@ -144,6 +144,14 @@ class ProductionGovernanceStorageBackend:
         start_time = time.time()
         
         try:
+            # Input validation
+            if data_type is None or data_type == "":
+                raise ValueError("data_type cannot be None or empty")
+            if data is None:
+                raise ValueError("data cannot be None")
+            if not isinstance(data, dict):
+                raise ValueError("data must be a dictionary")
+            
             if record_id is None:
                 record_id = str(uuid.uuid4())
             
@@ -404,6 +412,12 @@ class ProductionGovernanceEventBus:
     
     async def publish(self, event: GovernanceEvent) -> bool:
         """Publish event with production error handling"""
+        # Input validation - raise exceptions for invalid input
+        if event is None:
+            raise ValueError("event cannot be None")
+        if not isinstance(event, GovernanceEvent):
+            raise ValueError("event must be a GovernanceEvent instance")
+        
         try:
             if self.event_queue.full():
                 self.logger.warning("Event queue is full, dropping oldest event")
@@ -420,7 +434,7 @@ class ProductionGovernanceEventBus:
         except Exception as e:
             self.processing_errors += 1
             self.logger.error(f"Failed to publish event: {e}")
-            return False
+            raise  # Re-raise the exception instead of returning False
     
     async def _process_events(self):
         """Process events in batches for better performance"""
