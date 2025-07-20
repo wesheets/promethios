@@ -76,11 +76,12 @@ export class OptimizedExistingDataBridge {
       
       if (cached) {
         console.log(`⚡ Dashboard metrics served from cache (${Date.now() - startTime}ms)`);
-        console.log(`🔍 Cached dashboard metrics:`, {
-          totalAgents: cached.agents?.total,
-          governanceScore: cached.governance?.score,
-          trustScore: cached.trust?.averageScore
-        });
+      console.log(`🔍 Cached dashboard metrics:`, {
+        totalAgents: cached.agents?.total,
+        governanceScore: cached.governance?.score,
+        trustScore: cached.trust?.averageScore,
+        fullCachedData: cached
+      });
         return cached;
       }
 
