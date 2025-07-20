@@ -1,91 +1,90 @@
-/**
- * useGovernanceDashboard Hook
- * React hook for managing Dashboard state with existing Promethios data sources
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
-import existingDataBridgeService from '../services/ExistingDataBridgeService';
-import { DashboardMetrics, BackendHealthStatus } from '../services/GovernanceDashboardService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import { existingDataBridgeService } from '../services/ExistingDataBridgeService';
 
-interface UseGovernanceDashboardReturn {
-  metrics: DashboardMetrics;
-  health: BackendHealthStatus;
-  loading: boolean;
-  error: string | null;
-  lastUpdated: Date | null;
-  isConnected: boolean;
-  refreshMetrics: () => Promise<void>;
-  triggerAction: (action: string, params?: any) => Promise<any>;
+export interface DashboardMetrics {
+  agents: {
+    total: number;
+    healthy: number;
+    warning: number;
+    critical: number;
+  };
+  governance: {
+    score: number;
+    activePolicies: number;
+    violations: number;
+  };
+  trust: {
+    averageScore: number;
+    competence: number;
+    reliability: number;
+    honesty: number;
+    transparency: number;
+    attestations: number;
+    boundaries: number;
+  };
+  systemHealth: {
+    status: 'operational' | 'degraded' | 'down';
+    lastCheck: Date;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: 'info' | 'warning' | 'error' | 'success';
+    message: string;
+    timestamp: Date;
+  }>;
 }
 
-export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
-  const { currentUser } = useAuth(); // Get current authenticated user
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
-    agents: { total: 0, individual: 0, multiAgent: 0, healthy: 0, warning: 0, critical: 0 },
-    governance: { score: 0, activePolicies: 0, violations: 0, complianceRate: 0 },
-    trust: { averageScore: 0, competence: 0, reliability: 0, honesty: 0, transparency: 0, totalAttestations: 0, activeBoundaries: 0 },
-    activity: { recentEvents: [] },
-  });
+export interface SystemHealth {
+  status: 'operational' | 'degraded' | 'down';
+  uptime: number;
+  lastCheck: Date;
+  components: {
+    storage: 'operational' | 'degraded' | 'down';
+    eventBus: 'operational' | 'degraded' | 'down';
+    governance: 'operational' | 'degraded' | 'down';
+  };
+}
 
-  const [health, setHealth] = useState<BackendHealthStatus>({
-    status: 'down',
-    lastCheck: new Date().toISOString(),
-    components: {
-      trustMetricsCalculator: false,
-      enhancedVeritas: false,
-      emotionTelemetry: false,
-      governanceCore: false,
-      eventBus: false,
-      storage: false,
-    },
-  });
-
+export function useGovernanceDashboard() {
+  const { currentUser } = useAuth();
+  const mountedRef = useRef(true);
+  
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [health, setHealth] = useState<SystemHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const mountedRef = useRef(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   /**
-   * Fetch dashboard metrics from bridge service
+   * Refresh dashboard metrics from backend
    */
   const refreshMetrics = useCallback(async () => {
-    if (!mountedRef.current || loading) return;
-
-    setLoading(true);
-
+    if (!mountedRef.current || !currentUser?.uid) {
+      setLoading(false);
+      return;
+    }
+    
     try {
+      console.log('🔧 useGovernanceDashboard: Setting current user in bridge service:', currentUser.uid);
+      await existingDataBridgeService.setCurrentUser(currentUser.uid);
+      
       setError(null);
       
-      // CRITICAL: Set the current user in the bridge service
-      if (currentUser?.uid) {
-        console.log('🔧 useGovernanceDashboard: Setting current user in bridge service:', currentUser.uid);
-        existingDataBridgeService.setCurrentUser(currentUser.uid);
-      } else {
-        console.warn('⚠️ useGovernanceDashboard: No current user available');
-        setLoading(false);
-        return;
-      }
+      const newMetrics = await existingDataBridgeService.getDashboardMetrics();
+      const healthData = await existingDataBridgeService.getSystemHealth();
       
-      // Fetch metrics and health in parallel
-      const [metricsData, healthData] = await Promise.all([
-        existingDataBridgeService.getDashboardMetrics(),
-        existingDataBridgeService.getBackendHealth(),
-      ]);
-
       if (mountedRef.current) {
-        setMetrics(metricsData);
+        setMetrics(newMetrics);
         setHealth(healthData);
+        setIsConnected(true);
         setLastUpdated(new Date());
-        setIsConnected(healthData.status !== 'down');
+        console.log('✅ Dashboard metrics loaded successfully');
       }
     } catch (err) {
       if (mountedRef.current) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboard data';
-        setError(errorMessage);
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
         setIsConnected(false);
         console.error('Dashboard refresh error:', err);
       }
@@ -94,95 +93,52 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
         setLoading(false);
       }
     }
-  }, [loading, currentUser]); // Add currentUser as dependency
+  }, [currentUser?.uid]);
 
   /**
    * Trigger governance action
    */
   const triggerAction = useCallback(async (action: string, params: any = {}) => {
+    if (!currentUser?.uid) return;
+    
     try {
-      setError(null);
-      const result = await existingDataBridgeService.triggerGovernanceAction(action, params);
-      
+      await existingDataBridgeService.triggerAction(action, params);
       // Refresh metrics after action
       await refreshMetrics();
-      
-      return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to execute action: ${action}`;
-      setError(errorMessage);
-      throw err;
+      console.error('Action trigger error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to trigger action');
     }
-  }, [refreshMetrics]);
+  }, [currentUser?.uid, refreshMetrics]);
 
-  /**
-   * Handle real-time updates from existing data bridge service
-   */
+  // Initial load and setup
   useEffect(() => {
-    const handleMetricsUpdate = (data: any) => {
-      if (mountedRef.current) {
-        setMetrics(prevMetrics => ({
-          ...prevMetrics,
-          ...data,
-        }));
-        setLastUpdated(new Date());
-      }
-    };
+    if (currentUser?.uid) {
+      console.log('🚀 useGovernanceDashboard: Initial load for user:', currentUser.uid);
+      refreshMetrics();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUser?.uid, refreshMetrics]);
 
-    const handleConnectionChange = (data: any) => {
-      if (mountedRef.current) {
-        setIsConnected(data.status === 'connected');
-        if (data.status === 'connected') {
-          setError(null);
-          // Refresh data when reconnected
-          refreshMetrics();
-        } else if (data.status === 'error') {
-          setError('Data bridge connection error');
-        }
-      }
-    };
-
-    // Subscribe to real-time updates from existing data bridge
-    existingDataBridgeService.on('metrics_update', handleMetricsUpdate);
-    existingDataBridgeService.on('connection', handleConnectionChange);
-
-    return () => {
-      existingDataBridgeService.off('metrics_update', handleMetricsUpdate);
-      existingDataBridgeService.off('connection', handleConnectionChange);
-    };
-  }, [refreshMetrics]);
-
-  /**
-   * Initialize dashboard data and set up refresh interval
-   */
+  // Periodic refresh every 30 seconds
   useEffect(() => {
-    // Initial data fetch
-    refreshMetrics();
+    if (!currentUser?.uid) return;
 
-    // Set up periodic refresh (every 30 seconds)
-    refreshIntervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       if (mountedRef.current) {
-        // Refresh data periodically to check for changes
+        console.log('🔄 Periodic dashboard refresh');
         refreshMetrics();
       }
     }, 30000);
 
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [refreshMetrics, isConnected]);
+    return () => clearInterval(interval);
+  }, [currentUser?.uid, refreshMetrics]);
 
-  /**
-   * Cleanup on unmount
-   */
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
     };
   }, []);
 
@@ -191,12 +147,10 @@ export const useGovernanceDashboard = (): UseGovernanceDashboardReturn => {
     health,
     loading,
     error,
-    lastUpdated,
     isConnected,
+    lastUpdated,
     refreshMetrics,
-    triggerAction,
+    triggerAction
   };
-};
-
-export default useGovernanceDashboard;
+}
 
