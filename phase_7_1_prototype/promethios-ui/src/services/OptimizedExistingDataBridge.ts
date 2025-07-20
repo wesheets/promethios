@@ -223,14 +223,15 @@ export class OptimizedExistingDataBridge {
     console.log(`🧮 Calculating optimized metrics from batch results`);
     
     // Get agents data from cache first (which should have the 17 agents)
+    // Use the correct cache key format and category that matches the actual cached data
     const cacheKey = `agents:${this.currentUser}`;
-    const cachedAgents = universalCache.get(cacheKey);
+    const cachedAgents = universalCache.get(cacheKey, 'agents');
     console.log(`🔍 Cached agents data:`, cachedAgents);
     
     let agents: AgentProfile[] = [];
     
-    if (cachedAgents && cachedAgents.data && Array.isArray(cachedAgents.data)) {
-      agents = cachedAgents.data;
+    if (cachedAgents && Array.isArray(cachedAgents)) {
+      agents = cachedAgents;
       console.log(`🔍 Using cached agents array:`, agents);
       console.log(`🔍 Cached agents array length:`, agents.length);
     } else {
