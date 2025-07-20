@@ -339,7 +339,7 @@ const DashboardPage: React.FC = () => {
                   }
                 }} 
               />
-              {(metrics?.agents?.total || 0) === 0 ? ((
+              {(metrics?.agents?.total || 0) === 0 ? (
                 <Button 
                   size="small" 
                   startIcon={<Add />}
