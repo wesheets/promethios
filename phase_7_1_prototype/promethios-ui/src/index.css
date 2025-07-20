@@ -4,13 +4,22 @@
 @tailwind utilities;
 
 /* Custom styles */
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  background-color: #1a202c; /* Dark background to prevent white boxes */
+  color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure root div also has dark background */
+#root {
+  background-color: #1a202c;
+  min-height: 100vh;
 }
 
 /* Dark mode styles */

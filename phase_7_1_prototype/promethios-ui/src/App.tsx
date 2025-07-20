@@ -45,10 +45,10 @@ const AppContent: React.FC = () => {
   console.log('📍 Current location:', location.pathname);
   
   return (
-    <div className="min-h-screen flex flex-col dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       {/* Only show NewHeader for non-UI routes */}
       {!isUIRoute && <NewHeader />}
-      <div className={`flex-grow ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
+      <div className={`flex-grow bg-gray-900 ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
                 <Routes>
                   <Route path="/" element={<NewLandingPage />} />
                   <Route path="/signup" element={<LoginWaitlistPage />} />
