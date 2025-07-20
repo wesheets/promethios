@@ -222,11 +222,10 @@ export class OptimizedExistingDataBridge {
   private async calculateOptimizedMetrics(batchResults: Map<string, any>): Promise<DashboardMetrics> {
     console.log(`🧮 Calculating optimized metrics from batch results`);
     
-    // Get agents data (from cache or batch result)
-    const agentsResult = batchResults.get('agents');
-    console.log(`🔍 Agents result from batch:`, agentsResult);
+    // Get agents data directly from UserAgentStorageService (not from batch results)
+    console.log(`🔍 Loading agents directly from UserAgentStorageService instead of batch results`);
     
-    const agents: AgentProfile[] = agentsResult?.data || await this.loadAgentsFromStorage();
+    const agents: AgentProfile[] = await this.loadAgentsFromStorage();
     console.log(`🔍 Final agents array:`, agents);
     console.log(`🔍 Agents array length:`, agents.length);
     
