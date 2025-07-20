@@ -83,6 +83,7 @@ const DashboardPage: React.FC = () => {
     loading: dashboardLoading,
     error: dashboardError,
     isConnected,
+    lastUpdated,
     loadingProgress,
     currentStage,
     refreshMetrics,
