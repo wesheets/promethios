@@ -304,7 +304,12 @@ const DashboardPage: React.FC = () => {
                 </Box>
               </Box>
                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#2d3748' }}>
-                {metrics?.agents?.total || 0}
+                {(() => {
+                  console.log('🔍 Dashboard UI metrics object:', metrics);
+                  console.log('🔍 Dashboard UI agents object:', metrics?.agents);
+                  console.log('🔍 Dashboard UI agents.total:', metrics?.agents?.total);
+                  return metrics?.agents?.total || 0;
+                })()}
               </Typography>
               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                 <Chip 
