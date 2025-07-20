@@ -710,7 +710,7 @@ const DashboardPage: React.FC = () => {
                 </IconButton>
               </Box>
               <List>
-                {metrics.activity.recentEvents.map((event, index) => (
+                {(metrics?.activity?.recentEvents || []).map((event, index) => (
                   <React.Fragment key={event.id}>
                     <ListItem sx={{ px: 0 }}>
                       <ListItemIcon>
@@ -725,7 +725,7 @@ const DashboardPage: React.FC = () => {
                         secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
                       />
                     </ListItem>
-                    {index < metrics.activity.recentEvents.length - 1 && (
+                    {index < (metrics?.activity?.recentEvents || []).length - 1 && (
                       <Divider sx={{ borderColor: '#4a5568' }} />
                     )}
                   </React.Fragment>
