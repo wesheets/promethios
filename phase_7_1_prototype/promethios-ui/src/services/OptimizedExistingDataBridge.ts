@@ -224,7 +224,7 @@ export class OptimizedExistingDataBridge {
     
     // Get agents data from cache first (which should have the 17 agents)
     const cacheKey = `agents:${this.currentUser}`;
-    const cachedAgents = this.cache.get(cacheKey);
+    const cachedAgents = universalCache.get(cacheKey);
     console.log(`🔍 Cached agents data:`, cachedAgents);
     
     let agents: AgentProfile[] = [];
