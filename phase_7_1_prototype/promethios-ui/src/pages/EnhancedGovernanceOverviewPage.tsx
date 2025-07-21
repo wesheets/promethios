@@ -350,7 +350,7 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser, dualRegistry, governanceEngine, timeRange, toast]);
+  }, [currentUser, dualRegistry, governanceEngine, storageService, timeRange, toast]);
 
   // Refresh data
   const handleRefresh = useCallback(async () => {
