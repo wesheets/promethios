@@ -287,15 +287,6 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Original Enhanced Governance Overview for debugging */}
-        <Route path="governance/enhanced" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <EnhancedGovernanceOverviewPage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
         <Route path="governance/policies" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>

@@ -370,16 +370,20 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         const storageService = new UnifiedStorageService();
         const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
         
+        console.log('🔍 Raw multi-agent systems from storage:', userSystems);
+        
         // Filter main systems (not testing/production variants)
         const mainSystems = userSystems.filter((systemRef: any) => {
           const systemId = systemRef.id || '';
-          return !systemId.endsWith('-testing') && 
-                 !systemId.endsWith('-production') &&
-                 !systemRef.environment &&
-                 !systemRef.deploymentType;
+          const isMainSystem = !systemId.endsWith('-testing') && 
+                              !systemId.endsWith('-production') &&
+                              !systemRef.environment &&
+                              !systemRef.deploymentType;
+          console.log(`🔍 System ${systemId}: isMainSystem=${isMainSystem}`, systemRef);
+          return isMainSystem;
         });
         
-        console.log('📊 Loaded multi-agent systems:', mainSystems.length, mainSystems.map((s: any) => s.name || s.id));
+        console.log('📊 Filtered main multi-agent systems:', mainSystems.length, mainSystems.map((s: any) => s.name || s.id));
         
         // Convert individual agents to scorecards
         const agentScorecards: AgentScorecard[] = agents.map((agent, index) => {
@@ -500,11 +504,14 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         });
         
         // Convert multi-agent systems to scorecards
+        console.log('🔄 Converting multi-agent systems to scorecards...');
         const multiAgentScorecards: AgentScorecard[] = await Promise.all(
           mainSystems.map(async (systemRef: any, index: number) => {
+            console.log(`🔄 Processing multi-agent system ${index + 1}:`, systemRef);
             try {
               // Load full system data
               const systemData = await storageService.get('multi-agent-system', systemRef.id);
+              console.log(`📊 System data for ${systemRef.id}:`, systemData);
               
               // Calculate metrics for multi-agent system based on deployment status
               const isActive = systemRef.status === 'active';
