@@ -262,7 +262,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <EnhancedGovernanceOverviewPage />
+              <SimplifiedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -272,6 +272,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <SimplifiedGovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Original Enhanced Governance Overview for debugging */}
+        <Route path="governance/enhanced" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <EnhancedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
