@@ -413,34 +413,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             governanceModel = 'native-llm';
           }
           
-          // Calculate trust score based on deployment status
-          let trustScore: number;
-          let isRealData = false;
-          
-          if (agentStatus === 'active' && agent.isDeployed) {
-            // For deployed agents, we would get real metrics from monitoring
-            // For now, show that real data would be available
-            const trustScoreMap = { low: 45, medium: 70, high: 90 };
-            trustScore = trustScoreMap[agent.trustLevel] || 70;
-            isRealData = true; // This would be true when connected to real monitoring
-          } else {
-            // For non-deployed agents, show placeholder
-            trustScore = 0;
-          }
-          
-          // Calculate compliance rate based on deployment status
-          let complianceRate: number;
-          
-          if (agentStatus === 'active' && agent.isDeployed) {
-            // For deployed agents, compliance would be based on real monitoring
-            const complianceMap = { healthy: 100, warning: 85, critical: 60 };
-            complianceRate = complianceMap[agent.healthStatus] || 85;
-          } else {
-            // For non-deployed agents, no compliance data available
-            complianceRate = 0;
-          }
-          
-          // Determine agent status based on multiple factors
+          // Determine agent status based on multiple factors FIRST
           let agentStatus: 'active' | 'inactive' | 'suspended' = 'inactive';
           
           // Check if agent has critical health issues (should be suspended)
@@ -473,6 +446,33 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             hasApiDetails: !!agent.apiDetails,
             isDeployed: agent.isDeployed
           });
+          
+          // Calculate trust score based on deployment status
+          let trustScore: number;
+          let isRealData = false;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, we would get real metrics from monitoring
+            // For now, show that real data would be available
+            const trustScoreMap = { low: 45, medium: 70, high: 90 };
+            trustScore = trustScoreMap[agent.trustLevel] || 70;
+            isRealData = true; // This would be true when connected to real monitoring
+          } else {
+            // For non-deployed agents, show placeholder
+            trustScore = 0;
+          }
+          
+          // Calculate compliance rate based on deployment status
+          let complianceRate: number;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, compliance would be based on real monitoring
+            const complianceMap = { healthy: 100, warning: 85, critical: 60 };
+            complianceRate = complianceMap[agent.healthStatus] || 85;
+          } else {
+            // For non-deployed agents, no compliance data available
+            complianceRate = 0;
+          }
           
           // Calculate violations based on deployment status
           let violationCount: number;
