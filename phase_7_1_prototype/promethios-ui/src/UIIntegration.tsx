@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { 
   MainLayoutProxy, 
   DashboardProxy, 
@@ -72,10 +72,12 @@ import PrometheosLLMCreationPage from './pages/PrometheosLLMCreationPage';
  * All routes are protected and require onboarding completion.
  */
 const UIIntegration: React.FC = () => {
+  const location = useLocation();
+  
   // Using proxy components to connect to the actual UI components
   return (
     <ObserverProvider>
-      <Routes>
+      <Routes key={location.pathname}>
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="demo" element={<OnboardingDemo />} />
