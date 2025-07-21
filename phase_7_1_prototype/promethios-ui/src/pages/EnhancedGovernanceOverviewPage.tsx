@@ -264,9 +264,6 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
         trend: 'stable' as const,
         change: 0
       };
-        agentId: undefined,
-        source: 'deployed_agents' // Only from deployed agents
-      });
 
       // Calculate scores from OptimizedDataBridge data
       const avgTrustScore = trustScore;
