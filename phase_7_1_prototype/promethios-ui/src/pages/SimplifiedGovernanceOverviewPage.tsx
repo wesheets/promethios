@@ -124,7 +124,12 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       
     } catch (err) {
       console.error('❌ Error loading governance data:', err);
-      setError('Failed to load governance data');
+      console.error('❌ Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : 'No stack trace',
+        name: err instanceof Error ? err.name : 'Unknown error type'
+      });
+      setError(`Failed to load governance data: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
