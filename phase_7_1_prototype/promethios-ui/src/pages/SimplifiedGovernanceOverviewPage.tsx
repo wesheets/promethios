@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { OptimizedExistingDataBridge } from '../services/OptimizedExistingDataBridge';
 import { UserAgentStorageService } from '../services/UserAgentStorageService';
 import { multiAgentService } from '../services/multiAgentService';
-import { AgentDetailModal } from '../components/AgentDetailModal';
+import AgentDetailModal from '../components/AgentDetailModal';
 import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
 
 interface GovernanceMetrics {
