@@ -32,6 +32,7 @@ import GovernanceOverviewPage from './pages/GovernanceOverviewPage';
 import GovernancePoliciesPage from './pages/GovernancePoliciesPage';
 // Import Enhanced versions instead of original pages
 import EnhancedGovernanceOverviewPage from './pages/EnhancedGovernanceOverviewPage';
+import SimplifiedGovernanceOverviewPage from './pages/SimplifiedGovernanceOverviewPage';
 import EnhancedGovernanceViolationsPage from './pages/EnhancedGovernanceViolationsPage';
 import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage';
 import EnhancedDeployPage from './pages/EnhancedDeployPage';
@@ -262,6 +263,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnhancedGovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Simplified Governance Overview for testing */}
+        <Route path="governance/simple" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <SimplifiedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
