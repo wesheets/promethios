@@ -4,7 +4,7 @@ import { OptimizedExistingDataBridge } from '../services/OptimizedExistingDataBr
 import { UserAgentStorageService } from '../services/UserAgentStorageService';
 import { multiAgentService } from '../services/multiAgentService';
 import { AgentDetailModal } from '../components/AgentDetailModal';
-import { exportUtils } from '../utils/exportUtils';
+import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
 
 interface GovernanceMetrics {
   overallScore: number;
@@ -149,7 +149,34 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
 
   // Stable event handlers
   const handleExport = useCallback((format: 'csv' | 'json' | 'pdf') => {
-    exportUtils.exportGovernanceData(filteredScorecards, format);
+    // Convert our AgentScorecard format to the expected format
+    const exportData = filteredScorecards.map(scorecard => ({
+      agentId: scorecard.id,
+      agentName: scorecard.name,
+      agentDescription: `${scorecard.type} agent with ${scorecard.governance} governance`,
+      trustScore: scorecard.trustScore || 0,
+      complianceRate: scorecard.compliance || 0,
+      violationCount: scorecard.violations,
+      status: scorecard.status.toLowerCase() as 'active' | 'inactive' | 'suspended',
+      type: scorecard.type === 'Multi-Agent' ? 'multi-agent' : 'single',
+      healthStatus: scorecard.health.toLowerCase() as 'healthy' | 'warning' | 'critical',
+      trustLevel: scorecard.trustScore && scorecard.trustScore > 80 ? 'high' : 
+                  scorecard.trustScore && scorecard.trustScore > 60 ? 'medium' : 'low',
+      provider: scorecard.governance,
+      lastActivity: new Date()
+    }));
+
+    switch (format) {
+      case 'csv':
+        exportToCSV(exportData, 'governance-report');
+        break;
+      case 'json':
+        exportToJSON(exportData, 'governance-report');
+        break;
+      case 'pdf':
+        exportToPDF(exportData, 'governance-report');
+        break;
+    }
   }, [filteredScorecards]);
 
   const handleAgentClick = useCallback((agent: AgentScorecard) => {
