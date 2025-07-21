@@ -66,17 +66,15 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       const dashboardMetrics = await dataBridge.getDashboardMetrics(currentUser.uid);
       console.log('✅ Step 3 complete: Dashboard metrics loaded');
       
-      // Load agents
-      console.log('🔄 Step 4: Creating UserAgentStorageService...');
-      const userAgentService = new UserAgentStorageService();
-      console.log('🔄 Step 5: Loading agents...');
-      const agents = await userAgentService.loadAgents(currentUser.uid);
-      console.log(`✅ Step 5 complete: Loaded ${agents.length} agents`);
+      // Get agents from dashboard metrics (already loaded by OptimizedExistingDataBridge)
+      console.log('🔄 Step 4: Extracting agents from dashboard metrics...');
+      const agents = dashboardMetrics.agents || [];
+      console.log(`✅ Step 4 complete: Extracted ${agents.length} agents from dashboard metrics`);
       
       // Load multi-agent systems
-      console.log('🔄 Step 6: Loading multi-agent systems...');
+      console.log('🔄 Step 5: Loading multi-agent systems...');
       const multiAgentSystems = await multiAgentService.getMultiAgentSystems(currentUser.uid);
-      console.log(`✅ Step 6 complete: Loaded ${multiAgentSystems.length} multi-agent systems:`, multiAgentSystems);
+      console.log(`✅ Step 5 complete: Loaded ${multiAgentSystems.length} multi-agent systems:`, multiAgentSystems);
       
       // Create agent scorecards
       const agentScorecards: AgentScorecard[] = agents.map(agent => {
