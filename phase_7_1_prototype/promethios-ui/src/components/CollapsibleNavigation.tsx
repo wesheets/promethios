@@ -213,7 +213,10 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   };
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    console.log('🔄 Navigating to:', path);
+    // Force a complete page refresh by adding a timestamp query parameter
+    const timestamp = Date.now();
+    navigate(`${path}?t=${timestamp}`);
   };
 
   const isActive = (path: string) => {

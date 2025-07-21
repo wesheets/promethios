@@ -519,7 +519,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
               const complianceRate = isActive ? 95 + Math.floor(Math.random() * 5) : 0; // Would be real metrics when deployed
               const violationCount = isActive ? Math.floor(Math.random() * 2) : 0; // Would be real violations when deployed
               
-              return {
+              const scorecard = {
                 agentId: `multi-${systemRef.id}`,
                 agentName: systemRef.name || systemData?.name || `Multi-Agent System ${index + 1}`,
                 agentDescription: systemRef.description || systemData?.description || 'Multi-agent collaborative system',
@@ -535,6 +535,9 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 lastActivity: new Date(),
                 isRealData: false // Multi-agent systems not yet connected to real monitoring
               };
+              
+              console.log(`✅ Created scorecard for ${systemRef.name || systemRef.id}:`, scorecard);
+              return scorecard;
             } catch (error) {
               console.error('Error loading multi-agent system:', systemRef.id, error);
               return null;
@@ -544,7 +547,10 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         // Filter out null results and combine all scorecards
         const validMultiAgentScorecards = multiAgentScorecards.filter(Boolean) as AgentScorecard[];
+        console.log('✅ Valid multi-agent scorecards:', validMultiAgentScorecards.length, validMultiAgentScorecards.map(s => s.agentName));
+        
         const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
+        console.log('📊 All scorecards combined:', allScorecards.length, allScorecards.map(s => `${s.agentName} (${s.type})`));
         
         console.log('📊 Generated scorecards:', {
           individual: agentScorecards.length,
@@ -563,8 +569,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     loadRealAgentData();
   }, [currentUser]);
 
-  // Apply filters, search, and sorting
-  useEffect(() => {
+  // Apply filters, search, and sorting with memoization to prevent render loops
+  const filteredAndSortedScorecards = useMemo(() => {
     let filtered = [...scorecards];
     
     // Apply type filter
@@ -610,9 +616,14 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       return 0;
     });
     
-    setFilteredScorecards(filtered);
-    setPage(0); // Reset to first page when filters change
+    return filtered;
   }, [scorecards, typeFilter, governanceFilter, statusFilter, searchQuery, sortField, sortDirection]);
+
+  // Update filtered scorecards and reset page when filters change
+  useEffect(() => {
+    setFilteredScorecards(filteredAndSortedScorecards);
+    setPage(0); // Reset to first page when filters change
+  }, [filteredAndSortedScorecards]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -768,10 +779,16 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ color: governanceLevel.color }}>
-                {metrics?.governance?.score || 0}%
+                {(metrics?.governance?.score && scorecards.some(s => s.isRealData)) 
+                  ? `${metrics.governance.score}%` 
+                  : 'N/A'
+                }
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                {governanceLevel.level}
+                {(metrics?.governance?.score && scorecards.some(s => s.isRealData)) 
+                  ? governanceLevel.level 
+                  : 'No Deployed Agents'
+                }
               </Typography>
             </CardContent>
           </Card>
@@ -787,10 +804,16 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ color: '#3B82F6' }}>
-                {metrics?.trust?.score || 0}
+                {(metrics?.trust?.score && scorecards.some(s => s.isRealData)) 
+                  ? metrics.trust.score 
+                  : 'N/A'
+                }
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                Average Rating
+                {(metrics?.trust?.score && scorecards.some(s => s.isRealData)) 
+                  ? 'Average Rating' 
+                  : 'Not Deployed'
+                }
               </Typography>
             </CardContent>
           </Card>
