@@ -403,9 +403,18 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
 
   // Load data after services are initialized
   useEffect(() => {
+    console.log('🔍 Governance services check:', {
+      governanceEngine: !!governanceEngine,
+      storageService: !!storageService,
+      dualRegistry: !!dualRegistry,
+      loading: loading
+    });
+    
     if (governanceEngine && storageService && dualRegistry && !loading) {
       console.log('🚀 Services initialized, loading governance data...');
       loadGovernanceData();
+    } else {
+      console.log('⏳ Waiting for services to initialize...');
     }
   }, [governanceEngine, storageService, dualRegistry, loadGovernanceData, loading]);
 
