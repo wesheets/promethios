@@ -357,6 +357,15 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         // Convert agent profiles to scorecards
         const agentScorecards: AgentScorecard[] = agents.map((agent, index) => {
+          console.log(`🔍 Processing agent ${index + 1}:`, {
+            name: agent.identity?.name,
+            hasPrometheosLLM: !!agent.prometheosLLM,
+            hasApiDetails: !!agent.apiDetails,
+            isDeployed: agent.isDeployed,
+            healthStatus: agent.healthStatus,
+            trustLevel: agent.trustLevel
+          });
+          
           // Determine agent type
           let agentType: 'single' | 'multi-agent' | 'native-llm' | 'api-wrapped' = 'single';
           if (agent.prometheosLLM) {
@@ -376,6 +385,40 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
           const complianceMap = { healthy: 100, warning: 85, critical: 60 };
           const complianceRate = complianceMap[agent.healthStatus] || 85;
           
+          // Determine agent status based on multiple factors
+          let agentStatus: 'active' | 'inactive' | 'suspended' = 'inactive';
+          
+          // Check if agent has critical health issues (should be suspended)
+          if (agent.healthStatus === 'critical') {
+            agentStatus = 'suspended';
+          }
+          // Check if agent is properly configured and can be considered active
+          else if (
+            // Native LLM agents: Check if they have valid Promethios LLM config
+            (agent.prometheosLLM && agent.prometheosLLM.apiKey) ||
+            // API Wrapped agents: Check if they have valid API details
+            (agent.apiDetails && agent.apiDetails.apiKey && agent.apiDetails.provider) ||
+            // Other agents: Check if they have basic identity and are not in critical state
+            (agent.identity?.name && agent.healthStatus !== 'critical')
+          ) {
+            agentStatus = 'active';
+          }
+          
+          // Override with explicit deployment status if available
+          if (agent.isDeployed === true) {
+            agentStatus = 'active';
+          } else if (agent.isDeployed === false && agentStatus === 'active') {
+            agentStatus = 'inactive';
+          }
+          
+          console.log(`📊 Agent ${agent.identity?.name} status determined:`, {
+            finalStatus: agentStatus,
+            healthStatus: agent.healthStatus,
+            hasPrometheosLLM: !!agent.prometheosLLM,
+            hasApiDetails: !!agent.apiDetails,
+            isDeployed: agent.isDeployed
+          });
+          
           // Calculate violations based on health status
           const violationCount = agent.healthStatus === 'critical' ? Math.floor(Math.random() * 3) + 1 :
                                 agent.healthStatus === 'warning' ? Math.floor(Math.random() * 2) : 0;
@@ -387,7 +430,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             trustScore: Math.round(trustScore),
             complianceRate,
             violationCount,
-            status: agent.isDeployed ? 'active' : 'inactive' as const,
+            status: agentStatus,
             type: agentType,
             healthStatus: agent.healthStatus,
             trustLevel: agent.trustLevel,
@@ -1008,7 +1051,9 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                             label={scorecard.status}
                             size="small"
                             sx={{
-                              backgroundColor: scorecard.status === 'active' ? '#10B981' : '#6B7280',
+                              backgroundColor: 
+                                scorecard.status === 'active' ? '#10B981' : 
+                                scorecard.status === 'suspended' ? '#EF4444' : '#6B7280',
                               color: 'white',
                               textTransform: 'capitalize'
                             }}
