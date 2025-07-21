@@ -4,10 +4,14 @@
  * Enhanced version with real agent data, filtering, and pagination
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
+import AgentDetailModal from '../components/AgentDetailModal';
+import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
+import { useNotifications } from '../hooks/useNotifications';
+import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension';
 import {
   Box,
   Grid,
@@ -34,6 +38,19 @@ import {
   TablePagination,
   TextField,
   InputAdornment,
+  Checkbox,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Badge,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Fab,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
 } from '@mui/material';
 import {
   Security,
@@ -53,6 +70,19 @@ import {
   SmartToy,
   Api,
   Psychology,
+  PlayArrow,
+  Pause,
+  Stop,
+  Delete,
+  Archive,
+  Notifications,
+  NotificationsActive,
+  Sync,
+  AutorenewRounded,
+  SelectAll,
+  MoreVert,
+  Edit,
+  Visibility,
 } from '@mui/icons-material';
 
 interface AgentScorecard {
@@ -91,6 +121,26 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   // Sorting state
   const [sortField, setSortField] = useState<keyof AgentScorecard>('agentName');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Modal state
+  const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  // Bulk actions state
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
+  const [bulkActionMenuAnchor, setBulkActionMenuAnchor] = useState<null | HTMLElement>(null);
+  
+  // Notifications state
+  const { notifications, unreadCount } = useNotifications({ type: 'governance' });
+  const [notificationExtension] = useState(() => new GovernanceNotificationExtension());
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+  
+  // Real-time monitoring state
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
   console.log('🔍 Simplified governance page state:', {
     currentUser: !!currentUser,
@@ -136,6 +186,158 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const handleAgentClick = (agent: AgentScorecard) => {
+    setSelectedAgent(agent);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedAgent(null);
+  };
+
+  const handleExportCSV = () => {
+    exportToCSV(filteredScorecards, 'governance-report');
+  };
+
+  const handleExportJSON = () => {
+    exportToJSON(filteredScorecards, 'governance-report');
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(filteredScorecards, 'governance-report');
+  };
+
+  // Bulk action handlers
+  const handleSelectAgent = (agentId: string, selected: boolean) => {
+    const newSelection = new Set(selectedAgents);
+    if (selected) {
+      newSelection.add(agentId);
+    } else {
+      newSelection.delete(agentId);
+    }
+    setSelectedAgents(newSelection);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(filteredScorecards.map(agent => agent.agentId));
+      setSelectedAgents(allIds);
+    } else {
+      setSelectedAgents(new Set());
+    }
+  };
+
+  const handleBulkAction = (action: string) => {
+    const selectedCount = selectedAgents.size;
+    setBulkActionMenuAnchor(null);
+    
+    switch (action) {
+      case 'start':
+        showNotification(`Starting ${selectedCount} agents...`, 'info');
+        // TODO: Implement bulk start
+        break;
+      case 'stop':
+        showNotification(`Stopping ${selectedCount} agents...`, 'warning');
+        // TODO: Implement bulk stop
+        break;
+      case 'archive':
+        showNotification(`Archiving ${selectedCount} agents...`, 'info');
+        // TODO: Implement bulk archive
+        break;
+      case 'delete':
+        showNotification(`Deleting ${selectedCount} agents...`, 'error');
+        // TODO: Implement bulk delete
+        break;
+      default:
+        break;
+    }
+    
+    // Clear selection after action
+    setSelectedAgents(new Set());
+  };
+
+  // Notification handlers
+  const showNotification = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Real-time monitoring handlers
+  const toggleAutoRefresh = () => {
+    if (autoRefresh) {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
+      }
+      setAutoRefresh(false);
+      showNotification('Auto-refresh disabled', 'info');
+    } else {
+      const interval = setInterval(async () => {
+        await refreshMetrics();
+        setLastUpdate(new Date());
+      }, 30000); // Refresh every 30 seconds
+      
+      setRefreshInterval(interval);
+      setAutoRefresh(true);
+      showNotification('Auto-refresh enabled (30s interval)', 'success');
+    }
+  };
+
+  // Initialize notifications
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      const initialized = await notificationExtension.initialize();
+      if (initialized) {
+        console.log('Governance notifications initialized');
+      }
+    };
+    
+    initializeNotifications();
+    
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, []);
+
+  // Monitor for violations and trigger notifications
+  useEffect(() => {
+    if (scorecards.length > 0) {
+      const criticalAgents = scorecards.filter(agent => 
+        agent.healthStatus === 'critical' || agent.violationCount > 0
+      );
+      
+      if (criticalAgents.length > 0) {
+        criticalAgents.forEach(agent => {
+          if (agent.violationCount > 0) {
+            showNotification(
+              `⚠️ ${agent.agentName} has ${agent.violationCount} violation(s)`,
+              'warning'
+            );
+          }
+          if (agent.healthStatus === 'critical') {
+            showNotification(
+              `🚨 ${agent.agentName} is in critical health status`,
+              'error'
+            );
+          }
+        });
+      }
+    }
+  }, [scorecards]);
+
+  // Computed values
+  const selectedCount = selectedAgents.size;
+  const allSelected = selectedCount === filteredScorecards.length && filteredScorecards.length > 0;
+  const someSelected = selectedCount > 0 && selectedCount < filteredScorecards.length;
 
   // Load real agent data
   useEffect(() => {
@@ -300,25 +502,100 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
           Governance Overview
         </Typography>
-        <Box>
+        
+        <Box display="flex" alignItems="center" gap={2}>
+          {/* Auto-refresh toggle */}
+          <Tooltip title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}>
+            <Button
+              variant="outlined"
+              startIcon={autoRefresh ? <AutorenewRounded /> : <Sync />}
+              onClick={toggleAutoRefresh}
+              sx={{ 
+                color: autoRefresh ? '#10B981' : 'white', 
+                borderColor: autoRefresh ? '#10B981' : 'white',
+                '&:hover': {
+                  borderColor: autoRefresh ? '#059669' : '#a0aec0'
+                }
+              }}
+            >
+              {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+            </Button>
+          </Tooltip>
+
+          {/* Notifications indicator */}
+          <Tooltip title={`${unreadCount} unread notifications`}>
+            <Badge badgeContent={unreadCount} color="error">
+              <Button
+                variant="outlined"
+                startIcon={unreadCount > 0 ? <NotificationsActive /> : <Notifications />}
+                sx={{ 
+                  color: unreadCount > 0 ? '#F59E0B' : 'white', 
+                  borderColor: unreadCount > 0 ? '#F59E0B' : 'white' 
+                }}
+              >
+                Alerts
+              </Button>
+            </Badge>
+          </Tooltip>
+
+          {/* Refresh button */}
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={handleRefresh}
             disabled={refreshing}
-            sx={{ mr: 2, color: 'white', borderColor: 'white' }}
+            sx={{ color: 'white', borderColor: 'white' }}
           >
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
+          
+          {/* Export buttons */}
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<Download />}
-            sx={{ color: 'white', borderColor: 'white' }}
+            onClick={handleExportCSV}
+            sx={{ 
+              backgroundColor: '#3182ce',
+              '&:hover': { backgroundColor: '#2c5aa0' }
+            }}
           >
-            Export Report
+            Export CSV
+          </Button>
+          
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportJSON}
+            sx={{ 
+              backgroundColor: '#10B981',
+              '&:hover': { backgroundColor: '#059669' }
+            }}
+          >
+            Export JSON
+          </Button>
+          
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportPDF}
+            sx={{ 
+              backgroundColor: '#8B5CF6',
+              '&:hover': { backgroundColor: '#7C3AED' }
+            }}
+          >
+            Export PDF
           </Button>
         </Box>
       </Box>
+
+      {/* Last update indicator */}
+      {autoRefresh && (
+        <Box mb={2}>
+          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+            Last updated: {lastUpdate.toLocaleTimeString()} • Auto-refresh every 30s
+          </Typography>
+        </Box>
+      )}
 
       {/* Metrics Overview */}
       <Grid container spacing={3} mb={4}>
@@ -533,6 +810,23 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
+                      {/* Bulk selection checkbox */}
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568', width: '50px' }}>
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          sx={{
+                            color: '#a0aec0',
+                            '&.Mui-checked': {
+                              color: '#3182ce',
+                            },
+                            '&.MuiCheckbox-indeterminate': {
+                              color: '#3182ce',
+                            },
+                          }}
+                        />
+                      </TableCell>
                       <TableCell 
                         sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
                         onClick={() => handleSort('agentName')}
@@ -615,11 +909,30 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                         sx={{ 
                           '&:hover': { 
                             backgroundColor: '#2d3748',
-                            cursor: 'pointer'
                           } 
                         }}
                       >
+                        {/* Bulk selection checkbox */}
                         <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Checkbox
+                            checked={selectedAgents.has(scorecard.agentId)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSelectAgent(scorecard.agentId, e.target.checked);
+                            }}
+                            sx={{
+                              color: '#a0aec0',
+                              '&.Mui-checked': {
+                                color: '#3182ce',
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        
+                        <TableCell 
+                          sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                          onClick={() => handleAgentClick(scorecard)}
+                        >
                           <Box display="flex" alignItems="center">
                             {getAgentTypeIcon(scorecard.type)}
                             <Box ml={1}>
@@ -749,6 +1062,93 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
 
 
       </Card>
+
+      {/* Agent Detail Modal */}
+      <AgentDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        agent={selectedAgent}
+      />
+
+      {/* Bulk Actions Floating Action Button */}
+      {selectedCount > 0 && (
+        <Fab
+          color="primary"
+          sx={{
+            position: 'fixed',
+            bottom: 80,
+            right: 20,
+            backgroundColor: '#3182ce',
+            '&:hover': {
+              backgroundColor: '#2c5aa0'
+            }
+          }}
+          onClick={(e) => setBulkActionMenuAnchor(e.currentTarget)}
+        >
+          <Badge badgeContent={selectedCount} color="error">
+            <MoreVert />
+          </Badge>
+        </Fab>
+      )}
+
+      {/* Bulk Actions Menu */}
+      <Menu
+        anchorEl={bulkActionMenuAnchor}
+        open={Boolean(bulkActionMenuAnchor)}
+        onClose={() => setBulkActionMenuAnchor(null)}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2d3748',
+            color: 'white',
+            '& .MuiMenuItem-root': {
+              '&:hover': {
+                backgroundColor: '#4a5568'
+              }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => handleBulkAction('start')}>
+          <ListItemIcon>
+            <PlayArrow sx={{ color: '#10B981' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Start ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('stop')}>
+          <ListItemIcon>
+            <Stop sx={{ color: '#F59E0B' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Stop ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('archive')}>
+          <ListItemIcon>
+            <Archive sx={{ color: '#6B7280' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Archive ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('delete')}>
+          <ListItemIcon>
+            <Delete sx={{ color: '#EF4444' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Delete ${selectedCount} agents`} />
+        </MenuItem>
+      </Menu>
+
+      {/* Notifications Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
