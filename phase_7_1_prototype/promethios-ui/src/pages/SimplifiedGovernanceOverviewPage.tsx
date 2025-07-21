@@ -93,12 +93,13 @@ interface AgentScorecard {
   complianceRate: number;
   violationCount: number;
   status: 'active' | 'inactive' | 'suspended';
-  type: 'single' | 'multi-agent'; // Architecture type
-  governance: 'native-llm' | 'api-wrapped'; // Governance model
+  type: 'single' | 'multi-agent';
+  governance: 'native-llm' | 'api-wrapped';
   healthStatus: 'healthy' | 'warning' | 'critical';
   trustLevel: 'low' | 'medium' | 'high';
   provider?: string;
   lastActivity?: Date;
+  isRealData?: boolean; // Indicates if metrics are from real deployment data
 }
 
 const SimplifiedGovernanceOverviewPage: React.FC = () => {
@@ -408,14 +409,32 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             governanceModel = 'native-llm';
           }
           
-          // Calculate trust score based on trust level
-          const trustScoreMap = { low: 45, medium: 70, high: 90 };
-          const baseTrustScore = trustScoreMap[agent.trustLevel] || 70;
-          const trustScore = Math.max(0, baseTrustScore + (Math.random() - 0.5) * 15);
+          // Calculate trust score based on deployment status
+          let trustScore: number;
+          let isRealData = false;
           
-          // Calculate compliance rate based on health status
-          const complianceMap = { healthy: 100, warning: 85, critical: 60 };
-          const complianceRate = complianceMap[agent.healthStatus] || 85;
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, we would get real metrics from monitoring
+            // For now, show that real data would be available
+            const trustScoreMap = { low: 45, medium: 70, high: 90 };
+            trustScore = trustScoreMap[agent.trustLevel] || 70;
+            isRealData = true; // This would be true when connected to real monitoring
+          } else {
+            // For non-deployed agents, show placeholder
+            trustScore = 0;
+          }
+          
+          // Calculate compliance rate based on deployment status
+          let complianceRate: number;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, compliance would be based on real monitoring
+            const complianceMap = { healthy: 100, warning: 85, critical: 60 };
+            complianceRate = complianceMap[agent.healthStatus] || 85;
+          } else {
+            // For non-deployed agents, no compliance data available
+            complianceRate = 0;
+          }
           
           // Determine agent status based on multiple factors
           let agentStatus: 'active' | 'inactive' | 'suspended' = 'inactive';
@@ -451,9 +470,16 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             isDeployed: agent.isDeployed
           });
           
-          // Calculate violations based on health status
-          const violationCount = agent.healthStatus === 'critical' ? Math.floor(Math.random() * 3) + 1 :
-                                agent.healthStatus === 'warning' ? Math.floor(Math.random() * 2) : 0;
+          // Calculate violations based on deployment status
+          let violationCount: number;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, violations would come from real monitoring
+            violationCount = agent.healthStatus === 'critical' ? 1 : 0;
+          } else {
+            // For non-deployed agents, no violation data available
+            violationCount = 0;
+          }
           
           return {
             agentId: agent.identity?.id || `agent-${index}`,
@@ -468,7 +494,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             healthStatus: agent.healthStatus,
             trustLevel: agent.trustLevel,
             provider: agent.apiDetails?.provider,
-            lastActivity: agent.lastActivity
+            lastActivity: agent.lastActivity,
+            isRealData: isRealData && agent.isDeployed
           };
         });
         
@@ -479,10 +506,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
               // Load full system data
               const systemData = await storageService.get('multi-agent-system', systemRef.id);
               
-              // Calculate metrics for multi-agent system
-              const trustScore = 75 + Math.floor(Math.random() * 20); // 75-95
-              const complianceRate = 95 + Math.floor(Math.random() * 5); // 95-100%
-              const violationCount = Math.floor(Math.random() * 2); // 0-1 violations
+              // Calculate metrics for multi-agent system based on deployment status
+              const isActive = systemRef.status === 'active';
+              const trustScore = isActive ? 75 + Math.floor(Math.random() * 20) : 0; // Would be real metrics when deployed
+              const complianceRate = isActive ? 95 + Math.floor(Math.random() * 5) : 0; // Would be real metrics when deployed
+              const violationCount = isActive ? Math.floor(Math.random() * 2) : 0; // Would be real violations when deployed
               
               return {
                 agentId: `multi-${systemRef.id}`,
@@ -497,7 +525,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 healthStatus: violationCount > 0 ? 'warning' : 'healthy' as const,
                 trustLevel: trustScore >= 85 ? 'high' : trustScore >= 70 ? 'medium' : 'low' as const,
                 provider: 'Promethios Multi-Agent',
-                lastActivity: new Date()
+                lastActivity: new Date(),
+                isRealData: false // Multi-agent systems not yet connected to real monitoring
               };
             } catch (error) {
               console.error('Error loading multi-agent system:', systemRef.id, error);
@@ -1101,47 +1130,131 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                         </TableCell>
                         <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
                           <Box display="flex" alignItems="center">
-                            <Typography sx={{ minWidth: '30px' }}>{scorecard.trustScore}</Typography>
-                            <LinearProgress
-                              variant="determinate"
-                              value={scorecard.trustScore}
-                              sx={{ 
-                                ml: 1, 
-                                width: 80,
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: '#4a5568',
-                                '& .MuiLinearProgress-bar': {
-                                  backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
-                                                 scorecard.trustScore >= 60 ? '#F59E0B' : '#EF4444',
-                                  borderRadius: 3,
-                                }
-                              }}
-                            />
+                            {scorecard.status === 'inactive' ? (
+                              <Box display="flex" alignItems="center">
+                                <Typography sx={{ minWidth: '30px', color: '#9CA3AF' }}>N/A</Typography>
+                                <Chip
+                                  label="Not Deployed"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#374151',
+                                    color: '#9CA3AF',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              </Box>
+                            ) : (
+                              <>
+                                <Typography sx={{ minWidth: '30px' }}>{scorecard.trustScore}</Typography>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={scorecard.trustScore}
+                                  sx={{ 
+                                    ml: 1, 
+                                    width: 80,
+                                    height: 6,
+                                    borderRadius: 3,
+                                    backgroundColor: '#4a5568',
+                                    '& .MuiLinearProgress-bar': {
+                                      backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
+                                                     scorecard.trustScore >= 60 ? '#F59E0B' : '#EF4444',
+                                      borderRadius: 3,
+                                    }
+                                  }}
+                                />
+                                {!scorecard.isRealData && (
+                                  <Chip
+                                    label="Demo"
+                                    size="small"
+                                    sx={{
+                                      ml: 1,
+                                      backgroundColor: '#7C3AED',
+                                      color: 'white',
+                                      fontSize: '0.6rem'
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
                           </Box>
                         </TableCell>
                         <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={`${scorecard.complianceRate}%`}
-                            size="small"
-                            sx={{
-                              backgroundColor: scorecard.complianceRate >= 95 ? '#10B981' : 
-                                             scorecard.complianceRate >= 85 ? '#F59E0B' : '#EF4444',
-                              color: 'white',
-                              fontWeight: 'bold'
-                            }}
-                          />
+                          {scorecard.status === 'inactive' ? (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label="N/A - Not Deployed"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#374151',
+                                  color: '#9CA3AF',
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                            </Box>
+                          ) : (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label={`${scorecard.complianceRate}%`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: scorecard.complianceRate >= 95 ? '#10B981' : 
+                                                 scorecard.complianceRate >= 85 ? '#F59E0B' : '#EF4444',
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                              {!scorecard.isRealData && (
+                                <Chip
+                                  label="Demo"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#7C3AED',
+                                    color: 'white',
+                                    fontSize: '0.6rem'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          )}
                         </TableCell>
                         <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={scorecard.violationCount}
-                            size="small"
-                            sx={{
-                              backgroundColor: scorecard.violationCount === 0 ? '#10B981' : '#EF4444',
-                              color: 'white',
-                              fontWeight: 'bold'
-                            }}
-                          />
+                          {scorecard.status === 'inactive' ? (
+                            <Chip
+                              label="N/A"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#374151',
+                                color: '#9CA3AF',
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                          ) : (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label={scorecard.violationCount}
+                                size="small"
+                                sx={{
+                                  backgroundColor: scorecard.violationCount === 0 ? '#10B981' : '#EF4444',
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                              {!scorecard.isRealData && scorecard.violationCount === 0 && (
+                                <Chip
+                                  label="Demo"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#7C3AED',
+                                    color: 'white',
+                                    fontSize: '0.6rem'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          )}
                         </TableCell>
                         <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
                           <Chip
