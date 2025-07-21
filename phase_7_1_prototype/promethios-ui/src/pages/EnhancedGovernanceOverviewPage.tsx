@@ -132,10 +132,14 @@ interface GovernanceAlert {
 }
 
 const EnhancedGovernanceOverviewPage: React.FC = () => {
+  console.log('🎯 EnhancedGovernanceOverviewPage component rendering...');
+  
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const { createNotification } = useNotificationBackend();
   const { trackEvent } = useAnalytics();
+  
+  console.log('🔍 Current user in governance page:', currentUser?.uid);
   
   // State management
   const [metrics, setMetrics] = useState<GovernanceMetrics | null>(null);
@@ -154,9 +158,14 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
 
   // Initialize services
   const initializeServices = useCallback(async () => {
-    if (!currentUser) return;
+    console.log('🚀 initializeServices called, currentUser:', currentUser?.uid);
+    if (!currentUser) {
+      console.log('❌ No current user, skipping service initialization');
+      return;
+    }
 
     try {
+      console.log('🔧 Creating storage and registry services...');
       const storage = new DualWrapperStorageService();
       const registry = new DualAgentWrapperRegistry(storage);
       
@@ -188,11 +197,15 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
         debugMode: false
       };
       
+      console.log('🔧 Creating governance engine with config...');
       const engine = new BasicGovernanceEngine(governanceConfig);
 
+      console.log('✅ Setting services in state...');
       setStorageService(storage);
       setDualRegistry(registry);
       setGovernanceEngine(engine);
+
+      console.log('🎉 Services initialized successfully!');
 
       toast({
         title: "Governance Dashboard Loaded",
@@ -398,6 +411,7 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
 
   // Initialize on mount
   useEffect(() => {
+    console.log('🔄 useEffect for initializeServices triggered');
     initializeServices();
   }, [initializeServices]);
 
@@ -407,16 +421,17 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
       governanceEngine: !!governanceEngine,
       storageService: !!storageService,
       dualRegistry: !!dualRegistry,
-      loading: loading
+      loading: loading,
+      currentUser: !!currentUser
     });
     
-    if (governanceEngine && storageService && dualRegistry && !loading) {
+    if (governanceEngine && storageService && dualRegistry && !loading && currentUser) {
       console.log('🚀 Services initialized, loading governance data...');
       loadGovernanceData();
     } else {
       console.log('⏳ Waiting for services to initialize...');
     }
-  }, [governanceEngine, storageService, dualRegistry, loadGovernanceData, loading]);
+  }, [governanceEngine, storageService, dualRegistry, loadGovernanceData, loading, currentUser]);
 
   // Auto-refresh every 5 minutes for deployed agent data
   useEffect(() => {
