@@ -520,234 +520,84 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
           }
         />
         <CardContent>
-          {loadingAgents ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-              <CircularProgress />
-              <Typography variant="h6" sx={{ ml: 2, color: '#a0aec0' }}>
-                Loading agent data...
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              <TableContainer component={Paper} sx={{ backgroundColor: '#1a202c' }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell 
-                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
-                        onClick={() => handleSort('agentName')}
-                      >
-                        <Box display="flex" alignItems="center">
-                          Agent
-                          {sortField === 'agentName' && (
-                            <TrendingUp 
-                              sx={{ 
-                                ml: 1, 
-                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
-                                transition: 'transform 0.2s'
-                              }} 
-                            />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell 
-                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
-                        onClick={() => handleSort('trustScore')}
-                      >
-                        <Box display="flex" alignItems="center">
-                          Trust Score
-                          {sortField === 'trustScore' && (
-                            <TrendingUp 
-                              sx={{ 
-                                ml: 1, 
-                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
-                                transition: 'transform 0.2s'
-                              }} 
-                            />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell 
-                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
-                        onClick={() => handleSort('complianceRate')}
-                      >
-                        <Box display="flex" alignItems="center">
-                          Compliance
-                          {sortField === 'complianceRate' && (
-                            <TrendingUp 
-                              sx={{ 
-                                ml: 1, 
-                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
-                                transition: 'transform 0.2s'
-                              }} 
-                            />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell 
-                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
-                        onClick={() => handleSort('violationCount')}
-                      >
-                        <Box display="flex" alignItems="center">
-                          Violations
-                          {sortField === 'violationCount' && (
-                            <TrendingUp 
-                              sx={{ 
-                                ml: 1, 
-                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
-                                transition: 'transform 0.2s'
-                              }} 
-                            />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Health</TableCell>
-                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
-                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredScorecards
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((scorecard) => (
-                      <TableRow 
-                        key={scorecard.agentId}
-                        sx={{ 
-                          '&:hover': { 
-                            backgroundColor: '#2d3748',
-                            cursor: 'pointer'
-                          } 
+          <TableContainer component={Paper} sx={{ backgroundColor: '#1a202c' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Agent</TableCell>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Trust Score</TableCell>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Compliance</TableCell>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Violations</TableCell>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
+                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {scorecards.slice(0, 10).map((scorecard) => (
+                  <TableRow key={scorecard.agentId}>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      <Box display="flex" alignItems="center">
+                        <Person sx={{ mr: 1 }} />
+                        {scorecard.agentName}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      <Box display="flex" alignItems="center">
+                        <Typography>{scorecard.trustScore}</Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={scorecard.trustScore}
+                          sx={{ 
+                            ml: 1, 
+                            width: 60,
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
+                                             scorecard.trustScore >= 60 ? '#F59E0B' : '#EF4444'
+                            }
+                          }}
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      {scorecard.complianceRate}%
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      <Chip
+                        label={scorecard.violationCount}
+                        size="small"
+                        sx={{
+                          backgroundColor: scorecard.violationCount === 0 ? '#10B981' : '#EF4444',
+                          color: 'white'
                         }}
-                      >
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Box display="flex" alignItems="center">
-                            {getAgentTypeIcon(scorecard.type)}
-                            <Box ml={1}>
-                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                {scorecard.agentName}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                                {scorecard.agentDescription.length > 50 
-                                  ? `${scorecard.agentDescription.substring(0, 50)}...`
-                                  : scorecard.agentDescription
-                                }
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Box display="flex" alignItems="center">
-                            <Typography sx={{ minWidth: '30px' }}>{scorecard.trustScore}</Typography>
-                            <LinearProgress
-                              variant="determinate"
-                              value={scorecard.trustScore}
-                              sx={{ 
-                                ml: 1, 
-                                width: 80,
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: '#4a5568',
-                                '& .MuiLinearProgress-bar': {
-                                  backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
-                                                 scorecard.trustScore >= 60 ? '#F59E0B' : '#EF4444',
-                                  borderRadius: 3,
-                                }
-                              }}
-                            />
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={`${scorecard.complianceRate}%`}
-                            size="small"
-                            sx={{
-                              backgroundColor: scorecard.complianceRate >= 95 ? '#10B981' : 
-                                             scorecard.complianceRate >= 85 ? '#F59E0B' : '#EF4444',
-                              color: 'white',
-                              fontWeight: 'bold'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={scorecard.violationCount}
-                            size="small"
-                            sx={{
-                              backgroundColor: scorecard.violationCount === 0 ? '#10B981' : '#EF4444',
-                              color: 'white',
-                              fontWeight: 'bold'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={scorecard.healthStatus}
-                            size="small"
-                            sx={{
-                              backgroundColor: getHealthStatusColor(scorecard.healthStatus),
-                              color: 'white',
-                              textTransform: 'capitalize'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Chip
-                            label={scorecard.status}
-                            size="small"
-                            sx={{
-                              backgroundColor: scorecard.status === 'active' ? '#10B981' : '#6B7280',
-                              color: 'white',
-                              textTransform: 'capitalize'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                          <Box display="flex" alignItems="center">
-                            {getAgentTypeIcon(scorecard.type)}
-                            <Typography variant="caption" sx={{ ml: 1, textTransform: 'capitalize' }}>
-                              {scorecard.type.replace('-', ' ')}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              
-              {/* Pagination */}
-              <TablePagination
-                component="div"
-                count={filteredScorecards.length}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                sx={{
-                  color: 'white',
-                  '& .MuiTablePagination-selectIcon': {
-                    color: 'white',
-                  },
-                  '& .MuiTablePagination-select': {
-                    color: 'white',
-                  },
-                  '& .MuiTablePagination-displayedRows': {
-                    color: '#a0aec0',
-                  },
-                  '& .MuiIconButton-root': {
-                    color: 'white',
-                  },
-                  '& .MuiIconButton-root.Mui-disabled': {
-                    color: '#4a5568',
-                  },
-                }}
-              />
-            </>
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      <Chip
+                        label={scorecard.status}
+                        size="small"
+                        sx={{
+                          backgroundColor: scorecard.status === 'active' ? '#10B981' : '#6B7280',
+                          color: 'white'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      {scorecard.type}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          {scorecards.length > 10 && (
+            <Box mt={2} textAlign="center">
+              <Button variant="outlined" sx={{ color: 'white', borderColor: 'white' }}>
+                View All {scorecards.length} Agents
+              </Button>
+            </Box>
           )}
         </CardContent>
-
-
       </Card>
     </Box>
   );
