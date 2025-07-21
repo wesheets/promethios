@@ -93,7 +93,8 @@ interface AgentScorecard {
   complianceRate: number;
   violationCount: number;
   status: 'active' | 'inactive' | 'suspended';
-  type: 'single' | 'multi-agent' | 'native-llm' | 'api-wrapped';
+  type: 'single' | 'multi-agent'; // Architecture type
+  governance: 'native-llm' | 'api-wrapped'; // Governance model
   healthStatus: 'healthy' | 'warning' | 'critical';
   trustLevel: 'low' | 'medium' | 'high';
   provider?: string;
@@ -113,6 +114,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   
   // Filtering and pagination state
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [governanceFilter, setGovernanceFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [page, setPage] = useState(0);
@@ -153,10 +155,17 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   // Helper functions
   const getAgentTypeIcon = (type: string) => {
     switch (type) {
+      case 'multi-agent': return <Groups sx={{ color: '#10B981' }} />;
+      case 'single': return <Person sx={{ color: '#6B7280' }} />;
+      default: return <Person sx={{ color: '#6B7280' }} />;
+    }
+  };
+
+  const getGovernanceIcon = (governance: string) => {
+    switch (governance) {
       case 'native-llm': return <Psychology sx={{ color: '#8B5CF6' }} />;
       case 'api-wrapped': return <Api sx={{ color: '#3B82F6' }} />;
-      case 'multi-agent': return <Groups sx={{ color: '#10B981' }} />;
-      default: return <Person sx={{ color: '#6B7280' }} />;
+      default: return <Api sx={{ color: '#6B7280' }} />;
     }
   };
 
@@ -366,14 +375,16 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             trustLevel: agent.trustLevel
           });
           
-          // Determine agent type
-          let agentType: 'single' | 'multi-agent' | 'native-llm' | 'api-wrapped' = 'single';
-          if (agent.prometheosLLM) {
-            agentType = 'native-llm';
-          } else if (agent.apiDetails) {
-            agentType = 'api-wrapped';
-          } else if (agent.isWrapped) {
+          // Determine agent architecture type (single vs multi-agent)
+          let agentType: 'single' | 'multi-agent' = 'single';
+          if (agent.isWrapped || agent.multiAgentConfig) {
             agentType = 'multi-agent';
+          }
+          
+          // Determine governance model (native vs api-wrapped)
+          let governanceModel: 'native-llm' | 'api-wrapped' = 'api-wrapped';
+          if (agent.prometheosLLM) {
+            governanceModel = 'native-llm';
           }
           
           // Calculate trust score based on trust level
@@ -432,6 +443,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             violationCount,
             status: agentStatus,
             type: agentType,
+            governance: governanceModel,
             healthStatus: agent.healthStatus,
             trustLevel: agent.trustLevel,
             provider: agent.apiDetails?.provider,
@@ -459,6 +471,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     // Apply type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter(scorecard => scorecard.type === typeFilter);
+    }
+    
+    // Apply governance filter
+    if (governanceFilter !== 'all') {
+      filtered = filtered.filter(scorecard => scorecard.governance === governanceFilter);
     }
     
     // Apply status filter
@@ -496,7 +513,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     
     setFilteredScorecards(filtered);
     setPage(0); // Reset to first page when filters change
-  }, [scorecards, typeFilter, statusFilter, searchQuery, sortField, sortDirection]);
+  }, [scorecards, typeFilter, governanceFilter, statusFilter, searchQuery, sortField, sortDirection]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -751,7 +768,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
               />
             </Grid>
             
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: '#a0aec0' }}>Agent Type</InputLabel>
                 <Select
@@ -776,13 +793,40 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                   <MenuItem value="all">All Types</MenuItem>
                   <MenuItem value="single">Single Agent</MenuItem>
                   <MenuItem value="multi-agent">Multi-Agent</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Governance</InputLabel>
+                <Select
+                  value={governanceFilter}
+                  onChange={(e) => setGovernanceFilter(e.target.value)}
+                  sx={{ 
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3182ce',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#a0aec0',
+                    },
+                  }}
+                >
+                  <MenuItem value="all">All Governance</MenuItem>
                   <MenuItem value="native-llm">Native LLM</MenuItem>
                   <MenuItem value="api-wrapped">API Wrapped</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: '#a0aec0' }}>Status</InputLabel>
                 <Select
@@ -941,6 +985,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                       <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Health</TableCell>
                       <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
                       <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Governance</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1064,6 +1109,14 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                             {getAgentTypeIcon(scorecard.type)}
                             <Typography variant="caption" sx={{ ml: 1, textTransform: 'capitalize' }}>
                               {scorecard.type.replace('-', ' ')}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Box display="flex" alignItems="center">
+                            {getGovernanceIcon(scorecard.governance)}
+                            <Typography variant="caption" sx={{ ml: 1, textTransform: 'capitalize' }}>
+                              {scorecard.governance.replace('-', ' ')}
                             </Typography>
                           </Box>
                         </TableCell>
