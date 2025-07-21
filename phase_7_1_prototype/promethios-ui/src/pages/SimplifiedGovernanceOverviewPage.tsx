@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { OptimizedExistingDataBridge } from '../services/OptimizedExistingDataBridge';
 import { UserAgentStorageService } from '../services/UserAgentStorageService';
 import { multiAgentService } from '../services/multiAgentService';
