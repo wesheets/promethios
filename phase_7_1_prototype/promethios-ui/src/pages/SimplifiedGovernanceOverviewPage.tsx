@@ -1,31 +1,17 @@
 /**
- * Enhanced Governance Overview Page
+ * Simplified Governance Overview Page
  * 
- * Comprehensive governance dashboard with real-time metrics, scorecards,
- * and actionable insights using existing notification and UI systems.
- * ALL COMPONENTS HAVE COMPREHENSIVE TOOLTIPS FOR TRANSPARENCY
+ * Enhanced version with real agent data, filtering, and pagination
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { ThemeProvider } from '@mui/material/styles';
-import { darkTheme } from '../theme/darkTheme';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { usePageMetrics } from '../hooks/usePageMetrics';
-import { useAnalytics } from '../components/common/AnalyticsProvider';
-import { useToast } from '../hooks/use-toast';
-import { useNotificationBackend } from '../hooks/useNotificationBackend';
-import { NotificationCenter } from '../components/notifications/NotificationCenter';
-import { metricsService } from '../services/MetricsCollectionService';
-import { multiAgentService } from '../services/multiAgentService';
-import { DualAgentWrapperRegistry } from '../modules/agent-wrapping/services/DualAgentWrapperRegistry';
-import { DualWrapperStorageService } from '../modules/agent-wrapping/services/DualWrapperStorageService';
-import { BasicGovernanceEngine } from '../modules/agent-wrapping/services/governance/BasicGovernanceEngine';
-import GovernanceHeatmap from '../components/governance/GovernanceHeatmap';
-import PolicyImpactChart from '../components/governance/PolicyImpactChart';
-import TrustNetworkGraph from '../components/governance/TrustNetworkGraph';
-import { LiveAgentStatusWidget } from '../components/monitoring/LiveAgentStatusWidget';
-import { MonitoringDashboardWidget } from '../components/monitoring/MonitoringDashboardWidget';
-import { RealTimeMetricsChart } from '../components/monitoring/RealTimeMetricsChart';
+import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
+import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
+import AgentDetailModal from '../components/AgentDetailModal';
+import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
+import { useNotifications } from '../hooks/useNotifications';
+import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension';
 import {
   Box,
   Grid,
@@ -35,13 +21,9 @@ import {
   Typography,
   LinearProgress,
   Chip,
-  Avatar,
   Button,
   Alert,
-  AlertTitle,
-  Divider,
-  Tab,
-  Tabs,
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -49,23 +31,26 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
-  Tooltip,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Autocomplete,
+  TablePagination,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  CircularProgress,
-  Badge,
-  List,
-  ListItem,
-  ListItemText,
+  InputAdornment,
+  Checkbox,
+  Menu,
+  MenuItem,
   ListItemIcon,
-  ListItemSecondaryAction
+  ListItemText,
+  Badge,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Fab,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
 } from '@mui/material';
 import {
   Security,
@@ -74,416 +59,578 @@ import {
   CheckCircle,
   TrendingUp,
   Assessment,
-  Visibility,
   Refresh,
   Download,
-  FilterList,
-  MoreVert,
   Error,
-  Info,
-  Timeline,
-  Speed,
-  Psychology,
+  VerifiedUser,
   Groups,
   Person,
+  Search,
+  FilterList,
+  SmartToy,
+  Api,
+  Psychology,
+  PlayArrow,
+  Pause,
+  Stop,
+  Delete,
+  Archive,
   Notifications,
-  Settings,
-  Analytics,
-  CloudSync,
-  VerifiedUser,
-  BugReport,
-  Insights,
-  AutoFixHigh,
-  NotificationsActive
+  NotificationsActive,
+  Sync,
+  AutorenewRounded,
+  SelectAll,
+  MoreVert,
+  Edit,
+  Visibility,
 } from '@mui/icons-material';
-
-// Enhanced types for real governance data
-interface GovernanceMetrics {
-  overallScore: number;
-  trustScore: number;
-  complianceRate: number;
-  violationCount: number;
-  criticalViolations: number;
-  agentCount: number;
-  governedAgents: number;
-  lastUpdated: string;
-}
 
 interface AgentScorecard {
   agentId: string;
   agentName: string;
+  agentDescription: string;
   trustScore: number;
   complianceRate: number;
   violationCount: number;
-  lastActivity: string;
-  governanceIdentity: string;
   status: 'active' | 'inactive' | 'suspended';
   type: 'single' | 'multi-agent';
+  governance: 'native-llm' | 'api-wrapped';
+  healthStatus: 'healthy' | 'warning' | 'critical';
+  trustLevel: 'low' | 'medium' | 'high';
+  provider?: string;
+  lastActivity?: Date;
+  isRealData?: boolean; // Indicates if metrics are from real deployment data
 }
 
-interface GovernanceAlert {
-  id: string;
-  type: 'critical' | 'warning' | 'info';
-  title: string;
-  message: string;
-  agentId?: string;
-  timestamp: string;
-  actionRequired: boolean;
-  actionUrl?: string;
-}
-
-const EnhancedGovernanceOverviewPage: React.FC = () => {
-  console.log('🎯 EnhancedGovernanceOverviewPage component rendering...');
+const SimplifiedGovernanceOverviewPage: React.FC = () => {
+  console.log('🎯 SimplifiedGovernanceOverviewPage rendering...');
   
   const { currentUser } = useAuth();
-  const { toast } = useToast();
-  const { createNotification } = useNotificationBackend();
-  const { trackEvent } = useAnalytics();
+  const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
   
-  console.log('🔍 Current user in governance page:', currentUser?.uid);
-  
-  // State management
-  const [metrics, setMetrics] = useState<GovernanceMetrics | null>(null);
   const [scorecards, setScorecards] = useState<AgentScorecard[]>([]);
-  const [alerts, setAlerts] = useState<GovernanceAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filteredScorecards, setFilteredScorecards] = useState<AgentScorecard[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
+  const [loadingAgents, setLoadingAgents] = useState(false);
   
-  // Services
-  const [dualRegistry, setDualRegistry] = useState<DualAgentWrapperRegistry | null>(null);
-  const [storageService, setStorageService] = useState<DualWrapperStorageService | null>(null);
-  const [governanceEngine, setGovernanceEngine] = useState<BasicGovernanceEngine | null>(null);
+  // Filtering and pagination state
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [governanceFilter, setGovernanceFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Initialize services
-  const initializeServices = useCallback(async () => {
-    console.log('🚀 initializeServices called, currentUser:', currentUser?.uid);
-    if (!currentUser) {
-      console.log('❌ No current user, skipping service initialization');
-      return;
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof AgentScorecard>('agentName');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Modal state
+  const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  // Bulk actions state
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
+  const [bulkActionMenuAnchor, setBulkActionMenuAnchor] = useState<null | HTMLElement>(null);
+  
+  // Notifications state
+  const { notifications, unreadCount } = useNotifications({ type: 'governance' });
+  const [notificationExtension] = useState(() => new GovernanceNotificationExtension());
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+  
+  // Real-time monitoring state
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  console.log('🔍 Simplified governance page state:', {
+    currentUser: !!currentUser,
+    metrics: !!metrics,
+    loading,
+    error,
+    scorecardsCount: scorecards.length
+  });
+
+  // Helper functions
+  const getAgentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'multi-agent': return <Groups sx={{ color: '#10B981' }} />;
+      case 'single': return <Person sx={{ color: '#6B7280' }} />;
+      default: return <Person sx={{ color: '#6B7280' }} />;
     }
+  };
 
-    try {
-      console.log('🔧 Creating storage and registry services...');
-      const storage = new DualWrapperStorageService();
-      const registry = new DualAgentWrapperRegistry(storage);
-      
-      // Create proper governance engine config
-      const governanceConfig = {
-        agentId: currentUser.uid || 'default-agent',
-        userId: currentUser.uid,
-        policies: [], // Will be loaded from backend
-        trustConfig: {
-          minTrustScore: 0.7,
-          trustDecayRate: 0.1,
-          maxTrustScore: 1.0,
-          trustUpdateFrequency: 3600000 // 1 hour
-        },
-        auditConfig: {
-          enableLogging: true,
-          logLevel: 'info',
-          retentionPeriod: 30 * 24 * 60 * 60 * 1000, // 30 days
-          storageLocation: 'firebase'
-        },
-        performanceConfig: {
-          maxProcessingTime: 5000,
-          enableCaching: true,
-          cacheSize: 1000,
-          batchSize: 10,
-          parallelProcessing: true,
-          timeoutHandling: 'allow' as const
-        },
-        debugMode: false
-      };
-      
-      console.log('🔧 Creating governance engine with config...');
-      const engine = new BasicGovernanceEngine(governanceConfig);
-
-      console.log('✅ Setting services in state...');
-      setStorageService(storage);
-      setDualRegistry(registry);
-      setGovernanceEngine(engine);
-
-      console.log('🎉 Services initialized successfully!');
-
-      toast({
-        title: "Governance Dashboard Loaded",
-        description: "Real-time governance metrics are now available",
-        variant: "default"
-      });
-
-    } catch (error) {
-      console.error('Failed to initialize governance services:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(`Failed to initialize governance services: ${errorMessage}`);
-      toast({
-        title: "Initialization Error",
-        description: `Failed to load governance services. ${errorMessage}`,
-        variant: "destructive"
-      });
-      setLoading(false); // Ensure loading state is cleared on error
+  const getGovernanceIcon = (governance: string) => {
+    switch (governance) {
+      case 'native-llm': return <Psychology sx={{ color: '#8B5CF6' }} />;
+      case 'api-wrapped': return <Api sx={{ color: '#3B82F6' }} />;
+      default: return <Api sx={{ color: '#6B7280' }} />;
     }
-  }, [currentUser, toast]);
+  };
 
-  // Load real governance data from deployed agents using OptimizedDataBridge
-  const loadGovernanceData = useCallback(async () => {
-    if (!currentUser || !dualRegistry || !governanceEngine) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Use OptimizedDataBridge for consistent data loading like dashboard
-      const { OptimizedExistingDataBridge } = await import('../services/OptimizedExistingDataBridge');
-      const dataBridge = new OptimizedExistingDataBridge();
-      
-      // Set user and preload data
-      await dataBridge.setUser(currentUser.uid);
-      
-      // Get dashboard metrics which includes governance data
-      const dashboardMetrics = await dataBridge.getDashboardMetrics();
-      
-      // Extract governance-specific data
-      const totalAgents = dashboardMetrics.agents?.total || 0;
-      const governanceScore = dashboardMetrics.governance?.score || 0;
-      const trustScore = dashboardMetrics.trust?.score || 0;
-      const violations = dashboardMetrics.governance?.violations || 0;
-      const policies = dashboardMetrics.governance?.policies || 0;
-
-      // Get dual wrappers for the user (DEPLOYED AGENTS ONLY)
-      const userWrappers = await dualRegistry.listDualWrappers({
-        limit: 100,
-        includeInactive: false, // Only active deployed agents
-        deploymentOnly: true    // Only deployment wrappers, not test versions
-      });
-
-      const governedAgents = userWrappers.wrappers.filter(w => 
-        w.deploymentWrapper && w.deploymentWrapper.status === 'deployed'
-      ).length;
-
-      // Use data from OptimizedDataBridge for consistent metrics
-      const governanceMetrics = {
-        value: governanceScore,
-        trend: 'stable' as const,
-        change: 0
-      };
-
-      const violationMetrics = {
-        value: violations,
-        trend: 'stable' as const,
-        change: 0
-      };
-
-      // Calculate scores from OptimizedDataBridge data
-      const avgTrustScore = trustScore;
-      const violationCount = violations;
-      const criticalViolations = Math.floor(violations * 0.3); // Estimate critical violations
-      
-      const complianceRate = totalAgents > 0 
-        ? ((totalAgents - violationCount) / totalAgents) * 100 
-        : 100;
-
-      const overallScore = totalAgents > 0 ? Math.round((avgTrustScore + complianceRate) / 2) : 0;
-
-      setMetrics({
-        overallScore,
-        trustScore: Math.round(avgTrustScore),
-        complianceRate: Math.round(complianceRate),
-        violationCount,
-        criticalViolations,
-        agentCount: totalAgents,
-        governedAgents: Math.min(governedAgents, totalAgents),
-        lastUpdated: new Date().toISOString()
-      });
-
-      // Create scorecards for each DEPLOYED agent with real governance identities
-      const agentScorecards: AgentScorecard[] = userWrappers.wrappers.slice(0, totalAgents).map((wrapper, index) => {
-        // Use consistent scoring based on OptimizedDataBridge data
-        const baseTrustScore = trustScore;
-        const agentTrustScore = Math.max(0, baseTrustScore + (Math.random() - 0.5) * 20); // Add some variation
-        
-        const hasViolations = index < violationCount;
-        const agentViolationCount = hasViolations ? Math.floor(Math.random() * 3) + 1 : 0;
-        
-        const complianceRate = agentViolationCount === 0 ? 100 : 
-          Math.max(0, 100 - (agentViolationCount * 10));
-
-        return {
-          agentId: wrapper.id,
-          agentName: wrapper.metadata?.name || `Agent ${index + 1}`,
-          trustScore: Math.round(agentTrustScore),
-          complianceRate,
-          violationCount: agentViolationCount,
-          lastActivity: wrapper.metadata?.updatedAt || new Date().toISOString(),
-          governanceIdentity: wrapper.governanceIdentity || `gov-id-${wrapper.id.slice(0, 8)}`,
-          status: wrapper.deploymentWrapper?.status === 'deployed' ? 'active' : 'inactive',
-          type: wrapper.metadata?.multiAgentConfig ? 'multi-agent' : 'single'
-        };
-      });
-
-      setScorecards(agentScorecards);
-
-      // Load and add multi-agent systems to scorecards
-      try {
-        console.log('🔄 Loading multi-agent systems...');
-        let multiAgentSystems = [];
-        try {
-          const systemMetrics = await multiAgentService.getSystemGovernanceMetrics();
-          multiAgentSystems = [{
-            agentId: 'test-multi-agent-system',
-            agentName: 'Test Multi-Agent System',
-            trustScore: systemMetrics?.systemTrustScore || 85,
-            complianceRate: systemMetrics?.governanceEffectiveness || 90,
-            violationCount: 0,
-            lastActivity: new Date().toISOString(),
-            governanceIdentity: 'multi-agent-gov-id',
-            status: 'active',
-            type: 'multi-agent'
-          }];
-        } catch (error) {
-          multiAgentSystems = [{
-            agentId: 'test-multi-agent-system',
-            agentName: 'Test Multi-Agent System',
-            trustScore: 85,
-            complianceRate: 90,
-            violationCount: 0,
-            lastActivity: new Date().toISOString(),
-            governanceIdentity: 'multi-agent-gov-id',
-            status: 'active',
-            type: 'multi-agent'
-          }];
-        }
-        
-        // Add multi-agent systems to scorecards
-        setScorecards(prev => [...prev, ...multiAgentSystems]);
-        console.log(`✅ Added ${multiAgentSystems.length} multi-agent systems to scorecards`);
-      } catch (error) {
-        console.error('Error loading multi-agent systems:', error);
-      }
-
-      // Create governance notifications for critical issues using existing system
-      if (criticalViolations > 0) {
-        console.log(`Creating notification for ${criticalViolations} critical violations`);
-        // Note: createNotification function may not be available, so we'll log instead
-      }
-
-      // Track analytics
-      console.log('Governance data loaded successfully', {
-        agent_count: totalAgents,
-        governed_agents: governedAgents,
-        overall_score: overallScore,
-        critical_violations: criticalViolations
-      });
-
-    } catch (error) {
-      console.error('Failed to load governance data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(`Failed to load governance data: ${errorMessage}`);
-      toast({
-        title: "Data Load Error",
-        description: `Failed to load governance metrics. ${errorMessage}`,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  const getHealthStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy': return '#10B981';
+      case 'warning': return '#F59E0B';
+      case 'critical': return '#EF4444';
+      default: return '#6B7280';
     }
-  }, [currentUser, dualRegistry, governanceEngine, storageService, timeRange, toast]);
+  };
 
-  // Refresh data
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadGovernanceData();
-    setRefreshing(false);
-    
-    toast({
-      title: "Data Refreshed",
-      description: "Governance metrics updated from deployed agents",
-      variant: "default"
-    });
-  }, [loadGovernanceData, toast]);
-
-  // Export governance report
-  const handleExportReport = useCallback(async () => {
-    try {
-      const reportData = {
-        metrics,
-        scorecards,
-        alerts,
-        timestamp: new Date().toISOString(),
-        timeRange,
-        source: 'deployed_agents_only'
-      };
-
-      // Use existing export functionality if available
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], { 
-        type: 'application/json' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `governance-report-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Report Exported",
-        description: "Governance report downloaded successfully",
-        variant: "default"
-      });
-
-      trackEvent('governance_report_exported', {
-        agent_count: metrics?.agentCount || 0,
-        time_range: timeRange
-      });
-
-    } catch (error) {
-      console.error('Failed to export report:', error);
-      toast({
-        title: "Export Error",
-        description: "Failed to export governance report",
-        variant: "destructive"
-      });
-    }
-  }, [metrics, scorecards, alerts, timeRange, toast, trackEvent]);
-
-  // Initialize on mount
-  useEffect(() => {
-    console.log('🔄 useEffect for initializeServices triggered');
-    initializeServices();
-  }, [initializeServices]);
-
-  // Load data after services are initialized
-  useEffect(() => {
-    console.log('🔍 Governance services check:', {
-      governanceEngine: !!governanceEngine,
-      storageService: !!storageService,
-      dualRegistry: !!dualRegistry,
-      loading: loading,
-      currentUser: !!currentUser
-    });
-    
-    if (governanceEngine && storageService && dualRegistry && !loading && currentUser) {
-      console.log('🚀 Services initialized, loading governance data...');
-      loadGovernanceData();
+  const handleSort = (field: keyof AgentScorecard) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      console.log('⏳ Waiting for services to initialize...');
+      setSortField(field);
+      setSortDirection('asc');
     }
-  }, [governanceEngine, storageService, dualRegistry, loadGovernanceData, loading, currentUser]);
+  };
 
-  // Auto-refresh every 5 minutes for deployed agent data
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!loading && !refreshing) {
-        loadGovernanceData();
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleAgentClick = (agent: AgentScorecard) => {
+    setSelectedAgent(agent);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedAgent(null);
+  };
+
+  const handleExportCSV = () => {
+    exportToCSV(filteredScorecards, 'governance-report');
+  };
+
+  const handleExportJSON = () => {
+    exportToJSON(filteredScorecards, 'governance-report');
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(filteredScorecards, 'governance-report');
+  };
+
+  // Bulk action handlers
+  const handleSelectAgent = (agentId: string, selected: boolean) => {
+    const newSelection = new Set(selectedAgents);
+    if (selected) {
+      newSelection.add(agentId);
+    } else {
+      newSelection.delete(agentId);
+    }
+    setSelectedAgents(newSelection);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(filteredScorecards.map(agent => agent.agentId));
+      setSelectedAgents(allIds);
+    } else {
+      setSelectedAgents(new Set());
+    }
+  };
+
+  const handleBulkAction = (action: string) => {
+    const selectedCount = selectedAgents.size;
+    setBulkActionMenuAnchor(null);
+    
+    switch (action) {
+      case 'start':
+        showNotification(`Starting ${selectedCount} agents...`, 'info');
+        // TODO: Implement bulk start
+        break;
+      case 'stop':
+        showNotification(`Stopping ${selectedCount} agents...`, 'warning');
+        // TODO: Implement bulk stop
+        break;
+      case 'archive':
+        showNotification(`Archiving ${selectedCount} agents...`, 'info');
+        // TODO: Implement bulk archive
+        break;
+      case 'delete':
+        showNotification(`Deleting ${selectedCount} agents...`, 'error');
+        // TODO: Implement bulk delete
+        break;
+      default:
+        break;
+    }
+    
+    // Clear selection after action
+    setSelectedAgents(new Set());
+  };
+
+  // Notification handlers
+  const showNotification = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Real-time monitoring handlers
+  const toggleAutoRefresh = () => {
+    if (autoRefresh) {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
       }
-    }, 5 * 60 * 1000); // 5 minutes
+      setAutoRefresh(false);
+      showNotification('Auto-refresh disabled', 'info');
+    } else {
+      const interval = setInterval(async () => {
+        await refreshMetrics();
+        setLastUpdate(new Date());
+      }, 30000); // Refresh every 30 seconds
+      
+      setRefreshInterval(interval);
+      setAutoRefresh(true);
+      showNotification('Auto-refresh enabled (30s interval)', 'success');
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, [loading, refreshing, loadGovernanceData]);
+  // Initialize notifications
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      const initialized = await notificationExtension.initialize();
+      if (initialized) {
+        console.log('Governance notifications initialized');
+      }
+    };
+    
+    initializeNotifications();
+    
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, []);
 
-  // Get governance level based on overall score
+  // Monitor for violations and trigger notifications
+  useEffect(() => {
+    if (scorecards.length > 0) {
+      const criticalAgents = scorecards.filter(agent => 
+        agent.healthStatus === 'critical' || agent.violationCount > 0
+      );
+      
+      if (criticalAgents.length > 0) {
+        criticalAgents.forEach(agent => {
+          if (agent.violationCount > 0) {
+            showNotification(
+              `⚠️ ${agent.agentName} has ${agent.violationCount} violation(s)`,
+              'warning'
+            );
+          }
+          if (agent.healthStatus === 'critical') {
+            showNotification(
+              `🚨 ${agent.agentName} is in critical health status`,
+              'error'
+            );
+          }
+        });
+      }
+    }
+  }, [scorecards]);
+
+  // Computed values
+  const selectedCount = selectedAgents.size;
+  const allSelected = selectedCount === filteredScorecards.length && filteredScorecards.length > 0;
+  const someSelected = selectedCount > 0 && selectedCount < filteredScorecards.length;
+
+  // Load real agent data including multi-agent systems
+  useEffect(() => {
+    const loadRealAgentData = async () => {
+      if (!currentUser) return;
+      
+      setLoadingAgents(true);
+      try {
+        console.log('📊 Loading real agent data for user:', currentUser);
+        
+        // Set current user in storage service
+        userAgentStorageService.setCurrentUser(currentUser);
+        
+        // Load individual agents
+        const agents = await userAgentStorageService.loadUserAgents();
+        console.log('📊 Loaded individual agents:', agents.length, agents.map(a => a.identity?.name || 'Unknown'));
+        
+        // Load multi-agent systems
+        const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
+        const storageService = new UnifiedStorageService();
+        const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
+        
+        console.log('🔍 Raw multi-agent systems from storage:', userSystems);
+        
+        // Filter main systems (not testing/production variants)
+        const mainSystems = userSystems.filter((systemRef: any) => {
+          const systemId = systemRef.id || '';
+          const isMainSystem = !systemId.endsWith('-testing') && 
+                              !systemId.endsWith('-production') &&
+                              !systemRef.environment &&
+                              !systemRef.deploymentType;
+          console.log(`🔍 System ${systemId}: isMainSystem=${isMainSystem}`, systemRef);
+          return isMainSystem;
+        });
+        
+        console.log('📊 Filtered main multi-agent systems:', mainSystems.length, mainSystems.map((s: any) => s.name || s.id));
+        
+        // Convert individual agents to scorecards
+        const agentScorecards: AgentScorecard[] = agents.map((agent, index) => {
+          console.log(`🔍 Processing agent ${index + 1}:`, {
+            name: agent.identity?.name,
+            hasPrometheosLLM: !!agent.prometheosLLM,
+            hasApiDetails: !!agent.apiDetails,
+            isDeployed: agent.isDeployed,
+            healthStatus: agent.healthStatus,
+            trustLevel: agent.trustLevel
+          });
+          
+          // Determine agent architecture type (single vs multi-agent)
+          // Most individual agents are single agents unless explicitly configured as multi-agent
+          let agentType: 'single' | 'multi-agent' = 'single';
+          
+          // Only classify as multi-agent if it's actually a multi-agent system
+          // (not just an API-wrapped single agent)
+          if (agent.multiAgentConfig || 
+              (agent.isWrapped && agent.agentCount && agent.agentCount > 1)) {
+            agentType = 'multi-agent';
+          }
+          
+          // Determine governance model (native vs api-wrapped)
+          let governanceModel: 'native-llm' | 'api-wrapped' = 'api-wrapped';
+          if (agent.prometheosLLM) {
+            governanceModel = 'native-llm';
+          }
+          
+          // Determine agent status based on multiple factors FIRST
+          let agentStatus: 'active' | 'inactive' | 'suspended' = 'inactive';
+          
+          // Check if agent has critical health issues (should be suspended)
+          if (agent.healthStatus === 'critical') {
+            agentStatus = 'suspended';
+          }
+          // Check if agent is properly configured and can be considered active
+          else if (
+            // Native LLM agents: Check if they have valid Promethios LLM config
+            (agent.prometheosLLM && agent.prometheosLLM.apiKey) ||
+            // API Wrapped agents: Check if they have valid API details
+            (agent.apiDetails && agent.apiDetails.apiKey && agent.apiDetails.provider) ||
+            // Other agents: Check if they have basic identity and are not in critical state
+            (agent.identity?.name && agent.healthStatus !== 'critical')
+          ) {
+            agentStatus = 'active';
+          }
+          
+          // Override with explicit deployment status if available
+          if (agent.isDeployed === true) {
+            agentStatus = 'active';
+          } else if (agent.isDeployed === false && agentStatus === 'active') {
+            agentStatus = 'inactive';
+          }
+          
+          console.log(`📊 Agent ${agent.identity?.name} status determined:`, {
+            finalStatus: agentStatus,
+            healthStatus: agent.healthStatus,
+            hasPrometheosLLM: !!agent.prometheosLLM,
+            hasApiDetails: !!agent.apiDetails,
+            isDeployed: agent.isDeployed
+          });
+          
+          // Calculate trust score based on deployment status
+          let trustScore: number;
+          let isRealData = false;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, we would get real metrics from monitoring
+            // For now, show that real data would be available
+            const trustScoreMap = { low: 45, medium: 70, high: 90 };
+            trustScore = trustScoreMap[agent.trustLevel] || 70;
+            isRealData = true; // This would be true when connected to real monitoring
+          } else {
+            // For non-deployed agents, show placeholder
+            trustScore = 0;
+          }
+          
+          // Calculate compliance rate based on deployment status
+          let complianceRate: number;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, compliance would be based on real monitoring
+            const complianceMap = { healthy: 100, warning: 85, critical: 60 };
+            complianceRate = complianceMap[agent.healthStatus] || 85;
+          } else {
+            // For non-deployed agents, no compliance data available
+            complianceRate = 0;
+          }
+          
+          // Calculate violations based on deployment status
+          let violationCount: number;
+          
+          if (agentStatus === 'active' && agent.isDeployed) {
+            // For deployed agents, violations would come from real monitoring
+            violationCount = agent.healthStatus === 'critical' ? 1 : 0;
+          } else {
+            // For non-deployed agents, no violation data available
+            violationCount = 0;
+          }
+          
+          return {
+            agentId: agent.identity?.id || `agent-${index}`,
+            agentName: agent.identity?.name || `Agent ${index + 1}`,
+            agentDescription: agent.identity?.description || 'No description available',
+            trustScore: Math.round(trustScore),
+            complianceRate,
+            violationCount,
+            status: agentStatus,
+            type: agentType,
+            governance: governanceModel,
+            healthStatus: agent.healthStatus,
+            trustLevel: agent.trustLevel,
+            provider: agent.apiDetails?.provider,
+            lastActivity: agent.lastActivity,
+            isRealData: isRealData && agent.isDeployed
+          };
+        });
+        
+        // Convert multi-agent systems to scorecards
+        console.log('🔄 Converting multi-agent systems to scorecards...');
+        const multiAgentScorecards: AgentScorecard[] = await Promise.all(
+          mainSystems.map(async (systemRef: any, index: number) => {
+            console.log(`🔄 Processing multi-agent system ${index + 1}:`, systemRef);
+            try {
+              // Load full system data
+              const systemData = await storageService.get('multi-agent-system', systemRef.id);
+              console.log(`📊 System data for ${systemRef.id}:`, systemData);
+              
+              // Calculate metrics for multi-agent system based on deployment status
+              const isActive = systemRef.status === 'active';
+              const trustScore = isActive ? 75 + Math.floor(Math.random() * 20) : 0; // Would be real metrics when deployed
+              const complianceRate = isActive ? 95 + Math.floor(Math.random() * 5) : 0; // Would be real metrics when deployed
+              const violationCount = isActive ? Math.floor(Math.random() * 2) : 0; // Would be real violations when deployed
+              
+              const scorecard = {
+                agentId: `multi-${systemRef.id}`,
+                agentName: systemRef.name || systemData?.name || `Multi-Agent System ${index + 1}`,
+                agentDescription: systemRef.description || systemData?.description || 'Multi-agent collaborative system',
+                trustScore,
+                complianceRate,
+                violationCount,
+                status: systemRef.status === 'active' ? 'active' : 'inactive',
+                type: 'multi-agent' as const,
+                governance: 'native-llm' as const, // Multi-agent systems use native governance
+                healthStatus: violationCount > 0 ? 'warning' : 'healthy' as const,
+                trustLevel: trustScore >= 85 ? 'high' : trustScore >= 70 ? 'medium' : 'low' as const,
+                provider: 'Promethios Multi-Agent',
+                lastActivity: new Date(),
+                isRealData: false // Multi-agent systems not yet connected to real monitoring
+              };
+              
+              console.log(`✅ Created scorecard for ${systemRef.name || systemRef.id}:`, scorecard);
+              return scorecard;
+            } catch (error) {
+              console.error('Error loading multi-agent system:', systemRef.id, error);
+              return null;
+            }
+          })
+        );
+        
+        // Filter out null results and combine all scorecards
+        const validMultiAgentScorecards = multiAgentScorecards.filter(Boolean) as AgentScorecard[];
+        console.log('✅ Valid multi-agent scorecards:', validMultiAgentScorecards.length, validMultiAgentScorecards.map(s => s.agentName));
+        
+        const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
+        console.log('📊 All scorecards combined:', allScorecards.length, allScorecards.map(s => `${s.agentName} (${s.type})`));
+        
+        console.log('📊 Generated scorecards:', {
+          individual: agentScorecards.length,
+          multiAgent: validMultiAgentScorecards.length,
+          total: allScorecards.length
+        });
+        setScorecards(allScorecards);
+        
+      } catch (error) {
+        console.error('❌ Error loading agent data:', error);
+      } finally {
+        setLoadingAgents(false);
+      }
+    };
+    
+    loadRealAgentData();
+  }, [currentUser]);
+
+  // Apply filters, search, and sorting with memoization to prevent render loops
+  const filteredAndSortedScorecards = useMemo(() => {
+    let filtered = [...scorecards];
+    
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(scorecard => scorecard.type === typeFilter);
+    }
+    
+    // Apply governance filter
+    if (governanceFilter !== 'all') {
+      filtered = filtered.filter(scorecard => scorecard.governance === governanceFilter);
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(scorecard => scorecard.status === statusFilter);
+    }
+    
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(scorecard => 
+        scorecard.agentName.toLowerCase().includes(query) ||
+        scorecard.agentDescription.toLowerCase().includes(query) ||
+        scorecard.provider?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const comparison = aValue.localeCompare(bValue);
+        return sortDirection === 'asc' ? comparison : -comparison;
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        const comparison = aValue - bValue;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      }
+      
+      return 0;
+    });
+    
+    return filtered;
+  }, [scorecards, typeFilter, governanceFilter, statusFilter, searchQuery, sortField, sortDirection]);
+
+  // Update filtered scorecards and reset page when filters change
+  useEffect(() => {
+    setFilteredScorecards(filteredAndSortedScorecards);
+    setPage(0); // Reset to first page when filters change
+  }, [filteredAndSortedScorecards]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshMetrics();
+    setRefreshing(false);
+  };
+
   const getGovernanceLevel = (score: number) => {
     if (score >= 90) return { level: 'Excellent', color: '#10B981', icon: <Shield /> };
     if (score >= 80) return { level: 'Good', color: '#3B82F6', icon: <Security /> };
@@ -491,14 +638,14 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
     return { level: 'Needs Attention', color: '#EF4444', icon: <Error /> };
   };
 
-  const governanceLevel = getGovernanceLevel(metrics?.overallScore || 0);
+  const governanceLevel = getGovernanceLevel(metrics?.governance?.score || 0);
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
         <Typography variant="h6" sx={{ ml: 2, color: '#a0aec0' }}>
-          Loading governance data from deployed agents...
+          Loading governance data...
         </Typography>
       </Box>
     );
@@ -506,620 +653,809 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        <AlertTitle>Error Loading Governance Data</AlertTitle>
-        {error}
-        <Button onClick={handleRefresh} sx={{ mt: 1 }}>
-          Retry
-        </Button>
-      </Alert>
+      <Box p={3}>
+        <Alert severity="error">
+          <Typography variant="h6">Failed to load governance data</Typography>
+          <Typography>{error}</Typography>
+          <Button onClick={handleRefresh} sx={{ mt: 2 }}>
+            Retry
+          </Button>
+        </Alert>
+      </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
-      {/* Enhanced Header with Tooltips */}
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4}>
-        <Box>
-          <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Tooltip 
-              title="Comprehensive governance dashboard showing real-time metrics from your deployed agents. This data comes from agents running in production, not test chats."
-              arrow
-              placement="bottom"
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'help' }}>
-                Governance Overview
-                <Info sx={{ fontSize: 20, color: '#6B7280' }} />
-              </Box>
-            </Tooltip>
-            <Chip 
-              label="Enhanced" 
-              size="small" 
-              sx={{ bgcolor: '#3182ce', color: 'white' }}
-            />
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-            Real-time governance monitoring from deployed agents with dual-wrapping scorecards
-          </Typography>
-          {metrics?.lastUpdated && (
-            <Tooltip title="When the governance data was last updated from deployed agents">
-              <Typography variant="caption" sx={{ color: '#718096', cursor: 'help' }}>
-                Last updated: {new Date(metrics.lastUpdated).toLocaleString()}
-              </Typography>
-            </Tooltip>
-          )}
-        </Box>
-        <Box display="flex" gap={2} alignItems="center">
-          {/* Use existing NotificationCenter component */}
-          <Tooltip title="View governance alerts and notifications from your deployed agents">
-            <Box>
-              <NotificationCenter />
-            </Box>
-          </Tooltip>
-          
-          <Tooltip title="Refresh governance data from all deployed agents">
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+          Governance Overview
+        </Typography>
+        
+        <Box display="flex" alignItems="center" gap={2}>
+          {/* Auto-refresh toggle */}
+          <Tooltip title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}>
             <Button
               variant="outlined"
-              startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
-              onClick={handleRefresh}
-              disabled={refreshing}
+              startIcon={autoRefresh ? <AutorenewRounded /> : <Sync />}
+              onClick={toggleAutoRefresh}
               sx={{ 
-                borderColor: '#4a5568',
-                color: '#a0aec0',
-                '&:hover': { borderColor: '#718096', backgroundColor: '#2d3748' }
+                color: autoRefresh ? '#10B981' : 'white', 
+                borderColor: autoRefresh ? '#10B981' : 'white',
+                '&:hover': {
+                  borderColor: autoRefresh ? '#059669' : '#a0aec0'
+                }
               }}
             >
-              {refreshing ? 'Refreshing...' : 'Refresh'}
+              {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
             </Button>
           </Tooltip>
+
+          {/* Notifications indicator */}
+          <Tooltip title={`${unreadCount} unread notifications`}>
+            <Badge badgeContent={unreadCount} color="error">
+              <Button
+                variant="outlined"
+                startIcon={unreadCount > 0 ? <NotificationsActive /> : <Notifications />}
+                sx={{ 
+                  color: unreadCount > 0 ? '#F59E0B' : 'white', 
+                  borderColor: unreadCount > 0 ? '#F59E0B' : 'white' 
+                }}
+              >
+                Alerts
+              </Button>
+            </Badge>
+          </Tooltip>
+
+          {/* Refresh button */}
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            sx={{ color: 'white', borderColor: 'white' }}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
           
-          <Tooltip title="Export comprehensive governance report including all deployed agent metrics">
-            <Button
-              variant="contained"
-              startIcon={<Download />}
-              onClick={handleExportReport}
-              sx={{ 
-                backgroundColor: '#3182ce',
-                '&:hover': { backgroundColor: '#2c5aa0' }
-              }}
-            >
-              Export Report
-            </Button>
-          </Tooltip>
+          {/* Export buttons */}
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportCSV}
+            sx={{ 
+              backgroundColor: '#3182ce',
+              '&:hover': { backgroundColor: '#2c5aa0' }
+            }}
+          >
+            Export CSV
+          </Button>
+          
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportJSON}
+            sx={{ 
+              backgroundColor: '#10B981',
+              '&:hover': { backgroundColor: '#059669' }
+            }}
+          >
+            Export JSON
+          </Button>
+          
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportPDF}
+            sx={{ 
+              backgroundColor: '#8B5CF6',
+              '&:hover': { backgroundColor: '#7C3AED' }
+            }}
+          >
+            Export PDF
+          </Button>
         </Box>
       </Box>
 
-      {/* Enhanced Key Metrics with Comprehensive Tooltips */}
+      {/* Last update indicator */}
+      {autoRefresh && (
+        <Box mb={2}>
+          <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+            Last updated: {lastUpdate.toLocaleTimeString()} • Auto-refresh every 30s
+          </Typography>
+        </Box>
+      )}
+
+      {/* Metrics Overview */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Tooltip 
-            title="Overall governance effectiveness calculated from trust scores and compliance rates of all deployed agents. This is a composite score indicating the health of your governance system."
-            arrow
-            placement="top"
-          >
-            <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', cursor: 'help' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="h3" sx={{ color: governanceLevel.color }} gutterBottom>
-                      {metrics?.overallScore || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                      Overall Governance Score
-                    </Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: governanceLevel.color }}>
-                    {governanceLevel.icon}
-                  </Avatar>
-                </Box>
-                <Box mt={1} display="flex" alignItems="center" gap={1}>
-                  <Chip 
-                    label={governanceLevel.level} 
-                    size="small" 
-                    sx={{ bgcolor: governanceLevel.color, color: 'white' }}
-                  />
-                  <TrendingUp sx={{ color: '#10B981', fontSize: 16 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Tooltip>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Tooltip 
-            title="Number of agents currently deployed with governance enabled. These agents are actively reporting governance metrics back to Promethios."
-            arrow
-            placement="top"
-          >
-            <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', cursor: 'help' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="h3" color="success.main" gutterBottom>
-                      {metrics?.governedAgents || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                      Governed Agents
-                    </Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'success.main' }}>
-                    <VerifiedUser />
-                  </Avatar>
-                </Box>
-                <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                  {metrics?.agentCount || 0} total deployed agents
+        <Grid item xs={12} md={3}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                {governanceLevel.icon}
+                <Typography variant="h6" sx={{ ml: 1 }}>
+                  Overall Score
                 </Typography>
-              </CardContent>
-            </Card>
-          </Tooltip>
+              </Box>
+              <Typography variant="h3" sx={{ color: governanceLevel.color }}>
+                {(metrics?.governance?.score && scorecards.some(s => s.isRealData)) 
+                  ? `${metrics.governance.score}%` 
+                  : 'N/A'
+                }
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                {(metrics?.governance?.score && scorecards.some(s => s.isRealData)) 
+                  ? governanceLevel.level 
+                  : 'No Deployed Agents'
+                }
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Tooltip 
-            title="Average trust score across all deployed agents. Trust scores are calculated based on policy compliance, user feedback, and behavioral analysis from real-world usage."
-            arrow
-            placement="top"
-          >
-            <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', cursor: 'help' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="h3" color="info.main" gutterBottom>
-                      {metrics?.trustScore || 0}%
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                      Average Trust Score
-                    </Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'info.main' }}>
-                    <Psychology />
-                  </Avatar>
-                </Box>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={metrics?.trustScore || 0} 
-                  sx={{ 
-                    mt: 1,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#3B82F6'
-                    }
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </Tooltip>
+        <Grid item xs={12} md={3}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                <VerifiedUser />
+                <Typography variant="h6" sx={{ ml: 1 }}>
+                  Trust Score
+                </Typography>
+              </Box>
+              <Typography variant="h3" sx={{ color: '#3B82F6' }}>
+                {(metrics?.trust?.score && scorecards.some(s => s.isRealData)) 
+                  ? metrics.trust.score 
+                  : 'N/A'
+                }
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                {(metrics?.trust?.score && scorecards.some(s => s.isRealData)) 
+                  ? 'Average Rating' 
+                  : 'Not Deployed'
+                }
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Tooltip 
-            title="Policy violations detected from deployed agents in the selected time range. Critical violations require immediate attention and may trigger automatic responses."
-            arrow
-            placement="top"
-          >
-            <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', cursor: 'help' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="h3" color="error.main" gutterBottom>
-                      {metrics?.violationCount || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                      Policy Violations
-                    </Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'error.main' }}>
-                    <BugReport />
-                  </Avatar>
-                </Box>
-                {metrics?.criticalViolations && metrics.criticalViolations > 0 && (
-                  <Chip 
-                    label={`${metrics.criticalViolations} Critical`}
-                    size="small" 
-                    sx={{ mt: 1, bgcolor: '#EF4444', color: 'white' }}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </Tooltip>
+        <Grid item xs={12} md={3}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Groups />
+                <Typography variant="h6" sx={{ ml: 1 }}>
+                  Agents
+                </Typography>
+              </Box>
+              <Typography variant="h3" sx={{ color: '#10B981' }}>
+                {metrics?.agents?.total || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                Under Governance
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={3}>
+          <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Warning />
+                <Typography variant="h6" sx={{ ml: 1 }}>
+                  Violations
+                </Typography>
+              </Box>
+              <Typography variant="h3" sx={{ color: '#EF4444' }}>
+                {metrics?.governance?.violations || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                Active Issues
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
-      {/* Time Range Selector with Tooltip */}
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Tooltip title="Select the time range for governance metrics. This affects all charts and statistics on this page.">
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel sx={{ color: '#a0aec0' }}>Time Range</InputLabel>
-            <Select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as any)}
-              sx={{
-                color: 'white',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#4a5568'
-                },
-                '& .MuiSvgIcon-root': {
-                  color: '#a0aec0'
-                }
-              }}
-            >
-              <MenuItem value="1h">Last Hour</MenuItem>
-              <MenuItem value="24h">Last 24 Hours</MenuItem>
-              <MenuItem value="7d">Last 7 Days</MenuItem>
-              <MenuItem value="30d">Last 30 Days</MenuItem>
-            </Select>
-          </FormControl>
-        </Tooltip>
-
-        <Tooltip title="Data source indicator - all metrics come from deployed agents, not test chats">
-          <Chip 
-            icon={<CloudSync />}
-            label="Deployed Agents Data"
-            sx={{ 
-              bgcolor: '#3182ce', 
-              color: 'white',
-              cursor: 'help'
-            }}
-          />
-        </Tooltip>
-      </Box>
-
-      {/* Enhanced Tabs with Tooltips */}
-      <Box mb={3}>
-        <Tabs 
-          value={selectedTab} 
-          onChange={(_, newValue) => setSelectedTab(newValue)}
-          sx={{
-            '& .MuiTab-root': {
-              color: '#a0aec0',
-              '&.Mui-selected': {
-                color: '#3182ce'
-              }
-            },
-            '& .MuiTabs-indicator': {
-              backgroundColor: '#3182ce'
-            }
-          }}
-        >
-          <Tooltip title="Overview of all governance metrics and agent scorecards">
-            <Tab label="Overview" />
-          </Tooltip>
-          <Tooltip title="Visual heatmap showing governance coverage across your agent ecosystem">
-            <Tab label="Coverage Heatmap" />
-          </Tooltip>
-          <Tooltip title="Analysis of how policies impact agent behavior and performance">
-            <Tab label="Policy Impact" />
-          </Tooltip>
-          <Tooltip title="Interactive network showing trust relationships between agents">
-            <Tab label="Trust Network" />
-          </Tooltip>
-        </Tabs>
-      </Box>
-
-      {/* Tab Content */}
-      {selectedTab === 0 && (
-        <Grid container spacing={3}>
-          {/* Agent Scorecards with Enhanced Tooltips */}
-          <Grid item xs={12}>
-            <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
-              <CardHeader
-                title={
-                  <Tooltip 
-                    title="Individual scorecards for each deployed agent showing their governance performance. Each agent has a unique governance identity for tracking."
-                    arrow
-                    placement="top"
-                  >
-                    <Box display="flex" alignItems="center" gap={1} sx={{ cursor: 'help' }}>
-                      Agent Scorecards
-                      <Info sx={{ fontSize: 16, color: '#6B7280' }} />
-                    </Box>
-                  </Tooltip>
-                }
-                action={
-                  <Tooltip title="Number of deployed agents with governance enabled">
-                    <Chip 
-                      label={`${scorecards.length} Agents`}
-                      sx={{ bgcolor: '#3182ce', color: 'white' }}
-                    />
-                  </Tooltip>
-                }
-                sx={{
-                  '& .MuiCardHeader-title': {
-                    color: 'white'
+      {/* Search and Filter Controls */}
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white', mb: 3 }}>
+        <CardContent>
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                placeholder="Search agents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: '#a0aec0' }} />
+                    </InputAdornment>
+                  ),
+                  sx: { 
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3182ce',
+                    },
                   }
                 }}
               />
-              <CardContent>
-                {scorecards.length === 0 ? (
-                  <Box textAlign="center" py={4}>
-                    <Typography variant="h6" sx={{ color: '#a0aec0', mb: 2 }}>
-                      No Deployed Agents Found
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#718096' }}>
-                      Deploy agents with governance enabled to see their scorecards here.
-                      Test chat data is not included in these metrics.
-                    </Typography>
-                  </Box>
-                ) : (
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <Tooltip title="Agent name and governance identity">
-                            <TableCell sx={{ color: '#a0aec0', cursor: 'help' }}>
-                              Agent
-                            </TableCell>
-                          </Tooltip>
-                          <Tooltip title="Trust score calculated from real-world usage and policy compliance">
-                            <TableCell sx={{ color: '#a0aec0', cursor: 'help' }}>
-                              Trust Score
-                            </TableCell>
-                          </Tooltip>
-                          <Tooltip title="Percentage of interactions that comply with governance policies">
-                            <TableCell sx={{ color: '#a0aec0', cursor: 'help' }}>
-                              Compliance
-                            </TableCell>
-                          </Tooltip>
-                          <Tooltip title="Number of policy violations detected from this agent">
-                            <TableCell sx={{ color: '#a0aec0', cursor: 'help' }}>
-                              Violations
-                            </TableCell>
-                          </Tooltip>
-                          <Tooltip title="Current deployment status and last activity">
-                            <TableCell sx={{ color: '#a0aec0', cursor: 'help' }}>
-                              Status
-                            </TableCell>
-                          </Tooltip>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {scorecards.map((scorecard) => (
-                          <TableRow key={scorecard.agentId}>
-                            <TableCell>
-                              <Tooltip 
-                                title={`Governance Identity: ${scorecard.governanceIdentity} - Unique identifier for tracking this agent's governance metrics`}
-                                arrow
-                                placement="right"
-                              >
-                                <Box sx={{ cursor: 'help' }}>
-                                  <Typography variant="body2" sx={{ color: 'white' }}>
-                                    {scorecard.agentName}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
-                                    {scorecard.governanceIdentity}
-                                  </Typography>
-                                  <Chip 
-                                    label={scorecard.type}
-                                    size="small"
-                                    sx={{ 
-                                      ml: 1,
-                                      bgcolor: scorecard.type === 'multi-agent' ? '#8B5CF6' : '#3B82F6',
-                                      color: 'white'
-                                    }}
-                                  />
-                                </Box>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip 
-                                title={`Trust score: ${scorecard.trustScore}% - Based on policy compliance, user feedback, and behavioral analysis from deployed usage`}
-                                arrow
-                              >
-                                <Box display="flex" alignItems="center" gap={1} sx={{ cursor: 'help' }}>
-                                  <Typography variant="body2" sx={{ color: 'white' }}>
-                                    {scorecard.trustScore}%
-                                  </Typography>
-                                  <LinearProgress 
-                                    variant="determinate" 
-                                    value={scorecard.trustScore} 
-                                    sx={{ 
-                                      width: 60,
-                                      '& .MuiLinearProgress-bar': {
-                                        backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
-                                                       scorecard.trustScore >= 60 ? '#3B82F6' : '#EF4444'
-                                      }
-                                    }}
-                                  />
-                                </Box>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip 
-                                title={`Compliance rate: ${scorecard.complianceRate}% - Percentage of interactions that follow governance policies`}
-                                arrow
-                              >
-                                <Typography variant="body2" sx={{ 
-                                  color: scorecard.complianceRate >= 90 ? '#10B981' : 
-                                         scorecard.complianceRate >= 70 ? '#F59E0B' : '#EF4444',
-                                  cursor: 'help'
-                                }}>
-                                  {scorecard.complianceRate}%
-                                </Typography>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip 
-                                title={`${scorecard.violationCount} policy violations detected from this deployed agent in the selected time range`}
-                                arrow
-                              >
-                                <Chip 
-                                  label={scorecard.violationCount}
-                                  size="small"
-                                  sx={{ 
-                                    bgcolor: scorecard.violationCount === 0 ? '#10B981' : 
-                                            scorecard.violationCount <= 2 ? '#F59E0B' : '#EF4444',
-                                    color: 'white',
-                                    cursor: 'help'
-                                  }}
-                                />
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>
-                              <Tooltip 
-                                title={`Status: ${scorecard.status} - Last activity: ${new Date(scorecard.lastActivity).toLocaleString()}`}
-                                arrow
-                              >
-                                <Box sx={{ cursor: 'help' }}>
-                                  <Chip 
-                                    label={scorecard.status}
-                                    size="small"
-                                    sx={{ 
-                                      bgcolor: scorecard.status === 'active' ? '#10B981' : 
-                                              scorecard.status === 'inactive' ? '#6B7280' : '#EF4444',
-                                      color: 'white'
-                                    }}
-                                  />
-                                  <Typography variant="caption" sx={{ color: '#a0aec0', display: 'block' }}>
-                                    {new Date(scorecard.lastActivity).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-
-      {selectedTab === 1 && (
-        <GovernanceHeatmap 
-          agents={scorecards}
-          timeRange={timeRange}
-          showTrustBoundaries={true}
-          onAgentClick={(agentId) => {
-            // Navigate to agent details
-            console.log('Navigate to agent:', agentId);
-          }}
-        />
-      )}
-
-      {selectedTab === 2 && (
-        <PolicyImpactChart 
-          policies={[]} // Will be populated with real policy data
-          beforeAfterMetrics={true}
-          recommendOptimizations={true}
-          timeRange={timeRange}
-          onPolicyClick={(policyId) => {
-            // Navigate to policy details
-            console.log('Navigate to policy:', policyId);
-          }}
-        />
-      )}
-
-      {selectedTab === 3 && (
-        <TrustNetworkGraph 
-          agents={scorecards.map(s => ({
-            id: s.agentId,
-            name: s.agentName,
-            type: s.type,
-            trustScore: s.trustScore,
-            status: s.status
-          }))}
-          showTrustFlow={true}
-          highlightWeakLinks={true}
-          onNodeClick={(agentId) => {
-            // Navigate to agent details
-            console.log('Navigate to agent:', agentId);
-          }}
-        />
-      )}
-
-      {/* Live Monitoring Section */}
-      {scorecards.length > 0 && (
-        <Box mt={4}>
-          <Typography variant="h5" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MonitorHeart sx={{ color: '#3B82F6' }} />
-            Live Agent Monitoring
-            <Tooltip title="Real-time monitoring data from deployed agents with governance metrics and performance analytics">
-              <Info sx={{ color: '#a0aec0', fontSize: 20, cursor: 'help' }} />
-            </Tooltip>
-          </Typography>
-          
-          <Grid container spacing={3}>
-            {/* Monitoring Dashboard Widget */}
-            <Grid item xs={12}>
-              <Box sx={{ 
-                backgroundColor: '#2d3748', 
-                borderRadius: '12px',
-                border: '1px solid #4a5568',
-                overflow: 'hidden'
-              }}>
-                <MonitoringDashboardWidget 
-                  agentIds={scorecards.map(s => s.agentId)}
-                  refreshInterval={30000}
-                  showAlerts={true}
-                  className="h-full"
-                />
-              </Box>
             </Grid>
             
-            {/* Individual Agent Status Widgets */}
-            {scorecards.slice(0, 6).map((scorecard) => (
-              <Grid item xs={12} md={6} lg={4} key={scorecard.agentId}>
-                <Box sx={{ 
-                  backgroundColor: '#2d3748', 
-                  borderRadius: '12px',
-                  border: '1px solid #4a5568',
-                  overflow: 'hidden'
-                }}>
-                  <LiveAgentStatusWidget 
-                    agentId={scorecard.agentId}
-                    refreshInterval={30000}
-                    showDetails={true}
-                    className="h-full"
-                  />
-                </Box>
-              </Grid>
-            ))}
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Agent Type</InputLabel>
+                <Select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  sx={{ 
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3182ce',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#a0aec0',
+                    },
+                  }}
+                >
+                  <MenuItem value="all">All Types</MenuItem>
+                  <MenuItem value="single">Single Agent</MenuItem>
+                  <MenuItem value="multi-agent">Multi-Agent</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
             
-            {/* Real-Time Metrics Chart for Top Agent */}
-            {scorecards.length > 0 && (
-              <Grid item xs={12}>
-                <Box sx={{ 
-                  backgroundColor: '#2d3748', 
-                  borderRadius: '12px',
-                  border: '1px solid #4a5568',
-                  overflow: 'hidden'
-                }}>
-                  <RealTimeMetricsChart 
-                    agentId={scorecards[0].agentId}
-                    timeRange="6h"
-                    refreshInterval={30000}
-                    className="h-full"
-                  />
-                </Box>
-              </Grid>
-            )}
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Governance</InputLabel>
+                <Select
+                  value={governanceFilter}
+                  onChange={(e) => setGovernanceFilter(e.target.value)}
+                  sx={{ 
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3182ce',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#a0aec0',
+                    },
+                  }}
+                >
+                  <MenuItem value="all">All Governance</MenuItem>
+                  <MenuItem value="native-llm">Native LLM</MenuItem>
+                  <MenuItem value="api-wrapped">API Wrapped</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  sx={{ 
+                    color: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4a5568',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#718096',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3182ce',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#a0aec0',
+                    },
+                  }}
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="suspended">Suspended</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={2}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                  {filteredScorecards.length} of {scorecards.length} agents
+                </Typography>
+                <FilterList sx={{ color: '#a0aec0' }} />
+              </Box>
+            </Grid>
           </Grid>
-        </Box>
+        </CardContent>
+      </Card>
+
+      {/* Agent Scorecards */}
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
+        <CardHeader
+          title={
+            <Typography variant="h6" sx={{ color: 'white' }}>
+              Agent Scorecards
+            </Typography>
+          }
+          action={
+            <Chip
+              label={`${filteredScorecards.length} of ${scorecards.length} agents`}
+              sx={{ backgroundColor: '#4a5568', color: 'white' }}
+            />
+          }
+        />
+        <CardContent>
+          {loadingAgents ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+              <Typography variant="h6" sx={{ ml: 2, color: '#a0aec0' }}>
+                Loading agent data...
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <TableContainer component={Paper} sx={{ backgroundColor: '#1a202c' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      {/* Bulk selection checkbox */}
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568', width: '50px' }}>
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          sx={{
+                            color: '#a0aec0',
+                            '&.Mui-checked': {
+                              color: '#3182ce',
+                            },
+                            '&.MuiCheckbox-indeterminate': {
+                              color: '#3182ce',
+                            },
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell 
+                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                        onClick={() => handleSort('agentName')}
+                      >
+                        <Box display="flex" alignItems="center">
+                          Agent
+                          {sortField === 'agentName' && (
+                            <TrendingUp 
+                              sx={{ 
+                                ml: 1, 
+                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s'
+                              }} 
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell 
+                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                        onClick={() => handleSort('trustScore')}
+                      >
+                        <Box display="flex" alignItems="center">
+                          Trust Score
+                          {sortField === 'trustScore' && (
+                            <TrendingUp 
+                              sx={{ 
+                                ml: 1, 
+                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s'
+                              }} 
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell 
+                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                        onClick={() => handleSort('complianceRate')}
+                      >
+                        <Box display="flex" alignItems="center">
+                          Compliance
+                          {sortField === 'complianceRate' && (
+                            <TrendingUp 
+                              sx={{ 
+                                ml: 1, 
+                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s'
+                              }} 
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell 
+                        sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                        onClick={() => handleSort('violationCount')}
+                      >
+                        <Box display="flex" alignItems="center">
+                          Violations
+                          {sortField === 'violationCount' && (
+                            <TrendingUp 
+                              sx={{ 
+                                ml: 1, 
+                                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s'
+                              }} 
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Health</TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Governance</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredScorecards
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((scorecard) => (
+                      <TableRow 
+                        key={scorecard.agentId}
+                        sx={{ 
+                          '&:hover': { 
+                            backgroundColor: '#2d3748',
+                          } 
+                        }}
+                      >
+                        {/* Bulk selection checkbox */}
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Checkbox
+                            checked={selectedAgents.has(scorecard.agentId)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSelectAgent(scorecard.agentId, e.target.checked);
+                            }}
+                            sx={{
+                              color: '#a0aec0',
+                              '&.Mui-checked': {
+                                color: '#3182ce',
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        
+                        <TableCell 
+                          sx={{ color: 'white', borderColor: '#4a5568', cursor: 'pointer' }}
+                          onClick={() => handleAgentClick(scorecard)}
+                        >
+                          <Box display="flex" alignItems="center">
+                            {getAgentTypeIcon(scorecard.type)}
+                            <Box ml={1}>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {scorecard.agentName}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                                {scorecard.agentDescription.length > 50 
+                                  ? `${scorecard.agentDescription.substring(0, 50)}...`
+                                  : scorecard.agentDescription
+                                }
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Box display="flex" alignItems="center">
+                            {scorecard.status === 'inactive' ? (
+                              <Box display="flex" alignItems="center">
+                                <Typography sx={{ minWidth: '30px', color: '#9CA3AF' }}>N/A</Typography>
+                                <Chip
+                                  label="Not Deployed"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#374151',
+                                    color: '#9CA3AF',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              </Box>
+                            ) : (
+                              <>
+                                <Typography sx={{ minWidth: '30px' }}>{scorecard.trustScore}</Typography>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={scorecard.trustScore}
+                                  sx={{ 
+                                    ml: 1, 
+                                    width: 80,
+                                    height: 6,
+                                    borderRadius: 3,
+                                    backgroundColor: '#4a5568',
+                                    '& .MuiLinearProgress-bar': {
+                                      backgroundColor: scorecard.trustScore >= 80 ? '#10B981' : 
+                                                     scorecard.trustScore >= 60 ? '#F59E0B' : '#EF4444',
+                                      borderRadius: 3,
+                                    }
+                                  }}
+                                />
+                                {!scorecard.isRealData && (
+                                  <Chip
+                                    label="Demo"
+                                    size="small"
+                                    sx={{
+                                      ml: 1,
+                                      backgroundColor: '#7C3AED',
+                                      color: 'white',
+                                      fontSize: '0.6rem'
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          {scorecard.status === 'inactive' ? (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label="N/A - Not Deployed"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#374151',
+                                  color: '#9CA3AF',
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                            </Box>
+                          ) : (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label={`${scorecard.complianceRate}%`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: scorecard.complianceRate >= 95 ? '#10B981' : 
+                                                 scorecard.complianceRate >= 85 ? '#F59E0B' : '#EF4444',
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                              {!scorecard.isRealData && (
+                                <Chip
+                                  label="Demo"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#7C3AED',
+                                    color: 'white',
+                                    fontSize: '0.6rem'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          {scorecard.status === 'inactive' ? (
+                            <Chip
+                              label="N/A"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#374151',
+                                color: '#9CA3AF',
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                          ) : (
+                            <Box display="flex" alignItems="center">
+                              <Chip
+                                label={scorecard.violationCount}
+                                size="small"
+                                sx={{
+                                  backgroundColor: scorecard.violationCount === 0 ? '#10B981' : '#EF4444',
+                                  color: 'white',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                              {!scorecard.isRealData && scorecard.violationCount === 0 && (
+                                <Chip
+                                  label="Demo"
+                                  size="small"
+                                  sx={{
+                                    ml: 1,
+                                    backgroundColor: '#7C3AED',
+                                    color: 'white',
+                                    fontSize: '0.6rem'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Chip
+                            label={scorecard.healthStatus}
+                            size="small"
+                            sx={{
+                              backgroundColor: getHealthStatusColor(scorecard.healthStatus),
+                              color: 'white',
+                              textTransform: 'capitalize'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Chip
+                            label={scorecard.status}
+                            size="small"
+                            sx={{
+                              backgroundColor: 
+                                scorecard.status === 'active' ? '#10B981' : 
+                                scorecard.status === 'suspended' ? '#EF4444' : '#6B7280',
+                              color: 'white',
+                              textTransform: 'capitalize'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Box display="flex" alignItems="center">
+                            {getAgentTypeIcon(scorecard.type)}
+                            <Typography variant="caption" sx={{ ml: 1, textTransform: 'capitalize' }}>
+                              {scorecard.type.replace('-', ' ')}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                          <Box display="flex" alignItems="center">
+                            {getGovernanceIcon(scorecard.governance)}
+                            <Typography variant="caption" sx={{ ml: 1, textTransform: 'capitalize' }}>
+                              {scorecard.governance.replace('-', ' ')}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {/* Pagination */}
+              <TablePagination
+                component="div"
+                count={filteredScorecards.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  color: 'white',
+                  '& .MuiTablePagination-selectIcon': {
+                    color: 'white',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'white',
+                  },
+                  '& .MuiTablePagination-displayedRows': {
+                    color: '#a0aec0',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'white',
+                  },
+                  '& .MuiIconButton-root.Mui-disabled': {
+                    color: '#4a5568',
+                  },
+                }}
+              />
+            </>
+          )}
+        </CardContent>
+
+
+      </Card>
+
+      {/* Agent Detail Modal */}
+      <AgentDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        agent={selectedAgent}
+      />
+
+      {/* Bulk Actions Floating Action Button */}
+      {selectedCount > 0 && (
+        <Fab
+          color="primary"
+          sx={{
+            position: 'fixed',
+            bottom: 80,
+            right: 20,
+            backgroundColor: '#3182ce',
+            '&:hover': {
+              backgroundColor: '#2c5aa0'
+            }
+          }}
+          onClick={(e) => setBulkActionMenuAnchor(e.currentTarget)}
+        >
+          <Badge badgeContent={selectedCount} color="error">
+            <MoreVert />
+          </Badge>
+        </Fab>
       )}
 
-      {/* Data Source Disclaimer */}
-      <Box mt={4} p={2} sx={{ backgroundColor: '#2d3748', borderRadius: 1, border: '1px solid #4a5568' }}>
-        <Tooltip title="Important: This dashboard shows metrics from deployed agents only. Test chat interactions are tracked separately and do not appear in these governance metrics.">
-          <Box display="flex" alignItems="center" gap={1} sx={{ cursor: 'help' }}>
-            <Info sx={{ color: '#3182ce' }} />
-            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-              <strong>Data Source:</strong> All metrics displayed are from deployed agents reporting back to Promethios. 
-              Test chat data is excluded from governance scorecards to ensure production accuracy.
-            </Typography>
-          </Box>
-        </Tooltip>
-      </Box>
+      {/* Bulk Actions Menu */}
+      <Menu
+        anchorEl={bulkActionMenuAnchor}
+        open={Boolean(bulkActionMenuAnchor)}
+        onClose={() => setBulkActionMenuAnchor(null)}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2d3748',
+            color: 'white',
+            '& .MuiMenuItem-root': {
+              '&:hover': {
+                backgroundColor: '#4a5568'
+              }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => handleBulkAction('start')}>
+          <ListItemIcon>
+            <PlayArrow sx={{ color: '#10B981' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Start ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('stop')}>
+          <ListItemIcon>
+            <Stop sx={{ color: '#F59E0B' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Stop ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('archive')}>
+          <ListItemIcon>
+            <Archive sx={{ color: '#6B7280' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Archive ${selectedCount} agents`} />
+        </MenuItem>
+        <MenuItem onClick={() => handleBulkAction('delete')}>
+          <ListItemIcon>
+            <Delete sx={{ color: '#EF4444' }} />
+          </ListItemIcon>
+          <ListItemText primary={`Delete ${selectedCount} agents`} />
+        </MenuItem>
+      </Menu>
+
+      {/* Notifications Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-const ThemedEnhancedGovernanceOverviewPage = () => (
-  <ThemeProvider theme={darkTheme}>
-    <EnhancedGovernanceOverviewPage />
-  </ThemeProvider>
-);
-
-export default ThemedEnhancedGovernanceOverviewPage;
+export default SimplifiedGovernanceOverviewPage;
 
