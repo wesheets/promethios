@@ -194,9 +194,6 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
       setDualRegistry(registry);
       setGovernanceEngine(engine);
 
-      // Load initial data
-      await loadGovernanceData();
-      
       toast({
         title: "Governance Dashboard Loaded",
         description: "Real-time governance metrics are now available",
@@ -403,6 +400,14 @@ const EnhancedGovernanceOverviewPage: React.FC = () => {
   useEffect(() => {
     initializeServices();
   }, [initializeServices]);
+
+  // Load data after services are initialized
+  useEffect(() => {
+    if (governanceEngine && storageService && dualRegistry && !loading) {
+      console.log('🚀 Services initialized, loading governance data...');
+      loadGovernanceData();
+    }
+  }, [governanceEngine, storageService, dualRegistry, loadGovernanceData, loading]);
 
   // Auto-refresh every 5 minutes for deployed agent data
   useEffect(() => {
