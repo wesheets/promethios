@@ -60,21 +60,23 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       // Load metrics
       console.log('🔄 Step 1: Creating OptimizedExistingDataBridge...');
       const dataBridge = new OptimizedExistingDataBridge();
-      console.log('🔄 Step 2: Getting dashboard metrics...');
+      console.log('🔄 Step 2: Setting current user in OptimizedExistingDataBridge...');
+      dataBridge.setCurrentUser(currentUser.uid);
+      console.log('🔄 Step 3: Getting dashboard metrics...');
       const dashboardMetrics = await dataBridge.getDashboardMetrics(currentUser.uid);
-      console.log('✅ Step 2 complete: Dashboard metrics loaded');
+      console.log('✅ Step 3 complete: Dashboard metrics loaded');
       
       // Load agents
-      console.log('🔄 Step 3: Creating UserAgentStorageService...');
+      console.log('🔄 Step 4: Creating UserAgentStorageService...');
       const userAgentService = new UserAgentStorageService();
-      console.log('🔄 Step 4: Loading agents...');
+      console.log('🔄 Step 5: Loading agents...');
       const agents = await userAgentService.loadAgents(currentUser.uid);
-      console.log(`✅ Step 4 complete: Loaded ${agents.length} agents`);
+      console.log(`✅ Step 5 complete: Loaded ${agents.length} agents`);
       
       // Load multi-agent systems
-      console.log('🔄 Step 5: Loading multi-agent systems...');
+      console.log('🔄 Step 6: Loading multi-agent systems...');
       const multiAgentSystems = await multiAgentService.getMultiAgentSystems(currentUser.uid);
-      console.log(`✅ Step 5 complete: Loaded ${multiAgentSystems.length} multi-agent systems:`, multiAgentSystems);
+      console.log(`✅ Step 6 complete: Loaded ${multiAgentSystems.length} multi-agent systems:`, multiAgentSystems);
       
       // Create agent scorecards
       const agentScorecards: AgentScorecard[] = agents.map(agent => {
