@@ -324,27 +324,13 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         agent.healthStatus === 'critical' || agent.violationCount > 0
       );
       
-      // Only show notifications if there are new critical agents (prevent spam)
+      // Log violations for debugging but don't trigger notifications to prevent render loop
       if (criticalAgents.length > 0) {
-        // Use a timeout to batch notifications and prevent excessive triggering
-        const notificationTimeout = setTimeout(() => {
-          criticalAgents.forEach(agent => {
-            if (agent.violationCount > 0) {
-              showNotification(
-                `⚠️ ${agent.agentName} has ${agent.violationCount} violation(s)`,
-                'warning'
-              );
-            }
-            if (agent.healthStatus === 'critical') {
-              showNotification(
-                `🚨 ${agent.agentName} is in critical health status`,
-                'error'
-              );
-            }
-          });
-        }, 1000); // Delay notifications to prevent render loop
-        
-        return () => clearTimeout(notificationTimeout);
+        console.log('🚨 Critical agents detected:', criticalAgents.map(a => ({
+          name: a.agentName,
+          violations: a.violationCount,
+          health: a.healthStatus
+        })));
       }
     }
   }, [scorecards.length]); // Only depend on scorecards.length to prevent excessive re-renders
