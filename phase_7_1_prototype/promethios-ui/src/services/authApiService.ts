@@ -132,37 +132,39 @@ class AuthApiService {
 
   /**
    * Provide fallback analytics data when backend is not available
+   * Returns null values to indicate no real data is available (will show N/A in UI)
    */
   private getFallbackAnalytics(user: User | null): any {
+    console.warn('Backend API not available - returning null values to show N/A in UI');
     return {
       agent_metrics: {
-        total_agents: 18,
-        active_agents: 15,
-        deployed_agents: 12
+        total_agents: 0, // Keep count of stored agents
+        active_agents: null,
+        deployed_agents: null
       },
       trust_metrics: {
-        average_trust_score: 0.85,
-        total_evaluations: 156,
+        average_trust_score: null,
+        total_evaluations: null,
         trust_distribution: {
-          high: 12,
-          medium: 5,
-          low: 1
+          high: null,
+          medium: null,
+          low: null
         }
       },
       violation_metrics: {
-        total_violations: 3,
-        agents_with_violations: 2,
-        resolved_violations: 1
+        total_violations: null,
+        agents_with_violations: null,
+        resolved_violations: null
       },
       compliance_metrics: {
-        compliance_rate: 0.94,
-        policy_adherence: 0.96,
-        audit_score: 0.92
+        compliance_rate: null,
+        policy_adherence: null,
+        audit_score: null
       },
       performance_metrics: {
-        average_response_time: 245,
-        success_rate: 0.98,
-        availability: 0.99
+        average_response_time: null,
+        success_rate: null,
+        availability: null
       }
     };
   }

@@ -423,7 +423,8 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
     }
   };
   
-  const getTrustScoreColor = (score: number) => {
+  const getTrustScoreColor = (score: number | null) => {
+    if (score === null) return '#64748b'; // Gray for N/A
     if (score >= 0.9) return '#10b981';
     if (score >= 0.8) return '#f59e0b';
     if (score >= 0.7) return '#f97316';
@@ -694,7 +695,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ color: getTrustScoreColor(overviewStats.averageTrustScore), fontWeight: 'bold' }}>
-                    {Math.round(overviewStats.averageTrustScore * 100)}%
+                    {overviewStats.averageTrustScore !== null ? `${Math.round(overviewStats.averageTrustScore * 100)}%` : 'N/A'}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     Across {overviewStats.totalAgents} agents
@@ -716,10 +717,13 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ color: '#10b981', fontWeight: 'bold' }}>
-                    {overviewStats.highConfidenceAgents}
+                    {overviewStats.highConfidenceAgents !== null ? overviewStats.highConfidenceAgents : 'N/A'}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
-                    {Math.round((overviewStats.highConfidenceAgents / overviewStats.totalAgents) * 100)}% of agents
+                    {overviewStats.highConfidenceAgents !== null && overviewStats.totalAgents > 0 
+                      ? `${Math.round((overviewStats.highConfidenceAgents / overviewStats.totalAgents) * 100)}% of agents`
+                      : 'N/A'
+                    }
                   </Typography>
                 </CardContent>
               </Card>
@@ -738,10 +742,13 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ color: overviewStats.atRiskAgents > 0 ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
-                    {overviewStats.atRiskAgents}
+                    {overviewStats.atRiskAgents !== null ? overviewStats.atRiskAgents : 'N/A'}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
-                    {Math.round((overviewStats.atRiskAgents / overviewStats.totalAgents) * 100)}% of agents
+                    {overviewStats.atRiskAgents !== null && overviewStats.totalAgents > 0 
+                      ? `${Math.round((overviewStats.atRiskAgents / overviewStats.totalAgents) * 100)}% of agents`
+                      : 'N/A'
+                    }
                   </Typography>
                 </CardContent>
               </Card>
@@ -804,7 +811,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ color: '#06b6d4', fontWeight: 'bold' }}>
-                    {Math.round(overviewStats.complianceRate * 100)}%
+                    {overviewStats.complianceRate !== null ? `${Math.round(overviewStats.complianceRate * 100)}%` : 'N/A'}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     Policy adherence
