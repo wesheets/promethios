@@ -38,16 +38,16 @@ const NewLandingPage: React.FC = () => {
             <div className="mb-12 relative h-64 overflow-visible w-full -mt-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
-                  {/* Animated words that cycle through - positioned on the left */}
+                  {/* Animated words that cycle through - all positioned at the same top level */}
                   <div className="absolute left-0 top-0">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
+                    <span className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
                       REPUTATION
                     </span>
-                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word financial-risk uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word financial-risk uppercase flex flex-col leading-tight">
                       <span className="financial-risk-word">FINANCIAL</span>
                       <span className="financial-risk-word">RISK</span>
                     </div>
-                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
                       <span className="customer-trust-word">CUSTOMER</span>
                       <span className="customer-trust-word">TRUST</span>
                     </div>
