@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   return (
     <header className={`sticky top-0 z-50 w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} shadow-md`}>
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center py-2">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
