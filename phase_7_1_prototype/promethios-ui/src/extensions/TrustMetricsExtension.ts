@@ -427,8 +427,12 @@ export class TrustMetricsExtension {
       const filteredAgents = agentId ? agents.filter(a => a.identity?.name === agentId) : agents;
       
       console.log('🔍 Trust Metrics - Sample agent data:', filteredAgents[0]);
+      console.log('🔍 Trust Metrics - Agent multiAgentConfig:', filteredAgents[0]?.multiAgentConfig);
+      console.log('🔍 Trust Metrics - Agent isWrapped:', filteredAgents[0]?.isWrapped);
+      console.log('🔍 Trust Metrics - Agent agentCount:', filteredAgents[0]?.agentCount);
+      console.log('🔍 Trust Metrics - Total agents loaded:', filteredAgents.length);
       
-      return filteredAgents.map(agent => {
+      const trustMetrics = filteredAgents.map(agent => {
         // Check if agent is actually deployed (has real deployment data)
         const isDeployed = agent.deploymentStatus === 'deployed' && 
                           agent.healthStatus && 
@@ -439,10 +443,20 @@ export class TrustMetricsExtension {
         const realViolations = isDeployed ? agent.violationCount : null;
         const realPerformance = isDeployed ? agent.performanceMetrics : null;
         
+        // Determine agent type (same logic as Governance Overview)
+        let agentType = 'Single Agent';
+        
+        // Only classify as multi-agent if it's actually a multi-agent system
+        // (not just an API-wrapped single agent)
+        if (agent.multiAgentConfig || 
+            (agent.isWrapped && agent.agentCount && agent.agentCount > 1)) {
+          agentType = 'Multi-Agent System';
+        }
+        
         return {
           agent_id: agent.identity?.name || agent.agentId,
           agent_name: agent.identity?.name || `Agent ${agent.agentId}`,
-          agent_type: agent.multiAgentConfig ? 'Multi-Agent System' : 'Single Agent',
+          agent_type: agentType,
           timestamp: new Date().toISOString(),
           trustScores: {
             overall: realTrustScore,
@@ -480,11 +494,48 @@ export class TrustMetricsExtension {
           },
           metadata: {
             lastUpdated: new Date().toISOString(),
-            dataSource: isDeployed ? 'real_deployment' : 'not_deployed',
-            version: '1.0'
-          }
-        };
+             dataSource: isDeployed ? 'real_deployment' : 'not_deployed',
+          version: '1.0'
+        }
       });
+
+      // Add a test multi-agent system if none were loaded from storage (same as Governance Overview)
+      const hasMultiAgent = trustMetrics.some(metric => metric.agent_type === 'Multi-Agent System');
+      if (!hasMultiAgent) {
+        const testMultiAgentSystem = {
+          agent_id: 'test-multi-agent-system',
+          agent_name: 'Test Multi-Agent System',
+          agent_type: 'Multi-Agent System',
+          timestamp: new Date().toISOString(),
+          trust_scores: {
+            overall: null,
+            competence: null,
+            reliability: null,
+            honesty: null,
+            transparency: null,
+            aggregate: null
+          },
+          confidence: null,
+          trend: {
+            direction: null,
+            velocity: null,
+            prediction: null
+          },
+          risk_level: 'unknown',
+          risk_factors: [],
+          performance: {
+            response_time: null,
+            success_rate: null,
+            availability: null
+          },
+          dataSource: 'not_deployed',
+          version: '1.0'
+        };
+        trustMetrics.push(testMultiAgentSystem);
+      }
+
+      console.log('🔍 Trust Metrics - Final metrics count:', trustMetrics.length);
+      return trustMetrics;
     } catch (error) {
       console.error('Error fetching trust metrics:', error);
       throw error;
