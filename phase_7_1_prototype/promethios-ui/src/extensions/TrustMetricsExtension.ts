@@ -314,10 +314,13 @@ export class TrustMetricsExtension {
         console.log('Trust ML models loaded successfully');
       } else {
         console.warn('Failed to load trust ML models, continuing without ML features');
+        this.mlModelsLoaded = false;
       }
     } catch (error) {
       console.warn('ML models not available, continuing without ML features:', error);
+      this.mlModelsLoaded = false;
     }
+  }
   }
 
   private startRealTimeUpdates(): void {
@@ -334,22 +337,21 @@ export class TrustMetricsExtension {
     }, this.config.refreshInterval);
   }
 
-  private async checkTrustAlerts(): Promise<void> {
+  private async checkAlerts(): Promise<void> {
     try {
       const response = await fetch('/api/trust-metrics/alerts/check', {
-        method: 'GET',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.ok) {
-        const alerts: TrustAlert[] = await response.json();
-        
-        for (const alert of alerts) {
-          await this.handleTrustAlert(alert);
-        }
+        const alerts = await response.json();
+        this.processAlerts(alerts);
+      } else {
+        console.warn('Trust alerts endpoint not available, skipping alert checks');
       }
     } catch (error) {
-      console.error('Error checking trust alerts:', error);
+      console.warn('Trust alerts not available, skipping alert checks:', error);
     }
   }
 
