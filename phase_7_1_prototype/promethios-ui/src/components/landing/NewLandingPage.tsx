@@ -35,26 +35,32 @@ const NewLandingPage: React.FC = () => {
         <div className="relative z-10 h-full flex items-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
             {/* Full-Width Animated Pre-Headline */}
-            <div className="mb-12 relative h-32 overflow-hidden w-full">
-              <div className="absolute inset-0 flex items-center justify-between">
-                <div className="relative flex items-center w-full">
-                  {/* Animated words that cycle through */}
-                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
-                    REPUTATION
-                  </span>
-                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word risk uppercase">
-                    RISK
-                  </span>
-                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase">
-                    CUSTOMER TRUST
-                  </span>
-                  {/* Static text that remains - positioned to leave space for longest word */}
-                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text" style={{marginLeft: 'clamp(200px, 25vw, 400px)'}}>
-                    is on the line
-                  </span>
+            <div className="mb-16 relative h-40 overflow-hidden w-full">
+              <div className="absolute inset-0 flex items-center">
+                <div className="relative w-full">
+                  {/* Animated words that cycle through - positioned on the left */}
+                  <div className="absolute left-0 top-0">
+                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
+                      REPUTATION
+                    </span>
+                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word risk uppercase">
+                      RISK
+                    </span>
+                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold animated-word customer-trust uppercase flex flex-col leading-tight">
+                      <span className="text-red-800 customer-trust-word">CUSTOMER</span>
+                      <span className="text-red-800 customer-trust-word">TRUST</span>
+                    </div>
+                  </div>
+                  
+                  {/* Static text positioned on the right */}
+                  <div className="absolute right-0 top-0">
+                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text">
+                      is on the line
+                    </span>
+                  </div>
                 </div>
               </div>
-              {/* Italic subtitle that fades in later - positioned on the right */}
+              {/* Italic subtitle that fades in later - positioned on the right bottom */}
               <div className="absolute right-0 bottom-0">
                 <p className="text-xl sm:text-2xl italic text-gray-300 fade-in-subtitle">
                   And you're still trusting your AI… just because it sounds smart?
