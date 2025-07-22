@@ -32,6 +32,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api/agent-metrics', require('./routes/agentMetrics'));
 app.use('/api/agents', require('./routes/agents'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/audit', require('./routes/audit'));

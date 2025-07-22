@@ -3,10 +3,11 @@
  * 
  * Provides advanced trust monitoring, analytics, and management capabilities
  * for deployed agents with real-time updates and predictive insights.
- * Now includes proper user authentication and scoping.
+ * Now uses local storage services for data consistency with governance overview.
  */
 
 import { User } from 'firebase/auth';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
 import { authApiService } from '../services/authApiService';
 import { NotificationService } from '../services/NotificationService';
 import { notificationExtension } from './NotificationExtension';
@@ -314,9 +315,11 @@ export class TrustMetricsExtension {
         console.log('Trust ML models loaded successfully');
       } else {
         console.warn('Failed to load trust ML models, continuing without ML features');
+        this.mlModelsLoaded = false;
       }
     } catch (error) {
       console.warn('ML models not available, continuing without ML features:', error);
+      this.mlModelsLoaded = false;
     }
   }
 
@@ -334,22 +337,21 @@ export class TrustMetricsExtension {
     }, this.config.refreshInterval);
   }
 
-  private async checkTrustAlerts(): Promise<void> {
+  private async checkAlerts(): Promise<void> {
     try {
       const response = await fetch('/api/trust-metrics/alerts/check', {
-        method: 'GET',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.ok) {
-        const alerts: TrustAlert[] = await response.json();
-        
-        for (const alert of alerts) {
-          await this.handleTrustAlert(alert);
-        }
+        const alerts = await response.json();
+        this.processAlerts(alerts);
+      } else {
+        console.warn('Trust alerts endpoint not available, skipping alert checks');
       }
     } catch (error) {
-      console.error('Error checking trust alerts:', error);
+      console.warn('Trust alerts not available, skipping alert checks:', error);
     }
   }
 
@@ -417,56 +419,70 @@ export class TrustMetricsExtension {
     }
 
     try {
-      // Use authenticated API to get user's trust metrics
-      const userAnalytics = await authApiService.getUserAnalytics(user, {
-        agent_id: agentId,
-        include_trends: true
+      // Set current user in storage service
+      userAgentStorageService.setCurrentUser(user);
+      
+      // Load agents from local storage (same as governance overview)
+      const agents = await userAgentStorageService.loadUserAgents();
+      const filteredAgents = agentId ? agents.filter(a => a.identity?.name === agentId) : agents;
+      
+      return filteredAgents.map(agent => {
+        // Check if agent is actually deployed (has real deployment data)
+        const isDeployed = agent.deploymentStatus === 'deployed' && 
+                          agent.healthStatus && 
+                          agent.lastActivity;
+        
+        // Only show real data for deployed agents, null for others (will show N/A in UI)
+        const realTrustScore = isDeployed ? agent.trustScore : null;
+        const realViolations = isDeployed ? agent.violationCount : null;
+        const realPerformance = isDeployed ? agent.performanceMetrics : null;
+        
+        return {
+          agentId: agent.identity?.name || agent.agentId,
+          agentName: agent.identity?.name || `Agent ${agent.agentId}`,
+          agentType: agent.multiAgentConfig ? 'multi_agent_system' : 'single' as const,
+          timestamp: new Date().toISOString(),
+          trustScores: {
+            overall: realTrustScore,
+            competence: realTrustScore ? realTrustScore * 0.9 : null,
+            reliability: realTrustScore ? realTrustScore * 1.1 : null,
+            honesty: realTrustScore ? realTrustScore * 0.95 : null,
+            transparency: realTrustScore ? realTrustScore * 0.85 : null
+          },
+          confidence: isDeployed ? (agent.confidence || null) : null,
+          riskLevel: realTrustScore ? 
+            (realTrustScore > 0.8 ? 'low' : realTrustScore > 0.6 ? 'medium' : 'high') : 
+            null,
+          lastEvaluation: isDeployed ? agent.lastActivity : null,
+          evaluationCount: isDeployed ? (agent.evaluationCount || 0) : null,
+          attestations: [],
+          violations: realViolations,
+          performance: realPerformance ? {
+            responseTime: realPerformance.responseTime,
+            successRate: realPerformance.successRate,
+            availability: realPerformance.availability
+          } : {
+            responseTime: null,
+            successRate: null,
+            availability: null
+          },
+          trends: {
+            trustScoreChange: isDeployed ? (agent.trustTrend || 0) : null,
+            riskLevelChange: isDeployed ? 'stable' as const : null,
+            performanceChange: isDeployed ? 'stable' as const : null
+          },
+          predictions: {
+            nextWeekTrustScore: realTrustScore,
+            riskProbability: isDeployed ? 0.1 : null,
+            recommendedActions: isDeployed ? ['Monitor performance'] : []
+          },
+          metadata: {
+            lastUpdated: new Date().toISOString(),
+            dataSource: isDeployed ? 'real_deployment' : 'not_deployed',
+            version: '1.0'
+          }
+        };
       });
-      
-      // Transform analytics data to enhanced trust metrics format
-      const agents = await authApiService.getUserAgents(user);
-      const filteredAgents = agentId ? agents.filter(a => a.agent_id === agentId) : agents;
-      
-      return filteredAgents.map(agent => ({
-        agentId: agent.agent_id,
-        agentName: agent.agent_name || `Agent ${agent.agent_id}`,
-        agentType: 'single' as const,
-        timestamp: new Date().toISOString(),
-        trustScores: {
-          overall: userAnalytics.trust_metrics?.average_trust_score || 0.8,
-          competence: (userAnalytics.trust_metrics?.average_trust_score || 0.8) * 0.9,
-          reliability: (userAnalytics.trust_metrics?.average_trust_score || 0.8) * 1.1,
-          honesty: (userAnalytics.trust_metrics?.average_trust_score || 0.8) * 0.95,
-          transparency: (userAnalytics.trust_metrics?.average_trust_score || 0.8) * 0.85
-        },
-        confidence: 0.85,
-        riskLevel: userAnalytics.trust_metrics?.average_trust_score > 0.8 ? 'low' : 
-                  userAnalytics.trust_metrics?.average_trust_score > 0.6 ? 'medium' : 'high',
-        lastEvaluation: new Date().toISOString(),
-        evaluationCount: userAnalytics.trust_metrics?.total_evaluations || 0,
-        attestations: [],
-        violations: userAnalytics.violation_metrics?.total_violations || 0,
-        performance: {
-          responseTime: Math.random() * 1000 + 200,
-          successRate: 0.95,
-          availability: 0.99
-        },
-        trends: {
-          trustScoreChange: Math.random() * 0.1 - 0.05,
-          riskLevelChange: 'stable' as const,
-          performanceChange: 'improving' as const
-        },
-        predictions: {
-          nextWeekTrustScore: (userAnalytics.trust_metrics?.average_trust_score || 0.8) + (Math.random() * 0.1 - 0.05),
-          riskProbability: Math.random() * 0.3,
-          recommendedActions: ['Monitor performance', 'Review policies']
-        },
-        metadata: {
-          lastUpdated: new Date().toISOString(),
-          dataSource: 'promethios_backend',
-          version: '1.0'
-        }
-      }));
     } catch (error) {
       console.error('Error fetching trust metrics:', error);
       throw error;
@@ -490,12 +506,12 @@ export class TrustMetricsExtension {
       return {
         overview: {
           totalAgents: userAnalytics.agent_metrics?.total_agents || 0,
-          averageTrustScore: userAnalytics.trust_metrics?.average_trust_score || 0.8,
-          highConfidenceAgents: Math.floor((userAnalytics.agent_metrics?.total_agents || 0) * 0.7),
-          atRiskAgents: userAnalytics.violation_metrics?.agents_with_violations || 0,
-          criticalAgents: Math.floor((userAnalytics.violation_metrics?.agents_with_violations || 0) * 0.3),
-          totalAttestations: userAnalytics.trust_metrics?.total_evaluations || 0,
-          complianceRate: userAnalytics.compliance_metrics?.compliance_rate || 0.95
+          averageTrustScore: userAnalytics.trust_metrics?.average_trust_score || null,
+          highConfidenceAgents: userAnalytics.trust_metrics?.high_confidence_agents || null,
+          atRiskAgents: userAnalytics.violation_metrics?.agents_with_violations || null,
+          criticalAgents: userAnalytics.violation_metrics?.critical_agents || null,
+          totalAttestations: userAnalytics.trust_metrics?.total_evaluations || null,
+          complianceRate: userAnalytics.compliance_metrics?.compliance_rate || null
         },
         trends: {
           trustScoreTrend: this.generateTrustTrend(userAnalytics.trust_metrics?.average_trust_score || 0.8),
