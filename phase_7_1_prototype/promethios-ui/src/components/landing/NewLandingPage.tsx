@@ -53,10 +53,10 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Static "is on the line" text positioned on the right - will fade out */}
+                  {/* Static "is on the line" text positioned on the right - will fade in and out */}
                   <div className="absolute right-0 top-0">
                     <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text">
-                      is on the line
+                      is on the line.
                     </span>
                   </div>
                   
