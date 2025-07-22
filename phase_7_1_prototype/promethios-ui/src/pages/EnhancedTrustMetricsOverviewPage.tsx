@@ -256,7 +256,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
       
       setTrustMetrics(metrics);
       setTrustAnalytics(analytics);
-      setTrustAlerts(alerts);
+      setTrustAlerts(Array.isArray(alerts) ? alerts : []);
       setLastUpdate(new Date());
       
       // Send notification for critical alerts
@@ -1512,7 +1512,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                         Confidence: {Math.round(agent.confidence * 100)}%
                       </Typography>
                       
-                      {agent.risk_factors.length > 0 && (
+                      {(agent.risk_factors || []).length > 0 && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 'bold' }}>
                             Risk Factors:
