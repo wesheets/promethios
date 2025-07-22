@@ -231,3 +231,110 @@
   }
 }
 
+
+/* Sequential Word Animation for Pre-Headline */
+.animated-word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Reputation animation - appears first, scrolls up and fades */
+.animated-word.reputation {
+  animation: word-scroll-fade 2s ease-in-out 1s both;
+}
+
+/* Risk animation - appears second, scrolls up and fades */
+.animated-word.risk {
+  animation: word-scroll-fade 2s ease-in-out 3.5s both;
+}
+
+/* Customer Trust animation - appears third, scrolls up and glows red */
+.animated-word.customer-trust {
+  animation: word-scroll-glow-red 3s ease-in-out 6s both;
+}
+
+/* Static text that remains visible */
+.static-text {
+  opacity: 1;
+  animation: static-text-appear 0.5s ease-out 1s both;
+}
+
+/* Fade-in subtitle that appears after Customer Trust glows */
+.fade-in-subtitle {
+  opacity: 0;
+  animation: subtitle-fade-in 1.5s ease-out 9.5s both;
+}
+
+@keyframes word-scroll-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  20%, 70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes word-scroll-glow-red {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+    color: white;
+    text-shadow: none;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+    color: white;
+    text-shadow: none;
+  }
+  40%, 80% {
+    opacity: 1;
+    transform: translateY(0);
+    color: #ef4444;
+    text-shadow: 
+      0 0 10px rgba(239, 68, 68, 0.8),
+      0 0 20px rgba(239, 68, 68, 0.6),
+      0 0 30px rgba(239, 68, 68, 0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px);
+    color: #ef4444;
+    text-shadow: 
+      0 0 10px rgba(239, 68, 68, 0.8),
+      0 0 20px rgba(239, 68, 68, 0.6),
+      0 0 30px rgba(239, 68, 68, 0.4);
+  }
+}
+
+@keyframes static-text-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes subtitle-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
