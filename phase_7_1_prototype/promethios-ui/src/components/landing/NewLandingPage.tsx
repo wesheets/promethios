@@ -35,30 +35,30 @@ const NewLandingPage: React.FC = () => {
         <div className="relative z-10 h-full flex items-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
             {/* Full-Width Animated Pre-Headline */}
-            <div className="mb-8 relative h-20 overflow-hidden w-full">
+            <div className="mb-12 relative h-32 overflow-hidden w-full">
               <div className="absolute inset-0 flex items-center justify-between">
-                <div className="relative flex items-center">
+                <div className="relative flex items-center w-full">
                   {/* Animated words that cycle through */}
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white animated-word reputation uppercase">
+                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
                     REPUTATION
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white animated-word risk uppercase">
+                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word risk uppercase">
                     RISK
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white animated-word customer-trust uppercase">
+                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase">
                     CUSTOMER TRUST
                   </span>
-                  {/* Static text that remains */}
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white ml-6 static-text">
+                  {/* Static text that remains - positioned to leave space for longest word */}
+                  <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text" style={{marginLeft: 'clamp(200px, 25vw, 400px)'}}>
                     is on the line
                   </span>
                 </div>
-                {/* Italic subtitle that fades in later - positioned on the right */}
-                <div className="absolute right-0 bottom-0">
-                  <p className="text-lg italic text-gray-300 fade-in-subtitle">
-                    And you're still trusting your AI… just because it sounds smart?
-                  </p>
-                </div>
+              </div>
+              {/* Italic subtitle that fades in later - positioned on the right */}
+              <div className="absolute right-0 bottom-0">
+                <p className="text-xl sm:text-2xl italic text-gray-300 fade-in-subtitle">
+                  And you're still trusting your AI… just because it sounds smart?
+                </p>
               </div>
             </div>
             
