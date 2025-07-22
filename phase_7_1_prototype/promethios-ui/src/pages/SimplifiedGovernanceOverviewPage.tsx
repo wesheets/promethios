@@ -103,8 +103,6 @@ interface AgentScorecard {
 }
 
 const SimplifiedGovernanceOverviewPage: React.FC = () => {
-  console.log('🎯 SimplifiedGovernanceOverviewPage rendering...');
-  
   const { currentUser } = useAuth();
   const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
   
@@ -143,14 +141,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
-
-  console.log('🔍 Simplified governance page state:', {
-    currentUser: !!currentUser,
-    metrics: !!metrics,
-    loading,
-    error,
-    scorecardsCount: scorecards.length
-  });
 
   // Helper functions
   const getAgentTypeIcon = (type: string) => {
@@ -317,21 +307,14 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
   }, []);
 
-  // Monitor for violations and trigger notifications (optimized to prevent render loops)
+  // Monitor for violations (optimized to prevent render loops)
   useEffect(() => {
     if (scorecards.length > 0) {
       const criticalAgents = scorecards.filter(agent => 
         agent.healthStatus === 'critical' || agent.violationCount > 0
       );
       
-      // Log violations for debugging but don't trigger notifications to prevent render loop
-      if (criticalAgents.length > 0) {
-        console.log('🚨 Critical agents detected:', criticalAgents.map(a => ({
-          name: a.agentName,
-          violations: a.violationCount,
-          health: a.healthStatus
-        })));
-      }
+      // Silent monitoring - no logging to prevent render loop
     }
   }, [scorecards.length]); // Only depend on scorecards.length to prevent excessive re-renders
 
@@ -342,21 +325,16 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       
       setLoadingAgents(true);
       try {
-        console.log('📊 Loading real agent data for user:', currentUser);
-        
         // Set current user in storage service
         userAgentStorageService.setCurrentUser(currentUser);
         
         // Load individual agents
         const agents = await userAgentStorageService.loadUserAgents();
-        console.log('📊 Loaded individual agents:', agents.length, agents.map(a => a.identity?.name || 'Unknown'));
         
         // Load multi-agent systems
         const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
         const storageService = new UnifiedStorageService();
         const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
-        
-        console.log('🔍 Raw multi-agent systems from storage:', userSystems);
         
         // Filter main systems (not testing/production variants)
         const mainSystems = userSystems.filter((systemRef: any) => {
@@ -365,23 +343,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                               !systemId.endsWith('-production') &&
                               !systemRef.environment &&
                               !systemRef.deploymentType;
-          console.log(`🔍 System ${systemId}: isMainSystem=${isMainSystem}`, systemRef);
           return isMainSystem;
         });
         
-        console.log('📊 Filtered main multi-agent systems:', mainSystems.length, mainSystems.map((s: any) => s.name || s.id));
-        
         // Convert individual agents to scorecards
         const agentScorecards: AgentScorecard[] = agents.map((agent, index) => {
-          console.log(`🔍 Processing agent ${index + 1}:`, {
-            name: agent.identity?.name,
-            hasPrometheosLLM: !!agent.prometheosLLM,
-            hasApiDetails: !!agent.apiDetails,
-            isDeployed: agent.isDeployed,
-            healthStatus: agent.healthStatus,
-            trustLevel: agent.trustLevel
-          });
-          
           // Determine agent architecture type (single vs multi-agent)
           // Most individual agents are single agents unless explicitly configured as multi-agent
           let agentType: 'single' | 'multi-agent' = 'single';
@@ -424,14 +390,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
           } else if (agent.isDeployed === false && agentStatus === 'active') {
             agentStatus = 'inactive';
           }
-          
-          console.log(`📊 Agent ${agent.identity?.name} status determined:`, {
-            finalStatus: agentStatus,
-            healthStatus: agent.healthStatus,
-            hasPrometheosLLM: !!agent.prometheosLLM,
-            hasApiDetails: !!agent.apiDetails,
-            isDeployed: agent.isDeployed
-          });
           
           // Calculate trust score based on deployment status
           let trustScore: number;
@@ -490,14 +448,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         });
         
         // Convert multi-agent systems to scorecards
-        console.log('🔄 Converting multi-agent systems to scorecards...');
         const multiAgentScorecards: AgentScorecard[] = await Promise.all(
           mainSystems.map(async (systemRef: any, index: number) => {
-            console.log(`🔄 Processing multi-agent system ${index + 1}:`, systemRef);
             try {
               // Load full system data
               const systemData = await storageService.get('multi-agent-system', systemRef.id);
-              console.log(`📊 System data for ${systemRef.id}:`, systemData);
               
               // Calculate metrics for multi-agent system based on deployment status
               const isActive = systemRef.status === 'active';
@@ -522,10 +477,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 isRealData: false // Multi-agent systems not yet connected to real monitoring
               };
               
-              console.log(`✅ Created scorecard for ${systemRef.name || systemRef.id}:`, scorecard);
               return scorecard;
             } catch (error) {
-              console.error('Error loading multi-agent system:', systemRef.id, error);
               return null;
             }
           })
@@ -533,13 +486,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         // Filter out null results and combine all scorecards
         const validMultiAgentScorecards = multiAgentScorecards.filter(Boolean) as AgentScorecard[];
-        console.log('✅ Valid multi-agent scorecards:', validMultiAgentScorecards.length, validMultiAgentScorecards.map(s => s.agentName));
         
         const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
         
         // Add a test multi-agent system if none were loaded from storage
         if (validMultiAgentScorecards.length === 0) {
-          console.log('🔄 No multi-agent systems found in storage, adding test system...');
           const testMultiAgentSystem: AgentScorecard = {
             agentId: 'test-multi-agent-system',
             agentName: 'Test Multi-Agent System',
@@ -557,20 +508,12 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             isRealData: false
           };
           allScorecards.push(testMultiAgentSystem);
-          console.log('✅ Added test multi-agent system to scorecards');
         }
         
-        console.log('📊 All scorecards combined:', allScorecards.length, allScorecards.map(s => `${s.agentName} (${s.type})`));
-        
-        console.log('📊 Generated scorecards:', {
-          individual: agentScorecards.length,
-          multiAgent: validMultiAgentScorecards.length,
-          total: allScorecards.length
-        });
         setScorecards(allScorecards);
         
       } catch (error) {
-        console.error('❌ Error loading agent data:', error);
+        // Silent error handling to prevent console spam
       } finally {
         setLoadingAgents(false);
       }
