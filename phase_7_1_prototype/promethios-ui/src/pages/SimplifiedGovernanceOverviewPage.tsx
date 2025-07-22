@@ -853,7 +853,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ color: '#10B981' }}>
-                {metrics?.agents?.total || 0}
+                {scorecards.length || 0}
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 Under Governance
