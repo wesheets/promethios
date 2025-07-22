@@ -8,7 +8,7 @@ import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
 import EmailVerification from './components/auth/EmailVerification';
 import OnboardingFlow from './components/auth/OnboardingFlow';
 import CMUBenchmarkDashboard from './components/benchmark/CMUBenchmarkDashboard';
-import FeedbackWidget from './components/common/FeedbackWidget';
+// import FeedbackWidget from './components/common/FeedbackWidget';
 import AnalyticsProvider from './components/common/AnalyticsProvider';
 import InvestorDemoToggle from './components/common/InvestorDemoToggle';
 import AdminExportWaitlist from './components/admin/AdminExportWaitlist';
@@ -105,7 +105,7 @@ const AppContent: React.FC = () => {
       </div>
       {/* Only show Footer for non-UI routes */}
       {!isUIRoute && <Footer />}
-      <FeedbackWidget />
+      {/* <FeedbackWidget /> */}
     </div>
   );
 };
