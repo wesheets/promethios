@@ -93,6 +93,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         
         {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
         <Box
+          key={location.pathname}
           component="main"
           sx={{
             flexGrow: 1,
