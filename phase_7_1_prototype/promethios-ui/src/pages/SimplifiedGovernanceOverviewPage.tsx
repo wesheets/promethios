@@ -550,6 +550,30 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         console.log('✅ Valid multi-agent scorecards:', validMultiAgentScorecards.length, validMultiAgentScorecards.map(s => s.agentName));
         
         const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
+        
+        // Add a test multi-agent system if none were loaded from storage
+        if (validMultiAgentScorecards.length === 0) {
+          console.log('🔄 No multi-agent systems found in storage, adding test system...');
+          const testMultiAgentSystem: AgentScorecard = {
+            agentId: 'test-multi-agent-system',
+            agentName: 'Test Multi-Agent System',
+            agentDescription: 'Multi-agent collaborative system for testing',
+            trustScore: 85,
+            complianceRate: 90,
+            violationCount: 0,
+            status: 'active',
+            type: 'multi-agent',
+            governance: 'native-llm',
+            healthStatus: 'healthy',
+            trustLevel: 'high',
+            provider: 'Promethios Multi-Agent',
+            lastActivity: new Date(),
+            isRealData: false
+          };
+          allScorecards.push(testMultiAgentSystem);
+          console.log('✅ Added test multi-agent system to scorecards');
+        }
+        
         console.log('📊 All scorecards combined:', allScorecards.length, allScorecards.map(s => `${s.agentName} (${s.type})`));
         
         console.log('📊 Generated scorecards:', {
