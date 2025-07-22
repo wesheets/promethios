@@ -109,7 +109,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
   
   const [scorecards, setScorecards] = useState<AgentScorecard[]>([]);
-  const [filteredScorecards, setFilteredScorecards] = useState<AgentScorecard[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingAgents, setLoadingAgents] = useState(false);
   
@@ -208,15 +207,15 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    exportToCSV(filteredScorecards, 'governance-report');
+    exportToCSV(filteredAndSortedScorecards, 'governance-report');
   };
 
   const handleExportJSON = () => {
-    exportToJSON(filteredScorecards, 'governance-report');
+    exportToJSON(filteredAndSortedScorecards, 'governance-report');
   };
 
   const handleExportPDF = () => {
-    exportToPDF(filteredScorecards, 'governance-report');
+    exportToPDF(filteredAndSortedScorecards, 'governance-report');
   };
 
   // Bulk action handlers
@@ -232,7 +231,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allIds = new Set(filteredScorecards.map(agent => agent.agentId));
+      const allIds = new Set(filteredAndSortedScorecards.map(agent => agent.agentId));
       setSelectedAgents(allIds);
     } else {
       setSelectedAgents(new Set());
@@ -346,8 +345,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
 
   // Computed values
   const selectedCount = selectedAgents.size;
-  const allSelected = selectedCount === filteredScorecards.length && filteredScorecards.length > 0;
-  const someSelected = selectedCount > 0 && selectedCount < filteredScorecards.length;
+  const allSelected = selectedCount === filteredAndSortedScorecards.length && filteredAndSortedScorecards.length > 0;
+  const someSelected = selectedCount > 0 && selectedCount < filteredAndSortedScorecards.length;
 
   // Load real agent data including multi-agent systems
   useEffect(() => {
@@ -643,11 +642,10 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     return filtered;
   }, [scorecards, typeFilter, governanceFilter, statusFilter, searchQuery, sortField, sortDirection]);
 
-  // Update filtered scorecards and reset page when filters change
+  // Reset page when filters change
   useEffect(() => {
-    setFilteredScorecards(filteredAndSortedScorecards);
     setPage(0); // Reset to first page when filters change
-  }, [filteredAndSortedScorecards]);
+  }, [typeFilter, governanceFilter, statusFilter, searchQuery]);
 
   // Cleanup effect to prevent navigation interference
   useEffect(() => {
@@ -1019,7 +1017,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             <Grid item xs={12} md={2}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  {filteredScorecards.length} of {scorecards.length} agents
+                  {filteredAndSortedScorecards.length} of {scorecards.length} agents
                 </Typography>
                 <FilterList sx={{ color: '#a0aec0' }} />
               </Box>
@@ -1038,7 +1036,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
           }
           action={
             <Chip
-              label={`${filteredScorecards.length} of ${scorecards.length} agents`}
+              label={`${filteredAndSortedScorecards.length} of ${scorecards.length} agents`}
               sx={{ backgroundColor: '#4a5568', color: 'white' }}
             />
           }
@@ -1149,7 +1147,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredScorecards
+                    {filteredAndSortedScorecards
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((scorecard) => (
                       <TableRow 
@@ -1373,7 +1371,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
               {/* Pagination */}
               <TablePagination
                 component="div"
-                count={filteredScorecards.length}
+                count={filteredAndSortedScorecards.length}
                 page={page}
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}
