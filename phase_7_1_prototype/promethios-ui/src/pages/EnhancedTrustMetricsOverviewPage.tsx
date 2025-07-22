@@ -1500,8 +1500,8 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                           {agent.agent_name || 'N/A'}
                         </Typography>
                         <Chip 
-                          label={agent.risk_level.toUpperCase()} 
-                          color={getRiskChipColor(agent.risk_level) as any} 
+                          label={(agent.risk_level || 'unknown').toUpperCase()} 
+                          color={getRiskChipColor(agent.risk_level || 'unknown') as any} 
                           size="small"
                           sx={{ ml: 'auto' }}
                         />
