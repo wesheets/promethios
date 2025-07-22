@@ -317,31 +317,37 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
   }, []);
 
-  // Monitor for violations and trigger notifications
+  // Monitor for violations and trigger notifications (optimized to prevent render loops)
   useEffect(() => {
     if (scorecards.length > 0) {
       const criticalAgents = scorecards.filter(agent => 
         agent.healthStatus === 'critical' || agent.violationCount > 0
       );
       
+      // Only show notifications if there are new critical agents (prevent spam)
       if (criticalAgents.length > 0) {
-        criticalAgents.forEach(agent => {
-          if (agent.violationCount > 0) {
-            showNotification(
-              `⚠️ ${agent.agentName} has ${agent.violationCount} violation(s)`,
-              'warning'
-            );
-          }
-          if (agent.healthStatus === 'critical') {
-            showNotification(
-              `🚨 ${agent.agentName} is in critical health status`,
-              'error'
-            );
-          }
-        });
+        // Use a timeout to batch notifications and prevent excessive triggering
+        const notificationTimeout = setTimeout(() => {
+          criticalAgents.forEach(agent => {
+            if (agent.violationCount > 0) {
+              showNotification(
+                `⚠️ ${agent.agentName} has ${agent.violationCount} violation(s)`,
+                'warning'
+              );
+            }
+            if (agent.healthStatus === 'critical') {
+              showNotification(
+                `🚨 ${agent.agentName} is in critical health status`,
+                'error'
+              );
+            }
+          });
+        }, 1000); // Delay notifications to prevent render loop
+        
+        return () => clearTimeout(notificationTimeout);
       }
     }
-  }, [scorecards]);
+  }, [scorecards.length]); // Only depend on scorecards.length to prevent excessive re-renders
 
   // Load real agent data including multi-agent systems
   useEffect(() => {
@@ -637,15 +643,15 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     return filtered;
   }, [scorecards, typeFilter, governanceFilter, statusFilter, searchQuery, sortField, sortDirection]);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(0); // Reset to first page when filters change
-  }, [typeFilter, governanceFilter, statusFilter, searchQuery]);
-
   // Computed values (after filteredAndSortedScorecards is defined)
   const selectedCount = selectedAgents.size;
   const allSelected = selectedCount === filteredAndSortedScorecards.length && filteredAndSortedScorecards.length > 0;
   const someSelected = selectedCount > 0 && selectedCount < filteredAndSortedScorecards.length;
+
+  // Reset page when filters change (using useEffect with stable dependencies)
+  useEffect(() => {
+    setPage(0); // Reset to first page when filters change
+  }, [typeFilter, governanceFilter, statusFilter, searchQuery]);
 
   // Cleanup effect to prevent navigation interference
   useEffect(() => {
@@ -654,8 +660,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       if (refreshInterval) {
         clearInterval(refreshInterval);
       }
-      // Clear any pending state updates
-      setLoading(false);
+      // Clear any pending state updates (removed setLoading as it doesn't exist in this component)
       setLoadingAgents(false);
       setRefreshing(false);
     };

@@ -93,7 +93,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         
         {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
         <Box
-          key={`${location.pathname}-${location.key}`} // Force re-render on route changes using React Router's location key
+          key={location.pathname} // Simple pathname-based key to force remounting on navigation
           component="main"
           sx={{
             flexGrow: 1,
