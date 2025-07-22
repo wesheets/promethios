@@ -169,6 +169,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const EnhancedGovernanceReportsPage: React.FC = () => {
+  console.log('📊 EnhancedGovernanceReportsPage rendering...');
+  
   // Authentication context
   const { currentUser } = useAuth();
   
