@@ -144,6 +144,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
+  // Navigation detection - prevent rendering when not on governance overview
+  if (location.pathname !== '/ui/governance/overview') {
+    return null;
+  }
+
   // Helper functions
   const getAgentTypeIcon = (type: string) => {
     switch (type) {
