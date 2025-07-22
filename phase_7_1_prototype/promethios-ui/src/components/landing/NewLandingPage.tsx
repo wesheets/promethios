@@ -34,8 +34,8 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Reduced spacing */}
-            <div className="mb-12 relative h-64 overflow-visible w-full -mt-4">
+            {/* Full-Width Animated Pre-Headline - Tighter spacing */}
+            <div className="mb-8 relative h-56 overflow-visible w-full -mt-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - all positioned at the same top level */}

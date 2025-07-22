@@ -6,29 +6,29 @@
   animation-fill-mode: both;
 }
 
-/* Individual word animations with proper sequential timing - NO OVERLAPS */
+/* Individual word animations with faster timing - NO OVERLAPS */
 .reputation {
-  animation: reputationCycle 4.5s ease-in-out 0.5s;
+  animation: reputationCycle 3.5s ease-in-out 0.5s;
 }
 
 .financial-risk {
-  animation: financialRiskCycle 4.5s ease-in-out 5.5s;
+  animation: financialRiskCycle 3.5s ease-in-out 4.5s;
 }
 
 .customer-trust {
-  animation: customerTrustCycle 5s ease-in-out 10.5s;
+  animation: customerTrustCycle 4s ease-in-out 8.5s;
 }
 
 /* Static "is on the line" text - fades in at start, fades out when CUSTOMER TRUST ends */
 .static-text {
   opacity: 0;
-  animation: staticTextCycle 15s ease-in-out 0.5s;
+  animation: staticTextCycle 12s ease-in-out 0.5s;
 }
 
 /* Final tagline animation - appears after all words finish */
 .final-tagline {
   opacity: 0;
-  animation: fadeInFinal 2s ease-out 16s forwards;
+  animation: fadeInFinal 2s ease-out 13s forwards;
 }
 
 /* Single cycle animations for each word */
