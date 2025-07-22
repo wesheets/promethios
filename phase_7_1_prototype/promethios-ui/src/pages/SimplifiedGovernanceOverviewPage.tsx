@@ -649,6 +649,20 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     setPage(0); // Reset to first page when filters change
   }, [filteredAndSortedScorecards]);
 
+  // Cleanup effect to prevent navigation interference
+  useEffect(() => {
+    return () => {
+      // Clear any intervals or timeouts that might interfere with navigation
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      // Clear any pending state updates
+      setLoading(false);
+      setLoadingAgents(false);
+      setRefreshing(false);
+    };
+  }, [refreshInterval]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refreshMetrics();
