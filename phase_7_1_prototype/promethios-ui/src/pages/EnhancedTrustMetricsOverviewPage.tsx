@@ -310,7 +310,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
       const matchesRisk = riskFilter.length === 0 || riskFilter.includes(metric.risk_level);
       
       // Trust score range filter
-      const trustScore = metric.trust_scores.aggregate * 100;
+      const trustScore = (metric.trust_scores?.aggregate || 0) * 100;
       const matchesTrustScore = trustScore >= trustScoreRange[0] && trustScore <= trustScoreRange[1];
       
       return matchesSearch && matchesRisk && matchesTrustScore;
