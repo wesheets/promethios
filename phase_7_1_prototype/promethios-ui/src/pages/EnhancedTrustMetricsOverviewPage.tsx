@@ -1192,7 +1192,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                             fill="#8884d8"
                             dataKey="count"
                           >
-                            {trustAnalytics.trends.risk_distribution.map((entry: any, index: number) => (
+                            {(trustAnalytics.trends?.risk_distribution || []).map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={riskColors[entry.level as keyof typeof riskColors]} />
                             ))}
                           </Pie>
@@ -1374,7 +1374,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {trustAnalytics.predictions.risk_prediction.map((prediction: any) => (
+                            {(trustAnalytics.predictions?.risk_prediction || []).map((prediction: any) => (
                               <TableRow key={prediction.agent_id}>
                                 <TableCell sx={{ color: 'white' }}>
                                   {prediction.agent_id}
@@ -1427,7 +1427,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {trustAnalytics.predictions.anomaly_detection
+                            {(trustAnalytics.predictions?.anomaly_detection || [])
                               .filter((anomaly: any) => anomaly.anomaly_score > 0.3)
                               .map((anomaly: any) => (
                               <TableRow key={anomaly.agent_id}>
@@ -1517,7 +1517,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                           <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 'bold' }}>
                             Risk Factors:
                           </Typography>
-                          {agent.risk_factors.map((factor, index) => (
+                          {(agent.risk_factors || []).map((factor, index) => (
                             <Chip
                               key={index}
                               label={factor}
