@@ -343,11 +343,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     }
   }, [scorecards]);
 
-  // Computed values
-  const selectedCount = selectedAgents.size;
-  const allSelected = selectedCount === filteredAndSortedScorecards.length && filteredAndSortedScorecards.length > 0;
-  const someSelected = selectedCount > 0 && selectedCount < filteredAndSortedScorecards.length;
-
   // Load real agent data including multi-agent systems
   useEffect(() => {
     const loadRealAgentData = async () => {
@@ -646,6 +641,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   useEffect(() => {
     setPage(0); // Reset to first page when filters change
   }, [typeFilter, governanceFilter, statusFilter, searchQuery]);
+
+  // Computed values (after filteredAndSortedScorecards is defined)
+  const selectedCount = selectedAgents.size;
+  const allSelected = selectedCount === filteredAndSortedScorecards.length && filteredAndSortedScorecards.length > 0;
+  const someSelected = selectedCount > 0 && selectedCount < filteredAndSortedScorecards.length;
 
   // Cleanup effect to prevent navigation interference
   useEffect(() => {
