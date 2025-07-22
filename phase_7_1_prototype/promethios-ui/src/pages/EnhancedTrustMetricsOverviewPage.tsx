@@ -303,11 +303,11 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
     return trustMetrics.filter(metric => {
       // Search filter
       const matchesSearch = !searchTerm || 
-        metric.agent_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        metric.agent_id.toLowerCase().includes(searchTerm.toLowerCase());
+        (metric.agent_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (metric.agent_id || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       // Risk filter
-      const matchesRisk = riskFilter.length === 0 || riskFilter.includes(metric.risk_level);
+      const matchesRisk = riskFilter.length === 0 || riskFilter.includes(metric.risk_level || 'unknown');
       
       // Trust score range filter
       const trustScore = (metric.trust_scores?.aggregate || 0) * 100;
@@ -1070,14 +1070,14 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       
                       <TableCell sx={{ color: 'white' }}>
                         <Chip
-                          label={agent.risk_level.toUpperCase()}
-                          color={getRiskChipColor(agent.risk_level) as any}
+                          label={(agent.risk_level || 'unknown').toUpperCase()}
+                          color={getRiskChipColor(agent.risk_level || 'unknown') as any}
                           size="small"
                           sx={{ fontWeight: 'bold' }}
                         />
-                        {agent.risk_factors.length > 0 && (
-                          <Tooltip title={`Risk factors: ${agent.risk_factors.join(', ')}`}>
-                            <Warning sx={{ ml: 1, fontSize: '1rem', color: riskColors[agent.risk_level as keyof typeof riskColors] }} />
+                        {(agent.risk_factors || []).length > 0 && (
+                          <Tooltip title={`Risk factors: ${(agent.risk_factors || []).join(', ')}`}>
+                            <Warning sx={{ ml: 1, fontSize: '1rem', color: riskColors[(agent.risk_level || 'unknown') as keyof typeof riskColors] }} />
                           </Tooltip>
                         )}
                       </TableCell>
