@@ -7,7 +7,8 @@
  */
 
 import { User } from 'firebase/auth';
-import { userAgentStorageService } from '../services/userAgentStorageService';
+import { userAgentStorageService } from '../services/UserAgentStorageService';
+import { authApiService } from '../services/authApiService';
 import { NotificationService } from '../services/NotificationService';
 import { notificationExtension } from './NotificationExtension';
 
