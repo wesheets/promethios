@@ -1010,19 +1010,19 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       
                       <TableCell sx={{ color: 'white' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="h6" sx={{ color: getTrustScoreColor(agent.trust_scores.aggregate), fontWeight: 'bold', mr: 1 }}>
-                            {Math.round(agent.trust_scores.aggregate * 100)}%
+                          <Typography variant="h6" sx={{ color: getTrustScoreColor(agent.trust_scores?.aggregate || 0), fontWeight: 'bold', mr: 1 }}>
+                            {agent.trust_scores?.aggregate ? Math.round(agent.trust_scores.aggregate * 100) : 'N/A'}%
                           </Typography>
                           <LinearProgress
                             variant="determinate"
-                            value={agent.trust_scores.aggregate * 100}
+                            value={(agent.trust_scores?.aggregate || 0) * 100}
                             sx={{
                               width: 60,
                               height: 6,
                               borderRadius: 3,
                               backgroundColor: '#334155',
                               '& .MuiLinearProgress-bar': {
-                                backgroundColor: getTrustScoreColor(agent.trust_scores.aggregate)
+                                backgroundColor: getTrustScoreColor(agent.trust_scores?.aggregate || 0)
                               }
                             }}
                           />
@@ -1508,7 +1508,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       </Box>
                       
                       <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
-                        Trust Score: {Math.round(agent.trust_scores.aggregate * 100)}% | 
+                        Trust Score: {agent.trust_scores?.aggregate ? Math.round(agent.trust_scores.aggregate * 100) : 'N/A'}% | 
                         Confidence: {Math.round(agent.confidence * 100)}%
                       </Typography>
                       
@@ -1622,7 +1622,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                   label="Issue Description"
                   multiline
                   rows={3}
-                  defaultValue={`Trust score degradation: ${Math.round(selectedAgent.trust_scores.aggregate * 100)}%`}
+                  defaultValue={`Trust score degradation: ${selectedAgent.trust_scores?.aggregate ? Math.round(selectedAgent.trust_scores.aggregate * 100) : 'N/A'}%`}
                   sx={{ mb: 2 }}
                 />
                 <FormControl fullWidth sx={{ mb: 2 }}>
@@ -1656,7 +1656,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
               variant="contained" 
               onClick={() => selectedAgent && handleCreateRemediation(
                 selectedAgent.agent_id,
-                `Trust score degradation: ${Math.round(selectedAgent.trust_scores.aggregate * 100)}%`,
+                `Trust score degradation: ${selectedAgent.trust_scores?.aggregate ? Math.round(selectedAgent.trust_scores.aggregate * 100) : 'N/A'}%`,
                 selectedAgent.risk_level
               )}
             >
