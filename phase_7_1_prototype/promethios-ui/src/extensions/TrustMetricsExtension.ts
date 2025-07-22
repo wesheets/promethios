@@ -321,7 +321,6 @@ export class TrustMetricsExtension {
       this.mlModelsLoaded = false;
     }
   }
-  }
 
   private startRealTimeUpdates(): void {
     if (this.realTimeInterval) {
