@@ -426,6 +426,8 @@ export class TrustMetricsExtension {
       const agents = await userAgentStorageService.loadUserAgents();
       const filteredAgents = agentId ? agents.filter(a => a.identity?.name === agentId) : agents;
       
+      console.log('🔍 Trust Metrics - Sample agent data:', filteredAgents[0]);
+      
       return filteredAgents.map(agent => {
         // Check if agent is actually deployed (has real deployment data)
         const isDeployed = agent.deploymentStatus === 'deployed' && 
@@ -438,9 +440,9 @@ export class TrustMetricsExtension {
         const realPerformance = isDeployed ? agent.performanceMetrics : null;
         
         return {
-          agentId: agent.identity?.name || agent.agentId,
-          agentName: agent.identity?.name || `Agent ${agent.agentId}`,
-          agentType: agent.multiAgentConfig ? 'multi_agent_system' : 'single' as const,
+          agent_id: agent.identity?.name || agent.agentId,
+          agent_name: agent.identity?.name || `Agent ${agent.agentId}`,
+          agent_type: agent.multiAgentConfig ? 'Multi-Agent System' : 'Single Agent',
           timestamp: new Date().toISOString(),
           trustScores: {
             overall: realTrustScore,
