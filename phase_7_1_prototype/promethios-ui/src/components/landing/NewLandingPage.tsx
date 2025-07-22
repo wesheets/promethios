@@ -34,8 +34,8 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Tighter spacing */}
-            <div className="mb-8 relative h-56 overflow-visible w-full -mt-8">
+            {/* Full-Width Animated Pre-Headline - Minimal spacing */}
+            <div className="mb-8 relative h-56 overflow-visible w-full -mt-12">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - all positioned at the same top level */}
@@ -53,9 +53,9 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Static "is on the line" text positioned on the right - will fade in and out */}
+                  {/* Static "is on the line." text positioned on the right - italic styling */}
                   <div className="absolute right-0 top-0">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text">
+                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text italic">
                       is on the line.
                     </span>
                   </div>
