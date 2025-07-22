@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
@@ -104,6 +105,7 @@ interface AgentScorecard {
 
 const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
   
   const [scorecards, setScorecards] = useState<AgentScorecard[]>([]);
@@ -306,6 +308,15 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       }
     };
   }, []);
+
+  // Detect navigation changes and redirect if not on governance overview
+  useEffect(() => {
+    // If the location changes to a different governance page, this component should not render
+    if (location.pathname !== '/ui/governance/overview') {
+      // Force a page reload to ensure proper navigation
+      window.location.href = location.pathname;
+    }
+  }, [location.pathname]);
 
   // Monitor for violations (optimized to prevent render loops)
   useEffect(() => {
