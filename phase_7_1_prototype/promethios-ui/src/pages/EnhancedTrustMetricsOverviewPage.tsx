@@ -256,7 +256,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
       
       setTrustMetrics(metrics);
       setTrustAnalytics(analytics);
-      setTrustAlerts(alerts);
+      setTrustAlerts(Array.isArray(alerts) ? alerts : []);
       setLastUpdate(new Date());
       
       // Send notification for critical alerts
