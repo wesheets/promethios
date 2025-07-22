@@ -117,7 +117,14 @@ class AuthApiService {
         agentId
       });
       
-      return response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        // Response is not JSON (likely HTML error page), treat as endpoint not available
+        throw new Error(`Endpoint returned non-JSON response: ${response.status} ${response.statusText}`);
+      }
     } catch (error) {
       console.warn(`API endpoint ${url} not available, using fallback data:`, error);
       
