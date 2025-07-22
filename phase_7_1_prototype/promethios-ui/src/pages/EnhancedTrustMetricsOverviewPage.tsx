@@ -260,7 +260,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
       setLastUpdate(new Date());
       
       // Send notification for critical alerts
-      const criticalAlerts = alerts.filter((alert: any) => alert.severity === 'critical');
+      const criticalAlerts = Array.isArray(alerts) ? alerts.filter((alert: any) => alert.severity === 'critical') : [];
       if (criticalAlerts.length > 0) {
         await sendNotification({
           title: `${criticalAlerts.length} Critical Trust Alert${criticalAlerts.length > 1 ? 's' : ''}`,

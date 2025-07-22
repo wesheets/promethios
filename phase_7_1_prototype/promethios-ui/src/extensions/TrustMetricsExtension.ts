@@ -420,7 +420,7 @@ export class TrustMetricsExtension {
 
     try {
       // Set current user in storage service
-      userAgentStorageService.setCurrentUser(user);
+      userAgentStorageService.setCurrentUser(user.uid);
       
       // Load agents from local storage (same as governance overview)
       const agents = await userAgentStorageService.loadUserAgents();
