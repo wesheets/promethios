@@ -8,27 +8,27 @@
 
 /* Individual word animations with faster timing - NO OVERLAPS */
 .reputation {
-  animation: reputationCycle 3.5s ease-in-out 0.5s;
+  animation: reputationCycle 3s ease-in-out 0.5s;
 }
 
 .financial-risk {
-  animation: financialRiskCycle 3.5s ease-in-out 4.5s;
+  animation: financialRiskCycle 3s ease-in-out 3.8s;
 }
 
 .customer-trust {
-  animation: customerTrustCycle 4s ease-in-out 8.5s;
+  animation: customerTrustCycle 3.2s ease-in-out 7.1s;
 }
 
-/* Static "is on the line" text - fades in at start, fades out when CUSTOMER TRUST ends */
+/* Static "is on the line." text - fades in at start, fades out when CUSTOMER TRUST ends */
 .static-text {
   opacity: 0;
-  animation: staticTextCycle 12s ease-in-out 0.5s;
+  animation: staticTextCycle 10s ease-in-out 0.5s;
 }
 
 /* Final tagline animation - appears after all words finish */
 .final-tagline {
   opacity: 0;
-  animation: fadeInFinal 2s ease-out 13s forwards;
+  animation: fadeInFinal 2s ease-out 10.8s forwards;
 }
 
 /* Single cycle animations for each word */
@@ -37,11 +37,11 @@
     opacity: 0;
     transform: translateY(20px);
   }
-  20% {
+  25% {
     opacity: 1;
     transform: translateY(0);
   }
-  80% {
+  75% {
     opacity: 1;
     transform: translateY(0);
   }
@@ -56,11 +56,11 @@
     opacity: 0;
     transform: translateY(20px);
   }
-  20% {
+  25% {
     opacity: 1;
     transform: translateY(0);
   }
-  80% {
+  75% {
     opacity: 1;
     transform: translateY(0);
   }
@@ -75,11 +75,11 @@
     opacity: 0;
     transform: translateY(20px);
   }
-  15% {
+  20% {
     opacity: 1;
     transform: translateY(0);
   }
-  30% {
+  35% {
     opacity: 1;
     transform: translateY(0);
     text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
@@ -89,12 +89,12 @@
     transform: translateY(0);
     text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.6);
   }
-  70% {
+  65% {
     opacity: 1;
     transform: translateY(0);
     text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
   }
-  85% {
+  80% {
     opacity: 1;
     transform: translateY(0);
   }
@@ -108,10 +108,10 @@
   0% {
     opacity: 0;
   }
-  5% {
+  8% {
     opacity: 1;
   }
-  95% {
+  92% {
     opacity: 1;
   }
   100% {
@@ -137,11 +137,11 @@
       opacity: 0;
       transform: translateY(15px);
     }
-    20% {
+    25% {
       opacity: 1;
       transform: translateY(0);
     }
-    80% {
+    75% {
       opacity: 1;
       transform: translateY(0);
     }
@@ -156,11 +156,11 @@
       opacity: 0;
       transform: translateY(15px);
     }
-    20% {
+    25% {
       opacity: 1;
       transform: translateY(0);
     }
-    80% {
+    75% {
       opacity: 1;
       transform: translateY(0);
     }
@@ -175,11 +175,11 @@
       opacity: 0;
       transform: translateY(15px);
     }
-    15% {
+    20% {
       opacity: 1;
       transform: translateY(0);
     }
-    30% {
+    35% {
       opacity: 1;
       transform: translateY(0);
       text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
@@ -189,12 +189,12 @@
       transform: translateY(0);
       text-shadow: 0 0 15px rgba(239, 68, 68, 0.8), 0 0 25px rgba(239, 68, 68, 0.6);
     }
-    70% {
+    65% {
       opacity: 1;
       transform: translateY(0);
       text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
     }
-    85% {
+    80% {
       opacity: 1;
       transform: translateY(0);
     }
