@@ -989,7 +989,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       
                       <TableCell sx={{ color: 'white' }}>
                         <Grid container spacing={1}>
-                          {Object.entries(agent.trust_scores).filter(([key]) => key !== 'aggregate').map(([dimension, score]) => (
+                          {Object.entries(agent.trust_scores || {}).filter(([key]) => key !== 'aggregate').map(([dimension, score]) => (
                             <Grid item key={dimension}>
                               <Tooltip title={`${dimension.charAt(0).toUpperCase() + dimension.slice(1)}: ${Math.round(score * 100)}%`}>
                                 <Chip
