@@ -1,214 +1,39 @@
-/* Hero Section Custom Animations */
+/* Hero Animation Styles */
 
-/* Glowing Trust text effect */
-.glow-text {
-  text-shadow: 
-    0 0 5px rgba(34, 197, 94, 0.5),
-    0 0 10px rgba(34, 197, 94, 0.3),
-    0 0 15px rgba(34, 197, 94, 0.2),
-    0 0 20px rgba(34, 197, 94, 0.1);
-  animation: glow-pulse 3s ease-in-out infinite alternate;
+/* Base styles for animated words */
+.animated-word {
+  opacity: 0;
+  transform: translateY(20px);
+  animation-fill-mode: both;
 }
 
-@keyframes glow-pulse {
-  from {
-    text-shadow: 
-      0 0 5px rgba(34, 197, 94, 0.5),
-      0 0 10px rgba(34, 197, 94, 0.3),
-      0 0 15px rgba(34, 197, 94, 0.2),
-      0 0 20px rgba(34, 197, 94, 0.1);
-  }
-  to {
-    text-shadow: 
-      0 0 10px rgba(34, 197, 94, 0.8),
-      0 0 20px rgba(34, 197, 94, 0.6),
-      0 0 30px rgba(34, 197, 94, 0.4),
-      0 0 40px rgba(34, 197, 94, 0.2);
-  }
+/* Individual word animations with proper timing */
+.reputation {
+  animation: fadeInUp 1s ease-out 0.5s, fadeOutUp 1s ease-out 3s;
 }
 
-/* Enhanced pulsing glow effect for trust score box with green aura */
-.pulse-glow {
-  animation: box-glow 4s ease-in-out infinite alternate, floating 6s ease-in-out infinite;
+.financial-risk {
+  animation: fadeInUp 1s ease-out 3.5s, fadeOutUp 1s ease-out 6.5s;
 }
 
-@keyframes box-glow {
-  from {
-    box-shadow: 
-      0 0 20px rgba(34, 197, 94, 0.2),
-      0 0 40px rgba(34, 197, 94, 0.1),
-      0 0 60px rgba(34, 197, 94, 0.05),
-      inset 0 0 20px rgba(255, 255, 255, 0.05);
-  }
-  to {
-    box-shadow: 
-      0 0 30px rgba(34, 197, 94, 0.4),
-      0 0 60px rgba(34, 197, 94, 0.3),
-      0 0 90px rgba(34, 197, 94, 0.2),
-      inset 0 0 30px rgba(255, 255, 255, 0.1);
-  }
+.customer-trust {
+  animation: fadeInUp 1s ease-out 7s, glowRed 2s ease-out 8s, fadeOutUp 1s ease-out 10s;
 }
 
-/* Subtle floating animation for trust score box */
-@keyframes floating {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+/* Static "is on the line" text - fades out when final tagline appears */
+.static-text {
+  opacity: 1;
+  animation: fadeOutStatic 1s ease-out 9.5s forwards;
 }
 
-/* Enhanced trust score bar with gentle fill loop */
-.trust-bar {
-  animation: trust-bar-fill 2s ease-out 0.5s both, trust-bar-pulse 4s ease-in-out 2.5s infinite;
+/* Final tagline animation - appears after all words */
+.final-tagline {
+  opacity: 0;
+  animation: fadeInFinal 1.5s ease-out 10s forwards;
 }
 
-@keyframes trust-bar-fill {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 85%;
-  }
-}
-
-@keyframes trust-bar-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scaleX(1.02);
-  }
-}
-
-/* Ripple effect for Try Governance Demo button */
-.btn-ripple {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-ripple::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
-  transform: translate(-50%, -50%);
-}
-
-.btn-ripple:hover::before {
-  width: 300px;
-  height: 300px;
-  top: 50%;
-  left: 50%;
-}
-
-/* Blue glow border slide for Wrap an Agent button */
-.btn-blue-glow {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-blue-glow::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent);
-  transition: left 0.5s ease-in-out;
-}
-
-.btn-blue-glow:hover::after {
-  left: 100%;
-}
-
-.btn-blue-glow:hover {
-  box-shadow: 
-    0 0 20px rgba(59, 130, 246, 0.5),
-    0 0 40px rgba(59, 130, 246, 0.3),
-    inset 0 0 20px rgba(59, 130, 246, 0.1);
-}
-
-/* Auto-fade rotating metrics */
-.rotating-metric {
-  animation: metric-fade 12s infinite;
-}
-
-.rotating-metric:nth-child(2) {
-  animation-delay: 4s;
-}
-
-.rotating-metric:nth-child(3) {
-  animation-delay: 8s;
-}
-
-@keyframes metric-fade {
-  0%, 25% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  33.33%, 91.67% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Observer Agent bubble animation */
-.observer-bubble {
-  animation: bubble-entrance 0.5s ease-out, bubble-pulse 2s ease-in-out 0.5s infinite;
-}
-
-@keyframes bubble-entrance {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes bubble-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
-  }
-}
-
-/* Video overlay gradient for better text readability */
-.video-overlay {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
-}
-
-/* Smooth fade-in animation for hero content */
-.hero-content {
-  animation: hero-fade-in 1.5s ease-out;
-}
-
-@keyframes hero-fade-in {
+/* Keyframe animations */
+@keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(30px);
@@ -219,180 +44,84 @@
   }
 }
 
-/* Enhanced pulse animation for trust score percentage */
-@keyframes trust-score-pulse {
-  0%, 100% {
+@keyframes fadeOutUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes fadeOutStatic {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeInFinal {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes glowRed {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
   50% {
-    opacity: 0.8;
-    transform: scale(1.05);
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.6);
   }
 }
 
-
-/* Sequential Word Animation for Pre-Headline */
-.animated-word {
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  transform: translateY(20px);
-  font-weight: 900; /* Extra bold for impact */
-}
-
-/* Reputation animation - appears first, scrolls up and fades */
-.animated-word.reputation {
-  animation: word-scroll-fade 2s ease-in-out 1s both;
-}
-
-/* Risk animation - appears second, scrolls up and fades */
-.animated-word.risk {
-  animation: word-scroll-fade 2s ease-in-out 3.5s both;
-}
-
-/* Customer Trust animation - appears third, scrolls up and glows red */
-.animated-word.customer-trust {
-  animation: word-scroll-glow-red 3s ease-in-out 6s both;
-}
-
-/* Static text that remains visible */
-.static-text {
-  opacity: 1;
-  animation: static-text-appear 0.5s ease-out 1s both;
-  font-weight: 900; /* Extra bold for impact */
-}
-
-/* Fade-in subtitle that appears after Customer Trust glows */
-.fade-in-subtitle {
-  opacity: 0;
-  animation: subtitle-fade-in 1.5s ease-out 9.5s both;
-}
-
-@keyframes word-scroll-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .animated-word {
+    transform: translateY(15px);
   }
-  20%, 70% {
-    opacity: 1;
-    transform: translateY(0);
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  100% {
-    opacity: 0;
-    transform: translateY(-30px);
+  
+  @keyframes fadeOutUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
   }
 }
 
-@keyframes word-scroll-glow-red {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  40%, 80% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-}
-
-/* Special styling for stacked Customer Trust words */
+/* Ensure proper stacking for multi-line words */
+.financial-risk-word,
 .customer-trust-word {
-  text-shadow: 
-    0 0 10px rgba(239, 68, 68, 0.8),
-    0 0 20px rgba(239, 68, 68, 0.6),
-    0 0 30px rgba(239, 68, 68, 0.4),
-    0 0 40px rgba(239, 68, 68, 0.2);
-  animation: red-glow-pulse 2s ease-in-out infinite alternate;
+  display: block;
+  line-height: 0.9;
 }
 
-@keyframes red-glow-pulse {
-  from {
-    text-shadow: 
-      0 0 10px rgba(239, 68, 68, 0.8),
-      0 0 20px rgba(239, 68, 68, 0.6),
-      0 0 30px rgba(239, 68, 68, 0.4),
-      0 0 40px rgba(239, 68, 68, 0.2);
-  }
-  to {
-    text-shadow: 
-      0 0 20px rgba(239, 68, 68, 1),
-      0 0 30px rgba(239, 68, 68, 0.8),
-      0 0 40px rgba(239, 68, 68, 0.6),
-      0 0 50px rgba(239, 68, 68, 0.4);
-  }
-}
-
-@keyframes static-text-appear {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes subtitle-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-/* Special styling for enlarged RISK text */
-.risk-enlarged {
-  letter-spacing: 0.1em;
-  font-weight: 900;
-  text-shadow: 
-    0 0 5px rgba(255, 255, 255, 0.3),
-    0 0 10px rgba(255, 255, 255, 0.2);
-}
-
-
-
-/* Final tagline animation - appears after all word animations complete */
-.final-tagline {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: final-tagline-appear 2s ease-out 10s forwards;
-}
-
-@keyframes final-tagline-appear {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Update timing for word animations to make room for final tagline */
-.animated-word.reputation {
-  animation: word-scroll-fade 3s ease-in-out 1s forwards;
-}
-
-.animated-word.risk {
-  animation: word-scroll-fade 3s ease-in-out 4s forwards;
-}
-
-.animated-word.customer-trust {
-  animation: word-scroll-glow-red 4s ease-in-out 7s forwards;
+/* White color for customer trust (no red) */
+.customer-trust-word {
+  color: white;
 }
 

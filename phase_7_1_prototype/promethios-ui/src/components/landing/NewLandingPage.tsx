@@ -32,10 +32,10 @@ const NewLandingPage: React.FC = () => {
         <div className="absolute inset-0 bg-black/40 video-overlay"></div>
         
         {/* Content Container */}
-        <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content pt-4">
+        <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Increased height for proper display */}
-            <div className="mb-20 relative h-64 overflow-visible w-full -mt-8">
+            {/* Full-Width Animated Pre-Headline - Reduced spacing */}
+            <div className="mb-12 relative h-64 overflow-visible w-full -mt-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - positioned on the left */}
@@ -43,16 +43,17 @@ const NewLandingPage: React.FC = () => {
                     <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
                       REPUTATION
                     </span>
-                    <span className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold text-white animated-word risk uppercase risk-enlarged">
-                      RISK
-                    </span>
-                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold animated-word customer-trust uppercase flex flex-col leading-tight">
-                      <span className="text-red-800 customer-trust-word">CUSTOMER</span>
-                      <span className="text-red-800 customer-trust-word">TRUST</span>
+                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word financial-risk uppercase flex flex-col leading-tight">
+                      <span className="financial-risk-word">FINANCIAL</span>
+                      <span className="financial-risk-word">RISK</span>
+                    </div>
+                    <div className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
+                      <span className="customer-trust-word">CUSTOMER</span>
+                      <span className="customer-trust-word">TRUST</span>
                     </div>
                   </div>
                   
-                  {/* Static "is on the line" text positioned on the right */}
+                  {/* Static "is on the line" text positioned on the right - will fade out */}
                   <div className="absolute right-0 top-0">
                     <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text">
                       is on the line
