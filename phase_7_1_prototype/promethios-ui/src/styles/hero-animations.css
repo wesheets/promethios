@@ -289,32 +289,45 @@
   0% {
     opacity: 0;
     transform: translateY(20px);
-    color: white;
-    text-shadow: none;
   }
   20% {
     opacity: 1;
     transform: translateY(0);
-    color: white;
-    text-shadow: none;
   }
   40%, 80% {
     opacity: 1;
     transform: translateY(0);
-    color: #ef4444;
-    text-shadow: 
-      0 0 10px rgba(239, 68, 68, 0.8),
-      0 0 20px rgba(239, 68, 68, 0.6),
-      0 0 30px rgba(239, 68, 68, 0.4);
   }
   100% {
     opacity: 0;
     transform: translateY(-30px);
-    color: #ef4444;
+  }
+}
+
+/* Special styling for stacked Customer Trust words */
+.customer-trust-word {
+  text-shadow: 
+    0 0 10px rgba(239, 68, 68, 0.8),
+    0 0 20px rgba(239, 68, 68, 0.6),
+    0 0 30px rgba(239, 68, 68, 0.4),
+    0 0 40px rgba(239, 68, 68, 0.2);
+  animation: red-glow-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes red-glow-pulse {
+  from {
     text-shadow: 
       0 0 10px rgba(239, 68, 68, 0.8),
       0 0 20px rgba(239, 68, 68, 0.6),
-      0 0 30px rgba(239, 68, 68, 0.4);
+      0 0 30px rgba(239, 68, 68, 0.4),
+      0 0 40px rgba(239, 68, 68, 0.2);
+  }
+  to {
+    text-shadow: 
+      0 0 20px rgba(239, 68, 68, 1),
+      0 0 30px rgba(239, 68, 68, 0.8),
+      0 0 40px rgba(239, 68, 68, 0.6),
+      0 0 50px rgba(239, 68, 68, 0.4);
   }
 }
 
