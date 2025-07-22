@@ -970,11 +970,11 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       <TableCell sx={{ color: 'white' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Avatar sx={{ mr: 2, backgroundColor: '#3b82f6' }}>
-                            {agent.agent_name.charAt(0)}
+                            {(agent.agent_name || 'N/A').charAt(0)}
                           </Avatar>
                           <Box>
                             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              {agent.agent_name}
+                              {agent.agent_name || 'N/A'}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748b' }}>
                               {agent.agent_id}
@@ -1497,7 +1497,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                         <Warning sx={{ color: riskColors[agent.risk_level as keyof typeof riskColors], mr: 2 }} />
                         <Typography variant="h6" sx={{ color: 'white' }}>
-                          {agent.agent_name}
+                          {agent.agent_name || 'N/A'}
                         </Typography>
                         <Chip 
                           label={agent.risk_level.toUpperCase()} 
