@@ -239,6 +239,7 @@
   left: 0;
   opacity: 0;
   transform: translateY(20px);
+  font-weight: 900; /* Extra bold for impact */
 }
 
 /* Reputation animation - appears first, scrolls up and fades */
@@ -260,6 +261,7 @@
 .static-text {
   opacity: 1;
   animation: static-text-appear 0.5s ease-out 1s both;
+  font-weight: 900; /* Extra bold for impact */
 }
 
 /* Fade-in subtitle that appears after Customer Trust glows */
