@@ -353,3 +353,46 @@
   }
 }
 
+
+/* Special styling for enlarged RISK text */
+.risk-enlarged {
+  letter-spacing: 0.1em;
+  font-weight: 900;
+  text-shadow: 
+    0 0 5px rgba(255, 255, 255, 0.3),
+    0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+
+
+/* Final tagline animation - appears after all word animations complete */
+.final-tagline {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: final-tagline-appear 2s ease-out 10s forwards;
+}
+
+@keyframes final-tagline-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Update timing for word animations to make room for final tagline */
+.animated-word.reputation {
+  animation: word-scroll-fade 3s ease-in-out 1s forwards;
+}
+
+.animated-word.risk {
+  animation: word-scroll-fade 3s ease-in-out 4s forwards;
+}
+
+.animated-word.customer-trust {
+  animation: word-scroll-glow-red 4s ease-in-out 7s forwards;
+}
+
