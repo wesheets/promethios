@@ -494,9 +494,9 @@ export class TrustMetricsExtension {
           },
           metadata: {
             lastUpdated: new Date().toISOString(),
-             dataSource: isDeployed ? 'real_deployment' : 'not_deployed',
-          version: '1.0'
-        }
+            dataSource: isDeployed ? 'real_deployment' : 'not_deployed',
+            version: '1.0'
+          }
       });
 
       // Add a test multi-agent system if none were loaded from storage (same as Governance Overview)
