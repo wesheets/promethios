@@ -7,29 +7,29 @@
   animation-fill-mode: both;
 }
 
-/* Individual word animations with proper timing */
+/* Individual word animations with extended duration and slow fade outs */
 .reputation {
-  animation: fadeInUp 1s ease-out 0.5s, fadeOutUp 1s ease-out 3s;
+  animation: fadeInUp 1s ease-out 0.5s, slowFadeOut 2s ease-out 4s;
 }
 
 .financial-risk {
-  animation: fadeInUp 1s ease-out 3.5s, fadeOutUp 1s ease-out 6.5s;
+  animation: fadeInUp 1s ease-out 5s, slowFadeOut 2s ease-out 8s;
 }
 
 .customer-trust {
-  animation: fadeInUp 1s ease-out 7s, glowRed 2s ease-out 8s, fadeOutUp 1s ease-out 10s;
+  animation: fadeInUp 1s ease-out 9s, glowRed 3s ease-out 10s, slowFadeOut 2s ease-out 13s;
 }
 
 /* Static "is on the line" text - fades out when final tagline appears */
 .static-text {
   opacity: 1;
-  animation: fadeOutStatic 1s ease-out 9.5s forwards;
+  animation: fadeOutStatic 1.5s ease-out 14s forwards;
 }
 
 /* Final tagline animation - appears after all words */
 .final-tagline {
   opacity: 0;
-  animation: fadeInFinal 1.5s ease-out 10s forwards;
+  animation: fadeInFinal 2s ease-out 15s forwards;
 }
 
 /* Keyframe animations */
@@ -44,12 +44,16 @@
   }
 }
 
-@keyframes fadeOutUp {
-  from {
+@keyframes slowFadeOut {
+  0% {
     opacity: 1;
     transform: translateY(0);
   }
-  to {
+  70% {
+    opacity: 0.3;
+    transform: translateY(-10px);
+  }
+  100% {
     opacity: 0;
     transform: translateY(-30px);
   }
@@ -101,12 +105,16 @@
     }
   }
   
-  @keyframes fadeOutUp {
-    from {
+  @keyframes slowFadeOut {
+    0% {
       opacity: 1;
       transform: translateY(0);
     }
-    to {
+    70% {
+      opacity: 0.3;
+      transform: translateY(-8px);
+    }
+    100% {
       opacity: 0;
       transform: translateY(-20px);
     }
