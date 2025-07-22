@@ -77,7 +77,7 @@ const UIIntegration: React.FC = () => {
   // Using proxy components to connect to the actual UI components
   return (
     <ObserverProvider>
-      <Routes>
+      <Routes key={location.pathname}>
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="demo" element={<OnboardingDemo />} />
