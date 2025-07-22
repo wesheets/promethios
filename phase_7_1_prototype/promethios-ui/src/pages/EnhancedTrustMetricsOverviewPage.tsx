@@ -1052,17 +1052,17 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       
                       <TableCell sx={{ color: 'white' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {agent.trend.direction === 'up' && <TrendingUp sx={{ color: '#10b981', mr: 1 }} />}
-                          {agent.trend.direction === 'down' && <TrendingDown sx={{ color: '#ef4444', mr: 1 }} />}
-                          {agent.trend.direction === 'stable' && <TrendingFlat sx={{ color: '#64748b', mr: 1 }} />}
+                          {agent.trend?.direction === 'up' && <TrendingUp sx={{ color: '#10b981', mr: 1 }} />}
+                          {agent.trend?.direction === 'down' && <TrendingDown sx={{ color: '#ef4444', mr: 1 }} />}
+                          {agent.trend?.direction === 'stable' && <TrendingFlat sx={{ color: '#64748b', mr: 1 }} />}
                           <Box>
                             <Typography variant="body2" sx={{ 
-                              color: agent.trend.direction === 'up' ? '#10b981' : agent.trend.direction === 'down' ? '#ef4444' : '#64748b' 
+                              color: agent.trend?.direction === 'up' ? '#10b981' : agent.trend?.direction === 'down' ? '#ef4444' : '#64748b' 
                             }}>
-                              {agent.trend.velocity > 0 ? '+' : ''}{Math.round(agent.trend.velocity * 100)}%
+                              {agent.trend?.velocity ? (agent.trend.velocity > 0 ? '+' : '') + Math.round(agent.trend.velocity * 100) : 'N/A'}%
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748b' }}>
-                              Pred: {Math.round(agent.trend.prediction * 100)}%
+                              Pred: {agent.trend?.prediction ? Math.round(agent.trend.prediction * 100) : 'N/A'}%
                             </Typography>
                           </Box>
                         </Box>
