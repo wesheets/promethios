@@ -766,8 +766,8 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                       </Tooltip>
                     </Typography>
                   </Box>
-                  <Typography variant="h3" sx={{ color: overviewStats.criticalAgents > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
-                    {overviewStats.criticalAgents}
+                  <Typography variant="h3" sx={{ color: (overviewStats.criticalAgents || 0) > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                    {overviewStats.criticalAgents || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     Immediate attention needed
@@ -789,7 +789,7 @@ const EnhancedTrustMetricsOverviewPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h3" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
-                    {overviewStats.totalAttestations.toLocaleString()}
+                    {(overviewStats.totalAttestations || 0).toLocaleString()}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     Verification events
