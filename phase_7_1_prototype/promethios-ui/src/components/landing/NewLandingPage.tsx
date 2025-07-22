@@ -35,7 +35,7 @@ const NewLandingPage: React.FC = () => {
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
             {/* Full-Width Animated Pre-Headline - Moved much higher */}
-            <div className="mb-24 relative h-48 overflow-hidden w-full -mt-16">
+<div className="mb-24 relative h-48 overflow-hidden w-full -mt-16">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - positioned on the left */}
@@ -52,19 +52,13 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Static text positioned on the right */}
-                  <div className="absolute right-0 top-0">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text">
-                      is on the line
-                    </span>
+                  {/* Full-width tagline that appears after animation sequence */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed">
+                      And you're still trusting your AI… just because it sounds smart?
+                    </p>
                   </div>
                 </div>
-              </div>
-              {/* Italic subtitle that fades in later - positioned on the right bottom */}
-              <div className="absolute right-0 bottom-0">
-                <p className="text-xl sm:text-2xl italic text-gray-300 fade-in-subtitle">
-                  And you're still trusting your AI… just because it sounds smart?
-                </p>
               </div>
             </div>
             
