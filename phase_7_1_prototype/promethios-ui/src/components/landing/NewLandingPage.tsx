@@ -103,19 +103,19 @@ const NewLandingPage: React.FC = () => {
                     <div className="mb-6 relative h-16">
                       <div className="absolute inset-0 flex items-center justify-between">
                         <span className="text-white font-semibold">Trust Score</span>
-                        <div className="relative">
-                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute">85%</span>
-                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0">243</span>
-                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0">1.2M</span>
+                        <div className="relative pr-2">
+                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute right-0">85%</span>
+                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0 right-0">243</span>
+                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0 right-0">1.2M</span>
                         </div>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '4s'}}>
                         <span className="text-white font-semibold">Violations Prevented</span>
-                        <span className="text-2xl font-bold text-blue-400">243</span>
+                        <span className="text-2xl font-bold text-blue-400 pr-2">243</span>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '8s'}}>
                         <span className="text-white font-semibold">Governed Responses</span>
-                        <span className="text-2xl font-bold text-purple-400">1.2M</span>
+                        <span className="text-2xl font-bold text-purple-400 pr-2">1.2M</span>
                       </div>
                     </div>
 
