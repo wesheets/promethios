@@ -218,16 +218,16 @@ const NewLandingPage: React.FC = () => {
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-2 h-2 bg-red-500 rounded-full animate-pulse opacity-60"></div>
           <div className="absolute top-40 right-20 w-1 h-1 bg-blue-400 rounded-full animate-ping opacity-40"></div>
-          <div className="absolute bottom-32 left-1/4 w-1 h-1 bg-green-400 rounded-full animate-pulse opacity-50"></div>
-          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-purple-400 rounded-full animate-ping opacity-30"></div>
+          <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse opacity-50"></div>
+          <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-30"></div>
         </div>
-
-        <div className="relative z-10">
+        
+        <div className="w-full px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
               Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
             </h2>
-            <p className="text-xl text-gray-300 leading-relaxed px-4">
+            <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
               You're not managing models. You're protecting trust, reputation, and risk.
             </p>
             {/* Horizontal divider with warning colors */}
@@ -273,7 +273,7 @@ const NewLandingPage: React.FC = () => {
           </div>
 
           {/* Pain-Killer Approach Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
             
             {/* Your AI just lied to a customer */}
             <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
@@ -350,11 +350,16 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* You're regulated. Your AI isn't. */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-6 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              
+              <h3 className="text-xl font-bold mb-4 text-orange-400 group-hover:text-orange-300 transition-colors">
+                You're regulated. Your AI isn't.
+              </h3>
+              
+              <div className="flex flex-col lg:flex-row items-start gap-6 mb-6">
                 
                 {/* Problem View - Ungoverned Compliance */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -380,7 +385,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Promethios Compliance */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -404,34 +409,36 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-3 text-orange-400 group-hover:text-orange-300 transition-colors">
-                    You're regulated. Your AI isn't.
-                  </h3>
-                  <p className="text-gray-300 leading-relaxed mb-4">
-                    HIPAA, SOC2, GDPR compliance means nothing if your AI agents can bypass every control you've built.
-                  </p>
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
-                    </div>
-                    <p className="text-gray-300 text-sm">
-                      <strong>Governance Wrapping</strong> + <strong>Policy Enforcement</strong><br/>
-                      Zero-code compliance wrapping for any agent. HIPAA, SOC2, GDPR built-in.
-                    </p>
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-gray-300 leading-relaxed">
+                  HIPAA, SOC2, GDPR compliance means nothing if your AI agents can bypass every control you've built.
+                </p>
+                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
                   </div>
+                  <p className="text-gray-300 text-sm">
+                    <strong>Governance Wrapping</strong> + <strong>Policy Enforcement</strong><br/>
+                    Zero-code compliance wrapping for any agent. HIPAA, SOC2, GDPR built-in.
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Board wants to know if AI is safe to scale */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-6 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              
+              <h3 className="text-xl font-bold mb-4 text-purple-400 group-hover:text-purple-300 transition-colors">
+                Board wants to know if AI is safe to scale.
+              </h3>
+              
+              <div className="flex flex-col lg:flex-row items-start gap-6 mb-6">
                 
                 {/* Problem View - No Metrics */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -455,7 +462,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Trust Score Analytics */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -477,20 +484,19 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-3 text-purple-400 group-hover:text-purple-300 transition-colors">
-                    Board wants to know if AI is safe to scale.
-                  </h3>
-                  <p className="text-gray-300 leading-relaxed mb-4">
-                    "Trust me, it works" isn't a business case. You need metrics, benchmarks, and proof of governance.
-                  </p>
-                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
-                    </div>
-                    <p className="text-gray-300 text-sm">
-                      <strong>Trust Score Engine</strong> + <strong>Benchmark Insights</strong><br/>
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-gray-300 leading-relaxed">
+                  "Trust me, it works" isn't a business case. You need metrics, benchmarks, and proof of governance.
+                </p>
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                  </div>
+                  <p className="text-gray-300 text-sm">
+                    <strong>Trust Score Engine</strong> + <strong>Benchmark Insights</strong><br/>
                       Quantified trust metrics and governed vs. ungoverned performance data.
                     </p>
                   </div>
@@ -499,11 +505,16 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* Multi-agent chaos is coming */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-6 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              
+              <h3 className="text-xl font-bold mb-4 text-cyan-400 group-hover:text-cyan-300 transition-colors">
+                Multi-agent chaos is coming.
+              </h3>
+              
+              <div className="flex flex-col lg:flex-row items-start gap-6 mb-6">
                 
                 {/* Problem View - Multi-Agent Chaos */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -529,7 +540,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Multi-Agent Coordination */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -553,20 +564,18 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-3 text-cyan-400 group-hover:text-cyan-300 transition-colors">
-                    Multi-agent chaos is coming.
-                  </h3>
-                  <p className="text-gray-300 leading-relaxed mb-4">
-                    One agent is hard enough to govern. What happens when you have dozens working together?
-                  </p>
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
-                    </div>
-                    <p className="text-gray-300 text-sm">
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-gray-300 leading-relaxed">
+                  One agent is hard enough to govern. What happens when you have dozens working together?
+                </p>
+                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
+                  </div>
+                  <p className="text-gray-300 text-sm">
                       <strong>Multi-Agent Coordination</strong> + <strong>Unified Governance</strong><br/>
                       Single pane of glass for governing complex multi-agent workflows.
                     </p>
