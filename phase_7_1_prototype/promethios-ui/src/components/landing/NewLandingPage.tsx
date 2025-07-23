@@ -200,8 +200,10 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
   }>>([]);
 
   useEffect(() => {
+    console.log('FloodingNewsTicker isVisible:', isVisible);
     if (!isVisible) return;
 
+    console.log('Starting news ticker interval');
     const interval = setInterval(() => {
       // Add new headline
       const randomHeadline = AI_DISASTER_HEADLINES[Math.floor(Math.random() * AI_DISASTER_HEADLINES.length)];
@@ -252,7 +254,7 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-30 overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
       {activeHeadlines.map((item) => (
         <div
           key={item.id}
@@ -310,11 +312,21 @@ const NewLandingPage: React.FC = () => {
       if (riskSurfaceSection) {
         const rect = riskSurfaceSection.getBoundingClientRect();
         const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        console.log('Risk Surface Section:', { 
+          top: rect.top, 
+          bottom: rect.bottom, 
+          windowHeight: window.innerHeight, 
+          isVisible 
+        });
         setShowNewsTicker(isVisible);
+      } else {
+        console.log('Risk Surface Section not found');
       }
     };
 
     window.addEventListener('scroll', handleScroll);
+    // Also check on mount
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -1075,6 +1087,24 @@ const NewLandingPage: React.FC = () => {
           to {
             transform: translateY(-200px);
             opacity: 1;
+          }
+        }
+
+        /* Final Tagline Animation */
+        .final-tagline {
+          opacity: 0;
+          animation: taglineFadeIn 1s ease-in-out forwards;
+          animation-delay: 7s;
+        }
+
+        @keyframes taglineFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>
