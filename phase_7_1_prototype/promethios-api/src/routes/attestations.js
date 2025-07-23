@@ -651,3 +651,6 @@ router.get('/notifications/health', (req, res) => {
   });
 });
 
+
+module.exports = router;
+
