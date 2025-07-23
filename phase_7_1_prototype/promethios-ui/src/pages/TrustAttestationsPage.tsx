@@ -4,6 +4,7 @@ import { authApiService } from '../services/authApiService';
 import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
 import { trustBackendService } from '../services/trustBackendService';
 import { useTrustAttestations } from '../hooks/useTrustAttestations';
+import { CreateAttestationWizard } from '../components/CreateAttestationWizard';
 import {
   Box,
   Card,
@@ -129,30 +130,30 @@ const TrustAttestationsPage: React.FC = () => {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [createWizardOpen, setCreateWizardOpen] = useState(false);
 
   // Use real backend data with user authentication
   const {
     attestations,
-    chains: attestationChains,
     metrics,
     attestationsLoading,
-    chainsLoading,
     metricsLoading,
     attestationsError,
-    chainsError,
     metricsError,
     creatingAttestation,
     verifyingAttestation,
     operationError,
     createAttestation,
     verifyAttestation,
-    revokeAttestation,
+    updateAttestation,
+    deleteAttestation,
+    loadAttestations,
     refreshAll,
     clearErrors,
     filterAttestations
   } = useTrustAttestations();
 
-  const loading = attestationsLoading || chainsLoading || metricsLoading;
+  const loading = attestationsLoading || metricsLoading;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -213,6 +214,9 @@ const TrustAttestationsPage: React.FC = () => {
     return createdAt > weekAgo;
   }).length;
 
+  // Mock attestation chains for now - will be replaced with real data
+  const attestationChains: AttestationChain[] = [];
+
   // Authentication validation
   if (!currentUser) {
     return (
@@ -237,7 +241,7 @@ const TrustAttestationsPage: React.FC = () => {
   }
 
   // Error handling
-  if (attestationsError || chainsError || metricsError) {
+  if (attestationsError || metricsError) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
@@ -245,7 +249,7 @@ const TrustAttestationsPage: React.FC = () => {
         </Typography>
         <Alert severity="error" sx={{ mt: 2 }}>
           <AlertTitle>Error Loading Trust Attestations</AlertTitle>
-          {attestationsError || chainsError || metricsError}
+          {attestationsError || metricsError}
         </Alert>
       </Box>
     );
@@ -283,13 +287,28 @@ const TrustAttestationsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
-          Trust Attestations
-        </Typography>
-        <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-          Credibility logbook and verification tracking for agent trustworthiness and reputation
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+            Trust Attestations
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
+            Credibility logbook and verification tracking for agent trustworthiness and reputation
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => setCreateWizardOpen(true)}
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': { backgroundColor: '#2563eb' },
+            textTransform: 'none',
+            fontWeight: 'bold'
+          }}
+        >
+          CREATE ATTESTATION
+        </Button>
       </Box>
 
       {/* Overview Cards */}
@@ -435,6 +454,7 @@ const TrustAttestationsPage: React.FC = () => {
                 variant="contained"
                 startIcon={<Add />}
                 fullWidth
+                onClick={() => setCreateWizardOpen(true)}
                 sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
               >
                 New Attestation
@@ -750,6 +770,13 @@ const TrustAttestationsPage: React.FC = () => {
           </Grid>
         </TabPanel>
       </Card>
+
+      {/* Create Attestation Wizard */}
+      <CreateAttestationWizard
+        open={createWizardOpen}
+        onClose={() => setCreateWizardOpen(false)}
+        onSubmit={createAttestation}
+      />
     </Box>
   );
 };

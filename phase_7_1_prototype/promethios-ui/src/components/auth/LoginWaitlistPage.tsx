@@ -55,14 +55,17 @@ const LoginWaitlistPage: React.FC = () => {
     try {
       await loginWithEmail(loginEmail, loginPassword);
       
-      // Check if user has been approved for access
-      const hasInvitation = await checkUserInvitation(loginEmail, db);
+      // Check if user has been approved for access or is an existing user
+      const invitationCheck = await checkUserInvitation(loginEmail, db);
       
-      if (!hasInvitation) {
-        setLoginError('Access denied. This environment is not available to unverified operators. Please request access through the waitlist.');
+      if (!invitationCheck.hasAccess) {
+        setLoginError(invitationCheck.reason || 'Access denied. Please request access through the waitlist.');
         await logout(); // Sign them out immediately
         return;
       }
+      
+      // User has access, proceed to dashboard
+      console.log(`Login successful for ${invitationCheck.isExistingUser ? 'existing' : 'new approved'} user:`, loginEmail);
       
       navigate('/ui/dashboard');
     } catch (error) {
@@ -96,14 +99,17 @@ const LoginWaitlistPage: React.FC = () => {
       const userEmail = result?.user?.email || loginEmail;
       
       if (userEmail) {
-        // Check if user has been approved for access
-        const hasInvitation = await checkUserInvitation(userEmail, db);
+        // Check if user has been approved for access or is an existing user
+        const invitationCheck = await checkUserInvitation(userEmail, db);
         
-        if (!hasInvitation) {
-          setLoginError('Access denied. This environment is not available to unverified operators. Please request access through the waitlist.');
+        if (!invitationCheck.hasAccess) {
+          setLoginError(invitationCheck.reason || 'Access denied. Please request access through the waitlist.');
           await logout(); // Sign them out immediately
           return;
         }
+        
+        // User has access, proceed to dashboard
+        console.log(`Login successful for ${invitationCheck.isExistingUser ? 'existing' : 'new approved'} user:`, userEmail);
       }
       
       navigate('/ui/dashboard');

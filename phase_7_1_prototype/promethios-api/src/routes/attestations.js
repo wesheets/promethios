@@ -391,3 +391,263 @@ function performVerification(attestation) {
 
 module.exports = router;
 
+
+
+// Observer Integration Endpoints
+router.post('/observer/events', (req, res) => {
+  try {
+    const event = req.body;
+    
+    // Log the observer event (in production, this would be stored in a database)
+    console.log('Observer event received:', {
+      event_type: event.event_type,
+      agent_id: event.agent_id,
+      attestation_id: event.attestation_id,
+      timestamp: event.timestamp,
+      severity: event.severity
+    });
+    
+    res.json({
+      success: true,
+      message: 'Observer event recorded',
+      event_id: event.event_id
+    });
+  } catch (error) {
+    console.error('Error processing observer event:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process observer event'
+    });
+  }
+});
+
+router.get('/observer/metrics', (req, res) => {
+  try {
+    // In production, this would query actual metrics from the database
+    const mockMetrics = {
+      total_events: 156,
+      events_by_type: {
+        'attestation_created': 45,
+        'attestation_verified': 38,
+        'attestation_expired': 12,
+        'attestation_revoked': 3,
+        'verification_failed': 8
+      },
+      events_by_severity: {
+        'info': 83,
+        'warning': 20,
+        'error': 11,
+        'critical': 3
+      },
+      recent_events: [],
+      agent_activity: {},
+      attestation_health: {
+        active_attestations: attestations.filter(a => a.status === 'active').length,
+        expiring_soon: 5,
+        expired: 8,
+        revoked: 2
+      }
+    };
+    
+    res.json(mockMetrics);
+  } catch (error) {
+    console.error('Error fetching observer metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch observer metrics'
+    });
+  }
+});
+
+router.get('/observer/events', (req, res) => {
+  try {
+    const { limit = 50 } = req.query;
+    
+    // In production, this would query actual events from the database
+    const mockEvents = [];
+    
+    res.json({
+      success: true,
+      events: mockEvents,
+      total: mockEvents.length
+    });
+  } catch (error) {
+    console.error('Error fetching observer events:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch observer events'
+    });
+  }
+});
+
+router.get('/observer/events/agent/:agentId', (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const { limit = 50 } = req.query;
+    
+    // In production, this would query actual events for the specific agent
+    const mockEvents = [];
+    
+    res.json({
+      success: true,
+      events: mockEvents,
+      agent_id: agentId,
+      total: mockEvents.length
+    });
+  } catch (error) {
+    console.error('Error fetching agent events:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch agent events'
+    });
+  }
+});
+
+router.get('/observer/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'observer-integration',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Notification System Endpoints
+router.post('/notifications/send', (req, res) => {
+  try {
+    const { notification, preferences } = req.body;
+    
+    // Log the notification (in production, this would be stored and processed)
+    console.log('Notification sent:', {
+      type: notification.type,
+      title: notification.title,
+      agent_id: notification.agent_id,
+      priority: notification.priority,
+      timestamp: notification.timestamp
+    });
+    
+    // In production, this would:
+    // 1. Store the notification in the database
+    // 2. Send email if preferences.email_enabled is true
+    // 3. Send push notification if configured
+    // 4. Apply quiet hours and other preference rules
+    
+    res.json({
+      success: true,
+      message: 'Notification sent successfully',
+      notification_id: notification.id
+    });
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send notification'
+    });
+  }
+});
+
+router.get('/notifications', (req, res) => {
+  try {
+    const { limit = 50 } = req.query;
+    
+    // In production, this would query actual notifications from the database
+    const mockNotifications = [];
+    
+    res.json({
+      success: true,
+      notifications: mockNotifications,
+      total: mockNotifications.length
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch notifications'
+    });
+  }
+});
+
+router.get('/notifications/unread-count', (req, res) => {
+  try {
+    // In production, this would query the actual unread count
+    const unreadCount = 0;
+    
+    res.json({
+      success: true,
+      count: unreadCount
+    });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch unread count'
+    });
+  }
+});
+
+router.put('/notifications/:id/read', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // In production, this would update the notification in the database
+    console.log('Marking notification as read:', id);
+    
+    res.json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to mark notification as read'
+    });
+  }
+});
+
+router.put('/notifications/mark-all-read', (req, res) => {
+  try {
+    // In production, this would update all notifications in the database
+    console.log('Marking all notifications as read');
+    
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to mark all notifications as read'
+    });
+  }
+});
+
+router.put('/notifications/preferences', (req, res) => {
+  try {
+    const preferences = req.body;
+    
+    // In production, this would store the preferences in the database
+    console.log('Updating notification preferences:', preferences);
+    
+    res.json({
+      success: true,
+      message: 'Notification preferences updated',
+      preferences
+    });
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update notification preferences'
+    });
+  }
+});
+
+router.get('/notifications/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'notification-system',
+    timestamp: new Date().toISOString()
+  });
+});
+
