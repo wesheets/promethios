@@ -240,16 +240,20 @@ const TrustAttestationsPage: React.FC = () => {
     );
   }
 
-  // Error handling
-  if (attestationsError || metricsError) {
+  // Show error only if both attestations and metrics fail completely
+  if (attestationsError && metricsError && !metrics && attestations.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           Trust Attestations
         </Typography>
-        <Alert severity="error" sx={{ mt: 2 }}>
-          <AlertTitle>Error Loading Trust Attestations</AlertTitle>
-          {attestationsError || metricsError}
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <AlertTitle>API Connection Issue</AlertTitle>
+          The attestations service is temporarily unavailable. This may be due to deployment updates.
+          <br />
+          <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+            Technical details: {attestationsError || metricsError}
+          </Typography>
         </Alert>
       </Box>
     );

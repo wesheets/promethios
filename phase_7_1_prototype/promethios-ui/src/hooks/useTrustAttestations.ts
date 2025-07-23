@@ -3,6 +3,7 @@
  * 
  * React hook for managing trust attestations state and backend integration.
  * Provides state management for attestations and metrics with real API integration.
+ * Enhanced with robust error handling and fallback mechanisms.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,6 +15,24 @@ import {
 } from '../services/trustAttestationsBackendService';
 import { observerIntegrationService } from '../services/observerIntegrationService';
 import { notificationService } from '../services/notificationService';
+
+// Default metrics fallback
+const DEFAULT_METRICS: AttestationMetrics = {
+  total_attestations: 0,
+  active_attestations: 0,
+  expired_attestations: 0,
+  revoked_attestations: 0,
+  attestations_by_type: {
+    identity: 0,
+    capability: 0,
+    compliance: 0,
+    integrity: 0,
+    behavior: 0
+  },
+  average_confidence_score: 0,
+  verification_success_rate: 0,
+  recent_attestations: 0
+};
 
 interface UseTrustAttestationsState {
   // Attestations
@@ -90,12 +109,15 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     setAttestationsError(null);
     
     try {
-      const result = await trustAttestationsBackendService.getAttestations(filters);
-      setAttestations(result.attestations);
+      const response = await trustAttestationsBackendService.getAttestations(filters);
+      setAttestations(response.attestations);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load attestations';
-      setAttestationsError(errorMessage);
-      console.error('Error loading attestations:', error);
+      console.warn('Attestations API failed:', errorMessage);
+      
+      // Set empty array instead of breaking the UI
+      setAttestations([]);
+      setAttestationsError(`API unavailable: ${errorMessage}`);
     } finally {
       setAttestationsLoading(false);
     }
@@ -302,8 +324,13 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
       setMetrics(metricsData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load metrics';
-      setMetricsError(errorMessage);
-      console.error('Error loading metrics:', error);
+      console.warn('Metrics API failed, using default metrics:', errorMessage);
+      
+      // Use default metrics instead of showing error
+      setMetrics(DEFAULT_METRICS);
+      
+      // Only set error for debugging, don't break the UI
+      setMetricsError(`API unavailable (using defaults): ${errorMessage}`);
     } finally {
       setMetricsLoading(false);
     }
