@@ -5,11 +5,14 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { FirebaseError } from 'firebase/app';
 import { addToWaitlist } from '../../firebase/waitlistService';
+import { checkUserInvitation } from '../../firebase/invitationService';
 
 const LoginWaitlistPage: React.FC = () => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
-      const { loginWithEmail, loginWithGoogle, signup, resetPassword, db } = useAuth();  // State for login form
+  const { loginWithEmail, loginWithGoogle, signup, resetPassword, logout, db } = useAuth();
+  
+  // State for login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -19,9 +22,20 @@ const LoginWaitlistPage: React.FC = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
   
-  // State for waitlist form
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [role, setRole] = useState('');
+  // Enhanced state for waitlist form
+  const [waitlistData, setWaitlistData] = useState({
+    email: '',
+    role: '',
+    whyAccess: '',
+    organization: '',
+    aiConcern: '',
+    deploymentUrgency: '',
+    socialProfile: '',
+    onboardingCall: false,
+    currentAiTools: '',
+    biggestAiFailure: '',
+    additionalConcerns: ''
+  });
   const [submitted, setSubmitted] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +50,17 @@ const LoginWaitlistPage: React.FC = () => {
     
     try {
       await loginWithEmail(loginEmail, loginPassword);
-      navigate('/ui/dashboard'); // Redirect to new UI dashboard after login
+      
+      // Check if user has been approved for access
+      const hasInvitation = await checkUserInvitation(loginEmail, db);
+      
+      if (!hasInvitation) {
+        setLoginError('Access denied. This environment is not available to unverified operators. Please request access through the waitlist.');
+        await logout(); // Sign them out immediately
+        return;
+      }
+      
+      navigate('/ui/dashboard');
     } catch (error) {
       const firebaseError = error as FirebaseError;
       let errorMessage = 'Authentication failed. Please try again.';
@@ -62,8 +86,23 @@ const LoginWaitlistPage: React.FC = () => {
     setIsLoggingIn(true);
     
     try {
-      await loginWithGoogle();
-      navigate('/ui/dashboard'); // Redirect to new UI dashboard after login
+      const result = await loginWithGoogle();
+      
+      // Get email from the result or current user
+      const userEmail = result?.user?.email || loginEmail;
+      
+      if (userEmail) {
+        // Check if user has been approved for access
+        const hasInvitation = await checkUserInvitation(userEmail, db);
+        
+        if (!hasInvitation) {
+          setLoginError('Access denied. This environment is not available to unverified operators. Please request access through the waitlist.');
+          await logout(); // Sign them out immediately
+          return;
+        }
+      }
+      
+      navigate('/ui/dashboard');
     } catch (error) {
       const firebaseError = error as FirebaseError;
       let errorMessage = 'Google authentication failed. Please try again.';
@@ -110,17 +149,14 @@ const LoginWaitlistPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Store the waitlist entry in Firestore
-      const result = await addToWaitlist(waitlistEmail, role, db);
+      const result = await addToWaitlist(waitlistData, db);
       
       if (result === 'exists') {
-        // Email already exists in waitlist, but we'll show success anyway
-        console.log('Email already in waitlist:', waitlistEmail);
+        console.log('Email already in waitlist:', waitlistData.email);
       } else {
         console.log('Added to waitlist with ID:', result);
       }
       
-      // Show success state
       setSubmitted(true);
     } catch (error) {
       console.error('Waitlist submission error:', error);
@@ -130,29 +166,86 @@ const LoginWaitlistPage: React.FC = () => {
     }
   };
   
+  const updateWaitlistData = (field: string, value: string | boolean) => {
+    setWaitlistData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
   return (
-    <div className={`min-h-screen w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} flex flex-col justify-center py-12 sm:px-6 lg:px-8`}>
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className={`min-h-screen w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden`}>
+      {/* Enhanced Background Ghost UI - Blurred Dashboard Glimpses */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+        {/* Trust Dashboard */}
+        <div className="absolute top-20 left-10 w-80 h-40 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg blur-sm transform rotate-3 p-4">
+          <div className="text-white text-xs font-mono">
+            <div className="mb-2">TRUST SCORE: 85%</div>
+            <div className="w-full bg-gray-300 rounded-full h-2 mb-2">
+              <div className="bg-green-400 h-2 rounded-full w-4/5"></div>
+            </div>
+            <div className="text-xs">Hallucination Rate: 2.3%</div>
+            <div className="text-xs">Compliance: GDPR ✓ HIPAA ✓</div>
+          </div>
+        </div>
+        
+        {/* Alert Dashboard */}
+        <div className="absolute top-40 right-20 w-60 h-32 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg blur-sm transform -rotate-2 p-3">
+          <div className="text-white text-xs font-mono">
+            <div className="mb-1">🚨 ALERT: Hallucination Detected</div>
+            <div className="text-xs">Agent: customer-support-v2</div>
+            <div className="text-xs">Confidence: 23%</div>
+            <div className="text-xs">Action: Response Blocked</div>
+          </div>
+        </div>
+        
+        {/* Governance Logs */}
+        <div className="absolute bottom-40 left-20 w-72 h-36 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg blur-sm transform rotate-1 p-3">
+          <div className="text-white text-xs font-mono">
+            <div className="mb-1">GOVERNANCE LOG</div>
+            <div className="text-xs">14:23 - Policy violation blocked</div>
+            <div className="text-xs">14:19 - Trust score updated</div>
+            <div className="text-xs">14:15 - Audit trail logged</div>
+            <div className="text-xs">14:12 - Compliance check passed</div>
+          </div>
+        </div>
+        
+        {/* Multi-Agent Coordination */}
+        <div className="absolute bottom-20 right-10 w-64 h-28 bg-gradient-to-br from-cyan-600 to-teal-600 rounded-lg blur-sm transform -rotate-3 p-3">
+          <div className="text-white text-xs font-mono">
+            <div className="mb-1">AGENT COORDINATION</div>
+            <div className="text-xs">Active Agents: 12</div>
+            <div className="text-xs">Sync Status: ✓ Healthy</div>
+            <div className="text-xs">Trust Network: Stable</div>
+          </div>
+        </div>
+        
+        {/* Additional scattered elements */}
+        <div className="absolute top-60 left-1/2 w-48 h-24 bg-gray-600 rounded-lg blur-md transform rotate-12 opacity-30"></div>
+        <div className="absolute bottom-60 right-1/3 w-56 h-20 bg-yellow-600 rounded-lg blur-md transform -rotate-6 opacity-20"></div>
+      </div>
+      
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
             Beta
           </span>
         </div>
         <h2 className="mt-3 text-center text-3xl font-extrabold">
-          {showLoginForm ? 'Sign in to Promethios' : 'Join the Waitlist'}
+          {showLoginForm ? 'Sign in to Promethios' : 'Request Access to Private Beta'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           {showLoginForm 
-            ? 'Access is currently limited to admins, investors, and early access developers.' 
-            : 'Promethios is currently in invite-only beta. Join the waitlist to be notified when spots become available.'}
+            ? 'This environment is not available to unverified operators. Promethios governance requires accountability.' 
+            : 'Trust is not public. You don\'t get access just because you want it — you get it because someone trusted you.'}
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className={`${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow'} py-8 px-4 sm:rounded-lg sm:px-10`}>
           {showLoginForm ? (
             !showResetPassword ? (
-              // Login Form
+              // Login Form (unchanged)
               <div>
                 {loginError && (
                   <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
@@ -268,7 +361,7 @@ const LoginWaitlistPage: React.FC = () => {
                 </div>
               </div>
             ) : !resetPasswordSuccess ? (
-              // Reset Password Form
+              // Reset Password Form (unchanged)
               <div>
                 {loginError && (
                   <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
@@ -320,7 +413,7 @@ const LoginWaitlistPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              // Reset Password Success
+              // Reset Password Success (unchanged)
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -352,7 +445,7 @@ const LoginWaitlistPage: React.FC = () => {
               </motion.div>
             )
           ) : !submitted ? (
-            // Waitlist Form
+            // Enhanced Waitlist Form
             <form className="space-y-6" onSubmit={handleWaitlistSubmit}>
               {waitlistError && (
                 <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
@@ -375,8 +468,8 @@ const LoginWaitlistPage: React.FC = () => {
                     type="email"
                     autoComplete="email"
                     required
-                    value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    value={waitlistData.email}
+                    onChange={(e) => updateWaitlistData('email', e.target.value)}
                     className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                   />
                 </div>
@@ -391,17 +484,184 @@ const LoginWaitlistPage: React.FC = () => {
                     id="role"
                     name="role"
                     required
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                    value={waitlistData.role}
+                    onChange={(e) => updateWaitlistData('role', e.target.value)}
                     className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                   >
                     <option value="">Select your role</option>
-                    <option value="developer">Developer</option>
-                    <option value="investor">Investor</option>
-                    <option value="researcher">Researcher</option>
+                    <option value="enterprise-cto">Enterprise CTO</option>
+                    <option value="security-engineer">Security Engineer</option>
+                    <option value="ai-researcher">AI Researcher</option>
+                    <option value="product-founder">Product Founder</option>
+                    <option value="vc-investor">VC / Investor</option>
+                    <option value="parent-concerned">Parent (concerned)</option>
+                    <option value="journalist">Journalist</option>
+                    <option value="student">Student</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="why-access" className="block text-sm font-medium">
+                  Why do you want access? <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="why-access"
+                    name="whyAccess"
+                    rows={3}
+                    required
+                    value={waitlistData.whyAccess}
+                    onChange={(e) => updateWaitlistData('whyAccess', e.target.value)}
+                    placeholder="What problem are you trying to solve with Promethios?"
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="organization" className="block text-sm font-medium">
+                  Organization or Affiliation
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="organization"
+                    name="organization"
+                    type="text"
+                    value={waitlistData.organization}
+                    onChange={(e) => updateWaitlistData('organization', e.target.value)}
+                    placeholder="Company, university, lab, or independent"
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="ai-concern" className="block text-sm font-medium">
+                  What are you most concerned about with AI today?
+                </label>
+                <div className="mt-1">
+                  <select
+                    id="ai-concern"
+                    name="aiConcern"
+                    value={waitlistData.aiConcern}
+                    onChange={(e) => updateWaitlistData('aiConcern', e.target.value)}
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  >
+                    <option value="">Select your primary concern</option>
+                    <option value="hallucinations">Hallucinations</option>
+                    <option value="security-breaches">Security breaches</option>
+                    <option value="misinformation">Misinformation</option>
+                    <option value="compliance">Compliance (GDPR, HIPAA)</option>
+                    <option value="kids-unsupervised">My kids using AI unsupervised</option>
+                    <option value="black-box-decisions">Black-box decisions</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="deployment-urgency" className="block text-sm font-medium">
+                  How soon would you deploy this in your org/team if invited?
+                </label>
+                <div className="mt-1">
+                  <select
+                    id="deployment-urgency"
+                    name="deploymentUrgency"
+                    value={waitlistData.deploymentUrgency}
+                    onChange={(e) => updateWaitlistData('deploymentUrgency', e.target.value)}
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  >
+                    <option value="">Select deployment timeline</option>
+                    <option value="right-away">Right away (critical need)</option>
+                    <option value="within-30-days">Within 30 days</option>
+                    <option value="just-exploring">Just exploring</option>
+                    <option value="not-sure">Not sure</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="social-profile" className="block text-sm font-medium">
+                  Twitter / LinkedIn / Website
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="social-profile"
+                    name="socialProfile"
+                    type="url"
+                    value={waitlistData.socialProfile}
+                    onChange={(e) => updateWaitlistData('socialProfile', e.target.value)}
+                    placeholder="Where can we find your thoughts?"
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="current-ai-tools" className="block text-sm font-medium">
+                  Current AI tools you use
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="current-ai-tools"
+                    name="currentAiTools"
+                    type="text"
+                    value={waitlistData.currentAiTools}
+                    onChange={(e) => updateWaitlistData('currentAiTools', e.target.value)}
+                    placeholder="ChatGPT, Claude, Copilot, etc."
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="biggest-ai-failure" className="block text-sm font-medium">
+                  Biggest AI failure you've witnessed
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="biggest-ai-failure"
+                    name="biggestAiFailure"
+                    rows={2}
+                    value={waitlistData.biggestAiFailure}
+                    onChange={(e) => updateWaitlistData('biggestAiFailure', e.target.value)}
+                    placeholder="Tell us about a time AI let you down..."
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="additional-concerns" className="block text-sm font-medium">
+                  Additional concerns or use cases
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="additional-concerns"
+                    name="additionalConcerns"
+                    rows={2}
+                    value={waitlistData.additionalConcerns}
+                    onChange={(e) => updateWaitlistData('additionalConcerns', e.target.value)}
+                    placeholder="Anything else we should know?"
+                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  id="onboarding-call"
+                  name="onboardingCall"
+                  type="checkbox"
+                  checked={waitlistData.onboardingCall}
+                  onChange={(e) => updateWaitlistData('onboardingCall', e.target.checked)}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="onboarding-call" className="ml-2 block text-sm">
+                  Would you be open to a brief onboarding call if selected?
+                </label>
               </div>
 
               <div>
@@ -410,8 +670,19 @@ const LoginWaitlistPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
+                  {isSubmitting ? 'Submitting...' : 'Request Access to Private Beta'}
                 </button>
+              </div>
+              
+              {/* Enhanced Scarcity Warning */}
+              <div className="text-center text-xs text-red-400 mt-3 p-3 border border-red-400/30 rounded-lg bg-red-900/10">
+                <div className="flex items-center justify-center mb-2">
+                  <span className="text-red-500 mr-2">🛑</span>
+                  <span className="font-semibold">LIMITED ACCESS</span>
+                </div>
+                <div className="mb-1">Only <span className="font-bold text-red-300">47 invitations</span> remaining this quarter.</div>
+                <div className="text-xs text-gray-400">We prioritize those shaping AI's future—or trying to protect it.</div>
+                <div className="text-xs text-gray-500 mt-1">This environment is not available to unverified operators.</div>
               </div>
             </form>
           ) : (
@@ -427,9 +698,9 @@ const LoginWaitlistPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="mt-3 text-lg font-medium">You're on the list!</h3>
+              <h3 className="mt-3 text-lg font-medium">Application Received</h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Thank you for your interest in Promethios. We'll notify you when a spot becomes available.
+                Your request for private beta access has been submitted. We'll review your application and notify you if you're selected for early access.
               </p>
               <div className="mt-6">
                 <a
@@ -443,7 +714,7 @@ const LoginWaitlistPage: React.FC = () => {
           )}
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center relative z-10">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {showLoginForm ? (
               <>
@@ -456,7 +727,7 @@ const LoginWaitlistPage: React.FC = () => {
                   }} 
                   className="font-medium text-purple-600 hover:text-purple-500 bg-transparent border-none cursor-pointer"
                 >
-                  Join the waitlist
+                  Request access
                 </button>
               </>
             ) : (
