@@ -1042,8 +1042,8 @@ const NewLandingPage: React.FC = () => {
       {/* Flooding News Ticker - AI Disaster Headlines */}
       <FloodingNewsTicker isVisible={showNewsTicker && headlinesEnabled} />
 
-      {/* Headlines Toggle - "Mute the Mayhem" */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* Headlines Toggle - "Mute the Mayhem" - Top Right */}
+      <div className="fixed top-16 right-6 z-40">
         <button
           onClick={() => setHeadlinesEnabled(!headlinesEnabled)}
           className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 backdrop-blur-sm border ${
