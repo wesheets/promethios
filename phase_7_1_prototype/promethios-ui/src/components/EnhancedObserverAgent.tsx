@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { sendObserverMessage } from '../api/observerChat';
+import { observerTrustBoundaryIntegration, TrustBoundaryPageState } from '../extensions/ObserverTrustBoundaryIntegration';
 
 interface Message {
   id: string;
@@ -51,6 +52,7 @@ interface EnhancedObserverAgentProps {
   onMinimize: () => void;
   dashboardData?: any;
   currentContext?: string;
+  trustBoundaryPageState?: TrustBoundaryPageState;
 }
 
 const EnhancedObserverAgent: React.FC<EnhancedObserverAgentProps> = ({
@@ -58,7 +60,8 @@ const EnhancedObserverAgent: React.FC<EnhancedObserverAgentProps> = ({
   onClose,
   onMinimize,
   dashboardData,
-  currentContext = 'dashboard'
+  currentContext = 'dashboard',
+  trustBoundaryPageState
 }) => {
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -81,6 +84,24 @@ const EnhancedObserverAgent: React.FC<EnhancedObserverAgentProps> = ({
     }
   }, [isOpen, messages.length]);
 
+  // Initialize trust boundary integration when on trust boundaries page
+  useEffect(() => {
+    const initializeTrustBoundaryIntegration = async () => {
+      if (currentContext === 'trust_boundaries' && trustBoundaryPageState) {
+        try {
+          if (!observerTrustBoundaryIntegration.isInitialized()) {
+            await observerTrustBoundaryIntegration.initialize();
+          }
+          await observerTrustBoundaryIntegration.updatePageContext(trustBoundaryPageState);
+        } catch (error) {
+          console.error('Failed to initialize trust boundary integration:', error);
+        }
+      }
+    };
+
+    initializeTrustBoundaryIntegration();
+  }, [currentContext, trustBoundaryPageState]);
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -101,12 +122,24 @@ const EnhancedObserverAgent: React.FC<EnhancedObserverAgentProps> = ({
     setIsThinking(true);
 
     try {
-      const response = await sendObserverMessage({
-        message: inputValue,
-        context: currentContext,
-        systemPrompt: getEnhancedSystemPrompt(),
-        dashboardData
-      });
+      let response;
+      
+      // Use trust boundary integration for trust boundaries page
+      if (currentContext === 'trust_boundaries' && observerTrustBoundaryIntegration.isInitialized()) {
+        const trustBoundaryResponse = await observerTrustBoundaryIntegration.processObserverQuery(
+          inputValue,
+          { dashboardData, pageState: trustBoundaryPageState }
+        );
+        response = { response: trustBoundaryResponse.response };
+      } else {
+        // Use standard observer service for other pages
+        response = await sendObserverMessage({
+          message: inputValue,
+          context: currentContext,
+          systemPrompt: getEnhancedSystemPrompt(),
+          dashboardData
+        });
+      }
 
       const observerMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -148,6 +181,22 @@ CORE SYSTEMS:
 - PRISM: Real-time monitoring and risk assessment system
 - Vigil: Trust boundary management and relationship monitoring
 - Veritas: Truth verification and hallucination detection
+TRUST BOUNDARIES & AGENT COLLABORATION:
+- Trust Boundary Management: Define secure agent interaction rules
+- Trust Score Calculation: Multi-dimensional trust evaluation (Competence, Reliability, Honesty, Transparency)
+- Collaboration Discovery: Find suitable agent partners based on trust levels
+- Risk Assessment: Continuous monitoring of trust relationships and security risks
+- Policy Integration: Map governance policies to trust requirements
+- Real-time Monitoring: Track trust changes and boundary violations
+
+TRUST BOUNDARY FEATURES:
+- Boundary Creation: Define trust relationships between agents
+- Threshold Configuration: Set trust levels for different operations
+- Industry Standards: Apply compliance templates (Financial, Healthcare, Government)
+- Policy Mapping: Connect governance policies to trust boundaries
+- Alert Management: Notifications for trust changes and violations
+- Collaboration Recommendations: Intelligent partner suggestions
+
 - Atlas: Comprehensive agent management and deployment
 
 GOVERNANCE FEATURES:
