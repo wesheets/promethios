@@ -1,19 +1,19 @@
-import { doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where, connectFirestoreEmulator } from 'firebase/firestore';
 import { db } from './config';
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { generateWaitlistEmail } from './emailTemplateService';
 
-// Enhanced waitlist data interface
-interface WaitlistData {
+export interface WaitlistData {
   email: string;
   role: string;
+  aiConcern: string;
   whyAccess: string;
-  organization?: string;
-  aiConcern?: string;
-  deploymentUrgency?: string;
-  socialProfile?: string;
+  organization: string;
+  deploymentUrgency: string;
+  socialProfile: string;
   onboardingCall: boolean;
-  currentAiTools?: string;
-  biggestAiFailure?: string;
-  additionalConcerns?: string;
+  currentAiTools: string;
+  biggestAiFailure: string;
+  additionalConcerns: string;
 }
 
 // Test Firestore connection
@@ -74,7 +74,13 @@ export const addToWaitlistRobust = async (waitlistData: WaitlistData): Promise<{
     
     console.log('📊 Lead scoring complete:', { leadScore, priority });
     
-    // Add comprehensive waitlist entry
+    // Generate submission ID
+    const submissionId = generateSubmissionId();
+    
+    // Generate email template for Firebase Trigger Email Extension
+    const emailTemplate = generateWaitlistEmail(waitlistData, submissionId, priority, leadScore);
+    
+    // Add comprehensive waitlist entry with email template fields
     const waitlistEntry = {
       ...waitlistData,
       timestamp: new Date().toISOString(),
@@ -84,13 +90,21 @@ export const addToWaitlistRobust = async (waitlistData: WaitlistData): Promise<{
       source: 'website-form',
       ipAddress: 'unknown', // Could be enhanced with IP detection
       userAgent: navigator.userAgent || 'unknown',
-      submissionId: generateSubmissionId()
+      submissionId,
+      // Email template fields for Firebase Trigger Email Extension
+      to: emailTemplate.to,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+      from: emailTemplate.from,
+      replyTo: emailTemplate.replyTo
     };
     
-    console.log('💾 Saving to Firestore...');
+    console.log('💾 Saving to Firestore with email template...');
     const docRef = await addDoc(waitlistRef, waitlistEntry);
     
     console.log('✅ Waitlist submission successful! Document ID:', docRef.id);
+    console.log('📧 Email template included for automatic sending');
     
     // Verify the document was actually saved
     const savedDoc = await getDoc(docRef);
