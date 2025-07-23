@@ -1,18 +1,14 @@
 /**
- * Trust Attestations Backend Hook
+ * Trust Attestations Hook
  * 
  * React hook for managing trust attestations state and backend integration.
- * Provides state management for attestations and metrics with real API integration.
- * Enhanced with robust error handling and fallback mechanisms.
+ * Provides state management for attestations, metrics, and operations.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  trustAttestationsBackendService,
-  TrustAttestation,
-  AttestationMetrics,
-  AttestationFilters
-} from '../services/trustAttestationsBackendService';
+import { useAuth } from '../context/AuthContext';
+import { trustAttestationsBackendService } from '../services/trustAttestationsBackendService';
+import { TrustAttestation, CreateAttestationRequest, AttestationsMetrics } from '../services/TrustAttestationsStorageService';
 import { observerIntegrationService } from '../services/observerIntegrationService';
 import { notificationService } from '../services/notificationService';
 
@@ -90,6 +86,8 @@ interface UseTrustAttestationsActions {
 export interface UseTrustAttestationsReturn extends UseTrustAttestationsState, UseTrustAttestationsActions {}
 
 export const useTrustAttestations = (): UseTrustAttestationsReturn => {
+  const { user } = useAuth();
+  
   // State
   const [attestations, setAttestations] = useState<TrustAttestation[]>([]);
   const [attestationsLoading, setAttestationsLoading] = useState(false);
@@ -100,6 +98,15 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   const [metricsError, setMetricsError] = useState<string | null>(null);
   
   const [creatingAttestation, setCreatingAttestation] = useState(false);
+
+  // Initialize service with user authentication
+  useEffect(() => {
+    if (user?.uid) {
+      trustAttestationsBackendService.initialize(user.uid).catch(error => {
+        console.error('Failed to initialize Trust Attestations service:', error);
+      });
+    }
+  }, [user?.uid]);
   const [verifyingAttestation, setVerifyingAttestation] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
 

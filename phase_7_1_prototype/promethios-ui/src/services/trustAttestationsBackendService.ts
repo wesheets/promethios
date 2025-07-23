@@ -1,185 +1,138 @@
 /**
  * Trust Attestations Backend Service
- * 
- * Provides API integration for managing trust attestations.
- * Now connected to real backend API endpoints.
+ * Handles trust attestations using unified storage with API fallback
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+import { API_BASE_URL } from '../config/api';
+import { 
+  trustAttestationsStorageService, 
+  TrustAttestation, 
+  CreateAttestationRequest,
+  AttestationsMetrics 
+} from './TrustAttestationsStorageService';
 
-export interface TrustAttestation {
-  attestation_id: string;
-  attestation_type: 'identity' | 'capability' | 'compliance' | 'integrity' | 'behavior';
-  subject_instance_id: string;
-  subject_name: string;
-  attester_instance_id: string;
-  attester_name: string;
-  attestation_data: Record<string, any>;
-  created_at: string;
-  expires_at?: string;
-  status: 'active' | 'revoked' | 'expired';
-  signature: string;
-  verification_history: VerificationRecord[];
-  metadata: Record<string, any>;
-  confidence_score: number;
-  trust_impact: number;
-}
-
-export interface VerificationRecord {
-  timestamp: string;
-  verification_status: 'valid' | 'invalid' | 'expired' | 'revoked';
+export interface VerifyAttestationRequest {
   verifier_instance_id: string;
+  verification_method?: string;
 }
 
-export interface AttestationMetrics {
-  total_attestations: number;
-  active_attestations: number;
-  expired_attestations: number;
-  revoked_attestations: number;
-  attestations_by_type: Record<string, number>;
-  average_confidence_score: number;
-  verification_success_rate: number;
-  recent_attestations: number;
-}
-
-export interface AttestationFilters {
-  type?: string;
-  status?: string;
-  subject?: string;
-  attester?: string;
-  limit?: number;
+export interface VerifyAttestationResponse {
+  verification_status: 'verified' | 'failed';
+  verification_timestamp: string;
+  verification_details?: any;
 }
 
 class TrustAttestationsBackendService {
   private baseUrl: string;
+  private useUnifiedStorage: boolean = true;
 
   constructor() {
-    this.baseUrl = API_BASE_URL;
+    this.baseUrl = `${API_BASE_URL}/api/attestations`;
   }
 
   /**
-   * Get all attestations with optional filtering
+   * Initialize the service with user authentication
    */
-  async getAttestations(filters: AttestationFilters = {}): Promise<{
-    attestations: TrustAttestation[];
-    total: number;
-    filtered: number;
-  }> {
+  async initialize(userId: string): Promise<void> {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.type) queryParams.append('type', filters.type);
-      if (filters.status) queryParams.append('status', filters.status);
-      if (filters.subject) queryParams.append('subject', filters.subject);
-      if (filters.attester) queryParams.append('attester', filters.attester);
-      if (filters.limit) queryParams.append('limit', filters.limit.toString());
-
-      const url = `${this.baseUrl}/api/attestations?${queryParams.toString()}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+      trustAttestationsStorageService.setUserId(userId);
+      console.log('Trust Attestations service initialized with unified storage');
     } catch (error) {
-      console.error('Error fetching attestations:', error);
-      throw error;
+      console.error('Error initializing Trust Attestations service:', error);
+      this.useUnifiedStorage = false;
     }
   }
 
   /**
-   * Create a new attestation
+   * Create a new trust attestation
    */
-  async createAttestation(attestationData: {
-    attestation_type: string;
-    subject_instance_id: string;
-    subject_name: string;
-    attester_instance_id: string;
-    attester_name: string;
-    attestation_data?: Record<string, any>;
-    expires_at?: string;
-    metadata?: Record<string, any>;
-  }): Promise<TrustAttestation> {
+  async createAttestation(request: CreateAttestationRequest): Promise<TrustAttestation> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(attestationData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (this.useUnifiedStorage) {
+        // Use unified storage (primary method)
+        return await trustAttestationsStorageService.createAttestation(request);
+      } else {
+        // Fallback to API
+        return await this.createAttestationViaAPI(request);
       }
-      
-      return await response.json();
     } catch (error) {
       console.error('Error creating attestation:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a specific attestation by ID
-   */
-  async getAttestation(attestationId: string): Promise<TrustAttestation> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Try API fallback if unified storage fails
+      if (this.useUnifiedStorage) {
+        console.log('Falling back to API for attestation creation');
+        return await this.createAttestationViaAPI(request);
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching attestation:', error);
       throw error;
     }
   }
 
   /**
-   * Update an attestation (status and metadata only)
+   * Get all trust attestations
    */
-  async updateAttestation(attestationId: string, updates: {
-    status?: string;
-    metadata?: Record<string, any>;
-  }): Promise<TrustAttestation> {
+  async getAttestations(): Promise<TrustAttestation[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (this.useUnifiedStorage) {
+        // Use unified storage (primary method)
+        return await trustAttestationsStorageService.getAttestations();
+      } else {
+        // Fallback to API
+        return await this.getAttestationsViaAPI();
       }
-      
-      return await response.json();
     } catch (error) {
-      console.error('Error updating attestation:', error);
+      console.error('Error getting attestations:', error);
+      // Try API fallback if unified storage fails
+      if (this.useUnifiedStorage) {
+        console.log('Falling back to API for attestations retrieval');
+        return await this.getAttestationsViaAPI();
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Get a specific trust attestation
+   */
+  async getAttestation(attestationId: string): Promise<TrustAttestation | null> {
+    try {
+      if (this.useUnifiedStorage) {
+        return await trustAttestationsStorageService.getAttestation(attestationId);
+      } else {
+        return await this.getAttestationViaAPI(attestationId);
+      }
+    } catch (error) {
+      console.error(`Error getting attestation ${attestationId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Update a trust attestation
+   */
+  async updateAttestation(attestationId: string, updates: Partial<TrustAttestation>): Promise<TrustAttestation> {
+    try {
+      if (this.useUnifiedStorage) {
+        return await trustAttestationsStorageService.updateAttestation(attestationId, updates);
+      } else {
+        return await this.updateAttestationViaAPI(attestationId, updates);
+      }
+    } catch (error) {
+      console.error(`Error updating attestation ${attestationId}:`, error);
       throw error;
     }
   }
 
   /**
-   * Delete an attestation
+   * Delete a trust attestation
    */
   async deleteAttestation(attestationId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (this.useUnifiedStorage) {
+        await trustAttestationsStorageService.deleteAttestation(attestationId);
+      } else {
+        await this.deleteAttestationViaAPI(attestationId);
       }
     } catch (error) {
-      console.error('Error deleting attestation:', error);
+      console.error(`Error deleting attestation ${attestationId}:`, error);
       throw error;
     }
   }
@@ -187,112 +140,185 @@ class TrustAttestationsBackendService {
   /**
    * Verify an attestation
    */
-  async verifyAttestation(attestationId: string, verifierInstanceId: string): Promise<{
-    attestation_id: string;
-    verification_status: string;
-    verification_timestamp: string;
-    verifier_instance_id: string;
-  }> {
+  async verifyAttestation(attestationId: string, request: VerifyAttestationRequest): Promise<VerifyAttestationResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          attestation_id: attestationId,
-          verifier_instance_id: verifierInstanceId,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (this.useUnifiedStorage) {
+        return await trustAttestationsStorageService.verifyAttestation(attestationId, request.verifier_instance_id);
+      } else {
+        return await this.verifyAttestationViaAPI(attestationId, request);
       }
-      
-      return await response.json();
     } catch (error) {
-      console.error('Error verifying attestation:', error);
+      console.error(`Error verifying attestation ${attestationId}:`, error);
       throw error;
     }
   }
 
   /**
-   * Get attestation metrics
+   * Get attestations by agent ID
    */
-  async getMetrics(): Promise<AttestationMetrics> {
+  async getAgentAttestations(agentId: string): Promise<TrustAttestation[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/metrics`);
-      
-      if (!response.ok) {
-        // If metrics endpoint fails, return default metrics
-        console.warn(`Metrics endpoint returned ${response.status}, using default metrics`);
-        return {
-          total_attestations: 0,
-          active_attestations: 0,
-          expired_attestations: 0,
-          revoked_attestations: 0,
-          attestations_by_type: {},
-          average_confidence_score: 0,
-          verification_success_rate: 0,
-          recent_attestations: 0
-        };
+      if (this.useUnifiedStorage) {
+        return await trustAttestationsStorageService.getAttestationsByAgent(agentId);
+      } else {
+        return await this.getAgentAttestationsViaAPI(agentId);
       }
-      
-      return await response.json();
     } catch (error) {
-      console.error('Error fetching metrics:', error);
-      // Return default metrics instead of throwing
+      console.error(`Error getting attestations for agent ${agentId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get attestations metrics
+   */
+  async getMetrics(): Promise<AttestationsMetrics> {
+    try {
+      if (this.useUnifiedStorage) {
+        return await trustAttestationsStorageService.getMetrics();
+      } else {
+        return await this.getMetricsViaAPI();
+      }
+    } catch (error) {
+      console.error('Error getting attestations metrics:', error);
+      // Return default metrics on error
       return {
         total_attestations: 0,
         active_attestations: 0,
         expired_attestations: 0,
         revoked_attestations: 0,
-        attestations_by_type: {},
-        average_confidence_score: 0,
-        verification_success_rate: 0,
-        recent_attestations: 0
+        average_confidence: 0,
+        attestation_types: {},
+        verification_success_rate: 0
       };
     }
   }
 
   /**
-   * Get attestations for a specific agent
+   * Health check for the service
    */
-  async getAgentAttestations(agentId: string): Promise<{
-    agent_id: string;
-    attestations: TrustAttestation[];
-    total: number;
-  }> {
+  async healthCheck(): Promise<{ status: string; storage_type: string; user_authenticated: boolean }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/agent/${agentId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+      return {
+        status: 'healthy',
+        storage_type: this.useUnifiedStorage ? 'unified_storage' : 'api_fallback',
+        user_authenticated: trustAttestationsStorageService['currentUserId'] !== null
+      };
     } catch (error) {
-      console.error('Error fetching agent attestations:', error);
-      throw error;
+      console.error('Health check failed:', error);
+      return {
+        status: 'unhealthy',
+        storage_type: 'unknown',
+        user_authenticated: false
+      };
     }
   }
 
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/attestations/health`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error checking health:', error);
-      throw error;
+  // API Fallback Methods
+  private async createAttestationViaAPI(request: CreateAttestationRequest): Promise<TrustAttestation> {
+    const response = await fetch(`${this.baseUrl}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.json();
+  }
+
+  private async getAttestationsViaAPI(): Promise<TrustAttestation[]> {
+    const response = await fetch(`${this.baseUrl}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.attestations || [];
+  }
+
+  private async getAttestationViaAPI(attestationId: string): Promise<TrustAttestation | null> {
+    const response = await fetch(`${this.baseUrl}/${attestationId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  private async updateAttestationViaAPI(attestationId: string, updates: Partial<TrustAttestation>): Promise<TrustAttestation> {
+    const response = await fetch(`${this.baseUrl}/${attestationId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  private async deleteAttestationViaAPI(attestationId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/${attestationId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  }
+
+  private async verifyAttestationViaAPI(attestationId: string, request: VerifyAttestationRequest): Promise<VerifyAttestationResponse> {
+    const response = await fetch(`${this.baseUrl}/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        attestation_id: attestationId,
+        ...request
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  private async getAgentAttestationsViaAPI(agentId: string): Promise<TrustAttestation[]> {
+    const response = await fetch(`${this.baseUrl}/agent/${agentId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.attestations || [];
+  }
+
+  private async getMetricsViaAPI(): Promise<AttestationsMetrics> {
+    const response = await fetch(`${this.baseUrl}/metrics`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   }
 }
 

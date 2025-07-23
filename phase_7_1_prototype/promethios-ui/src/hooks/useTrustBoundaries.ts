@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import trustBoundariesBackendService, {
   TrustBoundary,
   TrustThreshold,
@@ -65,6 +66,8 @@ interface UseTrustBoundariesActions {
 export interface UseTrustBoundariesReturn extends UseTrustBoundariesState, UseTrustBoundariesActions {}
 
 export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
+  const { user } = useAuth();
+  
   // State
   const [boundaries, setBoundaries] = useState<TrustBoundary[]>([]);
   const [boundariesLoading, setBoundariesLoading] = useState(false);
@@ -73,6 +76,15 @@ export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
   const [thresholds, setThresholds] = useState<TrustThreshold[]>([]);
   const [thresholdsLoading, setThresholdsLoading] = useState(false);
   const [thresholdsError, setThresholdsError] = useState<string | null>(null);
+
+  // Initialize service with user authentication
+  useEffect(() => {
+    if (user?.uid) {
+      trustBoundariesBackendService.initialize(user.uid).catch(error => {
+        console.error('Failed to initialize Trust Boundaries service:', error);
+      });
+    }
+  }, [user?.uid]);
   
   const [metrics, setMetrics] = useState<{
     total_boundaries: number;

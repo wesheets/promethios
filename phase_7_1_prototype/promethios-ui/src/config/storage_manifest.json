@@ -164,6 +164,28 @@
     "compliance": [],
     "description": "Agent lifecycle events, creation, modification, and deletion tracking"
   },
+  "trust_boundaries": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 31536000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": ["GDPR", "SOX"],
+    "description": "Trust boundaries between agents, policies, and trust relationships"
+  },
+  "trust_attestations": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 31536000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": ["GDPR", "SOX"],
+    "description": "Trust attestations, verifications, and credibility tracking for agents"
+  },
   "cache": {
     "provider": "memory",
     "fallback": "localStorage",
