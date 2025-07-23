@@ -241,12 +241,12 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
               : h
           )
         );
-      }, 3000);
+      }, 8000); // Stay on screen for 8 seconds instead of 3
 
       // Remove from DOM
       setTimeout(() => {
         setActiveHeadlines(prev => prev.filter(h => h.id !== newHeadline.id));
-      }, 5000);
+      }, 10000); // Remove after 10 seconds instead of 5
 
     }, 800); // New headline every 800ms for flooding effect
 
@@ -272,20 +272,20 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
             href={item.headline.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block bg-red-900/90 backdrop-blur-sm border border-red-500/50 rounded-lg p-3 max-w-sm shadow-2xl hover:bg-red-800/90 transition-colors group"
+            className="block bg-red-900/90 backdrop-blur-sm border border-red-500/50 rounded-lg p-6 max-w-2xl shadow-2xl hover:bg-red-800/90 transition-colors group"
           >
-            <div className="flex items-start space-x-2">
-              <div className="flex-shrink-0 w-2 h-2 bg-red-400 rounded-full mt-2 animate-pulse"></div>
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-3 h-3 bg-red-400 rounded-full mt-3 animate-pulse"></div>
               <div className="flex-1 min-w-0">
-                <p className="text-red-100 text-sm font-semibold leading-tight line-clamp-3 group-hover:text-white">
+                <p className="text-red-100 text-xl font-semibold leading-tight line-clamp-4 group-hover:text-white">
                   {item.headline.headline}
                 </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-red-300 text-xs">{item.headline.source}</span>
-                  <span className="text-red-400 text-xs">{item.headline.date}</span>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-red-300 text-base">{item.headline.source}</span>
+                  <span className="text-red-400 text-base">{item.headline.date}</span>
                 </div>
-                <div className="flex items-center mt-1">
-                  <span className="text-red-400 text-xs">🔗 Real Article</span>
+                <div className="flex items-center mt-2">
+                  <span className="text-red-400 text-base">🔗 Real Article</span>
                 </div>
               </div>
             </div>
@@ -313,11 +313,14 @@ const NewLandingPage: React.FC = () => {
       const riskSurfaceSection = document.getElementById('risk-surface-section');
       if (riskSurfaceSection) {
         const rect = riskSurfaceSection.getBoundingClientRect();
-        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        // Trigger when Risk Surface section comes into view and keep active until end of page
+        const riskSurfaceVisible = rect.top < window.innerHeight;
+        const isVisible = riskSurfaceVisible;
         console.log('Risk Surface Section:', { 
           top: rect.top, 
           bottom: rect.bottom, 
           windowHeight: window.innerHeight, 
+          riskSurfaceVisible,
           isVisible 
         });
         setShowNewsTicker(isVisible);
@@ -1060,7 +1063,7 @@ const NewLandingPage: React.FC = () => {
         /* Animated Text Fade Out Sequence */
         .animated-text-fadeout {
           animation: fadeOutUp 1s ease-in-out forwards;
-          animation-delay: 12s;
+          animation-delay: 14s;
         }
 
         @keyframes fadeOutUp {
@@ -1077,7 +1080,7 @@ const NewLandingPage: React.FC = () => {
         /* CTA Rise Up Animation */
         .cta-rise-up {
           animation: riseUp 1s ease-out forwards;
-          animation-delay: 13s;
+          animation-delay: 15s;
           transform: translateY(250px);
         }
 
