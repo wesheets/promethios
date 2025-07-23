@@ -633,6 +633,28 @@ export class UserAgentStorageService {
       return { agentCount: 0, scorecardCount: 0, totalSize: 0 };
     }
   }
+
+  /**
+   * Get agents in the format expected by the CreateAttestationWizard
+   */
+  async getAgents(): Promise<Array<{ identity: { id: string; name: string }; id: string; name: string }>> {
+    try {
+      const agentProfiles = await this.loadUserAgents();
+      
+      // Transform AgentProfile[] to the format expected by the wizard
+      return agentProfiles.map(profile => ({
+        identity: {
+          id: profile.identity.id,
+          name: profile.identity.name
+        },
+        id: profile.identity.id,
+        name: profile.identity.name
+      }));
+    } catch (error) {
+      console.error('Error getting agents for wizard:', error);
+      return [];
+    }
+  }
 }
 
 // Singleton instance
