@@ -239,6 +239,74 @@ export class TrustBoundariesStorageService {
       return { boundaryCount: 0, activeBoundaries: 0, expiredBoundaries: 0 };
     }
   }
+
+  /**
+   * Get comprehensive metrics for trust boundaries
+   */
+  async getMetrics(): Promise<{
+    total_boundaries: number;
+    active_boundaries: number;
+    pending_boundaries: number;
+    expired_boundaries: number;
+    average_trust_level: number;
+    boundary_types: {
+      direct: number;
+      delegated: number;
+      transitive: number;
+      federated: number;
+    };
+  }> {
+    try {
+      const boundaries = await this.getBoundaries();
+      const now = new Date();
+      
+      const activeBoundaries = boundaries.filter(b => 
+        b.status === 'active' && 
+        (!b.expires_at || new Date(b.expires_at) > now)
+      );
+      
+      const pendingBoundaries = boundaries.filter(b => b.status === 'pending_deployment');
+      
+      const expiredBoundaries = boundaries.filter(b => 
+        b.expires_at && new Date(b.expires_at) <= now
+      );
+
+      const averageTrustLevel = boundaries.length > 0 
+        ? boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length 
+        : 0;
+
+      const boundaryTypes = {
+        direct: boundaries.filter(b => b.boundary_type === 'direct').length,
+        delegated: boundaries.filter(b => b.boundary_type === 'delegated').length,
+        transitive: boundaries.filter(b => b.boundary_type === 'transitive').length,
+        federated: boundaries.filter(b => b.boundary_type === 'federated').length,
+      };
+
+      return {
+        total_boundaries: boundaries.length,
+        active_boundaries: activeBoundaries.length,
+        pending_boundaries: pendingBoundaries.length,
+        expired_boundaries: expiredBoundaries.length,
+        average_trust_level: averageTrustLevel,
+        boundary_types: boundaryTypes
+      };
+    } catch (error) {
+      console.error('Error getting trust boundaries metrics:', error);
+      return {
+        total_boundaries: 0,
+        active_boundaries: 0,
+        pending_boundaries: 0,
+        expired_boundaries: 0,
+        average_trust_level: 0,
+        boundary_types: {
+          direct: 0,
+          delegated: 0,
+          transitive: 0,
+          federated: 0
+        }
+      };
+    }
+  }
 }
 
 // Singleton instance

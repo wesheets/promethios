@@ -345,6 +345,45 @@ class TrustBoundariesBackendService {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
   }
+
+  /**
+   * Get boundary metrics
+   */
+  async getBoundaryMetrics(): Promise<BoundariesMetrics> {
+    try {
+      if (this.useUnifiedStorage) {
+        return await trustBoundariesStorageService.getMetrics();
+      } else {
+        return await this.getBoundaryMetricsViaAPI();
+      }
+    } catch (error) {
+      console.error('Error getting boundary metrics:', error);
+      // Return default metrics on error
+      return {
+        total_boundaries: 0,
+        active_boundaries: 0,
+        pending_boundaries: 0,
+        expired_boundaries: 0,
+        average_trust_level: 0,
+        boundary_types: {
+          direct: 0,
+          delegated: 0,
+          transitive: 0,
+          federated: 0
+        }
+      };
+    }
+  }
+
+  private async getBoundaryMetricsViaAPI(): Promise<BoundariesMetrics> {
+    const response = await fetch(`${this.baseUrl}/metrics`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
 }
 
 export const trustBoundariesBackendService = new TrustBoundariesBackendService();

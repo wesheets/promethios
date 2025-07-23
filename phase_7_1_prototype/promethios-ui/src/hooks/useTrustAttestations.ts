@@ -359,7 +359,9 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
 
   // Filter Actions
   const filterAttestations = useCallback((filters: AttestationFilters) => {
-    let filtered = [...attestations];
+    // Defensive coding: ensure attestations is an array
+    const attestationsArray = Array.isArray(attestations) ? attestations : [];
+    let filtered = [...attestationsArray];
     
     if (filters.type && filters.type !== 'all') {
       filtered = filtered.filter(a => a.attestation_type === filters.type);
