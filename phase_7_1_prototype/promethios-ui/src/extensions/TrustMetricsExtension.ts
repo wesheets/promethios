@@ -433,6 +433,7 @@ export class TrustMetricsExtension {
       console.log('🔍 Trust Metrics - Total agents loaded:', filteredAgents.length);
       
       const trustMetrics = filteredAgents.map(agent => {
+        console.log('🚀 Processing agent:', agent.identity?.name);
         // Check if agent is actually deployed (has real deployment data)
         const isDeployed = agent.deploymentStatus === 'deployed' && 
                           agent.healthStatus && 
@@ -444,7 +445,7 @@ export class TrustMetricsExtension {
         const realPerformance = isDeployed ? agent.performanceMetrics : null;
         
         // Determine agent type (same logic as Governance Overview)
-        let agentType = 'Single Agent';
+        let agentType = 'single';
         
         // Debug logging to see agent properties
         console.log('🔍 Agent type detection for:', agent.identity?.name, {
