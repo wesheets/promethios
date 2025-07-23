@@ -6,40 +6,60 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
+  DialogActions,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Slider,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  LinearProgress,
+  Grid,
+  Alert,
+  AlertTitle,
+  Stepper,
+  Step,
+  StepLabel,
+  Avatar,
+  Divider,
+  CircularProgress
+} from '@mui/material';
+import {
   ChevronLeft, 
   ChevronRight, 
   Shield, 
-  Users, 
+  People, 
   Settings, 
   CheckCircle,
   Info,
-  Lock,
+  Security,
   Handshake,
-  Network,
-  Building
-} from 'lucide-react';
+  AccountTree,
+  Business
+} from '@mui/icons-material';
 
 interface Agent {
-  id: string;
-  name: string;
-  type: string;
+  identity?: {
+    id: string;
+    name: string;
+    description?: string;
+    status?: string;
+  };
+  id?: string;
+  name?: string;
+  type?: string;
   trust_score?: number;
   capabilities?: string[];
 }
@@ -47,7 +67,7 @@ interface Agent {
 interface CreateBoundaryWizardProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (boundaryData: any) => void;
+  onSubmit: (boundaryData: any) => Promise<void>;
   agents: Agent[];
 }
 
@@ -62,7 +82,7 @@ const WIZARD_STEPS = [
     id: 'agents',
     title: 'Choose Your Agents',
     description: 'Select which agents will collaborate',
-    icon: Users
+    icon: People
   },
   {
     id: 'trust-level',
@@ -74,7 +94,7 @@ const WIZARD_STEPS = [
     id: 'boundary-type',
     title: 'Select Boundary Type',
     description: 'Choose the right architecture',
-    icon: Network
+    icon: AccountTree
   },
   {
     id: 'policies',
@@ -98,7 +118,7 @@ const BOUNDARY_TYPES = [
     security: 'High',
     complexity: 'Low',
     useCase: 'Simple automation, predictive analysis',
-    color: 'bg-green-100 border-green-300 text-green-800'
+    color: '#10b981'
   },
   {
     id: 'delegated',
@@ -107,7 +127,7 @@ const BOUNDARY_TYPES = [
     security: 'Medium',
     complexity: 'Medium',
     useCase: 'Collaboration, data sharing',
-    color: 'bg-blue-100 border-blue-300 text-blue-800'
+    color: '#3b82f6'
   },
   {
     id: 'transitive',
@@ -116,7 +136,7 @@ const BOUNDARY_TYPES = [
     security: 'Low',
     complexity: 'Medium',
     useCase: 'Value chain, supply chain',
-    color: 'bg-orange-100 border-orange-300 text-orange-800'
+    color: '#f59e0b'
   },
   {
     id: 'federated',
@@ -125,7 +145,7 @@ const BOUNDARY_TYPES = [
     security: 'Medium',
     complexity: 'High',
     useCase: 'Cross-domain AI, industry consortium',
-    color: 'bg-purple-100 border-purple-300 text-purple-800'
+    color: '#8b5cf6'
   }
 ];
 
@@ -172,9 +192,14 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
   open,
   onClose,
   onSubmit,
-  agents
+  agents: propAgents
 }) => {
+  const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     sourceAgent: '',
     targetAgent: '',
@@ -188,6 +213,46 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
   const currentStepData = WIZARD_STEPS[currentStep];
   const progress = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
 
+  // Load agents when wizard opens
+  useEffect(() => {
+    if (open && currentUser) {
+      loadAvailableAgents();
+    }
+  }, [open, currentUser]);
+
+  const loadAvailableAgents = async () => {
+    setLoadingAgents(true);
+    try {
+      // Use the same agent loading logic as Trust Metrics
+      const userAgentStorageService = (await import('../services/UserAgentStorageService')).userAgentStorageService;
+      userAgentStorageService.setCurrentUser(currentUser!.uid);
+      const loadedAgents = await userAgentStorageService.loadUserAgents();
+      
+      console.log('Loaded agents for boundary wizard:', loadedAgents);
+      
+      // Add the multi-agent system if not present
+      const hasMultiAgent = loadedAgents.some(agent => agent.identity?.name?.includes('Multi-Agent'));
+      if (!hasMultiAgent) {
+        loadedAgents.push({
+          identity: {
+            id: 'test-multi-agent-system',
+            name: 'Test Multi-Agent System',
+            description: 'Test multi-agent system for boundary testing',
+            status: 'active'
+          }
+        });
+      }
+      
+      setAgents(loadedAgents);
+    } catch (error) {
+      console.error('Error loading agents:', error);
+      // Fallback to prop agents if available
+      setAgents(propAgents || []);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < WIZARD_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -200,9 +265,53 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     }
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    
+    try {
+      const boundaryData = {
+        source_instance_id: formData.sourceAgent,
+        target_instance_id: formData.targetAgent,
+        trust_level: formData.trustLevel,
+        boundary_type: formData.boundaryType,
+        policies: formData.policies.map(policyId => ({
+          policy_id: policyId,
+          policy_type: 'access' as const,
+          policy_config: {}
+        })),
+        description: formData.description,
+        expires_at: formData.expiresAt || undefined
+      };
+      
+      console.log('Submitting boundary data:', boundaryData);
+      
+      // Call the onSubmit function and wait for it to complete
+      await onSubmit(boundaryData);
+      
+      console.log('Boundary created successfully');
+      
+      // Close wizard and reset form only after successful creation
+      onClose();
+      
+      // Reset form
+      setFormData({
+        sourceAgent: '',
+        targetAgent: '',
+        trustLevel: 80,
+        boundaryType: 'direct',
+        description: '',
+        expiresAt: '',
+        policies: []
+      });
+      setCurrentStep(0);
+      
+    } catch (error) {
+      console.error('Error creating boundary:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create trust boundary');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canProceed = () => {
@@ -218,415 +327,510 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     }
   };
 
+  const getAgentName = (agentId: string) => {
+    const agent = agents.find(a => (a.identity?.id || a.id) === agentId);
+    return agent?.identity?.name || agent?.name || 'Unknown Agent';
+  };
+
+  const getTrustLevelInfo = (level: number) => {
+    const ranges = Object.keys(TRUST_LEVEL_DESCRIPTIONS).map(Number).sort((a, b) => a - b);
+    const range = ranges.find(r => level <= r) || 100;
+    return TRUST_LEVEL_DESCRIPTIONS[range as keyof typeof TRUST_LEVEL_DESCRIPTIONS];
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Introduction
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="mx-auto w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Network className="w-12 h-12 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Trust Boundaries Enable Safe AI Collaboration</h3>
-              <p className="text-gray-600 mb-6">
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Box sx={{ 
+                mx: 'auto', 
+                width: 96, 
+                height: 96, 
+                backgroundColor: '#1e3a8a', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                mb: 3 
+              }}>
+                <AccountTree sx={{ fontSize: 48, color: '#3b82f6' }} />
+              </Box>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Trust Boundaries Enable Safe AI Collaboration
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0', mb: 4 }}>
                 Think of trust boundaries as smart contracts for AI agents. They define how agents can safely work together while maintaining security and compliance.
-              </p>
-            </div>
+              </Typography>
+            </Box>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <h4 className="font-medium">Security</h4>
-                  <p className="text-sm text-gray-600">Automatic enforcement of security rules</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Handshake className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <h4 className="font-medium">Collaboration</h4>
-                  <p className="text-sm text-gray-600">Enable safe agent-to-agent workflows</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Building className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <h4 className="font-medium">Compliance</h4>
-                  <p className="text-sm text-gray-600">Built-in regulatory compliance</p>
-                </CardContent>
-              </Card>
-            </div>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={4}>
+                <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
+                  <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                    <Shield sx={{ fontSize: 32, color: '#10b981', mb: 2 }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                      Security
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                      Automatic enforcement of security rules
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
+                  <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                    <Handshake sx={{ fontSize: 32, color: '#3b82f6', mb: 2 }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                      Collaboration
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                      Enable safe agent-to-agent workflows
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
+                  <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                    <Business sx={{ fontSize: 32, color: '#8b5cf6', mb: 2 }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
+                      Compliance
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                      Built-in regulatory compliance
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
 
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Real-World Example</h4>
-              <p className="text-blue-800 text-sm">
-                A healthcare AI agent (trust level 95%) can share patient data with a diagnostic AI agent (trust level 90%) 
-                through a HIPAA-compliant trust boundary, ensuring secure collaboration while maintaining audit trails.
-              </p>
-            </div>
-          </div>
+            <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+              <AlertTitle sx={{ color: 'white' }}>Real-World Example</AlertTitle>
+              A healthcare AI agent (trust level 95%) can share patient data with a diagnostic AI agent (trust level 90%) 
+              through a HIPAA-compliant trust boundary, ensuring secure collaboration while maintaining audit trails.
+            </Alert>
+          </Box>
         );
 
       case 1: // Choose Agents
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Select Collaboration Partners</h3>
-              <p className="text-gray-600">Choose which AI agents will work together through this trust boundary.</p>
-            </div>
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Select Collaboration Partners
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                Choose which AI agents will work together through this trust boundary.
+              </Typography>
+            </Box>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="sourceAgent" className="text-base font-medium">Source Agent</Label>
-                <p className="text-sm text-gray-600 mb-3">The agent that initiates collaboration</p>
-                <Select value={formData.sourceAgent} onValueChange={(value) => setFormData({...formData, sourceAgent: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        <div className="flex items-center space-x-2">
-                          <span>{agent.name}</span>
-                          {agent.trust_score && (
-                            <Badge variant="secondary">{agent.trust_score}% trust</Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {loadingAgents ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                    Source Agent
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                    The agent that initiates collaboration
+                  </Typography>
+                  <FormControl fullWidth>
+                    <InputLabel sx={{ color: '#a0aec0' }}>Select source agent</InputLabel>
+                    <Select
+                      value={formData.sourceAgent}
+                      onChange={(e) => setFormData({...formData, sourceAgent: e.target.value})}
+                      sx={{ 
+                        color: 'white', 
+                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                        '.MuiSvgIcon-root': { color: '#a0aec0' }
+                      }}
+                    >
+                      {agents.map((agent) => (
+                        <MenuItem key={agent.identity?.id || agent.id} value={agent.identity?.id || agent.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 24, height: 24, backgroundColor: '#3b82f6' }}>
+                              {(agent.identity?.name || agent.name || 'A').charAt(0)}
+                            </Avatar>
+                            <Typography>{agent.identity?.name || agent.name}</Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-              <div>
-                <Label htmlFor="targetAgent" className="text-base font-medium">Target Agent</Label>
-                <p className="text-sm text-gray-600 mb-3">The agent that receives collaboration requests</p>
-                <Select value={formData.targetAgent} onValueChange={(value) => setFormData({...formData, targetAgent: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select target agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agents.filter(agent => agent.id !== formData.sourceAgent).map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        <div className="flex items-center space-x-2">
-                          <span>{agent.name}</span>
-                          {agent.trust_score && (
-                            <Badge variant="secondary">{agent.trust_score}% trust</Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {formData.sourceAgent && formData.targetAgent && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-green-900">Agents Selected</span>
-                  </div>
-                  <p className="text-green-800 text-sm">
-                    {agents.find(a => a.id === formData.sourceAgent)?.name} will collaborate with{' '}
-                    {agents.find(a => a.id === formData.targetAgent)?.name} through this trust boundary.
-                  </p>
-                </CardContent>
-              </Card>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                    Target Agent
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                    The agent that receives collaboration requests
+                  </Typography>
+                  <FormControl fullWidth>
+                    <InputLabel sx={{ color: '#a0aec0' }}>Select target agent</InputLabel>
+                    <Select
+                      value={formData.targetAgent}
+                      onChange={(e) => setFormData({...formData, targetAgent: e.target.value})}
+                      sx={{ 
+                        color: 'white', 
+                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                        '.MuiSvgIcon-root': { color: '#a0aec0' }
+                      }}
+                    >
+                      {agents
+                        .filter(agent => (agent.identity?.id || agent.id) !== formData.sourceAgent)
+                        .map((agent) => (
+                        <MenuItem key={agent.identity?.id || agent.id} value={agent.identity?.id || agent.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 24, height: 24, backgroundColor: '#10b981' }}>
+                              {(agent.identity?.name || agent.name || 'A').charAt(0)}
+                            </Avatar>
+                            <Typography>{agent.identity?.name || agent.name}</Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
             )}
-          </div>
+
+            {agents.length === 0 && !loadingAgents && (
+              <Alert severity="warning" sx={{ mt: 3 }}>
+                <AlertTitle>No Agents Available</AlertTitle>
+                No agents are currently deployed. Please deploy some agents first before creating trust boundaries.
+              </Alert>
+            )}
+          </Box>
         );
 
       case 2: // Trust Level
+        const trustInfo = getTrustLevelInfo(formData.trustLevel);
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Set Trust Level</h3>
-              <p className="text-gray-600">Define what level of access and permissions these agents will have.</p>
-            </div>
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Set Trust Level
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                Define how much the source agent trusts the target agent.
+              </Typography>
+            </Box>
 
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label className="text-base font-medium">Trust Level: {formData.trustLevel}%</Label>
-                  <Badge variant="outline">
-                    {TRUST_LEVEL_DESCRIPTIONS[Math.floor(formData.trustLevel / 25) * 25]?.label}
-                  </Badge>
-                </div>
+            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 4 }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold', mb: 1 }}>
+                    {formData.trustLevel}%
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                    {trustInfo.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    {trustInfo.description}
+                  </Typography>
+                </Box>
+
                 <Slider
-                  value={[formData.trustLevel]}
-                  onValueChange={(value) => setFormData({...formData, trustLevel: value[0]})}
-                  max={100}
+                  value={formData.trustLevel}
+                  onChange={(_, value) => setFormData({...formData, trustLevel: value as number})}
                   min={0}
+                  max={100}
                   step={5}
-                  className="w-full"
+                  marks={[
+                    { value: 0, label: '0%' },
+                    { value: 25, label: '25%' },
+                    { value: 50, label: '50%' },
+                    { value: 75, label: '75%' },
+                    { value: 100, label: '100%' }
+                  ]}
+                  sx={{ 
+                    color: '#3b82f6',
+                    '& .MuiSlider-markLabel': { color: '#a0aec0' }
+                  }}
                 />
-              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    {TRUST_LEVEL_DESCRIPTIONS[Math.floor(formData.trustLevel / 25) * 25]?.label}
-                  </CardTitle>
-                  <CardDescription>
-                    {TRUST_LEVEL_DESCRIPTIONS[Math.floor(formData.trustLevel / 25) * 25]?.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <h4 className="font-medium mb-2">Permissions Granted:</h4>
-                  <div className="space-y-1">
-                    {TRUST_LEVEL_DESCRIPTIONS[Math.floor(formData.trustLevel / 25) * 25]?.permissions.map((permission, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-sm">{permission}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                {trustInfo.permissions.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'white', mb: 2 }}>
+                      Permissions at this level:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {trustInfo.permissions.map((permission, index) => (
+                        <Chip 
+                          key={index} 
+                          label={permission} 
+                          size="small" 
+                          sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
 
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Real-World Analogy</h4>
-                <p className="text-blue-800 text-sm">
-                  Think of trust levels like security clearances or credit scores. Higher trust levels grant more capabilities and access to sensitive operations.
-                </p>
-              </div>
-            </div>
-          </div>
+            <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white' }}>
+              <AlertTitle sx={{ color: 'white' }}>Trust Level Guide</AlertTitle>
+              Higher trust levels grant more permissions but require stronger security guarantees. 
+              Most business applications work well with 70-85% trust levels.
+            </Alert>
+          </Box>
         );
 
       case 3: // Boundary Type
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Choose Boundary Architecture</h3>
-              <p className="text-gray-600">Select the trust boundary type that best fits your use case.</p>
-            </div>
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Select Boundary Type
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                Choose the architecture that best fits your collaboration needs.
+              </Typography>
+            </Box>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Grid container spacing={3}>
               {BOUNDARY_TYPES.map((type) => (
-                <Card 
-                  key={type.id}
-                  className={`cursor-pointer transition-all ${
-                    formData.boundaryType === type.id 
-                      ? 'ring-2 ring-blue-500 bg-blue-50' 
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => setFormData({...formData, boundaryType: type.id})}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{type.name}</CardTitle>
-                      <Badge className={type.color}>{type.security} Security</Badge>
-                    </div>
-                    <CardDescription>{type.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Complexity:</span>
-                        <span className="font-medium">{type.complexity}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Use Cases:</span>
-                        <p className="text-gray-600">{type.useCase}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Grid item xs={12} md={6} key={type.id}>
+                  <Card 
+                    sx={{ 
+                      backgroundColor: formData.boundaryType === type.id ? '#2d3748' : '#1a202c',
+                      border: formData.boundaryType === type.id ? `2px solid ${type.color}` : '1px solid #4a5568',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': { borderColor: type.color },
+                      height: '100%'
+                    }}
+                    onClick={() => setFormData({...formData, boundaryType: type.id})}
+                  >
+                    <CardHeader>
+                      <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                        {type.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        {type.description}
+                      </Typography>
+                    </CardHeader>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                        <Chip 
+                          label={`Security: ${type.security}`} 
+                          size="small" 
+                          sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                        />
+                        <Chip 
+                          label={`Complexity: ${type.complexity}`} 
+                          size="small" 
+                          sx={{ backgroundColor: '#2d3748', color: 'white' }}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        <strong>Use case:</strong> {type.useCase}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
               ))}
-            </div>
-
-            {formData.boundaryType && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-green-900">
-                      {BOUNDARY_TYPES.find(t => t.id === formData.boundaryType)?.name} Selected
-                    </span>
-                  </div>
-                  <p className="text-green-800 text-sm">
-                    {BOUNDARY_TYPES.find(t => t.id === formData.boundaryType)?.description}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            </Grid>
+          </Box>
         );
 
       case 4: // Policies
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Apply Compliance Policies</h3>
-              <p className="text-gray-600">Add industry-specific compliance and security policies.</p>
-            </div>
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Apply Compliance Policies
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                Add industry-specific compliance and security policies.
+              </Typography>
+            </Box>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Grid container spacing={3}>
               {POLICY_TEMPLATES.map((policy) => (
-                <Card 
-                  key={policy.id}
-                  className={`cursor-pointer transition-all ${
-                    formData.policies.includes(policy.id)
-                      ? 'ring-2 ring-blue-500 bg-blue-50' 
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => {
-                    const newPolicies = formData.policies.includes(policy.id)
-                      ? formData.policies.filter(p => p !== policy.id)
-                      : [...formData.policies, policy.id];
-                    setFormData({...formData, policies: newPolicies});
-                  }}
-                >
-                  <CardHeader>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{policy.icon}</span>
-                      <div>
-                        <CardTitle className="text-lg">{policy.name}</CardTitle>
-                        <CardDescription>{policy.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      {policy.requirements.map((req, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                          <span className="text-sm text-gray-600">{req}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <Grid item xs={12} md={6} key={policy.id}>
+                  <Card 
+                    sx={{ 
+                      backgroundColor: formData.policies.includes(policy.id) ? '#2d3748' : '#1a202c',
+                      border: formData.policies.includes(policy.id) ? '2px solid #3b82f6' : '1px solid #4a5568',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': { borderColor: '#3b82f6' },
+                      height: '100%'
+                    }}
+                    onClick={() => {
+                      const newPolicies = formData.policies.includes(policy.id)
+                        ? formData.policies.filter(p => p !== policy.id)
+                        : [...formData.policies, policy.id];
+                      setFormData({...formData, policies: newPolicies});
+                    }}
+                  >
+                    <CardHeader>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="h4">{policy.icon}</Typography>
+                        <Box>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {policy.name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                            {policy.description}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </CardHeader>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {policy.requirements.map((req, index) => (
+                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ width: 6, height: 6, backgroundColor: '#a0aec0', borderRadius: '50%' }} />
+                            <Typography variant="body2" sx={{ color: '#a0aec0' }}>{req}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
               ))}
-            </div>
-
-            <div>
-              <Label htmlFor="description" className="text-base font-medium">Description (Optional)</Label>
-              <p className="text-sm text-gray-600 mb-3">Add a description for this trust boundary</p>
-              <Textarea
-                id="description"
-                placeholder="Describe the purpose and scope of this trust boundary..."
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="expiresAt" className="text-base font-medium">Expiration Date (Optional)</Label>
-              <p className="text-sm text-gray-600 mb-3">Set when this trust boundary should expire</p>
-              <Input
-                id="expiresAt"
-                type="datetime-local"
-                value={formData.expiresAt}
-                onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
-              />
-            </div>
-          </div>
+            </Grid>
+          </Box>
         );
 
       case 5: // Review
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Review Your Trust Boundary</h3>
-              <p className="text-gray-600">Confirm all settings before deploying your trust boundary.</p>
-            </div>
+          <Box sx={{ py: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                Review & Deploy
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                Confirm your trust boundary configuration before deployment.
+              </Typography>
+            </Box>
 
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Agent Collaboration</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{agents.find(a => a.id === formData.sourceAgent)?.name}</p>
-                      <p className="text-sm text-gray-600">Source Agent</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-0.5 bg-gray-300" />
-                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                      <div className="w-8 h-0.5 bg-gray-300" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{agents.find(a => a.id === formData.targetAgent)?.name}</p>
-                      <p className="text-sm text-gray-600">Target Agent</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {submitError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                <AlertTitle>Error Creating Boundary</AlertTitle>
+                {submitError}
+              </Alert>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
+            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
+              <CardHeader>
+                <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  Trust Relationship
+                </Typography>
+              </CardHeader>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 3 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Avatar sx={{ width: 48, height: 48, backgroundColor: '#3b82f6', mx: 'auto', mb: 1 }}>
+                      {getAgentName(formData.sourceAgent).charAt(0)}
+                    </Avatar>
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {getAgentName(formData.sourceAgent)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                      Source Agent
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 32, height: 2, backgroundColor: '#4a5568' }} />
+                    <Box sx={{ width: 8, height: 8, backgroundColor: '#3b82f6', borderRadius: '50%' }} />
+                    <Box sx={{ width: 32, height: 2, backgroundColor: '#4a5568' }} />
+                  </Box>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Avatar sx={{ width: 48, height: 48, backgroundColor: '#10b981', mx: 'auto', mb: 1 }}>
+                      {getAgentName(formData.targetAgent).charAt(0)}
+                    </Avatar>
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {getAgentName(formData.targetAgent)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                      Target Agent
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
                   <CardHeader>
-                    <CardTitle className="text-lg">Trust Configuration</CardTitle>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      Trust Configuration
+                    </Typography>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Trust Level:</span>
-                        <Badge>{formData.trustLevel}%</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Boundary Type:</span>
-                        <Badge variant="outline">
-                          {BOUNDARY_TYPES.find(t => t.id === formData.boundaryType)?.name}
-                        </Badge>
-                      </div>
-                    </div>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography sx={{ color: '#a0aec0' }}>Trust Level:</Typography>
+                        <Chip label={`${formData.trustLevel}%`} color="primary" size="small" />
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography sx={{ color: '#a0aec0' }}>Boundary Type:</Typography>
+                        <Chip 
+                          label={BOUNDARY_TYPES.find(t => t.id === formData.boundaryType)?.name} 
+                          variant="outlined" 
+                          size="small"
+                          sx={{ color: 'white', borderColor: '#4a5568' }}
+                        />
+                      </Box>
+                    </Box>
                   </CardContent>
                 </Card>
+              </Grid>
 
-                <Card>
+              <Grid item xs={12} md={6}>
+                <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
                   <CardHeader>
-                    <CardTitle className="text-lg">Policies Applied</CardTitle>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      Policies Applied
+                    </Typography>
                   </CardHeader>
                   <CardContent>
                     {formData.policies.length > 0 ? (
-                      <div className="space-y-1">
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {formData.policies.map((policyId) => {
                           const policy = POLICY_TEMPLATES.find(p => p.id === policyId);
                           return (
-                            <div key={policyId} className="flex items-center space-x-2">
-                              <span>{policy?.icon}</span>
-                              <span className="text-sm">{policy?.name}</span>
-                            </div>
+                            <Box key={policyId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Typography variant="h6">{policy?.icon}</Typography>
+                              <Typography variant="body2" sx={{ color: 'white' }}>{policy?.name}</Typography>
+                            </Box>
                           );
                         })}
-                      </div>
+                      </Box>
                     ) : (
-                      <p className="text-sm text-gray-600">No policies selected</p>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        No policies selected
+                      </Typography>
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              </Grid>
+            </Grid>
 
-              {formData.description && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Description</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm">{formData.description}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-green-900">Ready to Deploy</span>
-                </div>
-                <p className="text-green-800 text-sm">
-                  Your trust boundary is configured and ready to enable secure collaboration between the selected agents.
-                </p>
-              </div>
-            </div>
-          </div>
+            <Alert severity="success" sx={{ mt: 3, backgroundColor: '#065f46', color: 'white' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <CheckCircle sx={{ color: '#10b981' }} />
+                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  Ready to Deploy
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#a7f3d0' }}>
+                Your trust boundary is configured and ready to enable secure collaboration between the selected agents.
+              </Typography>
+            </Alert>
+          </Box>
         );
 
       default:
@@ -635,60 +839,101 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <currentStepData.icon className="w-6 h-6 text-blue-600" />
-              <div>
-                <DialogTitle className="text-xl">{currentStepData.title}</DialogTitle>
-                <DialogDescription>{currentStepData.description}</DialogDescription>
-              </div>
-            </div>
-            <div className="flex-1" />
-            <div className="text-sm text-gray-600">
-              Step {currentStep + 1} of {WIZARD_STEPS.length}
-            </div>
-          </div>
-          <Progress value={progress} className="w-full" />
-        </DialogHeader>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="lg" 
+      fullWidth
+      PaperProps={{
+        sx: { 
+          backgroundColor: '#1a202c', 
+          color: 'white',
+          maxHeight: '90vh'
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #4a5568', pb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <currentStepData.icon sx={{ color: '#3b82f6' }} />
+          <Box>
+            <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
+              {currentStepData.title}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+              {currentStepData.description}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1 }} />
+          <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+            Step {currentStep + 1} of {WIZARD_STEPS.length}
+          </Typography>
+        </Box>
+        <LinearProgress 
+          variant="determinate" 
+          value={progress} 
+          sx={{ 
+            backgroundColor: '#4a5568',
+            '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' }
+          }} 
+        />
+      </DialogTitle>
 
-        <div className="py-6">
+      <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+        <Box sx={{ p: 3 }}>
           {renderStepContent()}
-        </div>
-
-        <div className="flex justify-between pt-6 border-t">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
-          </Button>
-
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            
-            {currentStep === WIZARD_STEPS.length - 1 ? (
-              <Button onClick={handleSubmit}>
-                Create Boundary
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleNext}
-                disabled={!canProceed()}
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            )}
-          </div>
-        </div>
+        </Box>
       </DialogContent>
+
+      <DialogActions sx={{ borderTop: '1px solid #4a5568', p: 3 }}>
+        <Button
+          variant="outlined"
+          onClick={handlePrevious}
+          disabled={currentStep === 0 || submitting}
+          startIcon={<ChevronLeft />}
+          sx={{ color: '#a0aec0', borderColor: '#4a5568' }}
+        >
+          Previous
+        </Button>
+
+        <Box sx={{ flex: 1 }} />
+
+        <Button 
+          variant="outlined" 
+          onClick={onClose}
+          disabled={submitting}
+          sx={{ color: '#a0aec0', borderColor: '#4a5568', mr: 2 }}
+        >
+          Cancel
+        </Button>
+        
+        {currentStep === WIZARD_STEPS.length - 1 ? (
+          <Button 
+            variant="contained" 
+            onClick={handleSubmit}
+            disabled={submitting || !canProceed()}
+            sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
+          >
+            {submitting ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                Creating...
+              </Box>
+            ) : (
+              'Create Boundary'
+            )}
+          </Button>
+        ) : (
+          <Button 
+            variant="contained"
+            onClick={handleNext}
+            disabled={!canProceed() || submitting}
+            endIcon={<ChevronRight />}
+            sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
+          >
+            Next
+          </Button>
+        )}
+      </DialogActions>
     </Dialog>
   );
 };
