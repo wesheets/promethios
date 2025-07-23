@@ -54,7 +54,7 @@ class TrustAttestationsBackendService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${API_BASE_URL}/api/attestations`;
+    this.baseUrl = API_BASE_URL;
   }
 
   /**
@@ -74,7 +74,7 @@ class TrustAttestationsBackendService {
       if (filters.attester) queryParams.append('attester', filters.attester);
       if (filters.limit) queryParams.append('limit', filters.limit.toString());
 
-      const url = `${this.baseUrl}?${queryParams.toString()}`;
+      const url = `${this.baseUrl}/api/attestations?${queryParams.toString()}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -102,7 +102,7 @@ class TrustAttestationsBackendService {
     metadata?: Record<string, any>;
   }): Promise<TrustAttestation> {
     try {
-      const response = await fetch(this.baseUrl, {
+      const response = await fetch(`${this.baseUrl}/api/attestations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ class TrustAttestationsBackendService {
    */
   async getAttestation(attestationId: string): Promise<TrustAttestation> {
     try {
-      const response = await fetch(`${this.baseUrl}/${attestationId}`);
+      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -147,7 +147,7 @@ class TrustAttestationsBackendService {
     metadata?: Record<string, any>;
   }): Promise<TrustAttestation> {
     try {
-      const response = await fetch(`${this.baseUrl}/${attestationId}`, {
+      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ class TrustAttestationsBackendService {
    */
   async deleteAttestation(attestationId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/${attestationId}`, {
+      const response = await fetch(`${this.baseUrl}/api/attestations/${attestationId}`, {
         method: 'DELETE',
       });
       
@@ -194,7 +194,7 @@ class TrustAttestationsBackendService {
     verifier_instance_id: string;
   }> {
     try {
-      const response = await fetch(`${this.baseUrl}/verify`, {
+      const response = await fetch(`${this.baseUrl}/api/attestations/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -221,16 +221,37 @@ class TrustAttestationsBackendService {
    */
   async getMetrics(): Promise<AttestationMetrics> {
     try {
-      const response = await fetch(`${this.baseUrl}/metrics`);
+      const response = await fetch(`${this.baseUrl}/api/attestations/metrics`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // If metrics endpoint fails, return default metrics
+        console.warn(`Metrics endpoint returned ${response.status}, using default metrics`);
+        return {
+          total_attestations: 0,
+          active_attestations: 0,
+          expired_attestations: 0,
+          revoked_attestations: 0,
+          attestations_by_type: {},
+          average_confidence_score: 0,
+          verification_success_rate: 0,
+          recent_attestations: 0
+        };
       }
       
       return await response.json();
     } catch (error) {
       console.error('Error fetching metrics:', error);
-      throw error;
+      // Return default metrics instead of throwing
+      return {
+        total_attestations: 0,
+        active_attestations: 0,
+        expired_attestations: 0,
+        revoked_attestations: 0,
+        attestations_by_type: {},
+        average_confidence_score: 0,
+        verification_success_rate: 0,
+        recent_attestations: 0
+      };
     }
   }
 
@@ -243,7 +264,7 @@ class TrustAttestationsBackendService {
     total: number;
   }> {
     try {
-      const response = await fetch(`${this.baseUrl}/agent/${agentId}`);
+      const response = await fetch(`${this.baseUrl}/api/attestations/agent/${agentId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -261,7 +282,7 @@ class TrustAttestationsBackendService {
    */
   async healthCheck(): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/health`);
+      const response = await fetch(`${this.baseUrl}/api/attestations/health`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
