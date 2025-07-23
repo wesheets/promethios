@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FirebaseError } from 'firebase/app';
 import { addToWaitlist } from '../../firebase/waitlistService';
 import { checkUserInvitation } from '../../firebase/invitationService';
+import '../../styles/animated-background.css';
 
 const LoginWaitlistPage: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -22,13 +23,16 @@ const LoginWaitlistPage: React.FC = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
   
-  // Enhanced state for waitlist form
-  const [waitlistData, setWaitlistData] = useState({
+  // Enhanced state for waitlist form with 2-step flow
+  const [currentStep, setCurrentStep] = useState(1);
+  const [step1Data, setStep1Data] = useState({
     email: '',
     role: '',
+    aiConcern: ''
+  });
+  const [step2Data, setStep2Data] = useState({
     whyAccess: '',
     organization: '',
-    aiConcern: '',
     deploymentUrgency: '',
     socialProfile: '',
     onboardingCall: false,
@@ -143,16 +147,36 @@ const LoginWaitlistPage: React.FC = () => {
     }
   };
   
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWaitlistError('');
+    
+    // Validate step 1 fields
+    if (!step1Data.email || !step1Data.role || !step1Data.aiConcern) {
+      setWaitlistError('Please fill in all required fields.');
+      return;
+    }
+    
+    // Move to step 2
+    setCurrentStep(2);
+  };
+  
+  const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setWaitlistError('');
     setIsSubmitting(true);
     
     try {
-      const result = await addToWaitlist(waitlistData, db);
+      // Combine step 1 and step 2 data
+      const completeData = {
+        ...step1Data,
+        ...step2Data
+      };
+      
+      const result = await addToWaitlist(completeData, db);
       
       if (result === 'exists') {
-        console.log('Email already in waitlist:', waitlistData.email);
+        console.log('Email already in waitlist:', step1Data.email);
       } else {
         console.log('Added to waitlist with ID:', result);
       }
@@ -166,8 +190,15 @@ const LoginWaitlistPage: React.FC = () => {
     }
   };
   
-  const updateWaitlistData = (field: string, value: string | boolean) => {
-    setWaitlistData(prev => ({
+  const updateStep1Data = (field: string, value: string) => {
+    setStep1Data(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  const updateStep2Data = (field: string, value: string | boolean) => {
+    setStep2Data(prev => ({
       ...prev,
       [field]: value
     }));
@@ -175,54 +206,211 @@ const LoginWaitlistPage: React.FC = () => {
   
   return (
     <div className={`min-h-screen w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden`}>
-      {/* Enhanced Background Ghost UI - Blurred Dashboard Glimpses */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
-        {/* Trust Dashboard */}
-        <div className="absolute top-20 left-10 w-80 h-40 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg blur-sm transform rotate-3 p-4">
-          <div className="text-white text-xs font-mono">
-            <div className="mb-2">TRUST SCORE: 85%</div>
-            <div className="w-full bg-gray-300 rounded-full h-2 mb-2">
-              <div className="bg-green-400 h-2 rounded-full w-4/5"></div>
+      {/* Enhanced Background - Animated Code Streams like Midjourney */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+        {/* Animated Code Stream 1 - Governance Engine */}
+        <div className="absolute top-0 left-0 w-full h-full code-stream-1">
+          <div className="text-green-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+            {`import { TrustScore, GovernanceLayer } from '@promethios/core';
+import { validateAgent, auditDecision } from './governance';
+
+class AIGovernanceEngine {
+  constructor(config) {
+    this.trustThreshold = config.minTrustScore || 0.85;
+    this.auditTrail = new Map();
+    this.governancePolicies = config.policies;
+  }
+
+  async validateRequest(agent, request) {
+    const trustScore = await this.calculateTrust(agent);
+    
+    if (trustScore < this.trustThreshold) {
+      this.logViolation(agent, 'TRUST_THRESHOLD_BREACH');
+      return { allowed: false, reason: 'Insufficient trust' };
+    }
+    
+    const policyCheck = await this.checkPolicies(request);
+    if (!policyCheck.compliant) {
+      this.logViolation(agent, 'POLICY_VIOLATION');
+      return { allowed: false, reason: policyCheck.violation };
+    }
+    
+    this.auditTrail.set(request.id, {
+      agent: agent.id,
+      timestamp: Date.now(),
+      trustScore,
+      decision: 'APPROVED'
+    });
+    
+    return { allowed: true, trustScore };
+  }
+
+  calculateTrust(agent) {
+    const factors = {
+      historicalAccuracy: agent.metrics.accuracy,
+      hallucinationRate: 1 - agent.metrics.hallucinations,
+      complianceScore: agent.compliance.score,
+      userFeedback: agent.feedback.average
+    };
+    
+    return Object.values(factors).reduce((sum, val) => sum + val, 0) / 4;
+  }
+}`}
+          </div>
+        </div>
+        
+        {/* Animated Code Stream 2 - Trust Network */}
+        <div className="absolute top-20 right-0 w-full h-full code-stream-2">
+          <div className="text-blue-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+            {`// Multi-Agent Trust Network
+const trustNetwork = new Map();
+
+function establishTrustBoundary(agents) {
+  const boundary = {
+    id: generateBoundaryId(),
+    agents: agents.map(a => a.id),
+    trustLevel: 'HIGH',
+    policies: ['NO_HALLUCINATION', 'AUDIT_ALL', 'HUMAN_OVERSIGHT'],
+    created: new Date().toISOString()
+  };
+  
+  agents.forEach(agent => {
+    agent.trustBoundary = boundary.id;
+    agent.governanceLevel = 'STRICT';
+    
+    // Install governance hooks
+    agent.beforeDecision = async (context) => {
+      return await validateDecision(context, boundary);
+    };
+    
+    agent.afterDecision = async (decision, context) => {
+      await auditDecision(decision, context, boundary);
+      await updateTrustMetrics(agent, decision);
+    };
+  });
+  
+  return boundary;
+}
+
+async function validateDecision(context, boundary) {
+  const riskAssessment = await assessRisk(context);
+  
+  if (riskAssessment.level === 'HIGH') {
+    await requestHumanOversight(context);
+    return { proceed: false, reason: 'Human review required' };
+  }
+  
+  return { proceed: true };
+}`}
+          </div>
+        </div>
+        
+        {/* Animated Code Stream 3 - Dashboard */}
+        <div className="absolute bottom-0 left-1/4 w-full h-full code-stream-3">
+          <div className="text-purple-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+            {`// Real-time Governance Dashboard
+class GovernanceDashboard {
+  constructor() {
+    this.metrics = {
+      totalAgents: 0,
+      trustScore: 0,
+      violations: 0,
+      decisions: 0
+    };
+    
+    this.alerts = [];
+    this.auditLog = [];
+  }
+  
+  updateMetrics(agentId, decision) {
+    this.metrics.decisions++;
+    
+    if (decision.violation) {
+      this.metrics.violations++;
+      this.alerts.push({
+        type: 'VIOLATION',
+        agent: agentId,
+        details: decision.violation,
+        timestamp: Date.now()
+      });
+    }
+    
+    this.auditLog.push({
+      agent: agentId,
+      action: decision.action,
+      trustScore: decision.trustScore,
+      timestamp: Date.now()
+    });
+    
+    this.calculateOverallTrust();
+  }
+  
+  calculateOverallTrust() {
+    const recentDecisions = this.auditLog.slice(-100);
+    const avgTrust = recentDecisions.reduce((sum, log) => 
+      sum + log.trustScore, 0) / recentDecisions.length;
+    
+    this.metrics.trustScore = avgTrust;
+    
+    if (avgTrust < 0.7) {
+      this.triggerAlert('LOW_TRUST_NETWORK');
+    }
+  }
+}`}
+          </div>
+        </div>
+        
+        {/* Matrix-style falling code columns */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={`matrix-${i}`}
+            className="absolute matrix-code text-xs"
+            style={{
+              left: `${10 + i * 12}%`,
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: `${8 + Math.random() * 4}s`
+            }}
+          >
+            {['validate()', 'audit()', 'trust++', 'govern()', 'secure()', 'monitor()', 'alert!', 'approve'][i]}
+          </div>
+        ))}
+        
+        {/* Floating Code Particles with enhanced effects */}
+        <div className="absolute inset-0">
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={`particle-${i}`}
+              className={`absolute text-xs font-mono floating-code ${i % 3 === 0 ? 'code-pulse' : ''} ${i % 5 === 0 ? 'glitch-effect' : ''}`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                color: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'][Math.floor(Math.random() * 4)]
+              }}
+            >
+              {['trustScore', 'validate()', 'audit()', 'govern()', 'secure()', 'monitor()'][Math.floor(Math.random() * 6)]}
             </div>
-            <div className="text-xs">Hallucination Rate: 2.3%</div>
-            <div className="text-xs">Compliance: GDPR ✓ HIPAA ✓</div>
-          </div>
+          ))}
         </div>
         
-        {/* Alert Dashboard */}
-        <div className="absolute top-40 right-20 w-60 h-32 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg blur-sm transform -rotate-2 p-3">
-          <div className="text-white text-xs font-mono">
-            <div className="mb-1">🚨 ALERT: Hallucination Detected</div>
-            <div className="text-xs">Agent: customer-support-v2</div>
-            <div className="text-xs">Confidence: 23%</div>
-            <div className="text-xs">Action: Response Blocked</div>
+        {/* Terminal-style scrolling text */}
+        <div className="absolute bottom-10 left-10 w-80 h-32 overflow-hidden opacity-10">
+          <div className="terminal-scroll text-green-300 text-xs font-mono">
+            <div>$ promethios --init governance</div>
+            <div>✓ Trust boundary established</div>
+            <div>✓ Audit trail initialized</div>
+            <div>✓ Policy engine loaded</div>
+            <div>✓ Multi-agent coordination active</div>
+            <div>$ monitor --trust-score</div>
+            <div>Current trust: 87.3%</div>
+            <div>Violations: 0</div>
+            <div>Status: SECURE</div>
+            <div>$ validate --agent-request</div>
+            <div>Checking compliance...</div>
+            <div>✓ Request approved</div>
+            <div className="cursor-blink">$ </div>
           </div>
         </div>
-        
-        {/* Governance Logs */}
-        <div className="absolute bottom-40 left-20 w-72 h-36 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg blur-sm transform rotate-1 p-3">
-          <div className="text-white text-xs font-mono">
-            <div className="mb-1">GOVERNANCE LOG</div>
-            <div className="text-xs">14:23 - Policy violation blocked</div>
-            <div className="text-xs">14:19 - Trust score updated</div>
-            <div className="text-xs">14:15 - Audit trail logged</div>
-            <div className="text-xs">14:12 - Compliance check passed</div>
-          </div>
-        </div>
-        
-        {/* Multi-Agent Coordination */}
-        <div className="absolute bottom-20 right-10 w-64 h-28 bg-gradient-to-br from-cyan-600 to-teal-600 rounded-lg blur-sm transform -rotate-3 p-3">
-          <div className="text-white text-xs font-mono">
-            <div className="mb-1">AGENT COORDINATION</div>
-            <div className="text-xs">Active Agents: 12</div>
-            <div className="text-xs">Sync Status: ✓ Healthy</div>
-            <div className="text-xs">Trust Network: Stable</div>
-          </div>
-        </div>
-        
-        {/* Additional scattered elements */}
-        <div className="absolute top-60 left-1/2 w-48 h-24 bg-gray-600 rounded-lg blur-md transform rotate-12 opacity-30"></div>
-        <div className="absolute bottom-60 right-1/3 w-56 h-20 bg-yellow-600 rounded-lg blur-md transform -rotate-6 opacity-20"></div>
       </div>
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -445,246 +633,238 @@ const LoginWaitlistPage: React.FC = () => {
               </motion.div>
             )
           ) : !submitted ? (
-            // Enhanced Waitlist Form
-            <form className="space-y-6" onSubmit={handleWaitlistSubmit}>
-              {waitlistError && (
-                <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800 dark:text-red-200">{waitlistError}</h3>
+            // 2-Step Waitlist Form
+            currentStep === 1 ? (
+              // Step 1: Velvet Rope Form (3 fields only)
+              <form className="space-y-6" onSubmit={handleStep1Submit}>
+                {waitlistError && (
+                  <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">{waitlistError}</h3>
+                      </div>
                     </div>
                   </div>
+                )}
+                
+                <div>
+                  <label htmlFor="waitlist-email" className="block text-sm font-medium">
+                    Email address
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="waitlist-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={step1Data.email}
+                      onChange={(e) => updateStep1Data('email', e.target.value)}
+                      className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                    />
+                  </div>
                 </div>
-              )}
-              
-              <div>
-                <label htmlFor="waitlist-email" className="block text-sm font-medium">
-                  Email address
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="waitlist-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={waitlistData.email}
-                    onChange={(e) => updateWaitlistData('email', e.target.value)}
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium">
-                  I am a...
-                </label>
-                <div className="mt-1">
-                  <select
-                    id="role"
-                    name="role"
-                    required
-                    value={waitlistData.role}
-                    onChange={(e) => updateWaitlistData('role', e.target.value)}
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium">
+                    I am a...
+                  </label>
+                  <div className="mt-1">
+                    <select
+                      id="role"
+                      name="role"
+                      required
+                      value={step1Data.role}
+                      onChange={(e) => updateStep1Data('role', e.target.value)}
+                      className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                    >
+                      <option value="">Select your role</option>
+                      <option value="enterprise-cto">Enterprise CTO</option>
+                      <option value="security-engineer">Security Engineer</option>
+                      <option value="ai-researcher">AI Researcher</option>
+                      <option value="product-founder">Product Founder</option>
+                      <option value="vc-investor">VC / Investor</option>
+                      <option value="parent-concerned">Parent (concerned)</option>
+                      <option value="journalist">Journalist</option>
+                      <option value="student">Student</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="ai-concern" className="block text-sm font-medium">
+                    What are you most concerned about with AI today?
+                  </label>
+                  <div className="mt-1">
+                    <select
+                      id="ai-concern"
+                      name="aiConcern"
+                      required
+                      value={step1Data.aiConcern}
+                      onChange={(e) => updateStep1Data('aiConcern', e.target.value)}
+                      className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                    >
+                      <option value="">Select your primary concern</option>
+                      <option value="hallucinations">Hallucinations</option>
+                      <option value="security-breaches">Security breaches</option>
+                      <option value="misinformation">Misinformation</option>
+                      <option value="compliance">Compliance (GDPR, HIPAA)</option>
+                      <option value="kids-unsupervised">My kids using AI unsupervised</option>
+                      <option value="black-box-decisions">Black-box decisions</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                   >
-                    <option value="">Select your role</option>
-                    <option value="enterprise-cto">Enterprise CTO</option>
-                    <option value="security-engineer">Security Engineer</option>
-                    <option value="ai-researcher">AI Researcher</option>
-                    <option value="product-founder">Product Founder</option>
-                    <option value="vc-investor">VC / Investor</option>
-                    <option value="parent-concerned">Parent (concerned)</option>
-                    <option value="journalist">Journalist</option>
-                    <option value="student">Student</option>
-                    <option value="other">Other</option>
-                  </select>
+                    Request Invite →
+                  </button>
                 </div>
-              </div>
-
+                
+                {/* Enhanced Scarcity Warning */}
+                <div className="text-center text-xs text-red-400 mt-3 p-3 border border-red-400/30 rounded-lg bg-red-900/10">
+                  <div className="flex items-center justify-center mb-2">
+                    <span className="text-red-500 mr-2">🛑</span>
+                    <span className="font-semibold">LIMITED ACCESS</span>
+                  </div>
+                  <div className="mb-1">Only <span className="font-bold text-red-300">47 invitations</span> remaining this quarter.</div>
+                  <div className="text-xs text-gray-400">We prioritize those shaping AI's future—or trying to protect it.</div>
+                </div>
+              </form>
+            ) : (
+              // Step 2: Context Gathering (Optional Enhancement)
               <div>
-                <label htmlFor="why-access" className="block text-sm font-medium">
-                  Why do you want access? <span className="text-red-500">*</span>
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    id="why-access"
-                    name="whyAccess"
-                    rows={3}
-                    required
-                    value={waitlistData.whyAccess}
-                    onChange={(e) => updateWaitlistData('whyAccess', e.target.value)}
-                    placeholder="What problem are you trying to solve with Promethios?"
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
+                <div className="mb-6 text-center">
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 mb-3">
+                    Step 2 of 2
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Complete Your Application</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    To help us prioritize access and match you with the right governance approach, we'd love a bit more context.
+                  </p>
                 </div>
-              </div>
+                
+                <form className="space-y-6" onSubmit={handleStep2Submit}>
+                  {waitlistError && (
+                    <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 mb-4">
+                      <div className="flex">
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800 dark:text-red-200">{waitlistError}</h3>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label htmlFor="why-access" className="block text-sm font-medium">
+                      Why do you want access?
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="why-access"
+                        name="whyAccess"
+                        rows={3}
+                        value={step2Data.whyAccess}
+                        onChange={(e) => updateStep2Data('whyAccess', e.target.value)}
+                        placeholder="What problem are you trying to solve with Promethios?"
+                        className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label htmlFor="organization" className="block text-sm font-medium">
-                  Organization or Affiliation
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="organization"
-                    name="organization"
-                    type="text"
-                    value={waitlistData.organization}
-                    onChange={(e) => updateWaitlistData('organization', e.target.value)}
-                    placeholder="Company, university, lab, or independent"
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
-              </div>
+                  <div>
+                    <label htmlFor="organization" className="block text-sm font-medium">
+                      Organization or Affiliation
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="organization"
+                        name="organization"
+                        type="text"
+                        value={step2Data.organization}
+                        onChange={(e) => updateStep2Data('organization', e.target.value)}
+                        placeholder="Company, university, lab, or independent"
+                        className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label htmlFor="ai-concern" className="block text-sm font-medium">
-                  What are you most concerned about with AI today?
-                </label>
-                <div className="mt-1">
-                  <select
-                    id="ai-concern"
-                    name="aiConcern"
-                    value={waitlistData.aiConcern}
-                    onChange={(e) => updateWaitlistData('aiConcern', e.target.value)}
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  >
-                    <option value="">Select your primary concern</option>
-                    <option value="hallucinations">Hallucinations</option>
-                    <option value="security-breaches">Security breaches</option>
-                    <option value="misinformation">Misinformation</option>
-                    <option value="compliance">Compliance (GDPR, HIPAA)</option>
-                    <option value="kids-unsupervised">My kids using AI unsupervised</option>
-                    <option value="black-box-decisions">Black-box decisions</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
+                  <div>
+                    <label htmlFor="deployment-urgency" className="block text-sm font-medium">
+                      How soon would you deploy this?
+                    </label>
+                    <div className="mt-1">
+                      <select
+                        id="deployment-urgency"
+                        name="deploymentUrgency"
+                        value={step2Data.deploymentUrgency}
+                        onChange={(e) => updateStep2Data('deploymentUrgency', e.target.value)}
+                        className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                      >
+                        <option value="">Select timeline</option>
+                        <option value="right-away">Right away (critical need)</option>
+                        <option value="within-30-days">Within 30 days</option>
+                        <option value="just-exploring">Just exploring</option>
+                        <option value="not-sure">Not sure</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div>
-                <label htmlFor="deployment-urgency" className="block text-sm font-medium">
-                  How soon would you deploy this in your org/team if invited?
-                </label>
-                <div className="mt-1">
-                  <select
-                    id="deployment-urgency"
-                    name="deploymentUrgency"
-                    value={waitlistData.deploymentUrgency}
-                    onChange={(e) => updateWaitlistData('deploymentUrgency', e.target.value)}
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  >
-                    <option value="">Select deployment timeline</option>
-                    <option value="right-away">Right away (critical need)</option>
-                    <option value="within-30-days">Within 30 days</option>
-                    <option value="just-exploring">Just exploring</option>
-                    <option value="not-sure">Not sure</option>
-                  </select>
-                </div>
-              </div>
+                  <div>
+                    <label htmlFor="social-profile" className="block text-sm font-medium">
+                      Twitter / LinkedIn / Website
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="social-profile"
+                        name="socialProfile"
+                        type="url"
+                        value={step2Data.socialProfile}
+                        onChange={(e) => updateStep2Data('socialProfile', e.target.value)}
+                        placeholder="Where can we find your thoughts?"
+                        className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label htmlFor="social-profile" className="block text-sm font-medium">
-                  Twitter / LinkedIn / Website
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="social-profile"
-                    name="socialProfile"
-                    type="url"
-                    value={waitlistData.socialProfile}
-                    onChange={(e) => updateWaitlistData('socialProfile', e.target.value)}
-                    placeholder="Where can we find your thoughts?"
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
-              </div>
+                  <div className="flex items-center">
+                    <input
+                      id="onboarding-call"
+                      name="onboardingCall"
+                      type="checkbox"
+                      checked={step2Data.onboardingCall}
+                      onChange={(e) => updateStep2Data('onboardingCall', e.target.checked)}
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="onboarding-call" className="ml-2 block text-sm">
+                      Would you be open to a brief onboarding call if selected?
+                    </label>
+                  </div>
 
-              <div>
-                <label htmlFor="current-ai-tools" className="block text-sm font-medium">
-                  Current AI tools you use
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="current-ai-tools"
-                    name="currentAiTools"
-                    type="text"
-                    value={waitlistData.currentAiTools}
-                    onChange={(e) => updateWaitlistData('currentAiTools', e.target.value)}
-                    placeholder="ChatGPT, Claude, Copilot, etc."
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Complete Application'}
+                    </button>
+                  </div>
+                </form>
               </div>
-
-              <div>
-                <label htmlFor="biggest-ai-failure" className="block text-sm font-medium">
-                  Biggest AI failure you've witnessed
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    id="biggest-ai-failure"
-                    name="biggestAiFailure"
-                    rows={2}
-                    value={waitlistData.biggestAiFailure}
-                    onChange={(e) => updateWaitlistData('biggestAiFailure', e.target.value)}
-                    placeholder="Tell us about a time AI let you down..."
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="additional-concerns" className="block text-sm font-medium">
-                  Additional concerns or use cases
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    id="additional-concerns"
-                    name="additionalConcerns"
-                    rows={2}
-                    value={waitlistData.additionalConcerns}
-                    onChange={(e) => updateWaitlistData('additionalConcerns', e.target.value)}
-                    placeholder="Anything else we should know?"
-                    className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="onboarding-call"
-                  name="onboardingCall"
-                  type="checkbox"
-                  checked={waitlistData.onboardingCall}
-                  onChange={(e) => updateWaitlistData('onboardingCall', e.target.checked)}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <label htmlFor="onboarding-call" className="ml-2 block text-sm">
-                  Would you be open to a brief onboarding call if selected?
-                </label>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Request Access to Private Beta'}
-                </button>
-              </div>
-              
-              {/* Enhanced Scarcity Warning */}
-              <div className="text-center text-xs text-red-400 mt-3 p-3 border border-red-400/30 rounded-lg bg-red-900/10">
-                <div className="flex items-center justify-center mb-2">
-                  <span className="text-red-500 mr-2">🛑</span>
-                  <span className="font-semibold">LIMITED ACCESS</span>
-                </div>
-                <div className="mb-1">Only <span className="font-bold text-red-300">47 invitations</span> remaining this quarter.</div>
-                <div className="text-xs text-gray-400">We prioritize those shaping AI's future—or trying to protect it.</div>
-                <div className="text-xs text-gray-500 mt-1">This environment is not available to unverified operators.</div>
-              </div>
-            </form>
+            )
           ) : (
             // Waitlist Confirmation
             <motion.div
