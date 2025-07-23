@@ -334,7 +334,7 @@ export class TrustMetricsExtension {
 
     this.realTimeInterval = setInterval(async () => {
       try {
-        await this.checkTrustAlerts();
+        await this.checkAlerts();
       } catch (error) {
         console.error('Error in real-time trust monitoring:', error);
       }
@@ -483,7 +483,8 @@ export class TrustMetricsExtension {
     const previousMetrics = this.previousTrustScores || new Map<string, number>();
     
     for (const metric of currentMetrics) {
-      const currentScore = metric.trustScores.overall || 0;
+      // Add null-safe checks for trustScores
+      const currentScore = metric.trustScores?.overall || 0;
       const previousScore = previousMetrics.get(metric.agentId) || 0;
       
       // Detect significant trust improvement (recovery)
@@ -615,14 +616,14 @@ export class TrustMetricsExtension {
       });
 
       // Add a test multi-agent system if none were loaded from storage (same as Governance Overview)
-      const hasMultiAgent = trustMetrics.some(metric => metric.agent_type === 'multi');
+      const hasMultiAgent = trustMetrics.some(metric => metric.agentType === 'multi');
       if (!hasMultiAgent) {
         const testMultiAgentSystem = {
-          agent_id: 'test-multi-agent-system',
-          agent_name: 'Test Multi-Agent System',
-          agent_type: 'multi',
+          agentId: 'test-multi-agent-system',
+          agentName: 'Test Multi-Agent System',
+          agentType: 'multi',
           timestamp: new Date().toISOString(),
-          trust_scores: {
+          trustScores: {
             overall: null,
             competence: null,
             reliability: null,
@@ -631,20 +632,63 @@ export class TrustMetricsExtension {
             aggregate: null
           },
           confidence: null,
+          reliability: null,
           trend: {
-            direction: null,
+            direction: 'stable' as const,
             velocity: null,
-            prediction: null
+            prediction: null,
+            confidence: null
           },
-          risk_level: 'unknown',
-          risk_factors: [],
+          riskLevel: 'unknown' as const,
+          riskFactors: [],
+          riskScore: null,
           performance: {
-            response_time: null,
-            success_rate: null,
-            availability: null
+            responseTime: null,
+            errorRate: null,
+            successRate: null,
+            uptime: null
           },
-          dataSource: 'not_deployed',
-          version: '1.0'
+          governance: {
+            complianceRate: null,
+            violationCount: null,
+            lastViolation: undefined,
+            policyAdherence: null
+          },
+          behavior: {
+            consistencyScore: null,
+            adaptabilityScore: null,
+            learningRate: null,
+            anomalyScore: null
+          },
+          interactions: {
+            totalInteractions: null,
+            successfulInteractions: null,
+            averageResponseQuality: null,
+            userSatisfactionScore: null
+          },
+          deployment: {
+            environment: 'test',
+            version: '1.0',
+            lastDeployment: null,
+            healthStatus: 'unknown' as const
+          },
+          alerts: [],
+          recommendations: [],
+          historicalData: {
+            trustScoreChange: null,
+            riskLevelChange: null,
+            performanceChange: null
+          },
+          predictions: {
+            nextWeekTrustScore: null,
+            riskProbability: null,
+            recommendedActions: []
+          },
+          metadata: {
+            lastUpdated: new Date().toISOString(),
+            dataSource: 'not_deployed',
+            version: '1.0'
+          }
         };
         trustMetrics.push(testMultiAgentSystem);
       }
