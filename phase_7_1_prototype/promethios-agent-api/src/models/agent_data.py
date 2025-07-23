@@ -11,6 +11,7 @@ class AgentMetrics(db.Model):
     Stores governance and performance metrics from deployed agents
     """
     __tablename__ = 'agent_metrics'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     agent_id = db.Column(db.String(255), nullable=False, index=True)
@@ -81,6 +82,7 @@ class AgentViolation(db.Model):
     Stores policy violations detected by governance wrappers
     """
     __tablename__ = 'agent_violations'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     agent_id = db.Column(db.String(255), nullable=False, index=True)
@@ -118,6 +120,7 @@ class AgentLog(db.Model):
     Stores logs from deployed governance wrappers
     """
     __tablename__ = 'agent_logs'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     agent_id = db.Column(db.String(255), nullable=False, index=True)
@@ -151,6 +154,7 @@ class AgentHeartbeat(db.Model):
     Stores heartbeat data from deployed governance wrappers
     """
     __tablename__ = 'agent_heartbeats'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     agent_id = db.Column(db.String(255), nullable=False, index=True)
@@ -182,6 +186,7 @@ class APIKey(db.Model):
     Stores API keys for deployed agents
     """
     __tablename__ = 'api_keys'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     key_hash = db.Column(db.String(255), nullable=False, unique=True, index=True)
