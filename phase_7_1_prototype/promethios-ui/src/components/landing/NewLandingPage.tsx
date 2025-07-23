@@ -477,17 +477,24 @@ const NewLandingPage: React.FC = () => {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                   <Link 
-                    to="/demo" 
+                    to="/beta-request" 
                     className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg btn-ripple"
                   >
-                    Try Governance Demo
+                    Request an Invitation to Governance
                   </Link>
                   <Link 
-                    to={user ? "/ui/dashboard" : "/ui/onboarding"} 
+                    to="/demo" 
                     className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 btn-blue-glow"
                   >
-                    {user ? "Go to Dashboard" : "Wrap an Agent"}
+                    Apply for Trusted Access
                   </Link>
+                </div>
+
+                {/* Exclusive Access Note */}
+                <div className="mb-8">
+                  <p className="text-sm text-gray-400 italic">
+                    Trust is not public. Access requires accountability.
+                  </p>
                 </div>
 
                 {/* Trust Indicators */}
@@ -908,94 +915,6 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Trust in Action Section - Minimalist Split */}
-      <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
-        {/* Subtle geometric background */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='none'/%3E%3Cpath d='M0 0l100 100M100 0L0 100' stroke='%23000' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E")`,
-          }}></div>
-        </div>
-        
-        <div className="max-w-screen-xl mx-auto relative">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6 text-gray-900">
-              Trust in <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Action</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Real-time analytics and proof of success from our governance platform.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            {/* Average Trust Score */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="text-7xl font-black text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300">
-                  85
-                  <span className="text-3xl text-green-500">%</span>
-                </div>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="text-lg font-semibold text-gray-700 mb-2">Average Trust Score</div>
-              <div className="text-sm text-gray-500">Across all governed agents</div>
-            </div>
-
-            {/* Violations Prevented */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="text-7xl font-black text-red-600 mb-4 group-hover:scale-110 transition-transform duration-300">
-                  243
-                </div>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="text-lg font-semibold text-gray-700 mb-2">Violations Prevented</div>
-              <div className="text-sm text-gray-500">This month alone</div>
-            </div>
-
-            {/* Governed Responses */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="text-7xl font-black text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">
-                  1.2
-                  <span className="text-3xl text-blue-500">M</span>
-                </div>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="text-lg font-semibold text-gray-700 mb-2">Governed Responses</div>
-              <div className="text-sm text-gray-500">Successfully processed</div>
-            </div>
-
-            {/* SOC2 Compliance */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="text-7xl font-black text-purple-600 mb-4 group-hover:scale-110 transition-transform duration-300">
-                  92
-                  <span className="text-3xl text-purple-500">%</span>
-                </div>
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="text-lg font-semibold text-gray-700 mb-2">SOC2 Compliance</div>
-              <div className="text-sm text-gray-500">Enterprise ready</div>
-            </div>
-          </div>
-
-          {/* Bottom accent line */}
-          <div className="mt-20 flex justify-center">
-            <div className="w-32 h-1 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 rounded-full"></div>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Demos Section */}
-      <InteractiveDemos />
-
-      {/* Promethios Stack Showcase */}
-      <PrometheusStackShowcase />
-
-      {/* Template Library Preview */}
-      <TemplateLibraryPreview />
-
       {/* Final CTA Section */}
       <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-gray-900 to-gray-800">
         <div className="max-w-screen-xl mx-auto text-center">
@@ -1003,28 +922,25 @@ const NewLandingPage: React.FC = () => {
             AI should be governed — not left to guess.
           </h2>
           <p className="text-xl mb-8 text-gray-300 max-w-3xl mx-auto">
-            Get Promethios and build better AI you can trust.
+            Most of the world's AI is lying, and nobody's stopping it. You don't get access just because you want it.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 
-              to={user ? "/ui/dashboard" : "/ui/onboarding"} 
+              to="/beta-request" 
               className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
-              {user ? "Go to Dashboard" : "Start Free"}
+              Request an Invitation to Governance
             </Link>
             <Link 
               to="/demo" 
               className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
             >
-              Run Demo
-            </Link>
-            <Link 
-              to="/signup" 
-              className="bg-transparent border-2 border-gray-600 hover:bg-gray-600 text-gray-300 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
-            >
-              Join Waitlist
+              Apply for Trusted Access
             </Link>
           </div>
+          <p className="text-sm text-gray-400 mt-4 italic">
+            This environment is not available to unverified operators • Promethios governance requires accountability
+          </p>
         </div>
       </section>
 
