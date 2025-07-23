@@ -5,6 +5,7 @@ import { governanceDashboardBackendService } from '../services/governanceDashboa
 import { trustBackendService } from '../services/trustBackendService';
 import { useTrustBoundaries } from '../hooks/useTrustBoundaries';
 import { CreateBoundaryWizard } from '../components/CreateBoundaryWizard';
+import InfoTooltip from '../components/InfoTooltip';
 import {
   Box,
   Card,
@@ -239,97 +240,44 @@ const TrustBoundariesPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
-          Trust Boundaries
+          <InfoTooltip
+            title="Trust Boundaries"
+            description="Security perimeters that define how AI agents can interact with each other based on trust levels, policies, and compliance requirements."
+            variant="text"
+          >
+            Trust Boundaries
+          </InfoTooltip>
         </Typography>
         <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
-          Configure trust thresholds, safety limits, and boundary policies for agent interactions
+          Configure{' '}
+          <InfoTooltip
+            title="Trust Thresholds"
+            description="Minimum trust levels required for agents to perform specific operations or access certain resources."
+            variant="underline"
+          >
+            trust thresholds
+          </InfoTooltip>
+          ,{' '}
+          <InfoTooltip
+            title="Safety Limits"
+            description="Automated controls that prevent agents from performing actions when trust levels fall below defined thresholds."
+            variant="underline"
+          >
+            safety limits
+          </InfoTooltip>
+          , and{' '}
+          <InfoTooltip
+            title="Boundary Policies"
+            description="Rules that govern how agents can share data, execute operations, and collaborate across organizational boundaries."
+            variant="underline"
+          >
+            boundary policies
+          </InfoTooltip>
+          {' '}for agent interactions
         </Typography>
       </Box>
 
-      {/* Trust Boundaries Infographics Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: 'white', fontWeight: 'bold', mb: 3 }}>
-          Understanding Trust Boundaries
-        </Typography>
-        
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Hero Infographic */}
-          <Grid item xs={12}>
-            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
-              <CardContent sx={{ textAlign: 'center', p: 4 }}>
-                <img 
-                  src="/images/trust-boundary-ecosystem-infographic.png" 
-                  alt="Trust Boundary Ecosystem" 
-                  style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                />
-                <Typography variant="h6" sx={{ color: 'white', mt: 2, mb: 1 }}>
-                  Trust Boundary Ecosystem
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Promethios provides the central governance layer that enables AI agents to collaborate safely across trust boundaries
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Educational Infographics */}
-          <Grid item xs={12} md={4}>
-            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
-              <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                <img 
-                  src="/images/trust-levels-explained-infographic.png" 
-                  alt="Trust Levels Explained" 
-                  style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                />
-                <Typography variant="h6" sx={{ color: 'white', mt: 2, mb: 1 }}>
-                  Trust Levels Guide
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Understand how trust scores determine agent permissions and collaboration capabilities
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
-              <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                <img 
-                  src="/images/boundary-types-comparison-infographic.png" 
-                  alt="Boundary Types Comparison" 
-                  style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                />
-                <Typography variant="h6" sx={{ color: 'white', mt: 2, mb: 1 }}>
-                  Boundary Types
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  Compare different trust boundary architectures and choose the right approach for your use case
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', height: '100%' }}>
-              <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                <img 
-                  src="/images/multi-agent-future-vision-infographic.png" 
-                  alt="Multi-Agent Future Vision" 
-                  style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                />
-                <Typography variant="h6" sx={{ color: 'white', mt: 2, mb: 1 }}>
-                  Future Vision
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                  See how trust boundaries enable the evolution toward a multi-agent economy
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Overview Cards */}
+      {/* Overview Cards */
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
           <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
@@ -416,10 +364,42 @@ const TrustBoundariesPage: React.FC = () => {
               '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
             }}
           >
-            <Tab label="Active Boundaries" />
-            <Tab label="Threshold Configuration" />
-            <Tab label="Industry Standards" />
-            <Tab label="Policy Mapping" />
+            <Tab label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                Active Boundaries
+                <InfoTooltip
+                  title="Active Boundaries"
+                  description="Currently operational trust relationships between agents, defining how they can interact and share resources."
+                />
+              </Box>
+            } />
+            <Tab label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                Threshold Configuration
+                <InfoTooltip
+                  title="Threshold Configuration"
+                  description="Set minimum trust levels required for different types of operations and automated responses when thresholds are breached."
+                />
+              </Box>
+            } />
+            <Tab label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                Industry Standards
+                <InfoTooltip
+                  title="Industry Standards"
+                  description="Pre-configured trust boundary templates that comply with industry regulations like HIPAA, SOX, and GDPR."
+                />
+              </Box>
+            } />
+            <Tab label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                Policy Mapping
+                <InfoTooltip
+                  title="Policy Mapping"
+                  description="Configure how governance policies from the Governance section map to trust requirements and boundary enforcement."
+                />
+              </Box>
+            } />
           </Tabs>
         </Box>
 
@@ -448,11 +428,51 @@ const TrustBoundariesPage: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#2d3748' }}>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Source → Target</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Trust Level</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Type</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Policies</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Source → Target
+                        <InfoTooltip
+                          title="Source → Target"
+                          description="The direction of trust relationship, showing which agent (source) is granting trust to another agent (target)."
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Trust Level
+                        <InfoTooltip
+                          title="Trust Level"
+                          description="Numerical score (0-100%) indicating the level of trust granted. Higher scores allow more permissions and access."
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Type
+                        <InfoTooltip
+                          title="Boundary Type"
+                          description="Direct: Point-to-point trust. Delegated: Trust through intermediary. Transitive: Trust chains. Federated: Cross-organizational trust."
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Status
+                        <InfoTooltip
+                          title="Status"
+                          description="Active: Currently operational. Suspended: Temporarily disabled. Expired: Past expiration date. Revoked: Permanently disabled."
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Policies
+                        <InfoTooltip
+                          title="Policies"
+                          description="Number of governance policies attached to this boundary, controlling specific permissions and restrictions."
+                        />
+                      </Box>
+                    </TableCell>
                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Created</TableCell>
                     <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                   </TableRow>
