@@ -218,11 +218,11 @@ const NewLandingPage: React.FC = () => {
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-2 h-2 bg-red-500 rounded-full animate-pulse opacity-60"></div>
           <div className="absolute top-40 right-20 w-1 h-1 bg-blue-400 rounded-full animate-ping opacity-40"></div>
-          <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse opacity-50"></div>
-          <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-30"></div>
+          <div className="absolute bottom-32 left-1/4 w-1 h-1 bg-green-400 rounded-full animate-pulse opacity-50"></div>
+          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-purple-400 rounded-full animate-ping opacity-30"></div>
         </div>
-        
-        <div className="w-full px-4 sm:px-6 lg:px-8 relative">
+
+        <div className="relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
               Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
