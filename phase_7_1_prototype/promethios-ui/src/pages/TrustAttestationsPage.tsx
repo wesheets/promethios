@@ -199,8 +199,11 @@ const TrustAttestationsPage: React.FC = () => {
     subject: searchTerm || undefined
   });
 
-  // Calculate statistics
+  // Calculate trust impact metrics
+  const totalTrustImpact = attestations.reduce((sum, attestation) => sum + (attestation.trust_impact || 0), 0);
   const totalAttestations = attestations.length;
+
+  // Calculate statistics
   const activeAttestations = attestations.filter(a => a.status === 'active').length;
   const averageConfidence = attestations.length > 0 ? 
     attestations.reduce((sum, a) => sum + a.confidence_score, 0) / attestations.length : 0;

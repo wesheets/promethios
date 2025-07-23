@@ -271,14 +271,22 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     
     try {
       // Find the selected agents to get their names
-      const sourceAgent = agents.find(agent => agent.instance_id === formData.sourceAgent);
-      const targetAgent = agents.find(agent => agent.instance_id === formData.targetAgent);
+      // Check both identity.id and id properties for compatibility
+      const sourceAgent = agents.find(agent => 
+        agent.identity?.id === formData.sourceAgent || agent.id === formData.sourceAgent
+      );
+      const targetAgent = agents.find(agent => 
+        agent.identity?.id === formData.targetAgent || agent.id === formData.targetAgent
+      );
+      
+      console.log('Source agent lookup:', formData.sourceAgent, sourceAgent);
+      console.log('Target agent lookup:', formData.targetAgent, targetAgent);
       
       const boundaryData = {
         source_instance_id: formData.sourceAgent,
         target_instance_id: formData.targetAgent,
-        source_name: sourceAgent?.name || `Agent ${formData.sourceAgent}`,
-        target_name: targetAgent?.name || `Agent ${formData.targetAgent}`,
+        source_name: sourceAgent?.identity?.name || sourceAgent?.name || `Agent ${formData.sourceAgent}`,
+        target_name: targetAgent?.identity?.name || targetAgent?.name || `Agent ${formData.targetAgent}`,
         trust_level: formData.trustLevel,
         boundary_type: formData.boundaryType,
         policies: formData.policies.map(policyId => ({
