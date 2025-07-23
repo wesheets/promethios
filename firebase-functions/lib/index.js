@@ -314,12 +314,16 @@ function createEmailTransporter() {
     });
 }
 // Main Cloud Function - triggers when a document is added to the waitlist collection
-exports.sendWaitlistEmail = functions.firestore
+// Configure to listen to the promethios-oregon database
+exports.sendWaitlistEmail = functions
+    .region('us-west1') // Match the database region
+    .firestore
     .document('waitlist/{docId}')
     .onCreate(async (snap, context) => {
     try {
         const data = snap.data();
         console.log('📧 New waitlist submission received:', data.email);
+        console.log('🗄️ Using promethios-oregon database (us-west1 region)');
         // Generate email content
         const htmlContent = generateHTMLEmail(data);
         const textContent = generateTextEmail(data);
