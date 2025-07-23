@@ -5,7 +5,7 @@
  * attestation activities, violations, and status changes.
  */
 
-import { TrustAttestation } from './trustAttestationsBackendService';
+import { TrustAttestation } from './TrustAttestationsStorageService';
 
 export interface ObserverEvent {
   event_id: string;

@@ -29,7 +29,7 @@ import {
   Warning,
   Info
 } from '@mui/icons-material';
-import { TrustBoundary } from '../services/trustBoundariesBackendService';
+import { TrustBoundary } from '../services/TrustBoundariesStorageService';
 
 interface BoundaryDetailsModalProps {
   open: boolean;

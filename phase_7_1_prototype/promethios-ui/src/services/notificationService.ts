@@ -5,7 +5,7 @@
  * notification extension to send alerts about attestation activities.
  */
 
-import { TrustAttestation } from './trustAttestationsBackendService';
+import { TrustAttestation } from './TrustAttestationsStorageService';
 
 export interface NotificationEvent {
   id: string;
