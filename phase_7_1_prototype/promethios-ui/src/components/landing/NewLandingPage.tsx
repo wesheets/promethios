@@ -225,7 +225,7 @@ const NewLandingPage: React.FC = () => {
         <div className="max-w-screen-xl mx-auto relative">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
-              Why Enterprises Are <span className="text-red-400">Locking Down</span> Their AI
+              Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
             </h2>
             <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
               You're not managing models. You're protecting trust, reputation, and risk.
@@ -594,9 +594,9 @@ const NewLandingPage: React.FC = () => {
           <div className="text-center">
             <Link 
               to="/features" 
-              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              See How Promethios Solves This
+              Fix the part of AI no one wants to admit is broken
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
