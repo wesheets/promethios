@@ -265,23 +265,23 @@ const NewLandingPage: React.FC = () => {
               <h3 className="text-2xl font-bold mb-6 text-red-400">Your AI just lied to a customer. Now what?</h3>
               
               {/* Micro Dashboard */}
-              <div className={`bg-gray-900/80 border rounded-lg p-4 mb-4 font-mono text-sm ${
+              <div className={`bg-gray-900/80 border rounded-lg p-5 mb-6 font-mono text-base ${
                 showProblem ? 'border-red-500/50' : 'border-red-500/30'
               }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`font-semibold ${showProblem ? 'text-red-500' : 'text-red-400'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`font-semibold text-sm ${showProblem ? 'text-red-500' : 'text-red-400'}`}>
                     {showProblem ? '💥 UNGOVERNED' : '🚨 HALLUCINATION ALERT'}
                   </span>
-                  <span className="text-gray-400">Live</span>
+                  <span className="text-gray-400 text-sm">Live</span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-2 text-sm">
                   {showProblem ? (
                     // Problem View
                     <>
                       <div className="text-red-400">❌ AI generated fake legal case</div>
                       <div className="text-gray-300">Case: Johnson v. Smith (FABRICATED)</div>
                       <div className="text-red-400">❌ No audit trail available</div>
-                      <div className="flex items-center mt-2">
+                      <div className="flex items-center mt-3">
                         <span className="text-gray-400 mr-2">Trust Score:</span>
                         <div className="bg-gray-800 rounded-full h-2 flex-1 mr-2">
                           <div className="bg-gray-600 h-2 rounded-full" style={{width: '0%'}}></div>
@@ -295,7 +295,7 @@ const NewLandingPage: React.FC = () => {
                       <div className="text-red-300">⚠️ Hallucination detected</div>
                       <div className="text-gray-300">Fabricated case: Johnson v. Smith</div>
                       <div className="text-green-400">✓ Blocked & redirected to verified sources</div>
-                      <div className="flex items-center mt-2">
+                      <div className="flex items-center mt-3">
                         <span className="text-gray-400 mr-2">Trust Score:</span>
                         <div className="bg-gray-800 rounded-full h-2 flex-1 mr-2">
                           <div className="bg-red-500 h-2 rounded-full" style={{width: '23%'}}></div>
@@ -307,10 +307,10 @@ const NewLandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-gray-300 leading-relaxed mb-4">
+              <p className="text-gray-300 leading-relaxed mb-6 text-lg">
                 When your AI hallucinates in production, you need immediate detection, transparent logs, and verified alternatives.
               </p>
-              <div className="text-sm text-green-400 font-semibold">
+              <div className="text-base text-green-400 font-semibold">
                 → Agent Integrity Reports + Real-Time Monitoring
               </div>
             </div>
@@ -320,16 +320,16 @@ const NewLandingPage: React.FC = () => {
               <h3 className="text-2xl font-bold mb-6 text-orange-400">You're regulated. Your AI isn't.</h3>
               
               {/* Micro Dashboard */}
-              <div className={`bg-gray-900/80 border rounded-lg p-4 mb-4 font-mono text-sm ${
+              <div className={`bg-gray-900/80 border rounded-lg p-5 mb-6 font-mono text-base ${
                 showProblem ? 'border-orange-500/50' : 'border-orange-500/30'
               }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`font-semibold ${showProblem ? 'text-orange-500' : 'text-orange-400'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`font-semibold text-sm ${showProblem ? 'text-orange-500' : 'text-orange-400'}`}>
                     {showProblem ? '💥 UNGOVERNED' : '📋 COMPLIANCE MONITOR'}
                   </span>
-                  <span className="text-gray-400">Live</span>
+                  <span className="text-gray-400 text-sm">Live</span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-2 text-sm">
                   {showProblem ? (
                     // Problem View
                     <>
@@ -345,7 +345,7 @@ const NewLandingPage: React.FC = () => {
                         <span className="text-gray-300">SOC2:</span>
                         <span className="text-red-400">❌ Violated</span>
                       </div>
-                      <div className="text-red-400 mt-2">❌ No compliance framework</div>
+                      <div className="text-red-400 mt-3">❌ No compliance framework</div>
                       <div className="text-gray-300">PII Exposed: Untracked</div>
                     </>
                   ) : (
@@ -363,17 +363,17 @@ const NewLandingPage: React.FC = () => {
                         <span className="text-gray-300">SOC2:</span>
                         <span className="text-green-400">✓ Active</span>
                       </div>
-                      <div className="text-green-400 mt-2">✓ GDPR violation prevented</div>
+                      <div className="text-green-400 mt-3">✓ GDPR violation prevented</div>
                       <div className="text-gray-300">PII Redacted: 47 instances</div>
                     </>
                   )}
                 </div>
               </div>
 
-              <p className="text-gray-300 leading-relaxed mb-4">
+              <p className="text-gray-300 leading-relaxed mb-6 text-lg">
                 GDPR, HIPAA, SOC2 compliance isn't optional. Your AI needs governance wrapping that auditors will accept.
               </p>
-              <div className="text-sm text-green-400 font-semibold">
+              <div className="text-base text-green-400 font-semibold">
                 → Governance Wrapping + Policy Enforcement
               </div>
             </div>
@@ -383,16 +383,16 @@ const NewLandingPage: React.FC = () => {
               <h3 className="text-2xl font-bold mb-6 text-purple-400">Board wants to know if AI is safe to scale.</h3>
               
               {/* Micro Dashboard */}
-              <div className={`bg-gray-900/80 border rounded-lg p-4 mb-4 font-mono text-sm ${
+              <div className={`bg-gray-900/80 border rounded-lg p-5 mb-6 font-mono text-base ${
                 showProblem ? 'border-purple-500/50' : 'border-purple-500/30'
               }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`font-semibold ${showProblem ? 'text-purple-500' : 'text-purple-400'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`font-semibold text-sm ${showProblem ? 'text-purple-500' : 'text-purple-400'}`}>
                     {showProblem ? '💥 UNGOVERNED' : '📊 TRUST ANALYTICS'}
                   </span>
-                  <span className="text-gray-400">Live</span>
+                  <span className="text-gray-400 text-sm">Live</span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-2 text-sm">
                   {showProblem ? (
                     // Problem View
                     <>
@@ -425,10 +425,10 @@ const NewLandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-gray-300 leading-relaxed mb-4">
+              <p className="text-gray-300 leading-relaxed mb-6 text-lg">
                 Executive decisions need quantified trust metrics, not promises. Show ROI and risk reduction with data.
               </p>
-              <div className="text-sm text-green-400 font-semibold">
+              <div className="text-base text-green-400 font-semibold">
                 → Trust Score Engine + Benchmark Insights
               </div>
             </div>
@@ -438,16 +438,16 @@ const NewLandingPage: React.FC = () => {
               <h3 className="text-2xl font-bold mb-6 text-cyan-400">Multi-agent chaos is coming.</h3>
               
               {/* Micro Dashboard */}
-              <div className={`bg-gray-900/80 border rounded-lg p-4 mb-4 font-mono text-sm ${
+              <div className={`bg-gray-900/80 border rounded-lg p-5 mb-6 font-mono text-base ${
                 showProblem ? 'border-cyan-500/50' : 'border-cyan-500/30'
               }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`font-semibold ${showProblem ? 'text-cyan-500' : 'text-cyan-400'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`font-semibold text-sm ${showProblem ? 'text-cyan-500' : 'text-cyan-400'}`}>
                     {showProblem ? '💥 UNGOVERNED' : '🤖 AGENT COORDINATION'}
                   </span>
-                  <span className="text-gray-400">Live</span>
+                  <span className="text-gray-400 text-sm">Live</span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-2 text-sm">
                   {showProblem ? (
                     // Problem View
                     <>
@@ -463,7 +463,7 @@ const NewLandingPage: React.FC = () => {
                         <span className="text-gray-300">Coordination:</span>
                         <span className="text-red-400">Failed</span>
                       </div>
-                      <div className="text-red-400 mt-2">Workflow Efficiency: 23%</div>
+                      <div className="text-red-400 mt-3">Workflow Efficiency: 23%</div>
                     </>
                   ) : (
                     // Solution View
@@ -480,16 +480,16 @@ const NewLandingPage: React.FC = () => {
                         <span className="text-gray-300">Conflicts Resolved:</span>
                         <span className="text-green-400">23</span>
                       </div>
-                      <div className="text-green-400 mt-2">Workflow Efficiency: 94%</div>
+                      <div className="text-green-400 mt-3">Workflow Efficiency: 94%</div>
                     </>
                   )}
                 </div>
               </div>
 
-              <p className="text-gray-300 leading-relaxed mb-4">
+              <p className="text-gray-300 leading-relaxed mb-6 text-lg">
                 When agents coordinate without governance, conflicts multiply. You need unified oversight before it's too late.
               </p>
-              <div className="text-sm text-green-400 font-semibold">
+              <div className="text-base text-green-400 font-semibold">
                 → Multi-Agent Coordination + Unified Governance
               </div>
             </div>
@@ -500,13 +500,13 @@ const NewLandingPage: React.FC = () => {
             <div className="bg-gray-800/40 backdrop-blur-sm border border-gray-600/50 rounded-xl p-8 max-w-4xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 <div className="border-r border-gray-600/50 last:border-r-0 pr-6 last:pr-0">
-                  <p className="text-lg font-bold text-red-400 mb-2">"Don't let your AI become your next liability."</p>
+                  <p className="text-xl font-bold text-red-400 mb-2">"Don't let your AI become your next liability."</p>
                 </div>
                 <div className="border-r border-gray-600/50 last:border-r-0 pr-6 last:pr-0">
-                  <p className="text-lg font-bold text-orange-400 mb-2">"Auditors won't accept 'It was the model's fault.'"</p>
+                  <p className="text-xl font-bold text-orange-400 mb-2">"Auditors won't accept 'It was the model's fault.'"</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-green-400 mb-2">"Trust is earned. Promethios proves it."</p>
+                  <p className="text-xl font-bold text-green-400 mb-2">"Trust is earned. Promethios proves it."</p>
                 </div>
               </div>
             </div>
