@@ -311,4 +311,5 @@ class TrustBoundariesBackendService {
 }
 
 export const trustBoundariesBackendService = new TrustBoundariesBackendService();
+export default trustBoundariesBackendService;
 
