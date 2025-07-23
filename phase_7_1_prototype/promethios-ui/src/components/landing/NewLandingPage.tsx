@@ -222,7 +222,7 @@ const NewLandingPage: React.FC = () => {
           <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-30"></div>
         </div>
         
-        <div className="max-w-screen-xl mx-auto relative">
+        <div className="w-full px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
               Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
@@ -273,14 +273,14 @@ const NewLandingPage: React.FC = () => {
           </div>
 
           {/* Pain-Killer Approach Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 gap-12 mb-16 max-w-6xl mx-auto">
             
             {/* Your AI just lied to a customer */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
                 
                 {/* Problem View - Ungoverned Scenario */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-3 problem-view hidden">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -303,7 +303,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Promethios Layer */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-3 solution-view">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -347,11 +347,11 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* You're regulated. Your AI isn't. */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
                 
                 {/* Problem View - Ungoverned Compliance */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-3 problem-view hidden">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -377,7 +377,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Promethios Compliance */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-3 solution-view">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -424,11 +424,11 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* Board wants to know if AI is safe to scale */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
                 
                 {/* Problem View - No Metrics */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-3 problem-view hidden">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -452,7 +452,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Trust Score Analytics */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-3 solution-view">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -496,11 +496,11 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* Multi-agent chaos is coming */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
                 
                 {/* Problem View - Multi-Agent Chaos */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-3 problem-view hidden">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -526,7 +526,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Multi-Agent Coordination */}
-                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-3 solution-view">
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
