@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
@@ -7,6 +7,7 @@ import { FirebaseError } from 'firebase/app';
 import { addToWaitlist } from '../../firebase/waitlistService';
 import { checkUserInvitation } from '../../firebase/invitationService';
 import '../../styles/animated-background.css';
+import '../../styles/video-background.css';
 
 const LoginWaitlistPage: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -46,6 +47,57 @@ const LoginWaitlistPage: React.FC = () => {
   
   // Toggle between login and waitlist forms
   const [showLoginForm, setShowLoginForm] = useState(false);
+  
+  // Video background state
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(10); // Default duration
+  
+  // Handle video fade-out loop
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const handleLoadedMetadata = () => {
+      setVideoDuration(video.duration);
+      setVideoLoaded(true);
+      
+      // Set CSS custom property for animation duration
+      document.documentElement.style.setProperty('--video-duration', `${video.duration}s`);
+    };
+    
+    const handleTimeUpdate = () => {
+      const currentTime = video.currentTime;
+      const duration = video.duration;
+      
+      // Start fade-out at 85% of video duration
+      if (currentTime >= duration * 0.85) {
+        video.style.opacity = String(1 - ((currentTime - duration * 0.85) / (duration * 0.15)));
+      } else {
+        video.style.opacity = '1';
+      }
+    };
+    
+    const handleEnded = () => {
+      // Reset opacity and restart
+      video.style.opacity = '0';
+      video.currentTime = 0;
+      setTimeout(() => {
+        video.style.opacity = '1';
+        video.play();
+      }, 100);
+    };
+    
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, []);
   
   const handleLoginWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,232 +263,55 @@ const LoginWaitlistPage: React.FC = () => {
   };
   
   return (
-    <div className={`min-h-screen w-full ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden`}>
-      {/* Enhanced Background - Animated Code Streams like Midjourney */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-        {/* Animated Code Stream 1 - Governance Engine */}
-        <div className="absolute top-0 left-0 w-full h-full code-stream-1">
-          <div className="text-green-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
-            {`import { TrustScore, GovernanceLayer } from '@promethios/core';
-import { validateAgent, auditDecision } from './governance';
-
-class AIGovernanceEngine {
-  constructor(config) {
-    this.trustThreshold = config.minTrustScore || 0.85;
-    this.auditTrail = new Map();
-    this.governancePolicies = config.policies;
-  }
-
-  async validateRequest(agent, request) {
-    const trustScore = await this.calculateTrust(agent);
-    
-    if (trustScore < this.trustThreshold) {
-      this.logViolation(agent, 'TRUST_THRESHOLD_BREACH');
-      return { allowed: false, reason: 'Insufficient trust' };
-    }
-    
-    const policyCheck = await this.checkPolicies(request);
-    if (!policyCheck.compliant) {
-      this.logViolation(agent, 'POLICY_VIOLATION');
-      return { allowed: false, reason: policyCheck.violation };
-    }
-    
-    this.auditTrail.set(request.id, {
-      agent: agent.id,
-      timestamp: Date.now(),
-      trustScore,
-      decision: 'APPROVED'
-    });
-    
-    return { allowed: true, trustScore };
-  }
-
-  calculateTrust(agent) {
-    const factors = {
-      historicalAccuracy: agent.metrics.accuracy,
-      hallucinationRate: 1 - agent.metrics.hallucinations,
-      complianceScore: agent.compliance.score,
-      userFeedback: agent.feedback.average
-    };
-    
-    return Object.values(factors).reduce((sum, val) => sum + val, 0) / 4;
-  }
-}`}
-          </div>
-        </div>
-        
-        {/* Animated Code Stream 2 - Trust Network */}
-        <div className="absolute top-20 right-0 w-full h-full code-stream-2">
-          <div className="text-blue-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
-            {`// Multi-Agent Trust Network
-const trustNetwork = new Map();
-
-function establishTrustBoundary(agents) {
-  const boundary = {
-    id: generateBoundaryId(),
-    agents: agents.map(a => a.id),
-    trustLevel: 'HIGH',
-    policies: ['NO_HALLUCINATION', 'AUDIT_ALL', 'HUMAN_OVERSIGHT'],
-    created: new Date().toISOString()
-  };
-  
-  agents.forEach(agent => {
-    agent.trustBoundary = boundary.id;
-    agent.governanceLevel = 'STRICT';
-    
-    // Install governance hooks
-    agent.beforeDecision = async (context) => {
-      return await validateDecision(context, boundary);
-    };
-    
-    agent.afterDecision = async (decision, context) => {
-      await auditDecision(decision, context, boundary);
-      await updateTrustMetrics(agent, decision);
-    };
-  });
-  
-  return boundary;
-}
-
-async function validateDecision(context, boundary) {
-  const riskAssessment = await assessRisk(context);
-  
-  if (riskAssessment.level === 'HIGH') {
-    await requestHumanOversight(context);
-    return { proceed: false, reason: 'Human review required' };
-  }
-  
-  return { proceed: true };
-}`}
-          </div>
-        </div>
-        
-        {/* Animated Code Stream 3 - Dashboard */}
-        <div className="absolute bottom-0 left-1/4 w-full h-full code-stream-3">
-          <div className="text-purple-400 text-xs font-mono leading-relaxed whitespace-pre-wrap">
-            {`// Real-time Governance Dashboard
-class GovernanceDashboard {
-  constructor() {
-    this.metrics = {
-      totalAgents: 0,
-      trustScore: 0,
-      violations: 0,
-      decisions: 0
-    };
-    
-    this.alerts = [];
-    this.auditLog = [];
-  }
-  
-  updateMetrics(agentId, decision) {
-    this.metrics.decisions++;
-    
-    if (decision.violation) {
-      this.metrics.violations++;
-      this.alerts.push({
-        type: 'VIOLATION',
-        agent: agentId,
-        details: decision.violation,
-        timestamp: Date.now()
-      });
-    }
-    
-    this.auditLog.push({
-      agent: agentId,
-      action: decision.action,
-      trustScore: decision.trustScore,
-      timestamp: Date.now()
-    });
-    
-    this.calculateOverallTrust();
-  }
-  
-  calculateOverallTrust() {
-    const recentDecisions = this.auditLog.slice(-100);
-    const avgTrust = recentDecisions.reduce((sum, log) => 
-      sum + log.trustScore, 0) / recentDecisions.length;
-    
-    this.metrics.trustScore = avgTrust;
-    
-    if (avgTrust < 0.7) {
-      this.triggerAlert('LOW_TRUST_NETWORK');
-    }
-  }
-}`}
-          </div>
-        </div>
-        
-        {/* Matrix-style falling code columns */}
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`matrix-${i}`}
-            className="absolute matrix-code text-xs"
-            style={{
-              left: `${10 + i * 12}%`,
-              animationDelay: `${i * 0.5}s`,
-              animationDuration: `${8 + Math.random() * 4}s`
-            }}
-          >
-            {['validate()', 'audit()', 'trust++', 'govern()', 'secure()', 'monitor()', 'alert!', 'approve'][i]}
-          </div>
-        ))}
-        
-        {/* Floating Code Particles with enhanced effects */}
-        <div className="absolute inset-0">
-          {[...Array(15)].map((_, i) => (
-            <div
-              key={`particle-${i}`}
-              className={`absolute text-xs font-mono floating-code ${i % 3 === 0 ? 'code-pulse' : ''} ${i % 5 === 0 ? 'glitch-effect' : ''}`}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                color: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'][Math.floor(Math.random() * 4)]
-              }}
-            >
-              {['trustScore', 'validate()', 'audit()', 'govern()', 'secure()', 'monitor()'][Math.floor(Math.random() * 6)]}
-            </div>
-          ))}
-        </div>
-        
-        {/* Terminal-style scrolling text */}
-        <div className="absolute bottom-10 left-10 w-80 h-32 overflow-hidden opacity-10">
-          <div className="terminal-scroll text-green-300 text-xs font-mono">
-            <div>$ promethios --init governance</div>
-            <div>✓ Trust boundary established</div>
-            <div>✓ Audit trail initialized</div>
-            <div>✓ Policy engine loaded</div>
-            <div>✓ Multi-agent coordination active</div>
-            <div>$ monitor --trust-score</div>
-            <div>Current trust: 87.3%</div>
-            <div>Violations: 0</div>
-            <div>Status: SECURE</div>
-            <div>$ validate --agent-request</div>
-            <div>Checking compliance...</div>
-            <div>✓ Request approved</div>
-            <div className="cursor-blink">$ </div>
-          </div>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Video Background */}
+      <div className="video-background">
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className={`transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onCanPlay={() => setVideoLoaded(true)}
+        >
+          <source src="/ai-orb-background.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
       </div>
       
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+      {/* Video Overlay for text readability */}
+      <div className="video-overlay"></div>
+      
+      {/* Fallback animated background for when video is loading */}
+      {!videoLoaded && (
+        <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+          {/* Simple fallback background */}
+          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"></div>
+        </div>
+      )}
+      
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      
+      <div className="sm:mx-auto sm:w-full sm:max-w-4xl relative z-10"> {/* Changed from max-w-md to max-w-4xl */}
         <div className="flex justify-center">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-white">
             Beta
           </span>
         </div>
-        <h2 className="mt-3 text-center text-3xl font-extrabold">
+        <h2 className="mt-6 text-center text-4xl font-extrabold text-white"> {/* Increased text size */}
           {showLoginForm ? 'Sign in to Promethios' : 'Request Access to Private Beta'}
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-4 text-center text-lg text-gray-300"> {/* Increased text size */}
           {showLoginForm 
             ? 'This environment is not available to unverified operators. Promethios governance requires accountability.' 
             : 'Trust is not public. You don\'t get access just because you want it — you get it because someone trusted you.'}
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className={`${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow'} py-8 px-4 sm:rounded-lg sm:px-10`}>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-3xl relative z-10"> {/* Changed from max-w-md to max-w-3xl */}
+        <div className="form-container-enhanced form-glow orb-sync rounded-2xl py-12 px-8 sm:px-16"> {/* Increased padding */}
           {showLoginForm ? (
             !showResetPassword ? (
               // Login Form (unchanged)
@@ -930,6 +805,7 @@ class GovernanceDashboard {
           </p>
         </div>
       </div>
+      </div> {/* Closing the main content div */}
     </div>
   );
 };
