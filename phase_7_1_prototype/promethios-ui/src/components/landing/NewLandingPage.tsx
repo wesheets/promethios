@@ -197,7 +197,29 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
     opacity: number;
     rotation: number;
     scale: number;
+    isPaused: boolean;
   }>>([]);
+
+  // Category color mapping
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'legal': return 'border-red-500/70 bg-red-900/90';
+      case 'data': return 'border-blue-500/70 bg-blue-900/90';
+      case 'health': return 'border-purple-500/70 bg-purple-900/90';
+      case 'regulation': return 'border-orange-500/70 bg-orange-900/90';
+      default: return 'border-red-500/70 bg-red-900/90';
+    }
+  };
+
+  const getCategoryTag = (category: string) => {
+    switch (category) {
+      case 'legal': return { label: 'LEGAL', color: 'bg-red-600 text-red-100' };
+      case 'data': return { label: 'DATA', color: 'bg-blue-600 text-blue-100' };
+      case 'health': return { label: 'HEALTH', color: 'bg-purple-600 text-purple-100' };
+      case 'regulation': return { label: 'REGULATION', color: 'bg-orange-600 text-orange-100' };
+      default: return { label: 'BREAKING', color: 'bg-red-600 text-red-100' };
+    }
+  };
 
   useEffect(() => {
     console.log('FloodingNewsTicker isVisible:', isVisible);
@@ -214,7 +236,8 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
         y: Math.random() * (window.innerHeight - 400) + 200, // Ensure within viewport
         opacity: 0,
         rotation: (Math.random() - 0.5) * 10,
-        scale: 0.8 + Math.random() * 0.4
+        scale: 0.8 + Math.random() * 0.4,
+        isPaused: false
       };
 
       console.log('Creating headline at position:', { x: newHeadline.x, y: newHeadline.y, windowWidth: window.innerWidth, windowHeight: window.innerHeight });
@@ -257,41 +280,81 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {activeHeadlines.map((item) => (
-        <div
-          key={item.id}
-          className="absolute transition-all duration-1000 ease-out pointer-events-auto"
-          style={{
-            left: `${item.x}px`,
-            top: `${item.y}px`,
-            opacity: item.opacity,
-            transform: `rotate(${item.rotation}deg) scale(${item.scale})`,
-          }}
-        >
-          <a
-            href={item.headline.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block bg-red-900/90 backdrop-blur-sm border border-red-500/50 rounded-lg p-6 max-w-2xl shadow-2xl hover:bg-red-800/90 transition-colors group"
+      {activeHeadlines.map((item) => {
+        const categoryTag = getCategoryTag(item.headline.category);
+        const categoryColor = getCategoryColor(item.headline.category);
+        
+        return (
+          <div
+            key={item.id}
+            className={`absolute transition-all duration-1000 ease-out pointer-events-auto ${item.isPaused ? 'pause-animation' : ''}`}
+            style={{
+              left: `${item.x}px`,
+              top: `${item.y}px`,
+              opacity: item.opacity,
+              transform: `rotate(${item.rotation}deg) scale(${item.scale})`,
+              animationPlayState: item.isPaused ? 'paused' : 'running'
+            }}
+            onMouseEnter={() => {
+              setActiveHeadlines(prev => 
+                prev.map(h => 
+                  h.id === item.id ? { ...h, isPaused: true } : h
+                )
+              );
+            }}
+            onMouseLeave={() => {
+              setActiveHeadlines(prev => 
+                prev.map(h => 
+                  h.id === item.id ? { ...h, isPaused: false } : h
+                )
+              );
+            }}
           >
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-3 h-3 bg-red-400 rounded-full mt-3 animate-pulse"></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-red-100 text-xl font-semibold leading-tight line-clamp-4 group-hover:text-white">
-                  {item.headline.headline}
-                </p>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-red-300 text-base">{item.headline.source}</span>
-                  <span className="text-red-400 text-base">{item.headline.date}</span>
-                </div>
-                <div className="flex items-center mt-2">
-                  <span className="text-red-400 text-base">🔗 Real Article</span>
+            <a
+              href={item.headline.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`block backdrop-blur-sm border rounded-lg p-6 max-w-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 group cursor-pointer ${categoryColor}`}
+            >
+              {/* Category Tag */}
+              <div className="flex items-center justify-between mb-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${categoryTag.color}`}>
+                  {categoryTag.label}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-300 text-xs">🔗 LIVE</span>
+                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
                 </div>
               </div>
-            </div>
-          </a>
-        </div>
-      ))}
+
+              {/* Headline */}
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-3 h-3 bg-red-400 rounded-full mt-3 animate-pulse"></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-xl font-semibold leading-tight line-clamp-4 group-hover:text-gray-100 mb-3">
+                    {item.headline.headline}
+                  </p>
+                  
+                  {/* Source and Timestamp */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-300 text-base font-medium">{item.headline.source}</span>
+                      {/* Outlet logo placeholder */}
+                      <div className="w-4 h-4 bg-gray-400 rounded-sm opacity-70"></div>
+                    </div>
+                    <span className="text-gray-400 text-sm">{item.headline.date}</span>
+                  </div>
+                  
+                  {/* Hover indicator */}
+                  <div className="flex items-center mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-gray-300 text-sm">Click to read full article →</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -306,6 +369,7 @@ const NewLandingPage: React.FC = () => {
   
   // State for flooding news ticker
   const [showNewsTicker, setShowNewsTicker] = useState(false);
+  const [headlinesEnabled, setHeadlinesEnabled] = useState(true); // Default ON for maximum impact
 
   // Scroll listener to trigger news ticker
   useEffect(() => {
@@ -976,7 +1040,26 @@ const NewLandingPage: React.FC = () => {
       />
 
       {/* Flooding News Ticker - AI Disaster Headlines */}
-      <FloodingNewsTicker isVisible={showNewsTicker} />
+      <FloodingNewsTicker isVisible={showNewsTicker && headlinesEnabled} />
+
+      {/* Headlines Toggle - "Mute the Mayhem" */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setHeadlinesEnabled(!headlinesEnabled)}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 backdrop-blur-sm border ${
+            headlinesEnabled 
+              ? 'bg-red-900/80 border-red-500/50 text-red-100 hover:bg-red-800/80' 
+              : 'bg-gray-900/80 border-gray-500/50 text-gray-300 hover:bg-gray-800/80'
+          }`}
+          title={headlinesEnabled ? "Mute the mayhem" : "See AI risk in the wild"}
+        >
+          <span className="text-base">⚡️</span>
+          <span className="hidden sm:inline">
+            {headlinesEnabled ? "Focus mode" : "See AI risk"}
+          </span>
+          <span className="text-base">📰</span>
+        </button>
+      </div>
 
       {/* Enhanced CSS Animations */}
       <style jsx>{`
