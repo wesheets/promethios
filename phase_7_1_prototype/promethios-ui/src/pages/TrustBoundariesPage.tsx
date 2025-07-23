@@ -6,6 +6,7 @@ import { trustBackendService } from '../services/trustBackendService';
 import { useTrustBoundaries } from '../hooks/useTrustBoundaries';
 import { CreateBoundaryWizard } from '../components/CreateBoundaryWizard';
 import InfoTooltip from '../components/InfoTooltip';
+import BoundaryDetailsModal from '../components/BoundaryDetailsModal';
 import {
   Box,
   Card,
@@ -129,6 +130,8 @@ const TrustBoundariesPage: React.FC = () => {
   const [createBoundaryOpen, setCreateBoundaryOpen] = useState(false);
   const [createThresholdOpen, setCreateThresholdOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [selectedBoundary, setSelectedBoundary] = useState<any>(null);
+  const [boundaryDetailsOpen, setBoundaryDetailsOpen] = useState(false);
 
   // Use real backend data with user authentication
   const {
@@ -479,7 +482,17 @@ const TrustBoundariesPage: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   {boundaries.map((boundary) => (
-                    <TableRow key={boundary.boundary_id} sx={{ '&:hover': { backgroundColor: '#2d3748' } }}>
+                    <TableRow 
+                      key={boundary.boundary_id} 
+                      sx={{ 
+                        '&:hover': { backgroundColor: '#2d3748', cursor: 'pointer' },
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setSelectedBoundary(boundary);
+                        setBoundaryDetailsOpen(true);
+                      }}
+                    >
                       <TableCell sx={{ color: 'white' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ width: 32, height: 32, backgroundColor: '#3b82f6' }}>
@@ -535,7 +548,10 @@ const TrustBoundariesPage: React.FC = () => {
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ color: 'white' }}>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box 
+                          sx={{ display: 'flex', gap: 1 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Tooltip title="Edit Boundary">
                             <IconButton size="small" sx={{ color: '#3b82f6' }}>
                               <Edit />
@@ -827,6 +843,13 @@ const TrustBoundariesPage: React.FC = () => {
         onClose={() => setCreateBoundaryOpen(false)}
         onSubmit={createBoundary}
         agents={[]} // Will be loaded by the wizard itself
+      />
+
+      {/* Boundary Details Modal */}
+      <BoundaryDetailsModal
+        open={boundaryDetailsOpen}
+        onClose={() => setBoundaryDetailsOpen(false)}
+        boundary={selectedBoundary}
       />
     </Box>
   );
