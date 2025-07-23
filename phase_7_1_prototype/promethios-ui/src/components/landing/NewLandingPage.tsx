@@ -240,10 +240,29 @@ const NewLandingPage: React.FC = () => {
             {/* Your AI just lied to a customer */}
             <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
               <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+                {/* Micro Dashboard - Hallucination Alert */}
+                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-400 text-xs font-semibold">ALERT</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-300">
+                      <span className="text-red-400">⚠</span> Hallucination detected
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Fabricated case: "Johnson v. Smith"
+                    </div>
+                    <div className="text-xs text-green-400">
+                      ✓ Blocked & redirected to verified sources
+                    </div>
+                    <div className="mt-2 bg-red-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-red-300">Trust Score: 23%</div>
+                      <div className="w-full bg-gray-700 rounded-full h-1 mt-1">
+                        <div className="bg-red-500 h-1 rounded-full" style={{width: '23%'}}></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-red-400 group-hover:text-red-300 transition-colors">
@@ -269,10 +288,30 @@ const NewLandingPage: React.FC = () => {
             {/* You're regulated. Your AI isn't. */}
             <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
               <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                {/* Micro Dashboard - Compliance Monitor */}
+                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-orange-500/50 flex-shrink-0 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-orange-400 text-xs font-semibold">COMPLIANCE</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">GDPR</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">HIPAA</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">SOC2</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="mt-2 bg-orange-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-orange-300">PII Redacted: 47 instances</div>
+                      <div className="text-xs text-green-400">✓ GDPR violation prevented</div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-orange-400 group-hover:text-orange-300 transition-colors">
@@ -298,10 +337,28 @@ const NewLandingPage: React.FC = () => {
             {/* Board wants to know if AI is safe to scale */}
             <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
               <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                {/* Micro Dashboard - Trust Score Analytics */}
+                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-purple-500/50 flex-shrink-0 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-purple-400 text-xs font-semibold">ANALYTICS</span>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Trust Score</span>
+                      <span className="text-green-400 font-bold">91%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style={{width: '91%'}}></div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Governed: 91% vs Ungoverned: 34%
+                    </div>
+                    <div className="mt-2 bg-purple-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-purple-300">ROI: +247%</div>
+                      <div className="text-xs text-green-400">✓ Board-ready metrics</div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-purple-400 group-hover:text-purple-300 transition-colors">
@@ -327,10 +384,30 @@ const NewLandingPage: React.FC = () => {
             {/* Multi-agent chaos is coming */}
             <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
               <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                {/* Micro Dashboard - Multi-Agent Coordination */}
+                <div className="w-48 h-32 bg-gray-900/80 rounded-lg border border-cyan-500/50 flex-shrink-0 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-cyan-400 text-xs font-semibold">COORDINATION</span>
+                    <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Active Agents</span>
+                      <span className="text-cyan-400 font-bold">12</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Coordinated Tasks</span>
+                      <span className="text-green-400">847</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Conflicts Resolved</span>
+                      <span className="text-yellow-400">23</span>
+                    </div>
+                    <div className="mt-2 bg-cyan-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-cyan-300">Workflow Efficiency: 94%</div>
+                      <div className="text-xs text-green-400">✓ Zero governance gaps</div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-cyan-400 group-hover:text-cyan-300 transition-colors">
