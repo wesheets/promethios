@@ -75,7 +75,7 @@ class TrustBoundariesBackendService {
    */
   async getBoundaries(): Promise<TrustBoundary[]> {
     try {
-      const response = await fetch('/api/trust/boundaries');
+      const response = await fetch(`${this.baseUrl}/boundaries`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -95,7 +95,7 @@ class TrustBoundariesBackendService {
    */
   async createBoundary(request: CreateBoundaryRequest): Promise<TrustBoundary> {
     try {
-      const response = await fetch('/api/trust/boundaries', {
+      const response = await fetch(`${this.baseUrl}/boundaries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ class TrustBoundariesBackendService {
    */
   async updateBoundary(boundaryId: string, updates: Partial<TrustBoundary>): Promise<TrustBoundary> {
     try {
-      const response = await fetch(`/api/trust/boundaries/${boundaryId}`, {
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ class TrustBoundariesBackendService {
    */
   async deleteBoundary(boundaryId: string): Promise<void> {
     try {
-      const response = await fetch(`/api/trust/boundaries/${boundaryId}`, {
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
         method: 'DELETE'
       });
 
@@ -163,7 +163,7 @@ class TrustBoundariesBackendService {
    */
   async getMetrics(): Promise<TrustBoundaryMetrics> {
     try {
-      const response = await fetch('/api/trust/metrics');
+      const response = await fetch(`${this.baseUrl}/metrics`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -190,7 +190,7 @@ class TrustBoundariesBackendService {
    */
   async getBoundaryMetrics(): Promise<any> {
     try {
-      const response = await fetch('/api/trust/metrics');
+      const response = await fetch(`${this.baseUrl}/metrics`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -302,7 +302,7 @@ class TrustBoundariesBackendService {
    */
   async getBoundary(boundaryId: string): Promise<TrustBoundary | null> {
     try {
-      const response = await fetch(`/api/trust/boundaries/${boundaryId}`);
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`);
       
       if (!response.ok) {
         if (response.status === 404) {
