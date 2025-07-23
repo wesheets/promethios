@@ -457,9 +457,11 @@ export class TrustMetricsExtension {
         // Only classify as multi-agent if it's actually a multi-agent system
         // Most agents should be Single Agent unless they have specific multi-agent properties
         if (agent.multiAgentConfig && Object.keys(agent.multiAgentConfig).length > 0) {
-          agentType = 'Multi-Agent System';
+          agentType = 'multi';
         } else if (agent.isWrapped && agent.agentCount && agent.agentCount > 1) {
-          agentType = 'Multi-Agent System';
+          agentType = 'multi';
+        } else {
+          agentType = 'single';
         }
         
         console.log('🔍 Final agent type for', agent.identity?.name, ':', agentType);
@@ -512,12 +514,12 @@ export class TrustMetricsExtension {
       });
 
       // Add a test multi-agent system if none were loaded from storage (same as Governance Overview)
-      const hasMultiAgent = trustMetrics.some(metric => metric.agent_type === 'Multi-Agent System');
+      const hasMultiAgent = trustMetrics.some(metric => metric.agent_type === 'multi');
       if (!hasMultiAgent) {
         const testMultiAgentSystem = {
           agent_id: 'test-multi-agent-system',
           agent_name: 'Test Multi-Agent System',
-          agent_type: 'Multi-Agent System',
+          agent_type: 'multi',
           timestamp: new Date().toISOString(),
           trust_scores: {
             overall: null,
