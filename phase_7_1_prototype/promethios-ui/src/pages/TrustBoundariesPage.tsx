@@ -277,7 +277,7 @@ const TrustBoundariesPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Overview Cards */
+      {/* Overview Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
           <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568' }}>
