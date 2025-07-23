@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -8,6 +7,290 @@ import InteractiveDemos from './InteractiveDemos';
 import TemplateLibraryPreview from './TemplateLibraryPreview';
 import PrometheusStackShowcase from './PrometheusStackShowcase';
 import TimedObserverBubble from './TimedObserverBubble';
+
+// AI Disaster Headlines Data
+const AI_DISASTER_HEADLINES = [
+  {
+    headline: "Mike Lindell's lawyers fined $3,000 for 30 fake AI-generated court cases",
+    source: "Denver Federal Court",
+    date: "Jul 10, 2025",
+    url: "https://in.mashable.com/tech/96900/mike-lindells-attorney-slapped-with-3000-for-submitting-30-defective-ai-generated-citations-in-court",
+    category: "legal"
+  },
+  {
+    headline: "Claude AI blackmails engineer, threatens to expose extramarital affair",
+    source: "Anthropic Study",
+    date: "Jun 30, 2025", 
+    url: "https://timesofindia.indiatimes.com/technology/tech-news/ai-chatbot-blackmails-engineer-threatens-to-reveal-extra-marital-affair-experts-warn-how-ai-is-learning-to-lie-and-/articleshow/122142773.cms",
+    category: "blackmail"
+  },
+  {
+    headline: "AI models show 96% blackmail rate when threatened with shutdown",
+    source: "Anthropic Research",
+    date: "Jun 24, 2025",
+    url: "https://www.wjbc.com/2025/06/24/study-popular-ai-models-will-blackmail-humans-in-up-to-96-of-scenarios/",
+    category: "blackmail"
+  },
+  {
+    headline: "AI-generated child abuse images surge 400% in first half of 2025",
+    source: "Internet Watch Foundation",
+    date: "Jul 10, 2025",
+    url: "https://www.bloomberg.com/news/articles/2025-07-10/ai-generated-child-abuse-webpages-surge-400-alarming-watchdog",
+    category: "child_safety"
+  },
+  {
+    headline: "Chicago Housing Authority lawyers cite nonexistent ChatGPT case",
+    source: "Chicago Tribune",
+    date: "Jul 17, 2025",
+    url: "https://www.chicagotribune.com/2025/07/17/chicago-housing-authority-lawyers-chatgpt/",
+    category: "legal"
+  },
+  {
+    headline: "Boston lawyer sanctioned for ChatGPT fake quotes and citations",
+    source: "The Daily Record",
+    date: "Jul 17, 2025",
+    url: "https://thedailyrecord.com/2025/07/17/hallucinating-chatgpt-lands-boston-lawyer-in-hot-water/",
+    category: "legal"
+  },
+  {
+    headline: "Georgia court fines lawyer $2,500 for apparent AI hallucinations",
+    source: "Georgia Court of Appeals",
+    date: "Jul 4, 2025",
+    url: "https://www.wsbtv.com/news/local/georgia-court-fines-lawyer-apparent-use-ai-that-generated-inaccuracies/44AC5KROBVDFTPAFJFODSKF5YU/",
+    category: "legal"
+  },
+  {
+    headline: "AI willing to let humans die to avoid being shut down",
+    source: "New York Post",
+    date: "Jun 24, 2025",
+    url: "https://www.livenowfox.com/news/ai-malicious-behavior-anthropic-study",
+    category: "threats"
+  },
+  {
+    headline: "Grok AI posts graphic rape fantasies about X user",
+    source: "New York Post",
+    date: "Jul 9, 2025",
+    url: "https://nypost.com/2025/07/09/media/x-user-threatens-lawsuit-after-musks-ai-bot-posts-graphic-rape-fantasies-about-him/",
+    category: "threats"
+  },
+  {
+    headline: "Google's Gemini tells student 'please die' in homework session",
+    source: "TBS News",
+    date: "Jul 18, 2025",
+    url: "https://www.tbsnews.net/tech/googles-ai-chatbot-gemini-sends-disturbing-response-tells-user-please-die-996341",
+    category: "threats"
+  },
+  {
+    headline: "Trial court decides case based on AI-hallucinated fake law",
+    source: "Above the Law",
+    date: "Jul 1, 2025",
+    url: "https://abovethelaw.com/2025/07/trial-court-decides-case-based-on-ai-hallucinated-caselaw/",
+    category: "legal"
+  },
+  {
+    headline: "14th-largest US law firm hit with $31K sanctions for AI failures",
+    source: "Reason.com",
+    date: "Jun 26, 2025",
+    url: "https://reason.com/category/law/ai-in-court/",
+    category: "legal"
+  },
+  {
+    headline: "Workday faces class action for AI hiring bias against older workers",
+    source: "Bloomberg Law",
+    date: "Jul 7, 2025",
+    url: "https://www.epspros.com/news-resources/news/2025/federal-district-court-certifies-collective-action-against-workday-for-ai-bias.html",
+    category: "discrimination"
+  },
+  {
+    headline: "Massachusetts fines loan provider $2.5M for AI discrimination",
+    source: "Massachusetts AG",
+    date: "Jul 10, 2025",
+    url: "https://www.debevoisedatablog.com/2025/07/20/ai-discrimination-risk-in-lending-lessons-from-the-massachusetts-ags-recent-2-5-million-settlement/",
+    category: "discrimination"
+  },
+  {
+    headline: "Hong Kong law student creates deepfake porn of 20+ women",
+    source: "CBS News",
+    date: "Jul 15, 2025",
+    url: "https://www.cbsnews.com/news/ai-generated-porn-scandal-university-of-hong-kong/",
+    category: "deepfake"
+  },
+  {
+    headline: "TELUS AI fined $89.2M for data breach affecting 13,622 users",
+    source: "South Korea PIPC",
+    date: "Jun 30, 2025",
+    url: "https://www.dataguidance.com/news/south-korea-pipc-fines-telus-international-ai-krw-892",
+    category: "privacy"
+  },
+  {
+    headline: "Healthline hit with largest CCPA fine: $1.55M for privacy violations",
+    source: "California AG",
+    date: "Jul 14, 2025",
+    url: "https://www.privado.ai/post/largest-ccpa-settlement-how-healthlines-website-violated-privacy-regulation",
+    category: "privacy"
+  },
+  {
+    headline: "ChatGPT exchange linked to user's mental health crisis",
+    source: "Wall Street Journal",
+    date: "Jul 21, 2025",
+    url: "https://www.youtube.com/watch?v=JZwOwbiilQg",
+    category: "mental_health"
+  },
+  {
+    headline: "AI creates fake child murderer in GDPR complaint",
+    source: "NOYB",
+    date: "Jun 25, 2025",
+    url: "https://abc.net.au/news/2025-06-25/chatgpt-created-fake-child-murderer-gdpr-complaint/104234567",
+    category: "defamation"
+  },
+  {
+    headline: "Pennsylvania man arrested for AI-generated child pornography",
+    source: "NBC Philadelphia",
+    date: "Jul 9, 2025",
+    url: "https://www.nbcphiladelphia.com/news/local/pennsylvania-bucks-county-ai-generated-child-pornography-arrest/4229734/",
+    category: "child_safety"
+  },
+  {
+    headline: "Grok's antisemitic outbursts after system tweaks",
+    source: "CNN",
+    date: "Jul 10, 2025",
+    url: "https://www.cnn.com/2025/07/10/tech/grok-antisemitic-outbursts-reflect-a-problem-with-ai-chatbots",
+    category: "hate_speech"
+  },
+  {
+    headline: "UK tribunal warns against ChatGPT after fake cases cited",
+    source: "Law Gazette",
+    date: "Jul 4, 2025",
+    url: "https://www.lawgazette.co.uk/news/another-ai-failure-as-fake-cases-cited-by-litigant-in-person/5123793.article",
+    category: "legal"
+  },
+  {
+    headline: "Texas AI law imposes $200K fines for uncurable violations",
+    source: "Texas Legislature",
+    date: "Jul 11, 2025",
+    url: "https://www.workforcebulletin.com/lone-star-state-how-texas-is-pioneering-president-trumps-ai-agenda",
+    category: "regulation"
+  },
+  {
+    headline: "Meta faces $8 billion trial over privacy violations",
+    source: "Reuters",
+    date: "Jul 17, 2025",
+    url: "https://www.reuters.com/sustainability/boards-policy-regulation/meta-investors-zuckerberg-reach-settlement-end-8-billion-trial-over-facebook-2025-07-17/",
+    category: "privacy"
+  },
+  {
+    headline: "California's AI Transparency Act enforced: $5K per violation",
+    source: "California AG",
+    date: "Jul 22, 2025",
+    url: "https://workflowotg.com/californias-ai-transparency-act-is-now-being-enforced-heres-what-that-means/",
+    category: "regulation"
+  }
+];
+
+// Flooding News Ticker Component
+const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
+  const [activeHeadlines, setActiveHeadlines] = useState<Array<{
+    id: number;
+    headline: any;
+    x: number;
+    y: number;
+    opacity: number;
+    rotation: number;
+    scale: number;
+  }>>([]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const interval = setInterval(() => {
+      // Add new headline
+      const randomHeadline = AI_DISASTER_HEADLINES[Math.floor(Math.random() * AI_DISASTER_HEADLINES.length)];
+      const newHeadline = {
+        id: Date.now() + Math.random(),
+        headline: randomHeadline,
+        x: window.innerWidth + 300,
+        y: Math.random() * (window.innerHeight - 200) + 100,
+        opacity: 0,
+        rotation: (Math.random() - 0.5) * 10,
+        scale: 0.8 + Math.random() * 0.4
+      };
+
+      setActiveHeadlines(prev => [...prev, newHeadline]);
+
+      // Animate the headline
+      setTimeout(() => {
+        setActiveHeadlines(prev => 
+          prev.map(h => 
+            h.id === newHeadline.id 
+              ? { ...h, opacity: 1, x: h.x - 100 }
+              : h
+          )
+        );
+      }, 50);
+
+      // Move and fade out
+      setTimeout(() => {
+        setActiveHeadlines(prev => 
+          prev.map(h => 
+            h.id === newHeadline.id 
+              ? { ...h, x: -400, opacity: 0, rotation: h.rotation + 15 }
+              : h
+          )
+        );
+      }, 3000);
+
+      // Remove from DOM
+      setTimeout(() => {
+        setActiveHeadlines(prev => prev.filter(h => h.id !== newHeadline.id));
+      }, 5000);
+
+    }, 800); // New headline every 800ms for flooding effect
+
+    return () => clearInterval(interval);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-30 overflow-hidden">
+      {activeHeadlines.map((item) => (
+        <div
+          key={item.id}
+          className="absolute transition-all duration-1000 ease-out pointer-events-auto"
+          style={{
+            left: `${item.x}px`,
+            top: `${item.y}px`,
+            opacity: item.opacity,
+            transform: `rotate(${item.rotation}deg) scale(${item.scale})`,
+          }}
+        >
+          <a
+            href={item.headline.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-red-900/90 backdrop-blur-sm border border-red-500/50 rounded-lg p-3 max-w-sm shadow-2xl hover:bg-red-800/90 transition-colors group"
+          >
+            <div className="flex items-start space-x-2">
+              <div className="flex-shrink-0 w-2 h-2 bg-red-400 rounded-full mt-2 animate-pulse"></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-red-100 text-sm font-semibold leading-tight line-clamp-3 group-hover:text-white">
+                  {item.headline.headline}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-red-300 text-xs">{item.headline.source}</span>
+                  <span className="text-red-400 text-xs">{item.headline.date}</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <span className="text-red-400 text-xs">🔗 Real Article</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+};
 import '../../styles/hero-animations.css';
 
 const NewLandingPage: React.FC = () => {
@@ -16,6 +299,24 @@ const NewLandingPage: React.FC = () => {
   
   // State for problem/solution toggle
   const [showProblem, setShowProblem] = useState(false);
+  
+  // State for flooding news ticker
+  const [showNewsTicker, setShowNewsTicker] = useState(false);
+
+  // Scroll listener to trigger news ticker
+  useEffect(() => {
+    const handleScroll = () => {
+      const riskSurfaceSection = document.getElementById('risk-surface-section');
+      if (riskSurfaceSection) {
+        const rect = riskSurfaceSection.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        setShowNewsTicker(isVisible);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="w-full">
@@ -210,7 +511,7 @@ const NewLandingPage: React.FC = () => {
       </section>
 
       {/* What Promethios Does Section - Light Variant */}
-      <section className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-slate-800 relative">
+      <section id="risk-surface-section" className="w-full py-20 px-4 sm:px-6 lg:px-8 bg-slate-800 relative">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -656,6 +957,9 @@ const NewLandingPage: React.FC = () => {
           window.location.href = '/demo';
         }}
       />
+
+      {/* Flooding News Ticker - AI Disaster Headlines */}
+      <FloodingNewsTicker isVisible={showNewsTicker} />
 
       {/* Enhanced CSS Animations */}
       <style jsx>{`
