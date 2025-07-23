@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { FirebaseError } from 'firebase/app';
-import { addToWaitlist } from '../../firebase/waitlistService';
+import { addToWaitlistRobust, testFirestoreConnection, debugFirestoreAccess } from '../../firebase/robustWaitlistService';
 import { checkUserInvitation } from '../../firebase/invitationService';
 import '../../styles/animated-background.css';
 import '../../styles/video-background.css';
@@ -41,16 +41,42 @@ const LoginWaitlistPage: React.FC = () => {
     biggestAiFailure: '',
     additionalConcerns: ''
   });
-  const [submitted, setSubmitted] = useState(false);
-  const [waitlistError, setWaitlistError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'testing' | 'connected' | 'failed'>('unknown');
+  const [debugInfo, setDebugInfo] = useState<string>('');
+  const [showDebugInfo, setShowDebugInfo] = useState(false);  
   // Toggle between login and waitlist forms
   const [showLoginForm, setShowLoginForm] = useState(false);
   
-  // Video background state
+  //   // Test Firestore connection on component mount
+  useEffect(() => {
+    const testConnection = async () => {
+      setConnectionStatus('testing');
+      try {
+        const result = await testFirestoreConnection();
+        if (result.connected) {
+          setConnectionStatus('connected');
+          console.log('✅ Firestore connection verified');
+        } else {
+          setConnectionStatus('failed');
+          setDebugInfo(`Connection failed: ${result.error}`);
+          console.error('❌ Firestore connection failed:', result.error);
+        }
+      } catch (error: any) {
+        setConnectionStatus('failed');
+        setDebugInfo(`Connection error: ${error.message}`);
+        console.error('❌ Connection test error:', error);
+      }
+    };
+    
+    testConnection();
+  }, []);
+
+  // Video management
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);;
   const [videoDuration, setVideoDuration] = useState(10); // Default duration
   
   // Handle video fade-out loop
@@ -221,33 +247,58 @@ const LoginWaitlistPage: React.FC = () => {
   
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setWaitlistError('');
+    await handleWaitlistSubmit();
+  };
+  
+  const handleWaitlistSubmit = async () => {
     setIsSubmitting(true);
+    setWaitlistError('');
     
     try {
+      console.log('🚀 Starting waitlist submission...');
+      
+      // Show connection status
+      if (connectionStatus === 'failed') {
+        setWaitlistError('Database connection failed. Please try again or contact support.');
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Combine step 1 and step 2 data
       const completeData = {
         ...step1Data,
         ...step2Data
       };
       
-      const result = await addToWaitlist(completeData, db);
+      console.log('📝 Submitting data:', completeData);
       
-      if (result === 'exists') {
-        console.log('Email already in waitlist:', step1Data.email);
+      const result = await addToWaitlistRobust(completeData);
+      
+      if (result.success) {
+        console.log('✅ Waitlist submission successful! ID:', result.id);
+        setSubmitted(true);
+      } else if (result.exists) {
+        console.log('⚠️ Email already in waitlist:', step1Data.email);
+        setWaitlistError('This email is already registered in our waitlist.');
       } else {
-        console.log('Added to waitlist with ID:', result);
+        console.error('❌ Waitlist submission failed:', result.error);
+        setWaitlistError(result.error || 'Failed to join waitlist. Please try again later.');
+        
+        // Show debug info if available
+        if (result.error?.includes('permission') || result.error?.includes('rules')) {
+          setDebugInfo(`Database Error: ${result.error}. This may be a Firestore security rules issue.`);
+          setShowDebugInfo(true);
+        }
       }
-      
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Waitlist submission error:', error);
-      setWaitlistError('Failed to join waitlist. Please try again later.');
+    } catch (error: any) {
+      console.error('❌ Waitlist submission error:', error);
+      setWaitlistError('An unexpected error occurred. Please try again.');
+      setDebugInfo(`Unexpected error: ${error.message}`);
+      setShowDebugInfo(true);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
   const updateStep1Data = (field: string, value: string) => {
     setStep1Data(prev => ({
       ...prev,
