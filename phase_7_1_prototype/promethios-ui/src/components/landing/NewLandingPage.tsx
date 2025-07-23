@@ -1064,16 +1064,16 @@ const NewLandingPage: React.FC = () => {
         .cta-rise-up {
           animation: riseUp 1s ease-out forwards;
           animation-delay: 9s;
-          transform: translateY(50px);
+          transform: translateY(250px);
         }
 
         @keyframes riseUp {
           from {
-            transform: translateY(50px);
+            transform: translateY(250px);
             opacity: 0.8;
           }
           to {
-            transform: translateY(0);
+            transform: translateY(-200px);
             opacity: 1;
           }
         }
