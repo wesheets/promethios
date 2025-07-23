@@ -222,29 +222,109 @@ const NewLandingPage: React.FC = () => {
           <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-30"></div>
         </div>
         
-        <div className="max-w-screen-xl mx-auto relative">
+        <div className="w-full px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
-              Why Enterprises Are <span className="text-red-400">Locking Down</span> Their AI
+              Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
             </h2>
             <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
               You're not managing models. You're protecting trust, reputation, and risk.
             </p>
             {/* Horizontal divider with warning colors */}
-            <div className="w-32 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 mx-auto mt-8"></div>
+            <div className="w-32 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 mx-auto mt-8 mb-8"></div>
+            
+            {/* Problem/Solution Toggle */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="bg-gray-800/60 backdrop-blur-sm border border-gray-600/50 rounded-xl p-2 flex items-center space-x-2">
+                <button 
+                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 problem-toggle-btn"
+                  onClick={() => {
+                    document.querySelectorAll('.problem-view').forEach(el => el.classList.remove('hidden'));
+                    document.querySelectorAll('.solution-view').forEach(el => el.classList.add('hidden'));
+                    document.querySelector('.problem-toggle-btn').classList.add('bg-red-500', 'text-white');
+                    document.querySelector('.problem-toggle-btn').classList.remove('text-gray-400');
+                    document.querySelector('.solution-toggle-btn').classList.remove('bg-green-500', 'text-white');
+                    document.querySelector('.solution-toggle-btn').classList.add('text-gray-400');
+                  }}
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>🚨</span>
+                    <span>The Problem</span>
+                  </span>
+                </button>
+                <button 
+                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 solution-toggle-btn bg-green-500 text-white"
+                  onClick={() => {
+                    document.querySelectorAll('.solution-view').forEach(el => el.classList.remove('hidden'));
+                    document.querySelectorAll('.problem-view').forEach(el => el.classList.add('hidden'));
+                    document.querySelector('.solution-toggle-btn').classList.add('bg-green-500', 'text-white');
+                    document.querySelector('.solution-toggle-btn').classList.remove('text-gray-400');
+                    document.querySelector('.problem-toggle-btn').classList.remove('bg-red-500', 'text-white');
+                    document.querySelector('.problem-toggle-btn').classList.add('text-gray-400');
+                  }}
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>🛡️</span>
+                    <span>The Promethios Layer</span>
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Pain-Killer Approach Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 gap-12 mb-16 max-w-6xl mx-auto">
             
             {/* Your AI just lied to a customer */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
+                
+                {/* Problem View - Ungoverned Scenario */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs text-red-400">
+                      🧠 AI generated fake legal case
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      "Johnson v. Smith" - completely fabricated
+                    </div>
+                    <div className="text-xs text-red-400">
+                      📉 Trust score unknown
+                    </div>
+                    <div className="mt-2 bg-red-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-red-300">💥 PRISM off. No transparency logs</div>
+                      <div className="text-xs text-red-400">❌ No audit trail available</div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Solution View - Promethios Layer */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs text-green-400">
+                      🛡️ Hallucination blocked
+                    </div>
+                    <div className="text-xs text-gray-300">
+                      Redirected to verified legal database
+                    </div>
+                    <div className="text-xs text-green-400">
+                      ✅ Trust score: 91% (Veritas active)
+                    </div>
+                    <div className="mt-2 bg-green-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-green-300">🕵️ Audit-ready logs available</div>
+                      <div className="text-xs text-green-400">✓ Full transparency maintained</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-red-400 group-hover:text-red-300 transition-colors">
                     Your AI just lied to a customer. Now what?
@@ -267,13 +347,61 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* You're regulated. Your AI isn't. */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-orange-500/30 hover:border-orange-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
+                
+                {/* Problem View - Ungoverned Compliance */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">GDPR</span>
+                      <span className="text-red-400">❌ Bypassed</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">HIPAA</span>
+                      <span className="text-red-400">❌ Ignored</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">SOC2</span>
+                      <span className="text-red-400">❌ Violated</span>
+                    </div>
+                    <div className="mt-2 bg-red-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-red-300">PII exposed: 127 instances</div>
+                      <div className="text-xs text-red-400">💥 Compliance failure</div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Solution View - Promethios Compliance */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">GDPR</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">HIPAA</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">SOC2</span>
+                      <span className="text-green-400">✓ Active</span>
+                    </div>
+                    <div className="mt-2 bg-green-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-green-300">PII Redacted: 47 instances</div>
+                      <div className="text-xs text-green-400">✓ GDPR violation prevented</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-orange-400 group-hover:text-orange-300 transition-colors">
                     You're regulated. Your AI isn't.
@@ -296,12 +424,55 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* Board wants to know if AI is safe to scale */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-purple-500/30 hover:border-purple-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
+                
+                {/* Problem View - No Metrics */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Trust Score</span>
+                      <span className="text-red-400 font-bold">???</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-red-500 h-2 rounded-full animate-pulse" style={{width: '15%'}}></div>
+                    </div>
+                    <div className="text-xs text-red-400">
+                      No governance metrics available
+                    </div>
+                    <div className="mt-2 bg-red-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-red-300">ROI: Unknown</div>
+                      <div className="text-xs text-red-400">❌ No business case</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Solution View - Trust Score Analytics */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Trust Score</span>
+                      <span className="text-green-400 font-bold">91%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style={{width: '91%'}}></div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Governed: 91% vs Ungoverned: 34%
+                    </div>
+                    <div className="mt-2 bg-green-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-green-300">ROI: +247%</div>
+                      <div className="text-xs text-green-400">✓ Board-ready metrics</div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-purple-400 group-hover:text-purple-300 transition-colors">
@@ -325,13 +496,61 @@ const NewLandingPage: React.FC = () => {
             </div>
 
             {/* Multi-agent chaos is coming */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-cyan-500/30 hover:border-cyan-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              <div className="flex items-start space-x-6 mb-6">
+                
+                {/* Problem View - Multi-Agent Chaos */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Active Agents</span>
+                      <span className="text-red-400 font-bold">12</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Conflicts</span>
+                      <span className="text-red-400">847</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Coordination</span>
+                      <span className="text-red-400">Failed</span>
+                    </div>
+                    <div className="mt-2 bg-red-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-red-300">Efficiency: 23%</div>
+                      <div className="text-xs text-red-400">💥 Governance gaps everywhere</div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Solution View - Multi-Agent Coordination */}
+                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Active Agents</span>
+                      <span className="text-cyan-400 font-bold">12</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Coordinated Tasks</span>
+                      <span className="text-green-400">847</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">Conflicts Resolved</span>
+                      <span className="text-yellow-400">23</span>
+                    </div>
+                    <div className="mt-2 bg-green-900/30 rounded px-2 py-1">
+                      <div className="text-xs text-cyan-300">Workflow Efficiency: 94%</div>
+                      <div className="text-xs text-green-400">✓ Zero governance gaps</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-3 text-cyan-400 group-hover:text-cyan-300 transition-colors">
                     Multi-agent chaos is coming.
@@ -375,9 +594,9 @@ const NewLandingPage: React.FC = () => {
           <div className="text-center">
             <Link 
               to="/features" 
-              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              See How Promethios Solves This
+              Fix the part of AI no one wants to admit is broken
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
