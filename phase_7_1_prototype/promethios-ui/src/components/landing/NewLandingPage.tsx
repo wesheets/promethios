@@ -38,8 +38,8 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Ultra-tight spacing */}
-            <div className="mb-8 relative h-56 overflow-visible w-full -mt-20">
+            {/* Full-Width Animated Pre-Headline - Improved spacing with fade-out */}
+            <div className="mb-8 relative h-56 overflow-visible w-full -mt-8 animated-text-fadeout">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - all positioned at the same top level */}
@@ -74,7 +74,7 @@ const NewLandingPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 h-full">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 h-full cta-rise-up">
               
               {/* Left-aligned Content */}
               <div className="lg:w-1/2 text-left">
@@ -82,7 +82,7 @@ const NewLandingPage: React.FC = () => {
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                   <span className="text-white">Govern, Monitor,</span><br />
                   <span className="text-white">and </span>
-                  <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-pulse glow-text">Trust</span>
+                  <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-pulse trust-glow-text">Trust</span>
                   <span className="text-white"> your AI</span>
                 </h1>
 
@@ -123,12 +123,12 @@ const NewLandingPage: React.FC = () => {
 
               {/* Right-aligned Trust Score Box */}
               <div className="lg:w-1/2 flex justify-end">
-                <div className="relative">
-                  {/* Pulsing Glow Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-blue-500/30 rounded-xl blur-xl animate-pulse"></div>
+                <div className="relative dashboard-float">
+                  {/* Enhanced Pulsing Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-blue-500/30 rounded-xl blur-xl animate-pulse dashboard-glow"></div>
                   
-                  {/* Trust Score Container */}
-                  <div className="relative bg-gray-800/90 backdrop-blur-sm border border-gray-600/50 rounded-xl p-6 shadow-2xl pulse-glow">
+                  {/* Trust Score Container with Hover Effects */}
+                  <div className="relative bg-gray-800/90 backdrop-blur-sm border border-gray-600/50 rounded-xl p-6 shadow-2xl pulse-glow hover:shadow-3xl hover:border-green-500/50 transition-all duration-300 transform hover:scale-105 dashboard-hover">
                     {/* Dashboard Header */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-3">
@@ -139,30 +139,30 @@ const NewLandingPage: React.FC = () => {
                       <span className="text-gray-300 text-sm">AI Governance Dashboard</span>
                     </div>
 
-                    {/* Rotating Trust Metrics */}
+                    {/* Rotating Trust Metrics with Enhanced Animations */}
                     <div className="mb-6 relative h-16">
                       <div className="absolute inset-0 flex items-center justify-between">
                         <span className="text-white font-semibold">Trust Score</span>
                         <div className="relative pr-2">
-                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute right-0">85%</span>
-                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0 right-0">243</span>
-                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0 right-0">1.2M</span>
+                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute right-0 metric-fade-in">85%</span>
+                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0 right-0 metric-fade-in">243</span>
+                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0 right-0 metric-fade-in">1.2M</span>
                         </div>
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '4s'}}>
+                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric metric-fade-in" style={{animationDelay: '4s'}}>
                         <span className="text-white font-semibold">Violations Prevented</span>
                         <span className="text-2xl font-bold text-blue-400 pr-2">243</span>
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric" style={{animationDelay: '8s'}}>
+                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric metric-fade-in" style={{animationDelay: '8s'}}>
                         <span className="text-white font-semibold">Governed Responses</span>
                         <span className="text-2xl font-bold text-purple-400 pr-2">1.2M</span>
                       </div>
                     </div>
 
-                    {/* Trust Score Bar */}
+                    {/* Animated Trust Score Bar */}
                     <div className="mb-6">
                       <div className="w-full bg-gray-700 rounded-full h-3">
-                        <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full trust-bar" style={{width: '85%'}}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full trust-bar-animated"></div>
                       </div>
                     </div>
 
@@ -656,6 +656,124 @@ const NewLandingPage: React.FC = () => {
           window.location.href = '/demo';
         }}
       />
+
+      {/* Enhanced CSS Animations */}
+      <style jsx>{`
+        /* Trust Glow Text Animation */
+        .trust-glow-text {
+          text-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
+          animation: trustGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes trustGlow {
+          from {
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
+          }
+          to {
+            text-shadow: 0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(34, 197, 94, 0.5);
+          }
+        }
+
+        /* Dashboard Float Animation */
+        .dashboard-float {
+          animation: dashboardFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes dashboardFloat {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        /* Enhanced Dashboard Glow */
+        .dashboard-glow {
+          animation: dashboardGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes dashboardGlow {
+          from {
+            opacity: 0.3;
+          }
+          to {
+            opacity: 0.6;
+          }
+        }
+
+        /* Trust Bar Loading Animation */
+        .trust-bar-animated {
+          width: 0%;
+          animation: trustBarLoad 2s ease-out forwards;
+          animation-delay: 1s;
+        }
+
+        @keyframes trustBarLoad {
+          from {
+            width: 0%;
+          }
+          to {
+            width: 85%;
+          }
+        }
+
+        /* Metric Fade In Animation */
+        .metric-fade-in {
+          animation: metricFadeIn 1s ease-in-out;
+        }
+
+        @keyframes metricFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Enhanced Dashboard Hover */
+        .dashboard-hover:hover {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 30px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Animated Text Fade Out Sequence */
+        .animated-text-fadeout {
+          animation: fadeOutUp 1s ease-in-out forwards;
+          animation-delay: 8s;
+        }
+
+        @keyframes fadeOutUp {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-50px);
+          }
+        }
+
+        /* CTA Rise Up Animation */
+        .cta-rise-up {
+          animation: riseUp 1s ease-out forwards;
+          animation-delay: 9s;
+          transform: translateY(50px);
+        }
+
+        @keyframes riseUp {
+          from {
+            transform: translateY(50px);
+            opacity: 0.8;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 };
