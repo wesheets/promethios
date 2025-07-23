@@ -446,12 +446,23 @@ export class TrustMetricsExtension {
         // Determine agent type (same logic as Governance Overview)
         let agentType = 'Single Agent';
         
+        // Debug logging to see agent properties
+        console.log('🔍 Agent type detection for:', agent.identity?.name, {
+          multiAgentConfig: agent.multiAgentConfig,
+          isWrapped: agent.isWrapped,
+          agentCount: agent.agentCount,
+          hasMultiAgentConfig: !!agent.multiAgentConfig
+        });
+        
         // Only classify as multi-agent if it's actually a multi-agent system
-        // (not just an API-wrapped single agent)
-        if (agent.multiAgentConfig || 
-            (agent.isWrapped && agent.agentCount && agent.agentCount > 1)) {
+        // Most agents should be Single Agent unless they have specific multi-agent properties
+        if (agent.multiAgentConfig && Object.keys(agent.multiAgentConfig).length > 0) {
+          agentType = 'Multi-Agent System';
+        } else if (agent.isWrapped && agent.agentCount && agent.agentCount > 1) {
           agentType = 'Multi-Agent System';
         }
+        
+        console.log('🔍 Final agent type for', agent.identity?.name, ':', agentType);
         
         return {
           agent_id: agent.identity?.name || agent.agentId,
