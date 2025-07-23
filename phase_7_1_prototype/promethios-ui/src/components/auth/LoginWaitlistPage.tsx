@@ -44,11 +44,13 @@ const LoginWaitlistPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'testing' | 'connected' | 'failed'>('unknown');
   const [debugInfo, setDebugInfo] = useState<string>('');
   const [showDebugInfo, setShowDebugInfo] = useState(false);  
   // Toggle between login and waitlist forms
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [waitlistError, setWaitlistError] = useState('');
   
   //   // Test Firestore connection on component mount
   useEffect(() => {
