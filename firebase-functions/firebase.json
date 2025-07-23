@@ -1,14 +1,10 @@
 {
   "functions": {
-    "source": ".",
+    "source": "lib",
     "predeploy": [
       "npm run build"
     ],
     "runtime": "nodejs18"
-  },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
   }
 }
 
