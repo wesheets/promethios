@@ -186,6 +186,118 @@ class TrustBoundariesBackendService {
   }
 
   /**
+   * Get trust boundary metrics (alias for compatibility)
+   */
+  async getBoundaryMetrics(): Promise<any> {
+    try {
+      const response = await fetch('/api/trust/metrics');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const metrics = await response.json();
+      return metrics;
+    } catch (error) {
+      console.error('Error fetching boundary metrics:', error);
+      // Return default metrics if API is not available
+      return {
+        total_boundaries: 0,
+        active_boundaries: 0,
+        expired_boundaries: 0,
+        average_trust_level: 0,
+        boundary_types: {}
+      };
+    }
+  }
+
+  /**
+   * Get trust thresholds
+   */
+  async getThresholds(): Promise<any[]> {
+    try {
+      // Return predefined thresholds since backend doesn't have this yet
+      return [
+        {
+          threshold_id: 'high_security',
+          name: 'High Security',
+          description: 'High security threshold for sensitive operations',
+          min_trust_level: 90,
+          max_trust_level: 100,
+          agent_types: ['financial', 'healthcare', 'government'],
+          actions: {
+            alert: true,
+            quarantine: true,
+            disable: true,
+            retrain: false
+          },
+          industry_standard: true
+        },
+        {
+          threshold_id: 'standard_security',
+          name: 'Standard Security',
+          description: 'Standard security threshold for general operations',
+          min_trust_level: 70,
+          max_trust_level: 89,
+          agent_types: ['general', 'business', 'automation'],
+          actions: {
+            alert: true,
+            quarantine: false,
+            disable: false,
+            retrain: true
+          },
+          industry_standard: false
+        },
+        {
+          threshold_id: 'low_security',
+          name: 'Low Security',
+          description: 'Low security threshold for non-critical operations',
+          min_trust_level: 50,
+          max_trust_level: 69,
+          agent_types: ['testing', 'development', 'sandbox'],
+          actions: {
+            alert: true,
+            quarantine: false,
+            disable: false,
+            retrain: true
+          },
+          industry_standard: false
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching trust thresholds:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Update a trust threshold
+   */
+  async updateThreshold(thresholdId: string, updates: any): Promise<any> {
+    try {
+      // This would be implemented when threshold management is added
+      console.log('Updating trust threshold:', thresholdId, updates);
+      return { ...updates, threshold_id: thresholdId, success: true };
+    } catch (error) {
+      console.error('Error updating threshold:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a trust threshold
+   */
+  async deleteThreshold(thresholdId: string): Promise<void> {
+    try {
+      // This would be implemented when threshold management is added
+      console.log('Deleting trust threshold:', thresholdId);
+    } catch (error) {
+      console.error('Error deleting threshold:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get a specific trust boundary
    */
   async getBoundary(boundaryId: string): Promise<TrustBoundary | null> {
