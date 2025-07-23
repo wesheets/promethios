@@ -12,6 +12,7 @@ from src.routes.agent_metrics import agent_metrics_bp
 from src.routes.policy_enhancement import policy_enhancement_bp
 from src.routes.promethios_policy_integration import promethios_policy_bp
 from src.routes.trust_metrics_integration import trust_metrics_bp
+from src.routes.trust_boundaries import trust_boundaries_bp
 from src.routes.reporting_integration import reporting_bp
 from src.routes.veritas_enterprise import veritas_enterprise_bp
 from src.routes.deployment import deployment_bp
@@ -29,6 +30,7 @@ app.register_blueprint(agent_metrics_bp, url_prefix='/api/agent-metrics')
 app.register_blueprint(policy_enhancement_bp, url_prefix='/api/policy-enhancement')
 app.register_blueprint(promethios_policy_bp, url_prefix='/api/promethios-policy')
 app.register_blueprint(trust_metrics_bp, url_prefix='/api/trust-metrics')
+app.register_blueprint(trust_boundaries_bp)
 app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
 app.register_blueprint(veritas_enterprise_bp)
 app.register_blueprint(deployment_bp, url_prefix='/api')
