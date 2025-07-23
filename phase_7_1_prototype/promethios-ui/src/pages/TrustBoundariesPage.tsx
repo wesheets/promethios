@@ -116,8 +116,258 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
-  );
+   }
 }
+
+// Create Boundary Modal Component
+interface CreateBoundaryModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (boundary: any) => Promise<void>;
+  loading: boolean;
+}
+
+const CreateBoundaryModal: React.FC<CreateBoundaryModalProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  loading
+}) => {
+  const { currentUser } = useAuth();
+  const [formData, setFormData] = useState({
+    sourceAgent: '',
+    targetAgent: '',
+    trustLevel: 80,
+    boundaryType: 'direct' as const,
+    policies: [] as string[],
+    description: '',
+    expiresAt: ''
+  });
+  const [availableAgents, setAvailableAgents] = useState<any[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+
+  // Load available agents when modal opens
+  useEffect(() => {
+    if (open && currentUser) {
+      loadAvailableAgents();
+    }
+  }, [open, currentUser]);
+
+  const loadAvailableAgents = async () => {
+    setLoadingAgents(true);
+    try {
+      // Use the same agent loading logic as Trust Metrics
+      const userAgentStorageService = (await import('../services/UserAgentStorageService')).userAgentStorageService;
+      userAgentStorageService.setCurrentUser(currentUser!.uid);
+      const agents = await userAgentStorageService.loadUserAgents();
+      
+      // Add the multi-agent system if not present
+      const hasMultiAgent = agents.some(agent => agent.identity?.name?.includes('Multi-Agent'));
+      if (!hasMultiAgent) {
+        agents.push({
+          identity: {
+            id: 'test-multi-agent-system',
+            name: 'Test Multi-Agent System',
+            description: 'Test multi-agent system for boundary testing',
+            status: 'active'
+          }
+        });
+      }
+      
+      setAvailableAgents(agents);
+    } catch (error) {
+      console.error('Error loading agents:', error);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const boundaryData = {
+        source_instance_id: formData.sourceAgent,
+        target_instance_id: formData.targetAgent,
+        trust_level: formData.trustLevel,
+        boundary_type: formData.boundaryType,
+        policies: formData.policies.map(policyId => ({
+          policy_id: policyId,
+          policy_type: 'access' as const,
+          policy_config: {}
+        })),
+        description: formData.description,
+        expires_at: formData.expiresAt || undefined
+      };
+      
+      await onSubmit(boundaryData);
+      
+      // Reset form and close modal
+      setFormData({
+        sourceAgent: '',
+        targetAgent: '',
+        trustLevel: 80,
+        boundaryType: 'direct',
+        policies: [],
+        description: '',
+        expiresAt: ''
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error creating boundary:', error);
+    }
+  };
+
+  const isFormValid = formData.sourceAgent && formData.targetAgent && formData.sourceAgent !== formData.targetAgent;
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: { backgroundColor: '#1a202c', color: 'white' }
+      }}
+    >
+      <DialogTitle sx={{ color: 'white', borderBottom: '1px solid #4a5568' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Shield color="primary" />
+          Create Trust Boundary
+        </Box>
+      </DialogTitle>
+      
+      <DialogContent sx={{ pt: 3 }}>
+        {loadingAgents ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <LinearProgress sx={{ width: '100%' }} />
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Source Agent</InputLabel>
+                <Select
+                  value={formData.sourceAgent}
+                  onChange={(e) => setFormData({ ...formData, sourceAgent: e.target.value })}
+                  sx={{ color: 'white', '.MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' } }}
+                >
+                  {availableAgents.map((agent) => (
+                    <MenuItem key={agent.identity?.id} value={agent.identity?.id}>
+                      {agent.identity?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Target Agent</InputLabel>
+                <Select
+                  value={formData.targetAgent}
+                  onChange={(e) => setFormData({ ...formData, targetAgent: e.target.value })}
+                  sx={{ color: 'white', '.MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' } }}
+                >
+                  {availableAgents
+                    .filter(agent => agent.identity?.id !== formData.sourceAgent)
+                    .map((agent) => (
+                    <MenuItem key={agent.identity?.id} value={agent.identity?.id}>
+                      {agent.identity?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography sx={{ color: '#a0aec0', mb: 1 }}>
+                Trust Level: {formData.trustLevel}%
+              </Typography>
+              <Slider
+                value={formData.trustLevel}
+                onChange={(_, value) => setFormData({ ...formData, trustLevel: value as number })}
+                min={0}
+                max={100}
+                step={5}
+                marks={[
+                  { value: 0, label: '0%' },
+                  { value: 50, label: '50%' },
+                  { value: 100, label: '100%' }
+                ]}
+                sx={{ color: '#3b82f6' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: '#a0aec0' }}>Boundary Type</InputLabel>
+                <Select
+                  value={formData.boundaryType}
+                  onChange={(e) => setFormData({ ...formData, boundaryType: e.target.value as any })}
+                  sx={{ color: 'white', '.MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' } }}
+                >
+                  <MenuItem value="direct">Direct</MenuItem>
+                  <MenuItem value="delegated">Delegated</MenuItem>
+                  <MenuItem value="transitive">Transitive</MenuItem>
+                  <MenuItem value="federated">Federated</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                multiline
+                rows={3}
+                sx={{ 
+                  '& .MuiInputLabel-root': { color: '#a0aec0' },
+                  '& .MuiOutlinedInput-root': { 
+                    color: 'white',
+                    '& fieldset': { borderColor: '#4a5568' }
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Expires At (Optional)"
+                type="datetime-local"
+                value={formData.expiresAt}
+                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{ 
+                  '& .MuiInputLabel-root': { color: '#a0aec0' },
+                  '& .MuiOutlinedInput-root': { 
+                    color: 'white',
+                    '& fieldset': { borderColor: '#4a5568' }
+                  }
+                }}
+              />
+            </Grid>
+          </Grid>
+        )}
+      </DialogContent>
+      
+      <DialogActions sx={{ borderTop: '1px solid #4a5568', pt: 2 }}>
+        <Button onClick={onClose} sx={{ color: '#a0aec0' }}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={!isFormValid || loading || loadingAgents}
+          sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
+        >
+          {loading ? 'Creating...' : 'Create Boundary'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const TrustBoundariesPage: React.FC = () => {
   // Authentication context
@@ -189,11 +439,11 @@ const TrustBoundariesPage: React.FC = () => {
     return new Date(timestamp).toLocaleDateString();
   };
 
-  // Calculate statistics
-  const activeBoundaries = boundaries.filter(b => b.status === 'active').length;
-  const averageTrustLevel = boundaries.length > 0 ? boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length : 0;
-  const boundariesAtRisk = boundaries.filter(b => b.trust_level < 80).length;
-  const totalPolicies = boundaries.reduce((sum, b) => sum + b.policies.length, 0);
+  // Calculate statistics - show N/A when no boundaries exist (agents not deployed)
+  const activeBoundaries = boundaries.length > 0 ? boundaries.filter(b => b.status === 'active').length : null;
+  const averageTrustLevel = boundaries.length > 0 ? boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length : null;
+  const boundariesAtRisk = boundaries.length > 0 ? boundaries.filter(b => b.trust_level < 80).length : null;
+  const totalPolicies = boundaries.length > 0 ? boundaries.reduce((sum, b) => sum + b.policies.length, 0) : null;
 
   // Authentication validation
   if (!currentUser) {
@@ -259,10 +509,10 @@ const TrustBoundariesPage: React.FC = () => {
                 </Tooltip>
               </Box>
               <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
-                {activeBoundaries}
+                {activeBoundaries !== null ? activeBoundaries : 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                Out of {boundaries.length} total
+                {boundaries.length > 0 ? `Out of ${boundaries.length} total` : 'Below 80% trust threshold'}
               </Typography>
             </CardContent>
           </Card>
@@ -279,8 +529,8 @@ const TrustBoundariesPage: React.FC = () => {
                   <Typography variant="h6">Average Trust Level</Typography>
                 </Tooltip>
               </Box>
-              <Typography variant="h3" sx={{ color: getTrustLevelColor(averageTrustLevel), fontWeight: 'bold' }}>
-                {Math.round(averageTrustLevel)}%
+              <Typography variant="h3" sx={{ color: averageTrustLevel !== null ? getTrustLevelColor(averageTrustLevel) : '#6b7280', fontWeight: 'bold' }}>
+                {averageTrustLevel !== null ? `${Math.round(averageTrustLevel)}%` : 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 Across all boundaries
@@ -300,8 +550,8 @@ const TrustBoundariesPage: React.FC = () => {
                   <Typography variant="h6">At Risk</Typography>
                 </Tooltip>
               </Box>
-              <Typography variant="h3" sx={{ color: boundariesAtRisk > 0 ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
-                {boundariesAtRisk}
+              <Typography variant="h3" sx={{ color: boundariesAtRisk !== null ? (boundariesAtRisk > 0 ? '#f59e0b' : '#10b981') : '#6b7280', fontWeight: 'bold' }}>
+                {boundariesAtRisk !== null ? boundariesAtRisk : 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 Below 80% trust threshold
@@ -318,7 +568,7 @@ const TrustBoundariesPage: React.FC = () => {
                 <Typography variant="h6">Active Policies</Typography>
               </Box>
               <Typography variant="h3" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
-                {totalPolicies}
+                {totalPolicies !== null ? totalPolicies : 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 Enforcement rules
@@ -744,6 +994,14 @@ const TrustBoundariesPage: React.FC = () => {
           </Grid>
         </TabPanel>
       </Card>
+
+      {/* Create Boundary Modal */}
+      <CreateBoundaryModal
+        open={createBoundaryOpen}
+        onClose={() => setCreateBoundaryOpen(false)}
+        onSubmit={createBoundary}
+        loading={creatingBoundary}
+      />
     </Box>
   );
 };

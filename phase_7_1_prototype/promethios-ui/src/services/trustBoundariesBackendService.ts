@@ -78,40 +78,85 @@ class TrustBoundariesBackendService {
   }
 
   /**
-   * Get all trust boundaries (simulated from trust evaluations)
+   * Get all trust boundaries (only show real data for deployed agents)
    */
   async getBoundaries(): Promise<TrustBoundary[]> {
     try {
-      // Use trust evaluations to simulate boundaries
-      const evaluations = await trustBackendService.queryTrust({ limit: 100 });
+      // Load real agent data (same as Trust Metrics)
+      const userAgentStorageService = (await import('./UserAgentStorageService')).userAgentStorageService;
+      const agents = await userAgentStorageService.loadUserAgents();
       
-      const boundaries: TrustBoundary[] = evaluations.evaluations.map((evaluation, index) => ({
-        boundary_id: `boundary_${evaluation.evaluation_id}`,
-        source_instance_id: evaluation.agent_id,
-        target_instance_id: evaluation.target_id,
-        source_name: `Agent ${evaluation.agent_id}`,
-        target_name: `Target ${evaluation.target_id}`,
-        trust_level: Math.round(evaluation.trust_score * 100),
-        boundary_type: evaluation.trust_score > 0.8 ? 'direct' : 'delegated',
-        status: evaluation.trust_score > 0.7 ? 'active' : 'suspended',
-        created_at: evaluation.evaluation_timestamp,
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
-        policies: [
-          {
-            policy_id: `policy_${evaluation.evaluation_id}`,
-            policy_type: 'access',
-            policy_config: {
-              allowed_operations: evaluation.trust_score > 0.8 ? ['read', 'write', 'execute'] : ['read']
-            }
+      // Add multi-agent system if not present
+      const hasMultiAgent = agents.some(agent => agent.identity?.name?.includes('Multi-Agent'));
+      if (!hasMultiAgent) {
+        agents.push({
+          identity: {
+            id: 'test-multi-agent-system',
+            name: 'Test Multi-Agent System',
+            description: 'Test multi-agent system for boundary testing',
+            status: 'active'
           }
-        ],
-        attestations: [`attestation_${evaluation.evaluation_id}`],
-        metadata: {
-          confidence_level: evaluation.confidence_level,
-          trust_dimensions: evaluation.trust_dimensions
+        });
+      }
+      
+      // Only create boundaries for actually deployed agents
+      const deployedAgents = agents.filter(agent => 
+        agent.deploymentStatus === 'deployed' && 
+        agent.healthStatus && 
+        agent.lastActivity
+      );
+      
+      // If no agents are deployed, return empty array (will show N/A in UI)
+      if (deployedAgents.length === 0) {
+        return [];
+      }
+      
+      // Create real boundaries only between deployed agents
+      const boundaries: TrustBoundary[] = [];
+      
+      for (let i = 0; i < deployedAgents.length; i++) {
+        for (let j = i + 1; j < deployedAgents.length; j++) {
+          const sourceAgent = deployedAgents[i];
+          const targetAgent = deployedAgents[j];
+          
+          if (sourceAgent.identity?.id && targetAgent.identity?.id) {
+            // Use real trust data from deployed agents
+            const trustLevel = sourceAgent.trustScore || 0;
+            const boundaryType = trustLevel > 85 ? 'direct' : 'delegated';
+            
+            boundaries.push({
+              boundary_id: `boundary_${sourceAgent.identity.id}_${targetAgent.identity.id}`,
+              source_instance_id: sourceAgent.identity.id,
+              target_instance_id: targetAgent.identity.id,
+              source_name: sourceAgent.identity.name || 'Unknown Agent',
+              target_name: targetAgent.identity.name || 'Unknown Agent',
+              trust_level: Math.round(trustLevel * 100),
+              boundary_type: boundaryType as any,
+              status: trustLevel > 70 ? 'active' : 'suspended',
+              created_at: sourceAgent.lastActivity?.toISOString() || new Date().toISOString(),
+              expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              policies: [
+                {
+                  policy_id: `policy_${sourceAgent.identity.id}_${targetAgent.identity.id}`,
+                  policy_type: 'access',
+                  policy_config: { 
+                    max_requests_per_hour: trustLevel > 85 ? 10000 : 1000,
+                    allowed_operations: trustLevel > 85 ? ['read', 'write', 'execute'] : ['read']
+                  }
+                }
+              ],
+              attestations: [`attestation_${sourceAgent.identity.id}_${targetAgent.identity.id}`],
+              metadata: {
+                created_by: 'deployment_system',
+                trust_based: true,
+                source_deployment: sourceAgent.deploymentStatus,
+                target_deployment: targetAgent.deploymentStatus
+              }
+            });
+          }
         }
-      }));
-
+      }
+      
       return boundaries;
     } catch (error) {
       console.error('Error fetching trust boundaries:', error);
