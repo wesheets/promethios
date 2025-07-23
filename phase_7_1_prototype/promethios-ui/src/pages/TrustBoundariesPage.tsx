@@ -116,7 +116,7 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
-   }
+  );
 }
 
 // Create Boundary Modal Component
