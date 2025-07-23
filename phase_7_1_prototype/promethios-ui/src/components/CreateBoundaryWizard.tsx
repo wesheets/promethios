@@ -33,7 +33,8 @@ import {
   Step,
   StepLabel,
   Avatar,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import {
   ChevronLeft, 
@@ -66,7 +67,7 @@ interface Agent {
 interface CreateBoundaryWizardProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (boundaryData: any) => void;
+  onSubmit: (boundaryData: any) => Promise<void>;
   agents: Agent[];
 }
 
@@ -197,6 +198,8 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     sourceAgent: '',
     targetAgent: '',
@@ -224,6 +227,8 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
       const userAgentStorageService = (await import('../services/UserAgentStorageService')).userAgentStorageService;
       userAgentStorageService.setCurrentUser(currentUser!.uid);
       const loadedAgents = await userAgentStorageService.loadUserAgents();
+      
+      console.log('Loaded agents for boundary wizard:', loadedAgents);
       
       // Add the multi-agent system if not present
       const hasMultiAgent = loadedAgents.some(agent => agent.identity?.name?.includes('Multi-Agent'));
@@ -260,35 +265,53 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     }
   };
 
-  const handleSubmit = () => {
-    const boundaryData = {
-      source_instance_id: formData.sourceAgent,
-      target_instance_id: formData.targetAgent,
-      trust_level: formData.trustLevel,
-      boundary_type: formData.boundaryType,
-      policies: formData.policies.map(policyId => ({
-        policy_id: policyId,
-        policy_type: 'access' as const,
-        policy_config: {}
-      })),
-      description: formData.description,
-      expires_at: formData.expiresAt || undefined
-    };
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
     
-    onSubmit(boundaryData);
-    onClose();
-    
-    // Reset form
-    setFormData({
-      sourceAgent: '',
-      targetAgent: '',
-      trustLevel: 80,
-      boundaryType: 'direct',
-      description: '',
-      expiresAt: '',
-      policies: []
-    });
-    setCurrentStep(0);
+    try {
+      const boundaryData = {
+        source_instance_id: formData.sourceAgent,
+        target_instance_id: formData.targetAgent,
+        trust_level: formData.trustLevel,
+        boundary_type: formData.boundaryType,
+        policies: formData.policies.map(policyId => ({
+          policy_id: policyId,
+          policy_type: 'access' as const,
+          policy_config: {}
+        })),
+        description: formData.description,
+        expires_at: formData.expiresAt || undefined
+      };
+      
+      console.log('Submitting boundary data:', boundaryData);
+      
+      // Call the onSubmit function and wait for it to complete
+      await onSubmit(boundaryData);
+      
+      console.log('Boundary created successfully');
+      
+      // Close wizard and reset form only after successful creation
+      onClose();
+      
+      // Reset form
+      setFormData({
+        sourceAgent: '',
+        targetAgent: '',
+        trustLevel: 80,
+        boundaryType: 'direct',
+        description: '',
+        expiresAt: '',
+        policies: []
+      });
+      setCurrentStep(0);
+      
+    } catch (error) {
+      console.error('Error creating boundary:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create trust boundary');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canProceed = () => {
@@ -406,7 +429,7 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
 
             {loadingAgents ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LinearProgress sx={{ width: '100%' }} />
+                <CircularProgress />
               </Box>
             ) : (
               <Grid container spacing={4}>
@@ -692,6 +715,13 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
               </Typography>
             </Box>
 
+            {submitError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                <AlertTitle>Error Creating Boundary</AlertTitle>
+                {submitError}
+              </Alert>
+            )}
+
             <Card sx={{ backgroundColor: '#1a202c', border: '1px solid #4a5568', mb: 3 }}>
               <CardHeader>
                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -858,7 +888,7 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
         <Button
           variant="outlined"
           onClick={handlePrevious}
-          disabled={currentStep === 0}
+          disabled={currentStep === 0 || submitting}
           startIcon={<ChevronLeft />}
           sx={{ color: '#a0aec0', borderColor: '#4a5568' }}
         >
@@ -870,6 +900,7 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
         <Button 
           variant="outlined" 
           onClick={onClose}
+          disabled={submitting}
           sx={{ color: '#a0aec0', borderColor: '#4a5568', mr: 2 }}
         >
           Cancel
@@ -879,15 +910,23 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
           <Button 
             variant="contained" 
             onClick={handleSubmit}
+            disabled={submitting || !canProceed()}
             sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
           >
-            Create Boundary
+            {submitting ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                Creating...
+              </Box>
+            ) : (
+              'Create Boundary'
+            )}
           </Button>
         ) : (
           <Button 
             variant="contained"
             onClick={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || submitting}
             endIcon={<ChevronRight />}
             sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
           >
