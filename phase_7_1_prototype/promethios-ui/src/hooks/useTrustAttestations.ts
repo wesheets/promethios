@@ -2,28 +2,22 @@
  * Trust Attestations Backend Hook
  * 
  * React hook for managing trust attestations state and backend integration.
- * Provides state management for attestations, chains, and metrics.
+ * Provides state management for attestations and metrics with real API integration.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import trustAttestationsBackendService, {
-  Attestation,
-  AttestationChain,
+import { 
+  trustAttestationsBackendService,
+  TrustAttestation,
   AttestationMetrics,
-  CreateAttestationRequest,
-  VerifyAttestationRequest
+  AttestationFilters
 } from '../services/trustAttestationsBackendService';
 
 interface UseTrustAttestationsState {
   // Attestations
-  attestations: Attestation[];
+  attestations: TrustAttestation[];
   attestationsLoading: boolean;
   attestationsError: string | null;
-  
-  // Chains
-  chains: AttestationChain[];
-  chainsLoading: boolean;
-  chainsError: string | null;
   
   // Metrics
   metrics: AttestationMetrics | null;
@@ -38,18 +32,28 @@ interface UseTrustAttestationsState {
 
 interface UseTrustAttestationsActions {
   // Attestation Actions
-  loadAttestations: () => Promise<void>;
-  createAttestation: (request: CreateAttestationRequest) => Promise<Attestation>;
-  verifyAttestation: (request: VerifyAttestationRequest) => Promise<{
+  loadAttestations: (filters?: AttestationFilters) => Promise<void>;
+  createAttestation: (attestationData: {
+    attestation_type: string;
+    subject_instance_id: string;
+    subject_name: string;
+    attester_instance_id: string;
+    attester_name: string;
+    attestation_data?: Record<string, any>;
+    expires_at?: string;
+    metadata?: Record<string, any>;
+  }) => Promise<TrustAttestation>;
+  verifyAttestation: (attestationId: string, verifierInstanceId: string) => Promise<{
     attestation_id: string;
-    verification_status: 'valid' | 'invalid' | 'expired' | 'revoked';
+    verification_status: string;
     verification_timestamp: string;
     verifier_instance_id: string;
   }>;
-  revokeAttestation: (attestationId: string) => Promise<void>;
-  
-  // Chain Actions
-  loadChains: () => Promise<void>;
+  updateAttestation: (attestationId: string, updates: {
+    status?: string;
+    metadata?: Record<string, any>;
+  }) => Promise<TrustAttestation>;
+  deleteAttestation: (attestationId: string) => Promise<void>;
   
   // Metrics Actions
   loadMetrics: () => Promise<void>;
@@ -59,25 +63,16 @@ interface UseTrustAttestationsActions {
   clearErrors: () => void;
   
   // Filter Actions
-  filterAttestations: (filters: {
-    type?: string;
-    status?: string;
-    subject?: string;
-    attester?: string;
-  }) => Attestation[];
+  filterAttestations: (filters: AttestationFilters) => TrustAttestation[];
 }
 
 export interface UseTrustAttestationsReturn extends UseTrustAttestationsState, UseTrustAttestationsActions {}
 
 export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   // State
-  const [attestations, setAttestations] = useState<Attestation[]>([]);
+  const [attestations, setAttestations] = useState<TrustAttestation[]>([]);
   const [attestationsLoading, setAttestationsLoading] = useState(false);
   const [attestationsError, setAttestationsError] = useState<string | null>(null);
-  
-  const [chains, setChains] = useState<AttestationChain[]>([]);
-  const [chainsLoading, setChainsLoading] = useState(false);
-  const [chainsError, setChainsError] = useState<string | null>(null);
   
   const [metrics, setMetrics] = useState<AttestationMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -88,13 +83,13 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   const [operationError, setOperationError] = useState<string | null>(null);
 
   // Attestation Actions
-  const loadAttestations = useCallback(async () => {
+  const loadAttestations = useCallback(async (filters: AttestationFilters = {}) => {
     setAttestationsLoading(true);
     setAttestationsError(null);
     
     try {
-      const attestationsData = await trustAttestationsBackendService.getAttestations();
-      setAttestations(attestationsData);
+      const result = await trustAttestationsBackendService.getAttestations(filters);
+      setAttestations(result.attestations);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load attestations';
       setAttestationsError(errorMessage);
@@ -104,14 +99,26 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     }
   }, []);
 
-  const createAttestation = useCallback(async (request: CreateAttestationRequest) => {
+  const createAttestation = useCallback(async (attestationData: {
+    attestation_type: string;
+    subject_instance_id: string;
+    subject_name: string;
+    attester_instance_id: string;
+    attester_name: string;
+    attestation_data?: Record<string, any>;
+    expires_at?: string;
+    metadata?: Record<string, any>;
+  }) => {
     setCreatingAttestation(true);
     setOperationError(null);
     
     try {
-      const attestation = await trustAttestationsBackendService.createAttestation(request);
-      setAttestations(prev => [...prev, attestation]);
-      return attestation;
+      const newAttestation = await trustAttestationsBackendService.createAttestation(attestationData);
+      
+      // Add to local state
+      setAttestations(prev => [newAttestation, ...prev]);
+      
+      return newAttestation;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create attestation';
       setOperationError(errorMessage);
@@ -122,32 +129,32 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     }
   }, []);
 
-  const verifyAttestation = useCallback(async (request: VerifyAttestationRequest) => {
+  const verifyAttestation = useCallback(async (attestationId: string, verifierInstanceId: string) => {
     setVerifyingAttestation(true);
     setOperationError(null);
     
     try {
-      const verification = await trustAttestationsBackendService.verifyAttestation(request);
+      const verificationResult = await trustAttestationsBackendService.verifyAttestation(attestationId, verifierInstanceId);
       
-      // Update the attestation's verification history
+      // Update local state to reflect verification
       setAttestations(prev => prev.map(attestation => {
-        if (attestation.attestation_id === request.attestation_id) {
+        if (attestation.attestation_id === attestationId) {
           return {
             ...attestation,
             verification_history: [
+              ...attestation.verification_history,
               {
-                timestamp: verification.verification_timestamp,
-                verification_status: verification.verification_status,
-                verifier_instance_id: verification.verifier_instance_id
-              },
-              ...attestation.verification_history
+                timestamp: verificationResult.verification_timestamp,
+                verification_status: verificationResult.verification_status as any,
+                verifier_instance_id: verifierInstanceId
+              }
             ]
           };
         }
         return attestation;
       }));
       
-      return verification;
+      return verificationResult;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify attestation';
       setOperationError(errorMessage);
@@ -158,40 +165,42 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     }
   }, []);
 
-  const revokeAttestation = useCallback(async (attestationId: string) => {
+  const updateAttestation = useCallback(async (attestationId: string, updates: {
+    status?: string;
+    metadata?: Record<string, any>;
+  }) => {
     setOperationError(null);
     
     try {
-      await trustAttestationsBackendService.revokeAttestation(attestationId);
+      const updatedAttestation = await trustAttestationsBackendService.updateAttestation(attestationId, updates);
       
-      // Update the attestation status
+      // Update local state
       setAttestations(prev => prev.map(attestation => 
-        attestation.attestation_id === attestationId 
-          ? { ...attestation, status: 'revoked' as const }
-          : attestation
+        attestation.attestation_id === attestationId ? updatedAttestation : attestation
       ));
+      
+      return updatedAttestation;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to revoke attestation';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update attestation';
       setOperationError(errorMessage);
-      console.error('Error revoking attestation:', error);
+      console.error('Error updating attestation:', error);
       throw error;
     }
   }, []);
 
-  // Chain Actions
-  const loadChains = useCallback(async () => {
-    setChainsLoading(true);
-    setChainsError(null);
+  const deleteAttestation = useCallback(async (attestationId: string) => {
+    setOperationError(null);
     
     try {
-      const chainsData = await trustAttestationsBackendService.getAttestationChains();
-      setChains(chainsData);
+      await trustAttestationsBackendService.deleteAttestation(attestationId);
+      
+      // Remove from local state
+      setAttestations(prev => prev.filter(attestation => attestation.attestation_id !== attestationId));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load attestation chains';
-      setChainsError(errorMessage);
-      console.error('Error loading attestation chains:', error);
-    } finally {
-      setChainsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete attestation';
+      setOperationError(errorMessage);
+      console.error('Error deleting attestation:', error);
+      throw error;
     }
   }, []);
 
@@ -201,12 +210,12 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     setMetricsError(null);
     
     try {
-      const metricsData = await trustAttestationsBackendService.getAttestationMetrics();
+      const metricsData = await trustAttestationsBackendService.getMetrics();
       setMetrics(metricsData);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load attestation metrics';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load metrics';
       setMetricsError(errorMessage);
-      console.error('Error loading attestation metrics:', error);
+      console.error('Error loading metrics:', error);
     } finally {
       setMetricsLoading(false);
     }
@@ -216,55 +225,56 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   const refreshAll = useCallback(async () => {
     await Promise.all([
       loadAttestations(),
-      loadChains(),
       loadMetrics()
     ]);
-  }, [loadAttestations, loadChains, loadMetrics]);
+  }, [loadAttestations, loadMetrics]);
 
   const clearErrors = useCallback(() => {
     setAttestationsError(null);
-    setChainsError(null);
     setMetricsError(null);
     setOperationError(null);
   }, []);
 
   // Filter Actions
-  const filterAttestations = useCallback((filters: {
-    type?: string;
-    status?: string;
-    subject?: string;
-    attester?: string;
-  }) => {
-    return attestations.filter(attestation => {
-      if (filters.type && attestation.attestation_type !== filters.type) {
-        return false;
-      }
-      if (filters.status && attestation.status !== filters.status) {
-        return false;
-      }
-      if (filters.subject && !attestation.subject_name.toLowerCase().includes(filters.subject.toLowerCase())) {
-        return false;
-      }
-      if (filters.attester && !attestation.attester_name.toLowerCase().includes(filters.attester.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
+  const filterAttestations = useCallback((filters: AttestationFilters) => {
+    let filtered = [...attestations];
+    
+    if (filters.type && filters.type !== 'all') {
+      filtered = filtered.filter(a => a.attestation_type === filters.type);
+    }
+    
+    if (filters.status && filters.status !== 'all') {
+      filtered = filtered.filter(a => a.status === filters.status);
+    }
+    
+    if (filters.subject) {
+      filtered = filtered.filter(a => 
+        a.subject_name.toLowerCase().includes(filters.subject!.toLowerCase()) ||
+        a.subject_instance_id.includes(filters.subject!)
+      );
+    }
+    
+    if (filters.attester) {
+      filtered = filtered.filter(a => 
+        a.attester_name.toLowerCase().includes(filters.attester!.toLowerCase()) ||
+        a.attester_instance_id.includes(filters.attester!)
+      );
+    }
+    
+    return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [attestations]);
 
   // Load initial data
   useEffect(() => {
-    refreshAll();
-  }, [refreshAll]);
+    loadAttestations();
+    loadMetrics();
+  }, [loadAttestations, loadMetrics]);
 
   return {
     // State
     attestations,
     attestationsLoading,
     attestationsError,
-    chains,
-    chainsLoading,
-    chainsError,
     metrics,
     metricsLoading,
     metricsError,
@@ -276,14 +286,12 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     loadAttestations,
     createAttestation,
     verifyAttestation,
-    revokeAttestation,
-    loadChains,
+    updateAttestation,
+    deleteAttestation,
     loadMetrics,
     refreshAll,
     clearErrors,
     filterAttestations
   };
 };
-
-export default useTrustAttestations;
 
