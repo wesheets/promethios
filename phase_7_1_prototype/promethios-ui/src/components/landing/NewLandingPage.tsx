@@ -210,12 +210,14 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
       const newHeadline = {
         id: Date.now() + Math.random(),
         headline: randomHeadline,
-        x: window.innerWidth + 300,
-        y: Math.random() * (window.innerHeight - 200) + 100,
+        x: window.innerWidth + 50, // Start closer to screen edge
+        y: Math.random() * (window.innerHeight - 400) + 200, // Ensure within viewport
         opacity: 0,
         rotation: (Math.random() - 0.5) * 10,
         scale: 0.8 + Math.random() * 0.4
       };
+
+      console.log('Creating headline at position:', { x: newHeadline.x, y: newHeadline.y, windowWidth: window.innerWidth, windowHeight: window.innerHeight });
 
       setActiveHeadlines(prev => [...prev, newHeadline]);
 
@@ -224,7 +226,7 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
         setActiveHeadlines(prev => 
           prev.map(h => 
             h.id === newHeadline.id 
-              ? { ...h, opacity: 1, x: h.x - 100 }
+              ? { ...h, opacity: 1, x: h.x - 200 } // Move further into viewport
               : h
           )
         );
@@ -1058,7 +1060,7 @@ const NewLandingPage: React.FC = () => {
         /* Animated Text Fade Out Sequence */
         .animated-text-fadeout {
           animation: fadeOutUp 1s ease-in-out forwards;
-          animation-delay: 8s;
+          animation-delay: 12s;
         }
 
         @keyframes fadeOutUp {
@@ -1075,7 +1077,7 @@ const NewLandingPage: React.FC = () => {
         /* CTA Rise Up Animation */
         .cta-rise-up {
           animation: riseUp 1s ease-out forwards;
-          animation-delay: 9s;
+          animation-delay: 13s;
           transform: translateY(250px);
         }
 
@@ -1094,7 +1096,7 @@ const NewLandingPage: React.FC = () => {
         .final-tagline {
           opacity: 0;
           animation: taglineFadeIn 1s ease-in-out forwards;
-          animation-delay: 7s;
+          animation-delay: 10.8s;
         }
 
         @keyframes taglineFadeIn {
