@@ -270,9 +270,15 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     setSubmitError(null);
     
     try {
+      // Find the selected agents to get their names
+      const sourceAgent = agents.find(agent => agent.instance_id === formData.sourceAgent);
+      const targetAgent = agents.find(agent => agent.instance_id === formData.targetAgent);
+      
       const boundaryData = {
         source_instance_id: formData.sourceAgent,
         target_instance_id: formData.targetAgent,
+        source_name: sourceAgent?.name || `Agent ${formData.sourceAgent}`,
+        target_name: targetAgent?.name || `Agent ${formData.targetAgent}`,
         trust_level: formData.trustLevel,
         boundary_type: formData.boundaryType,
         policies: formData.policies.map(policyId => ({
