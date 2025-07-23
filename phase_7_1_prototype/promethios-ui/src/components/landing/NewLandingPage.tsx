@@ -227,7 +227,7 @@ const NewLandingPage: React.FC = () => {
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white">
               Your AI Is a <span className="text-red-400">Risk Surface</span>. That's Why Enterprises Are Locking It Down.
             </h2>
-            <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-300 leading-relaxed px-4">
               You're not managing models. You're protecting trust, reputation, and risk.
             </p>
             {/* Horizontal divider with warning colors */}
@@ -273,14 +273,19 @@ const NewLandingPage: React.FC = () => {
           </div>
 
           {/* Pain-Killer Approach Grid */}
-          <div className="grid grid-cols-1 gap-12 mb-16 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 w-full">
             
             {/* Your AI just lied to a customer */}
-            <div className="bg-gray-800/60 backdrop-blur-sm p-10 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
-              <div className="flex items-start space-x-6 mb-6">
+            <div className="bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl border border-red-500/30 hover:border-red-400 hover:bg-gray-800/80 transition-all duration-300 group">
+              
+              <h3 className="text-xl font-bold mb-4 text-red-400 group-hover:text-red-300 transition-colors">
+                Your AI just lied to a customer. Now what?
+              </h3>
+              
+              <div className="flex flex-col lg:flex-row items-start gap-6 mb-6">
                 
                 {/* Problem View - Ungoverned Scenario */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-red-500/50 flex-shrink-0 p-4 problem-view hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-red-400 text-xs font-semibold">UNGOVERNED</span>
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -303,7 +308,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Solution View - Promethios Layer */}
-                <div className="w-64 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
+                <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -324,15 +329,13 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-3 text-red-400 group-hover:text-red-300 transition-colors">
-                    Your AI just lied to a customer. Now what?
-                  </h3>
-                  <p className="text-gray-300 leading-relaxed mb-4">
-                    Without governance, you're flying blind. No audit trail, no accountability, no way to prove what went wrong.
-                  </p>
-                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-gray-300 leading-relaxed">
+                  Without governance, you're flying blind. No audit trail, no accountability, no way to prove what went wrong.
+                </p>
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                       <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
