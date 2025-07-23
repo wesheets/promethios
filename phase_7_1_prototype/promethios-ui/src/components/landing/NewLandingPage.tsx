@@ -477,16 +477,16 @@ const NewLandingPage: React.FC = () => {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                   <Link 
-                    to="/beta-request" 
+                    to="/login" 
                     className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg btn-ripple"
                   >
                     Request an Invitation to Governance
                   </Link>
                   <Link 
-                    to="/demo" 
+                    to="/learn" 
                     className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 btn-blue-glow"
                   >
-                    Apply for Trusted Access
+                    Govern Your AI
                   </Link>
                 </div>
 
@@ -926,16 +926,16 @@ const NewLandingPage: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 
-              to="/beta-request" 
+              to="/login" 
               className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               Request an Invitation to Governance
             </Link>
             <Link 
-              to="/demo" 
+              to="/learn" 
               className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200"
             >
-              Apply for Trusted Access
+              Govern Your AI
             </Link>
           </div>
           <p className="text-sm text-gray-400 mt-4 italic">
