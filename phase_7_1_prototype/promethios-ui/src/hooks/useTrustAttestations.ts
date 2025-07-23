@@ -12,6 +12,8 @@ import {
   AttestationMetrics,
   AttestationFilters
 } from '../services/trustAttestationsBackendService';
+import { observerIntegrationService } from '../services/observerIntegrationService';
+import { notificationService } from '../services/notificationService';
 
 interface UseTrustAttestationsState {
   // Attestations
@@ -118,6 +120,22 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
       // Add to local state
       setAttestations(prev => [newAttestation, ...prev]);
       
+      // Notify observer about attestation creation
+      try {
+        await observerIntegrationService.notifyAttestationCreated(newAttestation);
+      } catch (observerError) {
+        console.warn('Failed to notify observer about attestation creation:', observerError);
+        // Don't fail the entire operation if observer notification fails
+      }
+      
+      // Send notification about attestation creation
+      try {
+        await notificationService.notifyAttestationCreated(newAttestation);
+      } catch (notificationError) {
+        console.warn('Failed to send notification about attestation creation:', notificationError);
+        // Don't fail the entire operation if notification fails
+      }
+      
       return newAttestation;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create attestation';
@@ -154,16 +172,69 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
         return attestation;
       }));
       
+      // Notify observer about attestation verification
+      try {
+        await observerIntegrationService.notifyAttestationVerified(
+          attestationId, 
+          verificationResult.verification_status, 
+          verifierInstanceId
+        );
+      } catch (observerError) {
+        console.warn('Failed to notify observer about attestation verification:', observerError);
+        // Don't fail the entire operation if observer notification fails
+      }
+      
+      // Send notification about attestation verification
+      try {
+        const attestation = attestations.find(a => a.attestation_id === attestationId);
+        const agentName = attestation?.subject_name || 'Unknown Agent';
+        await notificationService.notifyAttestationVerified(
+          attestationId, 
+          verificationResult.verification_status, 
+          agentName
+        );
+      } catch (notificationError) {
+        console.warn('Failed to send notification about attestation verification:', notificationError);
+        // Don't fail the entire operation if notification fails
+      }
+      
       return verificationResult;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify attestation';
       setOperationError(errorMessage);
+      
+      // Notify observer about verification failure
+      try {
+        await observerIntegrationService.notifyVerificationFailed(
+          attestationId, 
+          verifierInstanceId, 
+          'Verifier Agent', 
+          errorMessage
+        );
+      } catch (observerError) {
+        console.warn('Failed to notify observer about verification failure:', observerError);
+      }
+      
+      // Send notification about verification failure
+      try {
+        const attestation = attestations.find(a => a.attestation_id === attestationId);
+        const agentName = attestation?.subject_name || 'Unknown Agent';
+        await notificationService.notifyVerificationFailed(
+          attestationId, 
+          verifierInstanceId, 
+          agentName, 
+          errorMessage
+        );
+      } catch (notificationError) {
+        console.warn('Failed to send notification about verification failure:', notificationError);
+      }
+      
       console.error('Error verifying attestation:', error);
       throw error;
     } finally {
       setVerifyingAttestation(false);
     }
-  }, []);
+  }, [attestations]);
 
   const updateAttestation = useCallback(async (attestationId: string, updates: {
     status?: string;
@@ -178,6 +249,23 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
       setAttestations(prev => prev.map(attestation => 
         attestation.attestation_id === attestationId ? updatedAttestation : attestation
       ));
+      
+      // Notify observer about status changes (especially revocations)
+      if (updates.status === 'revoked') {
+        try {
+          const revocationReason = updates.metadata?.revocation_reason || 'No reason provided';
+          await observerIntegrationService.notifyAttestationRevoked(updatedAttestation, revocationReason);
+        } catch (observerError) {
+          console.warn('Failed to notify observer about attestation revocation:', observerError);
+        }
+        
+        // Send notification about attestation revocation
+        try {
+          await notificationService.notifyAttestationRevoked(updatedAttestation, revocationReason);
+        } catch (notificationError) {
+          console.warn('Failed to send notification about attestation revocation:', notificationError);
+        }
+      }
       
       return updatedAttestation;
     } catch (error) {
