@@ -11,6 +11,7 @@ import { userAgentStorageService } from '../services/UserAgentStorageService';
 import { authApiService } from '../services/authApiService';
 import { NotificationService } from '../services/NotificationService';
 import { notificationExtension } from './NotificationExtension';
+import { governanceNotificationExtension } from './GovernanceNotificationExtension';
 
 export interface TrustMetricsConfig {
   refreshInterval: number;
@@ -280,6 +281,9 @@ export class TrustMetricsExtension {
 
       // Initialize notification extension
       await notificationExtension.initialize();
+      
+      // Initialize governance notification extension for advanced trust alerts
+      await governanceNotificationExtension.initialize();
 
       // Load ML models if enabled
       if (this.config.mlModels.enableTrustPrediction || 
@@ -356,22 +360,69 @@ export class TrustMetricsExtension {
   }
 
   private async handleTrustAlert(alert: TrustAlert): Promise<void> {
-    // Send notification through the notification system
-    await notificationExtension.sendNotification({
-      title: `Trust Alert: ${alert.type.replace('_', ' ').toUpperCase()}`,
-      message: alert.message,
-      type: 'trust_metrics',
-      severity: alert.severity,
-      source: 'trust_metrics_extension',
-      action_url: `/trust-metrics?agent=${alert.agentId}`,
-      metadata: {
-        agentId: alert.agentId,
-        alertType: alert.type,
-        currentValue: alert.currentValue,
-        threshold: alert.threshold,
-        recommendedActions: alert.recommendedActions
-      }
-    });
+    // Initialize governance notification extension if not already done
+    await governanceNotificationExtension.initialize();
+
+    // Route to appropriate governance notification method based on alert type
+    switch (alert.type) {
+      case 'trust_degradation':
+        // For trust degradation, we need previous and current scores
+        // Extract from alert data or calculate based on threshold and current value
+        const previousScore = alert.threshold || (alert.currentValue || 0) + 10; // Estimate previous score
+        const currentScore = alert.currentValue || 0;
+        
+        governanceNotificationExtension.onTrustScoreDrop(
+          alert.agentId,
+          previousScore,
+          currentScore
+        );
+        break;
+
+      case 'threshold_breach':
+        // Determine threshold type based on severity and current value
+        const thresholdType = alert.severity === 'critical' ? 'critical' : 
+                             alert.severity === 'high' ? 'operational' : 'warning';
+        
+        governanceNotificationExtension.onTrustThresholdBreach(
+          alert.agentId,
+          thresholdType,
+          alert.currentValue || 0
+        );
+        break;
+
+      case 'confidence_drop':
+      case 'risk_escalation':
+      case 'anomaly_detected':
+        // For other alert types, use trust score drop with appropriate context
+        const estimatedPrevious = (alert.currentValue || 0) + 5; // Conservative estimate
+        const estimatedCurrent = alert.currentValue || 0;
+        
+        governanceNotificationExtension.onTrustScoreDrop(
+          alert.agentId,
+          estimatedPrevious,
+          estimatedCurrent
+        );
+        break;
+
+      default:
+        // Fallback to basic notification for unknown alert types
+        await notificationExtension.sendNotification({
+          title: `Trust Alert: ${alert.type.replace('_', ' ').toUpperCase()}`,
+          message: alert.message,
+          type: 'trust_metrics',
+          severity: alert.severity,
+          source: 'trust_metrics_extension',
+          action_url: `/trust-metrics?agent=${alert.agentId}`,
+          metadata: {
+            agentId: alert.agentId,
+            alertType: alert.type,
+            currentValue: alert.currentValue,
+            threshold: alert.threshold,
+            recommendedActions: alert.recommendedActions
+          }
+        });
+        break;
+    }
 
     // Auto-remediation if enabled and available
     if (this.config.alertThresholds.riskLevel.autoRemediation && 
@@ -393,6 +444,7 @@ export class TrustMetricsExtension {
       });
 
       if (response.ok) {
+        // Use basic notification for auto-remediation success (not a governance event)
         await notificationExtension.sendNotification({
           title: 'Auto-Remediation Triggered',
           message: `Automatic remediation started for ${alert.agentName}`,
@@ -411,6 +463,54 @@ export class TrustMetricsExtension {
       console.error('Error triggering auto-remediation:', error);
     }
   }
+
+  /**
+   * Handle trust recovery events - called when an agent's trust score improves
+   */
+  private async handleTrustRecovery(agentId: string, agentName: string, oldScore: number, newScore: number): Promise<void> {
+    // Initialize governance notification extension if not already done
+    await governanceNotificationExtension.initialize();
+    
+    // Use governance notification for trust recovery
+    governanceNotificationExtension.onTrustRecovery(agentId, oldScore, newScore);
+  }
+
+  /**
+   * Monitor trust score changes and detect recovery events
+   */
+  private async monitorTrustRecovery(currentMetrics: EnhancedTrustMetrics[]): Promise<void> {
+    // Get previous trust scores from storage or cache
+    const previousMetrics = this.previousTrustScores || new Map<string, number>();
+    
+    for (const metric of currentMetrics) {
+      const currentScore = metric.trustScores.overall || 0;
+      const previousScore = previousMetrics.get(metric.agentId) || 0;
+      
+      // Detect significant trust improvement (recovery)
+      const improvement = currentScore - previousScore;
+      const significantImprovement = improvement >= 10; // 10 point improvement threshold
+      const wasLowTrust = previousScore < 70; // Was below operational threshold
+      const isNowHealthy = currentScore >= 80; // Now above healthy threshold
+      
+      if (significantImprovement && wasLowTrust && isNowHealthy) {
+        await this.handleTrustRecovery(
+          metric.agentId,
+          metric.agentName,
+          previousScore,
+          currentScore
+        );
+      }
+      
+      // Update previous scores for next comparison
+      previousMetrics.set(metric.agentId, currentScore);
+    }
+    
+    // Store updated previous scores
+    this.previousTrustScores = previousMetrics;
+  }
+
+  // Add property to track previous trust scores for recovery detection
+  private previousTrustScores: Map<string, number> = new Map();
 
   // Public API methods with authentication
   async getTrustMetrics(user: User | null, agentId?: string): Promise<EnhancedTrustMetrics[]> {
@@ -550,6 +650,10 @@ export class TrustMetricsExtension {
       }
 
       console.log('🔍 Trust Metrics - Final metrics count:', trustMetrics.length);
+      
+      // Monitor for trust recovery events
+      await this.monitorTrustRecovery(trustMetrics);
+      
       return trustMetrics;
     } catch (error) {
       console.error('Error fetching trust metrics:', error);
