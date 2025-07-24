@@ -420,31 +420,34 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Reduced height for above-the-fold content */}
-            <div className="mb-6 relative h-40 overflow-visible w-full -mt-4 animated-text-fadeout">
+            {/* Full-Width Animated Pre-Headline - Further reduced height for above-the-fold content */}
+            <div className="mb-4 relative h-32 overflow-visible w-full -mt-6 animated-text-fadeout">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
-                  {/* Animated words that cycle through - all positioned at the same top level */}
+                  {/* Animated words that cycle through - reordered sequence */}
                   <div className="absolute left-0 top-0">
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word reputation uppercase flex flex-col leading-tight">
                       <span className="reputation-word">YOUR</span>
                       <span className="reputation-word">REPUTATION</span>
                     </div>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
                       <span className="customer-trust-word">YOUR</span>
                       <span className="customer-trust-word">CUSTOMER'S</span>
                       <span className="customer-trust-word">TRUST</span>
                     </div>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
                       <span className="real-world-word">REAL-WORLD</span>
                       <span className="real-world-word">CONSEQUENCES</span>
                     </div>
                   </div>
                   
-                  {/* Static "is on the line." text positioned on the right - italic styling */}
+                  {/* Dynamic "is/are on the line." text positioned on the right - changes based on animation */}
                   <div className="absolute right-0 top-0">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text italic">
+                    <span className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white static-text-is italic">
                       is on the line.
+                    </span>
+                    <span className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white static-text-are italic">
+                      are on the line.
                     </span>
                   </div>
                   
