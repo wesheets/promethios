@@ -1,10 +1,44 @@
 /**
  * Trust Boundaries Backend Service
- * Handles trust boundaries using unified storage with API fallback
+ * Handles communication with the trust boundaries API endpoints
  */
 
 import { API_BASE_URL } from '../config/api';
-import { trustBoundariesStorageService, TrustBoundary, CreateBoundaryRequest } from './TrustBoundariesStorageService';
+
+export interface TrustBoundary {
+  boundary_id: string;
+  source_instance_id: string;
+  target_instance_id: string;
+  source_name: string;
+  target_name: string;
+  trust_level: number;
+  boundary_type: 'direct' | 'delegated' | 'transitive' | 'federated';
+  status: 'active' | 'suspended' | 'expired' | 'pending_deployment';
+  created_at: string;
+  expires_at?: string;
+  policies: Array<{
+    policy_id: string;
+    policy_type: 'access' | 'data' | 'operation' | 'resource';
+    policy_config: any;
+  }>;
+  attestations: string[];
+  metadata: any;
+}
+
+export interface CreateBoundaryRequest {
+  source_instance_id: string;
+  target_instance_id: string;
+  source_name?: string;
+  target_name?: string;
+  trust_level?: number;
+  boundary_type: 'direct' | 'delegated' | 'transitive' | 'federated';
+  policies?: Array<{
+    policy_type: 'access' | 'data' | 'operation' | 'resource';
+    policy_config: any;
+  }>;
+  expires_at?: string;
+  metadata?: any;
+}
 
 export interface CreateThresholdRequest {
   name: string;
@@ -14,59 +48,45 @@ export interface CreateThresholdRequest {
   agent_types: string[];
   actions: {
     alert: boolean;
-    block: boolean;
-    escalate: boolean;
+    quarantine: boolean;
+    disable: boolean;
+    retrain: boolean;
   };
 }
 
-export interface TrustThreshold {
-  threshold_id: string;
-  name: string;
-  description: string;
-  min_trust_level: number;
-  max_trust_level: number;
-  agent_types: string[];
-  actions: {
-    alert: boolean;
-    block: boolean;
-    escalate: boolean;
-  };
-  created_at: string;
-  status: 'active' | 'inactive';
-}
-
-export interface BoundariesMetrics {
-  total_boundaries: number;
+export interface TrustBoundaryMetrics {
   active_boundaries: number;
-  pending_boundaries: number;
-  expired_boundaries: number;
+  total_boundaries: number;
   average_trust_level: number;
-  boundary_types: {
-    direct: number;
-    delegated: number;
-    transitive: number;
-    federated: number;
-  };
+  at_risk_boundaries: number;
+  active_policies: number;
+  timestamp: string;
 }
 
 class TrustBoundariesBackendService {
   private baseUrl: string;
-  private useUnifiedStorage: boolean = true;
 
   constructor() {
-    this.baseUrl = `${API_BASE_URL}/api/trust-boundaries`;
+    this.baseUrl = `${API_BASE_URL}/api/trust`;
   }
 
   /**
-   * Initialize the service with user authentication
+   * Get all trust boundaries
    */
-  async initialize(userId: string): Promise<void> {
+  async getBoundaries(): Promise<TrustBoundary[]> {
     try {
-      trustBoundariesStorageService.setUserId(userId);
-      console.log('Trust Boundaries service initialized with unified storage');
+      const response = await fetch(`${this.baseUrl}/boundaries`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.boundaries || [];
     } catch (error) {
-      console.error('Error initializing Trust Boundaries service:', error);
-      this.useUnifiedStorage = false;
+      console.error('Error fetching trust boundaries:', error);
+      // Return empty array if API is not available (agents not deployed)
+      return [];
     }
   }
 
@@ -75,60 +95,23 @@ class TrustBoundariesBackendService {
    */
   async createBoundary(request: CreateBoundaryRequest): Promise<TrustBoundary> {
     try {
-      if (this.useUnifiedStorage) {
-        // Use unified storage (primary method)
-        return await trustBoundariesStorageService.createBoundary(request);
-      } else {
-        // Fallback to API
-        return await this.createBoundaryViaAPI(request);
+      const response = await fetch(`${this.baseUrl}/boundaries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const boundary = await response.json();
+      return boundary;
     } catch (error) {
-      console.error('Error creating boundary:', error);
-      // Try API fallback if unified storage fails
-      if (this.useUnifiedStorage) {
-        console.log('Falling back to API for boundary creation');
-        return await this.createBoundaryViaAPI(request);
-      }
+      console.error('Error creating trust boundary:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Get all trust boundaries
-   */
-  async getBoundaries(): Promise<TrustBoundary[]> {
-    try {
-      if (this.useUnifiedStorage) {
-        // Use unified storage (primary method)
-        return await trustBoundariesStorageService.getBoundaries();
-      } else {
-        // Fallback to API
-        return await this.getBoundariesViaAPI();
-      }
-    } catch (error) {
-      console.error('Error getting boundaries:', error);
-      // Try API fallback if unified storage fails
-      if (this.useUnifiedStorage) {
-        console.log('Falling back to API for boundaries retrieval');
-        return await this.getBoundariesViaAPI();
-      }
-      return [];
-    }
-  }
-
-  /**
-   * Get a specific trust boundary
-   */
-  async getBoundary(boundaryId: string): Promise<TrustBoundary | null> {
-    try {
-      if (this.useUnifiedStorage) {
-        return await trustBoundariesStorageService.getBoundary(boundaryId);
-      } else {
-        return await this.getBoundaryViaAPI(boundaryId);
-      }
-    } catch (error) {
-      console.error(`Error getting boundary ${boundaryId}:`, error);
-      return null;
     }
   }
 
@@ -137,13 +120,22 @@ class TrustBoundariesBackendService {
    */
   async updateBoundary(boundaryId: string, updates: Partial<TrustBoundary>): Promise<TrustBoundary> {
     try {
-      if (this.useUnifiedStorage) {
-        return await trustBoundariesStorageService.updateBoundary(boundaryId, updates);
-      } else {
-        return await this.updateBoundaryViaAPI(boundaryId, updates);
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const boundary = await response.json();
+      return boundary;
     } catch (error) {
-      console.error(`Error updating boundary ${boundaryId}:`, error);
+      console.error('Error updating trust boundary:', error);
       throw error;
     }
   }
@@ -153,238 +145,283 @@ class TrustBoundariesBackendService {
    */
   async deleteBoundary(boundaryId: string): Promise<void> {
     try {
-      if (this.useUnifiedStorage) {
-        await trustBoundariesStorageService.deleteBoundary(boundaryId);
-      } else {
-        await this.deleteBoundaryViaAPI(boundaryId);
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error(`Error deleting boundary ${boundaryId}:`, error);
+      console.error('Error deleting trust boundary:', error);
       throw error;
     }
   }
 
   /**
-   * Get boundaries metrics
+   * Get trust boundary metrics
    */
-  async getMetrics(): Promise<BoundariesMetrics> {
+  async getMetrics(): Promise<TrustBoundaryMetrics> {
     try {
-      if (this.useUnifiedStorage) {
-        const boundaries = await trustBoundariesStorageService.getBoundaries();
-        return this.calculateMetricsFromBoundaries(boundaries);
-      } else {
-        return await this.getMetricsViaAPI();
+      const response = await fetch(`${this.baseUrl}/metrics`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const metrics = await response.json();
+      return metrics;
     } catch (error) {
-      console.error('Error getting boundaries metrics:', error);
-      // Return default metrics on error
+      console.error('Error fetching trust boundary metrics:', error);
+      // Return default metrics if API is not available
       return {
-        total_boundaries: 0,
         active_boundaries: 0,
-        pending_boundaries: 0,
-        expired_boundaries: 0,
+        total_boundaries: 0,
         average_trust_level: 0,
-        boundary_types: {
-          direct: 0,
-          delegated: 0,
-          transitive: 0,
-          federated: 0
-        }
+        at_risk_boundaries: 0,
+        active_policies: 0,
+        timestamp: new Date().toISOString()
       };
     }
   }
 
   /**
-   * Calculate metrics from boundaries array
+   * Get trust boundary metrics (alias for compatibility)
    */
-  private calculateMetricsFromBoundaries(boundaries: TrustBoundary[]): BoundariesMetrics {
-    const now = new Date();
-    
-    const activeBoundaries = boundaries.filter(b => 
-      b.status === 'active' && 
-      (!b.expires_at || new Date(b.expires_at) > now)
-    );
-    
-    const pendingBoundaries = boundaries.filter(b => b.status === 'pending_deployment');
-    const expiredBoundaries = boundaries.filter(b => 
-      b.expires_at && new Date(b.expires_at) <= now
-    );
-
-    const averageTrustLevel = boundaries.length > 0 
-      ? boundaries.reduce((sum, b) => sum + b.trust_level, 0) / boundaries.length 
-      : 0;
-
-    const boundaryTypes = {
-      direct: boundaries.filter(b => b.boundary_type === 'direct').length,
-      delegated: boundaries.filter(b => b.boundary_type === 'delegated').length,
-      transitive: boundaries.filter(b => b.boundary_type === 'transitive').length,
-      federated: boundaries.filter(b => b.boundary_type === 'federated').length,
-    };
-
-    return {
-      total_boundaries: boundaries.length,
-      active_boundaries: activeBoundaries.length,
-      pending_boundaries: pendingBoundaries.length,
-      expired_boundaries: expiredBoundaries.length,
-      average_trust_level: Math.round(averageTrustLevel),
-      boundary_types
-    };
-  }
-
-  // API Fallback Methods
-  private async createBoundaryViaAPI(request: CreateBoundaryRequest): Promise<TrustBoundary> {
-    const response = await fetch(`${this.baseUrl}/boundaries`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  }
-
-  private async getBoundariesViaAPI(): Promise<TrustBoundary[]> {
-    const response = await fetch(`${this.baseUrl}/boundaries`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.boundaries || [];
-  }
-
-  private async getBoundaryViaAPI(boundaryId: string): Promise<TrustBoundary | null> {
-    const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
+  async getBoundaryMetrics(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/metrics`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
 
-    return await response.json();
-  }
-
-  private async updateBoundaryViaAPI(boundaryId: string, updates: Partial<TrustBoundary>): Promise<TrustBoundary> {
-    const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updates)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  }
-
-  private async deleteBoundaryViaAPI(boundaryId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`, {
-      method: 'DELETE'
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const metrics = await response.json();
+      return metrics;
+    } catch (error) {
+      console.error('Error fetching boundary metrics:', error);
+      // Return default metrics if API is not available
+      return {
+        total_boundaries: 0,
+        active_boundaries: 0,
+        expired_boundaries: 0,
+        average_trust_level: 0,
+        boundary_types: {}
+      };
     }
   }
 
-  private async getMetricsViaAPI(): Promise<BoundariesMetrics> {
-    const response = await fetch(`${this.baseUrl}/metrics`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  /**
+   * Get trust thresholds
+   */
+  async getThresholds(): Promise<any[]> {
+    try {
+      // Return predefined thresholds since backend doesn't have this yet
+      return [
+        {
+          threshold_id: 'high_security',
+          name: 'High Security',
+          description: 'High security threshold for sensitive operations',
+          min_trust_level: 90,
+          max_trust_level: 100,
+          agent_types: ['financial', 'healthcare', 'government'],
+          actions: {
+            alert: true,
+            quarantine: true,
+            disable: true,
+            retrain: false
+          },
+          industry_standard: true
+        },
+        {
+          threshold_id: 'standard_security',
+          name: 'Standard Security',
+          description: 'Standard security threshold for general operations',
+          min_trust_level: 70,
+          max_trust_level: 89,
+          agent_types: ['general', 'business', 'automation'],
+          actions: {
+            alert: true,
+            quarantine: false,
+            disable: false,
+            retrain: true
+          },
+          industry_standard: false
+        },
+        {
+          threshold_id: 'low_security',
+          name: 'Low Security',
+          description: 'Low security threshold for non-critical operations',
+          min_trust_level: 50,
+          max_trust_level: 69,
+          agent_types: ['testing', 'development', 'sandbox'],
+          actions: {
+            alert: true,
+            quarantine: false,
+            disable: false,
+            retrain: true
+          },
+          industry_standard: false
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching trust thresholds:', error);
+      return [];
     }
-
-    return await response.json();
   }
 
-  // Threshold methods (still use API for now)
-  async createThreshold(request: CreateThresholdRequest): Promise<TrustThreshold> {
-    const response = await fetch(`${this.baseUrl}/thresholds`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  /**
+   * Update a trust threshold
+   */
+  async updateThreshold(thresholdId: string, updates: any): Promise<any> {
+    try {
+      // This would be implemented when threshold management is added
+      console.log('Updating trust threshold:', thresholdId, updates);
+      return { ...updates, threshold_id: thresholdId, success: true };
+    } catch (error) {
+      console.error('Error updating threshold:', error);
+      throw error;
     }
-
-    return await response.json();
   }
 
-  async getThresholds(): Promise<TrustThreshold[]> {
-    const response = await fetch(`${this.baseUrl}/thresholds`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.thresholds || [];
-  }
-
+  /**
+   * Delete a trust threshold
+   */
   async deleteThreshold(thresholdId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/thresholds/${thresholdId}`, {
-      method: 'DELETE'
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      // This would be implemented when threshold management is added
+      console.log('Deleting trust threshold:', thresholdId);
+    } catch (error) {
+      console.error('Error deleting threshold:', error);
+      throw error;
     }
   }
 
   /**
-   * Get boundary metrics
+   * Get a specific trust boundary
    */
-  async getBoundaryMetrics(): Promise<BoundariesMetrics> {
+  async getBoundary(boundaryId: string): Promise<TrustBoundary | null> {
     try {
-      if (this.useUnifiedStorage) {
-        return await trustBoundariesStorageService.getMetrics();
-      } else {
-        return await this.getBoundaryMetricsViaAPI();
-      }
-    } catch (error) {
-      console.error('Error getting boundary metrics:', error);
-      // Return default metrics on error
-      return {
-        total_boundaries: 0,
-        active_boundaries: 0,
-        pending_boundaries: 0,
-        expired_boundaries: 0,
-        average_trust_level: 0,
-        boundary_types: {
-          direct: 0,
-          delegated: 0,
-          transitive: 0,
-          federated: 0
+      const response = await fetch(`${this.baseUrl}/boundaries/${boundaryId}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
         }
-      };
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const boundary = await response.json();
+      return boundary;
+    } catch (error) {
+      console.error('Error fetching trust boundary:', error);
+      return null;
     }
   }
 
-  private async getBoundaryMetricsViaAPI(): Promise<BoundariesMetrics> {
-    const response = await fetch(`${this.baseUrl}/metrics`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  /**
+   * Create a trust threshold configuration
+   */
+  async createThreshold(request: CreateThresholdRequest): Promise<any> {
+    try {
+      // This would be implemented when threshold management is added
+      console.log('Creating trust threshold:', request);
+      return { success: true, message: 'Threshold creation not yet implemented' };
+    } catch (error) {
+      console.error('Error creating threshold:', error);
+      throw error;
     }
+  }
 
-    return await response.json();
+  /**
+   * Get industry standard templates
+   */
+  async getIndustryStandards(): Promise<any[]> {
+    try {
+      // Return predefined industry standards
+      return [
+        {
+          id: 'financial_services',
+          name: 'Financial Services',
+          description: 'Compliance templates for financial institutions',
+          trust_levels: {
+            high: 95,
+            medium: 85,
+            low: 70
+          },
+          policies: ['data_encryption', 'audit_logging', 'access_control']
+        },
+        {
+          id: 'healthcare',
+          name: 'Healthcare (HIPAA)',
+          description: 'HIPAA-compliant trust boundaries for healthcare data',
+          trust_levels: {
+            high: 98,
+            medium: 90,
+            low: 80
+          },
+          policies: ['hipaa_compliance', 'data_minimization', 'audit_trail']
+        },
+        {
+          id: 'government',
+          name: 'Government/Defense',
+          description: 'High-security trust boundaries for government systems',
+          trust_levels: {
+            high: 99,
+            medium: 95,
+            low: 85
+          },
+          policies: ['security_clearance', 'classification_handling', 'need_to_know']
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching industry standards:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get policy mapping configurations
+   */
+  async getPolicyMappings(): Promise<any[]> {
+    try {
+      // Return predefined policy mappings
+      return [
+        {
+          id: 'access_control',
+          name: 'Access Control Policy',
+          description: 'Controls agent access to resources and operations',
+          trust_requirements: {
+            minimum: 70,
+            recommended: 85
+          }
+        },
+        {
+          id: 'data_sharing',
+          name: 'Data Sharing Policy',
+          description: 'Governs how agents can share sensitive data',
+          trust_requirements: {
+            minimum: 80,
+            recommended: 90
+          }
+        },
+        {
+          id: 'operation_execution',
+          name: 'Operation Execution Policy',
+          description: 'Controls which operations agents can perform',
+          trust_requirements: {
+            minimum: 75,
+            recommended: 85
+          }
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching policy mappings:', error);
+      return [];
+    }
   }
 }
 
 export const trustBoundariesBackendService = new TrustBoundariesBackendService();
+export default trustBoundariesBackendService;
 

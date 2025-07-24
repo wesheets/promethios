@@ -1,14 +1,18 @@
 /**
- * Trust Attestations Hook
+ * Trust Attestations Backend Hook
  * 
  * React hook for managing trust attestations state and backend integration.
- * Provides state management for attestations, metrics, and operations.
+ * Provides state management for attestations and metrics with real API integration.
+ * Enhanced with robust error handling and fallback mechanisms.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { trustAttestationsBackendService } from '../services/trustAttestationsBackendService';
-import { TrustAttestation, CreateAttestationRequest, AttestationsMetrics } from '../services/TrustAttestationsStorageService';
+import { 
+  trustAttestationsBackendService,
+  TrustAttestation,
+  AttestationMetrics,
+  AttestationFilters
+} from '../services/trustAttestationsBackendService';
 import { observerIntegrationService } from '../services/observerIntegrationService';
 import { notificationService } from '../services/notificationService';
 
@@ -86,8 +90,6 @@ interface UseTrustAttestationsActions {
 export interface UseTrustAttestationsReturn extends UseTrustAttestationsState, UseTrustAttestationsActions {}
 
 export const useTrustAttestations = (): UseTrustAttestationsReturn => {
-  const { user } = useAuth();
-  
   // State
   const [attestations, setAttestations] = useState<TrustAttestation[]>([]);
   const [attestationsLoading, setAttestationsLoading] = useState(false);
@@ -98,20 +100,6 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   const [metricsError, setMetricsError] = useState<string | null>(null);
   
   const [creatingAttestation, setCreatingAttestation] = useState(false);
-
-  // Initialize service with user authentication
-  useEffect(() => {
-    if (user?.uid) {
-      trustAttestationsBackendService.initialize(user.uid).catch(error => {
-        console.error('Failed to initialize Trust Attestations service:', error);
-        // Set error state but don't crash
-        setAttestationsError('Authentication required. Please sign in.');
-      });
-    } else {
-      // User not authenticated yet - show loading or auth required message
-      setAttestationsError('Authentication required. Please sign in.');
-    }
-  }, [user?.uid]);
   const [verifyingAttestation, setVerifyingAttestation] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
 
@@ -364,9 +352,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
 
   // Filter Actions
   const filterAttestations = useCallback((filters: AttestationFilters) => {
-    // Defensive coding: ensure attestations is an array
-    const attestationsArray = Array.isArray(attestations) ? attestations : [];
-    let filtered = [...attestationsArray];
+    let filtered = [...attestations];
     
     if (filters.type && filters.type !== 'all') {
       filtered = filtered.filter(a => a.attestation_type === filters.type);

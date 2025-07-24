@@ -124,7 +124,7 @@ function TabPanel(props: TabPanelProps) {
 
 const TrustBoundariesPage: React.FC = () => {
   // Authentication context
-  const { user: currentUser } = useAuth();
+  const { currentUser } = useAuth();
   
   const [tabValue, setTabValue] = useState(0);
   const [createBoundaryOpen, setCreateBoundaryOpen] = useState(false);

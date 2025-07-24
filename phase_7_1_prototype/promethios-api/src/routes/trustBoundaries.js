@@ -213,6 +213,26 @@ router.get('/metrics', (req, res) => {
 });
 
 /**
+ * Get trust thresholds
+ */
+router.get('/thresholds', (req, res) => {
+  try {
+    // For now, return empty thresholds array
+    // In production, this would fetch from database
+    const thresholds = [];
+
+    res.status(200).json({
+      thresholds: thresholds,
+      total: thresholds.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting thresholds:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * Evaluate trust between two agents
  */
 router.post('/evaluate', (req, res) => {

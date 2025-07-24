@@ -123,7 +123,7 @@ function TabPanel(props: TabPanelProps) {
 
 const TrustAttestationsPage: React.FC = () => {
   // Authentication context
-  const { user: currentUser } = useAuth();
+  const { currentUser } = useAuth();
   
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
