@@ -19,10 +19,10 @@
   animation: realWorldCycle 3s ease-in-out 7.3s;
 }
 
-/* Dynamic "is/are" text animations */
+/* Dynamic "is/are" text animations - fixed timing to prevent overlap */
 .static-text-is {
   opacity: 0;
-  animation: staticTextIsCycle 10.8s ease-in-out 0.5s;
+  animation: staticTextIsCycle 7s ease-in-out 0.5s;
 }
 
 .static-text-are {
@@ -128,14 +128,11 @@
   0% {
     opacity: 0;
   }
-  8% {
+  10% {
     opacity: 1;
   }
-  68% {
+  85% {
     opacity: 1;
-  }
-  76% {
-    opacity: 0;
   }
   100% {
     opacity: 0;
