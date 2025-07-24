@@ -388,6 +388,28 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     }
   }, []);
 
+  // Metrics Actions
+  const loadMetrics = useCallback(async () => {
+    setMetricsLoading(true);
+    setMetricsError(null);
+    
+    try {
+      const metricsData = await trustAttestationsBackendService.getMetrics();
+      setMetrics(metricsData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load metrics';
+      console.warn('Metrics API failed, using default metrics:', errorMessage);
+      
+      // Use default metrics instead of showing error
+      setMetrics(DEFAULT_METRICS);
+      
+      // Only set error for debugging, don't break the UI
+      setMetricsError(`API unavailable (using defaults): ${errorMessage}`);
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, []);
+
   // Utility Actions
   const refreshAll = useCallback(async () => {
     await Promise.all([
