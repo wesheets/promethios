@@ -39,6 +39,7 @@ import {
   Psychology,
   Policy
 } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 import { UserAgentStorageService } from '../services/UserAgentStorageService';
 
 interface Agent {
@@ -120,6 +121,7 @@ export const CreateAttestationWizard: React.FC<CreateAttestationWizardProps> = (
   onSubmit,
   agents: propAgents = []
 }) => {
+  const { currentUser } = useAuth();
   const [activeStep, setActiveStep] = useState(0);
   const [agents, setAgents] = useState<Agent[]>(propAgents);
   const [loadingAgents, setLoadingAgents] = useState(false);
@@ -138,15 +140,22 @@ export const CreateAttestationWizard: React.FC<CreateAttestationWizardProps> = (
 
   // Load agents when wizard opens
   useEffect(() => {
-    if (open && propAgents.length === 0) {
+    if (open && propAgents.length === 0 && currentUser?.uid) {
       loadAgents();
     }
-  }, [open, propAgents.length]);
+  }, [open, propAgents.length, currentUser?.uid]);
 
   const loadAgents = async () => {
+    if (!currentUser?.uid) {
+      console.warn('No authenticated user, cannot load agents');
+      return;
+    }
+
     setLoadingAgents(true);
     try {
       const userAgentService = new UserAgentStorageService();
+      // Set the current user before loading agents
+      userAgentService.setCurrentUser(currentUser.uid);
       const loadedAgents = await userAgentService.getAgents();
       console.log('Loaded agents for attestation wizard:', loadedAgents);
       setAgents(loadedAgents);
