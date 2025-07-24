@@ -5,6 +5,9 @@
       "npm run build"
     ],
     "runtime": "nodejs18"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
 

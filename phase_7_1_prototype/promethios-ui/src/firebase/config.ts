@@ -27,9 +27,9 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-const db = getFirestore(app);
-console.log('🔧 Firestore initialized with default database for email automation');
-console.log('📧 New waitlist submissions will trigger automatic emails!');
+const db = getFirestore(app, 'promethios-oregon');
+console.log('🔧 Firestore initialized with promethios-oregon database (us-west1 region)');
+console.log('🎯 Restored to original database with all user data and sessions!');
 
 export { auth, googleProvider, firebaseConfig, db };
 export default app;

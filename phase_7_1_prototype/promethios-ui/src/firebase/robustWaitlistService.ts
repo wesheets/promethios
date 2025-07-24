@@ -1,5 +1,5 @@
+import { collection, addDoc, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './config';
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { generateWaitlistEmail } from './emailTemplateService';
 
 export interface WaitlistData {
