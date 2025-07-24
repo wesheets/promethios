@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { FirebaseError } from 'firebase/app';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase/config';
 import { addToWaitlistRobust, testFirestoreConnection, debugFirestoreAccess } from '../../firebase/robustWaitlistService';
 import { checkUserInvitation } from '../../firebase/invitationService';
 import '../../styles/animated-background.css';
@@ -78,7 +80,8 @@ const LoginWaitlistPage: React.FC = () => {
 
   // Video management
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);;
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const [videoDuration, setVideoDuration] = useState(10); // Default duration
   
   // Handle video fade-out loop
@@ -87,11 +90,31 @@ const LoginWaitlistPage: React.FC = () => {
     if (!video) return;
     
     const handleLoadedMetadata = () => {
+      console.log('Video metadata loaded, duration:', video.duration);
       setVideoDuration(video.duration);
       setVideoLoaded(true);
+      setVideoError(false);
       
       // Set CSS custom property for animation duration
       document.documentElement.style.setProperty('--video-duration', `${video.duration}s`);
+    };
+    
+    const handleCanPlay = () => {
+      console.log('Video can play');
+      setVideoLoaded(true);
+      setVideoError(false);
+      
+      // Ensure video starts playing
+      video.play().catch(error => {
+        console.error('Video autoplay failed:', error);
+        // Try to play again after user interaction
+      });
+    };
+    
+    const handleError = (e: Event) => {
+      console.error('Video loading error:', e);
+      setVideoError(true);
+      setVideoLoaded(false);
     };
     
     const handleTimeUpdate = () => {
@@ -112,16 +135,26 @@ const LoginWaitlistPage: React.FC = () => {
       video.currentTime = 0;
       setTimeout(() => {
         video.style.opacity = '1';
-        video.play();
+        video.play().catch(error => {
+          console.error('Video restart failed:', error);
+        });
       }, 100);
     };
     
+    // Add event listeners
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
     
+    // Force load the video
+    video.load();
+    
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
     };
@@ -173,6 +206,12 @@ const LoginWaitlistPage: React.FC = () => {
     setIsLoggingIn(true);
     
     try {
+      // Clear any existing auth state first
+      await signOut(auth).catch(() => {}); // Ignore errors if already signed out
+      
+      // Add a small delay to ensure clean state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const result = await loginWithGoogle();
       
       // Get email from the result or current user
@@ -198,9 +237,13 @@ const LoginWaitlistPage: React.FC = () => {
       let errorMessage = 'Google authentication failed. Please try again.';
       
       if (firebaseError.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in popup was closed before completing the sign in.';
+        errorMessage = 'Sign-in popup was closed. Please try again.';
       } else if (firebaseError.code === 'auth/popup-blocked') {
-        errorMessage = 'Sign-in popup was blocked by the browser.';
+        errorMessage = 'Sign-in popup was blocked by your browser. Please allow popups and try again.';
+      } else if (firebaseError.code === 'auth/cancelled-popup-request') {
+        errorMessage = 'Another sign-in popup is already open. Please close it and try again.';
+      } else if (firebaseError.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
       }
       
       setLoginError(errorMessage);
@@ -325,22 +368,50 @@ const LoginWaitlistPage: React.FC = () => {
           muted
           loop
           playsInline
+          preload="auto"
           className={`transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onCanPlay={() => setVideoLoaded(true)}
+          onCanPlay={() => {
+            console.log('Video onCanPlay triggered');
+            setVideoLoaded(true);
+            setVideoError(false);
+          }}
+          onError={(e) => {
+            console.error('Video onError triggered:', e);
+            setVideoError(true);
+            setVideoLoaded(false);
+          }}
+          onLoadStart={() => console.log('Video loading started')}
+          onLoadedData={() => console.log('Video data loaded')}
         >
           <source src="/ai-orb-background.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+        
+        {/* Video loading indicator */}
+        {!videoLoaded && !videoError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+            <div className="text-white text-sm opacity-50">Loading video...</div>
+          </div>
+        )}
+        
+        {/* Video error fallback */}
+        {videoError && (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-white text-sm opacity-50">Video unavailable</div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Video Overlay for text readability */}
       <div className="video-overlay"></div>
       
-      {/* Fallback animated background for when video is loading */}
-      {!videoLoaded && (
+      {/* Fallback animated background for when video is loading or failed */}
+      {(!videoLoaded || videoError) && (
         <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-          {/* Simple fallback background */}
-          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"></div>
+          {/* Enhanced fallback background */}
+          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 animate-pulse"></div>
         </div>
       )}
       
@@ -358,7 +429,7 @@ const LoginWaitlistPage: React.FC = () => {
         </h2>
         <p className="mt-4 text-center text-lg text-gray-300"> {/* Increased text size */}
           {showLoginForm 
-            ? 'This environment is not available to unverified operators. Promethios governance requires accountability.' 
+            ? 'Request access to govern your agents with trust and accountability.' 
             : 'Trust is not public. You don\'t get access just because you want it — you get it because someone trusted you.'}
         </p>
       </div>

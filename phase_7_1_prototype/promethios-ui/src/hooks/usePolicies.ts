@@ -78,13 +78,6 @@ export const usePolicies = (): UsePoliciesReturn => {
     initializeService();
   }, [currentUser?.uid]);
 
-  // Load policies after initialization
-  useEffect(() => {
-    if (currentUser?.uid) {
-      loadPolicies();
-    }
-  }, [currentUser?.uid, loadPolicies]);
-
   // Update statistics when policies change
   useEffect(() => {
     const updateStats = () => {
@@ -97,7 +90,7 @@ export const usePolicies = (): UsePoliciesReturn => {
       
       const byCategory: Record<string, number> = {};
       
-      policies.forEach(policy => {
+      (policies || []).forEach(policy => {
         byStatus[policy.status]++;
         
         if (policy.category) {
@@ -190,15 +183,29 @@ export const usePolicies = (): UsePoliciesReturn => {
     setError(null);
 
     try {
+      // Transform SimplePolicy data to PrometheiosPolicy format
+      const transformedPolicy = {
+        ...policyData,
+        version: policyData.version || '1.0.0',
+        status: policyData.status || 'draft' as const,
+        category: policyData.type || policyData.category || 'GENERAL',
+        created_by: currentUser.uid,
+        metadata: {
+          owner: currentUser.uid,
+          tags: [],
+          ...policyData.metadata
+        }
+      };
+
       // Try backend first, fallback to storage-only
       let newPolicy: Policy;
       try {
-        newPolicy = await prometheiosPolicyAPI.createPolicy(policyData);
+        newPolicy = await prometheiosPolicyAPI.createPolicy(transformedPolicy);
         console.log('Policy created in backend:', newPolicy.policy_id);
         
         // Also save to storage for persistence
         try {
-          await storageService.createPolicy(policyData);
+          await storageService.createPolicy(transformedPolicy);
         } catch (storageError) {
           console.warn('Failed to save policy to storage:', storageError);
         }
@@ -414,6 +421,13 @@ export const usePolicies = (): UsePoliciesReturn => {
       return [];
     }
   }, [storageService]);
+
+  // Load policies after initialization (moved after function definitions)
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadPolicies();
+    }
+  }, [currentUser?.uid, loadPolicies]);
 
   return {
     // Data
