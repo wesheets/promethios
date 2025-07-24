@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const llmService = require('../services/llmService');
+const policyEnforcementService = require('../services/policyEnforcementService');
 
 // Import the real Promethios GovernanceCore
 const { spawn } = require('child_process');
@@ -104,12 +105,55 @@ const governance_core = new PrometheusGovernanceCore();
 router.post('/', async (req, res) => {
     try {
         const { agent_id, message, governance_enabled = false, session_id, system_message } = req.body;
+        const userId = req.headers['x-user-id'] || req.body.userId || 'anonymous';
 
         if (!agent_id || !message) {
             return res.status(400).json({ 
                 error: 'agent_id and message are required',
                 governance_metrics: null
             });
+        }
+
+        // Policy enforcement for chat messages
+        if (userId !== 'anonymous') {
+            const chatPolicyCheck = await policyEnforcementService.evaluateAction(
+                userId,
+                agent_id,
+                {
+                    type: 'chat_message',
+                    parameters: {
+                        message: message,
+                        agentId: agent_id,
+                        governanceEnabled: governance_enabled,
+                        messageLength: message.length,
+                        containsPII: /\b\d{3}-\d{2}-\d{4}\b|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(message)
+                    }
+                },
+                {
+                    chat: {
+                        sessionId: session_id,
+                        messageHistory: activeChatSessions[session_id]?.messages?.length || 0
+                    },
+                    user: { id: userId }
+                }
+            );
+
+            if (!chatPolicyCheck.allowed) {
+                return res.status(403).json({
+                    error: 'Message blocked by policy',
+                    policyViolations: chatPolicyCheck.violations,
+                    blockedBy: chatPolicyCheck.blockedBy,
+                    governance_metrics: {
+                        policy_compliant: false,
+                        violations: chatPolicyCheck.violations.length,
+                        blocked: true
+                    }
+                });
+            }
+
+            if (chatPolicyCheck.warnings.length > 0) {
+                console.warn(`Chat policy warnings for user ${userId}:`, chatPolicyCheck.warnings.map(w => w.message));
+            }
         }
 
         // Generate or use existing session ID
@@ -122,7 +166,9 @@ router.post('/', async (req, res) => {
                 agent_id: agent_id,
                 messages: [],
                 created_at: new Date().toISOString(),
-                governance_enabled: governance_enabled
+                governance_enabled: governance_enabled,
+                userId: userId,
+                policyCompliant: true
             };
         }
 

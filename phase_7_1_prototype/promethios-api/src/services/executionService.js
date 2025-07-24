@@ -5,6 +5,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const auditService = require('./auditService');
+const policyEnforcementService = require('./policyEnforcementService');
 
 class ExecutionService {
   constructor() {
@@ -28,7 +29,7 @@ class ExecutionService {
   }
 
   /**
-   * Execute a system operation
+   * Execute a system operation with policy enforcement
    */
   async execute(operationType, parameters = {}, userId = 'system') {
     const executionId = uuidv4();
@@ -50,6 +51,39 @@ class ExecutionService {
     this.executions.set(executionId, execution);
     
     try {
+      // Policy enforcement check before execution
+      if (userId !== 'system') {
+        this.addExecutionLog(executionId, 'info', 'Checking execution policies...');
+        
+        const policyCheck = await policyEnforcementService.evaluateAction(
+          userId,
+          'execution_service',
+          {
+            type: 'system_execution',
+            parameters: {
+              operationType,
+              ...parameters
+            }
+          },
+          {
+            execution: {
+              id: executionId,
+              type: operationType
+            }
+          }
+        );
+        
+        if (!policyCheck.allowed) {
+          const error = new Error(`Execution blocked by policy: ${policyCheck.blockedBy.join(', ')}`);
+          error.policyViolations = policyCheck.violations;
+          throw error;
+        }
+        
+        if (policyCheck.warnings.length > 0) {
+          this.addExecutionLog(executionId, 'warn', `Policy warnings: ${policyCheck.warnings.map(w => w.message).join(', ')}`);
+        }
+      }
+      
       // Log execution start
       this.addExecutionLog(executionId, 'info', `Starting execution: ${operationType}`);
       
@@ -57,7 +91,7 @@ class ExecutionService {
       let result;
       switch (operationType) {
         case 'deploy_agent':
-          result = await this.executeAgentDeployment(parameters, executionId);
+          result = await this.executeAgentDeployment(parameters, executionId, userId);
           break;
         case 'system_health_check':
           result = await this.executeSystemHealthCheck(parameters, executionId);
@@ -124,10 +158,39 @@ class ExecutionService {
   /**
    * Execute agent deployment
    */
-  async executeAgentDeployment(parameters, executionId) {
+  async executeAgentDeployment(parameters, executionId, userId = 'system') {
     const { agentId, deploymentConfig, targetEnvironment } = parameters;
     
     this.addExecutionLog(executionId, 'info', `Deploying agent ${agentId} to ${targetEnvironment}`);
+    
+    // Policy enforcement for agent deployment
+    if (userId !== 'system') {
+      const agentPolicyCheck = await policyEnforcementService.checkAgentExecution(
+        userId,
+        {
+          id: agentId,
+          type: deploymentConfig?.type || 'unknown',
+          capabilities: deploymentConfig?.capabilities || [],
+          model: deploymentConfig?.model
+        },
+        {
+          deployment: {
+            environment: targetEnvironment,
+            config: deploymentConfig
+          }
+        }
+      );
+      
+      if (!agentPolicyCheck.allowed) {
+        const error = new Error(`Agent deployment blocked by policy: ${agentPolicyCheck.blockedBy.join(', ')}`);
+        error.policyViolations = agentPolicyCheck.violations;
+        throw error;
+      }
+      
+      if (agentPolicyCheck.warnings.length > 0) {
+        this.addExecutionLog(executionId, 'warn', `Agent deployment warnings: ${agentPolicyCheck.warnings.map(w => w.message).join(', ')}`);
+      }
+    }
     
     // Simulate deployment process
     const deploymentId = uuidv4();
@@ -138,7 +201,9 @@ class ExecutionService {
       status: 'deploying',
       startTime: new Date().toISOString(),
       config: deploymentConfig,
-      executionId
+      executionId,
+      userId,
+      policyCompliant: true
     };
     
     this.deployments.set(deploymentId, deployment);
