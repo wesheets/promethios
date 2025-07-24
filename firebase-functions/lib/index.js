@@ -4,8 +4,16 @@ exports.testEmail = exports.sendWaitlistEmail = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-// Initialize Firebase Admin
-admin.initializeApp();
+// Initialize Firebase Admin with promethios-oregon database
+admin.initializeApp({
+    databaseURL: 'https://promethios-oregon-default-rtdb.firebaseio.com/'
+});
+// Get Firestore instance for promethios-oregon database
+const db = admin.firestore();
+// Explicitly set the database to promethios-oregon
+db.settings({
+    databaseId: 'promethios-oregon'
+});
 // Role display mapping
 const roleDisplayMap = {
     'enterprise-cto': 'Enterprise CTO',
