@@ -30,10 +30,10 @@
   animation: staticTextAreCycle 3s ease-in-out 7.3s;
 }
 
-/* Final tagline animation - appears after all words finish */
+/* Final tagline animation - appears after all words finish with scaling effect */
 .final-tagline {
   opacity: 0;
-  animation: fadeInFinal 2s ease-out 10.8s forwards;
+  animation: fadeInFinal 3s ease-out 10.8s forwards;
 }
 
 /* Single cycle animations for each word */
@@ -157,7 +157,11 @@
 @keyframes fadeInFinal {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
   }
   to {
     opacity: 1;
