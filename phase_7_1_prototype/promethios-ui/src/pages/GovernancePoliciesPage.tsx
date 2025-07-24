@@ -11,7 +11,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
 import { usePolicies } from '../hooks/usePolicies';
-import PolicyRuleBuilder from '../components/governance/PolicyRuleBuilder';
+import SimplifiedPolicyWizard from '../components/governance/SimplifiedPolicyWizard';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
 import {
@@ -715,14 +715,42 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       <Dialog 
         open={createPolicyOpen} 
         onClose={() => setCreatePolicyOpen(false)}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: { minHeight: '80vh' }
+        }}
       >
-        <DialogTitle>Create New Policy</DialogTitle>
-        <DialogContent>
-          <PolicyRuleBuilder
-            mode="create"
-            onSave={handleCreatePolicy}
+        <DialogContent sx={{ p: 0 }}>
+          <SimplifiedPolicyWizard
+            onSave={async (simplePolicy) => {
+              // Convert simple policy to full policy format
+              const fullPolicy = {
+                name: simplePolicy.name,
+                version: '1.0.0',
+                status: 'draft' as const,
+                category: simplePolicy.type,
+                description: simplePolicy.description,
+                rules: simplePolicy.rules.map(rule => ({
+                  name: rule.name,
+                  description: rule.description,
+                  condition: rule.condition,
+                  action: rule.action,
+                  priority: 1,
+                  metadata: {
+                    rationale: rule.description,
+                    tags: ['user-created']
+                  }
+                })),
+                metadata: {
+                  owner: currentUser?.uid || 'unknown',
+                  tags: ['simplified-wizard'],
+                  created_via: 'simplified-wizard'
+                }
+              };
+              
+              await handleCreatePolicy(fullPolicy);
+            }}
             onCancel={() => setCreatePolicyOpen(false)}
           />
         </DialogContent>

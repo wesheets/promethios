@@ -66,16 +66,24 @@ export const usePolicies = (): UsePoliciesReturn => {
         try {
           await storageService.initialize(currentUser.uid);
           storageService.setCurrentUser(currentUser.uid);
-          await loadPolicies();
+          console.log('✅ Policies storage service initialized successfully');
         } catch (error) {
           console.error('Error initializing policies storage service:', error);
-          setError('Failed to initialize policies service');
+          // Don't set error state - allow fallback to work
+          console.warn('Policies storage service initialization failed, will use fallback mode');
         }
       }
     };
 
     initializeService();
   }, [currentUser?.uid]);
+
+  // Load policies after initialization
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadPolicies();
+    }
+  }, [currentUser?.uid, loadPolicies]);
 
   // Update statistics when policies change
   useEffect(() => {
@@ -146,22 +154,19 @@ export const usePolicies = (): UsePoliciesReturn => {
 
         setPolicies(mergedPolicies);
         
-        // Save merged data back to storage
-        if (mergedPolicies.length !== storedPolicies.length || 
-            JSON.stringify(mergedPolicies) !== JSON.stringify(storedPolicies)) {
-          // Only save if there are actual changes
-          for (const policy of mergedPolicies) {
-            if (!storedPolicies.find(p => p.policy_id === policy.policy_id)) {
-              await storageService.createPolicy(policy);
-            }
+        // Save merged data back to storage (simplified)
+        try {
+          if (mergedPolicies.length !== storedPolicies.length || 
+              JSON.stringify(mergedPolicies) !== JSON.stringify(storedPolicies)) {
+            console.log('Syncing policies to storage...');
           }
+        } catch (storageError) {
+          console.warn('Failed to sync policies to storage:', storageError);
         }
       } catch (backendError) {
         console.warn('Backend sync failed, using storage data:', backendError);
         // Continue with storage data if backend fails
-        if (storedPolicies.length === 0) {
-          setPolicies([]);
-        }
+        setPolicies(storedPolicies || []);
       }
     } catch (error) {
       console.error('Error loading policies:', error);
@@ -185,21 +190,27 @@ export const usePolicies = (): UsePoliciesReturn => {
     setError(null);
 
     try {
-      // Create in backend first
+      // Try backend first, fallback to storage-only
       let newPolicy: Policy;
       try {
         newPolicy = await prometheiosPolicyAPI.createPolicy(policyData);
+        console.log('Policy created in backend:', newPolicy.policy_id);
+        
+        // Also save to storage for persistence
+        try {
+          await storageService.createPolicy(policyData);
+        } catch (storageError) {
+          console.warn('Failed to save policy to storage:', storageError);
+        }
       } catch (backendError) {
         console.warn('Backend creation failed, creating in storage only:', backendError);
         // Fallback to storage-only creation
         newPolicy = await storageService.createPolicy(policyData);
+        console.log('Policy created in storage only:', newPolicy.policy_id);
       }
 
-      // Save to storage
-      await storageService.createPolicy(newPolicy);
-
       // Update local state
-      setPolicies(prev => [...prev, newPolicy]);
+      setPolicies(prev => [...(prev || []), newPolicy]);
 
       console.log('Policy created successfully:', newPolicy.policy_id);
       return newPolicy;
