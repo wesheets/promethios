@@ -13,6 +13,8 @@ import {
   AttestationMetrics,
   AttestationFilters
 } from '../services/trustAttestationsBackendService';
+import { TrustAttestationsStorageService } from '../services/TrustAttestationsStorageService';
+import { useAuth } from '../context/AuthContext';
 import { observerIntegrationService } from '../services/observerIntegrationService';
 import { notificationService } from '../services/notificationService';
 
@@ -90,6 +92,8 @@ interface UseTrustAttestationsActions {
 export interface UseTrustAttestationsReturn extends UseTrustAttestationsState, UseTrustAttestationsActions {}
 
 export const useTrustAttestations = (): UseTrustAttestationsReturn => {
+  const { currentUser } = useAuth();
+  
   // State
   const [attestations, setAttestations] = useState<TrustAttestation[]>([]);
   const [attestationsLoading, setAttestationsLoading] = useState(false);
@@ -103,25 +107,74 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
   const [verifyingAttestation, setVerifyingAttestation] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
 
+  // Storage service instance
+  const [storageService] = useState(() => new TrustAttestationsStorageService());
+
+  // Initialize storage service when user changes
+  useEffect(() => {
+    if (currentUser?.uid) {
+      try {
+        storageService.setUserId(currentUser.uid);
+        console.log('Trust attestations storage service initialized for user:', currentUser.uid);
+      } catch (error) {
+        console.error('Failed to initialize trust attestations storage service:', error);
+      }
+    }
+  }, [currentUser?.uid, storageService]);
+
   // Attestation Actions
   const loadAttestations = useCallback(async (filters: AttestationFilters = {}) => {
     setAttestationsLoading(true);
     setAttestationsError(null);
     
     try {
-      const response = await trustAttestationsBackendService.getAttestations(filters);
-      setAttestations(response.attestations);
+      // First, try to load from local storage for immediate display
+      if (currentUser?.uid) {
+        try {
+          const storedAttestations = await storageService.getAttestations();
+          if (storedAttestations.length > 0) {
+            setAttestations(storedAttestations);
+            console.log('Loaded attestations from storage:', storedAttestations.length);
+          }
+        } catch (storageError) {
+          console.warn('Failed to load from storage:', storageError);
+        }
+      }
+
+      // Then sync with backend API
+      try {
+        const response = await trustAttestationsBackendService.getAttestations(filters);
+        setAttestations(response.attestations);
+        console.log('Loaded attestations from backend:', response.attestations.length);
+        
+        // Store the backend data locally for future use
+        if (currentUser?.uid && response.attestations.length > 0) {
+          try {
+            // Note: We'd need to add a method to store multiple attestations
+            // For now, just update the state
+            console.log('Backend attestations loaded and displayed');
+          } catch (syncError) {
+            console.warn('Failed to sync backend data to storage:', syncError);
+          }
+        }
+      } catch (backendError) {
+        const errorMessage = backendError instanceof Error ? backendError.message : 'Failed to load attestations';
+        console.warn('Attestations API failed:', errorMessage);
+        
+        // If we have stored data, keep it; otherwise set empty array
+        if (attestations.length === 0) {
+          setAttestations([]);
+          setAttestationsError(`API unavailable: ${errorMessage}`);
+        }
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load attestations';
-      console.warn('Attestations API failed:', errorMessage);
-      
-      // Set empty array instead of breaking the UI
+      setAttestationsError(errorMessage);
       setAttestations([]);
-      setAttestationsError(`API unavailable: ${errorMessage}`);
     } finally {
       setAttestationsLoading(false);
     }
-  }, []);
+  }, [currentUser?.uid, storageService, attestations.length]);
 
   const createAttestation = useCallback(async (attestationData: {
     attestation_type: string;
@@ -137,7 +190,28 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     setOperationError(null);
     
     try {
+      // Create attestation via backend API
       const newAttestation = await trustAttestationsBackendService.createAttestation(attestationData);
+      
+      // Also save to local storage for persistence
+      if (currentUser?.uid) {
+        try {
+          await storageService.createAttestation({
+            attestation_type: attestationData.attestation_type,
+            subject_instance_id: attestationData.subject_instance_id,
+            subject_name: attestationData.subject_name,
+            attester_instance_id: attestationData.attester_instance_id,
+            attester_name: attestationData.attester_name,
+            attestation_data: attestationData.attestation_data,
+            expires_at: attestationData.expires_at,
+            metadata: attestationData.metadata
+          });
+          console.log('Attestation saved to storage:', newAttestation.attestation_id);
+        } catch (storageError) {
+          console.warn('Failed to save attestation to storage:', storageError);
+          // Don't fail the entire operation if storage fails
+        }
+      }
       
       // Add to local state
       setAttestations(prev => [newAttestation, ...prev]);
@@ -167,7 +241,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     } finally {
       setCreatingAttestation(false);
     }
-  }, []);
+  }, [currentUser?.uid, storageService]);
 
   const verifyAttestation = useCallback(async (attestationId: string, verifierInstanceId: string) => {
     setVerifyingAttestation(true);
@@ -314,27 +388,59 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     }
   }, []);
 
-  // Metrics Actions
-  const loadMetrics = useCallback(async () => {
-    setMetricsLoading(true);
-    setMetricsError(null);
+  // Metrics Ac  // Attestation Actions
+  const loadAttestations = useCallback(async (filters: AttestationFilters = {}) => {
+    setAttestationsLoading(true);
+    setAttestationsError(null);
     
     try {
-      const metricsData = await trustAttestationsBackendService.getMetrics();
-      setMetrics(metricsData);
+      // First, try to load from local storage for immediate display
+      if (currentUser?.uid) {
+        try {
+          const storedAttestations = await storageService.getAttestations();
+          if (storedAttestations.length > 0) {
+            setAttestations(storedAttestations);
+            console.log('Loaded attestations from storage:', storedAttestations.length);
+          }
+        } catch (storageError) {
+          console.warn('Failed to load from storage:', storageError);
+        }
+      }
+
+      // Then sync with backend API
+      try {
+        const response = await trustAttestationsBackendService.getAttestations(filters);
+        setAttestations(response.attestations);
+        console.log('Loaded attestations from backend:', response.attestations.length);
+        
+        // Store the backend data locally for future use
+        if (currentUser?.uid && response.attestations.length > 0) {
+          try {
+            // Note: We'd need to add a method to store multiple attestations
+            // For now, just update the state
+            console.log('Backend attestations loaded and displayed');
+          } catch (syncError) {
+            console.warn('Failed to sync backend data to storage:', syncError);
+          }
+        }
+      } catch (backendError) {
+        const errorMessage = backendError instanceof Error ? backendError.message : 'Failed to load attestations';
+        console.warn('Attestations API failed:', errorMessage);
+        
+        // If we have stored data, keep it; otherwise set empty array
+        if (attestations.length === 0) {
+          setAttestations([]);
+          setAttestationsError(`API unavailable: ${errorMessage}`);
+        }
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load metrics';
-      console.warn('Metrics API failed, using default metrics:', errorMessage);
-      
-      // Use default metrics instead of showing error
-      setMetrics(DEFAULT_METRICS);
-      
-      // Only set error for debugging, don't break the UI
-      setMetricsError(`API unavailable (using defaults): ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load attestations';
+      setAttestationsError(errorMessage);
+      setAttestations([]);
     } finally {
-      setMetricsLoading(false);
+      setAttestationsLoading(false);
     }
-  }, []);
+  }, [currentUser?.uid, storageService, attestations.length]);
 
   // Utility Actions
   const refreshAll = useCallback(async () => {

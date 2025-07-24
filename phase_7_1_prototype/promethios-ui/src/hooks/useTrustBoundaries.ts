@@ -12,6 +12,8 @@ import trustBoundariesBackendService, {
   CreateBoundaryRequest,
   CreateThresholdRequest
 } from '../services/trustBoundariesBackendService';
+import { TrustBoundariesStorageService } from '../services/TrustBoundariesStorageService';
+import { useAuth } from '../context/AuthContext';
 
 interface UseTrustBoundariesState {
   // Boundaries
@@ -65,6 +67,8 @@ interface UseTrustBoundariesActions {
 export interface UseTrustBoundariesReturn extends UseTrustBoundariesState, UseTrustBoundariesActions {}
 
 export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
+  const { currentUser } = useAuth();
+  
   // State
   const [boundaries, setBoundaries] = useState<TrustBoundary[]>([]);
   const [boundariesLoading, setBoundariesLoading] = useState(false);
@@ -87,6 +91,21 @@ export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
   const [creatingBoundary, setCreatingBoundary] = useState(false);
   const [creatingThreshold, setCreatingThreshold] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
+
+  // Storage service instance
+  const [storageService] = useState(() => new TrustBoundariesStorageService());
+
+  // Initialize storage service when user changes
+  useEffect(() => {
+    if (currentUser?.uid) {
+      try {
+        storageService.setUserId(currentUser.uid);
+        console.log('Trust boundaries storage service initialized for user:', currentUser.uid);
+      } catch (error) {
+        console.error('Failed to initialize trust boundaries storage service:', error);
+      }
+    }
+  }, [currentUser?.uid, storageService]);
 
   // Boundary Actions
   const loadBoundaries = useCallback(async () => {
