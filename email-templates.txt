@@ -1,0 +1,50 @@
+🔥 PROMETHIOS - Private Beta
+AI Governance & Trust Infrastructure
+
+Hello {{name}},
+
+Thank you for requesting access to Promethios Private Beta. Your application has been received and is now under review by our team.
+
+🎯 TRUST IS NOT PUBLIC
+You don't get access just because you want it — you get it because someone trusted you. We're building the infrastructure that makes AI governance accountable, transparent, and trustworthy.
+
+📋 YOUR APPLICATION SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Role: {{roleDisplay}}
+Organization: {{organization}}
+Primary AI Concern: {{aiConcernDisplay}}
+Lead Priority: {{priorityDisplay}}
+Application ID: {{submissionId}}
+
+🚀 WHAT HAPPENS NEXT?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. REVIEW PROCESS
+   Our team will carefully review your application and assess your fit for the private beta program.
+
+2. PRIORITY ASSESSMENT
+   Applications are prioritized based on role, organization, and specific AI governance needs.
+
+3. INVITATION
+   If selected, you'll receive an exclusive invitation with access credentials and onboarding materials.
+
+4. EARLY ACCESS
+   Join a select group of AI leaders shaping the future of governance and accountability.
+
+We're committed to building AI governance infrastructure that actually works. Your insights and feedback will be invaluable in shaping Promethios into the trust layer the AI ecosystem desperately needs.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Learn More: https://promethios.com/learn
+Support: https://promethios.com/support
+Documentation: https://promethios.com/docs
+
+Questions about your application? We're here to help.
+
+PROMETHIOS
+Building Trust in AI Systems
+
+Unsubscribe: {{unsubscribeUrl}}
+Email Preferences: {{preferencesUrl}}
+

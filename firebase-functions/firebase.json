@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "source": "lib",
+    "predeploy": [
+      "npm run build"
+    ],
+    "runtime": "nodejs18"
+  }
+}
+
