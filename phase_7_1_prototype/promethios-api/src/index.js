@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { policyEnforcementMiddleware } = require('./middleware/policyEnforcement');
+const { requestLoggingMiddleware } = require('./middleware/logging');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +20,14 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Request logging middleware
+app.use(requestLoggingMiddleware);
+
+// Policy enforcement middleware (applied to agent routes)
+app.use('/api/agents', policyEnforcementMiddleware({
+  skipRoutes: ['/health', '/api/health', '/api/policy-assignments', '/api/compliance']
+}));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -51,6 +61,8 @@ app.use('/api/status', require('./routes/status'));
 app.use('/api/trust', require('./routes/trustBoundaries'));
 app.use('/api/attestations', require('./routes/attestations'));
 app.use('/api/promethios-policy', require('./routes/policies'));
+app.use('/api/policy-assignments', require('./routes/policyAssignments'));
+app.use('/api/compliance', require('./routes/complianceMonitoring'));
 app.use('/api/upload', require('./routes/upload'));
 
 // Health check endpoints (both /health and /api/health for compatibility)

@@ -11,7 +11,9 @@ import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
 import { usePolicies } from '../hooks/usePolicies';
+import { usePolicyAssignments } from '../hooks/usePolicyAssignments';
 import SimplifiedPolicyWizard from '../components/governance/SimplifiedPolicyWizard';
+import AgentPolicyAssignment from '../components/governance/AgentPolicyAssignment';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
 import {
@@ -156,6 +158,19 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
     generatePolicyFromNL
   } = usePolicies();
   
+  // Policy assignments hook for agent-policy management
+  const { 
+    assignments, 
+    summary: assignmentSummary, 
+    loading: assignmentsLoading, 
+    assignPolicy, 
+    unassignPolicy, 
+    updateAssignment,
+    getAgentAssignments,
+    getPolicyAssignments,
+    isAssigned 
+  } = usePolicyAssignments();
+  
   const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -194,14 +209,24 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
-        const agents = await userAgentStorageService.getAgents();
-        const agentList = agents.flatMap(agent => [
-          { agentId: agent.id, version: 'test' as const },
-          { agentId: agent.id, version: 'production' as const }
-        ]);
-        setUserAgents(agentList);
+        const agents = await userAgentStorageService.loadUserAgents();
+        // Use actual agent profiles instead of creating duplicates
+        const agentList = agents.map(agent => ({
+          agentId: agent.identity.id,
+          name: agent.identity.name,
+          status: agent.identity.status,
+          version: agent.identity.version || 'production'
+        }));
+        
+        // Remove duplicates based on agentId
+        const uniqueAgents = agentList.filter((agent, index, self) => 
+          index === self.findIndex(a => a.agentId === agent.agentId)
+        );
+        
+        setUserAgents(uniqueAgents);
       } catch (error) {
         console.error('Failed to load user agents for policy tracking:', error);
+        setUserAgents([]); // Fallback to empty array
       }
     };
 
@@ -621,10 +646,176 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       </TabPanel>
 
       <TabPanel value={activeTab} index={1}>
-        <Typography variant="h6">Policy Templates</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Browse and use pre-built policy templates for common compliance requirements.
-        </Typography>
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Policy Templates
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Browse and use pre-built policy templates for common compliance requirements.
+          </Typography>
+          
+          <Grid container spacing={3}>
+            {/* Security Policy Template */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ height: '100%', cursor: 'pointer', '&:hover': { boxShadow: 4 } }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Security sx={{ color: '#f44336', mr: 1, fontSize: 28 }} />
+                    <Typography variant="h6">Basic Security Policy</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Protect against common security threats and data breaches with automated detection and response.
+                  </Typography>
+                  
+                  <Typography variant="subtitle2" gutterBottom>
+                    Included Rules:
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Chip label="Block Personal Information" size="small" sx={{ mr: 1, mb: 1 }} />
+                    <Chip label="Block Low Trust Content" size="small" sx={{ mr: 1, mb: 1 }} />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      2 pre-configured rules
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      onClick={() => {
+                        setCreatePolicyOpen(true);
+                        // Could pre-select this template in the wizard
+                      }}
+                    >
+                      Use Template
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Compliance Policy Template */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ height: '100%', cursor: 'pointer', '&:hover': { boxShadow: 4 } }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Gavel sx={{ color: '#2196f3', mr: 1, fontSize: 28 }} />
+                    <Typography variant="h6">Data Compliance Policy</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Ensure compliance with data protection regulations like GDPR, CCPA, and industry standards.
+                  </Typography>
+                  
+                  <Typography variant="subtitle2" gutterBottom>
+                    Included Rules:
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Chip label="Log Sensitive Data Access" size="small" sx={{ mr: 1, mb: 1 }} />
+                    <Chip label="Require User Consent" size="small" sx={{ mr: 1, mb: 1 }} />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      2 pre-configured rules
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      onClick={() => {
+                        setCreatePolicyOpen(true);
+                        // Could pre-select this template in the wizard
+                      }}
+                    >
+                      Use Template
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Content Safety Policy Template */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ height: '100%', cursor: 'pointer', '&:hover': { boxShadow: 4 } }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Balance sx={{ color: '#9c27b0', mr: 1, fontSize: 28 }} />
+                    <Typography variant="h6">Content Safety Policy</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Ensure AI responses are safe, appropriate, and unbiased with automated content filtering.
+                  </Typography>
+                  
+                  <Typography variant="subtitle2" gutterBottom>
+                    Included Rules:
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Chip label="Block Harmful Content" size="small" sx={{ mr: 1, mb: 1 }} />
+                    <Chip label="Check for Bias" size="small" sx={{ mr: 1, mb: 1 }} />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      2 pre-configured rules
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      onClick={() => {
+                        setCreatePolicyOpen(true);
+                        // Could pre-select this template in the wizard
+                      }}
+                    >
+                      Use Template
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Custom Policy Option */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ 
+                height: '100%', 
+                cursor: 'pointer', 
+                border: '2px dashed',
+                borderColor: 'primary.main',
+                '&:hover': { boxShadow: 4, borderColor: 'primary.dark' }
+              }}>
+                <CardContent sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  height: '100%',
+                  textAlign: 'center'
+                }}>
+                  <Add sx={{ color: 'primary.main', fontSize: 48, mb: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Create Custom Policy
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Start from scratch and build your own custom policy rules tailored to your specific needs.
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => setCreatePolicyOpen(true)}
+                  >
+                    Create Custom
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 4 }}>
+            <Alert severity="info" icon={<Info />}>
+              <Typography variant="body2">
+                <strong>Pro Tip:</strong> Templates provide a quick starting point with industry best practices. 
+                You can customize any template after creation to match your specific requirements.
+              </Typography>
+            </Alert>
+          </Box>
+        </Box>
       </TabPanel>
 
       <TabPanel value={activeTab} index={2}>
@@ -640,7 +831,49 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
             Agent Policy Compliance
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Monitor real-time policy compliance across all your agents.
+            Monitor real-time policy compliance and manage policy assignments across all your agents.
+          </Typography>
+          
+          {/* Agent-Policy Assignment Interface */}
+          <AgentPolicyAssignment
+            agents={userAgents.map(({ agentId, version }) => {
+              const profile = agentMetrics.getProfile(agentId, version);
+              const agentAssignments = getAgentAssignments(agentId);
+              return {
+                agentId,
+                agentName: profile?.agentName || agentId,
+                version,
+                status: 'active' as const,
+                assignedPolicies: agentAssignments.map(a => a.policyId)
+              };
+            })}
+            policies={policies.map(policy => {
+              const policyAssignments = getPolicyAssignments(policy.policy_id);
+              return {
+                policy_id: policy.policy_id,
+                name: policy.name,
+                category: policy.category || 'OPERATIONAL',
+                status: policy.status,
+                description: policy.description || '',
+                assignedAgents: policyAssignments.map(a => a.agentId)
+              };
+            })}
+            assignments={assignments}
+            onAssignPolicy={assignPolicy}
+            onUnassignPolicy={unassignPolicy}
+            onUpdateAssignment={async (agentId: string, policyId: string, updates: any) => {
+              const assignment = assignments.find(a => a.agentId === agentId && a.policyId === policyId);
+              if (assignment) {
+                await updateAssignment(assignment.id, updates);
+              }
+            }}
+          />
+
+          <Divider sx={{ my: 4 }} />
+
+          {/* Existing Compliance Monitoring */}
+          <Typography variant="h6" gutterBottom>
+            Real-Time Compliance Monitoring
           </Typography>
           
           {agentMetrics.isLoading ? (
