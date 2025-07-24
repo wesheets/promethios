@@ -112,7 +112,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
 
   // Initialize storage service when user changes
   useEffect(() => {
-    if (currentUser?.uid) {
+    if (currentUser && currentUser.uid) {
       try {
         storageService.setUserId(currentUser.uid);
         console.log('Trust attestations storage service initialized for user:', currentUser.uid);
@@ -120,7 +120,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
         console.error('Failed to initialize trust attestations storage service:', error);
       }
     }
-  }, [currentUser?.uid, storageService]);
+  }, [currentUser, storageService]);
 
   // Attestation Actions
   const loadAttestations = useCallback(async (filters: AttestationFilters = {}) => {
@@ -129,7 +129,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     
     try {
       // First, try to load from local storage for immediate display
-      if (currentUser?.uid) {
+      if (currentUser && currentUser.uid) {
         try {
           const storedAttestations = await storageService.getAttestations();
           if (storedAttestations.length > 0) {
@@ -148,7 +148,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
         console.log('Loaded attestations from backend:', response.attestations.length);
         
         // Store the backend data locally for future use
-        if (currentUser?.uid && response.attestations.length > 0) {
+        if (currentUser && currentUser.uid && response.attestations.length > 0) {
           try {
             // Note: We'd need to add a method to store multiple attestations
             // For now, just update the state
@@ -174,7 +174,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     } finally {
       setAttestationsLoading(false);
     }
-  }, [currentUser?.uid, storageService, attestations.length]);
+  }, [currentUser, storageService, attestations.length]);
 
   const createAttestation = useCallback(async (attestationData: {
     attestation_type: string;
@@ -194,7 +194,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
       const newAttestation = await trustAttestationsBackendService.createAttestation(attestationData);
       
       // Also save to local storage for persistence
-      if (currentUser?.uid) {
+      if (currentUser && currentUser.uid) {
         try {
           await storageService.createAttestation({
             attestation_type: attestationData.attestation_type,
@@ -241,7 +241,7 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     } finally {
       setCreatingAttestation(false);
     }
-  }, [currentUser?.uid, storageService]);
+  }, [currentUser, storageService]);
 
   const verifyAttestation = useCallback(async (attestationId: string, verifierInstanceId: string) => {
     setVerifyingAttestation(true);

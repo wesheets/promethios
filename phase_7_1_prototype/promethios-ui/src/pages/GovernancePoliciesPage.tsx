@@ -299,7 +299,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   };
 
   // Filter and sort policies
-  const filteredPolicies = policies.filter(policy => {
+  const filteredPolicies = (policies || []).filter(policy => {
     const matchesSearch = !searchQuery || 
       policy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       policy.description?.toLowerCase().includes(searchQuery.toLowerCase());

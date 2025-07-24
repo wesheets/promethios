@@ -121,14 +121,14 @@ export const usePolicies = (): UsePoliciesReturn => {
 
     try {
       // Load from storage first for immediate display
-      const storedPolicies = await storageService.getPolicies();
+      const storedPolicies = await storageService.getPolicies() || [];
       if (storedPolicies.length > 0) {
         setPolicies(storedPolicies);
       }
 
       // Then sync with backend
       try {
-        const backendPolicies = await prometheiosPolicyAPI.getPolicies();
+        const backendPolicies = await prometheiosPolicyAPI.getPolicies() || [];
         
         // Merge backend data with storage
         const mergedPolicies = [...storedPolicies];
@@ -159,10 +159,14 @@ export const usePolicies = (): UsePoliciesReturn => {
       } catch (backendError) {
         console.warn('Backend sync failed, using storage data:', backendError);
         // Continue with storage data if backend fails
+        if (storedPolicies.length === 0) {
+          setPolicies([]);
+        }
       }
     } catch (error) {
       console.error('Error loading policies:', error);
       setError('Failed to load policies');
+      setPolicies([]); // Ensure policies is never undefined
     } finally {
       setLoading(false);
     }
