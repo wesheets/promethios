@@ -92,12 +92,19 @@ export const addToWaitlistRobust = async (waitlistData: WaitlistData): Promise<{
       userAgent: navigator.userAgent || 'unknown',
       submissionId,
       // Email template fields for Firebase Trigger Email Extension
-      to: emailTemplate.to,
+      to: [emailTemplate.to], // Extension expects array format
       subject: emailTemplate.subject,
       html: emailTemplate.html,
       text: emailTemplate.text,
       from: emailTemplate.from,
-      replyTo: emailTemplate.replyTo
+      replyTo: emailTemplate.replyTo,
+      // Additional fields for extension
+      delivery: {
+        state: 'PENDING',
+        attempts: 0,
+        leaseExpireTime: null,
+        error: null
+      }
     };
     
     console.log('💾 Saving to Firestore with email template...');
