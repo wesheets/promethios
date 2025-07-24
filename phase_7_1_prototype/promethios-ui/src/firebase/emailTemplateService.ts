@@ -325,8 +325,8 @@ export function generateWaitlistEmail(waitlistData: WaitlistData, submissionId: 
     subject: subject,
     html: html,
     text: text,
-    from: 'noreply@promethios.com',
-    replyTo: 'support@promethios.com'
+    from: 'Promethios <hello@promethios.ai>',
+    replyTo: 'hello@promethios.ai'
   };
 }
 

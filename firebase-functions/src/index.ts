@@ -2,8 +2,17 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
-// Initialize Firebase Admin
-admin.initializeApp();
+// Initialize Firebase Admin with promethios-oregon database
+admin.initializeApp({
+  databaseURL: 'https://promethios-oregon-default-rtdb.firebaseio.com/'
+});
+
+// Get Firestore instance for promethios-oregon database
+const db = admin.firestore();
+// Explicitly set the database to promethios-oregon
+db.settings({
+  databaseId: 'promethios-oregon'
+});
 
 // Email configuration interface (removed as it's not used)
 
