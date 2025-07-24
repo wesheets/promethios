@@ -19,13 +19,15 @@ import {
   InputLabel,
   Chip,
   Grid,
-  Paper,
+  Alert,
   Stepper,
   Step,
   StepLabel,
   StepContent,
-  Alert,
+  IconButton,
+  Divider,
   CircularProgress,
+  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -35,8 +37,6 @@ import {
   ListItemText,
   ListItemIcon,
   ListItemButton,
-  Divider,
-  IconButton,
   Tooltip
 } from '@mui/material';
 import {
@@ -660,53 +660,77 @@ const SimplifiedPolicyWizard: React.FC<SimplifiedPolicyWizardProps> = ({
             <StepContent>
               {renderStepContent(index)}
               
-              {/* Navigation buttons - always render for debugging */}
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                  Step {index + 1} of {steps.length} | Active Step: {activeStep}
+              {/* Force render navigation buttons - always visible */}
+              <Paper sx={{ mt: 3, p: 3, bgcolor: 'primary.light', borderRadius: 2 }} elevation={3}>
+                <Typography variant="body2" color="primary.contrastText" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  🔧 Navigation Controls (Step {index + 1} of {steps.length})
                 </Typography>
                 
-                {index === steps.length - 1 ? (
-                  <Button
-                    variant="contained"
-                    onClick={handleSave}
-                    disabled={saving}
-                    startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                    sx={{ mr: 1 }}
-                  >
-                    {saving ? 'Saving...' : 'Save Policy'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    sx={{ mr: 1 }}
-                    disabled={
-                      (index === 0 && !selectedTemplate) ||
-                      (index === 1 && (!policy.name.trim() || !policy.description.trim()))
-                    }
-                  >
-                    Continue
-                  </Button>
-                )}
-                
-                {index > 0 && (
-                  <Button onClick={handleBack} sx={{ mr: 1 }}>
-                    Back
-                  </Button>
-                )}
-                
-                {onCancel && (
-                  <Button onClick={onCancel} sx={{ ml: 1 }}>
-                    Cancel
-                  </Button>
-                )}
-                
-                {/* Debug info */}
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Policy: {policy.name || 'No name'} | Rules: {policy.rules.length} | Template: {selectedTemplate || 'None'}
+                <Typography variant="caption" color="primary.contrastText" sx={{ mb: 2, display: 'block' }}>
+                  Active Step: {activeStep} | Policy: "{policy.name || 'No name'}" | Rules: {policy.rules.length} | Template: {selectedTemplate || 'None'}
                 </Typography>
-              </Box>
+                
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {index === steps.length - 1 ? (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={handleSave}
+                      disabled={saving}
+                      startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                      size="large"
+                    >
+                      {saving ? 'Saving Policy...' : 'Save Policy'}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={handleNext}
+                      disabled={
+                        (index === 0 && !selectedTemplate) ||
+                        (index === 1 && (!policy.name.trim() || !policy.description.trim()))
+                      }
+                      size="large"
+                    >
+                      Continue to Next Step
+                    </Button>
+                  )}
+                  
+                  {index > 0 && (
+                    <Button 
+                      variant="outlined" 
+                      color="secondary"
+                      onClick={handleBack}
+                      size="large"
+                    >
+                      Back
+                    </Button>
+                  )}
+                  
+                  {onCancel && (
+                    <Button 
+                      variant="text" 
+                      color="secondary"
+                      onClick={onCancel}
+                      size="large"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </Box>
+                
+                {/* Validation status */}
+                <Typography variant="caption" color="primary.contrastText" sx={{ mt: 2, display: 'block' }}>
+                  {index === 0 && !selectedTemplate && "⚠️ Please select a template to continue"}
+                  {index === 1 && (!policy.name.trim() || !policy.description.trim()) && "⚠️ Please fill in policy name and description"}
+                  {index === 2 && policy.rules.length === 0 && "⚠️ Please add at least one rule"}
+                  {((index === 0 && selectedTemplate) || 
+                    (index === 1 && policy.name.trim() && policy.description.trim()) || 
+                    (index === 2 && policy.rules.length > 0) ||
+                    (index === 3)) && "✅ Ready to proceed"}
+                </Typography>
+              </Paper>
             </StepContent>
           </Step>
         ))}
