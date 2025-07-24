@@ -194,7 +194,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
-        const agents = await userAgentStorageService.getAllAgents();
+        const agents = await userAgentStorageService.getAgents();
         const agentList = agents.flatMap(agent => [
           { agentId: agent.id, version: 'test' as const },
           { agentId: agent.id, version: 'production' as const }

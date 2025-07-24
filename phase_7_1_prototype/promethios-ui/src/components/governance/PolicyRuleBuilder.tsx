@@ -57,6 +57,7 @@ import {
   Security as SecurityIcon,
   Gavel as ComplianceIcon,
   Settings as OperationalIcon,
+  Settings as SettingsIcon,
   Balance as EthicalIcon,
   Article as LegalIcon,
   SmartToy as NLIcon,

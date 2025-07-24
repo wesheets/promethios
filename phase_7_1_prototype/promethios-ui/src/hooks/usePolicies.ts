@@ -48,7 +48,7 @@ interface UsePoliciesReturn {
 }
 
 export const usePolicies = (): UsePoliciesReturn => {
-  const { user: currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
