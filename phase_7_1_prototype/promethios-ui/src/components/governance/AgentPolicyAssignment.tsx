@@ -4,8 +4,7 @@
  * Allows users to assign multiple policies to agents and manage
  * policy assignments across the governance system.
  */
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -101,13 +100,22 @@ interface AgentPolicyAssignmentProps {
 }
 
 const AgentPolicyAssignment: React.FC<AgentPolicyAssignmentProps> = ({
-  agents,
+  agents: rawAgents,
   policies,
   assignments,
   onAssignPolicy,
   onUnassignPolicy,
   onUpdateAssignment
 }) => {
+  // Deduplicate agents to ensure clean list
+  const agents = useMemo(() => {
+    const uniqueAgents = rawAgents.filter((agent, index, self) => 
+      index === self.findIndex(a => a.agentId === agent.agentId)
+    );
+    
+    console.log(`Agent deduplication: ${rawAgents.length} → ${uniqueAgents.length} agents`);
+    return uniqueAgents;
+  }, [rawAgents]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);

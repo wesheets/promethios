@@ -183,15 +183,29 @@ export const usePolicies = (): UsePoliciesReturn => {
     setError(null);
 
     try {
+      // Transform SimplePolicy data to PrometheiosPolicy format
+      const transformedPolicy = {
+        ...policyData,
+        version: policyData.version || '1.0.0',
+        status: policyData.status || 'draft' as const,
+        category: policyData.type || policyData.category || 'GENERAL',
+        created_by: currentUser.uid,
+        metadata: {
+          owner: currentUser.uid,
+          tags: [],
+          ...policyData.metadata
+        }
+      };
+
       // Try backend first, fallback to storage-only
       let newPolicy: Policy;
       try {
-        newPolicy = await prometheiosPolicyAPI.createPolicy(policyData);
+        newPolicy = await prometheiosPolicyAPI.createPolicy(transformedPolicy);
         console.log('Policy created in backend:', newPolicy.policy_id);
         
         // Also save to storage for persistence
         try {
-          await storageService.createPolicy(policyData);
+          await storageService.createPolicy(transformedPolicy);
         } catch (storageError) {
           console.warn('Failed to save policy to storage:', storageError);
         }

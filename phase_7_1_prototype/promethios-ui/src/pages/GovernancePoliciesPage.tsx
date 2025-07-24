@@ -209,14 +209,24 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
-        const agents = await userAgentStorageService.getAgents();
-        const agentList = agents.flatMap(agent => [
-          { agentId: agent.id, version: 'test' as const },
-          { agentId: agent.id, version: 'production' as const }
-        ]);
-        setUserAgents(agentList);
+        const agents = await userAgentStorageService.loadUserAgents();
+        // Use actual agent profiles instead of creating duplicates
+        const agentList = agents.map(agent => ({
+          agentId: agent.identity.id,
+          name: agent.identity.name,
+          status: agent.identity.status,
+          version: agent.identity.version || 'production'
+        }));
+        
+        // Remove duplicates based on agentId
+        const uniqueAgents = agentList.filter((agent, index, self) => 
+          index === self.findIndex(a => a.agentId === agent.agentId)
+        );
+        
+        setUserAgents(uniqueAgents);
       } catch (error) {
         console.error('Failed to load user agents for policy tracking:', error);
+        setUserAgents([]); // Fallback to empty array
       }
     };
 
