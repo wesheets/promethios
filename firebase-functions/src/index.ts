@@ -350,6 +350,7 @@ function createEmailTransporter(): nodemailer.Transporter {
 export const sendWaitlistEmail = functions
   .region('us-west1') // Match the database region
   .firestore
+  .database('promethios-oregon') // Explicitly target the promethios-oregon database
   .document('waitlist/{docId}')
   .onCreate(async (snap, context) => {
     try {
