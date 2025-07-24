@@ -43,6 +43,7 @@ import {
   Security as SecurityIcon,
   Gavel as ComplianceIcon,
   Shield as ContentIcon,
+  Psychology as EthicalIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
