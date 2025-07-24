@@ -12,7 +12,7 @@ import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
 import { usePolicies } from '../hooks/usePolicies';
 import { usePolicyAssignments } from '../hooks/usePolicyAssignments';
-import SimplifiedPolicyWizard from '../components/governance/SimplifiedPolicyWizard';
+import HorizontalPolicyWizard from '../components/governance/HorizontalPolicyWizard';
 import AgentPolicyAssignment from '../components/governance/AgentPolicyAssignment';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
@@ -267,15 +267,32 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
 
   // Policy management functions using the hook
   const handleCreatePolicy = async (policyData: any) => {
+    console.log('🏭 handleCreatePolicy called with data:', JSON.stringify(policyData, null, 2));
+    
     try {
+      console.log('🔄 Calling createPolicy hook...');
       const createdPolicy = await createPolicy(policyData);
+      
       if (createdPolicy) {
+        console.log('✅ Policy created successfully:', createdPolicy.policy_id);
+        console.log('🚪 Closing dialog...');
         setCreatePolicyOpen(false);
+        
+        console.log('📊 Reloading analytics...');
         // Reload analytics for the new policy
         loadTemplatesAndAnalytics();
+      } else {
+        console.error('❌ createPolicy returned null/undefined');
+        throw new Error('Policy creation returned null');
       }
     } catch (error) {
-      console.error('Failed to create policy:', error);
+      console.error('💥 Failed to create policy in handleCreatePolicy:', error);
+      console.error('📊 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      throw error; // Re-throw to let the wizard handle it
     }
   };
 
@@ -955,7 +972,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         }}
       >
         <DialogContent sx={{ p: 0 }}>
-          <SimplifiedPolicyWizard
+          <HorizontalPolicyWizard
             onSave={async (simplePolicy) => {
               // Convert simple policy to full policy format
               const fullPolicy = {
