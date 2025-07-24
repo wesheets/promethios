@@ -50,6 +50,7 @@ app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/status', require('./routes/status'));
 app.use('/api/trust', require('./routes/trustBoundaries'));
 app.use('/api/attestations', require('./routes/attestations'));
+app.use('/api/promethios-policy', require('./routes/policies'));
 app.use('/api/upload', require('./routes/upload'));
 
 // Health check endpoints (both /health and /api/health for compatibility)

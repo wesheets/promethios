@@ -10,6 +10,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
+import { usePolicies } from '../hooks/usePolicies';
 import PolicyRuleBuilder from '../components/governance/PolicyRuleBuilder';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
@@ -141,7 +142,20 @@ function TabPanel(props: TabPanelProps) {
 
 const EnhancedGovernancePoliciesPage: React.FC = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  
+  // Use the policies hook for integrated backend + storage management
+  const {
+    policies,
+    loading,
+    error: policiesError,
+    loadPolicies,
+    createPolicy,
+    updatePolicy,
+    deletePolicy,
+    policyStats,
+    generatePolicyFromNL
+  } = usePolicies();
+  
   const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -150,8 +164,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   
-  // Promethios Policy states
-  const [policies, setPolicies] = useState<PrometheiosPolicy[]>([]);
+  // Additional states for enhanced features
   const [policyTemplates, setPolicyTemplates] = useState<any[]>([]);
   const [policyAnalytics, setPolicyAnalytics] = useState<{[key: string]: PolicyAnalytics}>({});
   const [policyOptimizations, setPolicyOptimizations] = useState<{[key: string]: PolicyOptimization}>({});
@@ -173,8 +186,9 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
 
   // Load initial data
   useEffect(() => {
-    loadAllData();
-  }, []);
+    loadPolicies();
+    loadTemplatesAndAnalytics();
+  }, [loadPolicies]);
 
   // Load user agents for policy compliance tracking
   useEffect(() => {
@@ -194,63 +208,61 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
     loadUserAgents();
   }, []);
 
-  const loadAllData = useCallback(async () => {
+  const loadTemplatesAndAnalytics = useCallback(async () => {
     try {
-      setLoading(true);
-      
-      // Load policies using Promethios API
-      const [policiesData, templatesData] = await Promise.all([
-        prometheiosPolicyAPI.listPolicies(),
-        prometheiosPolicyAPI.getPolicyTemplates()
-      ]);
-      
-      setPolicies(policiesData);
+      // Load templates
+      const templatesData = await prometheiosPolicyAPI.getPolicyTemplates();
       setPolicyTemplates(templatesData);
       
-      // Load analytics for each policy
-      const analyticsPromises = policiesData.map(async (policy) => {
-        try {
-          const analytics = await prometheiosPolicyAPI.getPolicyAnalytics(policy.policy_id);
-          return { policyId: policy.policy_id, analytics };
-        } catch (error) {
-          console.warn(`Failed to load analytics for policy ${policy.policy_id}:`, error);
-          return { policyId: policy.policy_id, analytics: null };
-        }
-      });
-      
-      const analyticsResults = await Promise.all(analyticsPromises);
-      const analyticsMap: {[key: string]: PolicyAnalytics} = {};
-      analyticsResults.forEach(result => {
-        if (result.analytics) {
-          analyticsMap[result.policyId] = result.analytics;
-        }
-      });
-      setPolicyAnalytics(analyticsMap);
-      
+      // Load analytics for existing policies
+      if (policies.length > 0) {
+        const analyticsPromises = policies.map(async (policy) => {
+          try {
+            const analytics = await prometheiosPolicyAPI.getPolicyAnalytics(policy.policy_id);
+            return { policyId: policy.policy_id, analytics };
+          } catch (error) {
+            console.warn(`Failed to load analytics for policy ${policy.policy_id}:`, error);
+            return { policyId: policy.policy_id, analytics: null };
+          }
+        });
+        
+        const analyticsResults = await Promise.all(analyticsPromises);
+        const analyticsMap: {[key: string]: PolicyAnalytics} = {};
+        analyticsResults.forEach(result => {
+          if (result.analytics) {
+            analyticsMap[result.policyId] = result.analytics;
+          }
+        });
+        setPolicyAnalytics(analyticsMap);
+      }
     } catch (error) {
-      console.error('Failed to load policy data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading templates and analytics:', error);
     }
-  }, []);
+  }, [policies]);
 
-  // Policy management functions
-  const handleCreatePolicy = async (policy: PrometheiosPolicy) => {
+  // Policy management functions using the hook
+  const handleCreatePolicy = async (policyData: any) => {
     try {
-      const createdPolicy = await prometheiosPolicyAPI.createPolicy(policy);
-      setPolicies(prev => [...prev, createdPolicy]);
-      setCreatePolicyOpen(false);
+      const createdPolicy = await createPolicy(policyData);
+      if (createdPolicy) {
+        setCreatePolicyOpen(false);
+        // Reload analytics for the new policy
+        loadTemplatesAndAnalytics();
+      }
     } catch (error) {
       console.error('Failed to create policy:', error);
     }
   };
 
-  const handleUpdatePolicy = async (policy: PrometheiosPolicy) => {
+  const handleUpdatePolicy = async (policyId: string, updates: any) => {
     try {
-      const updatedPolicy = await prometheiosPolicyAPI.updatePolicy(policy.policy_id, policy);
-      setPolicies(prev => prev.map(p => p.policy_id === policy.policy_id ? updatedPolicy : p));
-      setEditPolicyOpen(false);
-      setSelectedPolicy(null);
+      const updatedPolicy = await updatePolicy(policyId, updates);
+      if (updatedPolicy) {
+        setEditPolicyOpen(false);
+        setSelectedPolicy(null);
+        // Reload analytics
+        loadTemplatesAndAnalytics();
+      }
     } catch (error) {
       console.error('Failed to update policy:', error);
     }
@@ -258,8 +270,15 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
 
   const handleDeletePolicy = async (policyId: string) => {
     try {
-      await prometheiosPolicyAPI.deletePolicy(policyId);
-      setPolicies(prev => prev.filter(p => p.policy_id !== policyId));
+      const deleted = await deletePolicy(policyId);
+      if (deleted) {
+        // Remove analytics for deleted policy
+        setPolicyAnalytics(prev => {
+          const newAnalytics = { ...prev };
+          delete newAnalytics[policyId];
+          return newAnalytics;
+        });
+      }
     } catch (error) {
       console.error('Failed to delete policy:', error);
     }
