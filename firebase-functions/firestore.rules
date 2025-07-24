@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to waitlist collection for authenticated users
+    match /waitlist/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow read/write access to connection-test collection for testing
+    match /connection-test/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow read/write access to metrics collection for authenticated users
+    match /metrics/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow read/write access to user profiles for authenticated users
+    match /userProfiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow read/write access to trust boundaries for authenticated users
+    match /trustBoundaries/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow read/write access to agent configurations for authenticated users
+    match /agentConfigurations/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
