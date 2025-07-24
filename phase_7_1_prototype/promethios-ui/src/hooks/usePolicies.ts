@@ -78,13 +78,6 @@ export const usePolicies = (): UsePoliciesReturn => {
     initializeService();
   }, [currentUser?.uid]);
 
-  // Load policies after initialization
-  useEffect(() => {
-    if (currentUser?.uid) {
-      loadPolicies();
-    }
-  }, [currentUser?.uid, loadPolicies]);
-
   // Update statistics when policies change
   useEffect(() => {
     const updateStats = () => {
@@ -97,7 +90,7 @@ export const usePolicies = (): UsePoliciesReturn => {
       
       const byCategory: Record<string, number> = {};
       
-      policies.forEach(policy => {
+      (policies || []).forEach(policy => {
         byStatus[policy.status]++;
         
         if (policy.category) {
@@ -414,6 +407,13 @@ export const usePolicies = (): UsePoliciesReturn => {
       return [];
     }
   }, [storageService]);
+
+  // Load policies after initialization (moved after function definitions)
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadPolicies();
+    }
+  }, [currentUser?.uid, loadPolicies]);
 
   return {
     // Data
