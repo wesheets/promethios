@@ -104,7 +104,12 @@ export const useTrustAttestations = (): UseTrustAttestationsReturn => {
     if (user?.uid) {
       trustAttestationsBackendService.initialize(user.uid).catch(error => {
         console.error('Failed to initialize Trust Attestations service:', error);
+        // Set error state but don't crash
+        setAttestationsError('Authentication required. Please sign in.');
       });
+    } else {
+      // User not authenticated yet - show loading or auth required message
+      setAttestationsError('Authentication required. Please sign in.');
     }
   }, [user?.uid]);
   const [verifyingAttestation, setVerifyingAttestation] = useState(false);

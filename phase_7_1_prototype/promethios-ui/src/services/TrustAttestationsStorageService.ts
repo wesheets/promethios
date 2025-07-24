@@ -51,12 +51,16 @@ export class TrustAttestationsStorageService {
   private currentUserId: string | null = null;
 
   setUserId(userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
     this.currentUserId = userId;
+    console.log(`Trust Attestations storage service initialized for user: ${this.currentUserId}`);
   }
 
   private getUserKey(attestationId: string): string {
     if (!this.currentUserId) {
-      throw new Error('User ID not set');
+      throw new Error('User ID not set - authentication required');
     }
     return `${this.currentUserId}.${attestationId}`;
   }
@@ -106,8 +110,7 @@ export class TrustAttestationsStorageService {
   async getAttestations(): Promise<TrustAttestation[]> {
     try {
       if (!this.currentUserId) {
-        console.warn('No user set, returning empty attestations list');
-        return [];
+        throw new Error('User not authenticated');
       }
 
       const allKeys = await unifiedStorage.keys('trust_attestations');
@@ -141,7 +144,7 @@ export class TrustAttestationsStorageService {
   async getAttestation(attestationId: string): Promise<TrustAttestation | null> {
     try {
       if (!this.currentUserId) {
-        return null;
+        throw new Error('User not authenticated');
       }
 
       const userKey = this.getUserKey(attestationId);
@@ -159,6 +162,10 @@ export class TrustAttestationsStorageService {
    */
   async updateAttestation(attestationId: string, updates: Partial<TrustAttestation>): Promise<TrustAttestation> {
     try {
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated');
+      }
+
       const existingAttestation = await this.getAttestation(attestationId);
       if (!existingAttestation) {
         throw new Error(`Attestation ${attestationId} not found`);
@@ -168,7 +175,7 @@ export class TrustAttestationsStorageService {
         ...existingAttestation,
         ...updates,
         attestation_id: attestationId, // Ensure ID doesn't change
-        user_id: this.currentUserId!, // Ensure user association doesn't change
+        user_id: this.currentUserId, // Ensure user association doesn't change
       };
 
       const userKey = this.getUserKey(attestationId);

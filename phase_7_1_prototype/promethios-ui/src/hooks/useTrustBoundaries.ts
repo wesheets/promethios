@@ -83,7 +83,12 @@ export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
     if (user?.uid) {
       trustBoundariesBackendService.initialize(user.uid).catch(error => {
         console.error('Failed to initialize Trust Boundaries service:', error);
+        // Set error state but don't crash
+        setBoundariesError('Authentication required. Please sign in.');
       });
+    } else {
+      // User not authenticated yet - show loading or auth required message
+      setBoundariesError('Authentication required. Please sign in.');
     }
   }, [user?.uid]);
   

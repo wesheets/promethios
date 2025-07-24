@@ -46,12 +46,16 @@ export class TrustBoundariesStorageService {
   private currentUserId: string | null = null;
 
   setUserId(userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
     this.currentUserId = userId;
+    console.log(`Trust Boundaries storage service initialized for user: ${this.currentUserId}`);
   }
 
   private getUserKey(boundaryId: string): string {
     if (!this.currentUserId) {
-      throw new Error('User ID not set');
+      throw new Error('User ID not set - authentication required');
     }
     return `${this.currentUserId}.${boundaryId}`;
   }
@@ -101,8 +105,7 @@ export class TrustBoundariesStorageService {
   async getBoundaries(): Promise<TrustBoundary[]> {
     try {
       if (!this.currentUserId) {
-        console.warn('No user set, returning empty boundaries list');
-        return [];
+        throw new Error('User not authenticated');
       }
 
       const allKeys = await unifiedStorage.keys('trust_boundaries');
@@ -136,7 +139,7 @@ export class TrustBoundariesStorageService {
   async getBoundary(boundaryId: string): Promise<TrustBoundary | null> {
     try {
       if (!this.currentUserId) {
-        return null;
+        throw new Error('User not authenticated');
       }
 
       const userKey = this.getUserKey(boundaryId);
@@ -154,6 +157,10 @@ export class TrustBoundariesStorageService {
    */
   async updateBoundary(boundaryId: string, updates: Partial<TrustBoundary>): Promise<TrustBoundary> {
     try {
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated');
+      }
+
       const existingBoundary = await this.getBoundary(boundaryId);
       if (!existingBoundary) {
         throw new Error(`Boundary ${boundaryId} not found`);
@@ -163,7 +170,7 @@ export class TrustBoundariesStorageService {
         ...existingBoundary,
         ...updates,
         boundary_id: boundaryId, // Ensure ID doesn't change
-        user_id: this.currentUserId!, // Ensure user association doesn't change
+        user_id: this.currentUserId, // Ensure user association doesn't change
       };
 
       const userKey = this.getUserKey(boundaryId);
