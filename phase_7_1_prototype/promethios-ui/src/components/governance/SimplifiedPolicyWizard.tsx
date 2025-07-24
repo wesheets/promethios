@@ -660,7 +660,12 @@ const SimplifiedPolicyWizard: React.FC<SimplifiedPolicyWizardProps> = ({
             <StepContent>
               {renderStepContent(index)}
               
-              <Box sx={{ mt: 3 }}>
+              {/* Navigation buttons - always render for debugging */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  Step {index + 1} of {steps.length} | Active Step: {activeStep}
+                </Typography>
+                
                 {index === steps.length - 1 ? (
                   <Button
                     variant="contained"
@@ -686,7 +691,7 @@ const SimplifiedPolicyWizard: React.FC<SimplifiedPolicyWizardProps> = ({
                 )}
                 
                 {index > 0 && (
-                  <Button onClick={handleBack}>
+                  <Button onClick={handleBack} sx={{ mr: 1 }}>
                     Back
                   </Button>
                 )}
@@ -696,6 +701,11 @@ const SimplifiedPolicyWizard: React.FC<SimplifiedPolicyWizardProps> = ({
                     Cancel
                   </Button>
                 )}
+                
+                {/* Debug info */}
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Policy: {policy.name || 'No name'} | Rules: {policy.rules.length} | Template: {selectedTemplate || 'None'}
+                </Typography>
               </Box>
             </StepContent>
           </Step>
