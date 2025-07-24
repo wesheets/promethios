@@ -26,7 +26,7 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} ${className}`}>
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12">
+        <div className="flex items-center justify-between h-16">
           {/* Logo and brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">

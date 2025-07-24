@@ -11,8 +11,8 @@
   animation: reputationCycle 3s ease-in-out 0.5s;
 }
 
-.financial-risk {
-  animation: financialRiskCycle 3s ease-in-out 3.8s;
+.real-world {
+  animation: realWorldCycle 3s ease-in-out 3.8s;
 }
 
 .customer-trust {
@@ -51,7 +51,7 @@
   }
 }
 
-@keyframes financialRiskCycle {
+@keyframes realWorldCycle {
   0% {
     opacity: 0;
     transform: translateY(20px);
@@ -151,7 +151,7 @@
     }
   }
   
-  @keyframes financialRiskCycle {
+  @keyframes realWorldCycle {
     0% {
       opacity: 0;
       transform: translateY(15px);
@@ -206,13 +206,16 @@
 }
 
 /* Ensure proper stacking for multi-line words */
-.financial-risk-word,
+.reputation-word,
+.real-world-word,
 .customer-trust-word {
   display: block;
   line-height: 0.9;
 }
 
-/* White color for customer trust (no red) */
+/* White color for all words */
+.reputation-word,
+.real-world-word,
 .customer-trust-word {
   color: white;
 }
