@@ -338,7 +338,19 @@ export const CreateAttestationWizard: React.FC<CreateAttestationWizardProps> = (
                             <MenuItem
                               key={agent.identity?.id || agent.id}
                               value={agent.identity?.id || agent.id}
-                              sx={{ color: '#ffffff' }}
+                              sx={{ 
+                                color: '#ffffff',
+                                backgroundColor: '#2d3748',
+                                '&:hover': {
+                                  backgroundColor: '#4a5568'
+                                },
+                                '&.Mui-selected': {
+                                  backgroundColor: '#3b82f6',
+                                  '&:hover': {
+                                    backgroundColor: '#2563eb'
+                                  }
+                                }
+                              }}
                             >
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
@@ -387,7 +399,19 @@ export const CreateAttestationWizard: React.FC<CreateAttestationWizardProps> = (
                             <MenuItem
                               key={agent.identity?.id || agent.id}
                               value={agent.identity?.id || agent.id}
-                              sx={{ color: '#ffffff' }}
+                              sx={{ 
+                                color: '#ffffff',
+                                backgroundColor: '#2d3748',
+                                '&:hover': {
+                                  backgroundColor: '#4a5568'
+                                },
+                                '&.Mui-selected': {
+                                  backgroundColor: '#3b82f6',
+                                  '&:hover': {
+                                    backgroundColor: '#2563eb'
+                                  }
+                                }
+                              }}
                             >
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>

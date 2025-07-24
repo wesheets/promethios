@@ -57,6 +57,7 @@ import {
   Speed,
   Gavel,
   Assignment,
+  Policy,
   Schedule as TimelineIcon,
   TrendingUp,
   Download,
@@ -120,6 +121,54 @@ function TabPanel(props: TabPanelProps) {
     </div>
   );
 }
+
+// Helper functions for attestation display
+const getAttestationTypeIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'identity':
+      return <Verified />;
+    case 'capability':
+      return <Psychology />;
+    case 'compliance':
+      return <Policy />;
+    case 'integrity':
+      return <Security />;
+    case 'behavior':
+      return <Assignment />;
+    default:
+      return <Verified />;
+  }
+};
+
+const getAttestationTypeColor = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'identity':
+      return '#4CAF50'; // Green
+    case 'capability':
+      return '#2196F3'; // Blue
+    case 'compliance':
+      return '#FF9800'; // Orange
+    case 'integrity':
+      return '#9C27B0'; // Purple
+    case 'behavior':
+      return '#607D8B'; // Blue Grey
+    default:
+      return '#4CAF50';
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'success';
+    case 'expired':
+      return 'warning';
+    case 'revoked':
+      return 'error';
+    default:
+      return 'default';
+  }
+};
 
 const TrustAttestationsPage: React.FC = () => {
   // Authentication context
