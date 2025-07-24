@@ -6,23 +6,28 @@
   animation-fill-mode: both;
 }
 
-/* Individual word animations with faster timing - NO OVERLAPS */
+/* Individual word animations with reordered timing */
 .reputation {
   animation: reputationCycle 3s ease-in-out 0.5s;
 }
 
-.financial-risk {
-  animation: financialRiskCycle 3s ease-in-out 3.8s;
-}
-
 .customer-trust {
-  animation: customerTrustCycle 3.2s ease-in-out 7.1s;
+  animation: customerTrustCycle 3.2s ease-in-out 3.8s;
 }
 
-/* Static "is on the line." text - fades in at start, fades out when CUSTOMER TRUST ends */
-.static-text {
+.real-world {
+  animation: realWorldCycle 3s ease-in-out 7.3s;
+}
+
+/* Dynamic "is/are" text animations */
+.static-text-is {
   opacity: 0;
-  animation: staticTextCycle 10s ease-in-out 0.5s;
+  animation: staticTextIsCycle 10.8s ease-in-out 0.5s;
+}
+
+.static-text-are {
+  opacity: 0;
+  animation: staticTextAreCycle 3s ease-in-out 7.3s;
 }
 
 /* Final tagline animation - appears after all words finish */
@@ -51,7 +56,7 @@
   }
 }
 
-@keyframes financialRiskCycle {
+@keyframes realWorldCycle {
   0% {
     opacity: 0;
     transform: translateY(20px);
@@ -119,6 +124,39 @@
   }
 }
 
+@keyframes staticTextIsCycle {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 1;
+  }
+  76% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes staticTextAreCycle {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes fadeInFinal {
   from {
     opacity: 0;
@@ -151,7 +189,41 @@
     }
   }
   
-  @keyframes financialRiskCycle {
+  @keyframes customerTrustCycle {
+    0% {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    20% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    35% {
+      opacity: 1;
+      transform: translateY(0);
+      text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(0);
+      text-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 25px rgba(59, 130, 246, 0.6);
+    }
+    65% {
+      opacity: 1;
+      transform: translateY(0);
+      text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    }
+    80% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  
+  @keyframes realWorldCycle {
     0% {
       opacity: 0;
       transform: translateY(15px);
@@ -169,50 +241,19 @@
       transform: translateY(-8px);
     }
   }
-  
-  @keyframes customerTrustCycle {
-    0% {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    20% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    35% {
-      opacity: 1;
-      transform: translateY(0);
-      text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-    }
-    50% {
-      opacity: 1;
-      transform: translateY(0);
-      text-shadow: 0 0 15px rgba(239, 68, 68, 0.8), 0 0 25px rgba(239, 68, 68, 0.6);
-    }
-    65% {
-      opacity: 1;
-      transform: translateY(0);
-      text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-    }
-    80% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-  }
 }
 
 /* Ensure proper stacking for multi-line words */
-.financial-risk-word,
+.reputation-word,
+.real-world-word,
 .customer-trust-word {
   display: block;
   line-height: 0.9;
 }
 
-/* White color for customer trust (no red) */
+/* White color for all words */
+.reputation-word,
+.real-world-word,
 .customer-trust-word {
   color: white;
 }

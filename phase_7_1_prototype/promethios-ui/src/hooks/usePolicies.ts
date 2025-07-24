@@ -174,16 +174,21 @@ export const usePolicies = (): UsePoliciesReturn => {
    * Create a new policy
    */
   const createPolicy = useCallback(async (policyData: CreatePolicyRequest): Promise<Policy | null> => {
+    console.log('🪝 usePolicies.createPolicy called with:', JSON.stringify(policyData, null, 2));
+    
     if (!currentUser?.uid) {
+      console.error('❌ User not authenticated, currentUser:', currentUser);
       setError('User not authenticated');
       return null;
     }
 
+    console.log('✅ User authenticated:', currentUser.uid);
     setLoading(true);
     setError(null);
 
     try {
       // Transform SimplePolicy data to PrometheiosPolicy format
+      console.log('🔄 Transforming policy data...');
       const transformedPolicy = {
         ...policyData,
         version: policyData.version || '1.0.0',
@@ -196,36 +201,55 @@ export const usePolicies = (): UsePoliciesReturn => {
           ...policyData.metadata
         }
       };
+      
+      console.log('📋 Transformed policy:', JSON.stringify(transformedPolicy, null, 2));
 
       // Try backend first, fallback to storage-only
       let newPolicy: Policy;
       try {
+        console.log('🌐 Attempting backend API call...');
         newPolicy = await prometheiosPolicyAPI.createPolicy(transformedPolicy);
-        console.log('Policy created in backend:', newPolicy.policy_id);
+        console.log('✅ Policy created in backend:', newPolicy.policy_id);
         
         // Also save to storage for persistence
         try {
+          console.log('💾 Saving to storage for persistence...');
           await storageService.createPolicy(transformedPolicy);
+          console.log('✅ Policy saved to storage');
         } catch (storageError) {
-          console.warn('Failed to save policy to storage:', storageError);
+          console.warn('⚠️ Failed to save policy to storage:', storageError);
         }
       } catch (backendError) {
-        console.warn('Backend creation failed, creating in storage only:', backendError);
+        console.warn('⚠️ Backend creation failed, creating in storage only:', backendError);
+        console.error('📊 Backend error details:', {
+          message: backendError.message,
+          stack: backendError.stack,
+          name: backendError.name
+        });
+        
         // Fallback to storage-only creation
+        console.log('💾 Falling back to storage-only creation...');
         newPolicy = await storageService.createPolicy(policyData);
-        console.log('Policy created in storage only:', newPolicy.policy_id);
+        console.log('✅ Policy created in storage only:', newPolicy.policy_id);
       }
 
       // Update local state
+      console.log('🔄 Updating local state...');
       setPolicies(prev => [...(prev || []), newPolicy]);
 
-      console.log('Policy created successfully:', newPolicy.policy_id);
+      console.log('🎉 Policy created successfully:', newPolicy.policy_id);
       return newPolicy;
     } catch (error) {
-      console.error('Error creating policy:', error);
+      console.error('💥 Error creating policy in hook:', error);
+      console.error('📊 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setError('Failed to create policy');
       return null;
     } finally {
+      console.log('🏁 Setting loading to false...');
       setLoading(false);
     }
   }, [currentUser?.uid, storageService]);

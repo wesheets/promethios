@@ -420,36 +420,41 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Improved spacing with fade-out */}
-            <div className="mb-8 relative h-56 overflow-visible w-full -mt-8 animated-text-fadeout">
+            {/* Full-Width Animated Pre-Headline - Further reduced height for above-the-fold content */}
+            <div className="mb-4 relative h-32 overflow-visible w-full -mt-6 animated-text-fadeout">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
-                  {/* Animated words that cycle through - all positioned at the same top level */}
+                  {/* Animated words that cycle through - reordered sequence */}
                   <div className="absolute left-0 top-0">
-                    <span className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase">
-                      REPUTATION
-                    </span>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word financial-risk uppercase flex flex-col leading-tight">
-                      <span className="financial-risk-word">FINANCIAL</span>
-                      <span className="financial-risk-word">RISK</span>
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word reputation uppercase flex flex-col leading-tight">
+                      <span className="reputation-word">YOUR</span>
+                      <span className="reputation-word">REPUTATION</span>
                     </div>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
-                      <span className="customer-trust-word">CUSTOMER</span>
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
+                      <span className="customer-trust-word">YOUR</span>
+                      <span className="customer-trust-word">CUSTOMER'S</span>
                       <span className="customer-trust-word">TRUST</span>
+                    </div>
+                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
+                      <span className="real-world-word">REAL-WORLD</span>
+                      <span className="real-world-word">CONSEQUENCES</span>
                     </div>
                   </div>
                   
-                  {/* Static "is on the line." text positioned on the right - italic styling */}
+                  {/* Dynamic "is/are on the line." text positioned on the right - changes based on animation */}
                   <div className="absolute right-0 top-0">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text italic">
+                    <span className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white static-text-is italic">
                       is on the line.
+                    </span>
+                    <span className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white static-text-are italic">
+                      are on the line.
                     </span>
                   </div>
                   
                   {/* Full-width tagline that appears after animation sequence */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed">
-                      And you're still trusting your AI… just because it sounds smart?
+                      Smart isn't the same as trustworthy.
                     </p>
                   </div>
                 </div>
@@ -461,7 +466,7 @@ const NewLandingPage: React.FC = () => {
               {/* Left-aligned Content */}
               <div className="lg:w-1/2 text-left">
                 {/* Main Headline */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
                   <span className="text-white">Govern, Monitor,</span><br />
                   <span className="text-white">and </span>
                   <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-pulse trust-glow-text">Trust</span>
@@ -469,13 +474,13 @@ const NewLandingPage: React.FC = () => {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="text-xl mb-8 text-gray-200 max-w-2xl">
+                <p className="text-lg mb-6 text-gray-200 max-w-2xl">
                   Promethios wraps any LLM or agent with real-time policy enforcement, 
                   trust scoring, and hallucination prevention — no retraining required.
                 </p>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <Link 
                     to="/login" 
                     className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg btn-ripple"
@@ -491,7 +496,7 @@ const NewLandingPage: React.FC = () => {
                 </div>
 
                 {/* Exclusive Access Note */}
-                <div className="mb-8">
+                <div className="mb-4">
                   <p className="text-sm text-gray-400 italic">
                     Trust is not public. Access requires accountability.
                   </p>

@@ -187,10 +187,16 @@ const HorizontalPolicyWizard: React.FC<HorizontalPolicyWizardProps> = ({
   };
 
   const handleSave = async () => {
+    console.log('🚀 Save Policy button clicked!');
+    console.log('📋 Current policy data:', JSON.stringify(policy, null, 2));
+    
     setSaving(true);
     try {
       // Validation
+      console.log('🔍 Starting validation...');
+      
       if (!policy.name.trim()) {
+        console.error('❌ Validation failed: Policy name is required');
         toast({
           title: "Validation Error",
           description: "Policy name is required",
@@ -200,6 +206,7 @@ const HorizontalPolicyWizard: React.FC<HorizontalPolicyWizardProps> = ({
       }
 
       if (!policy.description.trim()) {
+        console.error('❌ Validation failed: Policy description is required');
         toast({
           title: "Validation Error", 
           description: "Policy description is required",
@@ -209,6 +216,7 @@ const HorizontalPolicyWizard: React.FC<HorizontalPolicyWizardProps> = ({
       }
 
       if (policy.rules.length === 0) {
+        console.error('❌ Validation failed: At least one rule is required');
         toast({
           title: "Validation Error",
           description: "At least one rule is required",
@@ -217,10 +225,19 @@ const HorizontalPolicyWizard: React.FC<HorizontalPolicyWizardProps> = ({
         return;
       }
 
+      console.log('✅ Validation passed!');
+      console.log('📞 Calling onSave function...');
+      
       if (onSave) {
+        console.log('🔄 Executing onSave callback...');
         await onSave(policy);
+        console.log('✅ onSave callback completed successfully!');
+      } else {
+        console.error('❌ onSave function is not provided!');
+        throw new Error('onSave function is not provided');
       }
 
+      console.log('🎉 Policy save completed successfully!');
       toast({
         title: "Success",
         description: "Policy created successfully!",
@@ -228,13 +245,20 @@ const HorizontalPolicyWizard: React.FC<HorizontalPolicyWizardProps> = ({
       });
 
     } catch (error) {
-      console.error('Error saving policy:', error);
+      console.error('💥 Error saving policy:', error);
+      console.error('📊 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
       toast({
         title: "Error",
-        description: "Failed to save policy. Please try again.",
+        description: `Failed to save policy: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
+      console.log('🏁 Setting saving to false...');
       setSaving(false);
     }
   };
