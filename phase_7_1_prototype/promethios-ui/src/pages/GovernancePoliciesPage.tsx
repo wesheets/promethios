@@ -12,7 +12,7 @@ import { darkTheme } from '../theme/darkTheme';
 import { useAuth } from '../context/AuthContext';
 import { usePolicies } from '../hooks/usePolicies';
 import { usePolicyAssignments } from '../hooks/usePolicyAssignments';
-import SimplifiedPolicyWizard from '../components/governance/SimplifiedPolicyWizard';
+import HorizontalPolicyWizard from '../components/governance/HorizontalPolicyWizard';
 import AgentPolicyAssignment from '../components/governance/AgentPolicyAssignment';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
@@ -955,7 +955,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         }}
       >
         <DialogContent sx={{ p: 0 }}>
-          <SimplifiedPolicyWizard
+          <HorizontalPolicyWizard
             onSave={async (simplePolicy) => {
               // Convert simple policy to full policy format
               const fullPolicy = {
