@@ -113,23 +113,74 @@ export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
     setBoundariesError(null);
     
     try {
-      const boundariesData = await trustBoundariesBackendService.getBoundaries();
-      setBoundaries(boundariesData);
+      // First, try to load from local storage for immediate display
+      if (currentUser?.uid) {
+        try {
+          const storedBoundaries = await storageService.getBoundaries();
+          if (storedBoundaries.length > 0) {
+            setBoundaries(storedBoundaries);
+            console.log('Loaded boundaries from storage:', storedBoundaries.length);
+          }
+        } catch (storageError) {
+          console.warn('Failed to load from storage:', storageError);
+        }
+      }
+
+      // Then sync with backend API
+      try {
+        const boundariesData = await trustBoundariesBackendService.getBoundaries();
+        setBoundaries(boundariesData);
+        console.log('Loaded boundaries from backend:', boundariesData.length);
+        
+        // Store the backend data locally for future use
+        if (currentUser?.uid && boundariesData.length > 0) {
+          try {
+            // Note: We'd need to add a method to store multiple boundaries
+            // For now, just update the state
+            console.log('Backend boundaries loaded and displayed');
+          } catch (syncError) {
+            console.warn('Failed to sync backend data to storage:', syncError);
+          }
+        }
+      } catch (backendError) {
+        const errorMessage = backendError instanceof Error ? backendError.message : 'Failed to load trust boundaries';
+        console.warn('Boundaries API failed:', errorMessage);
+        
+        // If we have stored data, keep it; otherwise set empty array
+        if (boundaries.length === 0) {
+          setBoundaries([]);
+          setBoundariesError(`API unavailable: ${errorMessage}`);
+        }
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load trust boundaries';
       setBoundariesError(errorMessage);
-      console.error('Error loading trust boundaries:', error);
+      setBoundaries([]);
     } finally {
       setBoundariesLoading(false);
     }
-  }, []);
+  }, [currentUser?.uid, storageService, boundaries.length]);
 
   const createBoundary = useCallback(async (request: CreateBoundaryRequest) => {
     setCreatingBoundary(true);
     setOperationError(null);
     
     try {
+      // Create boundary via backend API
       const boundary = await trustBoundariesBackendService.createBoundary(request);
+      
+      // Also save to local storage for persistence
+      if (currentUser?.uid) {
+        try {
+          await storageService.createBoundary(request);
+          console.log('Boundary saved to storage:', boundary.boundary_id);
+        } catch (storageError) {
+          console.warn('Failed to save boundary to storage:', storageError);
+          // Don't fail the entire operation if storage fails
+        }
+      }
+      
+      // Add to local state
       setBoundaries(prev => [...prev, boundary]);
       return boundary;
     } catch (error) {
@@ -140,7 +191,7 @@ export const useTrustBoundaries = (): UseTrustBoundariesReturn => {
     } finally {
       setCreatingBoundary(false);
     }
-  }, []);
+  }, [currentUser?.uid, storageService]);
 
   const updateBoundary = useCallback(async (boundaryId: string, updates: Partial<TrustBoundary>) => {
     setOperationError(null);
