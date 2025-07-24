@@ -42,18 +42,14 @@ import {
 import {
   Security as SecurityIcon,
   Gavel as ComplianceIcon,
-  Settings as OperationalIcon,
-  Balance as EthicalIcon,
-  Article as LegalIcon,
+  Shield as ContentIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  Help as HelpIcon,
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
-  Lightbulb as TipIcon,
-  PlayArrow as TestIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Check as CheckIcon,
+  Info as TipIcon
 } from '@mui/icons-material';
+import PolicyWizardNavigation from './PolicyWizardNavigation';
 import { useToast } from '../../hooks/use-toast';
 
 // Simplified interfaces
@@ -735,6 +731,32 @@ const SimplifiedPolicyWizard: React.FC<SimplifiedPolicyWizardProps> = ({
           </Step>
         ))}
       </Stepper>
+
+      {/* Standalone Navigation - Always Visible */}
+      <PolicyWizardNavigation
+        currentStep={activeStep}
+        totalSteps={steps.length}
+        onNext={handleNext}
+        onBack={handleBack}
+        onSave={handleSave}
+        onCancel={onCancel}
+        saving={saving}
+        canProceed={
+          (activeStep === 0 && !!selectedTemplate) ||
+          (activeStep === 1 && policy.name.trim() && policy.description.trim()) ||
+          (activeStep === 2 && policy.rules.length > 0) ||
+          (activeStep === 3)
+        }
+        policyName={policy.name}
+        rulesCount={policy.rules.length}
+        selectedTemplate={selectedTemplate}
+        validationMessage={
+          activeStep === 0 && !selectedTemplate ? "⚠️ Please select a template to continue" :
+          activeStep === 1 && (!policy.name.trim() || !policy.description.trim()) ? "⚠️ Please fill in policy name and description" :
+          activeStep === 2 && policy.rules.length === 0 ? "⚠️ Please add at least one rule" :
+          "✅ Ready to proceed"
+        }
+      />
     </Box>
   );
 };
