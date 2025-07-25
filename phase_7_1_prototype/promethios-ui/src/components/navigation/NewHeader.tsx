@@ -30,8 +30,7 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
           {/* Logo and brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8 mr-2" />
-              <span className="font-bold text-xl">PROMETHIOS</span>
+              <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8" />
             </Link>
           </div>
 

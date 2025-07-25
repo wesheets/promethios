@@ -254,9 +254,8 @@ const AdminDashboardLayout: React.FC = () => {
         {/* Logo/Brand */}
         <div className="p-4 border-b border-navy-700">
           <div className="flex items-center">
-            <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8 mr-2" />
-            <div>
-              <h1 className="text-xl font-bold text-blue-400">Promethios Admin</h1>
+            <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8" />
+            <div className="ml-2">
               <p className="text-sm text-gray-400">Governance Dashboard</p>
             </div>
           </div>
