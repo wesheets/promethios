@@ -366,6 +366,7 @@ const FloodingNewsTicker = ({ isVisible }: { isVisible: boolean }) => {
   );
 };
 import '../../styles/hero-animations.css';
+import '../../styles/black-box-animations.css';
 
 const NewLandingPage: React.FC = () => {
   const { user } = useAuth();
@@ -417,6 +418,30 @@ const NewLandingPage: React.FC = () => {
   //   handleScroll();
   //   return () => window.removeEventListener('scroll', handleScroll);
   // }, []);
+
+  // Scroll animations for black box section
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all fade-in elements
+    const fadeElements = document.querySelectorAll('.fade-in-on-scroll');
+    fadeElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      fadeElements.forEach((el) => observer.unobserve(el));
+    };
+  }, []);
 
   return (
     <div className="w-full">
@@ -587,19 +612,64 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* The Problem Section */}
-      <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl font-bold mb-8 text-gray-900">
-            The Problem
-          </h2>
-          <div className="space-y-6 text-xl text-gray-700 leading-relaxed">
-            <p>LLMs are powerful — but unpredictable.</p>
-            <p>They hallucinate, drift, break contracts, and can't explain why.</p>
-            <p>You can't trust them in production without governance.</p>
+      {/* The Black Box Problem Section */}
+      <section 
+        className="relative w-full min-h-screen flex items-center justify-center black-box-container parallax-cube"
+        style={{
+          backgroundImage: 'url(/black-cube.png)',
+          backgroundAttachment: 'fixed',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 black-box-overlay"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Main heading */}
+          <div className="text-center mb-16 fade-in-on-scroll">
+            <h2 className="text-6xl md:text-7xl font-bold mb-6 text-white">
+              The Black Box Problem
+            </h2>
+            <p className="text-2xl md:text-3xl text-gray-200 mb-8 leading-relaxed">
+              LLMs produce confident answers… but how do we trust them?
+            </p>
           </div>
-          <div className="mt-12 text-2xl text-gray-500 font-mono">
-            🧠 → No oversight · No accountability · No trust
+
+          {/* Word Flow Animation Container */}
+          <div className="relative mb-16">
+            {/* Input words flowing in from left */}
+            <div className="word-flow-container">
+              <div className="input-word">Legal Discovery Request</div>
+              <div className="input-word">Patient Medical Records</div>
+              <div className="input-word">Financial Forecast Analysis</div>
+            </div>
+
+            {/* Central black box with processing effect */}
+            <div className="black-box-center">
+              <div className="processing-pulse"></div>
+            </div>
+
+            {/* Output words flowing out to right */}
+            <div className="word-flow-container">
+              <div className="output-word">Motion Denied</div>
+              <div className="output-word">Diagnosis: Depression</div>
+              <div className="output-word">Investment Rejected</div>
+            </div>
+          </div>
+
+          {/* Problem statement */}
+          <div className="text-center fade-in-on-scroll">
+            <div className="space-y-8 text-xl md:text-2xl text-gray-300 leading-relaxed max-w-4xl mx-auto">
+              <p>LLMs are powerful — but unpredictable.</p>
+              <p>They hallucinate, drift, break contracts, and can't explain why.</p>
+              <p className="text-white font-semibold">You can't trust them in production without governance.</p>
+            </div>
+            <div className="mt-12 text-2xl md:text-3xl text-red-400 font-mono">
+              🧠 → No oversight · No accountability · No trust
+            </div>
           </div>
         </div>
       </section>

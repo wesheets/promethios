@@ -1,0 +1,247 @@
+/* Black Box Problem Section Animations */
+
+.black-box-container {
+  position: relative;
+  overflow: hidden;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.black-box-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+/* Parallax effect for the cube */
+.parallax-cube {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Word flow animations */
+.word-flow-container {
+  position: relative;
+  height: 100px;
+  overflow: hidden;
+}
+
+.input-word {
+  position: absolute;
+  left: -200px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #60a5fa;
+  white-space: nowrap;
+  animation: flowIntoBox 6s infinite;
+}
+
+.output-word {
+  position: absolute;
+  right: -200px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #f87171;
+  white-space: nowrap;
+  animation: flowOutOfBox 6s infinite;
+}
+
+/* Stagger the animations */
+.input-word:nth-child(1) { animation-delay: 0s; }
+.input-word:nth-child(2) { animation-delay: 2s; }
+.input-word:nth-child(3) { animation-delay: 4s; }
+
+.output-word:nth-child(1) { animation-delay: 1s; }
+.output-word:nth-child(2) { animation-delay: 3s; }
+.output-word:nth-child(3) { animation-delay: 5s; }
+
+/* Input animation: flow from left into the center */
+@keyframes flowIntoBox {
+  0% {
+    left: -200px;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  30% {
+    left: 45%;
+    opacity: 1;
+  }
+  45% {
+    left: 50%;
+    opacity: 0.3;
+    transform: translateY(-50%) scale(0.9);
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    left: 50%;
+    opacity: 0;
+  }
+}
+
+/* Output animation: emerge from center and flow right */
+@keyframes flowOutOfBox {
+  0% {
+    right: 50%;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  20% {
+    opacity: 0;
+  }
+  35% {
+    right: 45%;
+    opacity: 0.3;
+    transform: translateY(-50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  65% {
+    right: 10%;
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    right: -200px;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+}
+
+/* Black box processing effect */
+.black-box-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.processing-pulse {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: processingPulse 3s ease-in-out infinite;
+}
+
+@keyframes processingPulse {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .input-word, .output-word {
+    font-size: 0.9rem;
+  }
+  
+  .black-box-center {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .processing-pulse {
+    width: 40px;
+    height: 40px;
+  }
+  
+  @keyframes flowIntoBox {
+    0% {
+      left: -150px;
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    30% {
+      left: 40%;
+      opacity: 1;
+    }
+    45% {
+      left: 50%;
+      opacity: 0.3;
+    }
+    60% {
+      opacity: 0;
+    }
+    100% {
+      left: 50%;
+      opacity: 0;
+    }
+  }
+  
+  @keyframes flowOutOfBox {
+    0% {
+      right: 50%;
+      opacity: 0;
+    }
+    20% {
+      opacity: 0;
+    }
+    35% {
+      right: 40%;
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 1;
+    }
+    65% {
+      right: 15%;
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      right: -150px;
+      opacity: 0;
+    }
+  }
+}
+
+/* Scroll-triggered fade in */
+.fade-in-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s ease-out, transform 1s ease-out;
+}
+
+.fade-in-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
