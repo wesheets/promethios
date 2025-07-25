@@ -1010,6 +1010,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
               })}
               </Grid>
             </>
+          )}
         </Box>
       </TabPanel>
 
