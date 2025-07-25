@@ -253,8 +253,13 @@ const AdminDashboardLayout: React.FC = () => {
       <div className="w-64 bg-navy-800 border-r border-navy-700 flex flex-col">
         {/* Logo/Brand */}
         <div className="p-4 border-b border-navy-700">
-          <h1 className="text-xl font-bold text-blue-400">Promethios Admin</h1>
-          <p className="text-sm text-gray-400">Governance Dashboard</p>
+          <div className="flex items-center">
+            <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8 mr-2" />
+            <div>
+              <h1 className="text-xl font-bold text-blue-400">Promethios Admin</h1>
+              <p className="text-sm text-gray-400">Governance Dashboard</p>
+            </div>
+          </div>
         </div>
 
         {/* Governance Status Summary */}
