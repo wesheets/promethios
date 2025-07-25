@@ -188,6 +188,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   
   // Agent metrics integration
   const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const [agentLoadingState, setAgentLoadingState] = useState(false);
   const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
   
   // Dialog states
@@ -221,7 +222,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         } else {
           console.warn('⚠️ No user UID available for agent loading');
           setUserAgents([]);
-          setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+          setAgentLoadingState(false);
           return;
         }
         
@@ -265,30 +266,26 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         setUserAgents(uniqueAgents);
         
         // Set loading to false after successful load
-        setAgentMetrics(prev => ({ 
-          ...prev, 
-          isLoading: false,
-          totalAgents: uniqueAgents.length 
-        }));
+        setAgentLoadingState(false);
         
         console.log('✅ Agent loading complete! UI should now show', uniqueAgents.length, 'agents');
       } catch (error) {
         console.error('❌ Failed to load user agents for policy tracking:', error);
         console.error('❌ Error details:', error);
         setUserAgents([]); // Fallback to empty array
-        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+        setAgentLoadingState(false);
       }
     };
 
     // Only load agents if user is authenticated and not loading
     if (user?.uid && !loading) {
       console.log('🔍 User authenticated, loading agents...');
-      setAgentMetrics(prev => ({ ...prev, isLoading: true })); // Set loading state
+      setAgentLoadingState(true); // Set loading state
       loadUserAgents();
     } else if (!loading) {
       console.log('🔍 No authenticated user, setting empty agents list');
       setUserAgents([]);
-      setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+      setAgentLoadingState(false);
     }
   }, [user, loading]); // Add loading dependency
 
@@ -953,7 +950,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           </Typography>
           
           {/* Show loading only if we have agents but metrics are still loading */}
-          {userAgents.length > 0 && agentMetrics.isLoading ? (
+          {agentLoadingState ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress />
               <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
