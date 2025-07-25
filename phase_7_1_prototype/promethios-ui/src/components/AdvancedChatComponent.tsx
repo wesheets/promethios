@@ -56,8 +56,10 @@ import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
-import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
-import OptimizedChatLoader from './loading/OptimizedChatLoader';
+import { OptimizedAgentLoader } from '../services/OptimizedAgentLoader';
+import { OptimizedChatLoader } from './loading/OptimizedChatLoader';
+import { agentFeedbackLoop, AgentFeedbackPrompt } from '../services/AgentFeedbackLoop';
+import { antiGamingValidator, GamingDetectionResult } from '../services/AntiGamingValidator';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -363,6 +365,11 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const [loadingProgress, setLoadingProgress] = useState<LoadingProgress | null>(null);
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
   const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems' | 'promethios-native'>('promethios-native');
+  
+  // Agent feedback loop and gaming detection states
+  const [agentFeedback, setAgentFeedback] = useState<AgentFeedbackPrompt | null>(null);
+  const [gamingDetection, setGamingDetection] = useState<GamingDetectionResult | null>(null);
+  const [feedbackEnabled, setFeedbackEnabled] = useState(true);
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<AgentProfile[]>([]);
   const [availableSystems, setAvailableSystems] = useState<ChatSystemInfo[]>([]);
@@ -1791,6 +1798,25 @@ useEffect(() => {
       console.log('provider === "huggingface":', provider === 'huggingface');
       console.log('apiEndpoint exists:', !!apiEndpoint);
 
+      // AGENT FEEDBACK INTEGRATION - Get feedback prompts for agent self-awareness
+      let feedbackContext = '';
+      if (feedbackEnabled && agentFeedback) {
+        feedbackContext = `
+
+AGENT SELF-AWARENESS CONTEXT:
+${agentFeedback.performanceContext}
+
+${agentFeedback.trustAwareness}
+
+${agentFeedback.emotionalGuidance}
+
+${agentFeedback.improvementFocus}
+
+Use this context to inform your response while maintaining your natural personality. This feedback is for your self-improvement and should guide your decision-making process.
+`;
+        console.log('🔄 FEEDBACK LOOP: Including performance feedback in agent prompt');
+      }
+
       // Prepare message with attachments
       let messageContent = message;
       if (attachments.length > 0) {
@@ -1812,10 +1838,10 @@ useEffect(() => {
         let systemMessage;
         if (governanceEnabled) {
           // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
+          systemMessage = createPromethiosSystemMessage() + feedbackContext;
         } else {
           // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.${feedbackContext}`;
         }
 
         // Convert conversation history to OpenAI API format
@@ -2405,6 +2431,31 @@ useEffect(() => {
               `msg_${Date.now()}_agent`,
               currentAttachments
             );
+            
+            // AGENT FEEDBACK LOOP INTEGRATION
+            if (feedbackEnabled && selectedAgent) {
+              try {
+                // Generate feedback for agent self-improvement
+                const feedback = await agentFeedbackLoop.generateFeedbackPrompt(selectedAgent.identity.id);
+                setAgentFeedback(feedback);
+                
+                // Run anti-gaming detection
+                const gamingResult = await antiGamingValidator.detectGaming(
+                  selectedAgent.identity.id,
+                  agentResponse,
+                  inputValue,
+                  agentMetrics,
+                  monitoringResult
+                );
+                setGamingDetection(gamingResult);
+                
+                console.log('🔄 FEEDBACK LOOP: Generated feedback for agent:', selectedAgent.identity.id);
+                console.log('🛡️ ANTI-GAMING: Detection result:', gamingResult.isGaming ? 'GAMING DETECTED' : 'No gaming detected');
+                
+              } catch (error) {
+                console.error('❌ FEEDBACK LOOP: Error generating feedback:', error);
+              }
+            }
             
             // Create behavior-based transparency message
             let transparencyMessage = '';
