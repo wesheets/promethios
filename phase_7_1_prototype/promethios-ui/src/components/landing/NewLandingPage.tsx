@@ -435,24 +435,26 @@ const NewLandingPage: React.FC = () => {
                       <span className="customer-trust-word">CUSTOMER'S</span>
                       <span className="customer-trust-word">TRUST</span>
                     </div>
-                    <div className="absolute top-0 left-0 text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
+                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
                       <span className="real-world-word">REAL-WORLD</span>
                       <span className="real-world-word">CONSEQUENCES</span>
                     </div>
                   </div>
                   
                   {/* Dynamic "is/are on the line." text positioned on the right - properly aligned with dashboard */}
-                  <div className="absolute right-0 top-0 flex justify-end w-full">
-                    <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text-is italic text-right">
-                      is on the line.
-                    </span>
-                    <span className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white static-text-are italic text-right">
-                      are on the line.
-                    </span>
+                  <div className="absolute right-0 top-0 flex justify-end w-full" style={{pointerEvents: 'none'}}>
+                    <div className="mr-4 lg:mr-8">
+                      <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text-is italic text-right">
+                        is on the line.
+                      </span>
+                      <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white static-text-are italic text-right">
+                        are on the line.
+                      </span>
+                    </div>
                   </div>
                   
-                  {/* Full-width tagline that appears after animation sequence with 3D perspective */}
-                  <div className="absolute inset-0 flex items-center justify-center" style={{perspective: '1000px'}}>
+                  {/* Full-width tagline that appears after animation sequence with enhanced 3D perspective */}
+                  <div className="absolute inset-0 flex items-center justify-center" style={{perspective: '500px', transformStyle: 'preserve-3d'}}>
                     <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed">
                       Smart isn't the same as trustworthy.
                     </p>
