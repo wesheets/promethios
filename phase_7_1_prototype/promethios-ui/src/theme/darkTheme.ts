@@ -20,9 +20,6 @@ export const darkTheme = createTheme({
       default: '#0f172a', // Very dark blue background
       paper: '#1e293b', // Slightly lighter for cards/papers
     },
-    surface: {
-      main: '#334155', // Medium surface color
-    },
     text: {
       primary: '#f8fafc', // Very light text
       secondary: '#cbd5e1', // Medium light text
