@@ -391,13 +391,13 @@ const NewLandingPage: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setMetrics(prev => ({
-        trustScore: Math.min(99.9, Math.max(85.0, prev.trustScore + (Math.random() * 0.6 - 0.3))), // Vary by ±0.3%
-        complianceRate: Math.min(99.9, Math.max(90.0, prev.complianceRate + (Math.random() * 0.4 - 0.2))), // Vary by ±0.2%
-        responseTime: Math.max(1.2, Math.min(1.6, prev.responseTime + (Math.random() * 0.1 - 0.05))), // Vary by ±0.05s
-        sessionIntegrity: Math.min(99.9, Math.max(85.0, prev.sessionIntegrity + (Math.random() * 0.5 - 0.25))), // Vary by ±0.25%
+        trustScore: Math.min(99.9, Math.max(85.0, prev.trustScore + (Math.random() * 0.8 - 0.4))), // Vary by ±0.4%
+        complianceRate: Math.min(99.9, Math.max(90.0, prev.complianceRate + (Math.random() * 0.6 - 0.3))), // Vary by ±0.3%
+        responseTime: Math.max(1.2, Math.min(1.6, prev.responseTime + (Math.random() * 0.15 - 0.075))), // Vary by ±0.075s
+        sessionIntegrity: Math.min(99.9, Math.max(85.0, prev.sessionIntegrity + (Math.random() * 0.7 - 0.35))), // Vary by ±0.35%
         policyViolations: 0 // Keep at zero
       }));
-    }, 3000); // Update every 3 seconds
+    }, 1500); // Update every 1.5 seconds
 
     return () => clearInterval(interval);
   }, []);
