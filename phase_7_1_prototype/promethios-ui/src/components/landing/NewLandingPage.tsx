@@ -8,6 +8,13 @@ import TemplateLibraryPreview from './TemplateLibraryPreview';
 import PrometheusStackShowcase from './PrometheusStackShowcase';
 import TimedObserverBubble from './TimedObserverBubble';
 
+// Material UI Icons
+import SecurityIcon from '@mui/icons-material/Security';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SpeedIcon from '@mui/icons-material/Speed';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ErrorIcon from '@mui/icons-material/Error';
+
 // AI Disaster Headlines Data
 const AI_DISASTER_HEADLINES = [
   {
@@ -371,6 +378,30 @@ const NewLandingPage: React.FC = () => {
   const [showNewsTicker, setShowNewsTicker] = useState(false);
   const [headlinesEnabled, setHeadlinesEnabled] = useState(true); // Default ON for maximum impact
 
+  // Animated metrics state
+  const [metrics, setMetrics] = useState({
+    trustScore: 89.2,
+    complianceRate: 94.8,
+    responseTime: 1.4,
+    sessionIntegrity: 91.6,
+    policyViolations: 0
+  });
+
+  // Animate metrics with slight variations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetrics(prev => ({
+        trustScore: Math.min(99.9, Math.max(85.0, prev.trustScore + (Math.random() * 0.6 - 0.3))), // Vary by ±0.3%
+        complianceRate: Math.min(99.9, Math.max(90.0, prev.complianceRate + (Math.random() * 0.4 - 0.2))), // Vary by ±0.2%
+        responseTime: Math.max(1.2, Math.min(1.6, prev.responseTime + (Math.random() * 0.1 - 0.05))), // Vary by ±0.05s
+        sessionIntegrity: Math.min(99.9, Math.max(85.0, prev.sessionIntegrity + (Math.random() * 0.5 - 0.25))), // Vary by ±0.25%
+        policyViolations: 0 // Keep at zero
+      }));
+    }, 3000); // Update every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Scroll listener to trigger news ticker
   useEffect(() => {
     const handleScroll = () => {
@@ -420,183 +451,145 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
-            {/* Full-Width Animated Pre-Headline - Minimized height to maximize above-the-fold content */}
-            <div className="mb-2 relative h-28 overflow-visible w-full -mt-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="relative w-full">
-                  {/* Animated words that cycle through - reordered sequence */}
-                  <div className="absolute left-0 top-0">
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word reputation uppercase flex flex-col leading-tight">
-                      <span className="reputation-word">YOUR</span>
-                      <span className="reputation-word">REPUTATION</span>
-                    </div>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white animated-word customer-trust uppercase flex flex-col leading-tight">
-                      <span className="customer-trust-word">YOUR</span>
-                      <span className="customer-trust-word">CUSTOMER'S</span>
-                      <span className="customer-trust-word">TRUST</span>
-                    </div>
-                    <div className="absolute top-0 left-0 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white animated-word real-world uppercase flex flex-col leading-tight">
-                      <span className="real-world-word">REAL-WORLD</span>
-                      <span className="real-world-word">CONSEQUENCES</span>
-                    </div>
-                  </div>
-                  
-                  {/* Direct text for "is/are on the line" - positioned absolutely */}
-                  <div className="absolute" style={{right: '10%', top: '0', zIndex: 10}}>
-                    <div className="reputation-line text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white italic text-right">
-                      is on the line.
-                    </div>
-                    <div className="customer-line text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white italic text-right">
-                      is on the line.
-                    </div>
-                    <div className="consequences-line text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white italic text-right">
-                      are on the line.
-                    </div>
-                  </div>
-                  
-                  {/* Direct tagline with simple fade-in */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="tagline text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 text-center leading-relaxed">
-                      Smart isn't the same as trustworthy.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 h-full cta-rise-up">
-              
-              {/* Left-aligned Content */}
-              <div className="lg:w-1/2 text-left">
-                {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 leading-tight">
-                  <span className="text-white">Govern, Monitor,</span><br />
-                  <span className="text-white">and </span>
-                  <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent animate-pulse trust-glow-text">Trust</span>
-                  <span className="text-white"> your AI</span>
+            {/* New Hero Section Layout */}
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
+              {/* Left Column - Main Headline and CTA */}
+              <div className="lg:w-7/12">
+                {/* Main Headline - Large and Bold */}
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight">
+                  Turn Any LLM Into a<br />
+                  Governed Agent.
                 </h1>
 
-                {/* Subtitle */}
-                <p className="text-lg mb-4 text-gray-200 max-w-2xl">
-                  Promethios wraps any LLM or agent with real-time policy enforcement, 
-                  trust scoring, and hallucination prevention — no retraining required.
+                {/* Value Proposition */}
+                <p className="text-xl sm:text-2xl mb-8 text-gray-200 leading-relaxed">
+                  Govern decisions. Prevent hallucinations. Prove compliance.<br />
+                  All at Runtime.
                 </p>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <Link 
                     to="/login" 
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg btn-ripple"
+                    className="bg-green-500 hover:bg-green-600 text-black font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center"
                   >
                     Request an Invitation to Governance
                   </Link>
                   <Link 
-                    to="/learn" 
-                    className="bg-transparent border-2 border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 btn-blue-glow"
+                    to="/login" 
+                    className="bg-transparent border-2 border-blue-500 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center"
                   >
                     Govern Your AI
                   </Link>
                 </div>
 
-                {/* Exclusive Access Note */}
-                <div className="mb-2">
-                  <p className="text-sm text-gray-400 italic">
-                    Trust is not public. Access requires accountability.
-                  </p>
-                </div>
+                {/* Trust Note */}
+                <p className="text-sm text-gray-400 mb-4">
+                  Trust is not public. Access requires accountability.
+                </p>
 
-                {/* Trust Indicators */}
-                <div className="flex items-center space-x-6 text-sm text-gray-300">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span>Framework agnostic</span>
+                {/* Features */}
+                <div className="flex flex-wrap gap-6 mb-6">
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                    <span className="text-gray-300">Framework agnostic</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                    <span>Prevents hallucinations</span>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                    <span className="text-gray-300">Prevents hallucinations</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right-aligned Trust Score Box */}
-              <div className="lg:w-1/2 flex justify-end">
-                <div className="relative dashboard-float">
-                  {/* Enhanced Pulsing Glow Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-blue-500/30 rounded-xl blur-xl animate-pulse dashboard-glow"></div>
-                  
-                  {/* Trust Score Container with Hover Effects */}
-                  <div className="relative bg-gray-800/90 backdrop-blur-sm border border-gray-600/50 rounded-xl p-6 shadow-2xl pulse-glow hover:shadow-3xl hover:border-green-500/50 transition-all duration-300 transform hover:scale-105 dashboard-hover">
-                    {/* Dashboard Header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      </div>
-                      <span className="text-gray-300 text-sm">AI Governance Dashboard</span>
+              {/* Right Column - Metrics Panel */}
+              <div className="lg:w-5/12 mt-8 lg:mt-0">
+                <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                  {/* Panel Header */}
+                  <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center">
+                    <div className="flex items-center space-x-2 mr-3">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     </div>
+                    <span className="text-gray-300 text-sm">AI Governance Dashboard</span>
+                  </div>
 
-                    {/* Rotating Trust Metrics with Enhanced Animations */}
-                    <div className="mb-6 relative h-16">
-                      <div className="absolute inset-0 flex items-center justify-between">
-                        <span className="text-white font-semibold">Trust Score</span>
-                        <div className="relative pr-2">
-                          <span className="text-2xl font-bold text-green-400 rotating-metric absolute right-0 metric-fade-in">85%</span>
-                          <span className="text-2xl font-bold text-blue-400 rotating-metric absolute opacity-0 right-0 metric-fade-in">243</span>
-                          <span className="text-2xl font-bold text-purple-400 rotating-metric absolute opacity-0 right-0 metric-fade-in">1.2M</span>
-                        </div>
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric metric-fade-in" style={{animationDelay: '4s'}}>
-                        <span className="text-white font-semibold">Violations Prevented</span>
-                        <span className="text-2xl font-bold text-blue-400 pr-2">243</span>
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-between opacity-0 rotating-metric metric-fade-in" style={{animationDelay: '8s'}}>
-                        <span className="text-white font-semibold">Governed Responses</span>
-                        <span className="text-2xl font-bold text-purple-400 pr-2">1.2M</span>
-                      </div>
-                    </div>
-
-                    {/* Animated Trust Score Bar */}
+                  {/* Metrics Content */}
+                  <div className="p-6">
+                    {/* Trust Score */}
                     <div className="mb-6">
-                      <div className="w-full bg-gray-700 rounded-full h-3">
-                        <div className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full trust-bar-animated"></div>
+                      <div className="flex items-center mb-2">
+                        <SecurityIcon sx={{ color: '#3b82f6', mr: 1, fontSize: '1.2rem' }} />
+                        <span className="text-gray-400 text-sm font-medium">TRUST SCORE</span>
+                      </div>
+                      <div className="text-blue-400 text-5xl font-bold mb-2">
+                        {metrics.trustScore.toFixed(1)}%
+                      </div>
+                      <div className="h-2 bg-blue-900/30 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: `${metrics.trustScore}%` }}
+                        ></div>
                       </div>
                     </div>
 
-                    {/* Status Indicators */}
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          <span className="text-gray-300 text-sm">Vigil: Monitoring active</span>
-                        </div>
-                        <span className="text-green-400 text-sm">✓</span>
+                    {/* Compliance Rate */}
+                    <div className="mb-6">
+                      <div className="flex items-center mb-2">
+                        <CheckCircleIcon sx={{ color: '#4ade80', mr: 1, fontSize: '1.2rem' }} />
+                        <span className="text-gray-400 text-sm font-medium">COMPLIANCE RATE</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                          <span className="text-gray-300 text-sm">PRISM: Transparency enabled</span>
-                        </div>
-                        <span className="text-blue-400 text-sm">✓</span>
+                      <div className="text-green-400 text-5xl font-bold mb-2">
+                        {metrics.complianceRate.toFixed(1)}%
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                          <span className="text-gray-300 text-sm">Veritas: Fact-checking active</span>
-                        </div>
-                        <span className="text-purple-400 text-sm">✓</span>
+                      <div className="h-2 bg-green-900/30 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-green-500 rounded-full" 
+                          style={{ width: `${metrics.complianceRate}%` }}
+                        ></div>
                       </div>
                     </div>
 
-                    {/* Recent Activity */}
-                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-green-300 font-semibold text-sm">Hallucination prevented</span>
+                    {/* Response Time */}
+                    <div className="mb-6">
+                      <div className="flex items-center mb-2">
+                        <SpeedIcon sx={{ color: '#38bdf8', mr: 1, fontSize: '1.2rem' }} />
+                        <span className="text-gray-400 text-sm font-medium">RESPONSE TIME</span>
                       </div>
-                      <p className="text-gray-300 text-xs">
-                        Blocked fabricated legal case "Johnson v. Smith" - redirected to verified sources
-                      </p>
+                      <div className="text-cyan-400 text-5xl font-bold mb-2">
+                        {metrics.responseTime.toFixed(1)}s
+                      </div>
+                    </div>
+
+                    {/* Session Integrity */}
+                    <div className="mb-6">
+                      <div className="flex items-center mb-2">
+                        <VisibilityIcon sx={{ color: '#f59e0b', mr: 1, fontSize: '1.2rem' }} />
+                        <span className="text-gray-400 text-sm font-medium">SESSION INTEGRITY</span>
+                      </div>
+                      <div className="text-amber-400 text-5xl font-bold mb-2">
+                        {metrics.sessionIntegrity.toFixed(1)}%
+                      </div>
+                      <div className="h-2 bg-amber-900/30 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-amber-500 rounded-full" 
+                          style={{ width: `${metrics.sessionIntegrity}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Policy Violations */}
+                    <div>
+                      <div className="flex items-center mb-2">
+                        <ErrorIcon sx={{ color: '#10b981', mr: 1, fontSize: '1.2rem' }} />
+                        <span className="text-gray-400 text-sm font-medium">POLICY VIOLATIONS</span>
+                      </div>
+                      <div className="text-emerald-400 text-5xl font-bold">
+                        {metrics.policyViolations}
+                      </div>
+                      <div className="text-gray-500 text-xs mt-2">
+                        Last updated: 8:16:29 AM
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -947,7 +940,7 @@ const NewLandingPage: React.FC = () => {
             </Link>
           </div>
           <p className="text-sm text-gray-400 mt-4 italic">
-            This environment is not available to unverified operators • Promethios governance requires accountability
+            Request access to govern your agents with trust and accountability.
           </p>
         </div>
       </section>
@@ -984,144 +977,9 @@ const NewLandingPage: React.FC = () => {
           <span className="text-base">📰</span>
         </button>
       </div>
-
-      {/* Enhanced CSS Animations */}
-      <style jsx>{`
-        /* Trust Glow Text Animation */
-        .trust-glow-text {
-          text-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
-          animation: trustGlow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes trustGlow {
-          from {
-            text-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
-          }
-          to {
-            text-shadow: 0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(34, 197, 94, 0.5);
-          }
-        }
-
-        /* Dashboard Float Animation */
-        .dashboard-float {
-          animation: dashboardFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes dashboardFloat {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        /* Enhanced Dashboard Glow */
-        .dashboard-glow {
-          animation: dashboardGlow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes dashboardGlow {
-          from {
-            opacity: 0.3;
-          }
-          to {
-            opacity: 0.6;
-          }
-        }
-
-        /* Trust Bar Loading Animation */
-        .trust-bar-animated {
-          width: 0%;
-          animation: trustBarLoad 2s ease-out forwards;
-          animation-delay: 1s;
-        }
-
-        @keyframes trustBarLoad {
-          from {
-            width: 0%;
-          }
-          to {
-            width: 85%;
-          }
-        }
-
-        /* Metric Fade In Animation */
-        .metric-fade-in {
-          animation: metricFadeIn 1s ease-in-out;
-        }
-
-        @keyframes metricFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* Enhanced Dashboard Hover */
-        .dashboard-hover:hover {
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 30px rgba(34, 197, 94, 0.3);
-        }
-
-        /* Animated Text Fade Out Sequence */
-        .animated-text-fadeout {
-          animation: fadeOutUp 1s ease-in-out forwards;
-          animation-delay: 14s;
-        }
-
-        @keyframes fadeOutUp {
-          from {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateY(-50px);
-          }
-        }
-
-        /* CTA Rise Up Animation */
-        .cta-rise-up {
-          animation: riseUp 1s ease-out forwards;
-          animation-delay: 15s;
-          transform: translateY(250px);
-        }
-
-        @keyframes riseUp {
-          from {
-            transform: translateY(250px);
-            opacity: 0.8;
-          }
-          to {
-            transform: translateY(-200px);
-            opacity: 1;
-          }
-        }
-
-        /* Final Tagline Animation */
-        .final-tagline {
-          opacity: 0;
-          animation: taglineFadeIn 1s ease-in-out forwards;
-          animation-delay: 10.8s;
-        }
-
-        @keyframes taglineFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };
 
 export default NewLandingPage;
+
