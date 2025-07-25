@@ -14,6 +14,7 @@ import { usePolicies } from '../hooks/usePolicies';
 import { usePolicyAssignments } from '../hooks/usePolicyAssignments';
 import HorizontalPolicyWizard from '../components/governance/HorizontalPolicyWizard';
 import AgentPolicyAssignment from '../components/governance/AgentPolicyAssignment';
+import PolicyDetailsDialog from '../components/governance/PolicyDetailsDialog';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
 import {
@@ -209,7 +210,14 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
+        // Ensure user agent storage service has current user
+        if (user?.uid) {
+          userAgentStorageService.setCurrentUser(user.uid);
+        }
+        
         const agents = await userAgentStorageService.loadUserAgents();
+        console.log('🔍 Loaded user agents for compliance:', agents.length);
+        
         // Use actual agent profiles instead of creating duplicates
         const agentList = agents.map(agent => ({
           agentId: agent.identity.id,
@@ -223,6 +231,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           index === self.findIndex(a => a.agentId === agent.agentId)
         );
         
+        console.log('🎯 Setting user agents for compliance tracking:', uniqueAgents.length);
         setUserAgents(uniqueAgents);
       } catch (error) {
         console.error('Failed to load user agents for policy tracking:', error);
@@ -230,8 +239,13 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       }
     };
 
-    loadUserAgents();
-  }, []);
+    if (user?.uid) {
+      loadUserAgents();
+    } else {
+      console.log('🔍 No authenticated user, setting empty agents list');
+      setUserAgents([]);
+    }
+  }, [user?.uid]);
 
   const loadTemplatesAndAnalytics = useCallback(async () => {
     try {
@@ -893,7 +907,8 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
             Real-Time Compliance Monitoring
           </Typography>
           
-          {agentMetrics.isLoading ? (
+          {/* Show loading only if we have agents but metrics are still loading */}
+          {userAgents.length > 0 && agentMetrics.isLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress />
               <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
@@ -901,8 +916,16 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
               </Typography>
             </Box>
           ) : userAgents.length === 0 ? (
-            <Alert severity="info">
-              No agents found. Create and wrap agents to monitor policy compliance.
+            <Alert severity="info" sx={{ mb: 3 }}>
+              <AlertTitle>No Agents Found</AlertTitle>
+              No agents are currently available for policy compliance monitoring. 
+              <br />
+              <strong>Next steps:</strong>
+              <br />
+              • Go to <strong>Agent Wrapping</strong> to create and wrap new agents
+              • Or visit <strong>My Agents</strong> to check existing agent status
+              <br />
+              Once agents are created, they will appear here for policy assignment and compliance monitoring.
             </Alert>
           ) : (
             <Grid container spacing={3}>
@@ -1045,23 +1068,11 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       </Dialog>
 
       {/* View Policy Dialog */}
-      <Dialog 
-        open={viewPolicyOpen} 
+      <PolicyDetailsDialog
+        open={viewPolicyOpen}
+        policy={selectedPolicy}
         onClose={() => setViewPolicyOpen(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>View Policy</DialogTitle>
-        <DialogContent>
-          {selectedPolicy && (
-            <PolicyRuleBuilder
-              policy={selectedPolicy}
-              mode="view"
-              onCancel={() => setViewPolicyOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* Context Menu */}
       <Menu

@@ -41,7 +41,7 @@ export class PolicyAssignmentStorageService {
   private lastCacheUpdate: number = 0;
 
   constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = UnifiedStorageService.getInstance();
   }
 
   /**

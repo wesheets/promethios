@@ -69,7 +69,7 @@ export class PoliciesStorageService {
   private isInitialized = false;
 
   constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = UnifiedStorageService.getInstance();
   }
 
   /**
