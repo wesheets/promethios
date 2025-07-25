@@ -1,0 +1,103 @@
+/* Simple animations that will definitely work in production */
+
+/* Hide all elements initially */
+.reputation, .customer-trust, .real-world,
+.reputation-line, .customer-line, .consequences-line,
+.tagline {
+  opacity: 0;
+  display: none;
+}
+
+/* YOUR REPUTATION animation */
+.reputation {
+  animation: fadeIn 0.5s ease-in forwards;
+  display: block;
+}
+
+.reputation-line {
+  animation: fadeIn 0.5s ease-in 0.5s forwards;
+  display: block;
+}
+
+/* YOUR CUSTOMER'S TRUST animation - starts at 3.5s */
+@media (min-width: 100px) {
+  .reputation, .reputation-line {
+    animation-delay: 0s;
+    animation-duration: 3s;
+    animation-fill-mode: forwards;
+    animation-name: fadeInOut;
+  }
+  
+  .customer-trust {
+    animation: fadeIn 0.5s ease-in 3.5s forwards;
+    display: block;
+  }
+  
+  .customer-line {
+    animation: fadeIn 0.5s ease-in 4s forwards;
+    display: block;
+  }
+}
+
+/* REAL-WORLD CONSEQUENCES animation - starts at 7s */
+@media (min-width: 100px) {
+  .customer-trust, .customer-line {
+    animation-delay: 3.5s;
+    animation-duration: 3s;
+    animation-fill-mode: forwards;
+    animation-name: fadeInOut;
+  }
+  
+  .real-world {
+    animation: fadeIn 0.5s ease-in 7s forwards;
+    display: block;
+  }
+  
+  .consequences-line {
+    animation: fadeIn 0.5s ease-in 7.5s forwards;
+    display: block;
+  }
+}
+
+/* Final tagline animation - starts at 10.5s */
+@media (min-width: 100px) {
+  .real-world, .consequences-line {
+    animation-delay: 7s;
+    animation-duration: 3s;
+    animation-fill-mode: forwards;
+    animation-name: fadeInOut;
+  }
+  
+  .tagline {
+    animation: fadeInScale 1.5s ease-out 10.5s forwards;
+    display: block;
+  }
+}
+
+/* Basic animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fadeInScale {
+  0% { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
