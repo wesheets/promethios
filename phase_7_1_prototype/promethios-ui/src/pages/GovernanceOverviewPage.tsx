@@ -53,12 +53,20 @@ import {
   Refresh,
   Download,
   FilterList,
-  MoreVert
+  MoreVert,
+  Error,
+  Psychology,
+  TrendingDown,
+  QuestionMark,
+  Speed,
+  Healing
 } from '@mui/icons-material';
 import { observerService } from '../services/observers';
 import AgentMetricsWidget from '../components/AgentMetricsWidget';
 import { useMultiAgentRealTimeMetrics } from '../hooks/useRealTimeMetrics';
 import { userAgentStorageService } from '../services/UserAgentStorageService';
+import { AntiGamingValidator, GamingDetectionResult, TrustDecayInfo, AdaptiveChallenge } from '../services/AntiGamingValidator';
+import AgentFeedbackLoop, { FeedbackContext, AgentPerformanceContext } from '../services/AgentFeedbackLoop';
 
 // Types for governance data
 interface PrismMetrics {
@@ -178,6 +186,19 @@ const GovernanceOverviewPage: React.FC = () => {
   const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
   const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
 
+  // Anti-gaming and feedback services
+  const [antiGamingValidator] = useState(() => new AntiGamingValidator({
+    advancedFeatures: true,
+    trustDecay: { enabled: true, baseDecayRate: 0.01 },
+    adaptiveChallenges: { enabled: true, maxConcurrentChallenges: 3 }
+  }));
+  const [agentFeedbackLoop] = useState(() => new AgentFeedbackLoop());
+  
+  // Anti-gaming state
+  const [gamingDetectionResults, setGamingDetectionResults] = useState<Map<string, GamingDetectionResult>>(new Map());
+  const [agentFeedbackContexts, setAgentFeedbackContexts] = useState<Map<string, FeedbackContext>>(new Map());
+  const [showAntiGamingDetails, setShowAntiGamingDetails] = useState(false);
+
   // Load user agents for governance tracking
   useEffect(() => {
     const loadUserAgents = async () => {
@@ -220,7 +241,7 @@ const GovernanceOverviewPage: React.FC = () => {
     setActiveTab(newValue);
     
     // Track tab change
-    const tabNames = ['overview', 'violations', 'reports', 'agents', 'agent_metrics'];
+    const tabNames = ['overview', 'violations', 'reports', 'anti_gaming', 'agent_metrics'];
     trackFeatureUsage('governance_tabs', 'tab_change', {
       from_tab: tabNames[activeTab] || 'unknown',
       to_tab: tabNames[newValue] || 'unknown',
@@ -635,6 +656,7 @@ const GovernanceOverviewPage: React.FC = () => {
             <Tab label="PRISM Overview" />
             <Tab label="Trust Metrics" />
             <Tab label="Multi-Agent Systems" />
+            <Tab label="Anti-Gaming" />
             <Tab label="Agent Metrics" />
           </Tabs>
         </Box>
@@ -857,6 +879,271 @@ const GovernanceOverviewPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={3}>
+          {/* Anti-Gaming Features */}
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h6" sx={{ color: 'white' }}>
+                  Advanced Anti-Gaming Protection
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowAntiGamingDetails(!showAntiGamingDetails)}
+                  sx={{ 
+                    borderColor: '#4a5568',
+                    color: '#a0aec0',
+                    '&:hover': { borderColor: '#718096' }
+                  }}
+                >
+                  {showAntiGamingDetails ? 'Hide Details' : 'Show Details'}
+                </Button>
+              </Box>
+            </Grid>
+
+            {/* Anti-Gaming Summary Cards */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box>
+                      <Typography variant="h4" color="warning.main" gutterBottom>
+                        {Array.from(gamingDetectionResults.values()).filter(r => r.isGaming).length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        Gaming Detected
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: 'warning.main' }}>
+                      <Error />
+                    </Avatar>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                    Agents with suspicious behavior
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box>
+                      <Typography variant="h4" color="info.main" gutterBottom>
+                        {Array.from(gamingDetectionResults.values()).reduce((sum, r) => sum + (r.adaptiveChallenge ? 1 : 0), 0)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        Active Challenges
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: 'info.main' }}>
+                      <Psychology />
+                    </Avatar>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                    Adaptive challenges in progress
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box>
+                      <Typography variant="h4" color="error.main" gutterBottom>
+                        {Array.from(gamingDetectionResults.values()).reduce((sum, r) => sum + (r.trustDecayApplied ? 1 : 0), 0)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        Trust Decay Applied
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: 'error.main' }}>
+                      <TrendingDown />
+                    </Avatar>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                    Agents with reduced trust
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between">
+                    <Box>
+                      <Typography variant="h4" color="success.main" gutterBottom>
+                        {userAgents.filter(({ agentId }) => {
+                          const recovery = antiGamingValidator.getRecoveryStatus(agentId);
+                          return recovery.inRecovery;
+                        }).length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                        In Recovery
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: 'success.main' }}>
+                      <Healing />
+                    </Avatar>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                    Agents recovering trust
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Detailed Anti-Gaming Information */}
+            {showAntiGamingDetails && (
+              <Grid item xs={12}>
+                <Card sx={{ backgroundColor: '#1a202c', color: 'white', border: '1px solid #4a5568' }}>
+                  <CardHeader 
+                    title="Anti-Gaming Detection Details" 
+                    sx={{ '& .MuiCardHeader-title': { color: 'white' } }}
+                  />
+                  <CardContent>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Agent</TableCell>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Status</TableCell>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Trust Score</TableCell>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Gaming Risk</TableCell>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Active Challenges</TableCell>
+                            <TableCell sx={{ color: '#a0aec0', borderColor: '#4a5568' }}>Recovery Status</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {userAgents.filter(({ version }) => version === 'production').map(({ agentId, version }) => {
+                            const profile = agentMetrics.getProfile(agentId, version);
+                            const gamingResult = gamingDetectionResults.get(agentId);
+                            const trustScore = antiGamingValidator.getTrustScore(agentId);
+                            const activeChallenges = antiGamingValidator.getActiveChallenges(agentId);
+                            const recovery = antiGamingValidator.getRecoveryStatus(agentId);
+                            
+                            if (!profile) return null;
+                            
+                            return (
+                              <TableRow key={`${agentId}_${version}`}>
+                                <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                                  {profile.agentName}
+                                  <Typography variant="caption" display="block" sx={{ color: '#a0aec0' }}>
+                                    {version}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell sx={{ borderColor: '#4a5568' }}>
+                                  {profile.deployed ? (
+                                    <Chip 
+                                      label="Deployed" 
+                                      size="small" 
+                                      color="success"
+                                      sx={{ backgroundColor: '#10b981', color: 'white' }}
+                                    />
+                                  ) : (
+                                    <Chip 
+                                      label="Not Deployed" 
+                                      size="small" 
+                                      sx={{ backgroundColor: '#6b7280', color: 'white' }}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                                  {profile.deployed ? (
+                                    <Box>
+                                      <Typography variant="body2">
+                                        {(trustScore * 100).toFixed(1)}%
+                                      </Typography>
+                                      {recovery.inRecovery && (
+                                        <Typography variant="caption" sx={{ color: 'warning.main' }}>
+                                          Recovering
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  ) : (
+                                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                      N/A - Not Deployed
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ borderColor: '#4a5568' }}>
+                                  {profile.deployed && gamingResult ? (
+                                    <Chip 
+                                      label={gamingResult.suspicionLevel.toUpperCase()}
+                                      size="small"
+                                      color={
+                                        gamingResult.suspicionLevel === 'critical' ? 'error' :
+                                        gamingResult.suspicionLevel === 'high' ? 'warning' :
+                                        gamingResult.suspicionLevel === 'medium' ? 'info' : 'default'
+                                      }
+                                    />
+                                  ) : (
+                                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                      {profile.deployed ? 'Low' : 'N/A'}
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                                  {profile.deployed ? (
+                                    activeChallenges.length > 0 ? (
+                                      <Tooltip title={activeChallenges.map(c => c.type).join(', ')}>
+                                        <Chip 
+                                          label={`${activeChallenges.length} Active`}
+                                          size="small"
+                                          color="info"
+                                        />
+                                      </Tooltip>
+                                    ) : (
+                                      <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                        None
+                                      </Typography>
+                                    )
+                                  ) : (
+                                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                      N/A
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                                  {profile.deployed ? (
+                                    recovery.inRecovery ? (
+                                      <Box>
+                                        <Typography variant="body2" color="warning.main">
+                                          {recovery.recoveryDifficulty}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: '#a0aec0' }}>
+                                          {recovery.estimatedTimeRemaining}
+                                        </Typography>
+                                      </Box>
+                                    ) : (
+                                      <Typography variant="body2" sx={{ color: '#10b981' }}>
+                                        Healthy
+                                      </Typography>
+                                    )
+                                  ) : (
+                                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                      N/A
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={4}>
           {/* Multi-Agent Systems */}
           <Alert severity="info" sx={{ mb: 3, backgroundColor: '#1e3a8a', color: 'white', border: '1px solid #3b82f6' }}>
             Multi-agent governance data will be integrated here from the multi-agent coordination system.
@@ -897,7 +1184,7 @@ const GovernanceOverviewPage: React.FC = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           {/* Agent Metrics */}
           <Grid container spacing={3}>
             <Grid item xs={12}>
