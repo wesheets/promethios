@@ -188,6 +188,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   
   // Agent metrics integration
   const [userAgents, setUserAgents] = useState<Array<{ agentId: string; version: 'test' | 'production' }>>([]);
+  const [agentLoadingState, setAgentLoadingState] = useState(false);
   const agentMetrics = useMultiAgentRealTimeMetrics(userAgents);
   
   // Dialog states
@@ -212,6 +213,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       try {
         console.log('🔍 Starting agent loading process...');
         console.log('🔍 Current user:', user?.uid);
+        console.log('🔍 User object:', user);
         
         // Ensure user agent storage service has current user
         if (user?.uid) {
@@ -220,6 +222,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         } else {
           console.warn('⚠️ No user UID available for agent loading');
           setUserAgents([]);
+          setAgentLoadingState(false);
           return;
         }
         
@@ -235,6 +238,9 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           console.log('  2. Agents are stored with different keys');
           console.log('  3. User authentication issue');
           console.log('  4. Storage service configuration issue');
+        } else {
+          console.log('🎉 SUCCESS! Found', agents.length, 'agents for user:', user.uid);
+          console.log('🎯 Agent names:', agents.map(a => a.identity?.name || 'Unknown'));
         }
         
         // Use actual agent profiles instead of creating duplicates
@@ -255,25 +261,33 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         
         console.log('🎯 Final unique agents for compliance tracking:', uniqueAgents);
         console.log('🎯 Agent names:', uniqueAgents.map(a => a.name));
+        console.log('🎯 Setting userAgents state with', uniqueAgents.length, 'agents');
+        
         setUserAgents(uniqueAgents);
         
         // Set loading to false after successful load
-        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+        setAgentLoadingState(false);
+        
+        console.log('✅ Agent loading complete! UI should now show', uniqueAgents.length, 'agents');
       } catch (error) {
         console.error('❌ Failed to load user agents for policy tracking:', error);
         console.error('❌ Error details:', error);
         setUserAgents([]); // Fallback to empty array
-        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+        setAgentLoadingState(false);
       }
     };
 
-    if (user?.uid) {
+    // Only load agents if user is authenticated and not loading
+    if (user?.uid && !loading) {
+      console.log('🔍 User authenticated, loading agents...');
+      setAgentLoadingState(true); // Set loading state
       loadUserAgents();
-    } else {
+    } else if (!loading) {
       console.log('🔍 No authenticated user, setting empty agents list');
       setUserAgents([]);
+      setAgentLoadingState(false);
     }
-  }, [user?.uid]);
+  }, [user, loading]); // Add loading dependency
 
   const loadTemplatesAndAnalytics = useCallback(async () => {
     try {
@@ -936,7 +950,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           </Typography>
           
           {/* Show loading only if we have agents but metrics are still loading */}
-          {userAgents.length > 0 && agentMetrics.isLoading ? (
+          {agentLoadingState ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress />
               <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
@@ -1085,14 +1099,22 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         <DialogTitle>Edit Policy</DialogTitle>
         <DialogContent>
           {selectedPolicy && (
-            <PolicyRuleBuilder
-              policy={selectedPolicy}
-              mode="edit"
-              onSave={handleUpdatePolicy}
-              onCancel={() => setEditPolicyOpen(false)}
-            />
+            <Box sx={{ p: 2 }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                Policy editing functionality is currently being updated. 
+                Please use the Create Policy wizard to create new policies with your desired settings.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Policy: {selectedPolicy.name} (Version {selectedPolicy.version})
+              </Typography>
+            </Box>
           )}
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditPolicyOpen(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* View Policy Dialog */}
