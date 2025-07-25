@@ -441,9 +441,9 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Dynamic "is/are on the line." text positioned on the right - properly aligned with dashboard */}
-                  <div className="absolute right-0 top-0 flex justify-end w-full" style={{pointerEvents: 'none'}}>
-                    <div className="mr-4 lg:mr-8">
+                  {/* Dynamic "is/are on the line." text positioned on the right - with explicit positioning */}
+                  <div className="absolute" style={{right: '10%', top: '0', zIndex: 10, pointerEvents: 'none'}}>
+                    <div>
                       <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text-is italic text-right">
                         is on the line.
                       </span>
@@ -453,9 +453,14 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Full-width tagline that appears after animation sequence with enhanced 3D perspective */}
-                  <div className="absolute inset-0 flex items-center justify-center" style={{perspective: '500px', transformStyle: 'preserve-3d'}}>
-                    <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed">
+                  {/* Full-width tagline that appears after animation sequence with inline animation */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed"
+                       style={{
+                         animation: 'fadeInFinal 4s ease-out 10.8s forwards',
+                         opacity: 0,
+                         transform: 'perspective(500px) translateZ(-300px) scale(0.7)'
+                       }}>
                       Smart isn't the same as trustworthy.
                     </p>
                   </div>
