@@ -96,13 +96,14 @@ class NotificationBackendService {
       });
 
       // Convert audit events to notifications
-      auditEvents.events.forEach((event, index) => {
-        if (this.shouldCreateNotificationFromAuditEvent(event)) {
-          notifications.push({
-            notification_id: `audit_${event.event_id}`,
-            type: this.getNotificationTypeFromAuditEvent(event),
-            title: this.getAuditEventTitle(event),
-            message: event.description || 'Audit event detected',
+      if (auditEvents && auditEvents.events) {
+        auditEvents.events.forEach((event, index) => {
+          if (this.shouldCreateNotificationFromAuditEvent(event)) {
+            notifications.push({
+              notification_id: `audit_${event.event_id}`,
+              type: this.getNotificationTypeFromAuditEvent(event),
+              title: this.getAuditEventTitle(event),
+              message: event.description || 'Audit event detected',
             source: 'audit',
             agent_id: event.agent_id,
             agent_name: event.agent_id ? `Agent ${event.agent_id}` : 'System',
@@ -118,7 +119,7 @@ class NotificationBackendService {
             }
           });
         }
-      });
+      }
 
       // Sort by creation date (newest first)
       notifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

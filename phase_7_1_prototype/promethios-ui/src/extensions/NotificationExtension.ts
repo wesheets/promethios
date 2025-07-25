@@ -14,10 +14,10 @@ import { NotificationProvider } from '../types/notification';
 export class NotificationExtension {
   private static instance: NotificationExtension;
   private initialized = false;
-  private notificationService: NotificationService;
+  private notificationService: typeof notificationService;
 
   private constructor() {
-    this.notificationService = new NotificationService();
+    this.notificationService = notificationService;
   }
 
   static getInstance(): NotificationExtension {
