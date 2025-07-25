@@ -294,6 +294,16 @@ export class UnifiedStorageService {
   }
 
   /**
+   * Initialize method for backward compatibility
+   */
+  async initialize(): Promise<void> {
+    // Already initialized in constructor, but provide method for compatibility
+    if (!this.isInitialized) {
+      this.loadNamespaces();
+    }
+  }
+
+  /**
    * Store method (alias for set for backward compatibility)
    */
   async store<T>(namespace: string, key: string, value: T): Promise<void> {

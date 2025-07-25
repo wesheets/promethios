@@ -212,6 +212,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       try {
         console.log('🔍 Starting agent loading process...');
         console.log('🔍 Current user:', user?.uid);
+        console.log('🔍 User object:', user);
         
         // Ensure user agent storage service has current user
         if (user?.uid) {
@@ -220,6 +221,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         } else {
           console.warn('⚠️ No user UID available for agent loading');
           setUserAgents([]);
+          setAgentMetrics(prev => ({ ...prev, isLoading: false }));
           return;
         }
         
@@ -267,13 +269,16 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       }
     };
 
-    if (user?.uid) {
+    // Only load agents if user is authenticated and not loading
+    if (user?.uid && !loading) {
+      console.log('🔍 User authenticated, loading agents...');
       loadUserAgents();
-    } else {
+    } else if (!loading) {
       console.log('🔍 No authenticated user, setting empty agents list');
       setUserAgents([]);
+      setAgentMetrics(prev => ({ ...prev, isLoading: false }));
     }
-  }, [user?.uid]);
+  }, [user, loading]); // Add loading dependency
 
   const loadTemplatesAndAnalytics = useCallback(async () => {
     try {
@@ -1085,14 +1090,22 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         <DialogTitle>Edit Policy</DialogTitle>
         <DialogContent>
           {selectedPolicy && (
-            <PolicyRuleBuilder
-              policy={selectedPolicy}
-              mode="edit"
-              onSave={handleUpdatePolicy}
-              onCancel={() => setEditPolicyOpen(false)}
-            />
+            <Box sx={{ p: 2 }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                Policy editing functionality is currently being updated. 
+                Please use the Create Policy wizard to create new policies with your desired settings.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Policy: {selectedPolicy.name} (Version {selectedPolicy.version})
+              </Typography>
+            </Box>
           )}
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditPolicyOpen(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* View Policy Dialog */}
