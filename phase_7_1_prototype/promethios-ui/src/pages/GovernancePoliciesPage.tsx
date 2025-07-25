@@ -237,6 +237,9 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
           console.log('  2. Agents are stored with different keys');
           console.log('  3. User authentication issue');
           console.log('  4. Storage service configuration issue');
+        } else {
+          console.log('🎉 SUCCESS! Found', agents.length, 'agents for user:', user.uid);
+          console.log('🎯 Agent names:', agents.map(a => a.identity?.name || 'Unknown'));
         }
         
         // Use actual agent profiles instead of creating duplicates
@@ -257,10 +260,18 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
         
         console.log('🎯 Final unique agents for compliance tracking:', uniqueAgents);
         console.log('🎯 Agent names:', uniqueAgents.map(a => a.name));
+        console.log('🎯 Setting userAgents state with', uniqueAgents.length, 'agents');
+        
         setUserAgents(uniqueAgents);
         
         // Set loading to false after successful load
-        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
+        setAgentMetrics(prev => ({ 
+          ...prev, 
+          isLoading: false,
+          totalAgents: uniqueAgents.length 
+        }));
+        
+        console.log('✅ Agent loading complete! UI should now show', uniqueAgents.length, 'agents');
       } catch (error) {
         console.error('❌ Failed to load user agents for policy tracking:', error);
         console.error('❌ Error details:', error);
@@ -272,6 +283,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
     // Only load agents if user is authenticated and not loading
     if (user?.uid && !loading) {
       console.log('🔍 User authenticated, loading agents...');
+      setAgentMetrics(prev => ({ ...prev, isLoading: true })); // Set loading state
       loadUserAgents();
     } else if (!loading) {
       console.log('🔍 No authenticated user, setting empty agents list');
