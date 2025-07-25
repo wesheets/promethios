@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SkeletonLoader } from './SkeletonLoader';
+import { DashboardSpinnerLoader } from './SpinnerLoader';
 import './ProgressiveLoader.css';
 
 interface ProgressiveLoaderProps {
@@ -146,26 +147,14 @@ export const DashboardProgressiveLoader: React.FC<{
   error?: string | null;
   retryAction?: () => void;
 }> = ({ isLoading, children, error, retryAction }) => {
-  const dashboardStages: LoadingStage[] = [
-    { id: 0, name: "Connecting to Firebase", description: "Establishing secure connection..." },
-    { id: 1, name: "Loading User Agents", description: "Retrieving your agent configurations..." },
-    { id: 2, name: "Calculating Metrics", description: "Processing governance and trust scores..." },
-    { id: 3, name: "Preparing Dashboard", description: "Finalizing dashboard display..." }
-  ];
-
   return (
-    <ProgressiveLoader
+    <DashboardSpinnerLoader
       isLoading={isLoading}
-      loadingStages={dashboardStages}
-      skeletonType="metric"
-      skeletonCount={4}
       error={error}
       retryAction={retryAction}
-      showProgress={true}
-      showStageInfo={true}
     >
       {children}
-    </ProgressiveLoader>
+    </DashboardSpinnerLoader>
   );
 };
 
