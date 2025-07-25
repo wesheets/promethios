@@ -34,8 +34,8 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
             </Link>
           </div>
 
-          {/* Main navigation */}
-          <nav className="hidden md:flex space-x-8">
+          {/* Main navigation - temporarily hidden */}
+          {/* <nav className="hidden md:flex space-x-8">
             <Link 
               to="/learn" 
               className={`px-3 py-2 text-sm font-medium ${isActive('/learn') ? 'text-blue-500' : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
@@ -107,7 +107,7 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
                 </div>
               )}
             </div>
-          </nav>
+          </nav> */}
 
           {/* User section */}
           <div className="flex items-center">
