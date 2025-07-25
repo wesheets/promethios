@@ -965,10 +965,28 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       <Dialog 
         open={createPolicyOpen} 
         onClose={() => setCreatePolicyOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
-          sx: { minHeight: '80vh' }
+          sx: { 
+            minHeight: '80vh',
+            zIndex: 9999,
+            position: 'relative',
+            margin: '0 auto',
+            left: 0,
+            right: 0
+          }
+        }}
+        sx={{
+          zIndex: 9999,
+          '& .MuiBackdrop-root': {
+            zIndex: 9998
+          },
+          '& .MuiDialog-container': {
+            zIndex: 9999,
+            paddingLeft: '240px', // Account for sidebar width
+            paddingRight: '20px'
+          }
         }}
       >
         <DialogContent sx={{ p: 0 }}>
@@ -993,7 +1011,7 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
                   }
                 })),
                 metadata: {
-                  owner: currentUser?.uid || 'unknown',
+                  owner: user?.uid || 'unknown',
                   tags: ['simplified-wizard'],
                   created_via: 'simplified-wizard'
                 }
