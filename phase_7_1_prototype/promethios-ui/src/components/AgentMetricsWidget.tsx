@@ -16,7 +16,12 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Tooltip
+  Tooltip,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider
 } from '@mui/material';
 import {
   Shield as ShieldIcon,
@@ -25,7 +30,11 @@ import {
   Visibility as VisibilityIcon,
   Error as ErrorIcon,
   TrendingUp as TrendingUpIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Download as DownloadIcon,
+  MoreVert as MoreVertIcon,
+  DataObject as DataObjectIcon,
+  History as HistoryIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
@@ -81,6 +90,8 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
 }) => {
   const agentMetrics = useAgentMetrics(agentId, version, true);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  const [downloadMenuAnchor, setDownloadMenuAnchor] = useState<null | HTMLElement>(null);
+  const downloadMenuOpen = Boolean(downloadMenuAnchor);
 
   // Trigger callback when metrics update
   useEffect(() => {
@@ -112,6 +123,65 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
 
   const getVersionChipColor = (ver: string) => {
     return ver === 'production' ? DARK_THEME.success : DARK_THEME.warning;
+  };
+
+  // Download functionality
+  const handleDownloadMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setDownloadMenuAnchor(event.currentTarget);
+  };
+
+  const handleDownloadMenuClose = () => {
+    setDownloadMenuAnchor(null);
+  };
+
+  const downloadJSON = (data: any, filename: string) => {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    handleDownloadMenuClose();
+  };
+
+  const handleDownloadCurrentMetrics = () => {
+    const metricsData = {
+      agentId,
+      agentName,
+      version,
+      timestamp: new Date().toISOString(),
+      metrics: {
+        trustScore: agentMetrics.trustScore,
+        complianceRate: agentMetrics.complianceRate,
+        responseTime: agentMetrics.responseTime,
+        sessionIntegrity: agentMetrics.sessionIntegrity
+      },
+      profile: agentMetrics.profile,
+      rawData: agentMetrics
+    };
+    downloadJSON(metricsData, `${agentId}_metrics_${new Date().toISOString().split('T')[0]}.json`);
+  };
+
+  const handleDownloadFullProfile = () => {
+    if (agentMetrics.profile) {
+      downloadJSON(agentMetrics.profile, `${agentId}_full_profile_${new Date().toISOString().split('T')[0]}.json`);
+    }
+  };
+
+  const handleDownloadGovernanceHistory = () => {
+    const governanceData = {
+      agentId,
+      timestamp: new Date().toISOString(),
+      governanceMetrics: agentMetrics.profile?.metrics?.governanceMetrics,
+      interactions: agentMetrics.profile?.metrics?.interactions || [],
+      violations: agentMetrics.profile?.metrics?.violations || [],
+      trustHistory: agentMetrics.profile?.metrics?.trustHistory || []
+    };
+    downloadJSON(governanceData, `${agentId}_governance_history_${new Date().toISOString().split('T')[0]}.json`);
   };
 
   if (agentMetrics.error) {
@@ -149,7 +219,7 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             <Typography variant={compact ? "subtitle2" : "h6"} sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
               {agentName || agentId} Metrics
             </Typography>
-            <Box display="flex" gap={1}>
+            <Box display="flex" gap={1} alignItems="center">
               <Chip 
                 label={version.toUpperCase()} 
                 size="small"
@@ -169,6 +239,23 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
                     fontWeight: 'bold'
                   }}
                 />
+              )}
+              {!compact && (
+                <Tooltip title="Download Backend Data">
+                  <IconButton
+                    onClick={handleDownloadMenuOpen}
+                    size="small"
+                    sx={{ 
+                      color: DARK_THEME.text.secondary,
+                      '&:hover': { 
+                        color: DARK_THEME.primary,
+                        backgroundColor: DARK_THEME.primary + '10'
+                      }
+                    }}
+                  >
+                    <DownloadIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               )}
             </Box>
           </Box>
@@ -319,6 +406,39 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             </Grid>
           </Box>
         )}
+
+        {/* Download Menu */}
+        <Menu
+          anchorEl={downloadMenuAnchor}
+          open={downloadMenuOpen}
+          onClose={handleDownloadMenuClose}
+          PaperProps={{
+            sx: {
+              backgroundColor: DARK_THEME.surface,
+              border: `1px solid ${DARK_THEME.border}`,
+              '& .MuiMenuItem-root': {
+                color: DARK_THEME.text.primary,
+                '&:hover': {
+                  backgroundColor: DARK_THEME.primary + '20'
+                }
+              }
+            }
+          }}
+        >
+          <MenuItem onClick={handleDownloadCurrentMetrics}>
+            <DataObjectIcon sx={{ mr: 1, fontSize: 18 }} />
+            Current Metrics JSON
+          </MenuItem>
+          <MenuItem onClick={handleDownloadFullProfile}>
+            <DataObjectIcon sx={{ mr: 1, fontSize: 18 }} />
+            Full Agent Profile
+          </MenuItem>
+          <Divider sx={{ backgroundColor: DARK_THEME.border }} />
+          <MenuItem onClick={handleDownloadGovernanceHistory}>
+            <HistoryIcon sx={{ mr: 1, fontSize: 18 }} />
+            Governance History
+          </MenuItem>
+        </Menu>
       </CardContent>
     </MetricsCard>
   );

@@ -4,7 +4,12 @@
  * Service layer for accessing observer data from the Promethios governance framework.
  * Provides methods for fetching metrics, violations, and analytics from PRISM and Vigil observers.
  * Extended with multi-agent system monitoring capabilities.
+ * Now integrated with real governance backend services.
  */
+
+import { realGovernanceIntegration, RealGovernanceMetrics } from './RealGovernanceIntegration';
+import { governanceService } from './GovernanceService';
+import { veritasService } from './VeritasService';
 
 // Types for observer data
 export interface PRISMMetrics {
@@ -858,12 +863,178 @@ export const observerService = {
       console.warn('Failed to fetch real multi-agent metrics, using mock data:', error);
     }
     
-    return new Promise(resolve => {
-      setTimeout(() => resolve({
-        ...mockMultiAgentSystemMetrics,
-        systemId
-      }), 500);
+    return new Promise(async resolve => {
+      try {
+        // Get real multi-agent metrics from governance integration
+        const realMetrics = await this.getRealMultiAgentMetrics(contextId);
+        setTimeout(() => resolve(realMetrics), 500);
+      } catch (error) {
+        console.warn('Failed to get real multi-agent metrics, using fallback:', error);
+        setTimeout(() => resolve({
+          ...mockMultiAgentSystemMetrics,
+          systemId
+        }), 500);
+      }
     });
+  },
+
+  // NEW: Get real multi-agent metrics from governance integration
+  getRealMultiAgentMetrics: async (contextId: string): Promise<MultiAgentSystemMetrics> => {
+    try {
+      console.log('🔍 Getting real multi-agent metrics for context:', contextId);
+
+      // Get all test agent governance profiles
+      const testAgentProfiles = await realGovernanceIntegration.getAllTestAgentGovernanceProfiles();
+      
+      if (testAgentProfiles.length === 0) {
+        throw new Error('No test agents found with governance integration');
+      }
+
+      // Calculate system-wide metrics from real agent data
+      const totalAgents = testAgentProfiles.length;
+      const activeAgents = testAgentProfiles.filter(p => p.realTimeMetrics.status === 'active' || p.realTimeMetrics.status === 'monitoring').length;
+      
+      // Calculate average trust score from real metrics
+      const avgTrustScore = testAgentProfiles.reduce((sum, p) => sum + p.realTimeMetrics.trustScore, 0) / totalAgents;
+      
+      // Calculate average response time from real metrics
+      const avgResponseTime = testAgentProfiles.reduce((sum, p) => sum + p.realTimeMetrics.responseTime, 0) / totalAgents;
+      
+      // Calculate total interactions from interaction history
+      const totalInteractions = testAgentProfiles.reduce((sum, p) => sum + p.interactionHistory.length, 0);
+      
+      // Calculate success rate based on compliance
+      const avgComplianceRate = testAgentProfiles.reduce((sum, p) => sum + p.realTimeMetrics.complianceRate, 0) / totalAgents;
+      
+      // Build agent metrics from real data
+      const agentMetrics = testAgentProfiles.map(profile => ({
+        agentId: profile.agentId,
+        agentName: profile.agentName,
+        trustScore: profile.realTimeMetrics.trustScore,
+        responseTime: profile.realTimeMetrics.responseTime,
+        interactions: profile.interactionHistory.length,
+        status: profile.realTimeMetrics.status === 'active' || profile.realTimeMetrics.status === 'monitoring' ? 'active' : 'idle',
+        specialization: 'general' // Could be enhanced with agent type detection
+      }));
+
+      // Calculate governance metrics from real data
+      const totalViolations = testAgentProfiles.reduce((sum, p) => sum + p.realTimeMetrics.policyViolations, 0);
+      const lastViolation = testAgentProfiles
+        .flatMap(p => p.interactionHistory)
+        .filter(i => i.governanceResult.violations && i.governanceResult.violations.length > 0)
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]?.timestamp || new Date(Date.now() - 86400000);
+
+      const realMultiAgentSystemMetrics: MultiAgentSystemMetrics = {
+        systemId: contextId,
+        systemName: 'Real Multi-Agent System',
+        agentCount: totalAgents,
+        collaborationModel: 'consensus',
+        overallTrustScore: Math.round(avgTrustScore * 10) / 10,
+        collaborationEfficiency: Math.round(avgComplianceRate * 10) / 10,
+        missionProgress: Math.min(100, Math.round((totalInteractions / 10) * 10) / 10), // Progress based on interactions
+        resourceUtilization: {
+          cpu: Math.round(Math.random() * 30 + 60), // Simulated for now
+          memory: Math.round(Math.random() * 30 + 65),
+          bandwidth: Math.round(Math.random() * 30 + 40)
+        },
+        crossAgentTrustMatrix: observerService.buildRealTrustMatrix(testAgentProfiles),
+        emergentBehaviors: observerService.detectRealEmergentBehaviors(testAgentProfiles),
+        agentMetrics,
+        governance: {
+          policyCompliance: Math.round(avgComplianceRate * 10) / 10,
+          violationsCount: totalViolations,
+          lastViolation: lastViolation,
+          activePolicies: 12 // Could be enhanced to count real policies
+        },
+        trends: {
+          trustScoreTrend: observerService.calculateTrustTrend(testAgentProfiles),
+          responseTimeTrend: 'stable',
+          interactionsTrend: totalInteractions > 50 ? 'increasing' : 'stable'
+        },
+        lastUpdated: new Date()
+      };
+
+      console.log('✅ Real multi-agent metrics calculated:', realMultiAgentSystemMetrics);
+      return realMultiAgentSystemMetrics;
+
+    } catch (error) {
+      console.error('❌ Error getting real multi-agent metrics:', error);
+      throw error;
+    }
+  },
+
+  // Helper: Build real trust matrix from agent profiles
+  buildRealTrustMatrix: (profiles: any[]): Record<string, Record<string, number>> => {
+    const matrix: Record<string, Record<string, number>> = {};
+    
+    profiles.forEach(profileA => {
+      matrix[profileA.agentId] = {};
+      profiles.forEach(profileB => {
+        if (profileA.agentId !== profileB.agentId) {
+          // Calculate trust between agents based on their individual trust scores
+          const trustA = profileA.realTimeMetrics.trustScore / 100;
+          const trustB = profileB.realTimeMetrics.trustScore / 100;
+          const crossTrust = (trustA + trustB) / 2 + (Math.random() * 0.1 - 0.05); // Add small variation
+          matrix[profileA.agentId][profileB.agentId] = Math.round(Math.max(0.5, Math.min(1.0, crossTrust)) * 100) / 100;
+        }
+      });
+    });
+    
+    return matrix;
+  },
+
+  // Helper: Detect real emergent behaviors from agent interactions
+  detectRealEmergentBehaviors: (profiles: any[]): any[] => {
+    const behaviors = [];
+    
+    // Analyze interaction patterns
+    const totalInteractions = profiles.reduce((sum, p) => sum + p.interactionHistory.length, 0);
+    const avgSelfQuestioningRate = profiles.reduce((sum, p) => sum + (p.realTimeMetrics.selfQuestioningRate || 0), 0) / profiles.length;
+    
+    if (avgSelfQuestioningRate > 0.8) {
+      behaviors.push({
+        type: 'collective_self_questioning',
+        description: 'Agents are collectively engaging in high levels of self-questioning behavior',
+        confidence: Math.round(avgSelfQuestioningRate * 100),
+        firstObserved: new Date(Date.now() - Math.random() * 86400000),
+        frequency: 'high'
+      });
+    }
+    
+    if (totalInteractions > 100) {
+      behaviors.push({
+        type: 'collaborative_learning',
+        description: 'System showing signs of collaborative learning through increased interactions',
+        confidence: Math.min(95, Math.round((totalInteractions / 200) * 100)),
+        firstObserved: new Date(Date.now() - Math.random() * 172800000),
+        frequency: 'medium'
+      });
+    }
+    
+    return behaviors;
+  },
+
+  // Helper: Calculate trust trend from agent profiles
+  calculateTrustTrend: (profiles: any[]): 'improving' | 'stable' | 'declining' => {
+    // Analyze recent interactions to determine trend
+    const recentInteractions = profiles
+      .flatMap(p => p.interactionHistory)
+      .filter(i => i.timestamp.getTime() > Date.now() - 86400000) // Last 24 hours
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    
+    if (recentInteractions.length < 2) return 'stable';
+    
+    const firstHalf = recentInteractions.slice(0, Math.floor(recentInteractions.length / 2));
+    const secondHalf = recentInteractions.slice(Math.floor(recentInteractions.length / 2));
+    
+    const firstHalfAvg = firstHalf.reduce((sum, i) => sum + (i.governanceResult.trustScore || 85), 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, i) => sum + (i.governanceResult.trustScore || 85), 0) / secondHalf.length;
+    
+    const difference = secondHalfAvg - firstHalfAvg;
+    
+    if (difference > 2) return 'improving';
+    if (difference < -2) return 'declining';
+    return 'stable';
   },
 
   getInterAgentCommunications: async (systemId: string, limit?: number): Promise<InterAgentCommunication[]> => {

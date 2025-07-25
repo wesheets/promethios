@@ -4,7 +4,7 @@
  * Simplified version that provides notification functionality without complex extension framework
  */
 
-import { NotificationService } from '../services/NotificationService';
+import { notificationService } from '../services/notificationService';
 import { NotificationProvider } from '../types/notification';
 
 /**
