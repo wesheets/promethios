@@ -58,8 +58,8 @@ import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
 import { OptimizedAgentLoader } from '../services/OptimizedAgentLoader';
 import { OptimizedChatLoader } from './loading/OptimizedChatLoader';
-import { agentFeedbackLoop, AgentFeedbackPrompt } from '../services/AgentFeedbackLoop';
-import { antiGamingValidator, GamingDetectionResult } from '../services/AntiGamingValidator';
+import AgentFeedbackLoop, { AgentPerformanceContext, FeedbackContext } from '../services/AgentFeedbackLoop';
+import { AntiGamingValidator, GamingDetectionResult } from '../services/AntiGamingValidator';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -412,6 +412,8 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
   const governanceService = useMemo(() => new GovernanceService(), []);
+  const agentFeedbackLoop = useMemo(() => new AgentFeedbackLoop(), []);
+  const antiGamingValidator = useMemo(() => new AntiGamingValidator({ advancedFeatures: true }), []);
 
   // 📊 AGENT METRICS INTEGRATION
   const agentMetrics = useAgentMetrics({
