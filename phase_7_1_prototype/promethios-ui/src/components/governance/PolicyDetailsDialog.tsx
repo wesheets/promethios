@@ -124,7 +124,34 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
   policy,
   onClose
 }) => {
-  if (!policy) return null;
+  // Defensive coding - handle null/undefined policy
+  if (!policy) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm">
+        <DialogTitle>Policy Not Found</DialogTitle>
+        <DialogContent>
+          <Typography>The selected policy could not be loaded.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} variant="contained">Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
+  // Defensive coding - ensure required fields exist
+  const safePolicy = {
+    policy_id: policy.policy_id || 'unknown',
+    name: policy.name || 'Unnamed Policy',
+    version: policy.version || '1.0.0',
+    status: policy.status || 'draft',
+    category: policy.category || 'GENERAL',
+    description: policy.description || '',
+    rules: Array.isArray(policy.rules) ? policy.rules : [],
+    metadata: policy.metadata || {},
+    created_at: policy.created_at || '',
+    updated_at: policy.updated_at || ''
+  };
 
   return (
     <Dialog
@@ -141,25 +168,25 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {getCategoryIcon(policy.category)}
+          {getCategoryIcon(safePolicy.category)}
           <Box>
             <Typography variant="h6" component="div">
-              {policy.name}
+              {safePolicy.name}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
               <Chip 
-                label={policy.category || 'GENERAL'} 
+                label={safePolicy.category} 
                 size="small" 
                 color="primary" 
                 variant="outlined"
               />
               <Chip 
-                label={policy.status} 
+                label={safePolicy.status} 
                 size="small" 
-                color={getStatusColor(policy.status) as any}
+                color={getStatusColor(safePolicy.status) as any}
               />
               <Chip 
-                label={`v${policy.version}`} 
+                label={`v${safePolicy.version}`} 
                 size="small" 
                 variant="outlined"
               />
@@ -173,14 +200,14 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
 
       <DialogContent sx={{ pt: 1 }}>
         {/* Description */}
-        {policy.description && (
+        {safePolicy.description && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Description
               </Typography>
               <Typography variant="body2">
-                {policy.description}
+                {safePolicy.description}
               </Typography>
             </CardContent>
           </Card>
@@ -198,7 +225,7 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
                   Policy ID
                 </Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                  {policy.policy_id}
+                  {safePolicy.policy_id}
                 </Typography>
               </Box>
               <Box>
@@ -206,7 +233,7 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
                   Version
                 </Typography>
                 <Typography variant="body2">
-                  {policy.version}
+                  {safePolicy.version}
                 </Typography>
               </Box>
               <Box>
@@ -214,7 +241,7 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
                   Status
                 </Typography>
                 <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-                  {policy.status}
+                  {safePolicy.status}
                 </Typography>
               </Box>
               <Box>
@@ -222,7 +249,7 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
                   Rules Count
                 </Typography>
                 <Typography variant="body2">
-                  {policy.rules.length}
+                  {safePolicy.rules.length}
                 </Typography>
               </Box>
             </Box>
@@ -233,99 +260,112 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
         <Card>
           <CardContent>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Policy Rules ({policy.rules.length})
+              Policy Rules ({safePolicy.rules.length})
             </Typography>
-            {policy.rules.length === 0 ? (
+            {safePolicy.rules.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
                 No rules defined for this policy
               </Typography>
             ) : (
               <List sx={{ pt: 1 }}>
-                {policy.rules.map((rule, index) => (
-                  <React.Fragment key={rule.rule_id}>
-                    <ListItem sx={{ px: 0, alignItems: 'flex-start' }}>
-                      <ListItemIcon sx={{ mt: 0.5 }}>
-                        <RuleIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Typography variant="subtitle2">
-                              {rule.name || `Rule ${index + 1}`}
-                            </Typography>
-                            <Chip 
-                              label={rule.action} 
-                              size="small" 
-                              color={getActionColor(rule.action) as any}
-                            />
-                            {rule.priority && (
+                {safePolicy.rules.map((rule, index) => {
+                  // Defensive coding for rule data
+                  const safeRule = {
+                    rule_id: rule?.rule_id || `rule-${index}`,
+                    name: rule?.name || `Rule ${index + 1}`,
+                    description: rule?.description || '',
+                    condition: rule?.condition || 'No condition specified',
+                    action: rule?.action || 'allow',
+                    priority: rule?.priority || undefined,
+                    metadata: rule?.metadata || {}
+                  };
+
+                  return (
+                    <React.Fragment key={safeRule.rule_id}>
+                      <ListItem sx={{ px: 0, alignItems: 'flex-start' }}>
+                        <ListItemIcon sx={{ mt: 0.5 }}>
+                          <RuleIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <Typography variant="subtitle2">
+                                {safeRule.name}
+                              </Typography>
                               <Chip 
-                                label={`Priority: ${rule.priority}`} 
+                                label={safeRule.action} 
                                 size="small" 
-                                variant="outlined"
+                                color={getActionColor(safeRule.action) as any}
                               />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            {rule.description && (
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                {rule.description}
+                              {safeRule.priority && (
+                                <Chip 
+                                  label={`Priority: ${safeRule.priority}`} 
+                                  size="small" 
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box>
+                              {safeRule.description && (
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                  {safeRule.description}
+                                </Typography>
+                              )}
+                              <Typography variant="caption" color="text.secondary">
+                                <strong>Condition:</strong> {safeRule.condition}
                               </Typography>
-                            )}
-                            <Typography variant="caption" color="text.secondary">
-                              <strong>Condition:</strong> {rule.condition}
-                            </Typography>
-                            {rule.metadata?.rationale && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                <strong>Rationale:</strong> {rule.metadata.rationale}
-                              </Typography>
-                            )}
-                            {rule.metadata?.tags && rule.metadata.tags.length > 0 && (
-                              <Box sx={{ mt: 1 }}>
-                                {rule.metadata.tags.map((tag, tagIndex) => (
-                                  <Chip 
-                                    key={tagIndex}
-                                    label={tag} 
-                                    size="small" 
-                                    variant="outlined"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                  />
-                                ))}
-                              </Box>
-                            )}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    {index < policy.rules.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
+                              {safeRule.metadata?.rationale && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                  <strong>Rationale:</strong> {safeRule.metadata.rationale}
+                                </Typography>
+                              )}
+                              {safeRule.metadata?.tags && Array.isArray(safeRule.metadata.tags) && safeRule.metadata.tags.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  {safeRule.metadata.tags.map((tag, tagIndex) => (
+                                    <Chip 
+                                      key={tagIndex}
+                                      label={tag} 
+                                      size="small" 
+                                      variant="outlined"
+                                      sx={{ mr: 0.5, mb: 0.5 }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                      {index < safePolicy.rules.length - 1 && <Divider />}
+                    </React.Fragment>
+                  );
+                })}
               </List>
             )}
           </CardContent>
         </Card>
 
         {/* Metadata */}
-        {policy.metadata && Object.keys(policy.metadata).length > 0 && (
+        {safePolicy.metadata && Object.keys(safePolicy.metadata).length > 0 && (
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Metadata
               </Typography>
               <Box sx={{ mt: 1 }}>
-                {policy.metadata.owner && (
+                {safePolicy.metadata.owner && (
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Owner:</strong> {policy.metadata.owner}
+                    <strong>Owner:</strong> {safePolicy.metadata.owner}
                   </Typography>
                 )}
-                {policy.metadata.tags && policy.metadata.tags.length > 0 && (
+                {safePolicy.metadata.tags && Array.isArray(safePolicy.metadata.tags) && safePolicy.metadata.tags.length > 0 && (
                   <Box sx={{ mb: 1 }}>
                     <Typography variant="body2" sx={{ mb: 0.5 }}>
                       <strong>Tags:</strong>
                     </Typography>
-                    {policy.metadata.tags.map((tag, index) => (
+                    {safePolicy.metadata.tags.map((tag, index) => (
                       <Chip 
                         key={index}
                         label={tag} 
@@ -336,12 +376,12 @@ const PolicyDetailsDialog: React.FC<PolicyDetailsDialogProps> = ({
                     ))}
                   </Box>
                 )}
-                {policy.metadata.compliance_mappings && (
+                {safePolicy.metadata.compliance_mappings && (
                   <Box>
                     <Typography variant="body2" sx={{ mb: 0.5 }}>
                       <strong>Compliance Mappings:</strong>
                     </Typography>
-                    {Object.entries(policy.metadata.compliance_mappings).map(([key, value]) => (
+                    {Object.entries(safePolicy.metadata.compliance_mappings).map(([key, value]) => (
                       <Chip 
                         key={key}
                         label={key.toUpperCase()} 

@@ -210,32 +210,60 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
+        console.log('🔍 Starting agent loading process...');
+        console.log('🔍 Current user:', user?.uid);
+        
         // Ensure user agent storage service has current user
         if (user?.uid) {
+          console.log('🔍 Setting current user in storage service:', user.uid);
           userAgentStorageService.setCurrentUser(user.uid);
+        } else {
+          console.warn('⚠️ No user UID available for agent loading');
+          setUserAgents([]);
+          return;
         }
         
+        console.log('🔍 Calling userAgentStorageService.loadUserAgents()...');
         const agents = await userAgentStorageService.loadUserAgents();
-        console.log('🔍 Loaded user agents for compliance:', agents.length);
+        console.log('🔍 Raw agents loaded from storage:', agents);
+        console.log('🔍 Number of agents loaded:', agents.length);
+        
+        if (agents.length === 0) {
+          console.log('⚠️ No agents found in storage for user:', user.uid);
+          console.log('💡 This could mean:');
+          console.log('  1. No agents have been created yet');
+          console.log('  2. Agents are stored with different keys');
+          console.log('  3. User authentication issue');
+          console.log('  4. Storage service configuration issue');
+        }
         
         // Use actual agent profiles instead of creating duplicates
-        const agentList = agents.map(agent => ({
-          agentId: agent.identity.id,
-          name: agent.identity.name,
-          status: agent.identity.status,
-          version: agent.identity.version || 'production'
-        }));
+        const agentList = agents.map(agent => {
+          console.log('🔍 Processing agent:', agent.identity?.name || 'Unknown');
+          return {
+            agentId: agent.identity.id,
+            name: agent.identity.name,
+            status: agent.identity.status,
+            version: agent.identity.version || 'production'
+          };
+        });
         
         // Remove duplicates based on agentId
         const uniqueAgents = agentList.filter((agent, index, self) => 
           index === self.findIndex(a => a.agentId === agent.agentId)
         );
         
-        console.log('🎯 Setting user agents for compliance tracking:', uniqueAgents.length);
+        console.log('🎯 Final unique agents for compliance tracking:', uniqueAgents);
+        console.log('🎯 Agent names:', uniqueAgents.map(a => a.name));
         setUserAgents(uniqueAgents);
+        
+        // Set loading to false after successful load
+        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
       } catch (error) {
-        console.error('Failed to load user agents for policy tracking:', error);
+        console.error('❌ Failed to load user agents for policy tracking:', error);
+        console.error('❌ Error details:', error);
         setUserAgents([]); // Fallback to empty array
+        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
       }
     };
 
