@@ -56,6 +56,8 @@ import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
+import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
+import OptimizedChatLoader from './loading/OptimizedChatLoader';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -358,6 +360,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const [agents, setAgents] = useState<AgentProfile[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState<LoadingProgress | null>(null);
   const [governanceEnabled, setGovernanceEnabled] = useState(true);
   const [chatMode, setChatMode] = useState<'single' | 'multi-agent' | 'saved-systems' | 'promethios-native'>('promethios-native');
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
@@ -1377,43 +1380,22 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     processResponseQueue();
   }, [processResponseQueue]);
 
-  // Load real agents from unified storage and their chat history
+  // Load real agents from unified storage and their chat history using optimized loader
   useEffect(() => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
-        console.log('Loading agents for user:', currentUser?.uid);
+        console.log('🚀 OptimizedChatComponent: Starting optimized agent loading for user:', currentUser?.uid);
         
         if (isDeployedAgent && deployedAgentId) {
           // For deployed agents, create a mock agent profile
           console.log('🚀 Deployed agent mode: Creating agent profile for', deployedAgentId);
           
-          const deployedAgentProfile: AgentProfile = {
-            identity: {
-              id: deployedAgentId,
-              name: deployedAgentName || 'Deployed Agent',
-              version: '1.0.0',
-              description: 'Production deployed agent',
-              ownerId: currentUser?.uid || 'system',
-              creationDate: new Date(),
-              lastModifiedDate: new Date(),
-              status: 'active'
-            },
-            latestScorecard: null,
-            attestationCount: 0,
-            lastActivity: new Date(),
-            healthStatus: 'healthy',
-            trustLevel: 'high',
-            isWrapped: true,
-            governancePolicy: null,
-            isDeployed: true,
-            apiDetails: {
-              endpoint: '',
-              key: 'deployed-agent-key',
-              provider: 'openai',
-              selectedModel: 'gpt-4'
-            }
-          };
+          const deployedAgentProfile = optimizedAgentLoader.createDeployedAgentProfile(
+            deployedAgentId,
+            deployedAgentName || 'Deployed Agent',
+            currentUser?.uid || 'system'
+          );
           
           setAgents([deployedAgentProfile]);
           setSelectedAgent(deployedAgentProfile);
@@ -1424,172 +1406,81 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
           
           // Load chat history for deployed agent
           if (currentUser?.uid) {
-            chatStorageService.setCurrentUser(currentUser.uid);
-            const chatHistory = await chatStorageService.loadAgentChatHistory(deployedAgentId);
-            if (chatHistory && chatHistory.messages && chatHistory.messages.length > 0) {
-              setMessages(chatHistory.messages);
+            const chatHistory = await optimizedAgentLoader.loadAgentChatHistory(deployedAgentId);
+            if (chatHistory.length > 0) {
+              setMessages(chatHistory);
             }
           }
         } else if (currentUser?.uid) {
-          agentStorageService.setCurrentUser(currentUser.uid);
-          const userAgents = await agentStorageService.loadUserAgents();
-          
-          // 🔧 AUTO-MIGRATE: Fix existing native agents with missing apiDetails
-          let migrationCompleted = false;
-          try {
-            await NativeAgentMigration.autoMigrate(currentUser.uid);
-            migrationCompleted = true;
-            console.log('✅ Migration completed successfully');
-          } catch (migrationError) {
-            console.warn('⚠️ Migration warning:', migrationError);
-            // Don't fail the whole load process if migration has issues
-          }
-          
-          // If migration was completed, reload agents to get updated apiDetails
-          let finalAgents = userAgents;
-          if (migrationCompleted) {
-            console.log('🔄 Reloading agents after migration to get updated apiDetails...');
-            try {
-              finalAgents = await agentStorageService.loadUserAgents();
-              console.log('✅ Reloaded agents after migration:', finalAgents?.length || 0, 'agents');
-            } catch (reloadError) {
-              console.warn('⚠️ Failed to reload agents after migration:', reloadError);
-              finalAgents = userAgents; // Fall back to original agents
+          // Use optimized agent loader with progress tracking
+          const result = await optimizedAgentLoader.loadAgentsOptimized(
+            currentUser.uid,
+            chatMode,
+            (progress) => {
+              // Update loading progress (could be used for progress bar)
+              console.log(`🚀 Loading progress: ${progress.stage} - ${progress.progress}% - ${progress.message}`);
+              setLoadingProgress(progress);
             }
-          }
+          );
           
-          console.log('Loaded user agents:', finalAgents);
-          console.log('Number of agents loaded:', finalAgents?.length || 0);
+          console.log(`🚀 OptimizedChatComponent: Loaded ${result.agents.length} agents in ${result.loadingTime}ms (cache: ${result.cacheHit})`);
           
-          // Use only real user agents (no Observer agent)
-          const realAgents = finalAgents || [];
-          setAgents(realAgents);
-          
-          // Set first agent as selected if available and load appropriate chat history
-          if (realAgents.length > 0 && !selectedAgent) {
-            // Prioritize Promethios agents when in promethios-native mode
-            let defaultAgent = realAgents[0];
-            if (chatMode === 'promethios-native') {
-              const prometheosAgent = realAgents.find(agent => 
-                agent.identity.name.toLowerCase().includes('promethios') || 
-                agent.identity.id.includes('promethios-llm')
-              );
-              if (prometheosAgent) {
-                defaultAgent = prometheosAgent;
-              }
-            }
+          // Set the loaded data
+          setAgents(result.agents);
+          if (result.selectedAgent) {
+            setSelectedAgent(result.selectedAgent);
             
-            console.log('Setting first agent as selected:', defaultAgent);
-            setSelectedAgent(defaultAgent);
-            
-            // 📊 Initialize metrics for test agent
-            console.log('🧪 Initializing metrics for test agent:', defaultAgent.identity.id);
+            // 📊 Initialize metrics for selected agent
+            console.log('🧪 Initializing metrics for selected agent:', result.selectedAgent.identity.id);
             // Note: agentMetrics hook will auto-update when selectedAgent changes
-            
-            // 🔧 CHAT HISTORY FIX: Only load single-agent history when in single-agent or promethios-native mode
-            if (chatMode === 'single' || chatMode === 'promethios-native') {
-              console.log('🔧 CHAT MODE: Loading single-agent chat history for:', defaultAgent.identity.name);
-              
-              // Load existing chat history for this agent
-              const chatHistory = await chatStorageService.loadAgentChatHistory(defaultAgent.identity.id);
-              
-              if (chatHistory && chatHistory.messages.length > 0) {
-                // Load existing conversation and sort by timestamp (oldest first)
-                console.log('Loading existing chat history:', chatHistory.messages.length, 'messages');
-                
-                // Debug: Log timestamps before sorting
-                console.log('Messages before sorting:', chatHistory.messages.map(m => ({
-                  id: m.id,
-                  content: m.content.substring(0, 50),
-                  timestamp: m.timestamp,
-                  timestampString: m.timestamp.toString()
-                })));
-                
-                const sortedMessages = [...chatHistory.messages].sort((a, b) => 
-                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                );
-                
-                // Debug: Log timestamps after sorting
-                console.log('Messages after sorting:', sortedMessages.map(m => ({
-                  id: m.id,
-                  content: m.content.substring(0, 50),
-                  timestamp: m.timestamp,
-                  timestampString: m.timestamp.toString()
-                })));
-                
-                setMessages(sortedMessages);
-                
-                // Auto-scroll to bottom to show newest messages when loading existing chat
-                // Use longer timeout to ensure messages are fully rendered
-                setTimeout(() => {
-                  scrollToBottom();
-                  // Double-check scroll after additional time for complex rendering
-                  setTimeout(() => {
-                    scrollToBottom();
-                  }, 100);
-                }, 500);
-              } else {
-                // Add welcome message for new single-agent conversation
-                const welcomeMessage: ChatMessage = {
-                  id: `msg_${Date.now()}_welcome`,
-                  content: `Hello! I'm ${defaultAgent.identity.name}. How can I help you today?`,
-                  sender: 'agent',
-                  timestamp: new Date(),
-                  agentName: defaultAgent.identity.name,
-                  agentId: defaultAgent.identity.id
-                };
-                setMessages([welcomeMessage]);
-                
-                // Save welcome message to storage
-                await chatStorageService.saveMessage(welcomeMessage, defaultAgent.identity.id);
-              }
-              
-              // Initialize chat session for single-agent mode
-              await chatStorageService.initializeChatSession(defaultAgent, governanceEnabled);
-            } else if (chatMode === 'saved-systems') {
-              console.log('🔧 CHAT MODE: Multi-agent mode - keeping chat history clean');
-              // Multi-agent mode should start clean - don't load single-agent history
-              setMessages([]);
-            } else {
-              console.log('🔧 CHAT MODE: Unknown chat mode, keeping clean:', chatMode);
-              // For any other mode, start clean
-              setMessages([]);
-            }
-          } else if (realAgents.length === 0) {
-            console.log('No user agents found');
-            const noAgentsMessage: ChatMessage = {
-              id: `msg_${Date.now()}_no_agents`,
-              content: 'No agents found. Please create an agent using the Agent Wrapping feature.',
-              sender: 'system',
-              timestamp: new Date()
-            };
-            setMessages([noAgentsMessage]);
           }
-        } else {
-          console.log('No user found, cannot load agents');
-          setAgents([]);
+          
+          // Set chat history if loaded
+          if (result.messages.length > 0) {
+            setMessages(result.messages);
+          }
+          
+          // Show performance metrics
+          if (result.cacheHit) {
+            console.log('⚡ OptimizedChatComponent: Agents loaded from cache - ultra-fast loading!');
+          } else {
+            console.log(`🚀 OptimizedChatComponent: Fresh agent load completed in ${result.loadingTime}ms`);
+          }
+        
+        // Handle case when no agents are found
+        if (result.agents.length === 0) {
+          console.log('No user agents found');
+          const noAgentsMessage: ChatMessage = {
+            id: `msg_${Date.now()}_no_agents`,
+            content: 'No agents found. Please create an agent using the Agent Wrapping feature.',
+            sender: 'system',
+            timestamp: new Date()
+          };
+          setMessages([noAgentsMessage]);
         }
-      } catch (error) {
-        console.error('Error loading agents:', error);
-        setError('Failed to load agents. Please try refreshing the page.');
+      } else {
+        console.log('No user found, cannot load agents');
         setAgents([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    loadAgents();
-  }, [currentUser, chatMode, isDeployedAgent, deployedAgentId, deployedAgentName]); // Add deployed agent dependencies
-
-  // Ensure governance is always enabled for deployed agents
-  useEffect(() => {
-    if (isDeployedAgent && !governanceEnabled) {
-      console.log('🔒 Enabling governance for deployed agent');
-      setGovernanceEnabled(true);
+    } catch (error) {
+      console.error('❌ OptimizedChatComponent: Error loading agents:', error);
+      setError('Failed to load agents. Please try refreshing the page.');
+      setAgents([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isDeployedAgent, governanceEnabled]);
+  };
 
-  // Loa  // Load governance metrics based on chat mode
+  loadAgents();
+}, [currentUser, chatMode, isDeployedAgent, deployedAgentId, deployedAgentName]); // Add deployed agent dependencies
+
+// Ensure governance is always enabled for deployed agents
+useEffect(() => {
+  if (isDeployedAgent && !governanceEnabled) {
+    console.log('🔒 Enabling governance for deployed agent');
+    setGovernanceEnabled(true);
+  }
+}, [isDeployedAgent, governanceEnabled]);  // Load governance metrics based on chat mode
   useEffect(() => {
     const loadGovernanceMetrics = async () => {
       if (chatMode === 'single' && selectedAgent && governanceEnabled) {
@@ -3026,6 +2917,10 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     if (type.startsWith('audio/')) return <AudioFileIcon />;
     return <DescriptionIcon />;
   };
+
+  if (isLoading && loadingProgress) {
+    return <OptimizedChatLoader progress={loadingProgress} showMetrics={true} />;
+  }
 
   if (isLoading) {
     return (
