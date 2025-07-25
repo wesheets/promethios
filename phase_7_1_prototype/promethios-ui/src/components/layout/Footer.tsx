@@ -1,18 +1,52 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { subscribeToNewsletter } from '../../firebase/subscribeService';
 
 const Footer: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    message: string;
+    isSuccess: boolean;
+    isVisible: boolean;
+  }>({
+    message: '',
+    isSuccess: false,
+    isVisible: false,
+  });
   
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      setIsSubscribed(true);
-      setEmail('');
-      setTimeout(() => setIsSubscribed(false), 3000);
+      try {
+        const result = await subscribeToNewsletter(email);
+        setSubscriptionStatus({
+          message: result.message,
+          isSuccess: result.success,
+          isVisible: true,
+        });
+        
+        if (result.success) {
+          setEmail('');
+        }
+        
+        // Hide the message after 5 seconds
+        setTimeout(() => {
+          setSubscriptionStatus(prev => ({ ...prev, isVisible: false }));
+        }, 5000);
+      } catch (error) {
+        setSubscriptionStatus({
+          message: 'An error occurred. Please try again later.',
+          isSuccess: false,
+          isVisible: true,
+        });
+        
+        // Hide the error message after 5 seconds
+        setTimeout(() => {
+          setSubscriptionStatus(prev => ({ ...prev, isVisible: false }));
+        }, 5000);
+      }
     }
   };
 
@@ -44,7 +78,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {/* Logo and Newsletter */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-4">
@@ -74,8 +108,10 @@ const Footer: React.FC = () => {
                   Subscribe
                 </button>
               </form>
-              {isSubscribed && (
-                <p className="text-green-400 text-sm mt-2">✅ Thanks for subscribing!</p>
+              {subscriptionStatus.isVisible && (
+                <p className={`${subscriptionStatus.isSuccess ? 'text-green-400' : 'text-red-400'} text-sm mt-2`}>
+                  {subscriptionStatus.isSuccess ? '✅ ' : '❌ '}{subscriptionStatus.message}
+                </p>
               )}
               <p className="text-gray-500 text-xs mt-2">
                 Join thousands of engineers building safe AI systems.
@@ -99,76 +135,6 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Platform */}
-          <div>
-            <h3 className="text-white font-semibold mb-4 flex items-center">
-              <span className="mr-2">⚙️</span>
-              Platform
-            </h3>
-            <ul className="space-y-3">
-              <li>
-                <Link to="/agent-wrapping" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Agent Wrapping
-                </Link>
-              </li>
-              <li>
-                <Link to="/trust-metrics" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Trust Metrics
-                </Link>
-              </li>
-              <li>
-                <Link to="/governance-engine" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Governance Engine
-                </Link>
-              </li>
-              <li>
-                <Link to="/api" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Integration APIs
-                </Link>
-              </li>
-              <li>
-                <Link to="/templates" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Template Library
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h3 className="text-white font-semibold mb-4 flex items-center">
-              <span className="mr-2">📚</span>
-              Resources
-            </h3>
-            <ul className="space-y-3">
-              <li>
-                <Link to="/blog" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link to="/documentation" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Documentation
-                </Link>
-              </li>
-              <li>
-                <a href="https://github.com/promethios" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Open Source
-                </a>
-              </li>
-              <li>
-                <Link to="/system-status" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  System Status
-                </Link>
-              </li>
-              <li>
-                <Link to="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Promethios Demo
-                </Link>
-              </li>
-            </ul>
-          </div>
-
           {/* Company */}
           <div>
             <h3 className="text-white font-semibold mb-4 flex items-center">
@@ -182,24 +148,9 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/careers" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link to="/press" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Press Kit
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <a href="mailto:hello@promethios.ai" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Contact
-                </Link>
-              </li>
-              <li>
-                <Link to="/investors" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Investors
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -305,3 +256,4 @@ const Footer: React.FC = () => {
 };
 
 export default Footer;
+
