@@ -14,6 +14,7 @@ import { usePolicies } from '../hooks/usePolicies';
 import { usePolicyAssignments } from '../hooks/usePolicyAssignments';
 import HorizontalPolicyWizard from '../components/governance/HorizontalPolicyWizard';
 import AgentPolicyAssignment from '../components/governance/AgentPolicyAssignment';
+import PolicyDetailsDialog from '../components/governance/PolicyDetailsDialog';
 import { prometheiosPolicyAPI, PrometheiosPolicy, PrometheiosPolicyRule, PolicyAnalytics, PolicyOptimization, PolicyConflict } from '../services/api/prometheiosPolicyAPI';
 import { MonitoringExtension } from '../extensions/MonitoringExtension';
 import {
@@ -209,29 +210,70 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
   useEffect(() => {
     const loadUserAgents = async () => {
       try {
+        console.log('🔍 Starting agent loading process...');
+        console.log('🔍 Current user:', user?.uid);
+        
+        // Ensure user agent storage service has current user
+        if (user?.uid) {
+          console.log('🔍 Setting current user in storage service:', user.uid);
+          userAgentStorageService.setCurrentUser(user.uid);
+        } else {
+          console.warn('⚠️ No user UID available for agent loading');
+          setUserAgents([]);
+          return;
+        }
+        
+        console.log('🔍 Calling userAgentStorageService.loadUserAgents()...');
         const agents = await userAgentStorageService.loadUserAgents();
+        console.log('🔍 Raw agents loaded from storage:', agents);
+        console.log('🔍 Number of agents loaded:', agents.length);
+        
+        if (agents.length === 0) {
+          console.log('⚠️ No agents found in storage for user:', user.uid);
+          console.log('💡 This could mean:');
+          console.log('  1. No agents have been created yet');
+          console.log('  2. Agents are stored with different keys');
+          console.log('  3. User authentication issue');
+          console.log('  4. Storage service configuration issue');
+        }
+        
         // Use actual agent profiles instead of creating duplicates
-        const agentList = agents.map(agent => ({
-          agentId: agent.identity.id,
-          name: agent.identity.name,
-          status: agent.identity.status,
-          version: agent.identity.version || 'production'
-        }));
+        const agentList = agents.map(agent => {
+          console.log('🔍 Processing agent:', agent.identity?.name || 'Unknown');
+          return {
+            agentId: agent.identity.id,
+            name: agent.identity.name,
+            status: agent.identity.status,
+            version: agent.identity.version || 'production'
+          };
+        });
         
         // Remove duplicates based on agentId
         const uniqueAgents = agentList.filter((agent, index, self) => 
           index === self.findIndex(a => a.agentId === agent.agentId)
         );
         
+        console.log('🎯 Final unique agents for compliance tracking:', uniqueAgents);
+        console.log('🎯 Agent names:', uniqueAgents.map(a => a.name));
         setUserAgents(uniqueAgents);
+        
+        // Set loading to false after successful load
+        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
       } catch (error) {
-        console.error('Failed to load user agents for policy tracking:', error);
+        console.error('❌ Failed to load user agents for policy tracking:', error);
+        console.error('❌ Error details:', error);
         setUserAgents([]); // Fallback to empty array
+        setAgentMetrics(prev => ({ ...prev, isLoading: false }));
       }
     };
 
-    loadUserAgents();
-  }, []);
+    if (user?.uid) {
+      loadUserAgents();
+    } else {
+      console.log('🔍 No authenticated user, setting empty agents list');
+      setUserAgents([]);
+    }
+  }, [user?.uid]);
 
   const loadTemplatesAndAnalytics = useCallback(async () => {
     try {
@@ -893,7 +935,8 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
             Real-Time Compliance Monitoring
           </Typography>
           
-          {agentMetrics.isLoading ? (
+          {/* Show loading only if we have agents but metrics are still loading */}
+          {userAgents.length > 0 && agentMetrics.isLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
               <CircularProgress />
               <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
@@ -901,8 +944,16 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
               </Typography>
             </Box>
           ) : userAgents.length === 0 ? (
-            <Alert severity="info">
-              No agents found. Create and wrap agents to monitor policy compliance.
+            <Alert severity="info" sx={{ mb: 3 }}>
+              <AlertTitle>No Agents Found</AlertTitle>
+              No agents are currently available for policy compliance monitoring. 
+              <br />
+              <strong>Next steps:</strong>
+              <br />
+              • Go to <strong>Agent Wrapping</strong> to create and wrap new agents
+              • Or visit <strong>My Agents</strong> to check existing agent status
+              <br />
+              Once agents are created, they will appear here for policy assignment and compliance monitoring.
             </Alert>
           ) : (
             <Grid container spacing={3}>
@@ -1045,23 +1096,11 @@ const EnhancedGovernancePoliciesPage: React.FC = () => {
       </Dialog>
 
       {/* View Policy Dialog */}
-      <Dialog 
-        open={viewPolicyOpen} 
+      <PolicyDetailsDialog
+        open={viewPolicyOpen}
+        policy={selectedPolicy}
         onClose={() => setViewPolicyOpen(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>View Policy</DialogTitle>
-        <DialogContent>
-          {selectedPolicy && (
-            <PolicyRuleBuilder
-              policy={selectedPolicy}
-              mode="view"
-              onCancel={() => setViewPolicyOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* Context Menu */}
       <Menu

@@ -5,14 +5,15 @@ import { FirebaseStorageProvider } from './storage/FirebaseStorageProvider';
 import storageManifest from '../config/storage_manifest.json';
 
 export class UnifiedStorageService {
+  private static instance: UnifiedStorageService | null = null;
   private providers = new Map<string, StorageProvider>();
   private namespaces = new Map<string, StorageNamespace>();
   private eventListeners = new Set<(event: StorageEvent) => void>();
   private isInitialized = false;
 
-  constructor() {
+  private constructor() {
     try {
-      console.log('🔧 Initializing UnifiedStorageService');
+      console.log('🔧 Initializing UnifiedStorageService (singleton)');
       this.initializeProviders();
       this.loadNamespaces();
       console.log('✅ UnifiedStorageService initialized successfully');
@@ -21,6 +22,18 @@ export class UnifiedStorageService {
       // Set minimal initialized state to prevent further errors
       this.isInitialized = true;
     }
+  }
+
+  public static getInstance(): UnifiedStorageService {
+    if (!UnifiedStorageService.instance) {
+      UnifiedStorageService.instance = new UnifiedStorageService();
+    }
+    return UnifiedStorageService.instance;
+  }
+
+  // For backward compatibility, allow direct instantiation but return singleton
+  public static create(): UnifiedStorageService {
+    return UnifiedStorageService.getInstance();
   }
 
   private initializeProviders(): void {
@@ -289,5 +302,5 @@ export class UnifiedStorageService {
 }
 
 // Singleton instance
-export const unifiedStorage = new UnifiedStorageService();
+export const unifiedStorage = UnifiedStorageService.getInstance();
 
