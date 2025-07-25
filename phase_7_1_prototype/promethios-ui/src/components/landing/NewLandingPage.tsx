@@ -421,7 +421,7 @@ const NewLandingPage: React.FC = () => {
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
             {/* Full-Width Animated Pre-Headline - Minimized height to maximize above-the-fold content */}
-            <div className="mb-2 relative h-28 overflow-visible w-full -mt-8 animated-text-fadeout">
+            <div className="mb-2 relative h-28 overflow-visible w-full -mt-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="relative w-full">
                   {/* Animated words that cycle through - reordered sequence */}
@@ -441,28 +441,24 @@ const NewLandingPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Dynamic "is/are on the line." text positioned on the right - with explicit positioning */}
-                  <div className="absolute" style={{right: '10%', top: '0', zIndex: 10, pointerEvents: 'none'}}>
-                    <div>
-                      <span className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white static-text-is italic text-right">
-                        is on the line.
-                      </span>
-                      <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white static-text-are italic text-right">
-                        are on the line.
-                      </span>
+                  {/* Direct text for "is/are on the line" - positioned absolutely */}
+                  <div className="absolute" style={{right: '10%', top: '0', zIndex: 10}}>
+                    <div className="reputation-line text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white italic text-right">
+                      is on the line.
+                    </div>
+                    <div className="customer-line text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold text-white italic text-right">
+                      is on the line.
+                    </div>
+                    <div className="consequences-line text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white italic text-right">
+                      are on the line.
                     </div>
                   </div>
                   
-                  {/* Full-width tagline that appears after animation sequence with inline animation */}
+                  {/* Direct tagline with simple fade-in */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 final-tagline text-center leading-relaxed"
-                       style={{
-                         animation: 'fadeInFinal 4s ease-out 10.8s forwards',
-                         opacity: 0,
-                         transform: 'perspective(500px) translateZ(-300px) scale(0.7)'
-                       }}>
+                    <div className="tagline text-2xl sm:text-3xl lg:text-5xl xl:text-6xl italic text-gray-300 text-center leading-relaxed">
                       Smart isn't the same as trustworthy.
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
