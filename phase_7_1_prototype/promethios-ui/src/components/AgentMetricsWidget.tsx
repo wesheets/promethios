@@ -205,9 +205,32 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
   };
 
   const downloadCompleteGovernanceHistory = async () => {
+    if (!agentId) return;
+    
     try {
       // Get comprehensive governance data
       const governanceData = await realGovernanceIntegration.getGovernanceDataForDownload(agentId);
+      
+      // 🛡️ Get constitutional governance policy data
+      let constitutionalGovernanceData = null;
+      try {
+        const { useAuth } = await import('../context/AuthContext');
+        const currentUser = useAuth().currentUser;
+        if (currentUser?.uid) {
+          const policyAssignments = await realGovernanceIntegration.getAgentPolicyAssignments(agentId, currentUser.uid);
+          constitutionalGovernanceData = {
+            activePolicies: policyAssignments.length,
+            policyAssignments,
+            totalViolations: policyAssignments.reduce((sum, assignment) => sum + (assignment.violationCount || 0), 0),
+            averageCompliance: policyAssignments.length > 0 
+              ? policyAssignments.reduce((sum, assignment) => sum + (assignment.complianceRate || 1.0), 0) / policyAssignments.length 
+              : 1.0,
+            lastPolicyCheck: new Date().toISOString()
+          };
+        }
+      } catch (error) {
+        console.warn('Could not fetch constitutional governance data for download:', error);
+      }
       
       // Get chat history if available
       let chatHistory = null;
@@ -233,6 +256,7 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
           policyViolations: agentMetrics.policyViolations
         },
         governanceData,
+        constitutionalGovernance: constitutionalGovernanceData,
         chatHistory: chatHistory ? {
           messageCount: chatHistory.messageCount,
           sessionCount: chatHistory.governanceMetrics.sessionCount,
@@ -242,13 +266,13 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             sender: msg.sender,
             contentLength: msg.content.length,
             governanceData: msg.governanceData,
-            shadowGovernanceData: msg.shadowGovernanceData
+            shadowGovernanceData: msg.shadowGovernanceData,
+            constitutionalEnforcement: msg.governanceData?.constitutionalEnforcement
           }))
         } : null,
         downloadInfo: {
           timestamp: new Date().toISOString(),
-          dataType: 'complete_governance_transparency_report',
-          format: 'json',
+          dataType: 'complete_governance_transparency_report',    format: 'json',
           description: 'Complete transparency report including real-time metrics, governance data, telemetry, self-awareness prompts, and chat history',
           dataSource: 'Promethios Governance Backend + Firebase Storage',
           confidenceLevel: governanceData?.transparency?.confidenceLevel || 0.85

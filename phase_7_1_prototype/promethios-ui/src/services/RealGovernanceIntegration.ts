@@ -38,7 +38,7 @@ export interface SelfAwarenessPrompt {
 }
 
 export class RealGovernanceIntegration {
-  private baseUrl = 'https://api.promethios.com/governance'; // Replace with actual backend URL
+  private baseUrl = 'https://promethios-phase-7-1-api.onrender.com/api'; // Constitutional governance backend
   private telemetryCache = new Map<string, AgentTelemetryData>();
   private lastSyncTime = new Map<string, number>();
 
@@ -55,12 +55,12 @@ export class RealGovernanceIntegration {
         return this.telemetryCache.get(agentId)!;
       }
 
-      // Fetch from backend
-      const response = await fetch(`${this.baseUrl}/agents/${agentId}/telemetry`, {
+      // Fetch from constitutional governance backend
+      const response = await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getAuthToken()}`
+          'x-agent-id': agentId
         }
       });
 
@@ -84,6 +84,81 @@ export class RealGovernanceIntegration {
   }
 
   /**
+   * Get constitutional governance policy assignments for an agent
+   */
+  async getAgentPolicyAssignments(agentId: string, userId: string): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/policy-assignments?agentId=${agentId}&userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-agent-id': agentId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const assignments = await response.json();
+      console.log(`📋 Retrieved ${assignments.length} policy assignments for agent ${agentId}`);
+      return assignments;
+    } catch (error) {
+      console.warn(`Failed to fetch policy assignments for agent ${agentId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Enforce constitutional governance policies on agent request
+   */
+  async enforceConstitutionalPolicies(agentId: string, userId: string, requestContent: string, context: any = {}): Promise<{
+    allowed: boolean;
+    violations: any[];
+    action: string;
+    blockingViolation?: any;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/policy-enforcement/enforce`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-agent-id': agentId
+        },
+        body: JSON.stringify({
+          agentId,
+          userId,
+          request: {
+            content: requestContent,
+            timestamp: new Date().toISOString()
+          },
+          context: {
+            ...context,
+            metrics: await this.getAgentTelemetry(agentId)
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const enforcement = await response.json();
+      console.log(`🛡️ Constitutional governance enforcement for ${agentId}:`, enforcement);
+      return enforcement;
+    } catch (error) {
+      console.warn(`Constitutional governance enforcement failed for agent ${agentId}:`, error);
+      // Fail open for safety - allow request but log the failure
+      return {
+        allowed: true,
+        violations: [],
+        action: 'allow',
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Update agent telemetry based on interaction
    */
   async updateAgentTelemetry(agentId: string, interactionData: {
@@ -93,26 +168,26 @@ export class RealGovernanceIntegration {
     responseTime: number;
   }): Promise<void> {
     try {
-      await fetch(`${this.baseUrl}/agents/${agentId}/telemetry`, {
+      await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getAuthToken()}`
+          'x-agent-id': agentId
         },
         body: JSON.stringify({
-          ...interactionData,
+          agentId,
+          interactionData,
           timestamp: new Date().toISOString()
         })
       });
 
-      // Clear cache to force refresh
+      console.log(`📊 Updated constitutional governance telemetry for agent ${agentId}`);
+      
+      // Clear cache to force refresh on next get
       this.telemetryCache.delete(agentId);
       this.lastSyncTime.delete(agentId);
     } catch (error) {
       console.warn(`Failed to update telemetry for agent ${agentId}:`, error);
-      
-      // Update local cache with simulated improvements
-      this.updateLocalTelemetryCache(agentId, interactionData);
     }
   }
 

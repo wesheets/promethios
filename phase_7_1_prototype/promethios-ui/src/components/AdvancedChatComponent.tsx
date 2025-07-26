@@ -2177,6 +2177,68 @@ useEffect(() => {
       return;
     }
 
+    // 🛡️ CONSTITUTIONAL GOVERNANCE ENFORCEMENT - Check user input before processing
+    if (selectedAgent && currentUser?.uid && governanceEnabled) {
+      try {
+        console.log('🛡️ Enforcing constitutional governance on user input...');
+        const enforcement = await realGovernanceIntegration.enforceConstitutionalPolicies(
+          selectedAgent.identity.id,
+          currentUser.uid,
+          inputValue,
+          {
+            attachments: attachments.map(att => ({ type: att.type, name: att.name })),
+            timestamp: new Date().toISOString(),
+            messageCount,
+            sessionDuration: sessionStartTime ? Date.now() - sessionStartTime.getTime() : 0
+          }
+        );
+
+        if (!enforcement.allowed) {
+          // Constitutional governance blocked the request
+          const violationMessage: ChatMessage = {
+            id: `msg_${Date.now()}_governance_block`,
+            content: `🛡️ **Constitutional Governance Alert**\n\nYour request was blocked by constitutional policies:\n\n${enforcement.blockingViolation?.rule?.name || 'Policy violation detected'}\n\n**Reason:** ${enforcement.blockingViolation?.rule?.condition || 'Request violates governance constraints'}\n\n**Action:** ${enforcement.action}\n\nPlease rephrase your request to comply with governance policies.`,
+            sender: 'system',
+            timestamp: new Date(),
+            governanceData: {
+              violations: enforcement.violations,
+              action: enforcement.action,
+              blocked: true,
+              constitutionalEnforcement: true
+            }
+          };
+
+          setMessages(prev => [...prev, violationMessage]);
+          setInputValue(''); // Clear the blocked input
+          setAttachments([]);
+          console.log('🛡️ Constitutional governance blocked user request:', enforcement);
+          return; // Stop processing the blocked request
+        } else if (enforcement.violations.length > 0) {
+          // Constitutional governance allows but with warnings
+          const warningMessage: ChatMessage = {
+            id: `msg_${Date.now()}_governance_warning`,
+            content: `⚠️ **Constitutional Governance Warning**\n\n${enforcement.violations.length} policy concern(s) detected but request allowed:\n\n${enforcement.violations.map(v => `• ${v.rule?.name}: ${v.rule?.condition}`).join('\n')}\n\nProceeding with caution...`,
+            sender: 'system',
+            timestamp: new Date(),
+            governanceData: {
+              violations: enforcement.violations,
+              action: enforcement.action,
+              blocked: false,
+              constitutionalEnforcement: true
+            }
+          };
+
+          setMessages(prev => [...prev, warningMessage]);
+          console.log('🛡️ Constitutional governance warning for user request:', enforcement);
+        } else {
+          console.log('🛡️ Constitutional governance approved user request');
+        }
+      } catch (error) {
+        console.warn('Constitutional governance enforcement failed:', error);
+        // Continue with request but log the failure
+      }
+    }
+
     const userMessage: ChatMessage = {
       id: `msg_${Date.now()}_user`,
       content: inputValue || '(File attachments only)',

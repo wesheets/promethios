@@ -199,6 +199,36 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       } catch (telemetryError) {
         console.warn('Could not fetch telemetry data, using existing metrics:', telemetryError);
       }
+
+      // 🛡️ Enhance with constitutional governance policy data
+      try {
+        if (currentUser?.uid) {
+          const policyAssignments = await realGovernanceIntegration.getAgentPolicyAssignments(agentId, currentUser.uid);
+          if (policyAssignments && updatedProfile) {
+            // Add constitutional governance data to metrics
+            updatedProfile.metrics.constitutionalGovernance = {
+              activePolicies: policyAssignments.length,
+              policyAssignments: policyAssignments.map(assignment => ({
+                policyId: assignment.policyId,
+                policyName: assignment.policyName,
+                complianceRate: assignment.complianceRate || 1.0,
+                violationCount: assignment.violationCount || 0,
+                assignedAt: assignment.assignedAt,
+                lastViolation: assignment.lastViolation
+              })),
+              totalViolations: policyAssignments.reduce((sum, assignment) => sum + (assignment.violationCount || 0), 0),
+              averageCompliance: policyAssignments.length > 0 
+                ? policyAssignments.reduce((sum, assignment) => sum + (assignment.complianceRate || 1.0), 0) / policyAssignments.length 
+                : 1.0,
+              lastPolicyCheck: new Date().toISOString()
+            };
+            
+            console.log(`🛡️ Added constitutional governance data: ${policyAssignments.length} policies, ${updatedProfile.metrics.constitutionalGovernance.totalViolations} violations`);
+          }
+        }
+      } catch (policyError) {
+        console.warn('Could not fetch constitutional governance policy data:', policyError);
+      }
       
       if (updatedProfile) {
         setProfile(updatedProfile);
