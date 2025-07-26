@@ -127,21 +127,34 @@ export class GovernanceService {
   // Initialize governance session for an agent
   async initializeSession(agent: AgentProfile): Promise<GovernanceSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions`, {
+      const requestUrl = `${this.baseUrl}/sessions`;
+      const requestBody = {
+        agentId: agent.identity.id,
+        agentName: agent.identity.name,
+        governancePolicies: agent.governancePolicies || [],
+        trustMetrics: agent.trustMetrics || {}
+      };
+
+      console.log('🔧 GOVERNANCE DEBUG: Initializing session');
+      console.log('🔧 Request URL:', requestUrl);
+      console.log('🔧 Request body:', requestBody);
+      console.log('🔧 Base URL:', this.baseUrl);
+
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          agentId: agent.identity.id,
-          agentName: agent.identity.name,
-          governancePolicies: agent.governancePolicies || [],
-          trustMetrics: agent.trustMetrics || {}
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('🔧 Response status:', response.status);
+      console.log('🔧 Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error(`Failed to initialize governance session: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('🔧 Response error text:', errorText);
+        throw new Error(`Failed to initialize governance session: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const session = await response.json();
