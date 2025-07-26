@@ -2024,6 +2024,7 @@ useEffect(() => {
             message: messageContent,
             agent_name: agent.agentName || agent.identity?.name,
             agent_description: agent.description || agent.identity?.description,
+            governance_enabled: governanceEnabled, // Enable governance for all agents
             model: selectedModel,
             conversation_history: historyMessages,
             attachments: attachments.map(att => ({
