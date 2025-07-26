@@ -14,33 +14,54 @@ const sessionManager = require('../services/sessionManager');
 router.post('/', async (req, res) => {
   try {
     const {
+      // Support both old format (systemId, systemName, userId) and new format (agentId, agentName)
       systemId,
       systemName,
       userId,
+      agentId,
+      agentName,
+      governancePolicies = [],
+      trustMetrics = {},
       options = {}
     } = req.body;
 
+    // Use agentId/agentName if provided, otherwise fall back to systemId/systemName
+    const finalSystemId = agentId || systemId;
+    const finalSystemName = agentName || systemName;
+    const finalUserId = userId || 'anonymous'; // Default userId for agent sessions
+
     // Validate required fields
-    if (!systemId || !systemName || !userId) {
+    if (!finalSystemId || !finalSystemName) {
       return res.status(400).json({
-        error: 'Missing required fields: systemId, systemName, userId'
+        error: 'Missing required fields: agentId/systemId and agentName/systemName are required'
       });
     }
 
-    // Create session
-    const session = sessionManager.createSession(systemId, systemName, userId, options);
+    // Create session with governance data
+    const sessionOptions = {
+      ...options,
+      governancePolicies,
+      trustMetrics
+    };
+
+    const session = sessionManager.createSession(finalSystemId, finalSystemName, finalUserId, sessionOptions);
 
     res.status(201).json({
       success: true,
       session: {
         id: session.id,
+        sessionId: session.id, // Also provide sessionId for frontend compatibility
         systemId: session.systemId,
         systemName: session.systemName,
         userId: session.userId,
         status: session.status,
         createdAt: session.createdAt,
+        startTime: session.createdAt, // Also provide startTime for frontend compatibility
         messageLimit: session.messageLimit,
-        governanceEnabled: session.governanceEnabled
+        governanceEnabled: session.governanceEnabled,
+        messageCount: 0,
+        violations: [],
+        currentTrustScore: 85 // Default trust score
       }
     });
 
