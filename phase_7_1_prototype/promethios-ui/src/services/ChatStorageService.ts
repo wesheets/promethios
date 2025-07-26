@@ -1,5 +1,6 @@
 import { UserAgentStorageService, AgentProfile } from './UserAgentStorageService';
 import { governanceService, GovernanceMetrics, GovernanceSession } from './GovernanceService';
+import { UnifiedStorageService } from './UnifiedStorageService';
 
 export interface ChatMessage {
   id: string;
@@ -64,11 +65,13 @@ export interface ChatSession {
 
 export class ChatStorageService {
   private userAgentService: UserAgentStorageService;
+  private unifiedStorage: UnifiedStorageService;
   private currentUserId: string | null = null;
   private currentSession: ChatSession | null = null;
 
   constructor() {
     this.userAgentService = new UserAgentStorageService();
+    this.unifiedStorage = UnifiedStorageService.getInstance();
   }
 
   setCurrentUser(userId: string) {
@@ -116,13 +119,13 @@ export class ChatStorageService {
 
     try {
       const chatHistoryKey = `chat_history_${agentId}`;
-      const storedHistory = localStorage.getItem(`${this.currentUserId}_${chatHistoryKey}`);
+      const history = await this.unifiedStorage.get('chats', chatHistoryKey);
       
-      if (!storedHistory) {
+      if (!history) {
         return null;
       }
 
-      const history = JSON.parse(storedHistory);
+      console.log(`✅ Chat history loaded from Firebase for agent: ${agentId}`);
       
       // Convert date strings back to Date objects
       return {
@@ -187,14 +190,18 @@ export class ChatStorageService {
         this.currentSession.messageCount++;
       }
 
-      // Save to localStorage (in production, this would be a backend API)
+      // Save to Firebase via UnifiedStorageService (persistent for testing)
       const chatHistoryKey = `chat_history_${agentId}`;
-      localStorage.setItem(
-        `${this.currentUserId}_${chatHistoryKey}`, 
-        JSON.stringify(chatHistory)
-      );
+      
+      try {
+        await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+        console.log(`✅ Chat history saved to Firebase for agent: ${agentId}`);
+      } catch (storageError: any) {
+        console.error('Failed to save chat history to Firebase:', storageError);
+        // Don't throw error - continue with backend sync as fallback
+      }
 
-      // Also save to backend if available
+      // Also save to backend if available (additional backup)
       await this.syncToBackend(chatHistory);
 
     } catch (error) {
@@ -232,10 +239,8 @@ export class ChatStorageService {
 
       // Save updated history
       const chatHistoryKey = `chat_history_${agentId}`;
-      localStorage.setItem(
-        `${this.currentUserId}_${chatHistoryKey}`, 
-        JSON.stringify(chatHistory)
-      );
+      await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+      console.log(`✅ Governance metrics updated and saved to Firebase for agent: ${agentId}`);
 
       await this.syncToBackend(chatHistory);
 
@@ -278,7 +283,8 @@ export class ChatStorageService {
 
     try {
       const chatHistoryKey = `chat_history_${agentId}`;
-      localStorage.removeItem(`${this.currentUserId}_${chatHistoryKey}`);
+      await this.unifiedStorage.delete('chats', chatHistoryKey);
+      console.log(`✅ Chat history cleared from Firebase for agent: ${agentId}`);
       
       // Also clear from backend
       await this.clearFromBackend(agentId);
@@ -307,10 +313,8 @@ export class ChatStorageService {
         chatHistory.governanceMetrics.lastSessionDate = new Date();
         
         const chatHistoryKey = `chat_history_${this.currentSession.agentId}`;
-        localStorage.setItem(
-          `${this.currentUserId}_${chatHistoryKey}`, 
-          JSON.stringify(chatHistory)
-        );
+        await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+        console.log(`✅ Session ended and saved to Firebase for agent: ${this.currentSession.agentId}`);
 
         await this.syncToBackend(chatHistory);
       }
