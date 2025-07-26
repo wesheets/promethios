@@ -1629,10 +1629,10 @@ useEffect(() => {
   // Initialize governance session when governance is enabled
   useEffect(() => {
     const initializeGovernanceSession = async () => {
-      if (governanceEnabled && currentUser?.uid && !currentGovernanceSession) {
+      if (governanceEnabled && currentUser?.uid && selectedAgent && !currentGovernanceSession) {
         try {
-          console.log('Initializing governance session...');
-          const session = await governanceService.createSession(currentUser.uid);
+          console.log('Initializing governance session for agent:', selectedAgent.identity.name);
+          const session = await governanceService.initializeSession(selectedAgent);
           setCurrentGovernanceSession(session);
           console.log('Governance session initialized:', session);
         } catch (error) {
@@ -1642,7 +1642,7 @@ useEffect(() => {
     };
 
     initializeGovernanceSession();
-  }, [governanceEnabled, currentUser?.uid, currentGovernanceSession]);
+  }, [governanceEnabled, currentUser?.uid, selectedAgent, currentGovernanceSession]);
 
   // Refresh governance metrics periodically based on chat mode
   useEffect(() => {
