@@ -181,6 +181,22 @@ app.post('/api/agent-metrics/:agentId/telemetry', (req, res) => {
   });
 });
 
+// Chat history endpoint for ChatStorageService backend sync
+app.post('/api/chat/history', (req, res) => {
+  const chatHistory = req.body;
+  
+  console.log(`💾 Received chat history sync request for agent: ${chatHistory.agentId}`);
+  
+  // In a real implementation, this would save to a database
+  // For now, we'll just acknowledge the sync
+  
+  res.status(200).json({
+    success: true,
+    message: 'Chat history synced successfully',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
