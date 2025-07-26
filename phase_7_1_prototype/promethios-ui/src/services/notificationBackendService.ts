@@ -118,6 +118,7 @@ class NotificationBackendService {
               evidence: event.evidence
             }
           });
+          }
         }
       }
 
