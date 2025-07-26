@@ -1893,11 +1893,17 @@ useEffect(() => {
           }
         ];
 
+        // Validate and clean API key to prevent encoding issues
+        const cleanApiKey = apiKey?.trim().replace(/[^\x20-\x7E]/g, ''); // Remove non-ASCII characters
+        if (!cleanApiKey) {
+          throw new Error('Invalid API key: contains non-ASCII characters or is empty');
+        }
+
         response = await fetch(apiEndpoint || 'https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
+            'x-api-key': cleanApiKey,
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
