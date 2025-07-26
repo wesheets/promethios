@@ -37,7 +37,7 @@ export interface SelfAwarenessPrompt {
   timestamp: string;
 }
 
-class RealGovernanceIntegration {
+export class RealGovernanceIntegration {
   private baseUrl = 'https://api.promethios.com/governance'; // Replace with actual backend URL
   private telemetryCache = new Map<string, AgentTelemetryData>();
   private lastSyncTime = new Map<string, number>();
