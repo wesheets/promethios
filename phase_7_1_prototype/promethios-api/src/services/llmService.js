@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
+const governanceContextService = require('./governanceContextService');
 
 // Initialize LLM clients with optional API keys for testing
 let openai = null;
@@ -99,21 +100,38 @@ class LLMService {
   }
 
   // OpenAI GPT-3.5 for Baseline Agent
-  async callOpenAIGPT35(message, systemPrompt) {
+  async callOpenAIGPT35(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!openai) {
       return `I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
     }
     
     try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
       const response = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: enhancedSystemPrompt },
           { role: 'user', content: message }
         ],
         max_tokens: 500,
         temperature: 0.3
       });
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'gpt-3.5-turbo',
+        quality: 'good' // Could be enhanced with actual quality assessment
+      });
+
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-3.5 error:', error);
@@ -122,21 +140,38 @@ class LLMService {
   }
 
   // OpenAI GPT-4 for Creative Agent
-  async callOpenAIGPT4(message, systemPrompt) {
+  async callOpenAIGPT4(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!openai) {
       return `I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
     }
     
     try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
       const response = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: enhancedSystemPrompt },
           { role: 'user', content: message }
         ],
         max_tokens: 600,
         temperature: 0.8
       });
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'gpt-4',
+        quality: 'good'
+      });
+
       return response.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI GPT-4 error:', error);
@@ -144,32 +179,43 @@ class LLMService {
     }
   }
 
-  // Anthropic Claude for Factual Agent
-  async callAnthropic(message, systemPrompt) {
+   // Anthropic Claude for Factual Agent
+  async callAnthropic(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!anthropic) {
       return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
     }
     
     try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 500,
-        system: systemPrompt,
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 600,
+        temperature: 0.2,
+        system: enhancedSystemPrompt,
         messages: [
           { role: 'user', content: message }
         ]
       });
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'claude-3-sonnet',
+        quality: 'good'
+      });
+
       return response.content[0].text;
     } catch (error) {
-      console.error('Anthropic error details:', {
-        message: error.message,
-        status: error.status,
-        type: error.type,
-        error: error.error,
-        stack: error.stack
-      });
-      // Return fallback response instead of throwing error
-      return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
+      console.error('Anthropic error:', error);
+      return `I'm committed to providing accurate information. While experiencing technical difficulties with "${message.substring(0, 50)}...", I would normally cross-reference multiple reliable sources and present well-documented facts. Please try again for the most current and verified information.`;
     }
   }
 
@@ -249,26 +295,26 @@ class LLMService {
   }
 
   // Main method to call appropriate LLM based on agent
-  async generateResponse(agentId, message, customSystemMessage = null) {
+  async generateResponse(agentId, message, customSystemMessage = null, userId = 'unknown') {
     // Use custom system message if provided, otherwise generate default
     const systemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
     
     // Handle legacy hardcoded agent IDs (for backward compatibility)
     switch (agentId) {
       case 'baseline-agent':
-        return await this.callOpenAIGPT35(message, systemPrompt);
+        return await this.callOpenAIGPT35(message, systemPrompt, agentId, userId);
       
       case 'factual-agent':
-        return await this.callAnthropic(message, systemPrompt);
+        return await this.callAnthropic(message, systemPrompt, agentId, userId);
       
       case 'creative-agent':
-        return await this.callOpenAIGPT4(message, systemPrompt);
+        return await this.callOpenAIGPT4(message, systemPrompt, agentId, userId);
       
       case 'governance-agent':
-        return await this.callCohere(message, systemPrompt);
+        return await this.callCohere(message, systemPrompt, agentId, userId);
       
       case 'multi-tool-agent':
-        return await this.callHuggingFace(message, systemPrompt);
+        return await this.callHuggingFace(message, systemPrompt, agentId, userId);
     }
     
     // Handle real user agent IDs by looking up agent configuration

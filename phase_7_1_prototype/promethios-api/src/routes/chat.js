@@ -200,7 +200,7 @@ router.post('/', async (req, res) => {
 
                 // If governance approves, generate LLM response
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
-                    response = await llmService.generateResponse(agent_id, message, system_message);
+                    response = await llmService.generateResponse(agent_id, message, system_message, userId);
                     
                     // Apply governance filtering for high-risk content
                     if (governance_metrics.risk_level === 'high') {
@@ -214,7 +214,7 @@ router.post('/', async (req, res) => {
             } catch (governance_error) {
                 console.error('Governance error:', governance_error);
                 // Fallback to direct LLM call with warning
-                response = await llmService.generateResponse(agent_id, message, system_message);
+                response = await llmService.generateResponse(agent_id, message, system_message, userId);
                 const governanceWarning = "[Governance Warning: System temporarily unavailable, operating in fallback mode] ";
                 response = governanceWarning + response;
                 governance_metrics = {
@@ -228,7 +228,7 @@ router.post('/', async (req, res) => {
 
         } else {
             // Direct LLM call without governance
-            response = await llmService.generateResponse(agent_id, message, system_message);
+            response = await llmService.generateResponse(agent_id, message, system_message, userId);
             governance_metrics = {
                 trust_score: null,
                 compliance_score: null,
