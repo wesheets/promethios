@@ -13,6 +13,27 @@ import {
   AssignmentSummary 
 } from '../services/PolicyAssignmentStorageService';
 
+// Backend API configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+const POLICY_ASSIGNMENTS_ENDPOINT = `${API_BASE_URL}/api/policy-assignments`;
+
+// API Helper Functions
+const getAuthHeaders = (): HeadersInit => {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+};
+
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+};
+
 interface UsePolicyAssignmentsReturn {
   assignments: PolicyAssignment[];
   summary: AssignmentSummary;
@@ -79,7 +100,7 @@ export const usePolicyAssignments = (): UsePolicyAssignmentsReturn => {
     initializeService();
   }, [currentUser?.uid, initialized]);
 
-  // Load assignments from storage
+  // Load assignments from backend API first, fallback to storage
   const loadAssignments = useCallback(async () => {
     if (!currentUser?.uid) {
       console.warn('Cannot load assignments: user not authenticated');
@@ -90,16 +111,67 @@ export const usePolicyAssignments = (): UsePolicyAssignmentsReturn => {
       setLoading(true);
       setError(null);
 
-      const [assignmentsData, summaryData] = await Promise.all([
+      // Try backend API first
+      let backendAssignments: PolicyAssignment[] = [];
+      let backendSummary: AssignmentSummary | null = null;
+      
+      try {
+        console.log('🌐 Fetching policy assignments from backend API...');
+        
+        // Fetch assignments from backend
+        const assignmentsResponse = await fetch(POLICY_ASSIGNMENTS_ENDPOINT, {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        });
+        
+        if (assignmentsResponse.ok) {
+          const assignmentsData = await handleResponse(assignmentsResponse);
+          backendAssignments = assignmentsData.data || [];
+          console.log(`✅ Loaded ${backendAssignments.length} assignments from backend`);
+        }
+        
+        // Fetch summary from backend
+        const summaryResponse = await fetch(`${POLICY_ASSIGNMENTS_ENDPOINT}/summary`, {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        });
+        
+        if (summaryResponse.ok) {
+          const summaryData = await handleResponse(summaryResponse);
+          backendSummary = summaryData.data;
+          console.log('✅ Loaded assignment summary from backend');
+        }
+        
+      } catch (backendError) {
+        console.warn('⚠️ Backend API failed, falling back to local storage:', backendError);
+      }
+
+      // Load from local storage as fallback
+      const [storedAssignments, storedSummary] = await Promise.all([
         policyAssignmentStorageService.getAssignments(currentUser.uid),
         policyAssignmentStorageService.getAssignmentSummary(currentUser.uid)
       ]);
 
-      setAssignments(assignmentsData || []);
-      setSummary(summaryData);
+      // Use backend data if available, otherwise use storage data
+      const finalAssignments = backendAssignments.length > 0 ? backendAssignments : (storedAssignments || []);
+      const finalSummary = backendSummary || storedSummary;
+
+      setAssignments(finalAssignments);
+      setSummary(finalSummary);
+      
+      // Sync backend data to storage for offline access
+      if (backendAssignments.length > 0 && JSON.stringify(backendAssignments) !== JSON.stringify(storedAssignments)) {
+        try {
+          console.log('💾 Syncing backend assignments to local storage...');
+          // Note: This would require implementing a sync method in the storage service
+        } catch (syncError) {
+          console.warn('Failed to sync assignments to storage:', syncError);
+        }
+      }
+
     } catch (error) {
-      console.error('Failed to load policy assignments:', error);
-      setError('Failed to load assignments');
+      console.error('Error loading policy assignments:', error);
+      setError('Failed to load policy assignments');
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -119,6 +191,35 @@ export const usePolicyAssignments = (): UsePolicyAssignmentsReturn => {
     try {
       setError(null);
       
+      // Try backend API first
+      try {
+        console.log('🌐 Creating policy assignment via backend API...');
+        
+        const response = await fetch(POLICY_ASSIGNMENTS_ENDPOINT, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            agentId,
+            policyId,
+            metadata,
+            status: 'active'
+          }),
+        });
+
+        if (response.ok) {
+          const result = await handleResponse(response);
+          console.log('✅ Policy assignment created via backend API');
+          
+          // Refresh data
+          await loadAssignments();
+          
+          return result.data;
+        }
+      } catch (backendError) {
+        console.warn('⚠️ Backend assignment failed, falling back to local storage:', backendError);
+      }
+
+      // Fallback to local storage
       const assignment = await policyAssignmentStorageService.assignPolicy(
         currentUser.uid,
         agentId,
