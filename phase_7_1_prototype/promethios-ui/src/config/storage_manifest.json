@@ -87,6 +87,17 @@
     "compliance": [],
     "description": "Deployment results, status tracking, and deployment outcome data"
   },
+  "chats": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Legacy chat storage for authentication compatibility and existing user data"
+  },
   "singleAgentChats": {
     "provider": "firebase",
     "fallback": "localStorage",
