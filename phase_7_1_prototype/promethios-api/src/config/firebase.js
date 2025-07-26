@@ -29,6 +29,9 @@ if (!admin.apps.length) {
           serviceAccountKey = serviceAccountKey.slice(1, -1);
         }
         
+        // Try to clean up common JSON formatting issues
+        serviceAccountKey = serviceAccountKey.replace(/\n/g, '').replace(/\r/g, '').trim();
+        
         // Parse the service account
         const serviceAccount = JSON.parse(serviceAccountKey);
         console.log('🔑 Service account parsed successfully, project_id:', serviceAccount.project_id);
@@ -44,7 +47,13 @@ if (!admin.apps.length) {
       } catch (parseError) {
         console.error('❌ Failed to parse service account key:', parseError.message);
         console.error('❌ Service account key preview:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY.substring(0, 100) + '...');
-        throw parseError;
+        
+        // Don't throw the error - fall through to fallback initialization
+        console.log('🔄 Falling back to basic initialization without service account');
+        admin.initializeApp({
+          projectId: 'promethios'
+        });
+        console.log('🔥 Firebase Admin SDK initialized with basic configuration');
       }
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       console.log('🔑 Using application default credentials');
