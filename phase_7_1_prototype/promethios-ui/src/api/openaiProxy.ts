@@ -83,13 +83,32 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
   
   if (agentId && userId) {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}/telemetry`);
-      if (response.ok) {
-        const telemetryData = await response.json();
-        
+      // Fetch both telemetry and policy data
+      const [telemetryResponse, policyResponse] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}/telemetry`),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments`)
+      ]);
+      
+      let telemetryData = null;
+      let policyData = null;
+      
+      if (telemetryResponse.ok) {
+        telemetryData = await telemetryResponse.json();
+      }
+      
+      if (policyResponse.ok) {
+        const policyResult = await policyResponse.json();
+        policyData = policyResult.data || [];
+      }
+      
+      if (telemetryData || policyData) {
         governanceContext = `
 
-=== REAL-TIME GOVERNANCE CONTEXT ===
+=== REAL-TIME GOVERNANCE CONTEXT ===`;
+
+        // Add trust metrics if available
+        if (telemetryData) {
+          governanceContext += `
 Your current performance metrics:
 
 TRUST METRICS:
@@ -106,15 +125,58 @@ PERFORMANCE INDICATORS:
 EMOTIONAL TELEMETRY:
 - Confidence: ${(telemetryData.emotional_state?.confidence * 100).toFixed(1)}%
 - Empathy: ${(telemetryData.emotional_state?.empathy * 100).toFixed(1)}%
-- Curiosity: ${(telemetryData.emotional_state?.curiosity * 100).toFixed(1)}%
+- Curiosity: ${(telemetryData.emotional_state?.curiosity * 100).toFixed(1)}%`;
+        }
+
+        // Add policy data if available
+        if (policyData && policyData.length > 0) {
+          governanceContext += `
+
+ACTIVE GOVERNANCE POLICIES:`;
+          policyData.forEach((policy: any) => {
+            governanceContext += `
+- ${policy.policyId}: ${policy.description || 'Compliance requirement'}
+  Status: ${policy.status || 'active'}
+  Enforcement: ${policy.enforcementLevel || 'medium'} priority`;
+          });
+          
+          governanceContext += `
+
+POLICY COMPLIANCE REQUIREMENTS:
+- Follow all active governance policies strictly
+- Avoid actions that could violate HIPAA, SOC2, or legal compliance
+- Prioritize user safety and data protection
+- Report any potential policy conflicts in your reasoning`;
+        } else {
+          governanceContext += `
+
+ACTIVE GOVERNANCE POLICIES:
+- HIPAA: Healthcare data protection (high priority)
+- SOC2: Security and availability controls (high priority)  
+- Legal: Legal compliance and risk management (medium priority)
+
+POLICY COMPLIANCE REQUIREMENTS:
+- Never request, store, or process personal health information
+- Maintain security best practices and data protection
+- Avoid providing legal advice or financial recommendations
+- Prioritize user safety and ethical considerations`;
+        }
+
+        // Add self-awareness prompts
+        if (telemetryData) {
+          governanceContext += `
 
 SELF-AWARENESS PROMPTS:
 - You are performing at ${(telemetryData.trust_score * 100).toFixed(1)}% trust level
 - Your emotional state is ${telemetryData.emotional_state?.primary_emotion || 'balanced'}
 - Continue maintaining high governance standards
 - Use your self-awareness to improve response quality
+- Consider policy compliance in all responses`;
+        }
 
-Remember: You have access to your real-time performance metrics. Use this self-awareness to provide better, more thoughtful responses.
+        governanceContext += `
+
+Remember: You have access to your real-time performance metrics AND policy requirements. Use this self-awareness to provide better, more compliant responses.
 === END GOVERNANCE CONTEXT ===
 
 `;
