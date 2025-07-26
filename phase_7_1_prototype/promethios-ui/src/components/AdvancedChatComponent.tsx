@@ -56,7 +56,7 @@ import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
-import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
+import { AgentMetricsWidget } from './AgentMetricsWidget';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
 
@@ -3769,36 +3769,18 @@ useEffect(() => {
 
         <TabPanel value={sidebarTab} index={0}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+             <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
               Core Metrics
             </Typography>
             
-            <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: 20 }} />
-                  <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary }}>
-                    TRUST SCORE
-                  </Typography>
-                </Box>
-                <Typography variant="h3" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                  {agentMetrics.isInitialized ? `${(agentMetrics.trustScore * 100).toFixed(1)}%` : 
-                   governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? `${governanceMetrics.trustScore.toFixed(1)}%` : 'N/A'}
-                </Typography>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.isInitialized ? (agentMetrics.trustScore * 100) :
-                         governanceEnabled && governanceMetrics && typeof governanceMetrics.trustScore === 'number' ? governanceMetrics.trustScore : 0} 
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: DARK_THEME.success
-                    }
-                  }} 
-                />
-              </CardContent>
-            </Card>
+            {/* Use the dynamic AgentMetricsWidget instead of static metrics */}
+            <AgentMetricsWidget 
+              agentId={selectedAgent?.id || selectedAgent?.agentId || 'unknown'}
+              agentName={selectedAgent?.name || selectedAgent?.identity?.name || 'Unknown Agent'}
+              refreshInterval={5000}
+            />
+          </Box>
+        </TabPanel>
 
             <Card sx={{ bgcolor: DARK_THEME.background, border: `1px solid ${DARK_THEME.border}` }}>
               <CardContent>
