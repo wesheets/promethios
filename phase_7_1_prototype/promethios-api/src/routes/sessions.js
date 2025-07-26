@@ -13,6 +13,10 @@ const sessionManager = require('../services/sessionManager');
  */
 router.post('/', async (req, res) => {
   try {
+    console.log('🔍 Sessions API - Received POST request');
+    console.log('🔍 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 Request headers:', JSON.stringify(req.headers, null, 2));
+
     const {
       // Support both old format (systemId, systemName, userId) and new format (agentId, agentName)
       systemId,
@@ -25,15 +29,40 @@ router.post('/', async (req, res) => {
       options = {}
     } = req.body;
 
+    console.log('🔍 Extracted fields:');
+    console.log('  - systemId:', systemId);
+    console.log('  - systemName:', systemName);
+    console.log('  - userId:', userId);
+    console.log('  - agentId:', agentId);
+    console.log('  - agentName:', agentName);
+    console.log('  - governancePolicies:', governancePolicies);
+    console.log('  - trustMetrics:', trustMetrics);
+
     // Use agentId/agentName if provided, otherwise fall back to systemId/systemName
     const finalSystemId = agentId || systemId;
     const finalSystemName = agentName || systemName;
     const finalUserId = userId || 'anonymous'; // Default userId for agent sessions
 
+    console.log('🔍 Final values:');
+    console.log('  - finalSystemId:', finalSystemId);
+    console.log('  - finalSystemName:', finalSystemName);
+    console.log('  - finalUserId:', finalUserId);
+
     // Validate required fields
     if (!finalSystemId || !finalSystemName) {
+      console.log('❌ Validation failed - missing required fields');
+      console.log('  - finalSystemId present:', !!finalSystemId);
+      console.log('  - finalSystemName present:', !!finalSystemName);
       return res.status(400).json({
-        error: 'Missing required fields: agentId/systemId and agentName/systemName are required'
+        error: 'Missing required fields: agentId/systemId and agentName/systemName are required',
+        debug: {
+          receivedSystemId: systemId,
+          receivedSystemName: systemName,
+          receivedAgentId: agentId,
+          receivedAgentName: agentName,
+          finalSystemId,
+          finalSystemName
+        }
       });
     }
 
@@ -44,9 +73,14 @@ router.post('/', async (req, res) => {
       trustMetrics
     };
 
+    console.log('🔍 Creating session with options:', JSON.stringify(sessionOptions, null, 2));
+
     const session = sessionManager.createSession(finalSystemId, finalSystemName, finalUserId, sessionOptions);
 
-    res.status(201).json({
+    console.log('✅ Session created successfully:', session.id);
+    console.log('🔍 Session details:', JSON.stringify(session, null, 2));
+
+    const responseData = {
       success: true,
       session: {
         id: session.id,
@@ -63,13 +97,23 @@ router.post('/', async (req, res) => {
         violations: [],
         currentTrustScore: 85 // Default trust score
       }
-    });
+    };
+
+    console.log('🔍 Sending response:', JSON.stringify(responseData, null, 2));
+
+    res.status(201).json(responseData);
 
   } catch (error) {
-    console.error('Error creating session:', error);
+    console.error('❌ Error creating session:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Request body that caused error:', JSON.stringify(req.body, null, 2));
     res.status(500).json({
       error: 'Failed to create session',
-      details: error.message
+      details: error.message,
+      debug: {
+        errorType: error.constructor.name,
+        requestBody: req.body
+      }
     });
   }
 });
