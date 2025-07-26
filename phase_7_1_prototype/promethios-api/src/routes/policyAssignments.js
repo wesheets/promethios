@@ -50,11 +50,22 @@ router.get('/', async (req, res) => {
     
     // Execute query with pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const assignments = await PolicyAssignment.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
+    let assignments = await PolicyAssignment.find(query);
+    
+    // Manual sorting since in-memory model doesn't support .sort()
+    assignments.sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      
+      if (sortOrder === 'desc') {
+        return bValue > aValue ? 1 : bValue < aValue ? -1 : 0;
+      } else {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      }
+    });
+    
+    // Manual pagination
+    assignments = assignments.slice(skip, skip + parseInt(limit));
     
     // Get total count for pagination
     const total = await PolicyAssignment.countDocuments(query);
