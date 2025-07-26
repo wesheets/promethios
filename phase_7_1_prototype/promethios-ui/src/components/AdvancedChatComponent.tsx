@@ -46,6 +46,7 @@ import { styled } from '@mui/material/styles';
 import { UserAgentStorageService } from '../services/UserAgentStorageService';
 import { ChatStorageService } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
+import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
 import { NativeAgentMigration } from '../utils/NativeAgentMigration';
 import { VeritasService } from '../services/VeritasService';
