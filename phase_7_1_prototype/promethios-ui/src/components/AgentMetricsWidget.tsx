@@ -204,6 +204,71 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
     }
   };
 
+  const downloadCompleteGovernanceHistory = async () => {
+    try {
+      // Get comprehensive governance data
+      const governanceData = await realGovernanceIntegration.getGovernanceDataForDownload(agentId);
+      
+      // Get chat history if available
+      let chatHistory = null;
+      try {
+        const chatStorageService = new (await import('../services/ChatStorageService')).ChatStorageService();
+        chatHistory = await chatStorageService.loadAgentChatHistory(agentId);
+      } catch (error) {
+        console.warn('Could not load chat history:', error);
+      }
+
+      const completeData = {
+        agentProfile: {
+          agentId,
+          agentName,
+          version,
+          lastUpdated: lastUpdateTime.toISOString()
+        },
+        realTimeMetrics: {
+          trustScore: agentMetrics.trustScore,
+          complianceRate: agentMetrics.complianceRate,
+          responseTime: agentMetrics.responseTime,
+          sessionIntegrity: agentMetrics.sessionIntegrity,
+          policyViolations: agentMetrics.policyViolations
+        },
+        governanceData,
+        chatHistory: chatHistory ? {
+          messageCount: chatHistory.messageCount,
+          sessionCount: chatHistory.governanceMetrics.sessionCount,
+          messages: chatHistory.messages.map(msg => ({
+            id: msg.id,
+            timestamp: msg.timestamp,
+            sender: msg.sender,
+            contentLength: msg.content.length,
+            governanceData: msg.governanceData,
+            shadowGovernanceData: msg.shadowGovernanceData
+          }))
+        } : null,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'complete_governance_transparency_report',
+          format: 'json',
+          description: 'Complete transparency report including real-time metrics, governance data, telemetry, self-awareness prompts, and chat history',
+          dataSource: 'Promethios Governance Backend + Firebase Storage',
+          confidenceLevel: governanceData?.transparency?.confidenceLevel || 0.85
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(completeData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_complete_governance_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download complete governance history:', error);
+    }
+  };
+
   if (agentMetrics.error) {
     return (
       <MetricsCard>
@@ -444,6 +509,19 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
                 }}
               />
             )}
+            <Chip
+              label="📋 Complete Governance History"
+              size="small"
+              onClick={downloadCompleteGovernanceHistory}
+              sx={{
+                backgroundColor: DARK_THEME.warning + '20',
+                color: DARK_THEME.warning,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: DARK_THEME.warning + '30'
+                }
+              }}
+            />
             {isLoadingTelemetry && (
               <Chip
                 label="Loading telemetry..."

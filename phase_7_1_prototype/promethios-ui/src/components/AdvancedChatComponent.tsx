@@ -56,6 +56,7 @@ import { createPromethiosSystemMessage } from '../api/openaiProxy';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
+import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
 
@@ -405,6 +406,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const agentStorageService = new UserAgentStorageService();
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
   const governanceService = useMemo(() => new GovernanceService(), []);
+  const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
 
   // 📊 AGENT METRICS INTEGRATION
   const agentMetrics = useAgentMetrics({
@@ -2550,6 +2552,51 @@ useEffect(() => {
           responseSize: agentResponse.length,
           source: 'advanced-chat-component'
         });
+
+        // 🔄 REAL GOVERNANCE INTEGRATION: Update telemetry and provide feedback loops
+        try {
+          // Update agent telemetry based on this interaction
+          await realGovernanceIntegration.updateAgentTelemetry(selectedAgent.identity.id, {
+            responseQuality: governanceData?.trustScore ? governanceData.trustScore / 100 : 0.85,
+            userSatisfaction: governanceData?.approved ? 0.9 : 0.6,
+            taskComplexity: Math.min(userMessage.content.length / 100, 1.0),
+            responseTime: responseTime
+          });
+
+          // Generate and potentially send self-awareness prompts for long-term improvement
+          const selfAwarenessPrompts = await realGovernanceIntegration.generateSelfAwarenessPrompts(selectedAgent.identity.id);
+          
+          // Send high-priority self-awareness prompts as system messages for agent learning
+          for (const prompt of selfAwarenessPrompts) {
+            if (prompt.priority === 'high') {
+              const selfAwarenessMessage: ChatMessage = {
+                id: `self_awareness_${Date.now()}_${Math.random()}`,
+                content: `🧠 **Self-Awareness Prompt**: ${prompt.message}`,
+                sender: 'system',
+                timestamp: new Date(),
+                agentName: 'Governance System',
+                agentId: 'governance-system',
+                governanceData: {
+                  trustScore: 100,
+                  violations: [],
+                  approved: true,
+                  selfAwarenessPrompt: true,
+                  promptType: prompt.type
+                }
+              };
+              
+              // Add to chat for transparency
+              setMessages(prev => [...prev, selfAwarenessMessage]);
+              
+              // Save to storage
+              await chatStorageService.saveMessage(selfAwarenessMessage, selectedAgent.identity.id);
+            }
+          }
+
+          console.log(`✅ Real governance integration: Updated telemetry and generated ${selfAwarenessPrompts.length} self-awareness prompts for agent ${selectedAgent.identity.id}`);
+        } catch (governanceError) {
+          console.warn('Real governance integration failed, continuing with standard flow:', governanceError);
+        }
         
         // Save agent message to storage
         ensureUserSet();
