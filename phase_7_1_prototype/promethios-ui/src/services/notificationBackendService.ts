@@ -118,8 +118,8 @@ class NotificationBackendService {
               evidence: event.evidence
             }
           });
-          }
         }
+        });
       }
 
       // Sort by creation date (newest first)
