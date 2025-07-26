@@ -8,12 +8,12 @@
 const express = require('express');
 const router = express.Router();
 const PolicyAssignment = require('../models/PolicyAssignment');
-const { authenticateUser } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { validateRequest, assignmentValidation } = require('../middleware/validation');
 const { logActivity } = require('../middleware/logging');
 
 // Apply authentication to all routes
-router.use(authenticateUser);
+router.use(authenticateToken);
 
 /**
  * GET /api/policy-assignments

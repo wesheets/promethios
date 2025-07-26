@@ -8,12 +8,12 @@
 const express = require('express');
 const router = express.Router();
 const PolicyAssignment = require('../models/PolicyAssignment');
-const { authenticateUser } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { activityLogger } = require('../middleware/logging');
 const { enforcementEngine } = require('../middleware/policyEnforcement');
 
 // Apply authentication to all routes
-router.use(authenticateUser);
+router.use(authenticateToken);
 
 /**
  * GET /api/compliance/dashboard
