@@ -119,7 +119,7 @@ export class ChatStorageService {
 
     try {
       const chatHistoryKey = `chat_history_${agentId}`;
-      const history = await this.unifiedStorage.get('chats', chatHistoryKey);
+      const history = await this.unifiedStorage.get('singleAgentChats', chatHistoryKey);
       
       if (!history) {
         return null;
@@ -194,7 +194,7 @@ export class ChatStorageService {
       const chatHistoryKey = `chat_history_${agentId}`;
       
       try {
-        await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+        await this.unifiedStorage.set('singleAgentChats', chatHistoryKey, chatHistory);
         console.log(`✅ Chat history saved to Firebase for agent: ${agentId}`);
       } catch (storageError: any) {
         console.error('Failed to save chat history to Firebase:', storageError);
@@ -239,7 +239,7 @@ export class ChatStorageService {
 
       // Save updated history
       const chatHistoryKey = `chat_history_${agentId}`;
-      await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+      await this.unifiedStorage.set('singleAgentChats', chatHistoryKey, chatHistory);
       console.log(`✅ Governance metrics updated and saved to Firebase for agent: ${agentId}`);
 
       await this.syncToBackend(chatHistory);
@@ -283,7 +283,7 @@ export class ChatStorageService {
 
     try {
       const chatHistoryKey = `chat_history_${agentId}`;
-      await this.unifiedStorage.delete('chats', chatHistoryKey);
+      await this.unifiedStorage.delete('singleAgentChats', chatHistoryKey);
       console.log(`✅ Chat history cleared from Firebase for agent: ${agentId}`);
       
       // Also clear from backend
@@ -313,7 +313,7 @@ export class ChatStorageService {
         chatHistory.governanceMetrics.lastSessionDate = new Date();
         
         const chatHistoryKey = `chat_history_${this.currentSession.agentId}`;
-        await this.unifiedStorage.set('chats', chatHistoryKey, chatHistory);
+        await this.unifiedStorage.set('singleAgentChats', chatHistoryKey, chatHistory);
         console.log(`✅ Session ended and saved to Firebase for agent: ${this.currentSession.agentId}`);
 
         await this.syncToBackend(chatHistory);
