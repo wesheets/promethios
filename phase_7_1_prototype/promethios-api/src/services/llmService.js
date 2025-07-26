@@ -297,7 +297,15 @@ class LLMService {
   // Main method to call appropriate LLM based on agent
   async generateResponse(agentId, message, customSystemMessage = null, userId = 'unknown') {
     // Use custom system message if provided, otherwise generate default
-    const systemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
+    const baseSystemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
+    
+    // 🎯 INJECT GOVERNANCE CONTEXT - This is the missing piece!
+    console.log(`🔧 Injecting governance context for agent ${agentId}, user ${userId}`);
+    const systemPrompt = await governanceContextService.injectGovernanceContext(
+      baseSystemPrompt, 
+      agentId, 
+      userId
+    );
     
     // Handle legacy hardcoded agent IDs (for backward compatibility)
     switch (agentId) {
@@ -354,12 +362,20 @@ class LLMService {
   /**
    * Generate response using full agent configuration object
    */
-  async generateResponseWithAgent(agent, message, customSystemMessage = null) {
+  async generateResponseWithAgent(agent, message, customSystemMessage = null, userId = 'unknown') {
     console.log(`🤖 Generating response for agent: ${agent.name} (${agent.id})`);
     console.log(`🔧 Agent provider: ${agent.provider || 'default'}, model: ${agent.model || 'default'}`);
     
     // Use agent's system prompt or custom message
-    const systemPrompt = customSystemMessage || agent.systemPrompt || this.getSystemPrompt(agent.id);
+    const baseSystemPrompt = customSystemMessage || agent.systemPrompt || this.getSystemPrompt(agent.id);
+    
+    // 🎯 INJECT GOVERNANCE CONTEXT - This is the missing piece!
+    console.log(`🔧 Injecting governance context for agent ${agent.id}, user ${userId}`);
+    const systemPrompt = await governanceContextService.injectGovernanceContext(
+      baseSystemPrompt, 
+      agent.id, 
+      userId
+    );
     
     // Use agent's specified provider or fallback to default behavior
     const provider = agent.provider || 'openai';
