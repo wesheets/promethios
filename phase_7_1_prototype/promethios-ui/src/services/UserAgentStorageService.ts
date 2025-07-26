@@ -299,15 +299,42 @@ export class UserAgentStorageService {
             // Migrate legacy agents that don't have apiDetails
             if (!agentData.apiDetails && (agentData.apiKey || agentData.apiEndpoint || agentData.provider)) {
               console.log('🔧 Migrating legacy agent to include apiDetails:', agentData.identity?.name);
-              agentData.apiDetails = {
-                endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1',
-                key: agentData.apiKey || agentData.key || '',
-                provider: agentData.provider || 'OpenAI',
-                selectedModel: agentData.model || 'gpt-4',
-                selectedCapabilities: agentData.capabilities || [],
-                selectedContextLength: agentData.contextLength || 4096,
-                discoveredInfo: agentData.discoveredInfo || null,
-              };
+              
+              // Detect if this is a Claude agent based on name or existing configuration
+              const isClaudeAgent = agentData.identity?.name?.toLowerCase().includes('claude') ||
+                                   agentData.provider?.toLowerCase().includes('claude') ||
+                                   agentData.provider?.toLowerCase().includes('anthropic');
+              
+              // Clean up any Firebase logs that may have contaminated the API key
+              let cleanApiKey = agentData.apiKey || agentData.key || '';
+              if (cleanApiKey.includes('Firestore') || cleanApiKey.includes('Firebase') || cleanApiKey.includes('🔥')) {
+                console.warn('🧹 Detected Firebase log contamination in API key, clearing it');
+                cleanApiKey = '';
+              }
+              
+              if (isClaudeAgent) {
+                console.log('🤖 Configuring Claude/Anthropic agent');
+                agentData.apiDetails = {
+                  endpoint: 'https://api.anthropic.com/v1/messages',
+                  key: cleanApiKey,
+                  provider: 'Anthropic',
+                  selectedModel: 'claude-3-sonnet-20240229',
+                  selectedCapabilities: agentData.capabilities || [],
+                  selectedContextLength: agentData.contextLength || 200000, // Claude has larger context
+                  discoveredInfo: agentData.discoveredInfo || null,
+                };
+              } else {
+                console.log('🤖 Configuring OpenAI agent');
+                agentData.apiDetails = {
+                  endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1/chat/completions',
+                  key: cleanApiKey,
+                  provider: agentData.provider || 'OpenAI',
+                  selectedModel: agentData.model || 'gpt-4',
+                  selectedCapabilities: agentData.capabilities || [],
+                  selectedContextLength: agentData.contextLength || 4096,
+                  discoveredInfo: agentData.discoveredInfo || null,
+                };
+              }
               
               // Save the migrated agent back to storage
               try {

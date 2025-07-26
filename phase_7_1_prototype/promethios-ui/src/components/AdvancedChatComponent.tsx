@@ -1865,7 +1865,7 @@ useEffect(() => {
         
       } else if (provider === 'anthropic') {
         console.log('Taking Anthropic path...');
-        // Create system message based on governance setting (same as OpenAI)
+        // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
           // Use Promethios governance kernel for governed agents
@@ -1875,7 +1875,7 @@ useEffect(() => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
-        // Convert conversation history for backend API
+        // Convert conversation history to Anthropic API format
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage token limits
@@ -1884,26 +1884,36 @@ useEffect(() => {
             content: msg.content
           }));
 
-        response = await fetch(`${API_BASE_URL}/api/chat`, {
+        // Add current message
+        const messages = [
+          ...historyMessages,
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ];
+
+        response = await fetch(apiEndpoint || 'https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            agent_id: 'factual-agent', // Maps to Anthropic in backend
-            message: messageContent,
-            system_message: systemMessage, // Pass the governance system message
-            conversation_history: historyMessages, // Include conversation history
-            governance_enabled: governanceEnabled
+            model: selectedModel || 'claude-3-sonnet-20240229',
+            max_tokens: 1000,
+            system: systemMessage,
+            messages: messages
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        return data.response || 'No response received';
+        return data.content[0]?.text || 'No response received';
         
       } else if (provider === 'cohere') {
         console.log('Taking Cohere path...');
