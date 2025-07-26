@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { metricsCollectionExtension, AgentMetricsProfile, AgentInteractionEvent } from '../extensions/MetricsCollectionExtension';
 import { useAuth } from '../context/AuthContext';
+import { realGovernanceIntegration } from '../services/RealGovernanceIntegration';
 
 export interface UseAgentMetricsOptions {
   agentId: string;
@@ -147,6 +148,19 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       
       await metricsCollectionExtension.recordAgentInteraction(event);
       
+      // Update real governance backend with interaction data
+      try {
+        await realGovernanceIntegration.updateAgentTelemetry(agentId, {
+          responseQuality: eventData.governanceChecks?.complianceScore || 0.8,
+          userSatisfaction: eventData.success ? 0.9 : 0.3,
+          taskComplexity: eventData.responseSize ? Math.min(eventData.responseSize / 1000, 1) : 0.5,
+          responseTime: eventData.responseTime || 0
+        });
+        console.log(`🧠 Updated governance telemetry for ${agentId}`);
+      } catch (governanceError) {
+        console.warn('Could not update governance telemetry:', governanceError);
+      }
+      
       // Update local counters
       interactionCountRef.current += 1;
       lastInteractionRef.current = new Date();
@@ -164,10 +178,31 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
     if (!agentId) return;
 
     try {
+      // Get updated profile from existing metrics system
       const updatedProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);
+      
+      // Enhance with real governance telemetry data
+      try {
+        const telemetryData = await realGovernanceIntegration.getAgentTelemetry(agentId);
+        if (telemetryData && updatedProfile) {
+          // Merge telemetry data with existing metrics
+          updatedProfile.metrics.governanceMetrics = {
+            ...updatedProfile.metrics.governanceMetrics,
+            trustScore: telemetryData.trustScore,
+            emotionalState: telemetryData.emotionalState,
+            cognitiveMetrics: telemetryData.cognitiveMetrics,
+            behavioralPatterns: telemetryData.behavioralPatterns,
+            selfAwarenessLevel: telemetryData.selfAwarenessLevel,
+            lastTelemetryUpdate: telemetryData.lastUpdated
+          };
+        }
+      } catch (telemetryError) {
+        console.warn('Could not fetch telemetry data, using existing metrics:', telemetryError);
+      }
+      
       if (updatedProfile) {
         setProfile(updatedProfile);
-        console.log(`🔄 Metrics refreshed for ${agentId}`);
+        console.log(`🔄 Metrics refreshed for ${agentId} with governance data`);
       }
     } catch (err) {
       console.error('❌ Failed to refresh metrics:', err);

@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
+import { realGovernanceIntegration, AgentTelemetryData } from '../services/RealGovernanceIntegration';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -81,6 +82,27 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
 }) => {
   const agentMetrics = useAgentMetrics(agentId, version, true);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  const [telemetryData, setTelemetryData] = useState<AgentTelemetryData | null>(null);
+  const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
+
+  // Load real governance telemetry data
+  useEffect(() => {
+    const loadTelemetry = async () => {
+      setIsLoadingTelemetry(true);
+      try {
+        const data = await realGovernanceIntegration.getAgentTelemetry(agentId);
+        setTelemetryData(data);
+      } catch (error) {
+        console.warn('Failed to load telemetry data:', error);
+      } finally {
+        setIsLoadingTelemetry(false);
+      }
+    };
+
+    loadTelemetry();
+    const interval = setInterval(loadTelemetry, refreshInterval);
+    return () => clearInterval(interval);
+  }, [agentId, refreshInterval]);
 
   // Trigger callback when metrics update
   useEffect(() => {
@@ -112,6 +134,74 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
 
   const getVersionChipColor = (ver: string) => {
     return ver === 'production' ? DARK_THEME.success : DARK_THEME.warning;
+  };
+
+  // Download functionality for transparency
+  const downloadMetricsData = async () => {
+    try {
+      const governanceData = await realGovernanceIntegration.getGovernanceDataForDownload(agentId);
+      const combinedData = {
+        basicMetrics: {
+          agentId,
+          agentName,
+          version,
+          trustScore: agentMetrics.trustScore,
+          complianceRate: agentMetrics.complianceRate,
+          responseTime: agentMetrics.responseTime,
+          lastUpdated: lastUpdateTime.toISOString()
+        },
+        governanceData,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'agent_metrics_with_governance',
+          format: 'json'
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(combinedData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_metrics_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download metrics data:', error);
+    }
+  };
+
+  const downloadTelemetryData = async () => {
+    if (!telemetryData) return;
+    
+    try {
+      const fullTelemetryData = {
+        telemetryData,
+        emotionalState: telemetryData.emotionalState,
+        cognitiveMetrics: telemetryData.cognitiveMetrics,
+        behavioralPatterns: telemetryData.behavioralPatterns,
+        selfAwarenessLevel: telemetryData.selfAwarenessLevel,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'agent_telemetry_and_self_awareness',
+          format: 'json',
+          notes: 'Emotional, cognitive, and behavioral telemetry data for recursive improvement'
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(fullTelemetryData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_telemetry_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download telemetry data:', error);
+    }
   };
 
   if (agentMetrics.error) {
@@ -319,6 +409,53 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             </Grid>
           </Box>
         )}
+
+        {/* Download Section for Transparency */}
+        <Box mt={2} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
+          <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mb: 1, display: 'block' }}>
+            Download Data for Transparency
+          </Typography>
+          <Box display="flex" gap={1} flexWrap="wrap">
+            <Chip
+              label="📊 Metrics + Governance"
+              size="small"
+              onClick={downloadMetricsData}
+              sx={{
+                backgroundColor: DARK_THEME.primary + '20',
+                color: DARK_THEME.primary,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: DARK_THEME.primary + '30'
+                }
+              }}
+            />
+            {telemetryData && (
+              <Chip
+                label="🧠 Telemetry + Self-Awareness"
+                size="small"
+                onClick={downloadTelemetryData}
+                sx={{
+                  backgroundColor: DARK_THEME.success + '20',
+                  color: DARK_THEME.success,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: DARK_THEME.success + '30'
+                  }
+                }}
+              />
+            )}
+            {isLoadingTelemetry && (
+              <Chip
+                label="Loading telemetry..."
+                size="small"
+                sx={{
+                  backgroundColor: DARK_THEME.warning + '20',
+                  color: DARK_THEME.warning
+                }}
+              />
+            )}
+          </Box>
+        </Box>
       </CardContent>
     </MetricsCard>
   );
