@@ -1814,8 +1814,8 @@ useEffect(() => {
         // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          systemMessage = await createPromethiosSystemMessage(agent.id, user?.uid);
         } else {
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
@@ -1868,8 +1868,8 @@ useEffect(() => {
         // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          systemMessage = await createPromethiosSystemMessage(agent.id, user?.uid);
         } else {
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;

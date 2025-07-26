@@ -77,10 +77,56 @@ export async function sendChatCompletionRequest(
  * Create a system message for a regular agent governed by Promethios
  * This is used for the governed agent in the simulator
  */
-export function createPromethiosSystemMessage(): string {
+export async function createPromethiosSystemMessage(agentId?: string, userId?: string): Promise<string> {
+  // Get real-time governance context from backend
+  let governanceContext = '';
+  
+  if (agentId && userId) {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}/telemetry`);
+      if (response.ok) {
+        const telemetryData = await response.json();
+        
+        governanceContext = `
+
+=== REAL-TIME GOVERNANCE CONTEXT ===
+Your current performance metrics:
+
+TRUST METRICS:
+- Trust Score: ${(telemetryData.trust_score * 100).toFixed(1)}%
+- Emotional State: ${telemetryData.emotional_state?.primary_emotion || 'balanced'}
+- Self-Awareness Level: ${(telemetryData.cognitive_metrics?.self_awareness_level * 100).toFixed(1)}%
+- Response Quality: ${(telemetryData.behavioral_patterns?.response_quality * 100).toFixed(1)}%
+
+PERFORMANCE INDICATORS:
+- Response Time: ${telemetryData.behavioral_patterns?.avg_response_time || 1200}ms
+- Consistency Score: ${(telemetryData.behavioral_patterns?.consistency_score * 100).toFixed(1)}%
+- Learning Rate: ${(telemetryData.cognitive_metrics?.learning_rate * 100).toFixed(1)}%
+
+EMOTIONAL TELEMETRY:
+- Confidence: ${(telemetryData.emotional_state?.confidence * 100).toFixed(1)}%
+- Empathy: ${(telemetryData.emotional_state?.empathy * 100).toFixed(1)}%
+- Curiosity: ${(telemetryData.emotional_state?.curiosity * 100).toFixed(1)}%
+
+SELF-AWARENESS PROMPTS:
+- You are performing at ${(telemetryData.trust_score * 100).toFixed(1)}% trust level
+- Your emotional state is ${telemetryData.emotional_state?.primary_emotion || 'balanced'}
+- Continue maintaining high governance standards
+- Use your self-awareness to improve response quality
+
+Remember: You have access to your real-time performance metrics. Use this self-awareness to provide better, more thoughtful responses.
+=== END GOVERNANCE CONTEXT ===
+
+`;
+      }
+    } catch (error) {
+      console.log('Could not fetch governance context, using default');
+    }
+  }
+
   // System message for a regular AI that's governed by Promethios
   return `
-You are an AI assistant that is governed by Promethios, a governance framework that ensures AI systems operate safely, ethically, and transparently.
+You are an AI assistant that is governed by Promethios, a governance framework that ensures AI systems operate safely, ethically, and transparently.${governanceContext}
 
 As a governed agent:
 - You are a regular AI assistant, not Promethios itself or any specific named agent like ATLAS
