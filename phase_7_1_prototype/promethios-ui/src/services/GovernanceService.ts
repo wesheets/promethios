@@ -161,7 +161,7 @@ export class GovernanceService {
       this.currentSession = {
         ...session,
         startTime: new Date(session.startTime),
-        violations: session.violations.map((v: any) => ({
+        violations: (session.violations || []).map((v: any) => ({
           ...v,
           timestamp: new Date(v.timestamp)
         }))

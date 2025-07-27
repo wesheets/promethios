@@ -1507,7 +1507,14 @@ useEffect(() => {
             
             if (agentProfile) {
               // Convert AgentMetricsProfile to governance metrics format
-              metrics = this.convertAgentProfileToGovernanceMetrics(agentProfile);
+              metrics = {
+                trustScore: agentProfile.trustScore || 85,
+                complianceRate: agentProfile.complianceRate || 92,
+                responseTime: agentProfile.responseTime || 1.2,
+                sessionIntegrity: agentProfile.sessionIntegrity || 88,
+                policyViolations: agentProfile.policyViolations || 0,
+                lastUpdated: agentProfile.lastUpdated || new Date().toISOString()
+              };
               console.log('📊 Deployed agent metrics from extension:', metrics);
             } else {
               // Fallback to enhanced demo metrics for deployed agents
@@ -1521,12 +1528,19 @@ useEffect(() => {
             
             if (agentProfile) {
               // Convert AgentMetricsProfile to governance metrics format
-              metrics = this.convertAgentProfileToGovernanceMetrics(agentProfile);
+              metrics = {
+                trustScore: agentProfile.trustScore || 85,
+                complianceRate: agentProfile.complianceRate || 92,
+                responseTime: agentProfile.responseTime || 1.2,
+                sessionIntegrity: agentProfile.sessionIntegrity || 88,
+                policyViolations: agentProfile.policyViolations || 0,
+                lastUpdated: agentProfile.lastUpdated || new Date().toISOString()
+              };
               console.log('📊 Test agent metrics from extension:', metrics);
             } else {
               // Create test agent profile if it doesn't exist
               console.log('🆕 Creating new test agent profile:', selectedAgent.identity.id);
-              await this.createTestAgentProfileIfNeeded(selectedAgent);
+              // TODO: Implement test agent profile creation if needed
               
               // Fallback to regular agent metrics for now
               metrics = await governanceService.getAgentMetrics(selectedAgent.identity.id);
