@@ -1484,7 +1484,15 @@ useEffect(() => {
     console.log('🔒 Enabling governance for deployed agent');
     setGovernanceEnabled(true);
   }
-}, [isDeployedAgent, governanceEnabled]);  // Load governance metrics based on chat mode
+}, [isDeployedAgent, governanceEnabled]);
+
+// Auto-enable governance for production agents (detected by ID pattern)
+useEffect(() => {
+  if (selectedAgent && selectedAgent.identity?.id?.includes('-production') && !governanceEnabled) {
+    console.log('🔒 Auto-enabling governance for production agent:', selectedAgent.identity.id);
+    setGovernanceEnabled(true);
+  }
+}, [selectedAgent, governanceEnabled]);  // Load governance metrics based on chat mode
   useEffect(() => {
     const loadGovernanceMetrics = async () => {
       if (chatMode === 'single' && selectedAgent && governanceEnabled) {
