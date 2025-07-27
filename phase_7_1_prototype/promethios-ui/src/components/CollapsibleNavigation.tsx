@@ -51,6 +51,7 @@ import {
   AutoAwesome,
   Hub as MultiAgentIcon,
   LibraryBooks as LibraryBooksIcon,
+  Audit as AuditIcon,
 } from '@mui/icons-material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -126,13 +127,13 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       icon: <AgentsIcon />,
       children: [
         { id: 'my-agents', label: 'My Agents', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
-        { id: 'template-library', label: 'Template Library', icon: <LibraryBooksIcon />, path: '/ui/agents/templates' },
+        // { id: 'template-library', label: 'Template Library', icon: <LibraryBooksIcon />, path: '/ui/agents/templates' }, // Hidden for now
         { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
         { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
         { id: 'agent-lifecycle', label: 'Agent Lifecycle', icon: <TimelineIcon />, path: '/ui/agents/lifecycle' },
         { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/modern-chat' },
         { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
-        { id: 'registry', label: 'Registry', icon: <RegistryIcon />, path: '/ui/agents/registry' },
+        // { id: 'registry', label: 'Registry', icon: <RegistryIcon />, path: '/ui/agents/registry' }, // Hidden for now
       ],
     },
     {
@@ -143,8 +144,9 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'gov-overview', label: 'Overview', icon: <OverviewIcon />, path: '/ui/governance/overview' },
         { id: 'policies', label: 'Policies', icon: <PoliciesIcon />, path: '/ui/governance/policies' },
         { id: 'violations', label: 'Violations', icon: <ViolationsIcon />, path: '/ui/governance/violations' },
-        { id: 'reports', label: 'Reports', icon: <ReportsIcon />, path: '/ui/governance/reports' },
-        { id: 'veritas', label: 'Emotional Veritas', icon: <VeritasIcon />, path: '/ui/governance/veritas' },
+        { id: 'audit-reports', label: 'Audit Reports', icon: <AuditIcon />, path: '/ui/governance/audit-reports' },
+        // { id: 'reports', label: 'Reports', icon: <ReportsIcon />, path: '/ui/governance/reports' }, // Hidden for now
+        // { id: 'veritas', label: 'Emotional Veritas', icon: <VeritasIcon />, path: '/ui/governance/veritas' }, // Hidden for now
       ],
     },
     {
