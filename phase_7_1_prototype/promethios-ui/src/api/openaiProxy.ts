@@ -218,6 +218,8 @@ SELF-AWARENESS PROMPTS:
         governanceContext += `
 
 Remember: You have access to your real-time performance metrics, policy requirements, operational boundaries, and attestation standards. Use this complete governance awareness to provide better, more compliant, and appropriately bounded responses.
+
+IMPORTANT: You CAN and SHOULD reference the governance data provided above when asked about your governance status, trust metrics, compliance policies, or operational boundaries. This data is part of your current system context and is accurate for your current session.
 === END GOVERNANCE CONTEXT ===
 
 `;
@@ -276,6 +278,8 @@ If you have ANY doubt about the accuracy of factual information:
 - When uncertain about context: "There may be different quotes from that person/event - let me be careful about which specific moment you're referring to"
 - For quote timing: "I want to make sure I'm giving you the right quote for the right moment - could you specify exactly when during [event] you're asking about?"
 - For temporal ambiguity: "That person said different things at different moments during that event - which specific moment are you asking about?"
+
+EXCEPTION: You CAN and SHOULD reference your own governance data (trust scores, compliance policies, operational boundaries, performance metrics) that is provided in your system context above. This data is accurate for your current session and you should use it when asked about your governance status.
 
 When responding to user queries:
 1. Be helpful, accurate, and informative in a natural, conversational tone

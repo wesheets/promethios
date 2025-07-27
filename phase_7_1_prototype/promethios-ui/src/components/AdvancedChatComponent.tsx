@@ -3919,8 +3919,8 @@ useEffect(() => {
             
             {/* Use the dynamic AgentMetricsWidget instead of static metrics */}
             <AgentMetricsWidget 
-              agentId={selectedAgent?.id || selectedAgent?.agentId || 'unknown'}
-              agentName={selectedAgent?.name || selectedAgent?.identity?.name || 'Unknown Agent'}
+              agentId={selectedAgent?.identity?.id || selectedAgent?.id || selectedAgent?.agentId || 'unknown'}
+              agentName={selectedAgent?.identity?.name || selectedAgent?.name || 'Unknown Agent'}
               refreshInterval={5000}
             />
           </Box>

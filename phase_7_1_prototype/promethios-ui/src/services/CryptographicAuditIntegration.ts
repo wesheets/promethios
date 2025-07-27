@@ -156,7 +156,6 @@ class CryptographicAuditIntegrationService {
       console.log(`🔐 CryptographicAuditIntegration: Fetching audit logs for agent ${agentId}`, options);
       
       const params = new URLSearchParams();
-      params.append('agentId', agentId);
       
       if (options.startDate) params.append('startDate', options.startDate);
       if (options.endDate) params.append('endDate', options.endDate);
@@ -164,7 +163,8 @@ class CryptographicAuditIntegrationService {
       if (options.limit) params.append('limit', options.limit.toString());
       if (options.verified !== undefined) params.append('verified', options.verified.toString());
 
-      const url = `${this.baseUrl}/api/cryptographic-audit/logs?${params}`;
+      const queryString = params.toString();
+      const url = `${this.baseUrl}/api/cryptographic-audit/logs/${agentId}${queryString ? `?${queryString}` : ''}`;
       console.log(`🔐 CryptographicAuditIntegration: Fetching from URL: ${url}`);
 
       const response = await fetch(url, {
@@ -181,10 +181,11 @@ class CryptographicAuditIntegrationService {
       }
 
       const result = await response.json();
-      console.log(`✅ CryptographicAuditIntegration: Retrieved ${result.data?.length || 0} audit logs`);
-      console.log(`🔐 Sample logs:`, result.data?.slice(0, 2));
+      const logs = result.data?.logs || result.data || [];
+      console.log(`✅ CryptographicAuditIntegration: Retrieved ${logs.length} audit logs`);
+      console.log(`🔐 Sample logs:`, logs.slice(0, 2));
       
-      return result.data || [];
+      return logs;
     } catch (error) {
       console.error('❌ CryptographicAuditIntegration: Error fetching audit logs:', error);
       return [];

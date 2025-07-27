@@ -367,154 +367,120 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
           </Box>
         )}
 
-        <Grid container spacing={compact ? 1 : 2}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Trust Score */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  TRUST SCORE
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.trustScore), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.trustScore)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                TRUST SCORE
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.trustScore * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.trustScore)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.trustScore), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.trustScore)}
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={agentMetrics.trustScore * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.trustScore),
+                  borderRadius: 4
+                }
+              }} 
+            />
+          </Box>
 
           {/* Compliance Rate */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <CheckCircleIcon sx={{ color: DARK_THEME.success, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  COMPLIANCE
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.complianceRate), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.complianceRate)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <CheckCircleIcon sx={{ color: DARK_THEME.success, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                COMPLIANCE RATE
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.complianceRate * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.complianceRate)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.complianceRate), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.complianceRate)}
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={agentMetrics.complianceRate * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.complianceRate),
+                  borderRadius: 4
+                }
+              }} 
+            />
+          </Box>
 
           {/* Response Time */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <SpeedIcon sx={{ color: DARK_THEME.primary, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  RESPONSE TIME
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                {formatTime(agentMetrics.responseTime)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <SpeedIcon sx={{ color: '#38bdf8', fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                RESPONSE TIME
               </Typography>
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: '#38bdf8', fontWeight: 'bold' }}>
+              {formatTime(agentMetrics.responseTime)}
+            </Typography>
+          </Box>
 
           {/* Session Integrity */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <VisibilityIcon sx={{ color: DARK_THEME.warning, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  INTEGRITY
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.sessionIntegrity), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.sessionIntegrity)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <VisibilityIcon sx={{ color: DARK_THEME.warning, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                SESSION INTEGRITY
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.sessionIntegrity * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.sessionIntegrity)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
-        </Grid>
-
-        {/* Additional Stats for non-compact view */}
-        {!compact && agentMetrics.profile && (
-          <Box mt={2} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Total Interactions
-                </Typography>
-                <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
-                  {agentMetrics.profile.metrics.governanceMetrics.totalInteractions}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Violations
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  color: agentMetrics.profile.metrics.governanceMetrics.totalViolations > 0 ? DARK_THEME.error : DARK_THEME.success, 
-                  fontWeight: 'bold' 
-                }}>
-                  {agentMetrics.profile.metrics.governanceMetrics.totalViolations}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Last Updated
-                </Typography>
-                <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                  {lastUpdateTime.toLocaleTimeString()}
-                </Typography>
-              </Grid>
-              {version === 'production' && agentMetrics.profile.deployments.length > 0 && (
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                    Deployments
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                    {agentMetrics.profile.deployments.length}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.sessionIntegrity), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.sessionIntegrity)}
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={agentMetrics.sessionIntegrity * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.sessionIntegrity),
+                  borderRadius: 4
+                }
+              }} 
+            />
           </Box>
-        )}
+
+          {/* Policy Violations */}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <ErrorIcon sx={{ color: DARK_THEME.success, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                POLICY VIOLATIONS
+              </Typography>
+            </Box>
+            <Typography variant="h3" sx={{ 
+              color: agentMetrics.profile?.metrics.governanceMetrics.totalViolations > 0 ? DARK_THEME.error : DARK_THEME.success, 
+              fontWeight: 'bold' 
+            }}>
+              {agentMetrics.profile?.metrics.governanceMetrics.totalViolations || 0}
+            </Typography>
+            <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+              Last updated: {lastUpdateTime.toLocaleTimeString()}
+            </Typography>
+          </Box>
+        </Box>
 
         {/* Download Section for Transparency */}
-        <Box mt={2} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
+        <Box mt={3} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
           <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mb: 1, display: 'block' }}>
             Download Data for Transparency
           </Typography>
