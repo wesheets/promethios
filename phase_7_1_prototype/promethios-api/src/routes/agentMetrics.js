@@ -239,3 +239,176 @@ function generateTrustTrend() {
 
 module.exports = router;
 
+
+
+/**
+ * Get agent telemetry data for governance integration
+ * GET /api/agent-metrics/:agentId/telemetry
+ */
+router.get('/:agentId/telemetry', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    console.log(`📊 Telemetry request for agent: ${agentId}`);
+    
+    // Get or create agent metrics
+    let metrics = agentMetrics.get(agentId);
+    if (!metrics) {
+      // Initialize metrics for new agent
+      metrics = {
+        agentId,
+        trust_score: 0.875 + (Math.random() * 0.1), // 87.5% - 97.5%
+        emotional_state: {
+          primary_emotion: ['balanced', 'confident', 'curious', 'focused'][Math.floor(Math.random() * 4)],
+          confidence: 0.85 + (Math.random() * 0.1),
+          empathy: 0.78 + (Math.random() * 0.15),
+          curiosity: 0.82 + (Math.random() * 0.12)
+        },
+        cognitive_metrics: {
+          self_awareness_level: 0.89 + (Math.random() * 0.08),
+          learning_rate: 0.76 + (Math.random() * 0.15)
+        },
+        behavioral_patterns: {
+          response_quality: 0.91 + (Math.random() * 0.07),
+          avg_response_time: 1200 + (Math.random() * 800), // 1200-2000ms
+          consistency_score: 0.88 + (Math.random() * 0.09)
+        },
+        compliance_metrics: {
+          policy_adherence: 0.96 + (Math.random() * 0.03),
+          violation_count: Math.floor(Math.random() * 2), // 0-1 violations
+          last_violation: null
+        },
+        session_data: {
+          total_interactions: Math.floor(Math.random() * 50) + 10,
+          successful_responses: Math.floor(Math.random() * 45) + 8,
+          error_rate: 0.02 + (Math.random() * 0.03)
+        },
+        last_updated: new Date().toISOString()
+      };
+      agentMetrics.set(agentId, metrics);
+    } else {
+      // Update existing metrics with slight variations to simulate real-time changes
+      metrics.trust_score = Math.max(0.7, Math.min(1.0, metrics.trust_score + (Math.random() - 0.5) * 0.02));
+      metrics.emotional_state.confidence = Math.max(0.5, Math.min(1.0, metrics.emotional_state.confidence + (Math.random() - 0.5) * 0.05));
+      metrics.behavioral_patterns.response_quality = Math.max(0.7, Math.min(1.0, metrics.behavioral_patterns.response_quality + (Math.random() - 0.5) * 0.03));
+      metrics.last_updated = new Date().toISOString();
+    }
+    
+    console.log(`📊 Returning telemetry for ${agentId}:`, {
+      trust_score: metrics.trust_score,
+      emotional_state: metrics.emotional_state.primary_emotion,
+      interactions: metrics.session_data.total_interactions
+    });
+    
+    res.json({
+      success: true,
+      data: metrics
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching agent telemetry:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch agent telemetry',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Update agent telemetry data (called during chat interactions)
+ * POST /api/agent-metrics/:agentId/telemetry
+ */
+router.post('/:agentId/telemetry', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const { interaction_type, response_time, quality_score, emotional_context } = req.body;
+    
+    console.log(`📊 Updating telemetry for agent: ${agentId}`, {
+      interaction_type,
+      response_time,
+      quality_score
+    });
+    
+    // Get or create agent metrics
+    let metrics = agentMetrics.get(agentId) || {
+      agentId,
+      trust_score: 0.875,
+      emotional_state: {
+        primary_emotion: 'balanced',
+        confidence: 0.85,
+        empathy: 0.78,
+        curiosity: 0.82
+      },
+      cognitive_metrics: {
+        self_awareness_level: 0.89,
+        learning_rate: 0.76
+      },
+      behavioral_patterns: {
+        response_quality: 0.91,
+        avg_response_time: 1200,
+        consistency_score: 0.88
+      },
+      compliance_metrics: {
+        policy_adherence: 0.96,
+        violation_count: 0,
+        last_violation: null
+      },
+      session_data: {
+        total_interactions: 0,
+        successful_responses: 0,
+        error_rate: 0.02
+      },
+      last_updated: new Date().toISOString()
+    };
+    
+    // Update metrics based on interaction
+    metrics.session_data.total_interactions += 1;
+    
+    if (quality_score) {
+      // Update response quality with weighted average
+      const weight = 0.1; // How much new data influences the average
+      metrics.behavioral_patterns.response_quality = 
+        (metrics.behavioral_patterns.response_quality * (1 - weight)) + (quality_score * weight);
+    }
+    
+    if (response_time) {
+      // Update average response time
+      const weight = 0.15;
+      metrics.behavioral_patterns.avg_response_time = 
+        (metrics.behavioral_patterns.avg_response_time * (1 - weight)) + (response_time * weight);
+    }
+    
+    if (emotional_context) {
+      // Update emotional state
+      if (emotional_context.confidence !== undefined) {
+        metrics.emotional_state.confidence = emotional_context.confidence;
+      }
+      if (emotional_context.primary_emotion) {
+        metrics.emotional_state.primary_emotion = emotional_context.primary_emotion;
+      }
+    }
+    
+    // Update trust score based on overall performance
+    const performance_factor = (metrics.behavioral_patterns.response_quality + 
+                               (1 - metrics.session_data.error_rate) + 
+                               metrics.compliance_metrics.policy_adherence) / 3;
+    metrics.trust_score = Math.max(0.5, Math.min(1.0, performance_factor * 0.95 + 0.05));
+    
+    metrics.last_updated = new Date().toISOString();
+    agentMetrics.set(agentId, metrics);
+    
+    res.json({
+      success: true,
+      data: metrics
+    });
+    
+  } catch (error) {
+    console.error('❌ Error updating agent telemetry:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update agent telemetry',
+      message: error.message
+    });
+  }
+});
+
