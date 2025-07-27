@@ -185,56 +185,50 @@ export class GovernanceService {
 
   // Get real-time governance metrics for an agent
   async getAgentMetrics(agentId: string): Promise<GovernanceMetrics> {
-    // For test agents, return mock metrics instead of calling production API
-    if (agentId.includes('-testing') || agentId.includes('OpenAI') || agentId.includes('Claude') || agentId.includes('Assistant')) {
-      console.log('🔧 GovernanceService: Returning mock metrics for test agent:', agentId);
+    try {
+      console.log('🔧 GovernanceService: Fetching real metrics for agent:', agentId);
+      
+      // Call the real telemetry API for all agents
+      const response = await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const telemetryData = await response.json();
+        console.log('✅ GovernanceService: Real telemetry data received:', telemetryData);
+        
+        // Transform telemetry data to GovernanceMetrics format
+        const data = telemetryData.data;
+        return {
+          trustScore: data.trust_score * 100, // Convert to percentage
+          complianceRate: data.compliance_metrics.policy_adherence * 100, // Convert to percentage
+          responseTime: data.behavioral_patterns.avg_response_time / 1000, // Convert to seconds
+          sessionIntegrity: data.cognitive_metrics.self_awareness_level * 100, // Convert to percentage
+          policyViolations: data.compliance_metrics.violation_count,
+          status: data.session_data.error_rate < 0.1 ? 'active' : 'monitoring',
+          lastUpdated: new Date(data.last_updated)
+        };
+      } else {
+        console.warn('⚠️ GovernanceService: API call failed, using fallback metrics');
+        throw new Error(`API call failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ GovernanceService: Error fetching metrics:', error);
+      
+      // Fallback to dynamic mock metrics when API fails
       return {
-        trustScore: 87.5 + Math.random() * 10, // Dynamic value for test agents
-        complianceRate: 94.8 + Math.random() * 5, // Dynamic value
-        responseTime: 1.2 + Math.random() * 0.8, // Dynamic value
-        sessionIntegrity: 91.6 + Math.random() * 8, // Dynamic value
+        trustScore: 87.5 + Math.random() * 10, // Dynamic fallback
+        complianceRate: 94.8 + Math.random() * 5, // Dynamic fallback
+        responseTime: 1.2 + Math.random() * 0.8, // Dynamic fallback
+        sessionIntegrity: 91.6 + Math.random() * 8, // Dynamic fallback
         policyViolations: Math.floor(Math.random() * 2), // 0 or 1 violations
         status: 'monitoring' as const,
         lastUpdated: new Date()
       };
     }
-
-    // Default mock metrics for production agents or when API is unavailable
-    const mockMetrics = {
-      trustScore: 87.5, // Static value
-      complianceRate: 94.8, // Static value
-      responseTime: 1.4, // Static value
-      sessionIntegrity: 91.6, // Static value
-      policyViolations: 0, // Static value
-      status: 'monitoring' as const,
-      lastUpdated: new Date()
-    };
-
-    if (this.baseUrl !== 'demo' && this.isApiAvailable) {
-      try {
-        const response = await fetch(`${this.baseUrl}/agents/${agentId}/metrics`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(3000)
-        });
-
-        if (!response.ok) {
-          console.warn(`🔧 GovernanceService: API call failed for ${agentId}, using mock metrics`);
-          return mockMetrics;
-        }
-
-        const metrics = await response.json();
-        return {
-          ...metrics,
-          lastUpdated: new Date(metrics.lastUpdated)
-        };
-      } catch (error) {
-        console.log('Error fetching governance metrics, using demo data');
-      }
-    }
-
-    // Return static demo metrics (no random changes)
-    return baseMetrics;
   }
 
   // Get governance metrics for deployed agents
