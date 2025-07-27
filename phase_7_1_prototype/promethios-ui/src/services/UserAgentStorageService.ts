@@ -372,19 +372,31 @@ export class UserAgentStorageService {
 
       console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents'}`);
       
+      // For chat interface, prioritize testing agents over production agents
+      // Testing agents are meant for user interaction and demonstration
+      const testingAgents = agents.filter(agent => agent.identity.id.includes('-testing'));
+      const productionAgents = agents.filter(agent => agent.identity.id.includes('-production'));
+      const otherAgents = agents.filter(agent => !agent.identity.id.includes('-testing') && !agent.identity.id.includes('-production'));
+      
+      // Prioritize testing agents first, then others, then production agents last
+      const prioritizedAgents = [...testingAgents, ...otherAgents, ...productionAgents];
+      
+      console.log(`🎯 Agent prioritization: ${testingAgents.length} testing, ${otherAgents.length} other, ${productionAgents.length} production`);
+      console.log(`🎯 Prioritized agent order:`, prioritizedAgents.map(a => `${a.identity.name} (${a.identity.id})`));
+      
     // Cache the loaded agents for OptimizedDataBridge to use
-    if (this.currentUserId && agents.length > 0) {
+    if (this.currentUserId && prioritizedAgents.length > 0) {
       const { universalCache } = await import('./UniversalDataCache');
-      universalCache.set(this.currentUserId, agents, 'agents', 600); // Cache for 10 minutes
-      console.log(`💾 Cached ${agents.length} agents for OptimizedDataBridge access`);
+      universalCache.set(this.currentUserId, prioritizedAgents, 'agents', 600); // Cache for 10 minutes
+      console.log(`💾 Cached ${prioritizedAgents.length} prioritized agents for OptimizedDataBridge access`);
       
       // Invalidate dashboard metrics cache so OptimizedDataBridge recalculates with fresh agent data
       const dashboardCacheKey = `dashboard-${this.currentUserId}`;
       universalCache.invalidate('dashboard-metrics', dashboardCacheKey);
-      console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${agents.length} agents`);
+      console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${prioritizedAgents.length} agents`);
     }
       
-      return agents;
+      return prioritizedAgents;
     } catch (error) {
       console.error('Error loading user production agents:', error);
       return [];
