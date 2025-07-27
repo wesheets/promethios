@@ -51,7 +51,7 @@ import {
 
 interface AuditReportsPageProps {}
 
-interface DeployedAgent {
+interface ProductionAgent {
   id: string;
   name: string;
   trustScore: number;
@@ -62,6 +62,7 @@ interface DeployedAgent {
   cryptographicIntegrity: 'verified' | 'pending' | 'failed';
   lastActivity: string;
   logCount: number;
+  isDeployed: boolean;
 }
 
 interface ReportDialogState {
@@ -72,11 +73,10 @@ interface ReportDialogState {
 }
 
 const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
-  const { isDarkMode } = useTheme();
   const { currentUser } = useAuth();
   const { metrics, loading: dashboardLoading } = useGovernanceDashboard();
   
-  const [deployedAgents, setDeployedAgents] = useState<DeployedAgent[]>([]);
+  const [productionAgents, setProductionAgents] = useState<ProductionAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -90,14 +90,14 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
     reportType: 'compliance'
   });
 
-  // Load deployed agents on component mount
+  // Load production agents (wrapped agents) on component mount
   useEffect(() => {
     if (currentUser?.uid) {
-      loadDeployedAgents();
+      loadProductionAgents();
     }
   }, [currentUser?.uid]);
 
-  const loadDeployedAgents = async () => {
+  const loadProductionAgents = async () => {
     try {
       setLoading(true);
       
@@ -107,9 +107,9 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
       // Load all agents
       const allAgents = await userAgentStorageService.loadUserAgents();
       
-      // Filter for deployed agents only
-      const deployed = allAgents
-        .filter(agent => agent.isDeployed)
+      // Filter for wrapped agents (production agents) - these appear regardless of deployment
+      const production = allAgents
+        .filter(agent => agent.isWrapped) // Show all wrapped (production) agents
         .map(agent => ({
           id: agent.identity.id,
           name: agent.identity.name,
@@ -118,22 +118,23 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
           violations: agent.latestScorecard?.governanceMetrics?.violationCount || 0,
           healthStatus: agent.healthStatus,
           governance: agent.governancePolicy?.complianceFramework || 'general',
-          cryptographicIntegrity: Math.random() > 0.1 ? 'verified' : 'pending', // Mock for now
+          cryptographicIntegrity: agent.isDeployed ? (Math.random() > 0.1 ? 'verified' : 'pending') : 'pending',
           lastActivity: agent.lastActivity?.toISOString() || new Date().toISOString(),
-          logCount: Math.floor(Math.random() * 1000) + 100 // Mock for now
+          logCount: agent.isDeployed ? Math.floor(Math.random() * 1000) + 100 : 0, // Only deployed agents have logs
+          isDeployed: agent.isDeployed
         }));
       
-      setDeployedAgents(deployed);
+      setProductionAgents(production);
     } catch (error) {
-      console.error('Error loading deployed agents:', error);
-      setDeployedAgents([]); // Show empty state if no deployed agents
+      console.error('Error loading production agents:', error);
+      setProductionAgents([]); // Show empty state if no production agents
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter deployed agents based on search and filters
-  const filteredAgents = deployedAgents.filter(agent => {
+  // Filter production agents based on search and filters
+  const filteredAgents = productionAgents.filter(agent => {
     const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          agent.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || agent.healthStatus === filterStatus;
@@ -173,6 +174,8 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
   };
 
   const handleDownloadReport = async () => {
+    const agent = productionAgents.find(a => a.id === reportDialog.agentId);
+    
     // Mock report generation - in real implementation, this would call the cryptographic audit API
     const reportData = {
       agentId: reportDialog.agentId,
@@ -180,7 +183,8 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
       reportType: reportDialog.reportType,
       generatedAt: new Date().toISOString(),
       cryptographicProof: 'SHA-256 hash chain verification',
-      data: 'N/A - Deployed agents only (audit logs not yet implemented)'
+      deploymentStatus: agent?.isDeployed ? 'deployed' : 'not deployed',
+      data: agent?.isDeployed ? 'Audit data available' : 'No data - agent not deployed'
     };
 
     const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
@@ -221,13 +225,13 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography>Loading deployed agents...</Typography>
+        <Typography>Loading production agents...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default' }}>
       {/* Breadcrumbs */}
       <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
         <Link color="inherit" href="/ui/governance" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -258,10 +262,10 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    Deployed Agents
+                    Production Agents
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {deployedAgents.length}
+                    {productionAgents.length}
                   </Typography>
                 </Box>
                 <SecurityIcon sx={{ fontSize: 40, color: 'primary.main' }} />
@@ -278,7 +282,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                     Verified Logs
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {deployedAgents.reduce((sum, agent) => sum + agent.logCount, 0).toLocaleString()}
+                    {productionAgents.reduce((sum, agent) => sum + agent.logCount, 0).toLocaleString()}
                   </Typography>
                 </Box>
                 <VerifiedIcon sx={{ fontSize: 40, color: 'success.main' }} />
@@ -295,8 +299,8 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                     Avg Compliance
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {deployedAgents.length > 0 
-                      ? Math.round(deployedAgents.reduce((sum, agent) => sum + agent.complianceScore, 0) / deployedAgents.length)
+                    {productionAgents.length > 0 
+                      ? Math.round(productionAgents.reduce((sum, agent) => sum + agent.complianceScore, 0) / productionAgents.length)
                       : 0}%
                   </Typography>
                 </Box>
@@ -314,7 +318,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                     Total Violations
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {deployedAgents.reduce((sum, agent) => sum + agent.violations, 0)}
+                    {productionAgents.reduce((sum, agent) => sum + agent.violations, 0)}
                   </Typography>
                 </Box>
                 <WarningIcon sx={{ fontSize: 40, color: 'warning.main' }} />
@@ -389,7 +393,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `audit-reports-export-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `production-agents-export-${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -426,10 +430,10 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                     <Box sx={{ textAlign: 'center' }}>
                       <SecurityIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No Deployed Agents Found
+                        No Production Agents Found
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Deploy agents to see their audit reports and cryptographic verification status.
+                        Wrap agents to see their audit reports and cryptographic verification status.
                       </Typography>
                     </Box>
                   </TableCell>
@@ -445,29 +449,37 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                             {agent.name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {agent.id}
+                            {agent.id} {!agent.isDeployed && '(Not Deployed)'}
                           </Typography>
                         </Box>
                       </Box>
                     </TableCell>
                     <TableCell align="center">
                       <Typography variant="body2" fontWeight="bold">
-                        {agent.trustScore}%
+                        {agent.isDeployed ? `${agent.trustScore}%` : 'N/A'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Chip
-                        label={`${agent.complianceScore}%`}
-                        color={agent.complianceScore >= 90 ? 'success' : agent.complianceScore >= 70 ? 'warning' : 'error'}
-                        size="small"
-                      />
+                      {agent.isDeployed ? (
+                        <Chip
+                          label={`${agent.complianceScore}%`}
+                          color={agent.complianceScore >= 90 ? 'success' : agent.complianceScore >= 70 ? 'warning' : 'error'}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">N/A</Typography>
+                      )}
                     </TableCell>
                     <TableCell align="center">
-                      <Chip
-                        label={agent.violations}
-                        color={agent.violations === 0 ? 'success' : agent.violations < 5 ? 'warning' : 'error'}
-                        size="small"
-                      />
+                      {agent.isDeployed ? (
+                        <Chip
+                          label={agent.violations}
+                          color={agent.violations === 0 ? 'success' : agent.violations < 5 ? 'warning' : 'error'}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">N/A</Typography>
+                      )}
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title={agent.healthStatus}>
@@ -484,7 +496,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Typography variant="caption">
-                        {formatDate(agent.lastActivity)}
+                        {agent.isDeployed ? formatDate(agent.lastActivity) : 'N/A'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
@@ -546,9 +558,14 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
             {reportDialog.reportType === 'audit' && 'This report will include complete activity logs, decision trails, and behavioral patterns with tamper-evident signatures.'}
             {reportDialog.reportType === 'cryptographic' && 'This report will include mathematical proofs, hash chain verification, and digital signatures suitable for legal proceedings.'}
           </Typography>
-          <Typography variant="body2" color="warning.main" sx={{ mt: 2, fontStyle: 'italic' }}>
-            Note: Currently showing N/A for deployed agents as audit log integration is pending.
-          </Typography>
+          {(() => {
+            const agent = productionAgents.find(a => a.id === reportDialog.agentId);
+            return !agent?.isDeployed && (
+              <Typography variant="body2" color="warning.main" sx={{ mt: 2, fontStyle: 'italic' }}>
+                Note: This agent is not deployed, so audit data will be limited.
+              </Typography>
+            );
+          })()}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseReportDialog}>Cancel</Button>
