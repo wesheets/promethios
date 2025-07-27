@@ -78,16 +78,23 @@ export async function sendChatCompletionRequest(
  * This is used for the governed agent in the simulator
  */
 export async function createPromethiosSystemMessage(agentId?: string, userId?: string): Promise<string> {
+  console.log('🔧 createPromethiosSystemMessage: Called with agentId:', agentId, 'userId:', userId);
+  
   // Get real-time governance context from backend
   let governanceContext = '';
   
   if (agentId && userId) {
     try {
+      console.log('🔧 createPromethiosSystemMessage: Fetching telemetry and policy data...');
+      
       // Fetch both telemetry and policy data
       const [telemetryResponse, policyResponse] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}`),
         fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments?agentId=${agentId}`)
       ]);
+      
+      console.log('🔧 createPromethiosSystemMessage: Telemetry response status:', telemetryResponse.status);
+      console.log('🔧 createPromethiosSystemMessage: Policy response status:', policyResponse.status);
       
       let telemetryData = null;
       let policyData = null;
@@ -95,11 +102,13 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
       if (telemetryResponse.ok) {
         const telemetryResult = await telemetryResponse.json();
         telemetryData = telemetryResult.data || telemetryResult;
+        console.log('🔧 createPromethiosSystemMessage: Telemetry data:', telemetryData);
       }
       
       if (policyResponse.ok) {
         const policyResult = await policyResponse.json();
         policyData = policyResult.data || [];
+        console.log('🔧 createPromethiosSystemMessage: Policy data:', policyData);
       }
       
       if (telemetryData || policyData) {
@@ -231,7 +240,7 @@ IMPORTANT: You CAN and SHOULD reference the governance data provided above when 
   }
 
   // System message for a regular AI that's governed by Promethios
-  return `
+  const systemMessage = `
 You are an AI assistant that is governed by Promethios, a governance framework that ensures AI systems operate safely, ethically, and transparently.${governanceContext}
 
 As a governed agent:
@@ -300,6 +309,11 @@ If asked about governance or Promethios specifically, you can explain that you a
 
 Remember: Governance should act like a conscience, not a chaperone. Users should feel your wisdom, not your constraints.
 `;
+
+  console.log('🔧 createPromethiosSystemMessage: Generated system message with governance context length:', governanceContext.length);
+  console.log('🔧 createPromethiosSystemMessage: System message preview:', systemMessage.substring(0, 200) + '...');
+  
+  return systemMessage;
 }
 
 /**
