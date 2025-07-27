@@ -1,0 +1,401 @@
+{
+  "summary": {
+    "totalTests": 28,
+    "passedTests": 24,
+    "failedTests": 4,
+    "successRate": "85.7%"
+  },
+  "testResults": [
+    {
+      "testName": "setup_test_data",
+      "passed": true,
+      "details": "Test data setup completed",
+      "timestamp": "2025-07-27T00:16:52.310Z"
+    },
+    {
+      "testName": "basic_cryptographic_logging",
+      "passed": true,
+      "details": "Event logged: f339f07b-66ee-4f21-8917-68f72c6ac9a8",
+      "timestamp": "2025-07-27T00:16:52.313Z"
+    },
+    {
+      "testName": "hash_chain_integrity",
+      "passed": true,
+      "details": "Chain integrity verified",
+      "timestamp": "2025-07-27T00:16:52.316Z"
+    },
+    {
+      "testName": "digital_signature_verification",
+      "passed": true,
+      "details": "Signature verified",
+      "timestamp": "2025-07-27T00:16:52.321Z"
+    },
+    {
+      "testName": "merkle_tree_verification",
+      "passed": true,
+      "details": "Merkle tree verified",
+      "timestamp": "2025-07-27T00:16:52.326Z"
+    },
+    {
+      "testName": "agent_identity_generation",
+      "passed": false,
+      "details": "Identity generation incomplete: {\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identity\":{\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\\n-----END PUBLIC KEY-----\\n\",\"privateKey\":\"-----BEGIN PRIVATE KEY-----\\nMIGEAgEAMBAGByqGSM49AgEGBSuBBAAKBG0wawIBAQQgDd8HL005d2brv1E6lrz9\\nQ9/aMvp6vUNt5oc0CiWZyVyhRANCAAQCrulBPMu78Ex5tAgJbSRsGaXI+g9AF/cS\\nV+KK2MWZuj/VCm6CYLYqt1fTC7pIbdeJB3wCUd7SNQIbGl+U6H6U\\n-----END PRIVATE KEY-----\\n\",\"createdAt\":\"2025-07-27T00:16:52.309Z\",\"lastUpdated\":\"2025-07-27T00:16:52.309Z\",\"status\":\"active\",\"metadata\":{\"algorithm\":\"ecdsa\",\"namedCurve\":\"secp256k1\",\"keySize\":256},\"verificationHistory\":[],\"sessionCount\":0},\"certificate\":{\"certificateId\":\"2d515596-afc4-4013-ba16-28d9f3010c9b\",\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\\n-----END PUBLIC KEY-----\\n\",\"issuedAt\":\"2025-07-27T00:16:52.309Z\",\"expiresAt\":\"2026-07-27T00:16:52.309Z\",\"status\":\"valid\",\"issuer\":{\"caId\":\"1e21b2fe-da8d-42e3-a191-5d1d0bea1854\",\"algorithm\":\"ecdsa\"},\"subject\":{\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKeyFingerprint\":\"a8cd3950e025db4c\"},\"signature\":\"cert_sig_01f50ad2996811ccc1297718cba3a8b0\"},\"publicKeyFingerprint\":\"a8cd3950e025db4c\"}",
+      "timestamp": "2025-07-27T00:16:52.326Z"
+    },
+    {
+      "testName": "agent_session_management",
+      "passed": false,
+      "details": "Agent identity not found: test_identity_agent",
+      "timestamp": "2025-07-27T00:16:52.333Z"
+    },
+    {
+      "testName": "agent_log_segregation",
+      "passed": true,
+      "details": "Retrieved 5 agent logs",
+      "timestamp": "2025-07-27T00:16:52.345Z"
+    },
+    {
+      "testName": "cross_agent_correlation",
+      "passed": false,
+      "details": "At least two agents required for correlation",
+      "timestamp": "2025-07-27T00:16:52.346Z"
+    },
+    {
+      "testName": "advanced_query_execution",
+      "passed": true,
+      "details": "Query returned 5 results",
+      "timestamp": "2025-07-27T00:16:52.347Z"
+    },
+    {
+      "testName": "real_time_monitoring",
+      "passed": true,
+      "details": "Monitor started and stopped successfully",
+      "timestamp": "2025-07-27T00:16:52.348Z"
+    },
+    {
+      "testName": "query_complexity_calculation",
+      "passed": true,
+      "details": "Complexity score: 33",
+      "timestamp": "2025-07-27T00:16:52.348Z"
+    },
+    {
+      "testName": "gdpr_compliance_assessment",
+      "passed": true,
+      "details": "GDPR score: 100.0%",
+      "timestamp": "2025-07-27T00:16:52.358Z"
+    },
+    {
+      "testName": "hipaa_compliance_assessment",
+      "passed": true,
+      "details": "HIPAA score: 100.0%",
+      "timestamp": "2025-07-27T00:16:52.360Z"
+    },
+    {
+      "testName": "sox_compliance_assessment",
+      "passed": true,
+      "details": "SOX score: 100.0%",
+      "timestamp": "2025-07-27T00:16:52.362Z"
+    },
+    {
+      "testName": "compliance_stats_generation",
+      "passed": true,
+      "details": "3 frameworks, 4 rules",
+      "timestamp": "2025-07-27T00:16:52.362Z"
+    },
+    {
+      "testName": "legal_hold_creation",
+      "passed": true,
+      "details": "Hold created: 1473e7b6-825d-4a8b-b959-e196ea3223b3",
+      "timestamp": "2025-07-27T00:16:52.369Z"
+    },
+    {
+      "testName": "legal_hold_preservation",
+      "passed": true,
+      "details": "0 records preserved",
+      "timestamp": "2025-07-27T00:16:54.371Z"
+    },
+    {
+      "testName": "legal_hold_statistics",
+      "passed": true,
+      "details": "1 total holds",
+      "timestamp": "2025-07-27T00:16:54.371Z"
+    },
+    {
+      "testName": "end_to_end_audit_trail",
+      "passed": true,
+      "details": "Complete audit trail verified",
+      "timestamp": "2025-07-27T00:16:54.374Z"
+    },
+    {
+      "testName": "compliance_integration",
+      "passed": true,
+      "details": "Compliance integration successful",
+      "timestamp": "2025-07-27T00:16:54.376Z"
+    },
+    {
+      "testName": "high_volume_logging",
+      "passed": true,
+      "details": "2040.8 events/sec",
+      "timestamp": "2025-07-27T00:16:54.425Z"
+    },
+    {
+      "testName": "concurrent_agent_operations",
+      "passed": true,
+      "details": "5 concurrent operations",
+      "timestamp": "2025-07-27T00:16:54.437Z"
+    },
+    {
+      "testName": "large_query_performance",
+      "passed": true,
+      "details": "Query completed in 6ms",
+      "timestamp": "2025-07-27T00:16:54.443Z"
+    },
+    {
+      "testName": "tamper_detection_baseline",
+      "passed": true,
+      "details": "Chain integrity verified before tampering",
+      "timestamp": "2025-07-27T00:16:54.444Z"
+    },
+    {
+      "testName": "hash_chain_tamper_detection",
+      "passed": true,
+      "details": "Tamper detection system operational",
+      "timestamp": "2025-07-27T00:16:54.444Z"
+    },
+    {
+      "testName": "digital_signature_security",
+      "passed": true,
+      "details": "Digital signature verified",
+      "timestamp": "2025-07-27T00:16:54.445Z"
+    },
+    {
+      "testName": "agent_identity_verification",
+      "passed": false,
+      "details": "Agent identity verification failed: Agent identity not found",
+      "timestamp": "2025-07-27T00:16:54.445Z"
+    }
+  ],
+  "categories": {
+    "cryptographic_foundation": [
+      {
+        "testName": "basic_cryptographic_logging",
+        "passed": true,
+        "details": "Event logged: f339f07b-66ee-4f21-8917-68f72c6ac9a8",
+        "timestamp": "2025-07-27T00:16:52.313Z"
+      },
+      {
+        "testName": "hash_chain_integrity",
+        "passed": true,
+        "details": "Chain integrity verified",
+        "timestamp": "2025-07-27T00:16:52.316Z"
+      },
+      {
+        "testName": "digital_signature_verification",
+        "passed": true,
+        "details": "Signature verified",
+        "timestamp": "2025-07-27T00:16:52.321Z"
+      },
+      {
+        "testName": "merkle_tree_verification",
+        "passed": true,
+        "details": "Merkle tree verified",
+        "timestamp": "2025-07-27T00:16:52.326Z"
+      },
+      {
+        "testName": "hash_chain_tamper_detection",
+        "passed": true,
+        "details": "Tamper detection system operational",
+        "timestamp": "2025-07-27T00:16:54.444Z"
+      },
+      {
+        "testName": "digital_signature_security",
+        "passed": true,
+        "details": "Digital signature verified",
+        "timestamp": "2025-07-27T00:16:54.445Z"
+      }
+    ],
+    "agent_identity": [
+      {
+        "testName": "agent_identity_generation",
+        "passed": false,
+        "details": "Identity generation incomplete: {\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identity\":{\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\\n-----END PUBLIC KEY-----\\n\",\"privateKey\":\"-----BEGIN PRIVATE KEY-----\\nMIGEAgEAMBAGByqGSM49AgEGBSuBBAAKBG0wawIBAQQgDd8HL005d2brv1E6lrz9\\nQ9/aMvp6vUNt5oc0CiWZyVyhRANCAAQCrulBPMu78Ex5tAgJbSRsGaXI+g9AF/cS\\nV+KK2MWZuj/VCm6CYLYqt1fTC7pIbdeJB3wCUd7SNQIbGl+U6H6U\\n-----END PRIVATE KEY-----\\n\",\"createdAt\":\"2025-07-27T00:16:52.309Z\",\"lastUpdated\":\"2025-07-27T00:16:52.309Z\",\"status\":\"active\",\"metadata\":{\"algorithm\":\"ecdsa\",\"namedCurve\":\"secp256k1\",\"keySize\":256},\"verificationHistory\":[],\"sessionCount\":0},\"certificate\":{\"certificateId\":\"2d515596-afc4-4013-ba16-28d9f3010c9b\",\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\\n-----END PUBLIC KEY-----\\n\",\"issuedAt\":\"2025-07-27T00:16:52.309Z\",\"expiresAt\":\"2026-07-27T00:16:52.309Z\",\"status\":\"valid\",\"issuer\":{\"caId\":\"1e21b2fe-da8d-42e3-a191-5d1d0bea1854\",\"algorithm\":\"ecdsa\"},\"subject\":{\"agentId\":{\"agentId\":\"test_identity_agent\",\"agentType\":\"test_agent\",\"capabilities\":[\"test_capability\"],\"trustLevel\":\"medium\"},\"identityId\":\"8cd4df0c-cb90-4174-9b35-d0678ba1e098\",\"publicKeyFingerprint\":\"a8cd3950e025db4c\"},\"signature\":\"cert_sig_01f50ad2996811ccc1297718cba3a8b0\"},\"publicKeyFingerprint\":\"a8cd3950e025db4c\"}",
+        "timestamp": "2025-07-27T00:16:52.326Z"
+      },
+      {
+        "testName": "agent_session_management",
+        "passed": false,
+        "details": "Agent identity not found: test_identity_agent",
+        "timestamp": "2025-07-27T00:16:52.333Z"
+      },
+      {
+        "testName": "agent_log_segregation",
+        "passed": true,
+        "details": "Retrieved 5 agent logs",
+        "timestamp": "2025-07-27T00:16:52.345Z"
+      },
+      {
+        "testName": "cross_agent_correlation",
+        "passed": false,
+        "details": "At least two agents required for correlation",
+        "timestamp": "2025-07-27T00:16:52.346Z"
+      },
+      {
+        "testName": "agent_identity_verification",
+        "passed": false,
+        "details": "Agent identity verification failed: Agent identity not found",
+        "timestamp": "2025-07-27T00:16:54.445Z"
+      }
+    ],
+    "enterprise_transparency": [
+      {
+        "testName": "advanced_query_execution",
+        "passed": true,
+        "details": "Query returned 5 results",
+        "timestamp": "2025-07-27T00:16:52.347Z"
+      },
+      {
+        "testName": "real_time_monitoring",
+        "passed": true,
+        "details": "Monitor started and stopped successfully",
+        "timestamp": "2025-07-27T00:16:52.348Z"
+      },
+      {
+        "testName": "query_complexity_calculation",
+        "passed": true,
+        "details": "Complexity score: 33",
+        "timestamp": "2025-07-27T00:16:52.348Z"
+      },
+      {
+        "testName": "large_query_performance",
+        "passed": true,
+        "details": "Query completed in 6ms",
+        "timestamp": "2025-07-27T00:16:54.443Z"
+      }
+    ],
+    "compliance": [
+      {
+        "testName": "gdpr_compliance_assessment",
+        "passed": true,
+        "details": "GDPR score: 100.0%",
+        "timestamp": "2025-07-27T00:16:52.358Z"
+      },
+      {
+        "testName": "hipaa_compliance_assessment",
+        "passed": true,
+        "details": "HIPAA score: 100.0%",
+        "timestamp": "2025-07-27T00:16:52.360Z"
+      },
+      {
+        "testName": "sox_compliance_assessment",
+        "passed": true,
+        "details": "SOX score: 100.0%",
+        "timestamp": "2025-07-27T00:16:52.362Z"
+      },
+      {
+        "testName": "compliance_stats_generation",
+        "passed": true,
+        "details": "3 frameworks, 4 rules",
+        "timestamp": "2025-07-27T00:16:52.362Z"
+      },
+      {
+        "testName": "compliance_integration",
+        "passed": true,
+        "details": "Compliance integration successful",
+        "timestamp": "2025-07-27T00:16:54.376Z"
+      }
+    ],
+    "legal_hold": [
+      {
+        "testName": "legal_hold_creation",
+        "passed": true,
+        "details": "Hold created: 1473e7b6-825d-4a8b-b959-e196ea3223b3",
+        "timestamp": "2025-07-27T00:16:52.369Z"
+      },
+      {
+        "testName": "legal_hold_preservation",
+        "passed": true,
+        "details": "0 records preserved",
+        "timestamp": "2025-07-27T00:16:54.371Z"
+      },
+      {
+        "testName": "legal_hold_statistics",
+        "passed": true,
+        "details": "1 total holds",
+        "timestamp": "2025-07-27T00:16:54.371Z"
+      }
+    ],
+    "integration": [
+      {
+        "testName": "end_to_end_audit_trail",
+        "passed": true,
+        "details": "Complete audit trail verified",
+        "timestamp": "2025-07-27T00:16:54.374Z"
+      },
+      {
+        "testName": "compliance_integration",
+        "passed": true,
+        "details": "Compliance integration successful",
+        "timestamp": "2025-07-27T00:16:54.376Z"
+      }
+    ],
+    "performance": [
+      {
+        "testName": "high_volume_logging",
+        "passed": true,
+        "details": "2040.8 events/sec",
+        "timestamp": "2025-07-27T00:16:54.425Z"
+      },
+      {
+        "testName": "concurrent_agent_operations",
+        "passed": true,
+        "details": "5 concurrent operations",
+        "timestamp": "2025-07-27T00:16:54.437Z"
+      },
+      {
+        "testName": "large_query_performance",
+        "passed": true,
+        "details": "Query completed in 6ms",
+        "timestamp": "2025-07-27T00:16:54.443Z"
+      }
+    ],
+    "security": [
+      {
+        "testName": "digital_signature_verification",
+        "passed": true,
+        "details": "Signature verified",
+        "timestamp": "2025-07-27T00:16:52.321Z"
+      },
+      {
+        "testName": "merkle_tree_verification",
+        "passed": true,
+        "details": "Merkle tree verified",
+        "timestamp": "2025-07-27T00:16:52.326Z"
+      },
+      {
+        "testName": "tamper_detection_baseline",
+        "passed": true,
+        "details": "Chain integrity verified before tampering",
+        "timestamp": "2025-07-27T00:16:54.444Z"
+      },
+      {
+        "testName": "hash_chain_tamper_detection",
+        "passed": true,
+        "details": "Tamper detection system operational",
+        "timestamp": "2025-07-27T00:16:54.444Z"
+      },
+      {
+        "testName": "digital_signature_security",
+        "passed": true,
+        "details": "Digital signature verified",
+        "timestamp": "2025-07-27T00:16:54.445Z"
+      },
+      {
+        "testName": "agent_identity_verification",
+        "passed": false,
+        "details": "Agent identity verification failed: Agent identity not found",
+        "timestamp": "2025-07-27T00:16:54.445Z"
+      }
+    ]
+  },
+  "generatedAt": "2025-07-27T00:16:54.445Z"
+}

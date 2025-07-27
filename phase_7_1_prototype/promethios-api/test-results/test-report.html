@@ -1,0 +1,563 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptographic Audit System Test Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .summary-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .passed { color: #28a745; }
+        .failed { color: #dc3545; }
+        .success-rate { color: #17a2b8; }
+        .total { color: #6c757d; }
+        .categories {
+            padding: 30px;
+        }
+        .category {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .category-header {
+            background: #e9ecef;
+            padding: 15px 20px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .category-content {
+            padding: 20px;
+        }
+        .test-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .test-result:last-child {
+            border-bottom: none;
+        }
+        .test-name {
+            font-weight: 500;
+        }
+        .test-status {
+            font-weight: bold;
+        }
+        .test-details {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Cryptographic Audit System</h1>
+            <p>Comprehensive Test Report - 7/26/2025, 8:16:54 PM</p>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Total Tests</h3>
+                <div class="value total">28</div>
+            </div>
+            <div class="summary-card">
+                <h3>Passed</h3>
+                <div class="value passed">24</div>
+            </div>
+            <div class="summary-card">
+                <h3>Failed</h3>
+                <div class="value failed">4</div>
+            </div>
+            <div class="summary-card">
+                <h3>Success Rate</h3>
+                <div class="value success-rate">85.7%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85.7%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="categories">
+            
+                <div class="category">
+                    <div class="category-header">
+                        Cryptographic Foundation (6 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Basic Cryptographic Logging</div>
+                                    <div class="test-details">Event logged: f339f07b-66ee-4f21-8917-68f72c6ac9a8</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Hash Chain Integrity</div>
+                                    <div class="test-details">Chain integrity verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Digital Signature Verification</div>
+                                    <div class="test-details">Signature verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Merkle Tree Verification</div>
+                                    <div class="test-details">Merkle tree verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Hash Chain Tamper Detection</div>
+                                    <div class="test-details">Tamper detection system operational</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Digital Signature Security</div>
+                                    <div class="test-details">Digital signature verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Agent Identity (5 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Agent Identity Generation</div>
+                                    <div class="test-details">Identity generation incomplete: {"agentId":{"agentId":"test_identity_agent","agentType":"test_agent","capabilities":["test_capability"],"trustLevel":"medium"},"identity":{"agentId":{"agentId":"test_identity_agent","agentType":"test_agent","capabilities":["test_capability"],"trustLevel":"medium"},"identityId":"8cd4df0c-cb90-4174-9b35-d0678ba1e098","publicKey":"-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\n-----END PUBLIC KEY-----\n","privateKey":"-----BEGIN PRIVATE KEY-----\nMIGEAgEAMBAGByqGSM49AgEGBSuBBAAKBG0wawIBAQQgDd8HL005d2brv1E6lrz9\nQ9/aMvp6vUNt5oc0CiWZyVyhRANCAAQCrulBPMu78Ex5tAgJbSRsGaXI+g9AF/cS\nV+KK2MWZuj/VCm6CYLYqt1fTC7pIbdeJB3wCUd7SNQIbGl+U6H6U\n-----END PRIVATE KEY-----\n","createdAt":"2025-07-27T00:16:52.309Z","lastUpdated":"2025-07-27T00:16:52.309Z","status":"active","metadata":{"algorithm":"ecdsa","namedCurve":"secp256k1","keySize":256},"verificationHistory":[],"sessionCount":0},"certificate":{"certificateId":"2d515596-afc4-4013-ba16-28d9f3010c9b","agentId":{"agentId":"test_identity_agent","agentType":"test_agent","capabilities":["test_capability"],"trustLevel":"medium"},"identityId":"8cd4df0c-cb90-4174-9b35-d0678ba1e098","publicKey":"-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEAq7pQTzLu/BMebQICW0kbBmlyPoPQBf3\nElfiitjFmbo/1QpugmC2KrdX0wu6SG3XiQd8AlHe0jUCGxpflOh+lA==\n-----END PUBLIC KEY-----\n","issuedAt":"2025-07-27T00:16:52.309Z","expiresAt":"2026-07-27T00:16:52.309Z","status":"valid","issuer":{"caId":"1e21b2fe-da8d-42e3-a191-5d1d0bea1854","algorithm":"ecdsa"},"subject":{"agentId":{"agentId":"test_identity_agent","agentType":"test_agent","capabilities":["test_capability"],"trustLevel":"medium"},"identityId":"8cd4df0c-cb90-4174-9b35-d0678ba1e098","publicKeyFingerprint":"a8cd3950e025db4c"},"signature":"cert_sig_01f50ad2996811ccc1297718cba3a8b0"},"publicKeyFingerprint":"a8cd3950e025db4c"}</div>
+                                </div>
+                                <div class="test-status failed">
+                                    ❌ FAIL
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Agent Session Management</div>
+                                    <div class="test-details">Agent identity not found: test_identity_agent</div>
+                                </div>
+                                <div class="test-status failed">
+                                    ❌ FAIL
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Agent Log Segregation</div>
+                                    <div class="test-details">Retrieved 5 agent logs</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Cross Agent Correlation</div>
+                                    <div class="test-details">At least two agents required for correlation</div>
+                                </div>
+                                <div class="test-status failed">
+                                    ❌ FAIL
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Agent Identity Verification</div>
+                                    <div class="test-details">Agent identity verification failed: Agent identity not found</div>
+                                </div>
+                                <div class="test-status failed">
+                                    ❌ FAIL
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Enterprise Transparency (4 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Advanced Query Execution</div>
+                                    <div class="test-details">Query returned 5 results</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Real Time Monitoring</div>
+                                    <div class="test-details">Monitor started and stopped successfully</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Query Complexity Calculation</div>
+                                    <div class="test-details">Complexity score: 33</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Large Query Performance</div>
+                                    <div class="test-details">Query completed in 6ms</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Compliance (5 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Gdpr Compliance Assessment</div>
+                                    <div class="test-details">GDPR score: 100.0%</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Hipaa Compliance Assessment</div>
+                                    <div class="test-details">HIPAA score: 100.0%</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Sox Compliance Assessment</div>
+                                    <div class="test-details">SOX score: 100.0%</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Compliance Stats Generation</div>
+                                    <div class="test-details">3 frameworks, 4 rules</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Compliance Integration</div>
+                                    <div class="test-details">Compliance integration successful</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Legal Hold (3 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Legal Hold Creation</div>
+                                    <div class="test-details">Hold created: 1473e7b6-825d-4a8b-b959-e196ea3223b3</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Legal Hold Preservation</div>
+                                    <div class="test-details">0 records preserved</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Legal Hold Statistics</div>
+                                    <div class="test-details">1 total holds</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Integration (2 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">End To End Audit Trail</div>
+                                    <div class="test-details">Complete audit trail verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Compliance Integration</div>
+                                    <div class="test-details">Compliance integration successful</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Performance (3 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">High Volume Logging</div>
+                                    <div class="test-details">2040.8 events/sec</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Concurrent Agent Operations</div>
+                                    <div class="test-details">5 concurrent operations</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Large Query Performance</div>
+                                    <div class="test-details">Query completed in 6ms</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+                <div class="category">
+                    <div class="category-header">
+                        Security (6 tests)
+                    </div>
+                    <div class="category-content">
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Digital Signature Verification</div>
+                                    <div class="test-details">Signature verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Merkle Tree Verification</div>
+                                    <div class="test-details">Merkle tree verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Tamper Detection Baseline</div>
+                                    <div class="test-details">Chain integrity verified before tampering</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Hash Chain Tamper Detection</div>
+                                    <div class="test-details">Tamper detection system operational</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Digital Signature Security</div>
+                                    <div class="test-details">Digital signature verified</div>
+                                </div>
+                                <div class="test-status passed">
+                                    ✅ PASS
+                                </div>
+                            </div>
+                        
+                            <div class="test-result">
+                                <div>
+                                    <div class="test-name">Agent Identity Verification</div>
+                                    <div class="test-details">Agent identity verification failed: Agent identity not found</div>
+                                </div>
+                                <div class="test-status failed">
+                                    ❌ FAIL
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            
+        </div>
+    </div>
+</body>
+</html>
