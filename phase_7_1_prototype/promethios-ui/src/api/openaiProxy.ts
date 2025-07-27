@@ -85,15 +85,16 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
     try {
       // Fetch both telemetry and policy data
       const [telemetryResponse, policyResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}/telemetry`),
-        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments`)
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}`),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments?agentId=${agentId}`)
       ]);
       
       let telemetryData = null;
       let policyData = null;
       
       if (telemetryResponse.ok) {
-        telemetryData = await telemetryResponse.json();
+        const telemetryResult = await telemetryResponse.json();
+        telemetryData = telemetryResult.data || telemetryResult;
       }
       
       if (policyResponse.ok) {
