@@ -73,6 +73,7 @@ interface ReportDialogState {
 }
 
 const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
+  const { isDarkMode } = useTheme();
   const { currentUser } = useAuth();
   const { metrics, loading: dashboardLoading } = useGovernanceDashboard();
   
@@ -224,14 +225,27 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        bgcolor: isDarkMode ? 'grey.900' : 'background.default',
+        color: isDarkMode ? 'common.white' : 'text.primary'
+      }}>
         <Typography>Loading production agents...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default' }}>
+    <Box sx={{ 
+      flexGrow: 1, 
+      p: 3, 
+      bgcolor: isDarkMode ? 'grey.900' : 'background.default',
+      color: isDarkMode ? 'common.white' : 'text.primary',
+      minHeight: '100vh'
+    }}>
       {/* Breadcrumbs */}
       <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
         <Link color="inherit" href="/ui/governance" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -257,7 +271,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
       {/* Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
@@ -274,7 +288,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
@@ -291,7 +305,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
@@ -310,7 +324,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
@@ -329,7 +343,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
       </Grid>
 
       {/* Filters and Search */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: 2, mb: 3, bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <TextField
@@ -407,7 +421,7 @@ const AuditReportsPage: React.FC<AuditReportsPageProps> = () => {
       </Paper>
 
       {/* Agents Table */}
-      <Paper>
+      <Paper sx={{ bgcolor: isDarkMode ? 'grey.800' : 'background.paper' }}>
         <TableContainer>
           <Table>
             <TableHead>
