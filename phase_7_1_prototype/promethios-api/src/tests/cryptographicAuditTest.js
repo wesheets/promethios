@@ -299,6 +299,8 @@ class CryptographicAuditTestSuite {
       const agent1 = this.testData.testAgents[0].agentId;
       const agent2 = this.testData.testAgents[1].agentId;
       
+      console.log(`🔗 Testing correlation between ${agent1} and ${agent2}`);
+      
       // Create correlation between agents
       const correlation = await agentLogSegregationService.createCrossAgentCorrelation({
         primaryAgentId: agent1,
@@ -307,10 +309,10 @@ class CryptographicAuditTestSuite {
         correlationData: { task: 'test_collaboration' }
       });
       
-      if (correlation.correlationId) {
+      if (correlation && correlation.correlationId) {
         this.recordTestResult('cross_agent_correlation', true, 'Cross-agent correlation created');
       } else {
-        this.recordTestResult('cross_agent_correlation', false, 'Cross-agent correlation failed');
+        this.recordTestResult('cross_agent_correlation', false, 'Cross-agent correlation failed - no correlation ID returned');
       }
     } catch (error) {
       this.recordTestResult('cross_agent_correlation', false, error.message);

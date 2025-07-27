@@ -38,6 +38,7 @@ import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage
 import EnhancedDeployPage from './pages/EnhancedDeployPage';
 import EnhancedEmotionalVeritasPage from './pages/EnhancedEmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
+import AuditReportsPage from './components/audit/AuditReportsPage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
@@ -307,6 +308,14 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnhancedGovernanceReportsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/audit-reports" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AuditReportsPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

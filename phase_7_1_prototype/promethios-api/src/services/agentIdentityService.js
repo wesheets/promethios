@@ -78,9 +78,12 @@ class AgentIdentityService {
         privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
       });
       
+      // Extract agentId if it's nested
+      const actualAgentId = agentId.agentId || agentId;
+      
       // Create agent identity
       const identity = {
-        agentId,
+        agentId: actualAgentId,
         identityId: uuidv4(),
         publicKey,
         privateKey,
@@ -97,15 +100,15 @@ class AgentIdentityService {
         sessionCount: 0
       };
       
-      // Store identity
-      this.agentIdentities.set(agentId, identity);
+      // Store identity using actual agentId
+      this.agentIdentities.set(actualAgentId, identity);
       
       // Generate certificate
-      const certificate = await this.issueCertificate(agentId, identity);
+      const certificate = await this.issueCertificate(actualAgentId, identity);
       
       // Log identity creation
       await cryptographicAuditService.logCryptographicEvent(
-        agentId,
+        actualAgentId,
         'system',
         'agent_identity_created',
         {
@@ -119,14 +122,14 @@ class AgentIdentityService {
         }
       );
       
-      console.log(`🆔 Generated identity for agent: ${agentId}`);
+      console.log(`🆔 Generated identity for agent: ${actualAgentId}`);
       
       // Get the stored identity with certificate
-      const storedIdentity = this.agentIdentities.get(agentId);
-      const issuedCertificate = this.agentCertificates.get(agentId);
+      const storedIdentity = this.agentIdentities.get(actualAgentId);
+      const issuedCertificate = this.agentCertificates.get(actualAgentId);
       
       return {
-        agentId,
+        agentId: actualAgentId,
         identity: storedIdentity,
         certificate: issuedCertificate,
         publicKeyFingerprint: this.generateKeyFingerprint(publicKey)
@@ -260,14 +263,17 @@ class AgentIdentityService {
    */
   async verifyAgentIdentity(agentId, publicKey = null, signature = null, data = null) {
     try {
-      const identity = this.agentIdentities.get(agentId);
-      const certificate = this.agentCertificates.get(agentId);
+      // Extract agentId if it's nested
+      const actualAgentId = agentId.agentId || agentId;
+      
+      const identity = this.agentIdentities.get(actualAgentId);
+      const certificate = this.agentCertificates.get(actualAgentId);
       
       if (!identity || !certificate) {
         return {
           valid: false,
           reason: 'Agent identity or certificate not found',
-          agentId
+          agentId: actualAgentId
         };
       }
       

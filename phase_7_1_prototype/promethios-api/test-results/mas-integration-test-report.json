@@ -1,0 +1,266 @@
+{
+  "testSuite": "MAS Integration Test Suite",
+  "timestamp": "2025-07-27T01:13:38.290Z",
+  "summary": {
+    "totalTests": 24,
+    "passedTests": 24,
+    "failedTests": 0,
+    "successRate": "100.0",
+    "duration": "14ms"
+  },
+  "testResults": [
+    {
+      "name": "MAS Governance Service Integration",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "MAS Governance Service integration verified"
+      },
+      "error": null
+    },
+    {
+      "name": "Multi-Agent Audit Service Integration",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Multi-Agent Audit Service integration verified",
+        "behaviorId": "d583a158-1f12-4912-adeb-9dc1ade56b24"
+      },
+      "error": null
+    },
+    {
+      "name": "Cryptographic Audit Integration",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Cryptographic Audit integration verified",
+        "eventId": "d8531ace-ca73-466e-b910-621bd58a4170"
+      },
+      "error": null
+    },
+    {
+      "name": "Collective Decision Audit",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Collective decision audit completed",
+        "auditId": "audit_a29cd0144eca"
+      },
+      "error": null
+    },
+    {
+      "name": "Decision Cryptographic Verification",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Decision cryptographic verification passed"
+      },
+      "error": null
+    },
+    {
+      "name": "Decision Compliance Scoring",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Decision compliance scoring verified",
+        "score": 100
+      },
+      "error": null
+    },
+    {
+      "name": "Veritas Reflection Audit",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Veritas reflection audit completed",
+        "auditId": "audit_89bb8c3b95ab"
+      },
+      "error": null
+    },
+    {
+      "name": "Veritas Score Verification",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Veritas score verification passed"
+      },
+      "error": null
+    },
+    {
+      "name": "Veritas Compliance Assessment",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Veritas compliance assessment verified",
+        "grade": "A"
+      },
+      "error": null
+    },
+    {
+      "name": "Trust Relationship Change Audit",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Trust relationship change audit completed",
+        "auditId": "audit_fedc37fc5410"
+      },
+      "error": null
+    },
+    {
+      "name": "Trust Calculation Verification",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Trust calculation verification passed"
+      },
+      "error": null
+    },
+    {
+      "name": "Trust Impact Assessment",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Trust impact assessment verified",
+        "impact": "low"
+      },
+      "error": null
+    },
+    {
+      "name": "Governance Compliance Report Generation",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Governance compliance report generated",
+        "reportId": "report_e122a5f48837"
+      },
+      "error": null
+    },
+    {
+      "name": "Compliance Metrics Calculation",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Compliance metrics calculation verified",
+        "compliance": 100
+      },
+      "error": null
+    },
+    {
+      "name": "Audit Chain Integrity Verification",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Audit chain integrity verified",
+        "integrity": true
+      },
+      "error": null
+    },
+    {
+      "name": "Mathematical Proof Generation",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Mathematical proof generation verified",
+        "algorithm": "SHA-256 + ECDSA"
+      },
+      "error": null
+    },
+    {
+      "name": "Cryptographic Hash Generation",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Cryptographic hash generation verified",
+        "hashLength": 64
+      },
+      "error": null
+    },
+    {
+      "name": "Digital Signature Generation",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Digital signature generation verified",
+        "signaturePrefix": "sig_"
+      },
+      "error": null
+    },
+    {
+      "name": "MAS Context Data Structure",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "MAS context data structure verified"
+      },
+      "error": null
+    },
+    {
+      "name": "Audit Event Data Structure",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Audit event data structure verified"
+      },
+      "error": null
+    },
+    {
+      "name": "Compliance Report Data Structure",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Compliance report data structure verified"
+      },
+      "error": null
+    },
+    {
+      "name": "Audit Event Processing Performance",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Audit event processing performance verified",
+        "duration": "1ms"
+      },
+      "error": null
+    },
+    {
+      "name": "Compliance Report Generation Performance",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Compliance report generation performance verified",
+        "duration": "0ms"
+      },
+      "error": null
+    },
+    {
+      "name": "Cryptographic Operations Performance",
+      "passed": true,
+      "result": {
+        "success": true,
+        "message": "Cryptographic operations performance verified",
+        "duration": "1ms"
+      },
+      "error": null
+    }
+  ],
+  "environment": {
+    "testContexts": [
+      "test_mas_ctx_001",
+      "test_mas_ctx_002"
+    ],
+    "testAgents": [
+      "test_agent_finance_1",
+      "test_agent_finance_2",
+      "test_agent_risk_1",
+      "test_agent_support_1",
+      "test_agent_support_2",
+      "test_agent_support_3"
+    ],
+    "testDecisions": [
+      "test_decision_001"
+    ]
+  },
+  "recommendations": [
+    "All tests passed! MAS integration is ready for production."
+  ]
+}

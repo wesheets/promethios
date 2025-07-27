@@ -68,6 +68,7 @@ app.use('/api/cryptographic-audit', require('./routes/cryptographicAudit'));
 app.use('/api/agent-identity', require('./routes/agentIdentity'));
 app.use('/api/agent-logs', require('./routes/agentLogSegregation'));
 app.use('/api/enterprise-transparency', require('./routes/enterpriseTransparency'));
+app.use('/api/multi-agent-audit', require('./routes/multiAgentAudit'));
 
 // Health check endpoints (both /health and /api/health for compatibility)
 app.get('/health', (req, res) => {
