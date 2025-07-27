@@ -196,16 +196,19 @@ class CryptographicAuditIntegrationService {
         verified: true
       });
 
+      // Ensure auditLogs is an array (defensive programming)
+      const logsArray = Array.isArray(auditLogs) ? auditLogs : [];
+
       // Calculate summary metrics
-      const totalInteractions = auditLogs.filter(log => 
+      const totalInteractions = logsArray.filter(log => 
         log.eventType === 'chat_message' || log.eventType === 'agent_response'
       ).length;
 
-      const verifiedLogs = auditLogs.filter(log => 
+      const verifiedLogs = logsArray.filter(log => 
         log.cryptographicProof?.verificationStatus === 'verified'
       ).length;
 
-      const violations = auditLogs.filter(log => 
+      const violations = logsArray.filter(log => 
         log.eventData.governanceData?.violations?.length > 0
       ).length;
 
@@ -213,7 +216,7 @@ class CryptographicAuditIntegrationService {
         ? Math.round(((totalInteractions - violations) / totalInteractions) * 100)
         : 100;
 
-      const cryptographicIntegrity = verifiedLogs === auditLogs.length ? 'verified' : 'pending';
+      const cryptographicIntegrity = verifiedLogs === logsArray.length ? 'verified' : 'pending';
 
       // Generate report hash and signature
       const reportData = {
@@ -221,7 +224,7 @@ class CryptographicAuditIntegrationService {
         agentName,
         reportType,
         timeRange: { startDate, endDate },
-        auditLogs: auditLogs.length
+        auditLogs: logsArray.length
       };
 
       const reportHash = await this.generateReportHash(reportData);
@@ -241,12 +244,12 @@ class CryptographicAuditIntegrationService {
           violations,
           cryptographicIntegrity: cryptographicIntegrity as 'verified' | 'pending' | 'failed'
         },
-        auditTrail: auditLogs,
+        auditTrail: logsArray,
         cryptographicProof: {
           reportHash,
           signature,
-          merkleRoot: this.calculateMerkleRoot(auditLogs),
-          verificationChain: auditLogs.map(log => log.cryptographicProof?.hash || '').filter(Boolean)
+          merkleRoot: this.calculateMerkleRoot(logsArray),
+          verificationChain: logsArray.map(log => log.cryptographicProof?.hash || '').filter(Boolean)
         },
         metadata: {
           generatedBy: 'Promethios Cryptographic Audit System',
