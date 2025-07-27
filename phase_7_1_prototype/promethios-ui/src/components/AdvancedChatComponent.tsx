@@ -60,6 +60,7 @@ import { useAgentMetrics } from '../hooks/useAgentMetrics';
 import { AgentMetricsWidget } from './AgentMetricsWidget';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
+import { cryptographicAuditIntegration } from '../services/CryptographicAuditIntegration';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -2214,6 +2215,27 @@ useEffect(() => {
     if (selectedAgent) {
       ensureUserSet();
       await chatStorageService.saveMessage(userMessage, selectedAgent.identity.id);
+      
+      // 🔐 CRYPTOGRAPHIC AUDIT: Log user message
+      try {
+        await cryptographicAuditIntegration.logAgentInteraction(
+          selectedAgent.identity.id,
+          currentUser?.uid || 'anonymous',
+          'chat_message',
+          {
+            messageId: userMessage.id,
+            content: userMessage.content,
+            metadata: {
+              attachmentCount: currentAttachments.length,
+              messageLength: userMessage.content.length,
+              governanceEnabled
+            }
+          }
+        );
+        console.log('✅ Cryptographic audit: User message logged');
+      } catch (auditError) {
+        console.warn('⚠️ Cryptographic audit logging failed:', auditError);
+      }
     } else if (chatMode === 'saved-systems' && selectedSystem) {
       ensureUserSet();
       await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
@@ -2619,6 +2641,29 @@ useEffect(() => {
         // Save agent message to storage
         ensureUserSet();
         await chatStorageService.saveMessage(agentMessage, selectedAgent.identity.id);
+        
+        // 🔐 CRYPTOGRAPHIC AUDIT: Log agent response
+        try {
+          await cryptographicAuditIntegration.logAgentInteraction(
+            selectedAgent.identity.id,
+            currentUser?.uid || 'anonymous',
+            'agent_response',
+            {
+              messageId: agentMessage.id,
+              content: agentMessage.content,
+              governanceData: agentMessage.governanceData,
+              metadata: {
+                responseTime,
+                trustScore: agentMessage.governanceData?.trustScore,
+                violations: agentMessage.governanceData?.violations?.length || 0,
+                approved: agentMessage.governanceData?.approved
+              }
+            }
+          );
+          console.log('✅ Cryptographic audit: Agent response logged');
+        } catch (auditError) {
+          console.warn('⚠️ Cryptographic audit logging failed:', auditError);
+        }
         
         // Scroll to bottom after agent response
         setTimeout(() => {
@@ -3725,6 +3770,32 @@ useEffect(() => {
             >
               <ContentPasteIcon />
             </IconButton>
+
+            {/* Download Audit Report Button */}
+            {selectedAgent && (
+              <IconButton
+                onClick={async () => {
+                  try {
+                    const report = await cryptographicAuditIntegration.generateCryptographicReport(
+                      selectedAgent.identity.id,
+                      selectedAgent.identity.name,
+                      'audit'
+                    );
+                    await cryptographicAuditIntegration.downloadReport(report);
+                    console.log('✅ Audit report downloaded from chat interface');
+                  } catch (error) {
+                    console.error('Error downloading audit report:', error);
+                  }
+                }}
+                sx={{ 
+                  color: DARK_THEME.text.secondary,
+                  '&:hover': { color: DARK_THEME.success }
+                }}
+                title="Download Cryptographic Audit Report"
+              >
+                <DescriptionIcon />
+              </IconButton>
+            )}
 
             <Button
               variant="contained"

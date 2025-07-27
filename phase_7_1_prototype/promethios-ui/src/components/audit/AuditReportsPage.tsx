@@ -12,6 +12,7 @@ import { darkTheme } from '../../theme/darkTheme';
 import { useAuth } from '../../context/AuthContext';
 import { useGovernanceDashboard } from '../../hooks/useGovernanceDashboard';
 import { userAgentStorageService } from '../../services/UserAgentStorageService';
+import { cryptographicAuditIntegration, CryptographicReport } from '../../services/CryptographicAuditIntegration';
 import {
   Box,
   Grid,
@@ -249,28 +250,56 @@ const AuditReportsPage: React.FC = () => {
   }, []);
 
   const handleDownloadReport = useCallback(async () => {
-    // Mock report generation
-    const reportData = {
-      agentId: reportDialog.agentId,
-      agentName: reportDialog.agentName,
-      reportType: reportDialog.reportType,
-      generatedAt: new Date().toISOString(),
-      cryptographicProof: 'SHA-256 hash chain verification',
-      data: 'Comprehensive audit trail with mathematical proof'
-    };
+    try {
+      // Find the agent for the report
+      const agent = agents.find(a => a.agentId === reportDialog.agentId);
+      if (!agent) {
+        console.error('Agent not found for report generation');
+        return;
+      }
 
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${reportDialog.reportType}-report-${reportDialog.agentId}-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+      // Generate real cryptographic report using the audit integration service
+      const cryptographicReport = await cryptographicAuditIntegration.generateCryptographicReport(
+        reportDialog.agentId,
+        reportDialog.agentName,
+        reportDialog.reportType,
+        {
+          startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+          endDate: new Date().toISOString()
+        }
+      );
+
+      // Download the report
+      await cryptographicAuditIntegration.downloadReport(cryptographicReport);
+      
+      console.log('✅ Cryptographic report generated and downloaded:', cryptographicReport.reportId);
+    } catch (error) {
+      console.error('Error generating cryptographic report:', error);
+      
+      // Fallback to mock report if real data fails
+      const reportData = {
+        agentId: reportDialog.agentId,
+        agentName: reportDialog.agentName,
+        reportType: reportDialog.reportType,
+        generatedAt: new Date().toISOString(),
+        cryptographicProof: 'SHA-256 hash chain verification',
+        data: 'Comprehensive audit trail with mathematical proof',
+        error: 'Real audit data unavailable - using fallback report'
+      };
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportDialog.reportType}-report-${reportDialog.agentId}-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }
     
     handleCloseReportDialog();
-  }, [reportDialog, handleCloseReportDialog]);
+  }, [reportDialog, handleCloseReportDialog, agents]);
 
   const getStatusIcon = useCallback((status: string) => {
     switch (status) {
