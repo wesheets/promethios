@@ -250,26 +250,26 @@ export class UserAgentStorageService {
       console.log('🔍 Production keys found:', productionKeys.length, productionKeys.slice(0, 3));
       console.log('🔍 Other keys found:', otherKeys.length, otherKeys.slice(0, 3));
       
-      // Filter for production agents AND native agents
+      // Filter for ALL user agents (testing, production, and native agents)
       const userPrefix = `${this.currentUserId}_`;
-      console.log('🔍 Looking for production agents with prefix:', userPrefix);
+      console.log('🔍 Looking for all user agents with prefix:', userPrefix);
       console.log('🔍 Sample key analysis:');
       keyParts.slice(0, 5).forEach(key => {
-        console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')}`);
+        console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')} | Has -testing: ${key.includes('-testing')}`);
       });
       
-      // Include both production agents and native agents (promethios-llm-*)
+      // Include testing agents, production agents, and native agents (promethios-llm-*)
       const userKeyParts = keyParts.filter(keyPart => 
         keyPart.startsWith(userPrefix) && 
         !keyPart.includes('scorecard') &&
-        (keyPart.includes('-production') || keyPart.startsWith(`${userPrefix}promethios-llm-`)) // Include native agents
+        (keyPart.includes('-production') || keyPart.includes('-testing') || keyPart.startsWith(`${userPrefix}promethios-llm-`)) // Include all agent types
       );
-      console.log('🔍 Filtered production + native agent key parts:', userKeyParts);
+      console.log('🔍 Filtered testing + production + native agent key parts:', userKeyParts);
       
-      // Fallback: If no production agents found, load any user agents (for debugging)
+      // Fallback: If no agents found, load any user agents (for debugging)
       let fallbackKeyParts = [];
       if (userKeyParts.length === 0) {
-        console.log('⚠️ No production agents found, checking for any user agents...');
+        console.log('⚠️ No agents found, checking for any user agents...');
         fallbackKeyParts = keyParts.filter(keyPart => 
           keyPart.startsWith(userPrefix) && 
           !keyPart.includes('scorecard')
@@ -277,13 +277,13 @@ export class UserAgentStorageService {
         console.log('🔍 Fallback: Found user agent key parts:', fallbackKeyParts);
       }
       
-      // Use production agents if available, otherwise use fallback
+      // Use all agent types if available, otherwise use fallback
       const finalKeyParts = userKeyParts.length > 0 ? userKeyParts : fallbackKeyParts;
       
       // Reconstruct full keys for loading
       const userKeys = finalKeyParts.map(keyPart => `agents/${keyPart}`);
       console.log('🔍 Final agent keys for loading:', userKeys);
-      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production + native agents' : 'fallback to any user agents');
+      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'testing + production + native agents' : 'fallback to any user agents');
 
       const agents: AgentProfile[] = [];
 
@@ -370,7 +370,7 @@ export class UserAgentStorageService {
         }
       }
 
-      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents'}`);
+      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'testing + production + native agents' : 'fallback to any user agents'}`);
       
       // For chat interface, prioritize testing agents over production agents
       // Testing agents are meant for user interaction and demonstration
