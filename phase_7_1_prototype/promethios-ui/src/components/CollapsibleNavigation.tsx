@@ -51,7 +51,7 @@ import {
   AutoAwesome,
   Hub as MultiAgentIcon,
   LibraryBooks as LibraryBooksIcon,
-  Audit as AuditIcon,
+  Assessment as AuditIcon,
 } from '@mui/icons-material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
