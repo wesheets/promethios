@@ -80,10 +80,24 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
   refreshInterval = 30000,
   onMetricsUpdate
 }) => {
-  const agentMetrics = useAgentMetrics(agentId, version, true);
+  const agentMetrics = useAgentMetrics({
+    agentId,
+    agentName: 'Agent',
+    agentType: 'single',
+    version: version || 'test',
+    autoInitialize: true
+  });
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   const [telemetryData, setTelemetryData] = useState<AgentTelemetryData | null>(null);
   const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
+
+  console.log(`🔧 AgentMetricsWidget: Initialized for agent ${agentId} with version ${version}`);
+  console.log(`🔧 AgentMetricsWidget: Metrics hook state:`, {
+    isLoading: agentMetrics.isLoading,
+    isInitialized: agentMetrics.isInitialized,
+    error: agentMetrics.error,
+    profile: agentMetrics.profile
+  });
 
   // Load real governance telemetry data
   useEffect(() => {

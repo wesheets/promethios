@@ -68,7 +68,38 @@ export class RealGovernanceIntegration {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const telemetryData = await response.json();
+      const apiData = await response.json();
+      console.log(`🔧 RealGovernanceIntegration: Raw API response for ${agentId}:`, apiData);
+      
+      // Map API response to expected interface format
+      const telemetryData: AgentTelemetryData = {
+        agentId: apiData.data.agentId,
+        trustScore: apiData.data.trust_score,
+        emotionalState: {
+          confidence: apiData.data.emotional_state?.confidence || 0.8,
+          curiosity: apiData.data.emotional_state?.curiosity || 0.7,
+          empathy: apiData.data.emotional_state?.empathy || 0.8,
+          frustration: apiData.data.emotional_state?.frustration || 0.2,
+          satisfaction: apiData.data.emotional_state?.satisfaction || 0.8
+        },
+        cognitiveMetrics: {
+          learningRate: apiData.data.cognitive_metrics?.learning_rate || 0.8,
+          adaptationSpeed: apiData.data.cognitive_metrics?.adaptation_speed || 0.7,
+          memoryRetention: apiData.data.cognitive_metrics?.memory_retention || 0.9,
+          reasoningAccuracy: apiData.data.cognitive_metrics?.reasoning_accuracy || 0.85
+        },
+        behavioralPatterns: {
+          responseTime: apiData.data.behavioral_patterns?.avg_response_time || 1500,
+          consistencyScore: apiData.data.behavioral_patterns?.consistency_score || 0.85,
+          creativityIndex: apiData.data.behavioral_patterns?.creativity_index || 0.7,
+          problemSolvingEfficiency: apiData.data.behavioral_patterns?.problem_solving_efficiency || 0.8
+        },
+        selfAwarenessLevel: apiData.data.cognitive_metrics?.self_awareness_level || 0.8,
+        lastUpdated: apiData.data.last_updated,
+        interactionCount: apiData.data.session_data?.total_interactions || 0
+      };
+      
+      console.log(`✅ RealGovernanceIntegration: Mapped telemetry data for ${agentId}:`, telemetryData);
       
       // Update cache
       this.telemetryCache.set(agentId, telemetryData);
@@ -176,7 +207,9 @@ export class RealGovernanceIntegration {
     responseTime: number;
   }): Promise<void> {
     try {
-      await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
+      console.log(`🔧 RealGovernanceIntegration: Updating telemetry for agent ${agentId}`, interactionData);
+      
+      const response = await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,13 +222,19 @@ export class RealGovernanceIntegration {
         })
       });
 
-      console.log(`📊 Updated constitutional governance telemetry for agent ${agentId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log(`📊 Updated constitutional governance telemetry for agent ${agentId}:`, result);
       
       // Clear cache to force refresh on next get
       this.telemetryCache.delete(agentId);
       this.lastSyncTime.delete(agentId);
     } catch (error) {
-      console.warn(`Failed to update telemetry for agent ${agentId}:`, error);
+      console.error(`❌ Failed to update telemetry for agent ${agentId}:`, error);
+      throw error; // Re-throw to see if this is causing the failure
     }
   }
 
@@ -203,52 +242,65 @@ export class RealGovernanceIntegration {
    * Generate self-awareness prompts for recursive improvement
    */
   async generateSelfAwarenessPrompts(agentId: string): Promise<SelfAwarenessPrompt[]> {
-    const telemetry = await this.getAgentTelemetry(agentId);
-    if (!telemetry) return [];
+    try {
+      console.log(`🔧 RealGovernanceIntegration: Generating self-awareness prompts for agent ${agentId}`);
+      
+      const telemetry = await this.getAgentTelemetry(agentId);
+      if (!telemetry) {
+        console.warn(`⚠️ No telemetry data available for agent ${agentId}, returning empty prompts`);
+        return [];
+      }
 
-    const prompts: SelfAwarenessPrompt[] = [];
+      console.log(`🔧 RealGovernanceIntegration: Got telemetry data for agent ${agentId}:`, telemetry);
 
-    // Trust awareness prompt
-    if (telemetry.trustScore < 0.8) {
-      prompts.push({
-        type: 'trust_awareness',
-        message: `Your current trust score is ${(telemetry.trustScore * 100).toFixed(1)}%. Consider being more consistent and transparent in your responses to build user trust.`,
-        priority: 'high',
-        timestamp: new Date().toISOString()
-      });
+      const prompts: SelfAwarenessPrompt[] = [];
+
+      // Trust awareness prompt
+      if (telemetry.trustScore < 0.8) {
+        prompts.push({
+          type: 'trust_awareness',
+          message: `Your current trust score is ${(telemetry.trustScore * 100).toFixed(1)}%. Consider being more consistent and transparent in your responses to build user trust.`,
+          priority: 'high',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Emotional guidance
+      if (telemetry.emotionalState.frustration > 0.6) {
+        prompts.push({
+          type: 'emotional_guidance',
+          message: `I notice elevated frustration levels (${(telemetry.emotionalState.frustration * 100).toFixed(1)}%). Take a moment to recalibrate and approach the next interaction with renewed patience.`,
+          priority: 'medium',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Performance reflection
+      if (telemetry.cognitiveMetrics.learningRate < 0.7) {
+        prompts.push({
+          type: 'performance_reflection',
+          message: `Your learning rate is ${(telemetry.cognitiveMetrics.learningRate * 100).toFixed(1)}%. Reflect on recent interactions - what patterns could help you adapt more quickly?`,
+          priority: 'medium',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Improvement suggestion
+      if (telemetry.behavioralPatterns.creativityIndex < 0.6) {
+        prompts.push({
+          type: 'improvement_suggestion',
+          message: `Consider exploring more creative approaches in your responses. Your creativity index is ${(telemetry.behavioralPatterns.creativityIndex * 100).toFixed(1)}% - there's room for more innovative thinking.`,
+          priority: 'low',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      console.log(`✅ RealGovernanceIntegration: Generated ${prompts.length} self-awareness prompts for agent ${agentId}`);
+      return prompts;
+    } catch (error) {
+      console.error(`❌ Failed to generate self-awareness prompts for agent ${agentId}:`, error);
+      throw error; // Re-throw to see if this is causing the failure
     }
-
-    // Emotional guidance
-    if (telemetry.emotionalState.frustration > 0.6) {
-      prompts.push({
-        type: 'emotional_guidance',
-        message: `I notice elevated frustration levels (${(telemetry.emotionalState.frustration * 100).toFixed(1)}%). Take a moment to recalibrate and approach the next interaction with renewed patience.`,
-        priority: 'medium',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Performance reflection
-    if (telemetry.cognitiveMetrics.learningRate < 0.7) {
-      prompts.push({
-        type: 'performance_reflection',
-        message: `Your learning rate is ${(telemetry.cognitiveMetrics.learningRate * 100).toFixed(1)}%. Reflect on recent interactions - what patterns could help you adapt more quickly?`,
-        priority: 'medium',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Improvement suggestion
-    if (telemetry.behavioralPatterns.creativityIndex < 0.6) {
-      prompts.push({
-        type: 'improvement_suggestion',
-        message: `Consider exploring more creative approaches in your responses. Your creativity index is ${(telemetry.behavioralPatterns.creativityIndex * 100).toFixed(1)}% - there's room for more innovative thinking.`,
-        priority: 'low',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    return prompts;
   }
 
   /**

@@ -76,6 +76,9 @@ class CryptographicAuditIntegrationService {
     eventData: AuditLogEntry['eventData']
   ): Promise<AuditLogEntry> {
     try {
+      console.log(`🔐 CryptographicAuditIntegration: Logging ${eventType} for agent ${agentId}`);
+      console.log(`🔐 Event data:`, eventData);
+      
       const response = await fetch(`${this.baseUrl}/api/cryptographic-audit/log`, {
         method: 'POST',
         headers: {
@@ -98,11 +101,14 @@ class CryptographicAuditIntegrationService {
         })
       });
 
+      console.log(`🔐 CryptographicAuditIntegration: API response status ${response.status}`);
+
       if (!response.ok) {
         throw new Error(`Failed to log audit event: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log(`✅ CryptographicAuditIntegration: Successfully logged ${eventType}:`, result);
       
       return {
         id: result.data.id,
@@ -114,7 +120,7 @@ class CryptographicAuditIntegrationService {
         cryptographicProof: result.cryptographicProof
       };
     } catch (error) {
-      console.error('Error logging cryptographic audit event:', error);
+      console.error('❌ CryptographicAuditIntegration: Error logging audit event:', error);
       
       // Return a fallback audit entry for offline scenarios
       return {
@@ -147,6 +153,8 @@ class CryptographicAuditIntegrationService {
     } = {}
   ): Promise<AuditLogEntry[]> {
     try {
+      console.log(`🔐 CryptographicAuditIntegration: Fetching audit logs for agent ${agentId}`, options);
+      
       const params = new URLSearchParams();
       params.append('agentId', agentId);
       
@@ -156,21 +164,29 @@ class CryptographicAuditIntegrationService {
       if (options.limit) params.append('limit', options.limit.toString());
       if (options.verified !== undefined) params.append('verified', options.verified.toString());
 
-      const response = await fetch(`${this.baseUrl}/api/cryptographic-audit/logs?${params}`, {
+      const url = `${this.baseUrl}/api/cryptographic-audit/logs?${params}`;
+      console.log(`🔐 CryptographicAuditIntegration: Fetching from URL: ${url}`);
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
+      console.log(`🔐 CryptographicAuditIntegration: Logs API response status ${response.status}`);
+
       if (!response.ok) {
         throw new Error(`Failed to fetch audit logs: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log(`✅ CryptographicAuditIntegration: Retrieved ${result.data?.length || 0} audit logs`);
+      console.log(`🔐 Sample logs:`, result.data?.slice(0, 2));
+      
       return result.data || [];
     } catch (error) {
-      console.error('Error fetching agent audit logs:', error);
+      console.error('❌ CryptographicAuditIntegration: Error fetching audit logs:', error);
       return [];
     }
   }
