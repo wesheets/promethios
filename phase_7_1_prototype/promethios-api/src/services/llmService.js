@@ -287,6 +287,12 @@ class LLMService {
     }
     
     try {
+      console.log('🔧 HUGGINGFACE DEBUG: Starting HuggingFace API call');
+      console.log('🔧 HUGGINGFACE DEBUG: Agent ID:', agentId);
+      console.log('🔧 HUGGINGFACE DEBUG: User ID:', userId);
+      console.log('🔧 HUGGINGFACE DEBUG: Message length:', message?.length);
+      console.log('🔧 HUGGINGFACE DEBUG: System prompt length:', systemPrompt?.length);
+      
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
         systemPrompt, 
@@ -294,47 +300,77 @@ class LLMService {
         userId
       );
 
+      console.log('🔧 HUGGINGFACE DEBUG: Enhanced system prompt length:', enhancedSystemPrompt?.length);
       const startTime = Date.now();
       
-      // Use a more reliable HuggingFace model for text generation
+      // Use a more capable HuggingFace model for better responses
+      const modelName = 'meta-llama/Llama-2-7b-chat-hf'; // Better model than DialoGPT
+      console.log('🔧 HUGGINGFACE DEBUG: Using model:', modelName);
+      
+      // Format the prompt properly for Llama-2 chat format
+      const formattedPrompt = `<s>[INST] <<SYS>>\n${enhancedSystemPrompt}\n<</SYS>>\n\n${message} [/INST]`;
+      
+      console.log('🔧 HUGGINGFACE DEBUG: Formatted prompt length:', formattedPrompt?.length);
+      console.log('🔧 HUGGINGFACE DEBUG: Making API call to HuggingFace...');
+      
       const response = await hf.textGeneration({
-        model: 'microsoft/DialoGPT-medium',
-        inputs: `${enhancedSystemPrompt}\n\nHuman: ${message}\nAssistant:`,
+        model: modelName,
+        inputs: formattedPrompt,
         parameters: {
-          max_new_tokens: 200,
+          max_new_tokens: 512, // Increased for better responses
           temperature: 0.7,
           do_sample: true,
           return_full_text: false,
-          stop: ['Human:', '\n\n']
+          stop: ['</s>', '[INST]', '[/INST]'],
+          repetition_penalty: 1.1
         }
       });
+      
+      console.log('🔧 HUGGINGFACE DEBUG: API call completed');
+      console.log('🔧 HUGGINGFACE DEBUG: Raw response:', response);
       
       let generatedText = response.generated_text || '';
       
       // Clean up the response
-      generatedText = generatedText.replace(/^Assistant:\s*/, '').trim();
+      generatedText = generatedText
+        .replace(/^Assistant:\s*/, '')
+        .replace(/^\s*/, '')
+        .replace(/\s*$/, '')
+        .trim();
+      
+      console.log('🔧 HUGGINGFACE DEBUG: Cleaned response length:', generatedText?.length);
       
       // If response is too short or empty, provide a fallback
       if (!generatedText || generatedText.length < 10) {
+        console.log('🔧 HUGGINGFACE DEBUG: Response too short, using fallback');
         generatedText = `I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
       }
 
-      // Record interaction for governance tracking
+      // Record successful interaction for governance tracking
       const responseTime = Date.now() - startTime;
+      console.log('🔧 HUGGINGFACE DEBUG: Response time:', responseTime, 'ms');
+      
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime,
-        model: 'microsoft/DialoGPT-medium',
-        quality: 'good'
+        model: modelName,
+        quality: 'good',
+        tokenCount: generatedText.length // Approximate token count
       });
 
+      console.log('🔧 HUGGINGFACE DEBUG: Interaction recorded successfully');
+      console.log('🔧 HUGGINGFACE DEBUG: Final response length:', generatedText?.length);
+      
       return generatedText;
     } catch (error) {
-      console.error('HuggingFace error:', error);
+      console.error('❌ HUGGINGFACE DEBUG: API call failed with error:', error);
+      console.error('❌ HUGGINGFACE DEBUG: Error type:', error.constructor.name);
+      console.error('❌ HUGGINGFACE DEBUG: Error message:', error.message);
+      console.error('❌ HUGGINGFACE DEBUG: Error stack:', error.stack);
       
       // Record failed interaction for governance tracking
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime: 0,
-        model: 'microsoft/DialoGPT-medium',
+        model: 'meta-llama/Llama-2-7b-chat-hf',
         quality: 'failed',
         error: error.message
       });
