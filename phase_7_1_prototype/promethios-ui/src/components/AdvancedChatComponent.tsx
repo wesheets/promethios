@@ -2343,6 +2343,13 @@ useEffect(() => {
               conversationHistory: conversationHistory.slice(-10).map(msg => ({
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
+              })),
+              attachments: currentAttachments.map(att => ({
+                id: att.id,
+                name: att.name,
+                type: att.type,
+                size: att.size,
+                data: att.data
               }))
             })
           });
@@ -2421,6 +2428,13 @@ useEffect(() => {
               conversationHistory: conversationHistory.slice(-10).map(msg => ({
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
+              })),
+              attachments: currentAttachments.map(att => ({
+                id: att.id,
+                name: att.name,
+                type: att.type,
+                size: att.size,
+                data: att.data
               }))
             })
           });

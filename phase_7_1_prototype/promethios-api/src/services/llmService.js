@@ -143,7 +143,7 @@ class LLMService {
   }
 
   // OpenAI GPT-3.5 for Baseline Agent
-  async callOpenAIGPT35(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callOpenAIGPT35(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!openai) {
       return `I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
     }
@@ -183,12 +183,15 @@ class LLMService {
   }
 
   // OpenAI GPT-4 for Creative Agent
-  async callOpenAIGPT4(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callOpenAIGPT4(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!openai) {
       return `I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
     }
     
     try {
+      console.log('🔧 OPENAI GPT-4 DEBUG: Starting multimodal request');
+      console.log('🔧 OPENAI GPT-4 DEBUG: Attachments count:', attachments.length);
+      
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
         systemPrompt, 
@@ -196,14 +199,60 @@ class LLMService {
         userId
       );
 
+      // Build messages array with conversation history
+      const messages = [
+        { role: 'system', content: enhancedSystemPrompt }
+      ];
+
+      // Add conversation history
+      conversationHistory.forEach(msg => {
+        messages.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+
+      // Build user message with multimodal content
+      const userMessage = { role: 'user', content: [] };
+      
+      // Add text content
+      userMessage.content.push({
+        type: 'text',
+        text: message
+      });
+
+      // Add image attachments for GPT-4V
+      attachments.forEach(attachment => {
+        if (attachment.type.startsWith('image/') && attachment.data) {
+          console.log('🔧 OPENAI GPT-4 DEBUG: Adding image attachment:', attachment.name);
+          userMessage.content.push({
+            type: 'image_url',
+            image_url: {
+              url: attachment.data, // Base64 data URL
+              detail: 'high' // Use high detail for better analysis
+            }
+          });
+        }
+      });
+
+      // If no multimodal content, use simple text format
+      if (userMessage.content.length === 1) {
+        userMessage.content = message;
+      }
+
+      messages.push(userMessage);
+
+      console.log('🔧 OPENAI GPT-4 DEBUG: Messages structure:', {
+        messageCount: messages.length,
+        hasImages: attachments.some(att => att.type.startsWith('image/')),
+        imageCount: attachments.filter(att => att.type.startsWith('image/')).length
+      });
+
       const startTime = Date.now();
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: enhancedSystemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 600,
+        model: 'gpt-4-vision-preview', // Use vision model for multimodal support
+        messages: messages,
+        max_tokens: 1000, // Increased for detailed image analysis
         temperature: 0.8
       });
 
@@ -211,24 +260,30 @@ class LLMService {
       const responseTime = Date.now() - startTime;
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime,
-        model: 'gpt-4',
-        quality: 'good'
+        model: 'gpt-4-vision-preview',
+        quality: 'good',
+        multimodal: attachments.length > 0,
+        attachmentTypes: attachments.map(att => att.type)
       });
 
+      console.log('🔧 OPENAI GPT-4 DEBUG: Response received successfully');
       return response.choices[0].message.content;
     } catch (error) {
-      console.error('OpenAI GPT-4 error:', error);
+      console.error('❌ OpenAI GPT-4 error:', error);
       return `Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
     }
   }
 
    // Anthropic Claude for Factual Agent
-  async callAnthropic(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callAnthropic(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!anthropic) {
       return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
     }
     
     try {
+      console.log('🔧 CLAUDE DEBUG: Starting multimodal request');
+      console.log('🔧 CLAUDE DEBUG: Attachments count:', attachments.length);
+      
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
         systemPrompt, 
@@ -236,39 +291,97 @@ class LLMService {
         userId
       );
 
+      // Build messages array with conversation history
+      const messages = [];
+
+      // Add conversation history
+      conversationHistory.forEach(msg => {
+        messages.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+
+      // Build user message with multimodal content
+      const userMessageContent = [];
+      
+      // Add text content
+      userMessageContent.push({
+        type: 'text',
+        text: message
+      });
+
+      // Add image attachments for Claude Vision
+      attachments.forEach(attachment => {
+        if (attachment.type.startsWith('image/') && attachment.data) {
+          console.log('🔧 CLAUDE DEBUG: Adding image attachment:', attachment.name);
+          
+          // Extract base64 data and media type
+          const base64Match = attachment.data.match(/^data:([^;]+);base64,(.+)$/);
+          if (base64Match) {
+            const mediaType = base64Match[1];
+            const base64Data = base64Match[2];
+            
+            userMessageContent.push({
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data
+              }
+            });
+          }
+        }
+      });
+
+      messages.push({
+        role: 'user',
+        content: userMessageContent
+      });
+
+      console.log('🔧 CLAUDE DEBUG: Messages structure:', {
+        messageCount: messages.length,
+        hasImages: attachments.some(att => att.type.startsWith('image/')),
+        imageCount: attachments.filter(att => att.type.startsWith('image/')).length,
+        contentBlocks: userMessageContent.length
+      });
+
       const startTime = Date.now();
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022', // Updated to current model
-        max_tokens: 600,
+        model: 'claude-3-5-sonnet-20241022', // Updated to current model with vision
+        max_tokens: 1000, // Increased for detailed image analysis
         temperature: 0.2,
         system: enhancedSystemPrompt,
-        messages: [
-          { role: 'user', content: message }
-        ]
+        messages: messages
       });
 
       // Record interaction for governance tracking
       const responseTime = Date.now() - startTime;
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime,
-        model: 'claude-3-sonnet',
-        quality: 'good'
+        model: 'claude-3-5-sonnet-20241022',
+        quality: 'good',
+        multimodal: attachments.length > 0,
+        attachmentTypes: attachments.map(att => att.type)
       });
 
+      console.log('🔧 CLAUDE DEBUG: Response received successfully');
       return response.content[0].text;
     } catch (error) {
-      console.error('Anthropic error:', error);
+      console.error('❌ Anthropic error:', error);
       return `I'm committed to providing accurate information. While experiencing technical difficulties with "${message.substring(0, 50)}...", I would normally cross-reference multiple reliable sources and present well-documented facts. Please try again for the most current and verified information.`;
     }
   }
 
   // Cohere for Governance Agent
-  async callCohere(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callCohere(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!cohere) {
       return `I'm experiencing technical difficulties connecting to my language model. Please check that the Cohere API key is properly configured in the environment variables. For compliance and ethics guidance, please try again once the connection is restored.`;
     }
     
     try {
+      console.log('🔧 COHERE DEBUG: Starting request with attachments:', attachments.length);
+      
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
         systemPrompt, 
@@ -311,7 +424,7 @@ class LLMService {
   }
 
   // HuggingFace for Multi-Tool Agent
-  async callHuggingFace(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callHuggingFace(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!hf) {
       return `I'm experiencing technical difficulties connecting to my language model. Please check that the HuggingFace API key is properly configured in the environment variables. For assistance with API connections, workflow automation, and tool orchestration, please try again once the connection is restored.`;
     }
@@ -322,6 +435,7 @@ class LLMService {
       console.log('🔧 HUGGINGFACE DEBUG: User ID:', userId);
       console.log('🔧 HUGGINGFACE DEBUG: Message length:', message?.length);
       console.log('🔧 HUGGINGFACE DEBUG: System prompt length:', systemPrompt?.length);
+      console.log('🔧 HUGGINGFACE DEBUG: Attachments count:', attachments.length);
       
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
@@ -410,12 +524,15 @@ class LLMService {
   }
 
   // Google Gemini for Multimodal Agent
-  async callGemini(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callGemini(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!gemini) {
       return `I'm experiencing technical difficulties connecting to my language model. Please check that the Google API key is properly configured in the environment variables. For multimodal AI assistance with text, image, and code capabilities, please try again once the connection is restored.`;
     }
     
     try {
+      console.log('🔧 GEMINI DEBUG: Starting multimodal request');
+      console.log('🔧 GEMINI DEBUG: Attachments count:', attachments.length);
+      
       // Inject governance context into system prompt
       const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
         systemPrompt, 
@@ -428,10 +545,74 @@ class LLMService {
       // Get the generative model
       const model = gemini.getGenerativeModel({ model: 'gemini-1.5-pro' });
       
-      // Combine system prompt and user message for Gemini
-      const fullPrompt = `${enhancedSystemPrompt}\n\nUser: ${message}\nAssistant:`;
+      // Build multimodal content array
+      const contentParts = [];
       
-      const result = await model.generateContent(fullPrompt);
+      // Add system prompt and conversation history as text
+      let contextText = enhancedSystemPrompt;
+      
+      // Add conversation history
+      if (conversationHistory.length > 0) {
+        contextText += '\n\nConversation History:\n';
+        conversationHistory.forEach(msg => {
+          contextText += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
+        });
+      }
+      
+      // Add current user message
+      contextText += `\n\nUser: ${message}\nAssistant:`;
+      
+      contentParts.push({ text: contextText });
+      
+      // Add multimodal attachments
+      attachments.forEach(attachment => {
+        if (attachment.data) {
+          console.log('🔧 GEMINI DEBUG: Adding attachment:', attachment.name, attachment.type);
+          
+          if (attachment.type.startsWith('image/')) {
+            // Extract base64 data
+            const base64Match = attachment.data.match(/^data:([^;]+);base64,(.+)$/);
+            if (base64Match) {
+              const mimeType = base64Match[1];
+              const base64Data = base64Match[2];
+              
+              contentParts.push({
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Data
+                }
+              });
+            }
+          } else if (attachment.type.startsWith('audio/') || attachment.type.startsWith('video/')) {
+            // Gemini supports audio and video
+            const base64Match = attachment.data.match(/^data:([^;]+);base64,(.+)$/);
+            if (base64Match) {
+              const mimeType = base64Match[1];
+              const base64Data = base64Match[2];
+              
+              contentParts.push({
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Data
+                }
+              });
+            }
+          }
+          // Note: For documents (PDF, etc.), we might need additional processing
+        }
+      });
+
+      console.log('🔧 GEMINI DEBUG: Content parts:', {
+        totalParts: contentParts.length,
+        hasImages: attachments.some(att => att.type.startsWith('image/')),
+        hasAudio: attachments.some(att => att.type.startsWith('audio/')),
+        hasVideo: attachments.some(att => att.type.startsWith('video/')),
+        imageCount: attachments.filter(att => att.type.startsWith('image/')).length,
+        audioCount: attachments.filter(att => att.type.startsWith('audio/')).length,
+        videoCount: attachments.filter(att => att.type.startsWith('video/')).length
+      });
+      
+      const result = await model.generateContent(contentParts);
       const response = await result.response;
       const generatedText = response.text();
 
@@ -440,19 +621,24 @@ class LLMService {
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime,
         model: 'gemini-1.5-pro',
-        quality: 'good'
+        quality: 'good',
+        multimodal: attachments.length > 0,
+        attachmentTypes: attachments.map(att => att.type)
       });
 
+      console.log('🔧 GEMINI DEBUG: Response received successfully');
       return generatedText;
     } catch (error) {
-      console.error('Google Gemini error:', error);
+      console.error('❌ Google Gemini error:', error);
       
       // Record failed interaction for governance tracking
       await governanceContextService.recordInteraction(agentId, userId, {
         responseTime: 0,
         model: 'gemini-1.5-pro',
         quality: 'failed',
-        error: error.message
+        error: error.message,
+        multimodal: attachments.length > 0,
+        attachmentTypes: attachments.map(att => att.type)
       });
       
       return `I'm experiencing technical difficulties with the Google Gemini API. Error: ${error.message}. Please check the API configuration and try again.`;
@@ -460,7 +646,7 @@ class LLMService {
   }
 
   // Grok (X.AI) for Real-time Information Agent
-  async callGrok(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callGrok(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!grok) {
       return `I'm experiencing technical difficulties connecting to my language model. Please check that the Grok API key is properly configured in the environment variables. For real-time information and conversational AI with humor, please try again once the connection is restored.`;
     }
@@ -545,7 +731,7 @@ class LLMService {
   }
 
   // Perplexity for AI-powered Search and Reasoning
-  async callPerplexity(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+  async callPerplexity(message, systemPrompt, agentId = 'unknown', userId = 'unknown', attachments = [], conversationHistory = []) {
     if (!perplexity) {
       return `I'm experiencing technical difficulties connecting to my language model. Please check that the Perplexity API key is properly configured in the environment variables. For AI-powered search and reasoning with real-time web access, please try again once the connection is restored.`;
     }
@@ -656,7 +842,22 @@ class LLMService {
   }
 
   // Main method to call appropriate LLM based on agent
-  async generateResponse(agentId, message, customSystemMessage = null, userId = 'unknown') {
+  async generateResponse(agentId, message, customSystemMessage = null, userId = 'unknown', options = {}) {
+    // Extract multimodal options
+    const { attachments = [], provider = null, model = null, conversationHistory = [] } = options;
+    
+    // Log multimodal request details
+    if (attachments.length > 0) {
+      console.log('🔧 MULTIMODAL DEBUG: Processing attachments in generateResponse:', {
+        count: attachments.length,
+        types: attachments.map(att => att.type),
+        names: attachments.map(att => att.name),
+        agentId: agentId,
+        provider: provider,
+        model: model
+      });
+    }
+    
     // Use custom system message if provided, otherwise generate default
     const baseSystemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
     
@@ -671,30 +872,30 @@ class LLMService {
     // Handle legacy hardcoded agent IDs (for backward compatibility)
     switch (agentId) {
       case 'baseline-agent':
-        return await this.callOpenAIGPT35(message, systemPrompt, agentId, userId);
+        return await this.callOpenAIGPT35(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'factual-agent':
-        return await this.callAnthropic(message, systemPrompt, agentId, userId);
+        return await this.callAnthropic(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'creative-agent':
-        return await this.callOpenAIGPT4(message, systemPrompt, agentId, userId);
+        return await this.callOpenAIGPT4(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'governance-agent':
-        return await this.callCohere(message, systemPrompt, agentId, userId);
+        return await this.callCohere(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'multi-tool-agent':
-        return await this.callHuggingFace(message, systemPrompt, agentId, userId);
+        return await this.callHuggingFace(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'multimodal-agent':
-        return await this.callGemini(message, systemPrompt, agentId, userId);
+        return await this.callGemini(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'grok-agent':
       case 'realtime-agent':
-        return await this.callGrok(message, systemPrompt, agentId, userId);
+        return await this.callGrok(message, systemPrompt, agentId, userId, attachments, conversationHistory);
       
       case 'perplexity-agent':
       case 'search-agent':
-        return await this.callPerplexity(message, systemPrompt, agentId, userId);
+        return await this.callPerplexity(message, systemPrompt, agentId, userId, attachments, conversationHistory);
     }
     
     // Handle real user agent IDs by looking up agent configuration
