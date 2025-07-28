@@ -1318,15 +1318,15 @@ export class MetricsCollectionExtension {
     return {
       governanceMetrics: {
         totalInteractions: 0,
-        trustScore: 100, // Start with perfect trust (100%)
-        complianceRate: 100, // Start with perfect compliance (100%)
+        trustScore: 1.0, // Start with perfect trust (1.0 = 100% after UI conversion)
+        complianceRate: 1.0, // Start with perfect compliance (1.0 = 100% after UI conversion)
         totalViolations: 0,
         policyViolations: []
       },
       performanceMetrics: {
         averageResponseTime: 0,
         totalRequests: 0,
-        successRate: 100, // Start with perfect success rate (100%)
+        successRate: 1.0, // Start with perfect success rate (1.0 = 100% after UI conversion)
         errorRate: 0,
         uptimePercentage: 100,
         lastActiveAt: new Date()
