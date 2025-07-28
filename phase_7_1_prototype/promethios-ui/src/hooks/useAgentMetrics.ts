@@ -247,8 +247,18 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
 
   // Auto-initialize on mount
   useEffect(() => {
+    console.log('🔧 useAgentMetrics useEffect conditions:', {
+      autoInitialize,
+      agentId,
+      currentUserUid: currentUser?.uid,
+      isInitialized
+    });
+    
     if (autoInitialize && agentId && currentUser?.uid && !isInitialized) {
+      console.log('🚀 Initializing agent metrics for:', agentId);
       initializeAgent();
+    } else {
+      console.log('❌ Skipping initialization due to conditions not met');
     }
   }, [autoInitialize, agentId, currentUser?.uid, isInitialized, initializeAgent]);
 
