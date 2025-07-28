@@ -172,17 +172,39 @@ class OptimizedAgentLoaderService {
         console.log(`🚀 OptimizedAgentLoader: Cached ${agents.length} agents`);
       }
 
-      // Stage 4: Select default agent
+      // Stage 4: Select agent with persistence logic
       let selectedAgent: AgentProfile | null = null;
       if (agents.length > 0) {
-        // Prioritize Promethios agents when in promethios-native mode
-        if (chatMode === 'promethios-native') {
-          selectedAgent = agents.find(agent => 
-            agent.identity.name.toLowerCase().includes('promethios') || 
-            agent.identity.id.includes('promethios-llm')
-          ) || agents[0];
-        } else {
-          selectedAgent = agents[0];
+        // Try to restore the last selected agent from localStorage
+        const lastSelectedAgentId = this.getLastSelectedAgentId(userId);
+        console.log('🔍 OptimizedAgentLoader: Last selected agent ID:', lastSelectedAgentId);
+        
+        if (lastSelectedAgentId) {
+          // Try to find the previously selected agent
+          selectedAgent = agents.find(agent => agent.identity.id === lastSelectedAgentId);
+          if (selectedAgent) {
+            console.log('✅ OptimizedAgentLoader: Restored previously selected agent:', selectedAgent.identity.id);
+          } else {
+            console.log('⚠️ OptimizedAgentLoader: Previously selected agent not found, falling back to default');
+          }
+        }
+        
+        // If no previous agent or it wasn't found, use default selection logic
+        if (!selectedAgent) {
+          if (chatMode === 'promethios-native') {
+            selectedAgent = agents.find(agent => 
+              agent.identity.name.toLowerCase().includes('promethios') || 
+              agent.identity.id.includes('promethios-llm')
+            ) || agents[0];
+          } else {
+            selectedAgent = agents[0];
+          }
+          console.log('🎯 OptimizedAgentLoader: Selected default agent:', selectedAgent?.identity.id);
+        }
+        
+        // Save the selected agent ID for future sessions
+        if (selectedAgent) {
+          this.setLastSelectedAgentId(userId, selectedAgent.identity.id);
         }
       }
 
@@ -338,6 +360,32 @@ class OptimizedAgentLoaderService {
   ): void {
     if (onProgress) {
       onProgress(progress);
+    }
+  }
+
+  /**
+   * Get the last selected agent ID for a user from localStorage
+   */
+  private getLastSelectedAgentId(userId: string): string | null {
+    try {
+      const key = `last_selected_agent:${userId}`;
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.warn('⚠️ OptimizedAgentLoader: Failed to get last selected agent ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Save the last selected agent ID for a user to localStorage
+   */
+  private setLastSelectedAgentId(userId: string, agentId: string): void {
+    try {
+      const key = `last_selected_agent:${userId}`;
+      localStorage.setItem(key, agentId);
+      console.log('💾 OptimizedAgentLoader: Saved last selected agent ID:', agentId);
+    } catch (error) {
+      console.warn('⚠️ OptimizedAgentLoader: Failed to save last selected agent ID:', error);
     }
   }
 }

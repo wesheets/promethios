@@ -2812,6 +2812,17 @@ useEffect(() => {
     if (agent) {
       setSelectedAgent(agent);
       
+      // 💾 Save selected agent ID for persistence across sessions
+      if (currentUser?.uid) {
+        try {
+          const key = `last_selected_agent:${currentUser.uid}`;
+          localStorage.setItem(key, agent.identity.id);
+          console.log('💾 AdvancedChatComponent: Saved selected agent ID for persistence:', agent.identity.id);
+        } catch (error) {
+          console.warn('⚠️ AdvancedChatComponent: Failed to save selected agent ID:', error);
+        }
+      }
+      
       // 📊 Initialize metrics for newly selected agent
       console.log('🔄 Agent changed, initializing metrics for:', agent.identity.name);
       // Note: The useAgentMetrics hook will automatically reinitialize when selectedAgent changes
