@@ -1456,7 +1456,10 @@ const AgentProfilesPage: React.FC = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialTab = parseInt(searchParams.get('tab') || '0', 10);
-  
+  // Dynamic tab indices based on feature flags
+  const getWrappedAgentsTabIndex = () => isPromethiosNativeManagementEnabled() ? 2 : 1;
+  const getMultiAgentSystemsTabIndex = () => isPromethiosNativeManagementEnabled() ? 3 : 2;
+
   const [tabValue, setTabValue] = useState(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -2156,7 +2159,7 @@ const AgentProfilesPage: React.FC = () => {
         </TabPanel>
         )}
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={getWrappedAgentsTabIndex()}>
           {/* Wrapped API Agents Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
@@ -2187,7 +2190,7 @@ const AgentProfilesPage: React.FC = () => {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={getMultiAgentSystemsTabIndex()}>
           {/* Multi-Agent Systems Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
