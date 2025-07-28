@@ -1929,7 +1929,7 @@ useEffect(() => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
-        // Convert conversation history to Anthropic API format
+        // Convert conversation history for backend API
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage token limits
@@ -1938,42 +1938,28 @@ useEffect(() => {
             content: msg.content
           }));
 
-        // Add current message
-        const messages = [
-          ...historyMessages,
-          {
-            role: 'user',
-            content: messageContent
-          }
-        ];
-
-        // Validate and clean API key to prevent encoding issues
-        const cleanApiKey = apiKey?.trim().replace(/[^\x20-\x7E]/g, ''); // Remove non-ASCII characters
-        if (!cleanApiKey) {
-          throw new Error('Invalid API key: contains non-ASCII characters or is empty');
-        }
-
-        response = await fetch(apiEndpoint || 'https://api.anthropic.com/v1/messages', {
+        response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': cleanApiKey,
-            'anthropic-version': '2023-06-01'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: selectedModel || 'claude-3-sonnet-20240229',
-            max_tokens: 1000,
-            system: systemMessage,
-            messages: messages
+            agent_id: 'factual-agent', // Maps to Anthropic in backend
+            message: messageContent,
+            system_message: systemMessage, // Pass the governance system message
+            conversation_history: historyMessages, // Include conversation history
+            governance_enabled: governanceEnabled,
+            api_key: apiKey, // Pass the API key to backend
+            model: selectedModel || 'claude-3-sonnet-20240229' // Pass the selected model
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        return data.content[0]?.text || 'No response received';
+        return data.response || 'No response received';
         
       } else if (provider === 'cohere') {
         console.log('Taking Cohere path...');
