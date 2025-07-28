@@ -270,7 +270,25 @@ class LLMService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error('❌ OpenAI GPT-4 error:', error);
-      return `Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'gpt-4-vision-preview',
+        quality: 'failed',
+        error: error.message,
+        multimodal: attachments.length > 0,
+        attachmentTypes: attachments.map(att => att.type)
+      });
+      
+      // Check if it's a rate limit error (429) or other API errors
+      if (error.status === 429) {
+        return `I'm experiencing rate limiting from OpenAI. Please wait a moment and try again. For multimodal AI assistance with image analysis and creative thinking, I'll be ready shortly.`;
+      } else if (error.status === 400 && error.message.includes('vision')) {
+        return `I'm having trouble processing the image with OpenAI's vision API. Please ensure the image is in a supported format (PNG, JPEG, WebP, GIF) and try again.`;
+      } else {
+        return `I'm experiencing technical difficulties with OpenAI. Error: ${error.message}. For creative thinking and image analysis, please try again in a moment.`;
+      }
     }
   }
 

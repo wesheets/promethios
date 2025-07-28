@@ -3111,7 +3111,7 @@ useEffect(() => {
         setMessages(prev => [...prev, agentMessage]);
         
         // 📊 Record agent interaction for metrics
-        const responseTime = Date.now() - Date.now(); // This would be calculated from actual request start time
+        const responseTime = Date.now() - userMessage.timestamp.getTime(); // Calculate response time from user message timestamp
         await agentMetrics.recordInteraction({
           interactionType: 'chat',
           responseTime: responseTime,
@@ -3124,7 +3124,13 @@ useEffect(() => {
           sessionId: `chat_${Date.now()}`,
           requestSize: userMessage.content.length,
           responseSize: agentResponse.length,
-          source: 'advanced-chat-component'
+          source: 'advanced-chat-component',
+          metadata: {
+            provider: selectedAgent?.apiDetails?.provider || 'unknown',
+            model: selectedAgent?.apiDetails?.selectedModel || 'unknown',
+            hasAttachments: attachments.length > 0,
+            attachmentCount: attachments.length
+          }
         });
 
         // 🔄 REAL GOVERNANCE INTEGRATION: Update telemetry and provide feedback loops
