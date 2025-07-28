@@ -220,39 +220,75 @@ class LLMService {
   }
 
   // Cohere for Governance Agent
-  async callCohere(message, systemPrompt) {
+  async callCohere(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!cohere) {
-      return `I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the Cohere API key is properly configured in the environment variables. For compliance and ethics guidance, please try again once the connection is restored.`;
     }
     
     try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
+      
       const response = await cohere.chat({
         model: 'command',
         message: message,
-        preamble: systemPrompt,
+        preamble: enhancedSystemPrompt,
         max_tokens: 500,
         temperature: 0.3
       });
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'command',
+        quality: 'good'
+      });
+
       return response.text;
     } catch (error) {
       console.error('Cohere error:', error);
-      return `Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'command',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the Cohere API. Error: ${error.message}. Please check the API configuration and try again.`;
     }
   }
 
   // HuggingFace for Multi-Tool Agent
-  async callHuggingFace(message, systemPrompt) {
+  async callHuggingFace(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!hf) {
-      return `I'm your systems integration specialist! While in simulation mode, I can still help with API connections, workflow automation, and tool orchestration. For your challenge "${message.substring(0, 100)}..." I'd consider which tools to combine, how to automate the process, and what integrations would be most effective. What systems do you need to connect?`;
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the HuggingFace API key is properly configured in the environment variables. For assistance with API connections, workflow automation, and tool orchestration, please try again once the connection is restored.`;
     }
     
     try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
+      
       // Use a more reliable HuggingFace model for text generation
       const response = await hf.textGeneration({
         model: 'microsoft/DialoGPT-medium',
-        inputs: `${systemPrompt}\n\nHuman: ${message}\nAssistant:`,
+        inputs: `${enhancedSystemPrompt}\n\nHuman: ${message}\nAssistant:`,
         parameters: {
-          max_new_tokens: 150,
+          max_new_tokens: 200,
           temperature: 0.7,
           do_sample: true,
           return_full_text: false,
@@ -267,13 +303,30 @@ class LLMService {
       
       // If response is too short or empty, provide a fallback
       if (!generatedText || generatedText.length < 10) {
-        return `I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
+        generatedText = `I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
       }
-      
-      return `generatedText}`;
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'microsoft/DialoGPT-medium',
+        quality: 'good'
+      });
+
+      return generatedText;
     } catch (error) {
       console.error('HuggingFace error:', error);
-      return `Despite technical challenges, I'm still your automation expert! For "${message.substring(0, 50)}...", I'd focus on robust integrations, error handling, and scalable solutions. What workflow needs optimization?`;
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'microsoft/DialoGPT-medium',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the HuggingFace API. Error: ${error.message}. Please check the API configuration and try again.`;
     }
   }
 

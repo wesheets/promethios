@@ -2015,15 +2015,28 @@ useEffect(() => {
         }
         
       } else if (provider === 'cohere') {
-        console.log('Taking Cohere path...');
-        // Create system message based on governance setting (same as OpenAI)
+        console.log('🔧 COHERE DEBUG: Taking Cohere path...');
+        console.log('🔧 COHERE DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 COHERE DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
+          console.log('🔧 COHERE DEBUG: Creating governance system message...');
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 COHERE DEBUG: Governance system message created, length:', systemMessage?.length);
         } else {
+          console.log('🔧 COHERE DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          console.log('🔧 COHERE DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
         // Convert conversation history for backend API
@@ -2035,62 +2048,165 @@ useEffect(() => {
             content: msg.content
           }));
 
-        response = await fetch(`${API_BASE_URL}/api/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            agent_id: 'governance-agent', // Maps to Cohere in backend
-            message: messageContent,
-            system_message: systemMessage, // Pass the governance system message
-            conversation_history: historyMessages, // Include conversation history
-            governance_enabled: governanceEnabled
-          })
+        console.log('🔧 COHERE DEBUG: Conversation history prepared:', {
+          totalMessages: conversationHistory.length,
+          filteredMessages: historyMessages.length
         });
 
-        if (!response.ok) {
-          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
-        }
+        const requestPayload = {
+          agent_id: 'governance-agent', // Maps to Cohere in backend
+          message: messageContent,
+          system_message: systemMessage, // Pass the governance system message
+          conversation_history: historyMessages, // Include conversation history
+          governance_enabled: governanceEnabled
+        };
 
-        const data = await response.json();
-        return data.response || 'No response received';
+        console.log('🔧 COHERE DEBUG: Request payload prepared:', {
+          agent_id: requestPayload.agent_id,
+          messageLength: requestPayload.message?.length,
+          systemMessageLength: requestPayload.system_message?.length,
+          historyCount: requestPayload.conversation_history?.length,
+          governance_enabled: requestPayload.governance_enabled
+        });
+
+        const apiUrl = `${API_BASE_URL}/api/chat`;
+        console.log('🔧 COHERE DEBUG: Making API call to:', apiUrl);
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+          });
+
+          console.log('🔧 COHERE DEBUG: API call completed. Response status:', response.status);
+          console.log('🔧 COHERE DEBUG: Response ok:', response.ok);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ COHERE DEBUG: Backend API error response:', errorText);
+            throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 COHERE DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          const finalResponse = data.response || 'No response received';
+          console.log('🔧 COHERE DEBUG: Final response length:', finalResponse.length);
+          return finalResponse;
+          
+        } catch (error) {
+          console.error('❌ COHERE DEBUG: API call failed with error:', error);
+          console.error('❌ COHERE DEBUG: Error type:', error.constructor.name);
+          console.error('❌ COHERE DEBUG: Error message:', error.message);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
         
       } else if (provider === 'huggingface') {
-        // Build conversation context for HuggingFace
-        let conversationContext = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.\n\n`;
+        console.log('🔧 HUGGINGFACE DEBUG: Taking HuggingFace path...');
+        console.log('🔧 HUGGINGFACE DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 HUGGINGFACE DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
         
-        // Add recent conversation history
-        const recentHistory = conversationHistory
-          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
-          .slice(-10) // Last 10 messages for HuggingFace
-          .map(msg => `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-          .join('\n');
-        
-        if (recentHistory) {
-          conversationContext += recentHistory + '\n';
+        // Create system message based on governance setting
+        let systemMessage;
+        if (governanceEnabled) {
+          console.log('🔧 HUGGINGFACE DEBUG: Creating governance system message...');
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 HUGGINGFACE DEBUG: Governance system message created, length:', systemMessage?.length);
+        } else {
+          console.log('🔧 HUGGINGFACE DEBUG: Creating basic system message...');
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          console.log('🔧 HUGGINGFACE DEBUG: Basic system message created, length:', systemMessage?.length);
         }
-        
-        conversationContext += `User: ${messageContent}\nAssistant:`;
 
-        const hfModel = selectedModel || 'microsoft/DialoGPT-medium';
-        response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            inputs: conversationContext
-          })
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        console.log('🔧 HUGGINGFACE DEBUG: Conversation history prepared:', {
+          totalMessages: conversationHistory.length,
+          filteredMessages: historyMessages.length
         });
 
-        if (!response.ok) {
-          throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
-        }
+        const requestPayload = {
+          agent_id: 'multi-tool-agent', // Maps to HuggingFace in backend
+          message: messageContent,
+          system_message: systemMessage, // Pass the governance system message
+          conversation_history: historyMessages, // Include conversation history
+          governance_enabled: governanceEnabled
+        };
 
-        const data = await response.json();
-        return data[0]?.generated_text || data.generated_text || 'No response received';
+        console.log('🔧 HUGGINGFACE DEBUG: Request payload prepared:', {
+          agent_id: requestPayload.agent_id,
+          messageLength: requestPayload.message?.length,
+          systemMessageLength: requestPayload.system_message?.length,
+          historyCount: requestPayload.conversation_history?.length,
+          governance_enabled: requestPayload.governance_enabled
+        });
+
+        const apiUrl = `${API_BASE_URL}/api/chat`;
+        console.log('🔧 HUGGINGFACE DEBUG: Making API call to:', apiUrl);
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+          });
+
+          console.log('🔧 HUGGINGFACE DEBUG: API call completed. Response status:', response.status);
+          console.log('🔧 HUGGINGFACE DEBUG: Response ok:', response.ok);
+          console.log('🔧 HUGGINGFACE DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ HUGGINGFACE DEBUG: Backend API error response:', errorText);
+            throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 HUGGINGFACE DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          const finalResponse = data.response || 'No response received';
+          console.log('🔧 HUGGINGFACE DEBUG: Final response length:', finalResponse.length);
+          return finalResponse;
+          
+        } catch (error) {
+          console.error('❌ HUGGINGFACE DEBUG: API call failed with error:', error);
+          console.error('❌ HUGGINGFACE DEBUG: Error type:', error.constructor.name);
+          console.error('❌ HUGGINGFACE DEBUG: Error message:', error.message);
+          console.error('❌ HUGGINGFACE DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
         
       } else if (provider === 'promethios') {
         console.log('Taking Promethios path...');
