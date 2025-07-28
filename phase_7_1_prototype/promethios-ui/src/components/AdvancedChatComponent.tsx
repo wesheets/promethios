@@ -2307,6 +2307,84 @@ useEffect(() => {
           throw error;
         }
         
+      } else if (provider === 'grok' || provider === 'x.ai') {
+        console.log('🔧 GROK DEBUG: Taking Grok (X.AI) path...');
+        console.log('🔧 GROK DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 GROK DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        const systemMessage = governanceEnabled 
+          ? createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
+          : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, a real-time information AI with humor and conversational abilities.`);
+        
+        console.log('🔧 GROK DEBUG: System message created, length:', systemMessage?.length);
+        console.log('🔧 GROK DEBUG: Governance enabled:', governanceEnabled);
+        
+        try {
+          console.log('🔧 GROK DEBUG: Making backend API call...');
+          
+          const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: messageContent,
+              agentId: agentIdToUse,
+              systemMessage: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'grok',
+              model: agent.model || 'grok-beta',
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              }))
+            })
+          });
+
+          console.log('🔧 GROK DEBUG: Response status:', response.status);
+          console.log('🔧 GROK DEBUG: Response ok:', response.ok);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ GROK DEBUG: Backend API error:', errorText);
+            throw new Error(`Backend API error: ${response.status} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 GROK DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            hasError: !!data.error
+          });
+
+          if (data.error) {
+            console.error('❌ GROK DEBUG: Backend returned error:', data.error);
+            throw new Error(data.error);
+          }
+
+          if (!data.response) {
+            console.error('❌ GROK DEBUG: No response in data:', data);
+            throw new Error('No response received from backend');
+          }
+
+          console.log('🔧 GROK DEBUG: Successful response, length:', data.response.length);
+          return data.response;
+        } catch (error) {
+          console.error('❌ GROK DEBUG: API call failed with error:', error);
+          console.error('❌ GROK DEBUG: Error type:', error.constructor.name);
+          console.error('❌ GROK DEBUG: Error message:', error.message);
+          console.error('❌ GROK DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
       } else if (provider === 'promethios') {
         console.log('Taking Promethios path...');
         // Use the working backend API format we tested

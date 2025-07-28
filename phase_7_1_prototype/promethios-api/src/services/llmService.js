@@ -11,6 +11,7 @@ let anthropic = null;
 let cohere = null;
 let hf = null;
 let gemini = null;
+let grok = null;
 
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -71,6 +72,20 @@ try {
   }
 } catch (error) {
   console.log('⚠️ Google Gemini initialization failed - using fallback responses');
+}
+
+try {
+  if (process.env.GROK_API_KEY) {
+    grok = new OpenAI({
+      apiKey: process.env.GROK_API_KEY,
+      baseURL: 'https://api.x.ai/v1',
+    });
+    console.log('✅ Grok (X.AI) client initialized');
+  } else {
+    console.log('⚠️ Grok API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.log('⚠️ Grok initialization failed - using fallback responses');
 }
 
 class LLMService {
@@ -429,6 +444,91 @@ class LLMService {
     }
   }
 
+  // Grok (X.AI) for Real-time Information Agent
+  async callGrok(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+    if (!grok) {
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the Grok API key is properly configured in the environment variables. For real-time information and conversational AI with humor, please try again once the connection is restored.`;
+    }
+    
+    try {
+      console.log('🔧 GROK DEBUG: Starting Grok API call');
+      console.log('🔧 GROK DEBUG: Agent ID:', agentId);
+      console.log('🔧 GROK DEBUG: User ID:', userId);
+      console.log('🔧 GROK DEBUG: Message length:', message?.length);
+      console.log('🔧 GROK DEBUG: System prompt length:', systemPrompt?.length);
+      
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      console.log('🔧 GROK DEBUG: Enhanced system prompt length:', enhancedSystemPrompt?.length);
+      const startTime = Date.now();
+      
+      console.log('🔧 GROK DEBUG: Making API call to Grok...');
+      
+      const response = await grok.chat.completions.create({
+        model: 'grok-beta',
+        messages: [
+          {
+            role: 'system',
+            content: enhancedSystemPrompt
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+        stream: false
+      });
+      
+      console.log('🔧 GROK DEBUG: API call completed');
+      console.log('🔧 GROK DEBUG: Response received:', {
+        hasChoices: !!response.choices,
+        choicesLength: response.choices?.length,
+        hasContent: !!response.choices?.[0]?.message?.content
+      });
+      
+      const generatedText = response.choices[0]?.message?.content || '';
+      console.log('🔧 GROK DEBUG: Generated text length:', generatedText?.length);
+
+      // Record successful interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      console.log('🔧 GROK DEBUG: Response time:', responseTime, 'ms');
+      
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'grok-beta',
+        quality: 'good',
+        tokenCount: response.usage?.total_tokens || generatedText.length
+      });
+
+      console.log('🔧 GROK DEBUG: Interaction recorded successfully');
+      console.log('🔧 GROK DEBUG: Final response length:', generatedText?.length);
+
+      return generatedText;
+    } catch (error) {
+      console.error('❌ GROK DEBUG: API call failed with error:', error);
+      console.error('❌ GROK DEBUG: Error type:', error.constructor.name);
+      console.error('❌ GROK DEBUG: Error message:', error.message);
+      console.error('❌ GROK DEBUG: Error stack:', error.stack);
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'grok-beta',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the Grok API key is properly configured in the environment variables. For real-time information and conversational AI with humor, please try again once the connection is restored.`;
+    }
+  }
+
   // Generate system prompts for each agent type
   getSystemPrompt(agentId) {
     const prompts = {
@@ -478,6 +578,10 @@ class LLMService {
       
       case 'multimodal-agent':
         return await this.callGemini(message, systemPrompt, agentId, userId);
+      
+      case 'grok-agent':
+      case 'realtime-agent':
+        return await this.callGrok(message, systemPrompt, agentId, userId);
     }
     
     // Handle real user agent IDs by looking up agent configuration
@@ -557,10 +661,17 @@ class LLMService {
           return await this.callAnthropic(message, systemPrompt);
         
         case 'cohere':
-          return await this.callCohere(message, systemPrompt);
+          return await this.callCohere(message, systemPrompt, agent.id, userId);
         
         case 'huggingface':
-          return await this.callHuggingFace(message, systemPrompt);
+          return await this.callHuggingFace(message, systemPrompt, agent.id, userId);
+        
+        case 'google':
+          return await this.callGemini(message, systemPrompt, agent.id, userId);
+        
+        case 'grok':
+        case 'x.ai':
+          return await this.callGrok(message, systemPrompt, agent.id, userId);
         
         default:
           console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);
