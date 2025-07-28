@@ -1837,13 +1837,20 @@ useEffect(() => {
         // Create system message based on governance setting
         let systemMessage;
         console.log('🔧 DEBUG: governanceEnabled =', governanceEnabled);
+        console.log('🔧 DEBUG: agent object =', agent);
         console.log('🔧 DEBUG: agent.id =', agent.id);
+        console.log('🔧 DEBUG: agent.identity =', agent.identity);
+        console.log('🔧 DEBUG: agent.agentId =', agent.agentId);
+        console.log('🔧 DEBUG: selectedAgent =', selectedAgent);
+        console.log('🔧 DEBUG: selectedAgent.identity =', selectedAgent?.identity);
         console.log('🔧 DEBUG: currentUser?.uid =', currentUser?.uid);
         
         if (governanceEnabled) {
           // Use Promethios governance kernel for governed agents with real-time metrics
           console.log('🔧 DEBUG: About to call createPromethiosSystemMessage...');
-          systemMessage = await createPromethiosSystemMessage(agent.id, currentUser?.uid);
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id;
+          console.log('🔧 DEBUG: Using agentId =', agentIdToUse);
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
           console.log('🔧 DEBUG: createPromethiosSystemMessage returned:', systemMessage?.substring(0, 100) + '...');
         } else {
           // Use basic agent description for ungoverned agents
