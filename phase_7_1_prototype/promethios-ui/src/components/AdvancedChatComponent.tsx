@@ -433,7 +433,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
       return version;
     })(),
     deploymentId: isDeployedAgent ? deploymentId : undefined,
-    autoInitialize: false // We'll initialize manually when agent is selected
+    autoInitialize: true // Enable auto-initialization to load historical metrics
   });
 
   // Custom scroll function that only scrolls within messages container
