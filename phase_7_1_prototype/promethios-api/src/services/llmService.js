@@ -1258,19 +1258,13 @@ class LLMService {
         
         case 'grok':
         case 'x.ai':
-          return await this.callGrok(message, systemPrompt, agent.id, userId);
+          return await this.callGrok(message, systemPrompt, agent.id, userId, [], []);
         
         case 'perplexity':
-          return await this.callPerplexity(message, systemPrompt, agent.id, userId);
+          return await this.callPerplexity(message, systemPrompt, agent.id, userId, [], []);
         
         case 'mistral':
-          return await this.callMistral(message, systemPrompt, agent.id, userId);
-        
-        case 'grok':
-          return await this.callGrok(message, systemPrompt, agent.id, userId);
-        
-        case 'perplexity':
-          return await this.callPerplexity(message, systemPrompt, agent.id, userId);
+          return await this.callMistral(message, systemPrompt, agent.id, userId, [], []);
         
         default:
           console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);
