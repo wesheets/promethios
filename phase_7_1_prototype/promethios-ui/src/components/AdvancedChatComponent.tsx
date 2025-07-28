@@ -1948,9 +1948,7 @@ useEffect(() => {
             message: messageContent,
             system_message: systemMessage, // Pass the governance system message
             conversation_history: historyMessages, // Include conversation history
-            governance_enabled: governanceEnabled,
-            api_key: apiKey, // Pass the API key to backend
-            model: selectedModel || 'claude-3-sonnet-20240229' // Pass the selected model
+            governance_enabled: governanceEnabled
           })
         });
 
