@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { MistralAI } = require('@mistralai/mistralai');
 const governanceContextService = require('./governanceContextService');
 
 // Initialize LLM clients with optional API keys for testing
@@ -11,6 +12,7 @@ let anthropic = null;
 let cohere = null;
 let hf = null;
 let gemini = null;
+let mistral = null;
 
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -71,6 +73,19 @@ try {
   }
 } catch (error) {
   console.log('⚠️ Google Gemini initialization failed - using fallback responses');
+}
+
+try {
+  if (process.env.MISTRAL_API_KEY) {
+    mistral = new MistralAI({
+      apiKey: process.env.MISTRAL_API_KEY,
+    });
+    console.log('✅ Mistral AI client initialized');
+  } else {
+    console.log('⚠️ Mistral API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.log('⚠️ Mistral AI initialization failed - using fallback responses');
 }
 
 class LLMService {
@@ -393,6 +408,76 @@ class LLMService {
     }
   }
 
+  // Mistral AI for European Multilingual Agent
+  async callMistral(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+    if (!mistral) {
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the Mistral API key is properly configured in the environment variables. For European multilingual AI assistance with advanced reasoning capabilities, please try again once the connection is restored.`;
+    }
+    
+    try {
+      console.log('🔧 MISTRAL DEBUG: Starting Mistral API call');
+      console.log('🔧 MISTRAL DEBUG: Agent ID:', agentId);
+      console.log('🔧 MISTRAL DEBUG: User ID:', userId);
+      console.log('🔧 MISTRAL DEBUG: Message length:', message.length);
+      
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      console.log('🔧 MISTRAL DEBUG: Enhanced system prompt length:', enhancedSystemPrompt.length);
+
+      const startTime = Date.now();
+      
+      const response = await mistral.chat({
+        model: 'mistral-large-latest',
+        messages: [
+          { role: 'system', content: enhancedSystemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 600,
+        temperature: 0.7,
+        top_p: 1,
+        stream: false
+      });
+
+      console.log('🔧 MISTRAL DEBUG: API response received');
+      console.log('🔧 MISTRAL DEBUG: Response choices:', response.choices?.length || 0);
+
+      const generatedText = response.choices[0]?.message?.content || '';
+      
+      console.log('🔧 MISTRAL DEBUG: Generated text length:', generatedText.length);
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'mistral-large-latest',
+        quality: 'good',
+        tokenCount: response.usage?.total_tokens || 0
+      });
+
+      console.log('🔧 MISTRAL DEBUG: Interaction recorded, response time:', responseTime + 'ms');
+
+      return generatedText;
+    } catch (error) {
+      console.error('🔧 MISTRAL DEBUG: Error occurred:', error.message);
+      console.error('Mistral AI error:', error);
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'mistral-large-latest',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the Mistral AI API. Please check that the MISTRAL_API_KEY environment variable is properly configured and try again. For European multilingual assistance and advanced reasoning, I'll be ready once the connection is restored.`;
+    }
+  }
+
   // Generate system prompts for each agent type
   getSystemPrompt(agentId) {
     const prompts = {
@@ -525,6 +610,9 @@ class LLMService {
         
         case 'huggingface':
           return await this.callHuggingFace(message, systemPrompt);
+        
+        case 'mistral':
+          return await this.callMistral(message, systemPrompt, agent.id, userId);
         
         default:
           console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);

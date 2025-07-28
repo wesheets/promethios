@@ -2350,6 +2350,117 @@ useEffect(() => {
         const data = await response.json();
         return data.response || data.content || 'No response received';
         
+      } else if (provider === 'mistral') {
+        console.log('🔧 MISTRAL DEBUG: Taking Mistral AI path...');
+        console.log('🔧 MISTRAL DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 MISTRAL DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        let systemMessage;
+        if (governanceEnabled) {
+          console.log('🔧 MISTRAL DEBUG: Creating governance system message...');
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 MISTRAL DEBUG: Governance system message created, length:', systemMessage?.length);
+        } else {
+          console.log('🔧 MISTRAL DEBUG: Creating basic system message...');
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have advanced multilingual capabilities and European AI reasoning.`;
+          console.log('🔧 MISTRAL DEBUG: Basic system message created, length:', systemMessage?.length);
+        }
+
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        console.log('🔧 MISTRAL DEBUG: Conversation history prepared:', {
+          totalMessages: conversationHistory.length,
+          filteredMessages: historyMessages.length
+        });
+
+        const requestPayload = {
+          agent_id: 'mistral-agent', // Maps to Mistral in backend
+          message: messageContent,
+          system_message: systemMessage, // Pass the governance system message
+          conversation_history: historyMessages, // Include conversation history
+          governance_enabled: governanceEnabled,
+          provider: 'mistral',
+          model: selectedModel || 'mistral-large-latest',
+          attachments: attachments.map(att => ({
+            id: att.id,
+            name: att.name,
+            type: att.type,
+            size: att.size,
+            url: att.url,
+            data: att.data
+          }))
+        };
+
+        console.log('🔧 MISTRAL DEBUG: Request payload prepared:', {
+          agent_id: requestPayload.agent_id,
+          messageLength: requestPayload.message?.length,
+          systemMessageLength: requestPayload.system_message?.length,
+          historyCount: requestPayload.conversation_history?.length,
+          governance_enabled: requestPayload.governance_enabled,
+          provider: requestPayload.provider,
+          model: requestPayload.model,
+          attachmentCount: requestPayload.attachments?.length
+        });
+
+        const apiUrl = `${API_BASE_URL}/api/chat`;
+        console.log('🔧 MISTRAL DEBUG: Making API call to:', apiUrl);
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+          });
+
+          console.log('🔧 MISTRAL DEBUG: API call completed. Response status:', response.status);
+          console.log('🔧 MISTRAL DEBUG: Response ok:', response.ok);
+          console.log('🔧 MISTRAL DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ MISTRAL DEBUG: Backend API error response:', errorText);
+            throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 MISTRAL DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          const finalResponse = data.response || 'No response received';
+          console.log('🔧 MISTRAL DEBUG: Final response length:', finalResponse.length);
+          return finalResponse;
+          
+        } catch (error) {
+          console.error('❌ MISTRAL DEBUG: API call failed with error:', error);
+          console.error('❌ MISTRAL DEBUG: Error type:', error.constructor.name);
+          console.error('❌ MISTRAL DEBUG: Error message:', error.message);
+          console.error('❌ MISTRAL DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
       } else if (apiEndpoint) {
         // Convert conversation history for custom API
         const historyMessages = conversationHistory
