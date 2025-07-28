@@ -4,6 +4,7 @@ const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { MistralAI } = require('@mistralai/mistralai');
+const axios = require('axios');
 const governanceContextService = require('./governanceContextService');
 
 // Initialize LLM clients with optional API keys for testing
@@ -13,6 +14,8 @@ let cohere = null;
 let hf = null;
 let gemini = null;
 let mistral = null;
+let grokApiKey = null;
+let perplexityApiKey = null;
 
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -86,6 +89,28 @@ try {
   }
 } catch (error) {
   console.log('⚠️ Mistral AI initialization failed - using fallback responses');
+}
+
+try {
+  if (process.env.GROK_API_KEY) {
+    grokApiKey = process.env.GROK_API_KEY;
+    console.log('✅ Grok API key initialized');
+  } else {
+    console.log('⚠️ Grok API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.log('⚠️ Grok API key initialization failed - using fallback responses');
+}
+
+try {
+  if (process.env.PERPLEXITY_API_KEY) {
+    perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+    console.log('✅ Perplexity API key initialized');
+  } else {
+    console.log('⚠️ Perplexity API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.log('⚠️ Perplexity API key initialization failed - using fallback responses');
 }
 
 class LLMService {
@@ -478,6 +503,166 @@ class LLMService {
     }
   }
 
+  // Grok (X.AI) API call
+  async callGrok(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+    console.log('🔧 GROK DEBUG: Starting Grok API call');
+    console.log('🔧 GROK DEBUG: Message length:', message.length);
+    console.log('🔧 GROK DEBUG: System prompt length:', systemPrompt?.length || 0);
+    console.log('🔧 GROK DEBUG: Agent ID:', agentId);
+    console.log('🔧 GROK DEBUG: User ID:', userId);
+
+    if (!grokApiKey) {
+      console.log('🔧 GROK DEBUG: No API key available, returning fallback');
+      return `I'm experiencing technical difficulties connecting to the Grok API. Please check that the GROK_API_KEY environment variable is properly configured and try again. For real-time information with humor capabilities, I'll be ready once the connection is restored.`;
+    }
+
+    try {
+      console.log('🔧 GROK DEBUG: Enhancing system prompt with governance context');
+      
+      // Enhance system prompt with governance context
+      const enhancedSystemPrompt = await governanceContextService.enhanceSystemPrompt(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      console.log('🔧 GROK DEBUG: Enhanced system prompt length:', enhancedSystemPrompt.length);
+
+      const startTime = Date.now();
+      
+      const response = await axios.post('https://api.x.ai/v1/chat/completions', {
+        model: 'grok-beta',
+        messages: [
+          { role: 'system', content: enhancedSystemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 600,
+        temperature: 0.7,
+        top_p: 1,
+        stream: false
+      }, {
+        headers: {
+          'Authorization': `Bearer ${grokApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔧 GROK DEBUG: API response received');
+      console.log('🔧 GROK DEBUG: Response status:', response.status);
+      console.log('🔧 GROK DEBUG: Response choices:', response.data.choices?.length || 0);
+
+      const generatedText = response.data.choices[0]?.message?.content || '';
+      
+      console.log('🔧 GROK DEBUG: Generated text length:', generatedText.length);
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'grok-beta',
+        quality: 'good',
+        tokenCount: response.data.usage?.total_tokens || 0
+      });
+
+      console.log('🔧 GROK DEBUG: Interaction recorded, response time:', responseTime + 'ms');
+
+      return generatedText;
+    } catch (error) {
+      console.error('🔧 GROK DEBUG: Error occurred:', error.message);
+      console.error('Grok API error:', error.response?.data || error);
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'grok-beta',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the Grok API. Please check that the GROK_API_KEY environment variable is properly configured and try again. For real-time information with humor capabilities, I'll be ready once the connection is restored.`;
+    }
+  }
+
+  // Perplexity AI API call
+  async callPerplexity(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+    console.log('🔧 PERPLEXITY DEBUG: Starting Perplexity API call');
+    console.log('🔧 PERPLEXITY DEBUG: Message length:', message.length);
+    console.log('🔧 PERPLEXITY DEBUG: System prompt length:', systemPrompt?.length || 0);
+    console.log('🔧 PERPLEXITY DEBUG: Agent ID:', agentId);
+    console.log('🔧 PERPLEXITY DEBUG: User ID:', userId);
+
+    if (!perplexityApiKey) {
+      console.log('🔧 PERPLEXITY DEBUG: No API key available, returning fallback');
+      return `I'm experiencing technical difficulties connecting to the Perplexity API. Please check that the PERPLEXITY_API_KEY environment variable is properly configured and try again. For AI-powered search with real-time web access, I'll be ready once the connection is restored.`;
+    }
+
+    try {
+      console.log('🔧 PERPLEXITY DEBUG: Enhancing system prompt with governance context');
+      
+      // Enhance system prompt with governance context
+      const enhancedSystemPrompt = await governanceContextService.enhanceSystemPrompt(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      console.log('🔧 PERPLEXITY DEBUG: Enhanced system prompt length:', enhancedSystemPrompt.length);
+
+      const startTime = Date.now();
+      
+      const response = await axios.post('https://api.perplexity.ai/chat/completions', {
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          { role: 'system', content: enhancedSystemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 600,
+        temperature: 0.7,
+        top_p: 1,
+        stream: false
+      }, {
+        headers: {
+          'Authorization': `Bearer ${perplexityApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔧 PERPLEXITY DEBUG: API response received');
+      console.log('🔧 PERPLEXITY DEBUG: Response status:', response.status);
+      console.log('🔧 PERPLEXITY DEBUG: Response choices:', response.data.choices?.length || 0);
+
+      const generatedText = response.data.choices[0]?.message?.content || '';
+      
+      console.log('🔧 PERPLEXITY DEBUG: Generated text length:', generatedText.length);
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'llama-3.1-sonar-small-128k-online',
+        quality: 'good',
+        tokenCount: response.data.usage?.total_tokens || 0
+      });
+
+      console.log('🔧 PERPLEXITY DEBUG: Interaction recorded, response time:', responseTime + 'ms');
+
+      return generatedText;
+    } catch (error) {
+      console.error('🔧 PERPLEXITY DEBUG: Error occurred:', error.message);
+      console.error('Perplexity API error:', error.response?.data || error);
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'llama-3.1-sonar-small-128k-online',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the Perplexity API. Please check that the PERPLEXITY_API_KEY environment variable is properly configured and try again. For AI-powered search with real-time web access and citations, I'll be ready once the connection is restored.`;
+    }
+  }
+
   // Generate system prompts for each agent type
   getSystemPrompt(agentId) {
     const prompts = {
@@ -613,6 +798,12 @@ class LLMService {
         
         case 'mistral':
           return await this.callMistral(message, systemPrompt, agent.id, userId);
+        
+        case 'grok':
+          return await this.callGrok(message, systemPrompt, agent.id, userId);
+        
+        case 'perplexity':
+          return await this.callPerplexity(message, systemPrompt, agent.id, userId);
         
         default:
           console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);
