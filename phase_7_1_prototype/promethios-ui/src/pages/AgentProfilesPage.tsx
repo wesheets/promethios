@@ -1456,10 +1456,6 @@ const AgentProfilesPage: React.FC = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialTab = parseInt(searchParams.get('tab') || '0', 10);
-  // Dynamic tab indices based on feature flags
-  const getWrappedAgentsTabIndex = () => isPromethiosNativeManagementEnabled() ? 2 : 1;
-  const getMultiAgentSystemsTabIndex = () => isPromethiosNativeManagementEnabled() ? 3 : 2;
-
   const [tabValue, setTabValue] = useState(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -2099,22 +2095,22 @@ const AgentProfilesPage: React.FC = () => {
                 </Grid>
               </Grid>
 
-              {/* Recent Activity */}
+              {/* All Agents */}
               <Typography variant="h6" gutterBottom>
-                Recent Activity
+                All Agents
               </Typography>
               <Grid container spacing={3}>
-                {/* Show mix of agents and systems */}
-                {[...filteredAgentProfiles.slice(0, 2), ...filteredSystemProfiles.slice(0, 1)].map((profile, index) => (
-                  <Grid item xs={12} md={6} lg={4} key={index}>
+                {/* Show all agents and systems */}
+                {[...filteredAgentProfiles, ...filteredSystemProfiles].map((profile, index) => (
+                  <Grid item xs={12} md={6} lg={4} key={profile.identity.id}>
                     {'systemType' in profile.identity ? (
                       <SystemProfileCard profile={profile as SystemProfile} />
                     ) : (
                       <AgentProfileCard 
                         profile={profile as AgentProfile}
-                        selectionMode={false}
-                        isSelected={false}
-                        onSelectionChange={() => {}}
+                        selectionMode={selectionMode}
+                        isSelected={selectedAgents.includes(profile.identity.id)}
+                        onSelectionChange={handleAgentSelection}
                         onManageAgent={handleManageAgent}
                       />
                     )}
@@ -2159,7 +2155,7 @@ const AgentProfilesPage: React.FC = () => {
         </TabPanel>
         )}
 
-        <TabPanel value={tabValue} index={getWrappedAgentsTabIndex()}>
+        <TabPanel value={tabValue} index={isPromethiosNativeManagementEnabled() ? 2 : 1}>
           {/* Wrapped API Agents Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
@@ -2190,7 +2186,7 @@ const AgentProfilesPage: React.FC = () => {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={getMultiAgentSystemsTabIndex()}>
+        <TabPanel value={tabValue} index={isPromethiosNativeManagementEnabled() ? 3 : 2}>
           {/* Multi-Agent Systems Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
