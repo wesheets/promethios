@@ -74,6 +74,7 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
 
     try {
       console.log(`🚀 Initializing agent metrics: ${agentId} (${version})`);
+      console.log(`🔧 HOOK DEBUG: useAgentMetrics called with version="${version}" for agentId="${agentId}"`);
       
       // Check if profile already exists
       let existingProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);

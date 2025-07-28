@@ -89,7 +89,13 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
       
       // Fetch both telemetry and policy data
       const [telemetryResponse, policyResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}`),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/agent-metrics/${agentId}/telemetry`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-agent-id': agentId
+          }
+        }),
         fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments?agentId=${agentId}`)
       ]);
       
