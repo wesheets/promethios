@@ -2016,16 +2016,30 @@ useEffect(() => {
         
       } else if (provider === 'cohere') {
         console.log('Taking Cohere path...');
-        // Create system message based on governance setting (same as OpenAI)
+        // Create system message based on governance setting (same as OpenAI/Claude)
         let systemMessage;
+        console.log('🔧 COHERE DEBUG: governanceEnabled =', governanceEnabled);
+        console.log('🔧 COHERE DEBUG: agent object =', agent);
+        console.log('🔧 COHERE DEBUG: agent.id =', agent.id);
+        console.log('🔧 COHERE DEBUG: agent.identity =', agent.identity);
+        console.log('🔧 COHERE DEBUG: agent.agentId =', agent.agentId);
+        console.log('🔧 COHERE DEBUG: selectedAgent =', selectedAgent);
+        console.log('🔧 COHERE DEBUG: selectedAgent.identity =', selectedAgent?.identity);
+        console.log('🔧 COHERE DEBUG: currentUser?.uid =', currentUser?.uid);
+        
         if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents
-          systemMessage = createPromethiosSystemMessage();
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          console.log('🔧 COHERE DEBUG: About to call createPromethiosSystemMessage...');
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id;
+          console.log('🔧 COHERE DEBUG: Using agentId =', agentIdToUse);
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 COHERE DEBUG: createPromethiosSystemMessage returned:', systemMessage?.substring(0, 100) + '...');
         } else {
           // Use basic agent description for ungoverned agents
+          console.log('🔧 COHERE DEBUG: Using basic system message (governance disabled)');
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
-
+        
         // Convert conversation history for backend API
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
@@ -2035,16 +2049,25 @@ useEffect(() => {
             content: msg.content
           }));
 
+        console.log('🔧 COHERE DEBUG: Making API call to:', `${API_BASE_URL}/api/chat`);
+        console.log('🔧 COHERE DEBUG: Request payload:', {
+          agent_id: agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id,
+          message: messageContent.substring(0, 100) + '...',
+          system_message: systemMessage?.substring(0, 100) + '...',
+          conversation_history: historyMessages.length + ' messages',
+          governance_enabled: governanceEnabled
+        });
+
         response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            agent_id: 'governance-agent', // Maps to Cohere in backend
+            agent_id: agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id, // Use real agent ID
             message: messageContent,
             system_message: systemMessage, // Pass the governance system message
-            conversation_history: historyMessages, // Include conversation history
+            conversation_history: historyMessages, // Include conversation historyry
             governance_enabled: governanceEnabled
           })
         });

@@ -220,23 +220,56 @@ class LLMService {
   }
 
   // Cohere for Governance Agent
-  async callCohere(message, systemPrompt) {
+  // Cohere for Governance Agent
+  async callCohere(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
     if (!cohere) {
-      return `I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
+      console.log('⚠️ Cohere client not initialized - API key may be missing');
+      return `I apologize, but I'm experiencing technical difficulties connecting to my language model. Please check that the Cohere API key is properly configured. (Agent: ${agentId})`;
     }
     
     try {
+      console.log(`🔧 Cohere API call for agent ${agentId}, user ${userId}`);
+      console.log(`🔧 System prompt length: ${systemPrompt?.length || 0} characters`);
+      
+      // Add governance context injection logging
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, agentId, userId
+      );
+      
       const response = await cohere.chat({
         model: 'command',
         message: message,
-        preamble: systemPrompt,
+        preamble: enhancedSystemPrompt,
         max_tokens: 500,
         temperature: 0.3
       });
+      
+      // Record governance interaction
+      await governanceContextService.recordInteraction(agentId, userId, {
+        provider: 'cohere',
+        model: 'command',
+        inputTokens: message.length + enhancedSystemPrompt.length,
+        outputTokens: response.text?.length || 0,
+        responseTime: Date.now(),
+        success: true
+      });
+      
       return response.text;
     } catch (error) {
-      console.error('Cohere error:', error);
-      return `Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
+      console.error('Cohere API error:', error);
+      
+      // Record failed interaction
+      await governanceContextService.recordInteraction(agentId, userId, {
+        provider: 'cohere',
+        model: 'command',
+        inputTokens: message.length + (systemPrompt?.length || 0),
+        outputTokens: 0,
+        responseTime: Date.now(),
+        success: false,
+        error: error.message
+      });
+      
+      return `I apologize, but I'm experiencing technical difficulties with my language model. Please try again in a moment. (Error: ${error.message})`;
     }
   }
 
