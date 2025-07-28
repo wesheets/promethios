@@ -1832,6 +1832,7 @@ useEffect(() => {
       console.log('provider === "anthropic":', provider === 'anthropic');
       console.log('provider === "cohere":', provider === 'cohere');
       console.log('provider === "huggingface":', provider === 'huggingface');
+      console.log('provider === "google":', provider === 'google');
       console.log('apiEndpoint exists:', !!apiEndpoint);
 
       // Prepare message with attachments
@@ -2203,6 +2204,104 @@ useEffect(() => {
           console.error('❌ HUGGINGFACE DEBUG: Error type:', error.constructor.name);
           console.error('❌ HUGGINGFACE DEBUG: Error message:', error.message);
           console.error('❌ HUGGINGFACE DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
+      } else if (provider === 'google') {
+        console.log('🔧 GEMINI DEBUG: Taking Google Gemini path...');
+        console.log('🔧 GEMINI DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 GEMINI DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        let systemMessage;
+        if (governanceEnabled) {
+          console.log('🔧 GEMINI DEBUG: Creating governance system message...');
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 GEMINI DEBUG: Governance system message created, length:', systemMessage?.length);
+        } else {
+          console.log('🔧 GEMINI DEBUG: Creating basic system message...');
+          // Use basic agent description for ungoverned agents
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have multimodal capabilities including text, image, and code understanding.`;
+          console.log('🔧 GEMINI DEBUG: Basic system message created, length:', systemMessage?.length);
+        }
+
+        // Convert conversation history for backend API
+        const historyMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+
+        console.log('🔧 GEMINI DEBUG: Conversation history prepared:', {
+          totalMessages: conversationHistory.length,
+          filteredMessages: historyMessages.length
+        });
+
+        const requestPayload = {
+          agent_id: 'multimodal-agent', // Maps to Gemini in backend
+          message: messageContent,
+          system_message: systemMessage, // Pass the governance system message
+          conversation_history: historyMessages, // Include conversation history
+          governance_enabled: governanceEnabled
+        };
+
+        console.log('🔧 GEMINI DEBUG: Request payload prepared:', {
+          agent_id: requestPayload.agent_id,
+          messageLength: requestPayload.message?.length,
+          systemMessageLength: requestPayload.system_message?.length,
+          historyCount: requestPayload.conversation_history?.length,
+          governance_enabled: requestPayload.governance_enabled
+        });
+
+        const apiUrl = `${API_BASE_URL}/api/chat`;
+        console.log('🔧 GEMINI DEBUG: Making API call to:', apiUrl);
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+          });
+
+          console.log('🔧 GEMINI DEBUG: API call completed. Response status:', response.status);
+          console.log('🔧 GEMINI DEBUG: Response ok:', response.ok);
+          console.log('🔧 GEMINI DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ GEMINI DEBUG: Backend API error response:', errorText);
+            throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 GEMINI DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          const finalResponse = data.response || 'No response received';
+          console.log('🔧 GEMINI DEBUG: Final response length:', finalResponse.length);
+          return finalResponse;
+          
+        } catch (error) {
+          console.error('❌ GEMINI DEBUG: API call failed with error:', error);
+          console.error('❌ GEMINI DEBUG: Error type:', error.constructor.name);
+          console.error('❌ GEMINI DEBUG: Error message:', error.message);
+          console.error('❌ GEMINI DEBUG: Error stack:', error.stack);
           
           // Re-throw the error to be handled by the outer try/catch
           throw error;

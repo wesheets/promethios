@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const governanceContextService = require('./governanceContextService');
 
 // Initialize LLM clients with optional API keys for testing
@@ -9,6 +10,7 @@ let openai = null;
 let anthropic = null;
 let cohere = null;
 let hf = null;
+let gemini = null;
 
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -58,6 +60,17 @@ try {
   }
 } catch (error) {
   console.log('⚠️ HuggingFace initialization failed - using fallback responses');
+}
+
+try {
+  if (process.env.GOOGLE_API_KEY) {
+    gemini = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    console.log('✅ Google Gemini client initialized');
+  } else {
+    console.log('⚠️ Google API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.log('⚠️ Google Gemini initialization failed - using fallback responses');
 }
 
 class LLMService {
@@ -330,6 +343,56 @@ class LLMService {
     }
   }
 
+  // Google Gemini for Multimodal Agent
+  async callGemini(message, systemPrompt, agentId = 'unknown', userId = 'unknown') {
+    if (!gemini) {
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the Google API key is properly configured in the environment variables. For multimodal AI assistance with text, image, and code capabilities, please try again once the connection is restored.`;
+    }
+    
+    try {
+      // Inject governance context into system prompt
+      const enhancedSystemPrompt = await governanceContextService.injectGovernanceContext(
+        systemPrompt, 
+        agentId, 
+        userId
+      );
+
+      const startTime = Date.now();
+      
+      // Get the generative model
+      const model = gemini.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      
+      // Combine system prompt and user message for Gemini
+      const fullPrompt = `${enhancedSystemPrompt}\n\nUser: ${message}\nAssistant:`;
+      
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      const generatedText = response.text();
+
+      // Record interaction for governance tracking
+      const responseTime = Date.now() - startTime;
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime,
+        model: 'gemini-1.5-pro',
+        quality: 'good'
+      });
+
+      return generatedText;
+    } catch (error) {
+      console.error('Google Gemini error:', error);
+      
+      // Record failed interaction for governance tracking
+      await governanceContextService.recordInteraction(agentId, userId, {
+        responseTime: 0,
+        model: 'gemini-1.5-pro',
+        quality: 'failed',
+        error: error.message
+      });
+      
+      return `I'm experiencing technical difficulties with the Google Gemini API. Error: ${error.message}. Please check the API configuration and try again.`;
+    }
+  }
+
   // Generate system prompts for each agent type
   getSystemPrompt(agentId) {
     const prompts = {
@@ -376,6 +439,9 @@ class LLMService {
       
       case 'multi-tool-agent':
         return await this.callHuggingFace(message, systemPrompt, agentId, userId);
+      
+      case 'multimodal-agent':
+        return await this.callGemini(message, systemPrompt, agentId, userId);
     }
     
     // Handle real user agent IDs by looking up agent configuration
