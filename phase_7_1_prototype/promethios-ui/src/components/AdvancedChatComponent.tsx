@@ -1918,15 +1918,27 @@ useEffect(() => {
         return data.choices[0]?.message?.content || 'No response received';
         
       } else if (provider === 'anthropic') {
-        console.log('Taking Anthropic path...');
+        console.log('🔧 ANTHROPIC DEBUG: Taking Anthropic path...');
+        console.log('🔧 ANTHROPIC DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 ANTHROPIC DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
         // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
+          console.log('🔧 ANTHROPIC DEBUG: Creating governance system message...');
           // Use Promethios governance kernel for governed agents with real-time metrics
           systemMessage = await createPromethiosSystemMessage(agent.id, currentUser?.uid);
+          console.log('🔧 ANTHROPIC DEBUG: Governance system message created, length:', systemMessage?.length);
         } else {
+          console.log('🔧 ANTHROPIC DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          console.log('🔧 ANTHROPIC DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
         // Convert conversation history for backend API
@@ -1938,26 +1950,69 @@ useEffect(() => {
             content: msg.content
           }));
 
-        response = await fetch(`${API_BASE_URL}/api/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            agent_id: 'factual-agent', // Maps to Anthropic in backend
-            message: messageContent,
-            system_message: systemMessage, // Pass the governance system message
-            conversation_history: historyMessages, // Include conversation history
-            governance_enabled: governanceEnabled
-          })
+        console.log('🔧 ANTHROPIC DEBUG: Conversation history prepared:', {
+          totalMessages: conversationHistory.length,
+          filteredMessages: historyMessages.length
         });
 
-        if (!response.ok) {
-          throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
-        }
+        const requestPayload = {
+          agent_id: 'factual-agent', // Maps to Anthropic in backend
+          message: messageContent,
+          system_message: systemMessage, // Pass the governance system message
+          conversation_history: historyMessages, // Include conversation history
+          governance_enabled: governanceEnabled
+        };
 
-        const data = await response.json();
-        return data.response || 'No response received';
+        console.log('🔧 ANTHROPIC DEBUG: Request payload prepared:', {
+          agent_id: requestPayload.agent_id,
+          messageLength: requestPayload.message?.length,
+          systemMessageLength: requestPayload.system_message?.length,
+          historyCount: requestPayload.conversation_history?.length,
+          governance_enabled: requestPayload.governance_enabled
+        });
+
+        const apiUrl = `${API_BASE_URL}/api/chat`;
+        console.log('🔧 ANTHROPIC DEBUG: Making API call to:', apiUrl);
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+          });
+
+          console.log('🔧 ANTHROPIC DEBUG: API call completed. Response status:', response.status);
+          console.log('🔧 ANTHROPIC DEBUG: Response ok:', response.ok);
+          console.log('🔧 ANTHROPIC DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ ANTHROPIC DEBUG: Backend API error response:', errorText);
+            throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 ANTHROPIC DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            dataKeys: Object.keys(data)
+          });
+          
+          const finalResponse = data.response || 'No response received';
+          console.log('🔧 ANTHROPIC DEBUG: Final response length:', finalResponse.length);
+          return finalResponse;
+          
+        } catch (error) {
+          console.error('❌ ANTHROPIC DEBUG: API call failed with error:', error);
+          console.error('❌ ANTHROPIC DEBUG: Error type:', error.constructor.name);
+          console.error('❌ ANTHROPIC DEBUG: Error message:', error.message);
+          console.error('❌ ANTHROPIC DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
         
       } else if (provider === 'cohere') {
         console.log('Taking Cohere path...');
