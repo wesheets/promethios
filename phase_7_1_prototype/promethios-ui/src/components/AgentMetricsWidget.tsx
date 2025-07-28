@@ -132,15 +132,18 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
     }
   }, [agentMetrics.trustScore, agentMetrics.complianceRate, agentMetrics.responseTime]);
 
-  const formatPercentage = (value: number): string => {
+  const formatPercentage = (value: number | undefined): string => {
+    if (value === undefined) return '--';
     return `${(value * 100).toFixed(1)}%`;
   };
 
-  const formatTime = (milliseconds: number): string => {
+  const formatTime = (milliseconds: number | undefined): string => {
+    if (milliseconds === undefined) return '--';
     return `${(milliseconds / 1000).toFixed(1)}s`;
   };
 
-  const getScoreColor = (score: number): string => {
+  const getScoreColor = (score: number | undefined): string => {
+    if (score === undefined) return DARK_THEME.text.secondary;
     if (score >= 0.9) return DARK_THEME.success;
     if (score >= 0.7) return DARK_THEME.warning;
     return DARK_THEME.error;
@@ -380,8 +383,8 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
               {formatPercentage(agentMetrics.trustScore)}
             </Typography>
             <LinearProgress 
-              variant="determinate" 
-              value={agentMetrics.trustScore * 100}
+              variant={agentMetrics.trustScore === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.trustScore === undefined ? 0 : agentMetrics.trustScore * 100}
               sx={{ 
                 height: 8,
                 borderRadius: 4,
@@ -406,8 +409,8 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
               {formatPercentage(agentMetrics.complianceRate)}
             </Typography>
             <LinearProgress 
-              variant="determinate" 
-              value={agentMetrics.complianceRate * 100}
+              variant={agentMetrics.complianceRate === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.complianceRate === undefined ? 0 : agentMetrics.complianceRate * 100}
               sx={{ 
                 height: 8,
                 borderRadius: 4,
@@ -445,8 +448,8 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
               {formatPercentage(agentMetrics.sessionIntegrity)}
             </Typography>
             <LinearProgress 
-              variant="determinate" 
-              value={agentMetrics.sessionIntegrity * 100}
+              variant={agentMetrics.sessionIntegrity === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.sessionIntegrity === undefined ? 0 : agentMetrics.sessionIntegrity * 100}
               sx={{ 
                 height: 8,
                 borderRadius: 4,

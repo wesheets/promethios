@@ -276,23 +276,31 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
     }
   }, [agentId, currentUser?.uid]); // Removed initializeAgent dependency to prevent excessive reinitialization
 
-  // Periodic metrics refresh
-  useEffect(() => {
-    if (!isInitialized) return;
+  // Removed automatic periodic refresh - metrics should only update on actual interactions
+  // useEffect(() => {
+  //   if (!isInitialized) return;
+  //   const interval = setInterval(() => {
+  //     refreshMetrics();
+  //   }, 30000); // Refresh every 30 seconds
+  //   return () => clearInterval(interval);
+  // }, [isInitialized, refreshMetrics]);
 
-    const interval = setInterval(() => {
-      refreshMetrics();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [isInitialized, refreshMetrics]);
-
-  // Computed metrics values
-  const trustScore = profile?.metrics.governanceMetrics.trustScore || 0;
-  const complianceRate = profile?.metrics.governanceMetrics.complianceRate || 0;
-  const responseTime = profile?.metrics.performanceMetrics.averageResponseTime || 0;
-  const sessionIntegrity = profile?.metrics.performanceMetrics.successRate || 0;
-  const totalInteractions = profile?.metrics.governanceMetrics.totalInteractions || 0;
+  // Computed metrics values - only return values when profile is loaded and initialized
+  const trustScore = (isInitialized && profile?.metrics.governanceMetrics.trustScore !== undefined) 
+    ? profile.metrics.governanceMetrics.trustScore 
+    : undefined;
+  const complianceRate = (isInitialized && profile?.metrics.governanceMetrics.complianceRate !== undefined) 
+    ? profile.metrics.governanceMetrics.complianceRate 
+    : undefined;
+  const responseTime = (isInitialized && profile?.metrics.performanceMetrics.averageResponseTime !== undefined) 
+    ? profile.metrics.performanceMetrics.averageResponseTime 
+    : undefined;
+  const sessionIntegrity = (isInitialized && profile?.metrics.performanceMetrics.successRate !== undefined) 
+    ? profile.metrics.performanceMetrics.successRate 
+    : undefined;
+  const totalInteractions = (isInitialized && profile?.metrics.governanceMetrics.totalInteractions !== undefined) 
+    ? profile.metrics.governanceMetrics.totalInteractions 
+    : undefined;
   const lastUpdated = profile?.lastUpdated || null;
 
   return {
