@@ -423,8 +423,8 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         apiDetails: {
           endpoint: agentData.apiEndpoint.trim(),
           key: agentData.apiKey.trim(),
-          provider: agentData.provider?.trim() || 'Custom',
-          selectedModel: agentData.selectedModel,
+          provider: agentData.provider?.trim() || 'Unknown',
+          selectedModel: agentData.selectedModel || 'default',
           selectedCapabilities: agentData.selectedCapabilities,
           selectedContextLength: agentData.selectedContextLength,
           discoveredInfo: agentData.discoveredInfo

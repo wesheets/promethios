@@ -224,6 +224,9 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
       
       setDiscoveredInfo(discoveredData);
       
+      // Explicitly preserve the provider value to prevent corruption
+      setProvider(provider);
+      
       // Auto-populate fields if they're empty
       if (!agentName.trim()) setAgentName(discoveredData.name);
       if (!description.trim()) setDescription(discoveredData.description);
