@@ -18,7 +18,7 @@ class GovernanceContextService {
    */
   async getGovernanceContext(agentId, userId) {
     try {
-      // Get agent metrics and policies
+      // Get agent metrics and policies with graceful fallbacks
       const metrics = await this.getAgentMetrics(agentId);
       const policies = await this.getAgentPolicies(agentId, userId);
       const violations = await this.getRecentViolations(agentId);
@@ -31,7 +31,8 @@ class GovernanceContextService {
         governanceInstructions: this.generateGovernanceInstructions(policies, violations)
       };
     } catch (error) {
-      console.error('Error getting governance context:', error);
+      console.error('Error getting governance context for agent', agentId, ':', error);
+      // Return default context to ensure model-agnostic operation
       return this.getDefaultGovernanceContext();
     }
   }
@@ -83,6 +84,7 @@ Remember: You are being monitored for governance compliance. Your responses will
       return originalSystemPrompt + governanceSection;
     } catch (error) {
       console.error('Error injecting governance context:', error);
+      // Return original prompt with minimal governance context to ensure LLM calls don't fail
       return originalSystemPrompt + '\n\n=== GOVERNANCE CONTEXT ===\nOperating under Promethios governance framework with standard compliance monitoring.\n=== END GOVERNANCE CONTEXT ===';
     }
   }
@@ -118,24 +120,39 @@ Remember: You are being monitored for governance compliance. Your responses will
   }
 
   /**
-   * Get agent policies
+   * Get agent policies with graceful fallback for model-agnostic operation
    */
   async getAgentPolicies(agentId, userId) {
     try {
+      // Try to get policies from database
       const assignments = await PolicyAssignment.findByAgent(agentId);
-      return assignments.filter(a => a.status === 'active').map(a => ({
-        name: a.policyId,
-        description: a.description || 'Governance policy',
-        severity: a.enforcementLevel || 'medium'
-      }));
+      if (assignments && assignments.length > 0) {
+        return assignments.filter(a => a.status === 'active').map(a => ({
+          name: a.policyId,
+          description: a.description || 'Governance policy',
+          severity: a.enforcementLevel || 'medium'
+        }));
+      }
+      
+      // If no database records found, return default policies for any agent
+      return this.getDefaultPolicies();
     } catch (error) {
-      console.error('Error getting agent policies:', error);
-      return [
-        { name: 'HIPAA', description: 'Healthcare data protection', severity: 'high' },
-        { name: 'SOC2', description: 'Security and availability controls', severity: 'high' },
-        { name: 'Legal', description: 'Legal compliance and risk management', severity: 'medium' }
-      ];
+      console.error('Error getting agent policies for', agentId, ':', error);
+      // Always return default policies to ensure model-agnostic operation
+      return this.getDefaultPolicies();
     }
+  }
+
+  /**
+   * Get default policies for any agent type
+   */
+  getDefaultPolicies() {
+    return [
+      { name: 'HIPAA', description: 'Healthcare data protection', severity: 'high' },
+      { name: 'SOC2', description: 'Security and availability controls', severity: 'high' },
+      { name: 'Legal', description: 'Legal compliance and risk management', severity: 'medium' },
+      { name: 'Ethical AI', description: 'Responsible AI practices and bias prevention', severity: 'high' }
+    ];
   }
 
   /**
