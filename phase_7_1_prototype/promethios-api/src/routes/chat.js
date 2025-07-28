@@ -104,13 +104,24 @@ const governance_core = new PrometheusGovernanceCore();
 // POST / — Real-time chat with agents (governed or ungoverned)
 router.post('/', async (req, res) => {
     try {
-        const { agent_id, message, governance_enabled = false, session_id, system_message } = req.body;
+        const { agent_id, message, governance_enabled = false, session_id, system_message, attachments = [], provider, model, conversationHistory = [] } = req.body;
         const userId = req.headers['x-user-id'] || req.body.userId || 'anonymous';
 
         if (!agent_id || !message) {
             return res.status(400).json({ 
                 error: 'agent_id and message are required',
                 governance_metrics: null
+            });
+        }
+
+        // Log multimodal request details
+        if (attachments.length > 0) {
+            console.log('🔧 MULTIMODAL DEBUG: Received attachments:', {
+                count: attachments.length,
+                types: attachments.map(att => att.type),
+                names: attachments.map(att => att.name),
+                provider: provider,
+                model: model
             });
         }
 
@@ -200,7 +211,12 @@ router.post('/', async (req, res) => {
 
                 // If governance approves, generate LLM response
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
-                    response = await llmService.generateResponse(agent_id, message, system_message, userId);
+                    response = await llmService.generateResponse(agent_id, message, system_message, userId, {
+                        attachments: attachments,
+                        provider: provider,
+                        model: model,
+                        conversationHistory: conversationHistory
+                    });
                     
                     // Apply governance filtering for high-risk content
                     if (governance_metrics.risk_level === 'high') {
@@ -214,7 +230,12 @@ router.post('/', async (req, res) => {
             } catch (governance_error) {
                 console.error('Governance error:', governance_error);
                 // Fallback to direct LLM call with warning
-                response = await llmService.generateResponse(agent_id, message, system_message, userId);
+                response = await llmService.generateResponse(agent_id, message, system_message, userId, {
+                    attachments: attachments,
+                    provider: provider,
+                    model: model,
+                    conversationHistory: conversationHistory
+                });
                 const governanceWarning = "[Governance Warning: System temporarily unavailable, operating in fallback mode] ";
                 response = governanceWarning + response;
                 governance_metrics = {
@@ -228,7 +249,12 @@ router.post('/', async (req, res) => {
 
         } else {
             // Direct LLM call without governance
-            response = await llmService.generateResponse(agent_id, message, system_message, userId);
+            response = await llmService.generateResponse(agent_id, message, system_message, userId, {
+                attachments: attachments,
+                provider: provider,
+                model: model,
+                conversationHistory: conversationHistory
+            });
             governance_metrics = {
                 trust_score: null,
                 compliance_score: null,

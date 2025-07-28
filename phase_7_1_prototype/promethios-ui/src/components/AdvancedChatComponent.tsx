@@ -2307,6 +2307,178 @@ useEffect(() => {
           throw error;
         }
         
+      } else if (provider === 'grok' || provider === 'x.ai') {
+        console.log('🔧 GROK DEBUG: Taking Grok (X.AI) path...');
+        console.log('🔧 GROK DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 GROK DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+        const systemMessage = governanceEnabled 
+          ? await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
+          : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, a real-time information AI with humor and conversational abilities.`);
+        
+        console.log('🔧 GROK DEBUG: System message created, length:', systemMessage?.length);
+        console.log('🔧 GROK DEBUG: Governance enabled:', governanceEnabled);
+        
+        try {
+          console.log('🔧 GROK DEBUG: Making backend API call...');
+          
+          const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: messageContent,
+              agentId: agentIdToUse,
+              systemMessage: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'grok',
+              model: agent.model || 'grok-beta',
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              })),
+              attachments: currentAttachments.map(att => ({
+                id: att.id,
+                name: att.name,
+                type: att.type,
+                size: att.size,
+                data: att.data
+              }))
+            })
+          });
+
+          console.log('🔧 GROK DEBUG: Response status:', response.status);
+          console.log('🔧 GROK DEBUG: Response ok:', response.ok);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ GROK DEBUG: Backend API error:', errorText);
+            throw new Error(`Backend API error: ${response.status} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 GROK DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            hasError: !!data.error
+          });
+
+          if (data.error) {
+            console.error('❌ GROK DEBUG: Backend returned error:', data.error);
+            throw new Error(data.error);
+          }
+
+          if (!data.response) {
+            console.error('❌ GROK DEBUG: No response in data:', data);
+            throw new Error('No response received from backend');
+          }
+
+          console.log('🔧 GROK DEBUG: Successful response, length:', data.response.length);
+          return data.response;
+        } catch (error) {
+          console.error('❌ GROK DEBUG: API call failed with error:', error);
+          console.error('❌ GROK DEBUG: Error type:', error.constructor.name);
+          console.error('❌ GROK DEBUG: Error message:', error.message);
+          console.error('❌ GROK DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
+      } else if (provider === 'perplexity') {
+        console.log('🔧 PERPLEXITY DEBUG: Taking Perplexity path...');
+        console.log('🔧 PERPLEXITY DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 PERPLEXITY DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+        const systemMessage = governanceEnabled 
+          ? await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
+          : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, an AI-powered search and reasoning assistant with real-time web access.`);
+        
+        console.log('🔧 PERPLEXITY DEBUG: System message created, length:', systemMessage?.length);
+        console.log('🔧 PERPLEXITY DEBUG: Governance enabled:', governanceEnabled);
+        
+        try {
+          console.log('🔧 PERPLEXITY DEBUG: Making backend API call...');
+          
+          const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: messageContent,
+              agentId: agentIdToUse,
+              systemMessage: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'perplexity',
+              model: agent.model || 'llama-3.1-sonar-small-128k-online',
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              })),
+              attachments: currentAttachments.map(att => ({
+                id: att.id,
+                name: att.name,
+                type: att.type,
+                size: att.size,
+                data: att.data
+              }))
+            })
+          });
+
+          console.log('🔧 PERPLEXITY DEBUG: Response status:', response.status);
+          console.log('🔧 PERPLEXITY DEBUG: Response ok:', response.ok);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ PERPLEXITY DEBUG: Backend API error:', errorText);
+            throw new Error(`Backend API error: ${response.status} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 PERPLEXITY DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            hasError: !!data.error
+          });
+
+          if (data.error) {
+            console.error('❌ PERPLEXITY DEBUG: Backend returned error:', data.error);
+            throw new Error(data.error);
+          }
+
+          if (!data.response) {
+            console.error('❌ PERPLEXITY DEBUG: No response in data:', data);
+            throw new Error('No response received from backend');
+          }
+
+          console.log('🔧 PERPLEXITY DEBUG: Successful response, length:', data.response.length);
+          return data.response;
+        } catch (error) {
+          console.error('❌ PERPLEXITY DEBUG: API call failed with error:', error);
+          console.error('❌ PERPLEXITY DEBUG: Error type:', error.constructor.name);
+          console.error('❌ PERPLEXITY DEBUG: Error message:', error.message);
+          console.error('❌ PERPLEXITY DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
       } else if (provider === 'promethios') {
         console.log('Taking Promethios path...');
         // Use the working backend API format we tested
@@ -3272,7 +3444,7 @@ useEffect(() => {
         setMessages(prev => [...prev, agentMessage]);
         
         // 📊 Record agent interaction for metrics
-        const responseTime = Date.now() - Date.now(); // This would be calculated from actual request start time
+        const responseTime = Date.now() - userMessage.timestamp.getTime(); // Calculate response time from user message timestamp
         await agentMetrics.recordInteraction({
           interactionType: 'chat',
           responseTime: responseTime,
@@ -3285,7 +3457,13 @@ useEffect(() => {
           sessionId: `chat_${Date.now()}`,
           requestSize: userMessage.content.length,
           responseSize: agentResponse.length,
-          source: 'advanced-chat-component'
+          source: 'advanced-chat-component',
+          metadata: {
+            provider: selectedAgent?.apiDetails?.provider || 'unknown',
+            model: selectedAgent?.apiDetails?.selectedModel || 'unknown',
+            hasAttachments: attachments.length > 0,
+            attachmentCount: attachments.length
+          }
         });
 
         // 🔄 REAL GOVERNANCE INTEGRATION: Update telemetry and provide feedback loops
