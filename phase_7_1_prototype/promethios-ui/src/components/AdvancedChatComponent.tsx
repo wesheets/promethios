@@ -2318,6 +2318,7 @@ useEffect(() => {
         });
         
         // Create system message based on governance setting
+        const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
         const systemMessage = governanceEnabled 
           ? createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
           : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, a real-time information AI with humor and conversational abilities.`);
@@ -2403,6 +2404,7 @@ useEffect(() => {
         });
         
         // Create system message based on governance setting
+        const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
         const systemMessage = governanceEnabled 
           ? createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
           : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, an AI-powered search and reasoning assistant with real-time web access.`);
