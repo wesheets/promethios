@@ -1836,11 +1836,18 @@ useEffect(() => {
         console.log('Taking OpenAI path...');
         // Create system message based on governance setting
         let systemMessage;
+        console.log('🔧 DEBUG: governanceEnabled =', governanceEnabled);
+        console.log('🔧 DEBUG: agent.id =', agent.id);
+        console.log('🔧 DEBUG: currentUser?.uid =', currentUser?.uid);
+        
         if (governanceEnabled) {
           // Use Promethios governance kernel for governed agents with real-time metrics
+          console.log('🔧 DEBUG: About to call createPromethiosSystemMessage...');
           systemMessage = await createPromethiosSystemMessage(agent.id, currentUser?.uid);
+          console.log('🔧 DEBUG: createPromethiosSystemMessage returned:', systemMessage?.substring(0, 100) + '...');
         } else {
           // Use basic agent description for ungoverned agents
+          console.log('🔧 DEBUG: Using basic system message (governance disabled)');
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 

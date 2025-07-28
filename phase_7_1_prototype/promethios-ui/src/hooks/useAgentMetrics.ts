@@ -77,8 +77,10 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       
       // Check if profile already exists
       let existingProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);
+      console.log(`🔍 Existing profile for ${agentId}:`, existingProfile ? 'FOUND' : 'NOT FOUND');
       
       if (!existingProfile) {
+        console.log(`🆕 Creating new profile for ${agentId} (${version})`);
         // Create new profile based on version
         if (version === 'test') {
           existingProfile = await metricsCollectionExtension.createTestAgentProfile(
@@ -98,6 +100,9 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
             agentType
           );
         }
+        console.log(`✅ Created new profile for ${agentId} with trust score:`, existingProfile.metrics.governanceMetrics.trustScore);
+      } else {
+        console.log(`📊 Loaded existing profile for ${agentId} with trust score:`, existingProfile.metrics.governanceMetrics.trustScore);
       }
 
       setProfile(existingProfile);
@@ -253,9 +258,12 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       setIsInitialized(false);
       setProfile(null);
       setError(null);
-      initializeAgent();
+      // Call initializeAgent directly instead of depending on it
+      (async () => {
+        await initializeAgent();
+      })();
     }
-  }, [agentId, currentUser?.uid, initializeAgent]);
+  }, [agentId, currentUser?.uid]); // Removed initializeAgent dependency to prevent excessive reinitialization
 
   // Periodic metrics refresh
   useEffect(() => {
