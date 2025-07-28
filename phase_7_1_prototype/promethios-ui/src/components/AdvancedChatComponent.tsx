@@ -415,7 +415,23 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     agentId: isDeployedAgent ? (deployedAgentId || '') : (selectedAgent?.identity.id || ''),
     agentName: isDeployedAgent ? (deployedAgentName || 'Deployed Agent') : (selectedAgent?.identity.name || 'Unknown Agent'),
     agentType: 'single',
-    version: isDeployedAgent ? 'production' : 'test',
+    version: (() => {
+      // Determine version based on agent ID, not just deployment status
+      const agentId = isDeployedAgent ? (deployedAgentId || '') : (selectedAgent?.identity.id || '');
+      let version: 'test' | 'production';
+      
+      if (agentId.includes('-production')) {
+        version = 'production';
+      } else if (agentId.includes('-test') || agentId.includes('-testing')) {
+        version = 'test';
+      } else {
+        // Fallback to deployment status
+        version = isDeployedAgent ? 'production' : 'test';
+      }
+      
+      console.log(`🔧 METRICS VERSION: Agent ${agentId} detected as ${version} (isDeployedAgent: ${isDeployedAgent})`);
+      return version;
+    })(),
     deploymentId: isDeployedAgent ? deploymentId : undefined,
     autoInitialize: false // We'll initialize manually when agent is selected
   });
