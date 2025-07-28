@@ -88,6 +88,7 @@ import AgentManageModal from '../components/AgentManageModal';
 // import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
 // import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
 import PublishToRegistryModal from '../components/PublishToRegistryModal';
+import { isPromethiosNativeCreationEnabled, isPromethiosNativeManagementEnabled } from '../config/features';
 // Temporarily disabled to avoid backend dependency errors
 // import { agentBackendService } from '../services/agentBackendService';
 
@@ -605,6 +606,8 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           },
         }}
       >
+        {/* Create Promethios LLM option - hidden by feature flag */}
+        {isPromethiosNativeCreationEnabled() && (
         <MenuItem onClick={() => navigate('/ui/agents/create-promethios-llm')} sx={{ py: 2 }}>
           <ListItemIcon>
             <Security sx={{ color: '#3b82f6' }} />
@@ -615,7 +618,10 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>
+        )}
+        {isPromethiosNativeCreationEnabled() && (
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        )}
         {/* Temporarily hidden wrapper options
         <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
           <ListItemIcon>
@@ -1973,6 +1979,8 @@ const AgentProfilesPage: React.FC = () => {
                 </Box>
               } 
             />
+            {/* Promethios Native Agents tab - hidden by feature flag */}
+            {isPromethiosNativeManagementEnabled() && (
             <Tab 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
@@ -1981,6 +1989,7 @@ const AgentProfilesPage: React.FC = () => {
                 </Box>
               } 
             />
+            )}
             <Tab 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
@@ -2113,6 +2122,8 @@ const AgentProfilesPage: React.FC = () => {
           )}
         </TabPanel>
 
+        {/* Promethios Native Agents TabPanel - hidden by feature flag */}
+        {isPromethiosNativeManagementEnabled() && (
         <TabPanel value={tabValue} index={1}>
           {/* Promethios Native Agents Tab */}
           {combinedLoading ? (
@@ -2143,6 +2154,7 @@ const AgentProfilesPage: React.FC = () => {
             </Grid>
           )}
         </TabPanel>
+        )}
 
         <TabPanel value={tabValue} index={2}>
           {/* Wrapped API Agents Tab */}

@@ -58,6 +58,7 @@ import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
 import { AgentMetricsWidget } from './AgentMetricsWidget';
+import { isPromethiosNativeChatEnabled } from '../config/features';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
 import { cryptographicAuditIntegration } from '../services/CryptographicAuditIntegration';
@@ -3295,6 +3296,8 @@ useEffect(() => {
         {/* Mode Toggle - Hidden for deployed agents */}
         {!isDeployedAgent && (
         <ModeToggleContainer>
+          {/* PROMETHIOS NATIVE tab - hidden by feature flag */}
+          {isPromethiosNativeChatEnabled() && (
           <ModeButton
             active={chatMode === 'promethios-native'}
             onClick={() => {
@@ -3332,6 +3335,7 @@ useEffect(() => {
               PROMETHIOS NATIVE
             </Box>
           </ModeButton>
+          )}
           <ModeButton
             active={chatMode === 'single'}
             onClick={() => {
