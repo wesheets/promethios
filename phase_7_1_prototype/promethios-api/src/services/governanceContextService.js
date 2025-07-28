@@ -17,22 +17,41 @@ class GovernanceContextService {
    * Get governance context for an agent
    */
   async getGovernanceContext(agentId, userId) {
+    console.log(`🔧 GovernanceContextService: Getting context for agent ${agentId}, user ${userId}`);
+    
     try {
       // Get agent metrics and policies with graceful fallbacks
+      console.log(`🔧 GovernanceContextService: Getting agent metrics...`);
       const metrics = await this.getAgentMetrics(agentId);
-      const policies = await this.getAgentPolicies(agentId, userId);
-      const violations = await this.getRecentViolations(agentId);
+      console.log(`🔧 GovernanceContextService: Metrics retrieved:`, metrics);
       
-      return {
+      console.log(`🔧 GovernanceContextService: Getting agent policies...`);
+      const policies = await this.getAgentPolicies(agentId, userId);
+      console.log(`🔧 GovernanceContextService: Policies retrieved:`, policies);
+      
+      console.log(`🔧 GovernanceContextService: Getting recent violations...`);
+      const violations = await this.getRecentViolations(agentId);
+      console.log(`🔧 GovernanceContextService: Violations retrieved:`, violations);
+      
+      console.log(`🔧 GovernanceContextService: Generating prompts and instructions...`);
+      const selfAwarenessPrompts = this.generateSelfAwarenessPrompts(metrics, violations);
+      const governanceInstructions = this.generateGovernanceInstructions(policies, violations);
+      
+      const context = {
         metrics,
         policies,
         violations,
-        selfAwarenessPrompts: this.generateSelfAwarenessPrompts(metrics, violations),
-        governanceInstructions: this.generateGovernanceInstructions(policies, violations)
+        selfAwarenessPrompts,
+        governanceInstructions
       };
+      
+      console.log(`🔧 GovernanceContextService: Context generation completed successfully for agent ${agentId}`);
+      return context;
     } catch (error) {
-      console.error('Error getting governance context for agent', agentId, ':', error);
+      console.error(`❌ GovernanceContextService: Error getting governance context for agent ${agentId}:`, error);
+      console.error(`❌ GovernanceContextService: Error stack:`, error.stack);
       // Return default context to ensure model-agnostic operation
+      console.log(`🔧 GovernanceContextService: Using default context for agent ${agentId}`);
       return this.getDefaultGovernanceContext();
     }
   }
@@ -41,8 +60,16 @@ class GovernanceContextService {
    * Inject governance context into system prompt
    */
   async injectGovernanceContext(originalSystemPrompt, agentId, userId) {
+    console.log(`🔧 GovernanceContextService: Starting injection for agent ${agentId}, user ${userId}`);
+    
     try {
+      console.log(`🔧 GovernanceContextService: Getting governance context...`);
       const context = await this.getGovernanceContext(agentId, userId);
+      console.log(`🔧 GovernanceContextService: Context retrieved successfully:`, {
+        metricsCount: Object.keys(context.metrics).length,
+        policiesCount: context.policies.length,
+        violationsCount: context.violations.length
+      });
       
       const governanceSection = `
 
@@ -81,11 +108,16 @@ Remember: You are being monitored for governance compliance. Your responses will
 
 `;
 
-      return originalSystemPrompt + governanceSection;
+      const finalPrompt = originalSystemPrompt + governanceSection;
+      console.log(`🔧 GovernanceContextService: Injection completed successfully. Final prompt length: ${finalPrompt.length}`);
+      return finalPrompt;
     } catch (error) {
-      console.error('Error injecting governance context:', error);
+      console.error(`❌ GovernanceContextService: Error injecting governance context for agent ${agentId}:`, error);
+      console.error(`❌ GovernanceContextService: Error stack:`, error.stack);
       // Return original prompt with minimal governance context to ensure LLM calls don't fail
-      return originalSystemPrompt + '\n\n=== GOVERNANCE CONTEXT ===\nOperating under Promethios governance framework with standard compliance monitoring.\n=== END GOVERNANCE CONTEXT ===';
+      const fallbackPrompt = originalSystemPrompt + '\n\n=== GOVERNANCE CONTEXT ===\nOperating under Promethios governance framework with standard compliance monitoring.\n=== END GOVERNANCE CONTEXT ===';
+      console.log(`🔧 GovernanceContextService: Using fallback prompt for agent ${agentId}`);
+      return fallbackPrompt;
     }
   }
 
