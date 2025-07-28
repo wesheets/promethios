@@ -189,17 +189,43 @@ class OptimizedAgentLoaderService {
           }
         }
         
-        // If no previous agent or it wasn't found, use default selection logic
+        // If no previous agent or it wasn't found, use intelligent selection logic
         if (!selectedAgent) {
-          if (chatMode === 'promethios-native') {
-            selectedAgent = agents.find(agent => 
-              agent.identity.name.toLowerCase().includes('promethios') || 
-              agent.identity.id.includes('promethios-llm')
-            ) || agents[0];
-          } else {
-            selectedAgent = agents[0];
+          console.log('🔍 OptimizedAgentLoader: No previous agent, using intelligent selection...');
+          
+          // First, try to find agents with historical data (non-promethios agents that likely have metrics)
+          const regularAgents = agents.filter(agent => 
+            !agent.identity.id.includes('promethios-llm') && 
+            (agent.identity.id.includes('-production') || agent.identity.id.includes('-testing'))
+          );
+          
+          if (regularAgents.length > 0) {
+            // Prioritize production agents, then testing agents
+            const productionAgents = regularAgents.filter(agent => agent.identity.id.includes('-production'));
+            const testingAgents = regularAgents.filter(agent => agent.identity.id.includes('-testing'));
+            
+            if (productionAgents.length > 0) {
+              selectedAgent = productionAgents[0];
+              console.log('🎯 OptimizedAgentLoader: Selected production agent with historical data:', selectedAgent.identity.id);
+            } else if (testingAgents.length > 0) {
+              selectedAgent = testingAgents[0];
+              console.log('🎯 OptimizedAgentLoader: Selected testing agent with historical data:', selectedAgent.identity.id);
+            }
           }
-          console.log('🎯 OptimizedAgentLoader: Selected default agent:', selectedAgent?.identity.id);
+          
+          // If no regular agents found, fall back to original logic
+          if (!selectedAgent) {
+            if (chatMode === 'promethios-native') {
+              selectedAgent = agents.find(agent => 
+                agent.identity.name.toLowerCase().includes('promethios') || 
+                agent.identity.id.includes('promethios-llm')
+              ) || agents[0];
+              console.log('🎯 OptimizedAgentLoader: Selected Promethios native agent:', selectedAgent?.identity.id);
+            } else {
+              selectedAgent = agents[0];
+              console.log('🎯 OptimizedAgentLoader: Selected first available agent:', selectedAgent?.identity.id);
+            }
+          }
         }
         
         // Save the selected agent ID for future sessions
@@ -321,7 +347,30 @@ class OptimizedAgentLoaderService {
     const cacheKey = `agents:${userId}`;
     this.cache.delete(cacheKey);
     this.migrationCache.delete(`migration:${userId}`);
+    
+    // Also clear the last selected agent to force re-evaluation with new logic
+    try {
+      const agentSelectionKey = `last_selected_agent:${userId}`;
+      localStorage.removeItem(agentSelectionKey);
+      console.log('🗑️ OptimizedAgentLoader: Cleared last selected agent for re-evaluation');
+    } catch (error) {
+      console.warn('⚠️ OptimizedAgentLoader: Failed to clear last selected agent:', error);
+    }
+    
     console.log('🗑️ OptimizedAgentLoader: Cache cleared for user:', userId);
+  }
+
+  /**
+   * Clear only the agent selection persistence (for testing new selection logic)
+   */
+  clearAgentSelection(userId: string): void {
+    try {
+      const agentSelectionKey = `last_selected_agent:${userId}`;
+      localStorage.removeItem(agentSelectionKey);
+      console.log('🗑️ OptimizedAgentLoader: Cleared agent selection for user:', userId);
+    } catch (error) {
+      console.warn('⚠️ OptimizedAgentLoader: Failed to clear agent selection:', error);
+    }
   }
 
   /**
