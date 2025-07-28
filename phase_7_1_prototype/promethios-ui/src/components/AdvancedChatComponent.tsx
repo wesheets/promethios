@@ -2385,6 +2385,84 @@ useEffect(() => {
           throw error;
         }
         
+      } else if (provider === 'perplexity') {
+        console.log('🔧 PERPLEXITY DEBUG: Taking Perplexity path...');
+        console.log('🔧 PERPLEXITY DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 PERPLEXITY DEBUG: Agent details:', {
+          id: agent.id,
+          name: agent.agentName || agent.identity?.name,
+          provider: agent.provider,
+          governanceEnabled
+        });
+        
+        // Create system message based on governance setting
+        const systemMessage = governanceEnabled 
+          ? createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
+          : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, an AI-powered search and reasoning assistant with real-time web access.`);
+        
+        console.log('🔧 PERPLEXITY DEBUG: System message created, length:', systemMessage?.length);
+        console.log('🔧 PERPLEXITY DEBUG: Governance enabled:', governanceEnabled);
+        
+        try {
+          console.log('🔧 PERPLEXITY DEBUG: Making backend API call...');
+          
+          const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: messageContent,
+              agentId: agentIdToUse,
+              systemMessage: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'perplexity',
+              model: agent.model || 'llama-3.1-sonar-small-128k-online',
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              }))
+            })
+          });
+
+          console.log('🔧 PERPLEXITY DEBUG: Response status:', response.status);
+          console.log('🔧 PERPLEXITY DEBUG: Response ok:', response.ok);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ PERPLEXITY DEBUG: Backend API error:', errorText);
+            throw new Error(`Backend API error: ${response.status} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 PERPLEXITY DEBUG: Response data received:', {
+            hasResponse: !!data.response,
+            responseLength: data.response?.length,
+            hasError: !!data.error
+          });
+
+          if (data.error) {
+            console.error('❌ PERPLEXITY DEBUG: Backend returned error:', data.error);
+            throw new Error(data.error);
+          }
+
+          if (!data.response) {
+            console.error('❌ PERPLEXITY DEBUG: No response in data:', data);
+            throw new Error('No response received from backend');
+          }
+
+          console.log('🔧 PERPLEXITY DEBUG: Successful response, length:', data.response.length);
+          return data.response;
+        } catch (error) {
+          console.error('❌ PERPLEXITY DEBUG: API call failed with error:', error);
+          console.error('❌ PERPLEXITY DEBUG: Error type:', error.constructor.name);
+          console.error('❌ PERPLEXITY DEBUG: Error message:', error.message);
+          console.error('❌ PERPLEXITY DEBUG: Error stack:', error.stack);
+          
+          // Re-throw the error to be handled by the outer try/catch
+          throw error;
+        }
+        
       } else if (provider === 'promethios') {
         console.log('Taking Promethios path...');
         // Use the working backend API format we tested
