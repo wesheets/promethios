@@ -339,7 +339,7 @@ class LLMService {
         error: error.message
       });
       
-      return `I'm experiencing technical difficulties with the HuggingFace API. Error: ${error.message}. Please check the API configuration and try again.`;
+      return `I'm experiencing technical difficulties connecting to my language model. Please check that the HuggingFace API key is properly configured in the environment variables. For assistance with API connections, workflow automation, and tool orchestration, please try again once the connection is restored.`;
     }
   }
 
