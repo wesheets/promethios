@@ -424,7 +424,7 @@ router.get('/agents', (req, res) => {
             description: 'Specialized in factual accuracy and information retrieval. Prioritizes correctness over creativity.',
             capabilities: ['information-retrieval', 'fact-checking', 'data-analysis'],
             provider: 'Anthropic Claude',
-            model: 'claude-3-sonnet-20240229',
+            model: 'claude-3-5-sonnet-20241022',
             governance_compatible: true,
             status: 'active'
         },

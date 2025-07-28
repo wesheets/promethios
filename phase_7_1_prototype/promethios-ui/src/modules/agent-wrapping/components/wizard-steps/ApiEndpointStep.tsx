@@ -53,7 +53,7 @@ const ApiEndpointStep: React.FC<ApiEndpointStepProps> = ({
 
   const providers = [
     { value: 'openai', label: 'OpenAI', models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
-    { value: 'anthropic', label: 'Anthropic', models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'] },
+    { value: 'anthropic', label: 'Anthropic', models: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'] },
     { value: 'cohere', label: 'Cohere', models: ['command', 'command-light', 'command-nightly'] },
     { value: 'custom', label: 'Custom API', models: [] },
   ];

@@ -374,7 +374,7 @@ const AgentWrappingWizard: React.FC = () => {
           endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1',
           key: agentData.apiKey || agentData.key || '',
           provider: agentData.provider || 'OpenAI',
-          selectedModel: agentData.model || 'gpt-4',
+          selectedModel: agentData.selectedModel || agentData.model || (agentData.provider === 'Anthropic' ? 'claude-3-5-sonnet-20241022' : 'gpt-4'),
           selectedCapabilities: agentData.capabilities || [],
           selectedContextLength: agentData.contextLength || 4096,
           discoveredInfo: agentData.discoveredInfo || null,

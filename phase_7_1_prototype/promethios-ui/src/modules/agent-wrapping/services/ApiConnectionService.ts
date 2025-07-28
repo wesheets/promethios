@@ -114,7 +114,7 @@ class ApiConnectionService {
           'anthropic-version': '2023-06-01',
         },
         {
-          model: credentials.model || 'claude-3-haiku-20240307',
+          model: credentials.model || 'claude-3-5-sonnet-20241022',
           max_tokens: 1,
           messages: [{ role: 'user', content: 'Test connection' }],
         }
@@ -127,7 +127,7 @@ class ApiConnectionService {
           success: true,
           message: 'Connection successful',
           latency,
-          model: credentials.model || 'claude-3-haiku-20240307',
+          model: credentials.model || 'claude-3-5-sonnet-20241022',
         };
       } else if (response.status === 401) {
         return {

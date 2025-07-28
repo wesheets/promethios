@@ -317,11 +317,11 @@ export class UserAgentStorageService {
                 console.log('🤖 Configuring Claude/Anthropic agent');
                 // Preserve existing model if it's a valid Claude model, otherwise use default
                 let preservedModel = agentData.selectedModel || agentData.model;
-                const validClaudeModels = ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus', 'claude-3.5-sonnet', 'claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229', 'claude-3-5-sonnet-20240620'];
+                const validClaudeModels = ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus', 'claude-3.5-sonnet', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'];
                 
                 // Only override if the current model is clearly wrong (like gpt-4)
                 if (!preservedModel || preservedModel.startsWith('gpt-') || !validClaudeModels.some(valid => preservedModel.includes(valid.split('-')[2]))) {
-                  preservedModel = 'claude-3-sonnet-20240229'; // Default Claude model
+                  preservedModel = 'claude-3-5-sonnet-20241022'; // Default to current Claude model
                   console.log('🔧 Using default Claude model for agent with invalid model:', agentData.selectedModel || agentData.model);
                 } else {
                   console.log('✅ Preserving existing valid Claude model:', preservedModel);
@@ -368,8 +368,15 @@ export class UserAgentStorageService {
               // Fix Claude agents that have wrong models (like gpt-4)
               if (isClaudeAgent && agentData.apiDetails.selectedModel?.startsWith('gpt-')) {
                 console.log('🔧 Fixing Claude agent with wrong model:', agentData.identity?.name, 'Current model:', agentData.apiDetails.selectedModel);
-                agentData.apiDetails.selectedModel = 'claude-3-sonnet-20240229';
+                agentData.apiDetails.selectedModel = 'claude-3-5-sonnet-20241022'; // Use current model instead of deprecated
                 agentData.apiDetails.provider = 'Anthropic';
+                needsUpdate = true;
+              }
+              
+              // Fix deprecated Claude models
+              if (isClaudeAgent && agentData.apiDetails.selectedModel === 'claude-3-sonnet-20240229') {
+                console.log('🔧 Updating deprecated Claude model for agent:', agentData.identity?.name);
+                agentData.apiDetails.selectedModel = 'claude-3-5-sonnet-20241022'; // Update to current model
                 needsUpdate = true;
               }
               

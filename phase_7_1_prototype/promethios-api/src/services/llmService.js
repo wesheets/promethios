@@ -195,7 +195,7 @@ class LLMService {
 
       const startTime = Date.now();
       const response = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022', // Updated to current model
         max_tokens: 600,
         temperature: 0.2,
         system: enhancedSystemPrompt,
