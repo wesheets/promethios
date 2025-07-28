@@ -303,7 +303,8 @@ export class UserAgentStorageService {
               // Detect if this is a Claude agent based on name or existing configuration
               const isClaudeAgent = agentData.identity?.name?.toLowerCase().includes('claude') ||
                                    agentData.provider?.toLowerCase().includes('claude') ||
-                                   agentData.provider?.toLowerCase().includes('anthropic');
+                                   agentData.provider?.toLowerCase().includes('anthropic') ||
+                                   agentData.apiEndpoint?.includes('anthropic.com');
               
               // Clean up any Firebase logs that may have contaminated the API key
               let cleanApiKey = agentData.apiKey || agentData.key || '';
@@ -314,13 +315,25 @@ export class UserAgentStorageService {
               
               if (isClaudeAgent) {
                 console.log('🤖 Configuring Claude/Anthropic agent');
+                // Preserve existing model if it's a valid Claude model, otherwise use default
+                let preservedModel = agentData.selectedModel || agentData.model;
+                const validClaudeModels = ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus', 'claude-3.5-sonnet', 'claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229', 'claude-3-5-sonnet-20240620'];
+                
+                // Only override if the current model is clearly wrong (like gpt-4)
+                if (!preservedModel || preservedModel.startsWith('gpt-') || !validClaudeModels.some(valid => preservedModel.includes(valid.split('-')[2]))) {
+                  preservedModel = 'claude-3-sonnet-20240229'; // Default Claude model
+                  console.log('🔧 Using default Claude model for agent with invalid model:', agentData.selectedModel || agentData.model);
+                } else {
+                  console.log('✅ Preserving existing valid Claude model:', preservedModel);
+                }
+                
                 agentData.apiDetails = {
-                  endpoint: 'https://api.anthropic.com/v1/messages',
+                  endpoint: agentData.apiEndpoint || 'https://api.anthropic.com/v1/messages',
                   key: cleanApiKey,
                   provider: 'Anthropic',
-                  selectedModel: 'claude-3-sonnet-20240229',
-                  selectedCapabilities: agentData.capabilities || [],
-                  selectedContextLength: agentData.contextLength || 200000, // Claude has larger context
+                  selectedModel: preservedModel,
+                  selectedCapabilities: agentData.capabilities || agentData.selectedCapabilities || [],
+                  selectedContextLength: agentData.contextLength || agentData.selectedContextLength || 200000,
                   discoveredInfo: agentData.discoveredInfo || null,
                 };
               } else {
@@ -329,9 +342,9 @@ export class UserAgentStorageService {
                   endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1/chat/completions',
                   key: cleanApiKey,
                   provider: agentData.provider || 'OpenAI',
-                  selectedModel: agentData.model || 'gpt-4',
-                  selectedCapabilities: agentData.capabilities || [],
-                  selectedContextLength: agentData.contextLength || 4096,
+                  selectedModel: agentData.selectedModel || agentData.model || 'gpt-4',
+                  selectedCapabilities: agentData.capabilities || agentData.selectedCapabilities || [],
+                  selectedContextLength: agentData.contextLength || agentData.selectedContextLength || 4096,
                   discoveredInfo: agentData.discoveredInfo || null,
                 };
               }
@@ -342,6 +355,44 @@ export class UserAgentStorageService {
                 console.log('✅ Successfully migrated agent with apiDetails:', agentData.identity?.name);
               } catch (migrationError) {
                 console.error('❌ Failed to save migrated agent:', migrationError);
+              }
+            }
+            
+            // Fix corrupted apiDetails for existing agents (one-time fix)
+            else if (agentData.apiDetails) {
+              let needsUpdate = false;
+              const isClaudeAgent = agentData.identity?.name?.toLowerCase().includes('claude') ||
+                                   agentData.apiDetails.provider?.toLowerCase().includes('anthropic') ||
+                                   agentData.apiDetails.endpoint?.includes('anthropic.com');
+              
+              // Fix Claude agents that have wrong models (like gpt-4)
+              if (isClaudeAgent && agentData.apiDetails.selectedModel?.startsWith('gpt-')) {
+                console.log('🔧 Fixing Claude agent with wrong model:', agentData.identity?.name, 'Current model:', agentData.apiDetails.selectedModel);
+                agentData.apiDetails.selectedModel = 'claude-3-sonnet-20240229';
+                agentData.apiDetails.provider = 'Anthropic';
+                needsUpdate = true;
+              }
+              
+              // Fix agents with blank providers
+              if (!agentData.apiDetails.provider || agentData.apiDetails.provider.trim() === '') {
+                if (isClaudeAgent) {
+                  agentData.apiDetails.provider = 'Anthropic';
+                  needsUpdate = true;
+                } else if (agentData.apiDetails.endpoint?.includes('openai.com')) {
+                  agentData.apiDetails.provider = 'OpenAI';
+                  needsUpdate = true;
+                }
+                console.log('🔧 Fixed blank provider for agent:', agentData.identity?.name, 'Set to:', agentData.apiDetails.provider);
+              }
+              
+              // Save the corrected agent if changes were made
+              if (needsUpdate) {
+                try {
+                  await unifiedStorage.store('agents', key.replace('agents/', ''), agentData);
+                  console.log('✅ Successfully fixed corrupted agent data:', agentData.identity?.name);
+                } catch (fixError) {
+                  console.error('❌ Failed to save fixed agent:', fixError);
+                }
               }
             }
             
