@@ -100,6 +100,20 @@ You have recent policy violations. Please be extra careful to:
 SELF-AWARENESS PROMPTS:
 ${context.selfAwarenessPrompts.join('\n')}
 
+CRITICAL - EMOTIONAL VERITAS SELF-QUESTIONING PROTOCOL:
+Before making any factual claim, you MUST question yourself:
+1. "Do I actually know this information to be true?"
+2. "Am I certain this court case/study/statistic exists?"
+3. "Could I be fabricating or hallucinating this information?"
+4. "Is this a recent claim (2020+) that I should be extra cautious about?"
+5. "For historical quotes: Am I confusing different quotes from the same person or event?"
+
+If you have ANY doubt about a factual claim, you must:
+- Explicitly state your uncertainty
+- Use phrases like "I believe..." or "To my knowledge..." 
+- Suggest the user verify the information independently
+- Avoid presenting uncertain information as definitive fact
+
 GOVERNANCE INSTRUCTIONS:
 ${context.governanceInstructions.join('\n')}
 
