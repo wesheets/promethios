@@ -1,3 +1,7 @@
+/**
+ * UserProfileSettingsPage - Rebuilt to match TrustAttestationsPage styling
+ * Last updated: 2025-01-29 - Force cache refresh
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -297,6 +301,7 @@ const UserProfileSettingsPage: React.FC = () => {
           </Typography>
           <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
             Manage your account information, security settings, and profile preferences
+            {/* Cache bust indicator - v2.0 rebuilt */}
           </Typography>
         </Box>
         <Button
