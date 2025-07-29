@@ -155,15 +155,22 @@ const UserProfileSettingsPage: React.FC = () => {
   }, [currentUser]);
 
   const loadUserProfile = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('🔄 Loading user profile for:', currentUser.uid);
+      
       const userProfile = await userProfileService.getUserProfile(currentUser.uid);
+      console.log('📄 User profile loaded:', userProfile);
       
       if (userProfile) {
         setProfile(userProfile);
       } else {
+        console.log('📝 Creating default profile');
         // Create default profile
         const defaultProfile: UserProfile = {
           userId: currentUser.uid,
@@ -184,6 +191,8 @@ const UserProfileSettingsPage: React.FC = () => {
           github: '',
           emailVerified: currentUser.emailVerified,
           phoneVerified: !!currentUser.phoneNumber,
+          twoFactorEnabled: false,
+          loginNotifications: true,
           dateJoined: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -194,10 +203,40 @@ const UserProfileSettingsPage: React.FC = () => {
 
       // Update last login
       await userProfileService.updateLastLogin(currentUser.uid);
+      console.log('✅ Profile loading complete');
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      console.error('❌ Failed to load user profile:', error);
+      // Set a basic profile even if loading fails
+      const fallbackProfile: UserProfile = {
+        userId: currentUser?.uid || '',
+        firstName: currentUser?.displayName?.split(' ')[0] || 'User',
+        lastName: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
+        displayName: currentUser?.displayName || 'User',
+        email: currentUser?.email || '',
+        phone: '',
+        avatar: currentUser?.photoURL || '',
+        bio: '',
+        jobTitle: '',
+        organization: '',
+        location: '',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        website: '',
+        linkedIn: '',
+        twitter: '',
+        github: '',
+        emailVerified: currentUser?.emailVerified || false,
+        phoneVerified: false,
+        twoFactorEnabled: false,
+        loginNotifications: true,
+        dateJoined: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setProfile(fallbackProfile);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading state set to false');
     }
   };
 
@@ -262,15 +301,23 @@ const UserProfileSettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
-        {/* OBVIOUS INDICATOR - NEW REBUILT VERSION */}
-        <Alert severity="info" sx={{ mb: 2, backgroundColor: '#3b82f6', color: 'white' }}>
-          🚀 NEW REBUILT PROFILE PAGE - v2.0 - If you see this, the new component is loading!
-        </Alert>
-        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
-          User Profile Settings
+      <Box sx={{ 
+        p: 3, 
+        backgroundColor: '#1a202c', 
+        minHeight: '100vh', 
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', mb: 3 }}>
+          Loading Profile...
         </Typography>
-        <LinearProgress sx={{ mt: 2 }} />
+        <LinearProgress sx={{ width: '300px', mb: 2 }} />
+        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+          Please wait while we load your profile settings
+        </Typography>
       </Box>
     );
   }
