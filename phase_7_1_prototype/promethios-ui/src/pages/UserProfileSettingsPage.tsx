@@ -1007,7 +1007,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
                     '& .MuiSelect-select': { color: 'white !important' },
                     '& .MuiSvgIcon-root': { color: 'white !important' }
-                  }}}
+                  }}
                   MenuProps={{
                     PaperProps: {
                       sx: {
