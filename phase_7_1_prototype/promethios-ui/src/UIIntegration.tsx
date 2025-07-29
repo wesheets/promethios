@@ -363,50 +363,14 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
-        
-        {/* Clean Profile Route - New Implementation */}
+                {/* Clean Profile Route - New Implementation */}
         <Route path="profile" element={
           <ProtectedRoute requireOnboarding={false}>
             <UserProfilePage />
           </ProtectedRoute>
         } />
         
-        {/* Settings Routes */}
-        <Route path="settings/test" element={
-          <div style={{ padding: '20px', backgroundColor: '#1a202c', color: 'white', minHeight: '100vh' }}>
-            <h1>TEST ROUTE WORKS!</h1>
-            <p>If you can see this, routing is working correctly.</p>
-          </div>
-        } />
-        
-        <Route path="settings/profile-minimal" element={
-          <div style={{ padding: '20px', backgroundColor: '#1a202c', color: 'white', minHeight: '100vh' }}>
-            <h1>MINIMAL PROFILE TEST</h1>
-            <p>Testing minimal profile component...</p>
-            <div style={{ border: '1px solid white', padding: '20px', margin: '20px 0' }}>
-              <h2>Profile Information</h2>
-              <p>Name: Test User</p>
-              <p>Email: test@example.com</p>
-              <button style={{ padding: '10px', margin: '10px' }}>Save Changes</button>
-            </div>
-          </div>
-        } />
-        
-        <Route path="settings/profile-simple" element={
-          <div style={{ padding: '20px', backgroundColor: '#1a202c', color: 'white', minHeight: '100vh' }}>
-            <h1>TESTING COMPONENT DIRECTLY</h1>
-            <UserProfileSettingsPage />
-          </div>
-        } />
-        
-        <Route path="settings/profile" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <UserProfileSettingsPage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
+        {/* Settings Routes - Other pages */}
         <Route path="settings/preferences" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
