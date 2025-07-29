@@ -43,7 +43,7 @@ import AuditReportsPage from './components/audit/AuditReportsPage';
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
-import UserProfileSettingsPage from './pages/UserProfileSettingsPage';
+import UserProfilePage from '../pages/UserProfilePage';
 import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
@@ -361,6 +361,13 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <TrustAttestationsPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Clean Profile Route - New Implementation */}
+        <Route path="profile" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <UserProfilePage />
           </ProtectedRoute>
         } />
         
