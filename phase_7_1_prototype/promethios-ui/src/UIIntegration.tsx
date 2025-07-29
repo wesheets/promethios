@@ -362,7 +362,7 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* Settings Routes */}
-        <Route path="ui/settings/profile" element={
+        <Route path="settings/profile" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <UserProfileSettingsPage />
@@ -370,7 +370,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="ui/settings/preferences" element={
+        <Route path="settings/preferences" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <PreferencesSettingsPage />
@@ -378,7 +378,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="ui/settings/organization" element={
+        <Route path="settings/organization" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <OrganizationSettingsPage />
@@ -386,7 +386,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="ui/settings/integrations" element={
+        <Route path="settings/integrations" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <IntegrationsSettingsPage />
@@ -394,7 +394,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="ui/settings/data" element={
+        <Route path="settings/data" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <DataManagementSettingsPage />
@@ -402,7 +402,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="ui/settings/api-keys" element={
+        <Route path="settings/api-keys" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <ApiKeysSettingsPage />
