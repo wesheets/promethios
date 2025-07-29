@@ -114,6 +114,8 @@ function TabPanel(props: TabPanelProps) {
 const UserProfileSettingsPage: React.FC = () => {
   const { currentUser } = useAuth();
   
+  console.log('🔍 UserProfileSettingsPage rendering, currentUser:', currentUser);
+  
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -149,9 +151,30 @@ const UserProfileSettingsPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered, currentUser:', currentUser);
+    
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.log('⏰ Loading timeout reached, forcing loading to false');
+      setLoading(false);
+    }, 5000);
+
     if (currentUser) {
+      console.log('✅ currentUser exists, calling loadUserProfile');
       loadUserProfile();
+      clearTimeout(loadingTimeout);
+    } else {
+      console.log('❌ No currentUser, setting loading to false after delay');
+      // Give auth some time to initialize
+      setTimeout(() => {
+        if (!currentUser) {
+          console.log('🚫 Still no currentUser after delay, stopping loading');
+          setLoading(false);
+        }
+      }, 2000);
     }
+
+    return () => clearTimeout(loadingTimeout);
   }, [currentUser]);
 
   const loadUserProfile = async () => {
@@ -318,6 +341,36 @@ const UserProfileSettingsPage: React.FC = () => {
         <Typography variant="body2" sx={{ color: '#a0aec0' }}>
           Please wait while we load your profile settings
         </Typography>
+      </Box>
+    );
+  }
+
+  // Handle case when user is not authenticated
+  if (!currentUser) {
+    return (
+      <Box sx={{ 
+        p: 3, 
+        backgroundColor: '#1a202c', 
+        minHeight: '100vh', 
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', mb: 3 }}>
+          Authentication Required
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3, textAlign: 'center' }}>
+          Please log in to access your profile settings.
+        </Typography>
+        <Button 
+          variant="contained" 
+          onClick={() => window.location.href = '/login'}
+          sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
+        >
+          Go to Login
+        </Button>
       </Box>
     );
   }
