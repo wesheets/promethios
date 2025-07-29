@@ -376,7 +376,9 @@ const UserProfileSettingsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+    <>
+      {console.log('🎯 UserProfileSettingsPage MAIN RENDER - Component is rendering!')}
+      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
@@ -809,6 +811,7 @@ const UserProfileSettingsPage: React.FC = () => {
         </TabPanel>
       </Card>
     </Box>
+    </>
   );
 };
 
