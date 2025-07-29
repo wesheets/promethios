@@ -116,6 +116,34 @@ const UserProfileSettingsPage: React.FC = () => {
   
   console.log('🔍 UserProfileSettingsPage rendering, currentUser:', currentUser);
   
+  // Define initial profile state
+  const initialProfile: UserProfile = {
+    userId: '',
+    firstName: '',
+    lastName: '',
+    displayName: '',
+    email: '',
+    phone: '',
+    avatar: '',
+    bio: '',
+    jobTitle: '',
+    organization: '',
+    location: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    website: '',
+    linkedIn: '',
+    twitter: '',
+    github: '',
+    emailVerified: false,
+    phoneVerified: false,
+    twoFactorEnabled: false,
+    loginNotifications: true,
+    dateJoined: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
