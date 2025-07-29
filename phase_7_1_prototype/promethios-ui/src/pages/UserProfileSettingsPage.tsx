@@ -748,18 +748,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { color: 'white !important' }
+                  }
                 }}
                 InputLabelProps={{
-                  sx: { color: '#a0aec0' }
+                  sx: { 
+                    color: '#a0aec0 !important',
+                    '&.Mui-focused': { color: '#3b82f6 !important' }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { color: 'white !important' },
+                    '& input::placeholder': { color: '#a0aec0 !important' }
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                  '& .MuiInputLabel-root': { color: '#a0aec0 !important' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6 !important' }
                 }}
               />
             </Grid>
@@ -771,18 +780,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { color: 'white !important' }
+                  }
                 }}
                 InputLabelProps={{
-                  sx: { color: '#a0aec0' }
+                  sx: { 
+                    color: '#a0aec0 !important',
+                    '&.Mui-focused': { color: '#3b82f6 !important' }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { color: 'white !important' },
+                    '& input::placeholder': { color: '#a0aec0 !important' }
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                  '& .MuiInputLabel-root': { color: '#a0aec0 !important' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6 !important' }
                 }}
               />
             </Grid>
@@ -794,18 +812,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, displayName: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { color: 'white !important' }
+                  }
                 }}
                 InputLabelProps={{
-                  sx: { color: '#a0aec0' }
+                  sx: { 
+                    color: '#a0aec0 !important',
+                    '&.Mui-focused': { color: '#3b82f6 !important' }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { color: 'white !important' },
+                    '& input::placeholder': { color: '#a0aec0 !important' }
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                  '& .MuiInputLabel-root': { color: '#a0aec0 !important' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6 !important' }
                 }}
               />
             </Grid>
@@ -909,18 +936,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, jobTitle: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { color: 'white !important' }
+                  }
                 }}
                 InputLabelProps={{
-                  sx: { color: '#a0aec0' }
+                  sx: { 
+                    color: '#a0aec0 !important',
+                    '&.Mui-focused': { color: '#3b82f6 !important' }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { color: 'white !important' },
+                    '& input::placeholder': { color: '#a0aec0 !important' }
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                  '& .MuiInputLabel-root': { color: '#a0aec0 !important' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6 !important' }
                 }}
               />
             </Grid>
@@ -934,33 +970,44 @@ const UserProfileSettingsPage: React.FC = () => {
                 multiline
                 rows={4}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& textarea': { color: 'white !important' }
+                  }
                 }}
                 InputLabelProps={{
-                  sx: { color: '#a0aec0' }
+                  sx: { 
+                    color: '#a0aec0 !important',
+                    '&.Mui-focused': { color: '#3b82f6 !important' }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& textarea': { color: 'white !important' },
+                    '& textarea::placeholder': { color: '#a0aec0 !important' }
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                  '& .MuiInputLabel-root': { color: '#a0aec0 !important' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6 !important' }
                 }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth disabled={!editMode}>
-                <InputLabel sx={{ color: '#a0aec0' }}>Timezone</InputLabel>
+                <InputLabel sx={{ color: '#a0aec0 !important', '&.Mui-focused': { color: '#3b82f6 !important' } }}>Timezone</InputLabel>
                 <Select
                   value={profile.timezone}
                   onChange={(e) => setProfile(prev => ({ ...prev, timezone: e.target.value }))}
                   sx={{ 
-                    color: 'white', 
+                    color: 'white !important', 
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
                     '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                  }}
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
+                    '& .MuiSelect-select': { color: 'white !important' },
+                    '& .MuiSvgIcon-root': { color: 'white !important' }
+                  }}}
                   MenuProps={{
                     PaperProps: {
                       sx: {
