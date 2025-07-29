@@ -704,38 +704,34 @@ const UserProfileSettingsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
+         {/* Tabs */}
       <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
         <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
           <Tabs 
             value={tabValue} 
             onChange={handleTabChange}
             sx={{
-              '& .MuiTab-root': {
+              '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
+              '& .MuiTab-root': { 
                 color: '#a0aec0',
-                '&.Mui-selected': {
-                  color: '#3b82f6'
-                }
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#3b82f6'
+                '&.Mui-selected': { color: '#3b82f6' }
               }
             }}
           >
             <Tab 
               icon={<Person />} 
-              label="PERSONAL INFORMATION" 
-              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+              label="Personal Information" 
+              sx={{ textTransform: 'none' }}
             />
             <Tab 
               icon={<Security />} 
-              label="SECURITY" 
-              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+              label="Security" 
+              sx={{ textTransform: 'none' }}
             />
             <Tab 
-              icon={<Notifications />} 
-              label="PRIVACY" 
-              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+              icon={<PrivacyTip />} 
+              label="Privacy" 
+              sx={{ textTransform: 'none' }}
             />
           </Tabs>
         </Box>
