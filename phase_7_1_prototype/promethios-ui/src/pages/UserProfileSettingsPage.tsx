@@ -70,7 +70,8 @@ import {
   Close,
   Badge,
   AccountTree,
-  History
+  History,
+  PrivacyTip
 } from '@mui/icons-material';
 
 interface UserProfile extends ServiceUserProfile {
