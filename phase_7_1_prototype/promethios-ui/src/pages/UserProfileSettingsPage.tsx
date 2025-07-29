@@ -58,7 +58,7 @@ import {
 } from '@mui/icons-material';
 
 import { userProfileService, UserProfile as ServiceUserProfile } from '../services/userProfileService';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 interface UserProfile extends ServiceUserProfile {
   // Additional UI-specific properties if needed
