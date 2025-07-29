@@ -283,6 +283,10 @@ const UserProfileSettingsPage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+        {/* OBVIOUS INDICATOR - NEW REBUILT VERSION */}
+        <Alert severity="info" sx={{ mb: 2, backgroundColor: '#3b82f6', color: 'white' }}>
+          🚀 NEW REBUILT PROFILE PAGE - v2.0 - If you see this, the new component is loading!
+        </Alert>
         <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           User Profile Settings
         </Typography>
@@ -293,6 +297,10 @@ const UserProfileSettingsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+      {/* OBVIOUS INDICATOR - NEW REBUILT VERSION */}
+      <Alert severity="success" sx={{ mb: 2, backgroundColor: '#10b981', color: 'white' }}>
+        ✅ NEW REBUILT PROFILE PAGE - v2.0 - This is the new attestations-style component!
+      </Alert>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
