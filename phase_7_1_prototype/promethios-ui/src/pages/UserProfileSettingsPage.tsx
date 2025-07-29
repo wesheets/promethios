@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApiService } from '../services/authApiService';
 import { governanceDashboardBackendService } from '../services/governanceDashboardBackendService';
-import { darkThemeStyles } from '../styles/darkThemeStyles';
+import { userProfileService, UserProfile as ServiceUserProfile, ProfileUpdateData } from '../services/userProfileService';
 import {
   Box,
   Card,
@@ -37,7 +37,8 @@ import {
   LinearProgress,
   Slider,
   Backdrop,
-  CircularProgress
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
 import {
   Edit,
@@ -66,32 +67,14 @@ import {
   ZoomIn,
   ZoomOut,
   Check,
-  Close
+  Close,
+  Badge,
+  AccountTree,
+  History
 } from '@mui/icons-material';
 
-interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  displayName: string;
-  avatar: string;
-  phone: string;
-  location: string;
-  organization: string;
-  department: string;
-  jobTitle: string;
-  bio: string;
-  timezone: string;
-  language: string;
-  dateJoined: string;
-  lastLogin: string;
-  emailVerified: boolean;
-  phoneVerified: boolean;
-  twoFactorEnabled: boolean;
-  profileVisibility: 'public' | 'organization' | 'private';
-  roles: string[];
-  permissions: string[];
+interface UserProfile extends ServiceUserProfile {
+  // Additional UI-specific properties if needed
 }
 
 interface SecuritySettings {
@@ -160,6 +143,7 @@ const UserProfileSettingsPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -187,7 +171,7 @@ const UserProfileSettingsPage: React.FC = () => {
     rotation: 0
   });
 
-  // Mock user profile data
+  // User profile data with Firebase integration
   const [profile, setProfile] = useState<UserProfile>({
     id: 'user-001',
     email: 'wesheets@hotmail.com',
@@ -258,6 +242,70 @@ const UserProfileSettingsPage: React.FC = () => {
     ]
   });
 
+  // Load user profile from Firebase on component mount
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setAuthError(null);
+
+        // Use the unified storage service
+        const profileData = await userProfileService.getUserProfile(currentUser.uid);
+        
+        if (profileData) {
+          setProfile(profileData);
+        } else {
+          // Initialize with default profile if none exists
+          const defaultProfile: UserProfile = {
+            id: currentUser.uid,
+            email: currentUser.email || '',
+            firstName: currentUser.displayName?.split(' ')[0] || '',
+            lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+            displayName: currentUser.displayName || '',
+            avatar: currentUser.photoURL || '/api/placeholder/150/150',
+            phone: '',
+            location: '',
+            organization: 'Promethios Corp',
+            department: 'AI Governance',
+            jobTitle: 'AI Governance Specialist',
+            bio: '',
+            timezone: 'America/Los_Angeles',
+            language: 'en-US',
+            dateJoined: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            emailVerified: currentUser.emailVerified || false,
+            phoneVerified: false,
+            twoFactorEnabled: false,
+            profileVisibility: 'organization',
+            roles: ['AI Governance Specialist'],
+            permissions: ['read:agents', 'read:policies']
+          };
+          
+          setProfile(defaultProfile);
+          
+          // Save the default profile
+          await userProfileService.updateUserProfile(currentUser.uid, defaultProfile);
+        }
+
+        // Update last login
+        await userProfileService.updateLastLogin(currentUser.uid);
+
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+        setAuthError('Failed to load profile data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [currentUser]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -269,11 +317,11 @@ const UserProfileSettingsPage: React.FC = () => {
     }
 
     try {
-      setLoading(true);
+      setSaving(true);
       setAuthError(null);
 
-      // Save user profile data with real API calls
-      await authApiService.updateUserProfile(currentUser, {
+      // Prepare update data
+      const updateData: ProfileUpdateData = {
         firstName: profile.firstName,
         lastName: profile.lastName,
         displayName: profile.displayName,
@@ -286,10 +334,19 @@ const UserProfileSettingsPage: React.FC = () => {
         timezone: profile.timezone,
         language: profile.language,
         profileVisibility: profile.profileVisibility
-      });
+      };
 
-      // Update governance dashboard if needed
-      await governanceDashboardBackendService.updateUserProfile(currentUser, profile);
+      // Save using unified storage service
+      const updatedProfile = await userProfileService.updateUserProfile(currentUser.uid, updateData);
+      setProfile(updatedProfile);
+
+      // Also save to backend services if available (for compatibility)
+      try {
+        await authApiService.updateUserProfile(currentUser, updateData);
+        await governanceDashboardBackendService.updateUserProfile(currentUser, updatedProfile);
+      } catch (backendError) {
+        console.warn('Backend update failed, but unified storage save succeeded:', backendError);
+      }
 
       setSaveSuccess(true);
       setEditMode(false);
@@ -301,7 +358,7 @@ const UserProfileSettingsPage: React.FC = () => {
       console.error('Failed to save profile:', error);
       setAuthError('Failed to save profile changes');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -363,46 +420,59 @@ const UserProfileSettingsPage: React.FC = () => {
   };
 
   const handleCropImage = async () => {
-    if (!photoUpload.previewUrl || !cropCanvasRef.current) return;
+    if (!photoUpload.previewUrl || !photoUpload.selectedFile || !currentUser) return;
 
     setPhotoUpload(prev => ({ ...prev, uploading: true, progress: 0 }));
 
-    // Simulate upload progress
-    const progressInterval = setInterval(() => {
-      setPhotoUpload(prev => {
-        if (prev.progress >= 90) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        return { ...prev, progress: prev.progress + 10 };
-      });
-    }, 100);
+    try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setPhotoUpload(prev => {
+          if (prev.progress >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return { ...prev, progress: prev.progress + 10 };
+        });
+      }, 100);
 
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000));
+      // Upload avatar using the service
+      const uploadResult = await userProfileService.uploadAvatar(currentUser.uid, photoUpload.selectedFile);
+      
+      // Update profile with new avatar URL
+      setProfile(prev => ({
+        ...prev,
+        avatar: uploadResult.url
+      }));
 
-    // In real implementation, this would:
-    // 1. Draw cropped image to canvas
-    // 2. Convert canvas to blob
-    // 3. Upload to Firebase Storage
-    // 4. Get download URL
-    // 5. Update profile
+      setPhotoUpload(prev => ({ 
+        ...prev, 
+        uploading: false, 
+        progress: 100, 
+        cropDialogOpen: false,
+        selectedFile: null,
+        previewUrl: null
+      }));
 
-    setProfile(prev => ({
-      ...prev,
-      avatar: photoUpload.previewUrl!
-    }));
+      clearInterval(progressInterval);
 
-    setPhotoUpload(prev => ({ 
-      ...prev, 
-      uploading: false, 
-      progress: 100, 
-      cropDialogOpen: false,
-      selectedFile: null,
-      previewUrl: null
-    }));
+      // Show success message
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
 
-    clearInterval(progressInterval);
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      setAuthError('Failed to upload avatar');
+      
+      setPhotoUpload(prev => ({ 
+        ...prev, 
+        uploading: false, 
+        progress: 0, 
+        cropDialogOpen: false,
+        selectedFile: null,
+        previewUrl: null
+      }));
+    }
   };
 
   const handleCancelCrop = () => {
@@ -453,20 +523,75 @@ const UserProfileSettingsPage: React.FC = () => {
     }));
   };
 
-  return (
-    <Box sx={darkThemeStyles.pageContainer}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ ...darkThemeStyles.typography.primary, fontWeight: 'bold' }}>
+  // Authentication validation
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+        <Alert severity="warning" sx={{ backgroundColor: '#78350f', color: '#fed7aa' }}>
+          <AlertTitle>Authentication Required</AlertTitle>
+          Please log in to access your profile settings. This page requires user authentication to display and manage your profile data.
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
           User Profile Settings
         </Typography>
-        <Typography variant="body1" sx={darkThemeStyles.typography.secondary}>
-          Manage your account information, security settings, and profile preferences
-        </Typography>
+        <LinearProgress sx={{ mt: 2, backgroundColor: '#4a5568', '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' } }} />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
+      {/* Header */}
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+            User Profile Settings
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
+            Manage your account information, security settings, and profile preferences
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={editMode ? <Save /> : <Edit />}
+          onClick={editMode ? handleSaveProfile : () => setEditMode(true)}
+          disabled={saving}
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': { backgroundColor: '#2563eb' },
+            textTransform: 'none',
+            fontWeight: 'bold'
+          }}
+        >
+          {editMode ? (saving ? 'SAVING...' : 'SAVE PROFILE') : 'EDIT PROFILE'}
+        </Button>
       </Box>
 
+      {/* Success Alert */}
+      {saveSuccess && (
+        <Alert severity="success" sx={{ mb: 3, backgroundColor: '#14532d', color: '#bbf7d0' }}>
+          <AlertTitle>Profile Updated</AlertTitle>
+          Your profile changes have been saved successfully.
+        </Alert>
+      )}
+
+      {/* Error Alert */}
+      {authError && (
+        <Alert severity="error" sx={{ mb: 3, backgroundColor: '#7f1d1d', color: '#fecaca' }}>
+          <AlertTitle>Error</AlertTitle>
+          {authError}
+        </Alert>
+      )}
+
       {/* Profile Overview Card */}
-      <Card sx={{ ...darkThemeStyles.card, mb: 4 }}>
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568', mb: 4 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Box 
@@ -510,6 +635,7 @@ const UserProfileSettingsPage: React.FC = () => {
                     '&:hover': { backgroundColor: '#2563eb' }
                   }}
                   size="small"
+                  disabled={!editMode}
                 >
                   <PhotoCamera fontSize="small" />
                 </IconButton>
@@ -538,10 +664,10 @@ const UserProfileSettingsPage: React.FC = () => {
               )}
             </Box>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={darkThemeStyles.typography.primary}>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
                 {profile.displayName}
               </Typography>
-              <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
+              <Typography variant="body1" sx={{ color: '#a0aec0', mb: 1 }}>
                 {profile.jobTitle} at {profile.organization}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
@@ -570,53 +696,52 @@ const UserProfileSettingsPage: React.FC = () => {
                   />
                 )}
               </Box>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
+              <Typography variant="body2" sx={{ color: '#a0aec0' }}>
                 Member since {formatDate(profile.dateJoined)} • Last login {formatDate(profile.lastLogin)}
               </Typography>
-            </Box>
-            <Box>
-              <Button
-                variant={editMode ? "outlined" : "contained"}
-                startIcon={editMode ? <Cancel /> : <Edit />}
-                onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
-                sx={{
-                  backgroundColor: editMode ? 'transparent' : '#3b82f6',
-                  borderColor: '#3b82f6',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: editMode ? '#3b82f6' : '#2563eb'
-                  }
-                }}
-              >
-                {editMode ? 'Cancel' : 'Edit Profile'}
-              </Button>
             </Box>
           </Box>
         </CardContent>
       </Card>
 
       {/* Tabs */}
-      <Card sx={darkThemeStyles.card}>
+      <Card sx={{ backgroundColor: '#2d3748', color: 'white', border: '1px solid #4a5568' }}>
         <Box sx={{ borderBottom: 1, borderColor: '#4a5568' }}>
           <Tabs 
             value={tabValue} 
             onChange={handleTabChange}
             sx={{
-              '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
-              '& .MuiTab-root': { 
+              '& .MuiTab-root': {
                 color: '#a0aec0',
-                '&.Mui-selected': { color: '#3b82f6' }
+                '&.Mui-selected': {
+                  color: '#3b82f6'
+                }
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#3b82f6'
               }
             }}
           >
-            <Tab icon={<Person />} label="Personal Information" />
-            <Tab icon={<Security />} label="Security" />
-            <Tab icon={<Notifications />} label="Privacy" />
+            <Tab 
+              icon={<Person />} 
+              label="PERSONAL INFORMATION" 
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            />
+            <Tab 
+              icon={<Security />} 
+              label="SECURITY" 
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            />
+            <Tab 
+              icon={<Notifications />} 
+              label="PRIVACY" 
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            />
           </Tabs>
         </Box>
 
+        {/* Personal Information Tab */}
         <TabPanel value={tabValue} index={0}>
-          {/* Personal Information */}
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -625,7 +750,20 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.firstName}
                 onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                InputProps={{
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -635,32 +773,87 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.lastName}
                 onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                InputProps={{
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Email Address"
-                value={profile.email}
-                disabled
+                label="Display Name"
+                value={profile.displayName}
+                onChange={(e) => setProfile(prev => ({ ...prev, displayName: e.target.value }))}
+                disabled={!editMode}
                 InputProps={{
-                  endAdornment: profile.emailVerified ? <Verified sx={{ color: '#10b981' }} /> : <Warning sx={{ color: '#f59e0b' }} />
+                  sx: { color: 'white' }
                 }}
-                sx={darkThemeStyles.textField}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Email"
+                value={profile.email}
+                disabled={true}
+                InputProps={{
+                  startAdornment: <Email sx={{ color: '#a0aec0', mr: 1 }} />,
+                  sx: { color: '#718096' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Phone Number"
+                label="Phone"
                 value={profile.phone}
                 onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  endAdornment: profile.phoneVerified ? <Verified sx={{ color: '#10b981' }} /> : <Warning sx={{ color: '#f59e0b' }} />
+                  startAdornment: <Phone sx={{ color: '#a0aec0', mr: 1 }} />,
+                  sx: { color: 'white' }
                 }}
-                sx={darkThemeStyles.textField}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -670,7 +863,21 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.location}
                 onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                InputProps={{
+                  startAdornment: <LocationOn sx={{ color: '#a0aec0', mr: 1 }} />,
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -680,7 +887,21 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.organization}
                 onChange={(e) => setProfile(prev => ({ ...prev, organization: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                InputProps={{
+                  startAdornment: <Business sx={{ color: '#a0aec0', mr: 1 }} />,
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -690,44 +911,107 @@ const UserProfileSettingsPage: React.FC = () => {
                 value={profile.jobTitle}
                 onChange={(e) => setProfile(prev => ({ ...prev, jobTitle: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                InputProps={{
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                multiline
-                rows={3}
                 label="Bio"
                 value={profile.bio}
                 onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
                 disabled={!editMode}
-                sx={darkThemeStyles.textField}
+                multiline
+                rows={4}
+                InputProps={{
+                  sx: { color: 'white' }
+                }}
+                InputLabelProps={{
+                  sx: { color: '#a0aec0' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#4a5568' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
-                <InputLabel>Timezone</InputLabel>
+              <FormControl fullWidth disabled={!editMode}>
+                <InputLabel sx={{ color: '#a0aec0' }}>Timezone</InputLabel>
                 <Select
                   value={profile.timezone}
                   onChange={(e) => setProfile(prev => ({ ...prev, timezone: e.target.value }))}
-                  sx={darkThemeStyles.select}
+                  sx={{ 
+                    color: 'white', 
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: '#2d3748',
+                        color: 'white',
+                        '& .MuiMenuItem-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: '#4a5568'
+                          }
+                        }
+                      }
+                    }
+                  }}
                 >
-                  <MenuItem value="America/Los_Angeles">Pacific Time (PT)</MenuItem>
-                  <MenuItem value="America/New_York">Eastern Time (ET)</MenuItem>
-                  <MenuItem value="America/Chicago">Central Time (CT)</MenuItem>
-                  <MenuItem value="America/Denver">Mountain Time (MT)</MenuItem>
-                  <MenuItem value="UTC">UTC</MenuItem>
+                  <MenuItem value="America/Los_Angeles">Pacific Time</MenuItem>
+                  <MenuItem value="America/Denver">Mountain Time</MenuItem>
+                  <MenuItem value="America/Chicago">Central Time</MenuItem>
+                  <MenuItem value="America/New_York">Eastern Time</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode} sx={darkThemeStyles.formControl}>
-                <InputLabel>Language</InputLabel>
+              <FormControl fullWidth disabled={!editMode}>
+                <InputLabel sx={{ color: '#a0aec0' }}>Language</InputLabel>
                 <Select
                   value={profile.language}
                   onChange={(e) => setProfile(prev => ({ ...prev, language: e.target.value }))}
-                  sx={darkThemeStyles.select}
+                  sx={{ 
+                    color: 'white', 
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: '#2d3748',
+                        color: 'white',
+                        '& .MuiMenuItem-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: '#4a5568'
+                          }
+                        }
+                      }
+                    }
+                  }}
                 >
                   <MenuItem value="en-US">English (US)</MenuItem>
                   <MenuItem value="en-GB">English (UK)</MenuItem>
@@ -737,439 +1021,194 @@ const UserProfileSettingsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
+          </Grid>
+        </TabPanel>
 
-            {/* Roles and Permissions */}
+        {/* Security Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                Active Sessions
+              </Typography>
+              <List>
+                {securitySettings.sessions.map((session) => (
+                  <ListItem
+                    key={session.id}
+                    sx={{
+                      backgroundColor: '#1a202c',
+                      mb: 1,
+                      borderRadius: 1,
+                      border: '1px solid #4a5568'
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography sx={{ color: 'white' }}>{session.device}</Typography>
+                          {session.current && (
+                            <Chip
+                              label="Current"
+                              size="small"
+                              sx={{ backgroundColor: '#10b981', color: 'white' }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Typography sx={{ color: '#a0aec0' }}>
+                          {session.location} • Last active {formatDate(session.lastActive)}
+                        </Typography>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      {!session.current && (
+                        <Button
+                          size="small"
+                          onClick={() => handleRevokeSession(session.id)}
+                          sx={{ color: '#ef4444' }}
+                        >
+                          Revoke
+                        </Button>
+                      )}
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
             <Grid item xs={12}>
               <Divider sx={{ borderColor: '#4a5568', my: 2 }} />
-              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                API Keys
+              </Typography>
+              <List>
+                {securitySettings.apiKeys.map((apiKey) => (
+                  <ListItem
+                    key={apiKey.id}
+                    sx={{
+                      backgroundColor: '#1a202c',
+                      mb: 1,
+                      borderRadius: 1,
+                      border: '1px solid #4a5568'
+                    }}
+                  >
+                    <ListItemText
+                      primary={<Typography sx={{ color: 'white' }}>{apiKey.name}</Typography>}
+                      secondary={
+                        <Box>
+                          <Typography sx={{ color: '#a0aec0' }}>
+                            Created {formatDate(apiKey.created)} • Last used {formatDate(apiKey.lastUsed)}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                            {apiKey.permissions.map((permission) => (
+                              <Chip
+                                key={permission}
+                                label={permission}
+                                size="small"
+                                sx={{ backgroundColor: '#4a5568', color: 'white' }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        onClick={() => handleDeleteApiKey(apiKey.id)}
+                        sx={{ color: '#ef4444' }}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={() => setShowApiKeyDialog(true)}
+                sx={{
+                  mt: 2,
+                  borderColor: '#3b82f6',
+                  color: '#3b82f6',
+                  '&:hover': { borderColor: '#2563eb', backgroundColor: 'rgba(59, 130, 246, 0.1)' }
+                }}
+              >
+                Create New API Key
+              </Button>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Privacy Tab */}
+        <TabPanel value={tabValue} index={2}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                Profile Visibility
+              </Typography>
+              <FormControl fullWidth disabled={!editMode}>
+                <InputLabel sx={{ color: '#a0aec0' }}>Who can see your profile</InputLabel>
+                <Select
+                  value={profile.profileVisibility}
+                  onChange={(e) => setProfile(prev => ({ ...prev, profileVisibility: e.target.value as any }))}
+                  sx={{ 
+                    color: 'white', 
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: '#2d3748',
+                        color: 'white',
+                        '& .MuiMenuItem-root': {
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: '#4a5568'
+                          }
+                        }
+                      }
+                    }
+                  }}
+                >
+                  <MenuItem value="public">Public - Anyone can see your profile</MenuItem>
+                  <MenuItem value="organization">Organization - Only members of your organization</MenuItem>
+                  <MenuItem value="private">Private - Only you can see your profile</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
                 Roles and Permissions
               </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Current Roles
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {profile.roles.map((role, index) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {profile.roles.map((role) => (
                   <Chip
-                    key={index}
+                    key={role}
                     label={role}
                     sx={{ backgroundColor: '#3b82f6', color: 'white' }}
                   />
                 ))}
               </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Permissions
+              <Typography variant="body2" sx={{ color: '#a0aec0', mb: 2 }}>
+                Current Permissions:
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {profile.permissions.map((permission, index) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {profile.permissions.map((permission) => (
                   <Chip
-                    key={index}
+                    key={permission}
                     label={permission}
-                    variant="outlined"
-                    sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
+                    size="small"
+                    sx={{ backgroundColor: '#4a5568', color: 'white' }}
                   />
                 ))}
               </Box>
-            </Grid>
-
-            {editMode && (
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={handleCancelEdit}
-                    sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<Save />}
-                    onClick={handleSaveProfile}
-                    disabled={loading}
-                    sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          {/* Security Settings */}
-          <Grid container spacing={3}>
-            {/* Password Change */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
-                Password & Authentication
-              </Typography>
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
-                        Password
-                      </Typography>
-                      <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                        Last changed 30 days ago
-                      </Typography>
-                    </Box>
-                    <Button
-                      variant="outlined"
-                      onClick={() => setShowPasswordDialog(true)}
-                      sx={{ borderColor: '#3b82f6', color: '#3b82f6' }}
-                    >
-                      Change Password
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
-                        Two-Factor Authentication
-                      </Typography>
-                      <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                        Add an extra layer of security to your account
-                      </Typography>
-                    </Box>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={profile.twoFactorEnabled}
-                          onChange={(e) => setProfile(prev => ({ ...prev, twoFactorEnabled: e.target.checked }))}
-                          sx={{
-                            '& .MuiSwitch-switchBase.Mui-checked': { color: '#3b82f6' },
-                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#3b82f6' }
-                          }}
-                        />
-                      }
-                      label=""
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Active Sessions */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
-                Active Sessions
-              </Typography>
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <List>
-                    {securitySettings.sessions.map((session, index) => (
-                      <React.Fragment key={session.id}>
-                        <ListItem sx={{ px: 0 }}>
-                          <ListItemText
-                            primary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
-                                  {session.device}
-                                </Typography>
-                                {session.current && (
-                                  <Chip
-                                    label="Current"
-                                    size="small"
-                                    sx={{ backgroundColor: '#10b981', color: 'white' }}
-                                  />
-                                )}
-                              </Box>
-                            }
-                            secondary={
-                              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                                {session.location} • Last active {formatDate(session.lastActive)}
-                              </Typography>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            {!session.current && (
-                              <Button
-                                size="small"
-                                onClick={() => handleRevokeSession(session.id)}
-                                sx={{ color: '#ef4444' }}
-                              >
-                                Revoke
-                              </Button>
-                            )}
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                        {index < securitySettings.sessions.length - 1 && (
-                          <Divider sx={{ borderColor: '#4a5568' }} />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* API Keys */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
-                  API Keys
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setShowApiKeyDialog(true)}
-                  sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
-                >
-                  Generate API Key
-                </Button>
-              </Box>
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <List>
-                    {securitySettings.apiKeys.map((apiKey, index) => (
-                      <React.Fragment key={apiKey.id}>
-                        <ListItem sx={{ px: 0 }}>
-                          <ListItemText
-                            primary={
-                              <Typography variant="body1" sx={darkThemeStyles.typography.primary}>
-                                {apiKey.name}
-                              </Typography>
-                            }
-                            secondary={
-                              <Box>
-                                <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                                  Created {formatDate(apiKey.created)} • Last used {formatDate(apiKey.lastUsed)}
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                  {apiKey.permissions.map((permission, idx) => (
-                                    <Chip
-                                      key={idx}
-                                      label={permission}
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
-                                    />
-                                  ))}
-                                </Box>
-                              </Box>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton
-                              onClick={() => handleDeleteApiKey(apiKey.id)}
-                              sx={{ color: '#ef4444' }}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                        {index < securitySettings.apiKeys.length - 1 && (
-                          <Divider sx={{ borderColor: '#4a5568' }} />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={2}>
-          {/* Privacy Settings */}
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
-                Profile Visibility
-              </Typography>
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ color: '#a0aec0' }}>Who can see your profile</InputLabel>
-                    <Select
-                      value={profile.profileVisibility}
-                      onChange={(e) => setProfile(prev => ({ ...prev, profileVisibility: e.target.value as any }))}
-                      sx={{
-                        color: 'white',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5568' },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' }
-                      }}
-                    >
-                      <MenuItem value="public">Public - Anyone can see your profile</MenuItem>
-                      <MenuItem value="organization">Organization - Only members of your organization</MenuItem>
-                      <MenuItem value="private">Private - Only you can see your profile</MenuItem>
-                    </Select>
-                  </FormControl>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={darkThemeStyles.typography.primary}>
-                Data & Privacy
-              </Typography>
-              <Alert severity="info" sx={{ backgroundColor: '#1e3a8a', color: 'white', mb: 2 }}>
-                <AlertTitle>Privacy Notice</AlertTitle>
-                Your data is encrypted and stored securely. We never share your personal information with third parties without your explicit consent.
-              </Alert>
-              
-              <Card sx={darkThemeStyles.card}>
-                <CardContent>
-                  <List>
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemText
-                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Download your data</Typography>}
-                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Get a copy of all your data</Typography>}
-                      />
-                      <ListItemSecondaryAction>
-                        <Button variant="outlined" sx={{ borderColor: '#3b82f6', color: '#3b82f6' }}>
-                          Download
-                        </Button>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    <Divider sx={{ borderColor: '#4a5568' }} />
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemText
-                        primary={<Typography variant="body1" sx={darkThemeStyles.typography.primary}>Delete your account</Typography>}
-                        secondary={<Typography variant="body2" sx={darkThemeStyles.typography.primary}>Permanently delete your account and all data</Typography>}
-                      />
-                      <ListItemSecondaryAction>
-                        <Button variant="outlined" sx={{ borderColor: '#ef4444', color: '#ef4444' }}>
-                          Delete Account
-                        </Button>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </List>
-                </CardContent>
-              </Card>
             </Grid>
           </Grid>
         </TabPanel>
       </Card>
-
-      {/* Password Change Dialog */}
-      <Dialog
-        open={showPasswordDialog}
-        onClose={() => setShowPasswordDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { backgroundColor: '#2d3748', color: 'white' }
-        }}
-      >
-        <DialogTitle>Change Password</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                type="password"
-                label="Current Password"
-                value={securitySettings.currentPassword}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, currentPassword: e.target.value }))}
-                sx={darkThemeStyles.textField}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                type="password"
-                label="New Password"
-                value={securitySettings.newPassword}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, newPassword: e.target.value }))}
-                sx={darkThemeStyles.textField}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                type="password"
-                label="Confirm New Password"
-                value={securitySettings.confirmPassword}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                sx={darkThemeStyles.textField}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowPasswordDialog(false)} sx={{ color: '#a0aec0' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
-          >
-            Change Password
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* API Key Dialog */}
-      <Dialog
-        open={showApiKeyDialog}
-        onClose={() => setShowApiKeyDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { backgroundColor: '#2d3748', color: 'white' }
-        }}
-      >
-        <DialogTitle>Generate API Key</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="API Key Name"
-                placeholder="e.g., CI/CD Integration"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: '#4a5568' },
-                    '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                  },
-                  '& .MuiInputLabel-root': { color: '#a0aec0' },
-                  '& .MuiInputBase-input': { color: 'white !important' }, '& input': { color: 'white !important' }, '& textarea': { color: 'white !important' }
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Select permissions for this API key:
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {['read:agents', 'write:agents', 'read:policies', 'write:policies', 'read:reports', 'read:metrics'].map((permission) => (
-                  <Chip
-                    key={permission}
-                    label={permission}
-                    clickable
-                    variant="outlined"
-                    sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
-                  />
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowApiKeyDialog(false)} sx={{ color: '#a0aec0' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
-          >
-            Generate Key
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Photo Crop Dialog */}
       <Dialog
@@ -1177,156 +1216,51 @@ const UserProfileSettingsPage: React.FC = () => {
         onClose={handleCancelCrop}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: { backgroundColor: '#2d3748', color: 'white' }
+        sx={{
+          '& .MuiDialog-paper': {
+            backgroundColor: '#2d3748',
+            color: 'white'
+          }
         }}
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6">Crop Profile Photo</Typography>
-            <IconButton onClick={handleCancelCrop} sx={{ color: '#a0aec0' }}>
-              <Close />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <DialogTitle sx={{ color: 'white' }}>Crop Profile Photo</DialogTitle>
         <DialogContent>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             {photoUpload.previewUrl && (
               <Box
+                component="img"
+                src={photoUpload.previewUrl}
                 sx={{
-                  position: 'relative',
-                  display: 'inline-block',
                   maxWidth: '100%',
                   maxHeight: 400,
-                  border: '2px solid #4a5568',
-                  borderRadius: 2,
-                  overflow: 'hidden'
-                }}
-              >
-                <img
-                  src={photoUpload.previewUrl}
-                  alt="Preview"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    transform: `scale(${cropSettings.scale}) rotate(${cropSettings.rotation}deg)`,
-                    transition: 'transform 0.3s ease'
-                  }}
-                />
-                {/* Crop overlay would go here in real implementation */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    width: 200,
-                    height: 200,
-                    border: '2px solid #3b82f6',
-                    borderRadius: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    pointerEvents: 'none'
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
-
-          {/* Crop Controls */}
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Zoom
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <ZoomOut />
-                <Slider
-                  value={cropSettings.scale}
-                  onChange={(e, value) => setCropSettings(prev => ({ ...prev, scale: value as number }))}
-                  min={0.5}
-                  max={3}
-                  step={0.1}
-                  sx={{
-                    color: '#3b82f6',
-                    '& .MuiSlider-thumb': { backgroundColor: '#3b82f6' },
-                    '& .MuiSlider-track': { backgroundColor: '#3b82f6' }
-                  }}
-                />
-                <ZoomIn />
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Rotation
-              </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<RotateLeft />}
-                  onClick={() => handleRotateImage('left')}
-                  sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
-                >
-                  Rotate Left
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<RotateRight />}
-                  onClick={() => handleRotateImage('right')}
-                  sx={{ borderColor: '#4a5568', color: '#a0aec0' }}
-                >
-                  Rotate Right
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {photoUpload.uploading && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="body2" sx={darkThemeStyles.typography.primary}>
-                Uploading... {photoUpload.progress}%
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={photoUpload.progress}
-                sx={{
-                  backgroundColor: '#4a5568',
-                  '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' }
+                  border: '1px solid #4a5568',
+                  borderRadius: 1
                 }}
               />
+            )}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton onClick={() => handleRotateImage('left')} sx={{ color: 'white' }}>
+                <RotateLeft />
+              </IconButton>
+              <IconButton onClick={() => handleRotateImage('right')} sx={{ color: 'white' }}>
+                <RotateRight />
+              </IconButton>
             </Box>
-          )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleCancelCrop} 
-            disabled={photoUpload.uploading}
-            sx={{ color: '#a0aec0' }}
-          >
+          <Button onClick={handleCancelCrop} sx={{ color: '#a0aec0' }}>
             Cancel
           </Button>
           <Button
-            variant="contained"
-            startIcon={<Check />}
             onClick={handleCropImage}
-            disabled={photoUpload.uploading}
+            variant="contained"
             sx={{ backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb' } }}
           >
-            {photoUpload.uploading ? 'Uploading...' : 'Save Photo'}
+            Save Photo
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Upload Backdrop */}
-      <Backdrop
-        open={photoUpload.uploading}
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress color="inherit" />
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Processing your photo...
-          </Typography>
-        </Box>
-      </Backdrop>
     </Box>
   );
 };
