@@ -686,17 +686,13 @@ const UserProfileSettingsPage: React.FC = () => {
               </Card>
             </Grid>
           </Grid>
-        </TabPanel>       disabled={!editMode}
-              />
-            </ListItem>
-          </List>
         </TabPanel>
 
         {/* Privacy Tab */}
         <TabPanel value={tabValue} index={2}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth disabled={!editMode}>
+              <FormControl fullWidth>
                 <InputLabel sx={{ color: '#a0aec0' }}>Profile Visibility</InputLabel>
                 <Select
                   value={privacySettings.profileVisibility}
