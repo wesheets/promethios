@@ -1,4 +1,4 @@
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { AgentWrapper, WrapperMetrics } from '../types';
 
 /**
@@ -13,7 +13,7 @@ class AgentWrapperRegistry {
   private currentUserId: string | null = null;
   
   constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
   }
 
   /**

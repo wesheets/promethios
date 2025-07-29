@@ -92,7 +92,7 @@ const DashboardPage: React.FC = () => {
   } = useOptimizedGovernanceDashboard();
 
   useEffect(() => {
-    // Load user agents for real-time metrics (deferred until dashboard loads)
+    // Defer agent loading until dashboard is fully loaded and user interacts
     const loadUserAgents = async () => {
       try {
         // CRITICAL: Set the current user in the storage service
@@ -104,24 +104,35 @@ const DashboardPage: React.FC = () => {
           return;
         }
 
-        // Use the correct method from UserAgentStorageService
-        const agents = await userAgentStorageService.loadUserAgents();
-        const agentList = agents.map(agent => ({
-          agentId: agent.identity.id,
-          version: 'production' as const // Focus on production agents for dashboard
-        }));
-        setUserAgents(agentList);
-        console.log(`✅ Loaded ${agents.length} user agents for dashboard:`, agents.map(a => a.identity.name));
-        
-        // Enable real-time metrics after a longer delay to ensure UI is fully responsive
-        if (metrics?.agents?.total && metrics.agents.total > 0) {
-          setTimeout(() => {
-            console.log(`🚀 Enabling real-time metrics for ${agentList.length} agents after dashboard fully loaded`);
-            setRealTimeMetricsEnabled(true);
-          }, 15000); // 15 second delay to ensure UI is fully responsive
+        // Only load agents if dashboard metrics indicate we have agents
+        if (!metrics?.agents?.total || metrics.agents.total === 0) {
+          console.log('📊 No agents detected in metrics, skipping agent data loading');
+          return;
         }
+
+        // Defer agent loading to improve initial dashboard load time
+        setTimeout(async () => {
+          try {
+            console.log('🚀 Starting deferred agent data loading...');
+            const agents = await userAgentStorageService.loadUserAgents();
+            const agentList = agents.map(agent => ({
+              agentId: agent.identity.id,
+              version: 'production' as const // Focus on production agents for dashboard
+            }));
+            setUserAgents(agentList);
+            console.log(`✅ Loaded ${agents.length} user agents for dashboard:`, agents.map(a => a.identity.name));
+            
+            // Enable real-time metrics after agents are loaded
+            setTimeout(() => {
+              console.log(`🚀 Enabling real-time metrics for ${agentList.length} agents`);
+              setRealTimeMetricsEnabled(true);
+            }, 2000); // 2 second delay after agent loading
+          } catch (error) {
+            console.error('Failed to load user agents:', error);
+          }
+        }, 5000); // 5 second delay to prioritize dashboard UI loading
       } catch (error) {
-        console.error('Failed to load user agents:', error);
+        console.error('Failed to initialize agent loading:', error);
       }
     };
 

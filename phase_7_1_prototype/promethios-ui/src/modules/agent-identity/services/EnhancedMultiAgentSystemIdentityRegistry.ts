@@ -3,7 +3,7 @@
  * Creates system-level governance identities separate from individual agents
  */
 
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { 
   MultiAgentSystemIdentity, 
   SystemAttestation, 
@@ -24,7 +24,7 @@ export class EnhancedMultiAgentSystemIdentityRegistry {
   private currentUserId: string | null = null;
 
   private constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
   }
 
   public static getInstance(): EnhancedMultiAgentSystemIdentityRegistry {

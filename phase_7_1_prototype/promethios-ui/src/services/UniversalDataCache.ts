@@ -33,9 +33,9 @@ export class UniversalDataCache {
     ['policies', { ttl: 5 * 60 * 1000, maxSize: 100, version: '1.0.0' }],
     ['violations', { ttl: 2 * 60 * 1000, maxSize: 100, version: '1.0.0' }],
     
-    // Metrics - cache very short since they should be real-time
+    // Metrics - cache for better performance while maintaining reasonable freshness
     ['trust-metrics', { ttl: 1 * 60 * 1000, maxSize: 50, version: '1.0.0' }],
-    ['dashboard-metrics', { ttl: 30 * 1000, maxSize: 10, version: '1.0.0' }],
+    ['dashboard-metrics', { ttl: 5 * 60 * 1000, maxSize: 10, version: '1.0.0' }], // Increased from 30s to 5min
     
     // Static data - cache longer
     ['system-health', { ttl: 30 * 1000, maxSize: 10, version: '1.0.0' }],

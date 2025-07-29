@@ -26,7 +26,7 @@ export class UnifiedStorageService {
 
   public static getInstance(): UnifiedStorageService {
     if (!UnifiedStorageService.instance) {
-      UnifiedStorageService.instance = new UnifiedStorageService();
+      UnifiedStorageService.instance = unifiedStorage;
     }
     return UnifiedStorageService.instance;
   }

@@ -3,7 +3,7 @@
  * Integrates with agent wrapper data and includes governance identity numbers
  */
 
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { 
   ExtendedScorecardData,
   AgentIntrospectionData 
@@ -25,7 +25,7 @@ export class EnhancedScorecardService {
   private currentUserId: string | null = null;
 
   private constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
   }
 
   public static getInstance(): EnhancedScorecardService {

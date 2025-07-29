@@ -5,7 +5,7 @@
  * based on user sessions and system availability.
  */
 
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage } from './UnifiedStorageService';
 import { UserAgentStorageService } from './UserAgentStorageService';
 import { API_BASE_URL } from '../config/api';
 import { createPromethiosSystemMessage } from '../api/openaiProxy';
@@ -48,7 +48,7 @@ export class MultiAgentChatIntegrationService {
   private currentUserId: string | null = null;
 
   constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
     this.agentStorageService = new UserAgentStorageService();
     this.readableConsensusEngine = new ReadableConsensusEngine();
     this.blindVisionProtocol = new BlindVisionProtocol(

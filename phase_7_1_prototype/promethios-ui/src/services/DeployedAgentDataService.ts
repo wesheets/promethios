@@ -7,7 +7,7 @@
  */
 
 import { deployedAgentAPI, DeployedAgentStatus, AgentMetrics, PolicyViolation, AgentLogEntry, DeployedAgentAPI } from './api/deployedAgentAPI';
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage } from './UnifiedStorageService';
 import { metricsService } from './MetricsCollectionService';
 
 export interface ProcessedAgentMetrics {
@@ -438,6 +438,6 @@ export class DeployedAgentDataService {
 
 // Export singleton instance
 export const deployedAgentDataService = new DeployedAgentDataService(
-  new UnifiedStorageService()
+  unifiedStorage
 );
 

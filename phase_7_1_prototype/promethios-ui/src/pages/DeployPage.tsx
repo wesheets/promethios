@@ -536,7 +536,7 @@ const DeployPage: React.FC = () => {
         const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
         
         userAgentStorage.setCurrentUser(currentUser.uid);
-        const storageService = new UnifiedStorageService();
+        const storageService = unifiedStorage;
         
         // Load ALL user agents (for available agents tab)
         const allUserAgents = await userAgentStorage.loadUserAgents();

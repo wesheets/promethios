@@ -5,7 +5,7 @@
  */
 
 import { metricsService } from '../services/MetricsCollectionService';
-import { UnifiedStorageService } from '../services/UnifiedStorageService';
+import { unifiedStorage } from '../services/UnifiedStorageService';
 import { deployedAgentAPI } from '../services/api/deployedAgentAPI';
 import { DeployedAgentDataProcessor } from '../services/DeployedAgentDataProcessor';
 import { notificationBackendService } from '../services/notificationBackendService';
@@ -208,7 +208,7 @@ export class MetricsCollectionExtension {
   private dataProcessor: DeployedAgentDataProcessor;
 
   private constructor() {
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.dataProcessor = new DeployedAgentDataProcessor();
   } static getInstance(): MetricsCollectionExtension {
     if (!MetricsCollectionExtension.instance) {

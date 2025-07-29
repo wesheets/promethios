@@ -6,7 +6,7 @@
  */
 
 import { DeploymentService } from './DeploymentService';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { DualAgentWrapper } from '../types/DualAgentWrapper';
 import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
@@ -41,15 +41,16 @@ export interface RealDeploymentResult {
  * Enhanced Deployment Service with Promethios integration
  */
 export class EnhancedDeploymentService extends DeploymentService {
+  private static instance: EnhancedDeploymentService | null = null;
   private storage: UnifiedStorageService;
   private apiKeys: Map<string, AgentAPIKey> = new Map();
 
-  constructor() {
+  private constructor() {
     super();
     console.log('🔧 Initializing EnhancedDeploymentService');
     
     try {
-      this.storage = new UnifiedStorageService();
+      this.storage = unifiedStorage;
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService:', error);
@@ -95,6 +96,18 @@ export class EnhancedDeploymentService extends DeploymentService {
     }
     
     console.log('✅ EnhancedDeploymentService initialization complete');
+  }
+
+  public static getInstance(): EnhancedDeploymentService {
+    if (!EnhancedDeploymentService.instance) {
+      EnhancedDeploymentService.instance = new EnhancedDeploymentService();
+    }
+    return EnhancedDeploymentService.instance;
+  }
+
+  // For backward compatibility
+  public static create(): EnhancedDeploymentService {
+    return EnhancedDeploymentService.getInstance();
   }
 
   /**
@@ -536,16 +549,6 @@ export class EnhancedDeploymentService extends DeploymentService {
   }
 }
 
-// Singleton instance
-let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
-
-export function getEnhancedDeploymentService(): EnhancedDeploymentService {
-  if (!_enhancedDeploymentServiceInstance) {
-    _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
-  }
-  return _enhancedDeploymentServiceInstance;
-}
-
-// Simple export for direct use
-export const enhancedDeploymentService = getEnhancedDeploymentService();
+// Singleton instance export
+export const enhancedDeploymentService = EnhancedDeploymentService.getInstance();
 

@@ -1525,8 +1525,8 @@ const AgentProfilesPage: React.FC = () => {
   const loadMultiAgentSystems = async () => {
     try {
       setSystemsLoading(true);
-      const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
-      const storageService = new UnifiedStorageService();
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
+      const storageService = unifiedStorage;
       
       // Get user's system list
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];

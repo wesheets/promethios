@@ -13,7 +13,7 @@
  */
 
 import { metricsService, GovernanceMetric } from './MetricsCollectionService';
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage } from './UnifiedStorageService';
 import { notificationBackendService } from './notificationBackendService';
 import { deployedAgentAPI, AgentMetrics, AgentViolation, AgentLog } from './api/deployedAgentAPI';
 
@@ -93,7 +93,7 @@ export class DeployedAgentDataProcessor {
   private processingInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.initializeNotificationRules();
     this.startProcessing();
   }

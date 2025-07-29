@@ -3,7 +3,7 @@
  * Generates system-level scorecards that aggregate individual agent performance
  */
 
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { 
   MultiAgentSystemIdentity,
   SystemScorecardResult,
@@ -25,7 +25,7 @@ export class EnhancedMultiAgentSystemScorecardService {
   private currentUserId: string | null = null;
 
   private constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
   }
 
   public static getInstance(): EnhancedMultiAgentSystemScorecardService {

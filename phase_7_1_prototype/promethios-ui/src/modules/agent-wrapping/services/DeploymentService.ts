@@ -10,7 +10,7 @@
 
 import { DualAgentWrapper, DeploymentWrapper } from '../types/dualWrapper';
 import { MultiAgentDualWrapper, MultiAgentDeploymentPackage } from '../types/enhancedMultiAgent';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 
 export interface DeploymentTarget {
   type: 'docker' | 'kubernetes' | 'serverless' | 'api' | 'standalone';

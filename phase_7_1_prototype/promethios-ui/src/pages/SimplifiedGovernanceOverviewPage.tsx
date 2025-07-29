@@ -347,7 +347,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         // Load multi-agent systems
         const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
-        const storageService = new UnifiedStorageService();
+        const storageService = unifiedStorage;
         const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
         
         // Filter main systems (not testing/production variants)

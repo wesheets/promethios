@@ -16,7 +16,7 @@ import { DualAgentWrapper } from '../types/dualWrapper';
 import { MultiAgentDualWrapper } from '../types/enhancedMultiAgent';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { deployedAgentDataService } from '../../../services/DeployedAgentDataService';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
 
 export interface EnhancedDeploymentPackage extends DeploymentPackage {
@@ -82,7 +82,7 @@ export class EnhancedDeploymentService extends DeploymentService {
     console.log('🔧 Initializing EnhancedDeploymentService');
     
     try {
-      this.storage = new UnifiedStorageService();
+      this.storage = unifiedStorage;
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService:', error);
