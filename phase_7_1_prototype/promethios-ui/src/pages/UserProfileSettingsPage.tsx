@@ -177,6 +177,9 @@ const UserProfileSettingsPage: React.FC = () => {
 
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // Add missing ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     console.log('🔄 useEffect triggered, currentUser:', currentUser);
@@ -302,7 +305,6 @@ const UserProfileSettingsPage: React.FC = () => {
       setSaving(true);
       await userProfileService.updateUserProfile(currentUser.uid, profile);
       setSaveSuccess(true);
-      setEditMode(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to save profile:', error);
