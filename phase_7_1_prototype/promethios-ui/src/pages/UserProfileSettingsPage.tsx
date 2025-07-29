@@ -116,35 +116,33 @@ const UserProfileSettingsPage: React.FC = () => {
   
   console.log('🔍 UserProfileSettingsPage rendering, currentUser:', currentUser);
   
-  // Define initial profile state
-  const initialProfile: UserProfile = {
-    userId: '',
-    firstName: '',
-    lastName: '',
-    displayName: '',
-    email: '',
-    phone: '',
-    avatar: '',
-    bio: '',
-    jobTitle: '',
-    organization: '',
+  // User profile data with Firebase integration - using working defaults
+  const [profile, setProfile] = useState<UserProfile>({
+    userId: currentUser?.uid || '',
+    email: currentUser?.email || 'user@example.com',
+    firstName: currentUser?.displayName?.split(' ')[0] || 'User',
+    lastName: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
+    displayName: currentUser?.displayName || 'User',
+    avatar: currentUser?.photoURL || '/api/placeholder/150/150',
+    phone: currentUser?.phoneNumber || '',
     location: '',
+    organization: '',
+    jobTitle: '',
+    bio: '',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     website: '',
     linkedIn: '',
     twitter: '',
     github: '',
-    emailVerified: false,
-    phoneVerified: false,
+    emailVerified: currentUser?.emailVerified || false,
+    phoneVerified: !!currentUser?.phoneNumber,
     twoFactorEnabled: false,
     loginNotifications: true,
     dateJoined: new Date().toISOString(),
     lastLogin: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  };
-  
-  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -184,28 +182,13 @@ const UserProfileSettingsPage: React.FC = () => {
   useEffect(() => {
     console.log('🔄 useEffect triggered, currentUser:', currentUser);
     
-    // Set a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      console.log('⏰ Loading timeout reached, forcing loading to false');
-      setLoading(false);
-    }, 5000);
-
     if (currentUser) {
       console.log('✅ currentUser exists, calling loadUserProfile');
       loadUserProfile();
-      clearTimeout(loadingTimeout);
     } else {
-      console.log('❌ No currentUser, setting loading to false after delay');
-      // Give auth some time to initialize
-      setTimeout(() => {
-        if (!currentUser) {
-          console.log('🚫 Still no currentUser after delay, stopping loading');
-          setLoading(false);
-        }
-      }, 2000);
+      console.log('❌ No currentUser, setting loading to false');
+      setLoading(false);
     }
-
-    return () => clearTimeout(loadingTimeout);
   }, [currentUser]);
 
   const loadUserProfile = async () => {
@@ -223,74 +206,15 @@ const UserProfileSettingsPage: React.FC = () => {
       
       if (userProfile) {
         setProfile(userProfile);
-      } else {
-        console.log('📝 Creating default profile');
-        // Create default profile
-        const defaultProfile: UserProfile = {
-          userId: currentUser.uid,
-          firstName: currentUser.displayName?.split(' ')[0] || '',
-          lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
-          displayName: currentUser.displayName || '',
-          email: currentUser.email || '',
-          phone: currentUser.phoneNumber || '',
-          avatar: currentUser.photoURL || '',
-          bio: '',
-          jobTitle: '',
-          organization: '',
-          location: '',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          website: '',
-          linkedIn: '',
-          twitter: '',
-          github: '',
-          emailVerified: currentUser.emailVerified,
-          phoneVerified: !!currentUser.phoneNumber,
-          twoFactorEnabled: false,
-          loginNotifications: true,
-          dateJoined: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        setProfile(defaultProfile);
       }
-
+      
       // Update last login
       await userProfileService.updateLastLogin(currentUser.uid);
       console.log('✅ Profile loading complete');
     } catch (error) {
       console.error('❌ Failed to load user profile:', error);
-      // Set a basic profile even if loading fails
-      const fallbackProfile: UserProfile = {
-        userId: currentUser?.uid || '',
-        firstName: currentUser?.displayName?.split(' ')[0] || 'User',
-        lastName: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
-        displayName: currentUser?.displayName || 'User',
-        email: currentUser?.email || '',
-        phone: '',
-        avatar: currentUser?.photoURL || '',
-        bio: '',
-        jobTitle: '',
-        organization: '',
-        location: '',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        website: '',
-        linkedIn: '',
-        twitter: '',
-        github: '',
-        emailVerified: currentUser?.emailVerified || false,
-        phoneVerified: false,
-        twoFactorEnabled: false,
-        loginNotifications: true,
-        dateJoined: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setProfile(fallbackProfile);
     } finally {
       setLoading(false);
-      console.log('🏁 Loading state set to false');
     }
   };
 
