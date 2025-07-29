@@ -75,6 +75,9 @@ import PrometheosLLMCreationPage from './pages/PrometheosLLMCreationPage';
 const UIIntegration: React.FC = () => {
   const location = useLocation();
   
+  // Debug logging
+  console.log('📍 UIIntegration - Current location:', location.pathname);
+  
   // Using proxy components to connect to the actual UI components
   return (
     <ObserverProvider>
@@ -363,11 +366,14 @@ const UIIntegration: React.FC = () => {
         
         {/* Settings Routes */}
         <Route path="settings/profile" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <UserProfileSettingsPage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
+          <>
+            {console.log('🎯 Settings Profile Route Matched!')}
+            <ProtectedRoute requireOnboarding={false}>
+              <MainLayoutProxy>
+                <UserProfileSettingsPage />
+              </MainLayoutProxy>
+            </ProtectedRoute>
+          </>
         } />
         
         <Route path="settings/preferences" element={
