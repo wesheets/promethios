@@ -76,7 +76,7 @@ class UserProfileService {
       console.log(`📋 Loading profile for user: ${userId}`);
 
       // Try unified storage first (includes Firebase and fallbacks)
-      const storageKey = `${this.PROFILE_COLLECTION}:${userId}`;
+      const storageKey = `${this.PROFILE_COLLECTION}.${userId}`;
       const cachedProfile = await this.storageProvider.get<UserProfile>(storageKey);
       
       if (cachedProfile) {
@@ -142,7 +142,7 @@ class UserProfileService {
       }, { merge: true });
 
       // Update unified storage cache
-      const storageKey = `${this.PROFILE_COLLECTION}:${userId}`;
+      const storageKey = `${this.PROFILE_COLLECTION}.${userId}`;
       await this.storageProvider.set(storageKey, updatedProfile, {
         ttl: 1000 * 60 * 30, // 30 minutes cache
         namespace: 'user_profiles'
@@ -269,7 +269,7 @@ class UserProfileService {
       });
 
       // Update cache
-      const storageKey = `${this.PROFILE_COLLECTION}:${userId}`;
+      const storageKey = `${this.PROFILE_COLLECTION}.${userId}`;
       const cachedProfile = await this.storageProvider.get<UserProfile>(storageKey);
       if (cachedProfile) {
         cachedProfile.lastLogin = new Date().toISOString();
@@ -291,7 +291,7 @@ class UserProfileService {
    */
   async clearProfileCache(userId: string): Promise<void> {
     try {
-      const storageKey = `${this.PROFILE_COLLECTION}:${userId}`;
+      const storageKey = `${this.PROFILE_COLLECTION}.${userId}`;
       await this.storageProvider.delete(storageKey);
       console.log(`✅ Profile cache cleared for user: ${userId}`);
     } catch (error) {
