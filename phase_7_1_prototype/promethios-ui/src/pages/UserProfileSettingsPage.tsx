@@ -33,7 +33,8 @@ import {
   DialogContent,
   DialogActions,
   Slider,
-  Tooltip
+  Tooltip,
+  InputAdornment
 } from '@mui/material';
 import {
   Edit,
@@ -112,38 +113,17 @@ function TabPanel(props: TabPanelProps) {
 
 const UserProfileSettingsPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [tabValue, setTabValue] = useState(0);
-  const [editMode, setEditMode] = useState(false);
+  
+  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [profile, setProfile] = useState<UserProfile>({
-    userId: '',
-    firstName: '',
-    lastName: '',
-    displayName: '',
-    email: '',
-    phone: '',
-    avatar: '',
-    bio: '',
-    jobTitle: '',
-    organization: '',
-    location: '',
-    timezone: '',
-    website: '',
-    linkedIn: '',
-    twitter: '',
-    github: '',
-    emailVerified: false,
-    phoneVerified: false,
-    dateJoined: new Date().toISOString(),
-    lastLogin: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  });
-
+  const [tabValue, setTabValue] = useState(0);
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [twoFactorQRCode, setTwoFactorQRCode] = useState('');
+  const [twoFactorSecret, setTwoFactorSecret] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     loginNotifications: true,
@@ -297,10 +277,6 @@ const UserProfileSettingsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
-      {/* OBVIOUS INDICATOR - NEW REBUILT VERSION */}
-      <Alert severity="success" sx={{ mb: 2, backgroundColor: '#10b981', color: 'white' }}>
-        ✅ NEW REBUILT PROFILE PAGE - v2.0 - This is the new attestations-style component!
-      </Alert>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
@@ -309,22 +285,19 @@ const UserProfileSettingsPage: React.FC = () => {
           </Typography>
           <Typography variant="body1" sx={{ color: '#a0aec0', mb: 3 }}>
             Manage your account information, security settings, and profile preferences
-            {/* Cache bust indicator - v2.0 rebuilt */}
           </Typography>
         </Box>
         <Button
           variant="contained"
-          startIcon={editMode ? <Save /> : <Edit />}
-          onClick={editMode ? handleSaveProfile : () => setEditMode(true)}
-          disabled={saving}
+          startIcon={<Save />}
+          onClick={handleSaveProfile}
           sx={{
             backgroundColor: '#3b82f6',
             '&:hover': { backgroundColor: '#2563eb' },
-            textTransform: 'none',
-            fontWeight: 'bold'
+            textTransform: 'none'
           }}
         >
-          {editMode ? (saving ? 'SAVING...' : 'SAVE PROFILE') : 'EDIT PROFILE'}
+          Save Changes
         </Button>
       </Box>
 
@@ -447,9 +420,12 @@ const UserProfileSettingsPage: React.FC = () => {
                 placeholder="First Name"
                 value={profile.firstName}
                 onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
-                disabled={!editMode}
                 InputProps={{
-                  startAdornment: <Person sx={{ color: '#a0aec0', mr: 1 }} />,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person sx={{ color: '#a0aec0' }} />
+                    </InputAdornment>
+                  ),
                   sx: { 
                     color: 'white !important',
                     '& input': { 
@@ -483,7 +459,11 @@ const UserProfileSettingsPage: React.FC = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
                 disabled={!editMode}
                 InputProps={{
-                  startAdornment: <Person sx={{ color: '#a0aec0', mr: 1 }} />,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person sx={{ color: '#a0aec0' }} />
+                    </InputAdornment>
+                  ),
                   sx: { 
                     color: 'white !important',
                     '& input': { 
@@ -627,39 +607,86 @@ const UserProfileSettingsPage: React.FC = () => {
           </Grid>
         </TabPanel>
 
-        {/* Security Tab */}
+          {/* Security Tab */}
         <TabPanel value={tabValue} index={1}>
-          <List>
-            <ListItem>
-              <ListItemIcon>
-                <Security sx={{ color: '#3b82f6' }} />
-              </ListItemIcon>
-              <ListItemText 
-                primary="Two-Factor Authentication" 
-                secondary="Add an extra layer of security to your account"
-                primaryTypographyProps={{ color: 'white' }}
-                secondaryTypographyProps={{ color: '#a0aec0' }}
-              />
-              <Switch
-                checked={securitySettings.twoFactorEnabled}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: e.target.checked }))}
-                disabled={!editMode}
-              />
-            </ListItem>
-            <ListItem>
-              <ListItemIcon>
-                <Email sx={{ color: '#3b82f6' }} />
-              </ListItemIcon>
-              <ListItemText 
-                primary="Login Notifications" 
-                secondary="Get notified when someone logs into your account"
-                primaryTypographyProps={{ color: 'white' }}
-                secondaryTypographyProps={{ color: '#a0aec0' }}
-              />
-              <Switch
-                checked={securitySettings.loginNotifications}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, loginNotifications: e.target.checked }))}
-                disabled={!editMode}
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                Two-Factor Authentication
+              </Typography>
+              <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568', mb: 3 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Security sx={{ color: '#3b82f6', mr: 2 }} />
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ color: 'white' }}>
+                          Two-Factor Authentication
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                          Add an extra layer of security to your account
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Switch
+                      checked={profile.twoFactorEnabled}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setShowTwoFactorSetup(true);
+                        } else {
+                          setProfile(prev => ({ ...prev, twoFactorEnabled: false }));
+                        }
+                      }}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#3b82f6',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#3b82f6',
+                        },
+                      }}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                Login Notifications
+              </Typography>
+              <Card sx={{ backgroundColor: '#2d3748', border: '1px solid #4a5568' }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Email sx={{ color: '#10b981', mr: 2 }} />
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ color: 'white' }}>
+                          Login Notifications
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                          Get notified when someone logs into your account
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Switch
+                      checked={profile.loginNotifications}
+                      onChange={(e) => setProfile(prev => ({ ...prev, loginNotifications: e.target.checked }))}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#10b981',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#10b981',
+                        },
+                      }}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </TabPanel>       disabled={!editMode}
               />
             </ListItem>
           </List>
