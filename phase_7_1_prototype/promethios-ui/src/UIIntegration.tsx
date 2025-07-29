@@ -365,15 +365,19 @@ const UIIntegration: React.FC = () => {
         } />
         
         {/* Settings Routes */}
+        <Route path="settings/test" element={
+          <div style={{ padding: '20px', backgroundColor: '#1a202c', color: 'white', minHeight: '100vh' }}>
+            <h1>TEST ROUTE WORKS!</h1>
+            <p>If you can see this, routing is working correctly.</p>
+          </div>
+        } />
+        
         <Route path="settings/profile" element={
-          <>
-            {console.log('🎯 Settings Profile Route Matched!')}
-            <ProtectedRoute requireOnboarding={false}>
-              <MainLayoutProxy>
-                <UserProfileSettingsPage />
-              </MainLayoutProxy>
-            </ProtectedRoute>
-          </>
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <UserProfileSettingsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
         } />
         
         <Route path="settings/preferences" element={
