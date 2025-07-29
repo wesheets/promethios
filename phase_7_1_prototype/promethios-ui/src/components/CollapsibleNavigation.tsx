@@ -122,6 +122,12 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       path: '/ui/dashboard',
     },
     {
+      id: 'user-profile',
+      label: 'User Profile',
+      icon: <ProfileIcon />,
+      path: '/ui/profile',
+    },
+    {
       id: 'agents',
       label: 'Agents',
       icon: <AgentsIcon />,
@@ -164,7 +170,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       label: 'Settings',
       icon: <SettingsIcon />,
       children: [
-        { id: 'profile', label: 'User Profile', icon: <ProfileIcon />, path: '/ui/settings/profile' },
+        // { id: 'profile', label: 'User Profile', icon: <ProfileIcon />, path: '/ui/settings/profile' }, // Hidden - moved to main nav
         { id: 'preferences', label: 'Preferences', icon: <PreferencesIcon />, path: '/ui/settings/preferences' },
         { id: 'organization', label: 'Organization', icon: <OrganizationIcon />, path: '/ui/settings/organization' },
         { id: 'integrations', label: 'Integrations', icon: <IntegrationsIcon />, path: '/ui/settings/integrations' },
