@@ -372,6 +372,13 @@ const UIIntegration: React.FC = () => {
           </div>
         } />
         
+        <Route path="settings/profile-simple" element={
+          <div style={{ padding: '20px', backgroundColor: '#1a202c', color: 'white', minHeight: '100vh' }}>
+            <h1>TESTING COMPONENT DIRECTLY</h1>
+            <UserProfileSettingsPage />
+          </div>
+        } />
+        
         <Route path="settings/profile" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
