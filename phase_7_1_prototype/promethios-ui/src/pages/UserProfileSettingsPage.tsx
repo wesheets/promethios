@@ -437,13 +437,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 disabled={!editMode}
                 InputProps={{
                   startAdornment: <Person sx={{ color: '#a0aec0', mr: 1 }} />,
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  },
+                  '& input': { 
+                    color: 'white !important',
+                    WebkitTextFillColor: 'white !important'
                   }
                 }}
               />
@@ -457,13 +471,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 disabled={!editMode}
                 InputProps={{
                   startAdornment: <Person sx={{ color: '#a0aec0', mr: 1 }} />,
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& input': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& input': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  },
+                  '& input': { 
+                    color: 'white !important',
+                    WebkitTextFillColor: 'white !important'
                   }
                 }}
               />
@@ -558,13 +586,27 @@ const UserProfileSettingsPage: React.FC = () => {
                 multiline
                 rows={4}
                 InputProps={{
-                  sx: { color: 'white' }
+                  sx: { 
+                    color: 'white !important',
+                    '& textarea': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  }
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: '#4a5568' },
                     '&:hover fieldset': { borderColor: '#3b82f6' },
-                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                    '& textarea': { 
+                      color: 'white !important',
+                      WebkitTextFillColor: 'white !important'
+                    }
+                  },
+                  '& textarea': { 
+                    color: 'white !important',
+                    WebkitTextFillColor: 'white !important'
                   }
                 }}
               />
