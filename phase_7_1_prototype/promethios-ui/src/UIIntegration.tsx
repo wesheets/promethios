@@ -366,7 +366,9 @@ const UIIntegration: React.FC = () => {
                 {/* Clean Profile Route - New Implementation */}
         <Route path="profile" element={
           <ProtectedRoute requireOnboarding={false}>
-            <UserProfilePage />
+            <MainLayoutProxy>
+              <UserProfilePage />
+            </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
