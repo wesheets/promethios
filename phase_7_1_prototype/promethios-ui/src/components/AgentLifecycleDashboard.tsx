@@ -218,7 +218,18 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
     }
   };
 
-  if (isLoading) {
+  // Navigation functions for clickable status icons
+  const handleWrapAgent = (agentId: string) => {
+    // Navigate to agent wrapping page with specific agent
+    window.location.href = `/ui/agents/wrapping?agentId=${agentId}`;
+  };
+
+  const handleDeployAgent = (agentId: string) => {
+    // Navigate to deployment page with specific agent
+    window.location.href = `/ui/agents/wrapping?agentId=${agentId}&tab=deployment`;
+  };
+
+  if (loading) {
     return (
       <DashboardContainer>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -245,52 +256,16 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
       </Typography>
 
       {/* Summary Stats (for user dashboard) */}
-      {!agentId && summary && (
+      {!agentId && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatsCard>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <ScienceIcon sx={{ color: DARK_THEME.primary, fontSize: 32 }} />
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.primary }}>
-                      {summary.totalAgents}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
-                      Total Agents
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <StatsCard>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <ScienceIcon sx={{ color: DARK_THEME.warning, fontSize: 32 }} />
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.warning }}>
-                      {summary.testAgents}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
-                      Test Agents
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6}>
             <StatsCard>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <RocketIcon sx={{ color: DARK_THEME.success, fontSize: 32 }} />
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.success }}>
-                      {summary.productionAgents}
+                      {productionAgents.length}
                     </Typography>
                     <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
                       Production Agents
@@ -301,14 +276,14 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
             </StatsCard>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6}>
             <StatsCard>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <CloudIcon sx={{ color: DARK_THEME.primary, fontSize: 32 }} />
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.primary }}>
-                      {summary.deployedAgents}
+                      {productionAgents.filter(a => a.lifecycleStatus.deployed).length}
                     </Typography>
                     <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
                       Deployed Agents
@@ -453,23 +428,37 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
                           </TableCell>
                           
                           <TableCell align="center">
-                            <StatusIcon status={lifecycleStatus.wrapped}>
-                              {lifecycleStatus.wrapped ? (
+                            {lifecycleStatus.wrapped ? (
+                              <StatusIcon status={true}>
                                 <CheckCircleIcon fontSize="small" />
-                              ) : (
+                              </StatusIcon>
+                            ) : (
+                              <StatusIcon 
+                                status={false} 
+                                onClick={() => handleWrapAgent(agent.identity.id)}
+                                sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                title="Click to wrap this agent"
+                              >
                                 <CancelIcon fontSize="small" />
-                              )}
-                            </StatusIcon>
+                              </StatusIcon>
+                            )}
                           </TableCell>
                           
                           <TableCell align="center">
-                            <StatusIcon status={lifecycleStatus.deployed}>
-                              {lifecycleStatus.deployed ? (
+                            {lifecycleStatus.deployed ? (
+                              <StatusIcon status={true}>
                                 <CheckCircleIcon fontSize="small" />
-                              ) : (
+                              </StatusIcon>
+                            ) : (
+                              <StatusIcon 
+                                status={false} 
+                                onClick={() => handleDeployAgent(agent.identity.id)}
+                                sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                title="Click to deploy this agent"
+                              >
                                 <CancelIcon fontSize="small" />
-                              )}
-                            </StatusIcon>
+                              </StatusIcon>
+                            )}
                           </TableCell>
                           
                           <TableCell>

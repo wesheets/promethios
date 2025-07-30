@@ -286,74 +286,93 @@ export const LifecycleMigrationPanel: React.FC = () => {
 
       <style jsx>{`
         .lifecycle-migration-panel {
-          background: white;
+          background: #2a2d3a;
+          border: 1px solid #3a3f4b;
           border-radius: 8px;
           padding: 24px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
           margin: 16px 0;
+          color: #e1e5e9;
         }
 
         .migration-header h3 {
           margin: 0 0 8px 0;
-          color: #1a1a1a;
+          color: #e1e5e9;
         }
 
         .migration-header p {
-          margin: 0 0 24px 0;
-          color: #666;
+          color: #9ca3af;
+          margin: 0 0 16px 0;
         }
 
-        .migration-status, .migration-progress, .migration-results, .migration-actions, .migration-help {
-          margin-bottom: 24px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #eee;
+        .migration-status,
+        .migration-progress,
+        .migration-results,
+        .migration-actions,
+        .migration-help {
+          margin: 20px 0;
+          padding: 16px;
+          background: #1e2028;
+          border: 1px solid #3a3f4b;
+          border-radius: 6px;
         }
 
-        .migration-status:last-child, .migration-progress:last-child, .migration-results:last-child, .migration-actions:last-child, .migration-help:last-child {
-          border-bottom: none;
-          margin-bottom: 0;
+        .migration-status h4,
+        .migration-progress h4,
+        .migration-results h4,
+        .migration-actions h4,
+        .migration-help h4 {
+          margin: 0 0 12px 0;
+          color: #e1e5e9;
+          font-size: 16px;
         }
 
-        .status-grid, .report-grid {
+        .status-grid,
+        .report-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 12px;
           margin-top: 12px;
         }
 
-        .status-item, .report-item {
+        .status-item,
+        .report-item {
           display: flex;
           justify-content: space-between;
           padding: 8px 12px;
-          background: #f8f9fa;
+          background: #2a2d3a;
+          border: 1px solid #3a3f4b;
           border-radius: 4px;
         }
 
-        .label {
+        .status-item .label,
+        .report-item .label {
+          color: #9ca3af;
           font-weight: 500;
-          color: #666;
         }
 
-        .value {
+        .status-item .value,
+        .report-item .value {
+          color: #e1e5e9;
           font-weight: 600;
         }
 
         .value.success {
-          color: #28a745;
+          color: #10b981;
         }
 
         .value.warning {
-          color: #ffc107;
+          color: #f59e0b;
         }
 
         .value.error {
-          color: #dc3545;
+          color: #ef4444;
         }
 
         .progress-bar {
           width: 100%;
           height: 8px;
-          background: #e9ecef;
+          background: #3a3f4b;
           border-radius: 4px;
           overflow: hidden;
           margin: 8px 0;
@@ -361,128 +380,135 @@ export const LifecycleMigrationPanel: React.FC = () => {
 
         .progress-fill {
           height: 100%;
-          background: #007bff;
+          background: linear-gradient(90deg, #3b82f6, #10b981);
           transition: width 0.3s ease;
         }
 
         .progress-message {
-          margin: 8px 0 0 0;
+          color: #9ca3af;
           font-size: 14px;
-          color: #666;
+          margin: 8px 0 0 0;
         }
 
         .migration-results.success {
-          border-left: 4px solid #28a745;
-          background: #f8fff9;
-          padding: 16px;
-          border-radius: 4px;
+          border-color: #10b981;
+          background: #064e3b;
         }
 
         .migration-results.error {
-          border-left: 4px solid #dc3545;
-          background: #fff8f8;
-          padding: 16px;
-          border-radius: 4px;
+          border-color: #ef4444;
+          background: #7f1d1d;
         }
 
         .action-buttons {
           display: flex;
           gap: 12px;
           flex-wrap: wrap;
-          margin-bottom: 16px;
+          margin: 16px 0;
         }
 
         .btn {
-          padding: 8px 16px;
+          padding: 10px 16px;
+          border-radius: 6px;
           border: none;
-          border-radius: 4px;
-          cursor: pointer;
           font-weight: 500;
+          cursor: pointer;
           transition: all 0.2s ease;
+          font-size: 14px;
         }
 
         .btn:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
         .btn-primary {
-          background: #007bff;
+          background: #3b82f6;
           color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-          background: #0056b3;
+          background: #2563eb;
         }
 
         .btn-secondary {
-          background: #6c757d;
+          background: #6b7280;
           color: white;
         }
 
         .btn-secondary:hover:not(:disabled) {
-          background: #545b62;
+          background: #4b5563;
         }
 
         .btn-outline {
           background: transparent;
-          color: #007bff;
-          border: 1px solid #007bff;
+          color: #e1e5e9;
+          border: 1px solid #3a3f4b;
         }
 
         .btn-outline:hover:not(:disabled) {
-          background: #007bff;
-          color: white;
+          background: #3a3f4b;
         }
 
         .btn-danger {
-          background: #dc3545;
+          background: #ef4444;
           color: white;
         }
 
         .btn-danger:hover:not(:disabled) {
-          background: #c82333;
+          background: #dc2626;
         }
 
         .btn-link {
           background: transparent;
-          color: #007bff;
+          color: #3b82f6;
           border: none;
-          text-decoration: underline;
           padding: 4px 0;
+          font-size: 14px;
+        }
+
+        .btn-link:hover {
+          color: #2563eb;
+          text-decoration: underline;
         }
 
         .advanced-options {
           margin-top: 12px;
           padding: 12px;
-          background: #f8f9fa;
+          background: #2a2d3a;
+          border: 1px solid #3a3f4b;
           border-radius: 4px;
         }
 
         .warning-text {
-          margin: 8px 0 0 0;
+          color: #f59e0b;
           font-size: 12px;
-          color: #dc3545;
+          margin: 8px 0 0 0;
         }
 
         .help-content p {
+          color: #9ca3af;
           margin: 4px 0;
           font-size: 14px;
-          color: #666;
+        }
+
+        .help-content strong {
+          color: #e1e5e9;
         }
 
         .loading {
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           padding: 40px;
         }
 
         .loading-spinner {
           width: 32px;
           height: 32px;
-          border: 3px solid #f3f3f3;
-          border-top: 3px solid #007bff;
+          border: 3px solid #3a3f4b;
+          border-top: 3px solid #3b82f6;
           border-radius: 50%;
           animation: spin 1s linear infinite;
           margin-bottom: 16px;
@@ -493,14 +519,22 @@ export const LifecycleMigrationPanel: React.FC = () => {
           100% { transform: rotate(360deg); }
         }
 
+        .loading p {
+          color: #9ca3af;
+          margin: 0;
+        }
+
         .validation-status.success {
-          color: #28a745;
-          font-weight: 600;
+          color: #10b981;
         }
 
         .validation-status.error {
-          color: #dc3545;
-          font-weight: 600;
+          color: #ef4444;
+        }
+
+        .inconsistencies {
+          margin-top: 8px;
+          color: #f59e0b;
         }
       `}</style>
     </div>
