@@ -1452,6 +1452,7 @@ const AgentProfileCard: React.FC<{
 };
 // Main Agent Profiles Page Component
 const AgentProfilesPage: React.FC = () => {
+  const navigate = useNavigate();
   // Get tab from URL parameter
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -2223,19 +2224,15 @@ const AgentProfilesPage: React.FC = () => {
               // Refresh agents from storage to get the latest data
               await handleRefreshAgents();
               
-              // Show publish to registry modal after successful creation
-              setWrappedAgentData({
-                name: newAgent.identity.name,
-                type: 'single',
-                governanceTier: 'enhanced'
-              });
-              setShowPublishModal(true);
+              // Redirect to Agent Wrapping Wizard to complete the wrapping process
+              // Start at step 1 (Governance Setup) since API configuration is already done
+              navigate(`/ui/agents/wrapping?agentId=${newAgent.identity.id}`);
               
             } catch (error) {
               console.error('Failed to create agent:', error);
               alert('Failed to create agent. Please try again.');
             }
-          }}
+          }}}
         />
 
         {/* Create Multi-Agent System Dialog */}
