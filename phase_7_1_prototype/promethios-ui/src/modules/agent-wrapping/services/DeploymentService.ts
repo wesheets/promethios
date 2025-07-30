@@ -11,6 +11,7 @@
 import { DualAgentWrapper, DeploymentWrapper } from '../types/dualWrapper';
 import { MultiAgentDualWrapper, MultiAgentDeploymentPackage } from '../types/enhancedMultiAgent';
 import { unifiedStorage, UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { useAgentDeployedHook } from '../../../hooks/LifecycleHooks';
 
 export interface DeploymentTarget {
   type: 'docker' | 'kubernetes' | 'serverless' | 'api' | 'standalone';
@@ -294,6 +295,27 @@ export class DeploymentService {
 
       // Store deployment result
       await this.storage.set('agents', `deployment-result-${deploymentId}`, result);
+
+      // NEW: Trigger lifecycle event for agent deployment
+      try {
+        // Extract agent information from deployment package
+        const agentId = deploymentPackage.agentConfig?.id || 
+                       deploymentPackage.multiAgentConfig?.id || 
+                       deploymentPackage.id;
+        const userId = deploymentPackage.metadata.createdBy || 'system';
+        
+        await useAgentDeployedHook(
+          agentId,
+          deploymentId,
+          result.endpoint || 'unknown',
+          userId,
+          target.environment
+        );
+        console.log('✅ Lifecycle event triggered for agent deployment:', deploymentId);
+      } catch (lifecycleError) {
+        // Log but don't fail the deployment process
+        console.warn('⚠️ Failed to trigger lifecycle event for agent deployment:', lifecycleError);
+      }
 
       console.log(`🚀 Deployed package ${packageId} as ${deploymentId}`);
       return result;

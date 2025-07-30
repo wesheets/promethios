@@ -13,6 +13,7 @@ import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
 import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
 import { metricsCollectionExtension } from '../../../extensions/MetricsCollectionExtension';
 import { agentLifecycleService } from '../../../services/AgentLifecycleService';
+import { useAgentDeployedHook, useAgentWrappedHook } from '../../../hooks/LifecycleHooks';
 
 // Types
 export interface EnhancedDeploymentPackage {
@@ -269,23 +270,19 @@ export class EnhancedDeploymentService extends DeploymentService {
           // Create production agent ID (if different from test agent ID)
           const productionAgentId = agentId.includes('-test') ? agentId.replace('-test', '-production') : `${agentId}-production`;
           
-          // Handle agent wrapping (test to production promotion)
-          const wrappingResult = await agentLifecycleService.onAgentWrapped(agentId, productionAgentId, userId);
-          if (!wrappingResult.success) {
-            throw new Error(`Agent wrapping failed: ${wrappingResult.error}`);
-          }
+          // Handle agent wrapping (test to production promotion) using lifecycle hooks
+          await useAgentWrappedHook(agentId, productionAgentId, userId);
+          console.log('✅ Agent wrapping lifecycle event triggered successfully');
           
-          // Handle agent deployment
-          const deploymentResult = await agentLifecycleService.onAgentDeployed(
+          // Handle agent deployment using lifecycle hooks
+          await useAgentDeployedHook(
             productionAgentId,
             deploymentId,
             result.url || '',
             userId,
             'production'
           );
-          if (!deploymentResult.success) {
-            throw new Error(`Agent deployment lifecycle failed: ${deploymentResult.error}`);
-          }
+          console.log('✅ Agent deployment lifecycle event triggered successfully');
           
           console.log('✅ Agent lifecycle processing completed successfully');
         } catch (lifecycleError) {

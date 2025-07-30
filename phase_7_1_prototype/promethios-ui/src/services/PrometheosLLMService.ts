@@ -7,6 +7,7 @@
 
 import { auth } from '../firebase/config';
 import { prometheosLLMExtension } from '../extensions/PrometheosLLMExtension';
+import { useAgentCreatedHook } from '../hooks/LifecycleHooks';
 
 export interface PrometheosLLMAgent {
   agentId: string;
@@ -161,6 +162,29 @@ class PrometheosLLMService {
         apiAccess
       };
 
+      // NEW: Trigger lifecycle event for Promethios LLM agent creation
+      try {
+        // Convert PrometheosLLMAgent to AgentProfile format for lifecycle tracking
+        const agentProfile: any = {
+          identity: {
+            id: agent.agentId,
+            name: config.name,
+            version: agent.config.modelVersion || '1.0.0',
+            description: config.description,
+            ownerId: user.uid,
+            creationDate: new Date(agent.createdAt),
+            lastModifiedDate: new Date(agent.createdAt),
+            status: agent.status
+          }
+        };
+
+        await useAgentCreatedHook(agentProfile);
+        console.log('✅ Lifecycle event triggered for Promethios LLM agent creation:', agent.agentId);
+      } catch (lifecycleError) {
+        // Log but don't fail the creation process
+        console.warn('⚠️ Failed to trigger lifecycle event for Promethios LLM agent creation:', lifecycleError);
+      }
+
       console.log('✅ Promethios LLM agent created with immediate API access and persistence');
       return enhancedAgent;
 
@@ -207,6 +231,29 @@ class PrometheosLLMService {
         ...agent,
         apiAccess
       };
+
+      // NEW: Trigger lifecycle event for Promethios LLM agent creation
+      try {
+        // Convert PrometheosLLMAgent to AgentProfile format for lifecycle tracking
+        const agentProfile: any = {
+          identity: {
+            id: agent.agentId,
+            name: name,
+            version: agent.config?.modelVersion || '1.0.0',
+            description: description,
+            ownerId: user.uid,
+            creationDate: new Date(agent.createdAt),
+            lastModifiedDate: new Date(agent.createdAt),
+            status: agent.status
+          }
+        };
+
+        await useAgentCreatedHook(agentProfile);
+        console.log('✅ Lifecycle event triggered for Promethios LLM native agent creation:', agent.agentId);
+      } catch (lifecycleError) {
+        // Log but don't fail the creation process
+        console.warn('⚠️ Failed to trigger lifecycle event for Promethios LLM native agent creation:', lifecycleError);
+      }
 
       console.log('✅ Promethios LLM agent created with immediate API access');
       return enhancedAgent;

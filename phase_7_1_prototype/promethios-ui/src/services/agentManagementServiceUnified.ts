@@ -10,6 +10,7 @@ import { unifiedStorage } from './UnifiedStorageService';
 import { AgentWrapper, WrapperMetrics } from '../modules/agent-wrapping/types';
 import { MultiAgentService, MultiAgentContext, AgentMessage } from './multiAgentService';
 import { AgentProfile } from '../modules/agent-identity/types/multiAgent';
+import { useAgentCreatedHook } from '../hooks/LifecycleHooks';
 
 // Enhanced types for storage integration
 interface StoredAgentWrapper extends AgentWrapper {
@@ -135,6 +136,30 @@ class AgentManagementServiceUnified {
     try {
       await storageExtension.set('agents', `wrapper_${wrapperId}`, storedWrapper);
       console.log('Agent wrapper created and stored:', wrapperId);
+
+      // NEW: Trigger lifecycle event for agent creation
+      try {
+        // Convert StoredAgentWrapper to AgentProfile format for lifecycle tracking
+        const agentProfile: any = {
+          identity: {
+            id: wrapperId,
+            name: wrapper.name || `Agent Wrapper ${wrapperId}`,
+            version: '1.0.0',
+            description: wrapper.description || 'Agent wrapper created via unified management service',
+            ownerId: this.userId,
+            creationDate: new Date(storedWrapper.createdAt),
+            lastModifiedDate: new Date(storedWrapper.lastModified),
+            status: 'active'
+          }
+        };
+
+        await useAgentCreatedHook(agentProfile);
+        console.log('✅ Lifecycle event triggered for agent wrapper creation:', wrapperId);
+      } catch (lifecycleError) {
+        // Log but don't fail the creation process
+        console.warn('⚠️ Failed to trigger lifecycle event for agent wrapper creation:', lifecycleError);
+      }
+
       return wrapperId;
     } catch (error) {
       console.error('Failed to create agent wrapper:', error);
@@ -239,6 +264,30 @@ class AgentManagementServiceUnified {
     try {
       await storageExtension.set('agents', `profile_${profileId}`, storedProfile);
       console.log('Agent profile created and stored:', profileId);
+
+      // NEW: Trigger lifecycle event for agent creation
+      try {
+        // Convert StoredAgentProfile to AgentProfile format for lifecycle tracking
+        const agentProfile: any = {
+          identity: {
+            id: profileId,
+            name: profile.name || `Agent Profile ${profileId}`,
+            version: '1.0.0',
+            description: profile.description || 'Agent profile created via unified management service',
+            ownerId: this.userId,
+            creationDate: new Date(storedProfile.createdAt),
+            lastModifiedDate: new Date(storedProfile.lastModified),
+            status: 'active'
+          }
+        };
+
+        await useAgentCreatedHook(agentProfile);
+        console.log('✅ Lifecycle event triggered for agent profile creation:', profileId);
+      } catch (lifecycleError) {
+        // Log but don't fail the creation process
+        console.warn('⚠️ Failed to trigger lifecycle event for agent profile creation:', lifecycleError);
+      }
+
       return profileId;
     } catch (error) {
       console.error('Failed to create agent profile:', error);
@@ -310,6 +359,30 @@ class AgentManagementServiceUnified {
 
       await storageExtension.set('agents', `context_${context.context_id}`, storedContext);
       console.log('Multi-agent context created and stored:', context.context_id);
+
+      // NEW: Trigger lifecycle event for multi-agent context creation
+      try {
+        // Convert multi-agent context to AgentProfile format for lifecycle tracking
+        const agentProfile: any = {
+          identity: {
+            id: context.context_id,
+            name: name || `Multi-Agent Context ${context.context_id}`,
+            version: '1.0.0',
+            description: `Multi-agent context with ${agentIds.length} agents using ${collaborationModel} collaboration model`,
+            ownerId: this.userId,
+            creationDate: new Date(),
+            lastModifiedDate: new Date(),
+            status: 'active'
+          }
+        };
+
+        await useAgentCreatedHook(agentProfile);
+        console.log('✅ Lifecycle event triggered for multi-agent context creation:', context.context_id);
+      } catch (lifecycleError) {
+        // Log but don't fail the creation process
+        console.warn('⚠️ Failed to trigger lifecycle event for multi-agent context creation:', lifecycleError);
+      }
+
       return context.context_id;
     } catch (error) {
       console.error('Failed to create multi-agent context:', error);

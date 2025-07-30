@@ -40,6 +40,8 @@ import { agentLifecycleService, AgentLifecycleEvent } from '../services/AgentLif
 import { metricsCollectionExtension, AgentMetricsProfile } from '../extensions/MetricsCollectionExtension';
 import { useAuth } from '../context/AuthContext';
 import { useRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { useOptimizedLifecycleDashboard } from '../hooks/useOptimizedLifecycleDashboard';
+import LifecycleMigrationPanel from './LifecycleMigrationPanel';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -85,54 +87,25 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
   const { currentUser } = useAuth();
   const { agentId: urlAgentId } = useParams<{ agentId: string }>();
   const agentId = propAgentId || urlAgentId; // Use prop first, then URL param
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // Summary data
-  const [summary, setSummary] = useState<{
-    totalAgents: number;
-    testAgents: number;
-    productionAgents: number;
-    deployedAgents: number;
-    recentEvents: AgentLifecycleEvent[];
-  } | null>(null);
+  // Use optimized lifecycle dashboard hook
+  const {
+    metrics,
+    agentHistory,
+    isLoading,
+    error,
+    refreshData,
+    cacheAge,
+    lastRefresh,
+    isOptimized
+  } = useOptimizedLifecycleDashboard(agentId);
   
-  // Agent-specific data
-  const [agentHistory, setAgentHistory] = useState<AgentLifecycleEvent[]>([]);
+  // Extract summary from metrics for backward compatibility
+  const summary = metrics?.summary;
   
   // Real-time metrics for agent-specific view
   const testMetrics = useRealTimeMetrics(agentId || '', 'test');
   const productionMetrics = useRealTimeMetrics(agentId || '', 'production');
-
-  useEffect(() => {
-    if (currentUser?.uid) {
-      loadDashboardData();
-    }
-  }, [currentUser?.uid, agentId]);
-
-  const loadDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (agentId) {
-        // Load specific agent lifecycle
-        const history = await agentLifecycleService.getAgentLifecycleHistory(agentId);
-        setAgentHistory(history);
-        // Note: Metrics are now loaded via real-time hooks
-      } else {
-        // Load user summary
-        const userSummary = await agentLifecycleService.getUserAgentLifecycleSummary(currentUser!.uid);
-        setSummary(userSummary);
-      }
-
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
@@ -402,6 +375,11 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
           )}
         </CardContent>
       </TimelineCard>
+
+      {/* Migration Panel - Only show in overview mode (not for specific agents) */}
+      {!agentId && (
+        <LifecycleMigrationPanel />
+      )}
     </DashboardContainer>
   );
 };
