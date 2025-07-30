@@ -226,7 +226,7 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
 
   const handleDeployAgent = (agentId: string) => {
     // Navigate to deployment page with specific agent
-    window.location.href = `/ui/agents/wrapping?agentId=${agentId}&tab=deployment`;
+    window.location.href = `/ui/agents/deployment?agentId=${agentId}`;
   };
 
   if (isLoading) {
