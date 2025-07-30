@@ -10,7 +10,7 @@
 
 import { DualAgentWrapper, DeploymentWrapper } from '../types/dualWrapper';
 import { MultiAgentDualWrapper, MultiAgentDeploymentPackage } from '../types/enhancedMultiAgent';
-import { unifiedStorage } from '../../../services/UnifiedStorageService';
+import { unifiedStorage, UnifiedStorageService } from '../../../services/UnifiedStorageService';
 
 export interface DeploymentTarget {
   type: 'docker' | 'kubernetes' | 'serverless' | 'api' | 'standalone';
@@ -107,11 +107,10 @@ export class DeploymentService {
 
   constructor() {
     try {
-      // Use a safer pattern to avoid minification issues
-      const StorageServiceClass = UnifiedStorageService;
-      this.storage = new StorageServiceClass();
+      // Use singleton instance instead of creating new instance
+      this.storage = unifiedStorage;
     } catch (error) {
-      console.error('❌ Error creating UnifiedStorageService:', error);
+      console.error('❌ Error accessing UnifiedStorageService:', error);
       // Fallback to a minimal storage implementation
       this.storage = {
         get: async () => null,
