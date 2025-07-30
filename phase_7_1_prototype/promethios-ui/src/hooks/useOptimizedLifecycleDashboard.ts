@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { agentLifecycleService, AgentLifecycleEvent, AgentLifecycleSummary } from '../services/AgentLifecycleService';
-import { universalDataCache } from '../services/UniversalDataCache';
+import { universalCache } from '../services/UniversalDataCache';
 
 export interface LifecycleDashboardMetrics {
   summary: {
@@ -88,7 +88,7 @@ export const useOptimizedLifecycleDashboard = (agentId?: string) => {
 
       // Try to load from cache first (unless force refresh)
       if (!forceRefresh) {
-        const cachedData = await universalDataCache.get(cacheKey);
+        const cachedData = universalCache.get(cacheKey, 'dashboard-metrics');
         if (cachedData && cachedData.timestamp > Date.now() - CACHE_DURATION) {
           console.log('✅ [LifecycleDashboard] Using cached data', { 
             cacheAge: Date.now() - cachedData.timestamp,
@@ -139,7 +139,7 @@ export const useOptimizedLifecycleDashboard = (agentId?: string) => {
       };
 
       // Cache the results
-      await universalDataCache.set(cacheKey, newState, CACHE_DURATION);
+      universalCache.set(cacheKey, newState, 'dashboard-metrics');
       
       setState(prev => ({ ...prev, ...newState }));
       
@@ -265,7 +265,7 @@ export const useOptimizedLifecycleDashboard = (agentId?: string) => {
   // Clear cache
   const clearCache = useCallback(async () => {
     const cacheKey = getCacheKey();
-    await universalDataCache.delete(cacheKey);
+    universalCache.invalidate('dashboard-metrics', cacheKey);
     console.log('🗑️ [LifecycleDashboard] Cache cleared');
   }, [getCacheKey]);
 
