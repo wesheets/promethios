@@ -2232,7 +2232,7 @@ const AgentProfilesPage: React.FC = () => {
               console.error('Failed to create agent:', error);
               alert('Failed to create agent. Please try again.');
             }
-          }}}
+          }}
         />
 
         {/* Create Multi-Agent System Dialog */}
