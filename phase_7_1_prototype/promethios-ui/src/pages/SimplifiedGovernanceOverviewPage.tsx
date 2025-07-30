@@ -142,11 +142,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Navigation detection - prevent rendering when not on governance overview
-  if (location.pathname !== '/ui/governance/overview') {
-    return null;
-  }
-
   // Helper functions
   const getAgentTypeIcon = (type: string) => {
     switch (type) {
@@ -312,15 +307,6 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
   }, []);
 
-  // Detect navigation changes and redirect if not on governance overview
-  useEffect(() => {
-    // If the location changes to a different governance page, this component should not render
-    if (location.pathname !== '/ui/governance/overview') {
-      // Force a page reload to ensure proper navigation
-      window.location.href = location.pathname;
-    }
-  }, [location.pathname]);
-
   // Monitor for violations (optimized to prevent render loops)
   useEffect(() => {
     if (scorecards.length > 0) {
@@ -346,7 +332,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         const agents = await userAgentStorageService.loadUserAgents();
         
         // Load multi-agent systems
-        const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
+        const { unifiedStorage } = await import('../services/UnifiedStorageService');
         const storageService = unifiedStorage;
         const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
         
