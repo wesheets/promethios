@@ -1,6 +1,6 @@
 import { UserAgentStorageService, AgentProfile } from './UserAgentStorageService';
 import { governanceService, GovernanceMetrics, GovernanceSession } from './GovernanceService';
-import { unifiedStorage } from './UnifiedStorageService';
+import { unifiedStorage, UnifiedStorageService } from './UnifiedStorageService';
 
 export interface ChatMessage {
   id: string;
