@@ -3,7 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { MistralAI } = require('@mistralai/mistralai');
+// const { MistralAI } = require('@mistralai/mistralai'); // Temporarily disabled - missing zod dependency
 const axios = require('axios');
 const governanceContextService = require('./governanceContextService');
 
@@ -80,10 +80,10 @@ try {
 
 try {
   if (process.env.MISTRAL_API_KEY) {
-    mistral = new MistralAI({
-      apiKey: process.env.MISTRAL_API_KEY,
-    });
-    console.log('✅ Mistral AI client initialized');
+    // mistral = new MistralAI({
+    //   apiKey: process.env.MISTRAL_API_KEY,
+    // });
+    console.log('⚠️ Mistral AI temporarily disabled - missing zod dependency');
   } else {
     console.log('⚠️ Mistral API key not found - using fallback responses');
   }
