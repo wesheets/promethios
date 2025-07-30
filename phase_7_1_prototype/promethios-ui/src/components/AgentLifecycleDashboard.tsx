@@ -229,7 +229,7 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
     window.location.href = `/ui/agents/wrapping?agentId=${agentId}&tab=deployment`;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardContainer>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
