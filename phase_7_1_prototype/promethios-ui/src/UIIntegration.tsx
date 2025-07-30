@@ -413,10 +413,10 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Default Settings route - redirect to profile */}
+        {/* Default Settings route - redirect to preferences */}
         <Route path="settings" element={
           <ProtectedRoute requireOnboarding={false}>
-            <Navigate to="/ui/settings/profile" replace />
+            <Navigate to="/ui/settings/preferences" replace />
           </ProtectedRoute>
         } />
         

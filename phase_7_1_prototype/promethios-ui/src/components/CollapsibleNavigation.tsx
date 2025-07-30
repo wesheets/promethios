@@ -122,12 +122,6 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       path: '/ui/dashboard',
     },
     {
-      id: 'user-profile',
-      label: 'User Profile',
-      icon: <ProfileIcon />,
-      path: '/ui/profile',
-    },
-    {
       id: 'agents',
       label: 'Agents',
       icon: <AgentsIcon />,
@@ -163,29 +157,6 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         { id: 'trust-overview', label: 'Overview', icon: <OverviewIcon />, path: '/ui/trust/overview' },
         { id: 'boundaries', label: 'Boundaries', icon: <BoundariesIcon />, path: '/ui/trust/boundaries' },
         { id: 'attestations', label: 'Attestations', icon: <AttestationsIcon />, path: '/ui/trust/attestations' },
-      ],
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <SettingsIcon />,
-      children: [
-        // { id: 'profile', label: 'User Profile', icon: <ProfileIcon />, path: '/ui/settings/profile' }, // Hidden - moved to main nav
-        { id: 'preferences', label: 'Preferences', icon: <PreferencesIcon />, path: '/ui/settings/preferences' },
-        { id: 'organization', label: 'Organization', icon: <OrganizationIcon />, path: '/ui/settings/organization' },
-        { id: 'integrations', label: 'Integrations', icon: <IntegrationsIcon />, path: '/ui/settings/integrations' },
-        { id: 'data', label: 'Data Management', icon: <DataIcon />, path: '/ui/settings/data' },
-        { id: 'api-keys', label: 'API Keys', icon: <ApiKeyIcon />, path: '/ui/settings/api-keys' },
-      ],
-    },
-    {
-      id: 'help',
-      label: 'Help',
-      icon: <HelpIcon />,
-      children: [
-        { id: 'tours', label: 'Guided Tours', icon: <ToursIcon />, path: '/ui/help/tours' },
-        { id: 'docs', label: 'Documentation', icon: <DocsIcon />, path: '/ui/help/documentation' },
-        { id: 'support', label: 'Support', icon: <SupportIcon />, path: '/ui/help/support' },
       ],
     },
   ];
