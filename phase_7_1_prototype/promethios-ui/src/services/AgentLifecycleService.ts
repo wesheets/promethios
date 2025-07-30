@@ -18,6 +18,17 @@ export interface AgentLifecycleEvent {
   metadata?: Record<string, any>;
 }
 
+export interface AgentWithLifecycleStatus {
+  agent: AgentProfile;
+  lifecycleStatus: {
+    created: boolean;
+    wrapped: boolean;
+    deployed: boolean;
+  };
+  lastActivity: Date | null;
+  events: AgentLifecycleEvent[];
+}
+
 export interface AgentWrappingResult {
   success: boolean;
   productionAgentId?: string;
@@ -230,6 +241,76 @@ export class AgentLifecycleService {
                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     } catch (error) {
       console.error('❌ Failed to get agent lifecycle history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get production agents with their lifecycle status for dashboard display
+   */
+  async getProductionAgentsWithLifecycleStatus(userId: string): Promise<AgentWithLifecycleStatus[]> {
+    try {
+      console.log('🔍 Loading production agents with lifecycle status for user:', userId);
+      
+      // Set user context for agent storage service
+      this.agentStorageService.setCurrentUser(userId);
+      
+      // Load all user agents
+      const allAgents = await this.agentStorageService.loadUserAgents();
+      console.log('📊 Total agents loaded:', allAgents.length);
+      
+      // Filter for production agents only
+      const productionAgents = allAgents.filter(agent => 
+        agent.identity.id.includes('-production') || 
+        agent.identity.id.startsWith(`${userId}_promethios-llm-`) // Include native LLM agents
+      );
+      console.log('🏭 Production agents found:', productionAgents.length);
+      
+      // Get all lifecycle events for this user
+      const allEvents = await unifiedStorage.getMany<AgentLifecycleEvent>('agent_lifecycle_events', []);
+      const userEvents = allEvents.filter(event => event.userId === userId);
+      console.log('📝 Lifecycle events found:', userEvents.length);
+      
+      // Map production agents to lifecycle status
+      const agentsWithStatus: AgentWithLifecycleStatus[] = productionAgents.map(agent => {
+        const agentEvents = userEvents.filter(event => event.agentId === agent.identity.id);
+        
+        // Determine lifecycle status based on events and agent properties
+        const hasCreatedEvent = agentEvents.some(e => e.eventType === 'created');
+        const hasWrappedEvent = agentEvents.some(e => e.eventType === 'wrapped');
+        const hasDeployedEvent = agentEvents.some(e => e.eventType === 'deployed');
+        
+        // For production agents, assume they are at least wrapped if they exist
+        const isCreated = hasCreatedEvent || true; // All existing agents are created
+        const isWrapped = hasWrappedEvent || agent.isWrapped || agent.identity.id.includes('-production');
+        const isDeployed = hasDeployedEvent || agent.isDeployed;
+        
+        return {
+          agent,
+          lifecycleStatus: {
+            created: isCreated,
+            wrapped: isWrapped,
+            deployed: isDeployed
+          },
+          lastActivity: agentEvents.length > 0 
+            ? new Date(Math.max(...agentEvents.map(e => new Date(e.timestamp).getTime())))
+            : agent.lastActivity || agent.identity.lastModifiedDate,
+          events: agentEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        };
+      });
+      
+      // Sort by last activity (most recent first)
+      agentsWithStatus.sort((a, b) => {
+        const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
+        const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+        return bTime - aTime;
+      });
+      
+      console.log('✅ Production agents with lifecycle status prepared:', agentsWithStatus.length);
+      return agentsWithStatus;
+      
+    } catch (error) {
+      console.error('❌ Failed to get production agents with lifecycle status:', error);
       return [];
     }
   }
