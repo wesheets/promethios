@@ -13,10 +13,18 @@ export class UnifiedStorageService {
 
   private constructor() {
     try {
-      console.log('🔧 Initializing UnifiedStorageService (singleton)');
+      // Reduced logging - only log once per session
+      if (!sessionStorage.getItem('unified_storage_initialized')) {
+        console.log('🔧 Initializing UnifiedStorageService (singleton)');
+        sessionStorage.setItem('unified_storage_initialized', 'true');
+      }
       this.initializeProviders();
       this.loadNamespaces();
-      console.log('✅ UnifiedStorageService initialized successfully');
+      // Only log success once per session
+      if (!sessionStorage.getItem('unified_storage_success')) {
+        console.log('✅ UnifiedStorageService initialized successfully');
+        sessionStorage.setItem('unified_storage_success', 'true');
+      }
     } catch (error) {
       console.error('❌ Error initializing UnifiedStorageService:', error);
       // Set minimal initialized state to prevent further errors

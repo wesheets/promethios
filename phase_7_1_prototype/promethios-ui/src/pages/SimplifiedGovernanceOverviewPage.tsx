@@ -501,6 +501,35 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
         
+        // Deduplicate agents by agentId to prevent duplicates
+        const deduplicatedScorecards = allScorecards.reduce((acc, current) => {
+          const existingIndex = acc.findIndex(item => item.agentId === current.agentId);
+          if (existingIndex === -1) {
+            // Agent doesn't exist, add it
+            acc.push(current);
+          } else {
+            // Agent exists, keep the one with more recent data or production version
+            const existing = acc[existingIndex];
+            const currentIsProduction = current.agentId.includes('-production');
+            const existingIsProduction = existing.agentId.includes('-production');
+            
+            // Prefer production versions over testing versions
+            if (currentIsProduction && !existingIsProduction) {
+              acc[existingIndex] = current;
+            } else if (!currentIsProduction && existingIsProduction) {
+              // Keep existing production version
+            } else {
+              // Both are same type, keep the one with more recent activity
+              if (current.lastActivity > existing.lastActivity) {
+                acc[existingIndex] = current;
+              }
+            }
+          }
+          return acc;
+        }, [] as AgentScorecard[]);
+        
+        console.log(`📊 Deduplicated ${allScorecards.length} agents to ${deduplicatedScorecards.length} unique agents`);
+        
         // Add a test multi-agent system if none were loaded from storage
         if (validMultiAgentScorecards.length === 0) {
           const testMultiAgentSystem: AgentScorecard = {
@@ -519,10 +548,10 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
             lastActivity: new Date(),
             isRealData: false
           };
-          allScorecards.push(testMultiAgentSystem);
+          deduplicatedScorecards.push(testMultiAgentSystem);
         }
         
-        setScorecards(allScorecards);
+        setScorecards(deduplicatedScorecards);
         
       } catch (error) {
         // Silent error handling to prevent console spam

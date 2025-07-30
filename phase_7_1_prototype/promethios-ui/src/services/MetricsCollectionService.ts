@@ -98,7 +98,11 @@ export class MetricsCollectionService {
       } as UserInteractionMetric);
 
       this.isInitialized = true;
-      console.log('🎯 Metrics Collection Service initialized');
+      // Reduced logging - only log once per session
+      if (!sessionStorage.getItem('metrics_initialized')) {
+        console.log('🎯 Metrics Collection Service initialized');
+        sessionStorage.setItem('metrics_initialized', 'true');
+      }
     } catch (error) {
       console.error('Failed to initialize metrics service:', error);
     }
@@ -137,6 +141,12 @@ export class MetricsCollectionService {
    */
   private async trackEvent(category: MetricEvent['category'], data: MetricData) {
     try {
+      // Skip tracking if userId is not set to prevent Firebase errors
+      if (!this.userId) {
+        console.warn('⚠️ Skipping metrics tracking - userId not set');
+        return null;
+      }
+
       const event: MetricEvent = {
         userId: this.userId,
         sessionId: this.sessionId,
@@ -152,8 +162,8 @@ export class MetricsCollectionService {
       // Store in Firestore for detailed analysis
       await this.storeInFirestore(event);
 
-      // Log to console in development
-      if (this.environment === 'development') {
+      // Log to console in development (reduced logging)
+      if (this.environment === 'development' && Math.random() < 0.1) { // Only log 10% of events
         console.log('📊 Metric tracked:', event);
       }
 

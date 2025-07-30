@@ -71,7 +71,12 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }
         await metricsService.initialize(userId, userProperties);
         setIsInitialized(true);
         
-        console.log('🎯 Analytics Provider initialized with user:', userId);
+        // Reduced logging - only log once per session per user
+        const logKey = `analytics_initialized_${userId || 'anonymous'}`;
+        if (!sessionStorage.getItem(logKey)) {
+          console.log('🎯 Analytics Provider initialized with user:', userId);
+          sessionStorage.setItem(logKey, 'true');
+        }
       } catch (error) {
         console.error('Failed to initialize analytics:', error);
       }
