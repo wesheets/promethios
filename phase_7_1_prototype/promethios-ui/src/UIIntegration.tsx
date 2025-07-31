@@ -283,11 +283,11 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* New Governance Dashboard route - AUTO-REFRESH TEST */}
+        {/* Governance Dashboard route - WORKING VERSION */}
         <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AutoRefreshTestPage />
+              <WorkingGovernancePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
