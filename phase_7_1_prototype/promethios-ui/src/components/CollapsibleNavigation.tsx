@@ -141,7 +141,7 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       label: 'Governance',
       icon: <GovernanceIcon />,
       children: [
-        { id: 'gov-overview', label: 'Overview', icon: <OverviewIcon />, path: '/ui/governance/overview' },
+        { id: 'gov-dashboard', label: 'Governance Dashboard', icon: <OverviewIcon />, path: '/ui/governance/dashboard' },
         { id: 'policies', label: 'Policies', icon: <PoliciesIcon />, path: '/ui/governance/policies' },
         { id: 'violations', label: 'Violations', icon: <ViolationsIcon />, path: '/ui/governance/violations' },
         { id: 'audit-reports', label: 'Audit Reports', icon: <AuditIcon />, path: '/ui/governance/audit-reports' },

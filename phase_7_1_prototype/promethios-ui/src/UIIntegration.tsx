@@ -278,6 +278,15 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* New Governance Dashboard route - bypasses navigation issues */}
+        <Route path="governance/dashboard" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <SimplifiedGovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Enhanced Governance Overview for debugging */}
         <Route path="governance/enhanced" element={
           <ProtectedRoute requireOnboarding={false}>
