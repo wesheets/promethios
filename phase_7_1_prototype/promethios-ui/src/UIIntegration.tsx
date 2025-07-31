@@ -273,12 +273,12 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <EnhancedGovernanceOverviewPage />
+              <SimplifiedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
-        {/* New Governance Dashboard route - bypasses navigation issues */}
+        {/* New Governance Dashboard route - now using fixed component */}
         <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>

@@ -534,7 +534,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
     
     loadRealAgentData();
-  }, [currentUser, metrics?.agents, location.pathname]); // Include location.pathname to trigger re-load on navigation
+  }, [currentUser, metrics?.agents]); // Removed location.pathname to prevent navigation interference
 
   // Apply filters, search, and sorting with memoization to prevent render loops
   const filteredAndSortedScorecards = useMemo(() => {
@@ -600,14 +600,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   useEffect(() => {
     return () => {
       // Clear any intervals or timeouts that might interfere with navigation
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-      // Clear any pending state updates (removed setLoading as it doesn't exist in this component)
+      // Use a ref or state to track intervals instead of depending on refreshInterval
       setLoadingAgents(false);
       setRefreshing(false);
     };
-  }, [refreshInterval]);
+  }, []); // Empty dependency array to run only on mount/unmount
 
   const handleRefresh = async () => {
     setRefreshing(true);
