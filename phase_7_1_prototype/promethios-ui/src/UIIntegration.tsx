@@ -273,7 +273,7 @@ const UIIntegration: React.FC = () => {
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <SimplifiedGovernanceOverviewPage />
+              <EnhancedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
