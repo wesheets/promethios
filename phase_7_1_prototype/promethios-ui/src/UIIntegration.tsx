@@ -42,6 +42,8 @@ import AuditReportsPage from './components/audit/AuditReportsPage';
 import TestGovernancePage from './pages/TestGovernancePage';
 import StepByStepGovernancePage from './pages/StepByStepGovernancePage';
 import AutoRefreshTestPage from './pages/AutoRefreshTestPage';
+import ModalNotificationTestPage from './pages/ModalNotificationTestPage';
+import WorkingGovernancePage from './pages/WorkingGovernancePage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
@@ -272,11 +274,11 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Governance Routes - STEP BY STEP TEST */}
+        {/* Governance Routes - WORKING VERSION */}
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <StepByStepGovernancePage />
+              <WorkingGovernancePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -295,6 +297,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnhancedGovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Modal/Notification Test Route */}
+        <Route path="governance/modal-test" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ModalNotificationTestPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
