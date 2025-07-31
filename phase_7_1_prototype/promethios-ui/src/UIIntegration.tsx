@@ -40,6 +40,7 @@ import EnhancedEmotionalVeritasPage from './pages/EnhancedEmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
 import AuditReportsPage from './components/audit/AuditReportsPage';
 import TestGovernancePage from './pages/TestGovernancePage';
+import StepByStepGovernancePage from './pages/StepByStepGovernancePage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
@@ -270,11 +271,11 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Governance Routes - NUCLEAR TEST */}
+        {/* Governance Routes - STEP BY STEP TEST */}
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <TestGovernancePage />
+              <StepByStepGovernancePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
