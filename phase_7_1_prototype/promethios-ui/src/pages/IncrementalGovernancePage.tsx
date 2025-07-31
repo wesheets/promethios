@@ -3,11 +3,14 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
-import { Box, Typography, CircularProgress, Alert, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { 
+  Box, Typography, CircularProgress, Alert, Button, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, Paper, TablePagination 
+} from '@mui/material';
 
-// Incremental version - adding components step by step to find navigation killer
+// Incremental version - STEP 2: Add pagination
 const IncrementalGovernancePage: React.FC = () => {
-  console.log('🎯 IncrementalGovernancePage rendering');
+  console.log('🎯 IncrementalGovernancePage Step 2 rendering');
   
   const { currentUser } = useAuth();
   const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
@@ -16,11 +19,15 @@ const IncrementalGovernancePage: React.FC = () => {
   // Basic state
   const [refreshing, setRefreshing] = useState(false);
   
-  // STEP 1: Add agent data loading (like SimplifiedGovernanceOverviewPage)
+  // Agent data loading (from Step 1)
   const [scorecards, setScorecards] = useState<any[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
   
-  // Load agent data (copied from SimplifiedGovernanceOverviewPage)
+  // STEP 2: Add pagination state (copied from SimplifiedGovernanceOverviewPage)
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Load agent data (same as Step 1)
   useEffect(() => {
     const loadRealAgentData = async () => {
       if (!currentUser) return;
@@ -58,6 +65,26 @@ const IncrementalGovernancePage: React.FC = () => {
     loadRealAgentData();
   }, [currentUser, metrics?.agents]);
 
+  // STEP 2: Pagination handlers (copied from SimplifiedGovernanceOverviewPage)
+  const handleChangePage = (event: unknown, newPage: number) => {
+    console.log('🔄 Pagination: Changing to page', newPage);
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    console.log('🔄 Pagination: Changing rows per page to', newRowsPerPage);
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+  };
+
+  // STEP 2: Paginated data
+  const paginatedScorecards = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return scorecards.slice(startIndex, endIndex);
+  }, [scorecards, page, rowsPerPage]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refreshMetrics();
@@ -94,7 +121,7 @@ const IncrementalGovernancePage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Incremental Governance Test - Step 1
+          Incremental Governance Test - Step 2
         </Typography>
         
         <Button 
@@ -143,10 +170,10 @@ const IncrementalGovernancePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* STEP 1: Simple Agent Table (no pagination, no selection, no modals) */}
+      {/* STEP 2: Agent Table WITH PAGINATION */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ color: '#10B981', mb: 2 }}>
-          Agent Scorecards (Step 1: Basic Table)
+          Agent Scorecards (Step 2: WITH PAGINATION)
         </Typography>
         
         {loadingAgents ? (
@@ -155,52 +182,80 @@ const IncrementalGovernancePage: React.FC = () => {
             <Typography sx={{ ml: 2, color: '#a0aec0' }}>Loading agents...</Typography>
           </Box>
         ) : (
-          <TableContainer component={Paper} sx={{ backgroundColor: '#2d3748' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Agent</TableCell>
-                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
-                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Trust Score</TableCell>
-                  <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {scorecards.slice(0, 10).map((scorecard) => (
-                  <TableRow key={scorecard.agentId}>
-                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                      {scorecard.name}
-                    </TableCell>
-                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                      {scorecard.type}
-                    </TableCell>
-                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                      {scorecard.trustScore}
-                    </TableCell>
-                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
-                      {scorecard.healthStatus}
-                    </TableCell>
+          <Paper sx={{ backgroundColor: '#2d3748' }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Agent</TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Trust Score</TableCell>
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Status</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {paginatedScorecards.map((scorecard) => (
+                    <TableRow key={scorecard.agentId}>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                        {scorecard.name}
+                      </TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                        {scorecard.type}
+                      </TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                        {scorecard.trustScore}
+                      </TableCell>
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                        {scorecard.healthStatus}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            {/* STEP 2: PAGINATION COMPONENT - This is the prime suspect! */}
+            <TablePagination
+              component="div"
+              count={scorecards.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{
+                color: 'white',
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                  color: 'white',
+                },
+                '& .MuiSelect-select': {
+                  color: 'white',
+                },
+                '& .MuiTablePagination-actions button': {
+                  color: 'white',
+                },
+              }}
+            />
+          </Paper>
         )}
       </Box>
 
       {/* Navigation Test */}
       <Box sx={{ mt: 4, p: 2, backgroundColor: '#2d3748', borderRadius: 1 }}>
         <Typography variant="h6" sx={{ color: '#10B981', mb: 2 }}>
-          Navigation Test - Step 1
+          Navigation Test - Step 2
         </Typography>
         <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-          Added: Agent data loading + basic table (no pagination, no selection, no modals)
+          Added: PAGINATION with TablePagination component
         </Typography>
         <Typography variant="body2" sx={{ color: '#6B7280', mt: 1 }}>
-          Current path: {location.pathname} | Agents loaded: {scorecards.length}
+          Current path: {location.pathname} | Page: {page + 1} | Rows per page: {rowsPerPage}
         </Typography>
         <Typography variant="body2" sx={{ color: '#6B7280', mt: 1 }}>
-          If navigation still works, the issue is in pagination/selection/modals.
+          Total agents: {scorecards.length} | Showing: {paginatedScorecards.length}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#EF4444', mt: 1, fontWeight: 'bold' }}>
+          🎯 If navigation breaks now, PAGINATION is the culprit!
         </Typography>
       </Box>
     </Box>
