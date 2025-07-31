@@ -534,7 +534,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
     
     loadRealAgentData();
-  }, [currentUser, metrics?.agents]); // Include metrics.agents to avoid redundant loading
+  }, [currentUser, metrics?.agents, location.pathname]); // Include location.pathname to trigger re-load on navigation
 
   // Apply filters, search, and sorting with memoization to prevent render loops
   const filteredAndSortedScorecards = useMemo(() => {
