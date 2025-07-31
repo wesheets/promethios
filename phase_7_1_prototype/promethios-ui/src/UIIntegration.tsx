@@ -77,11 +77,16 @@ const UIIntegration: React.FC = () => {
   
   // Debug logging
   console.log('📍 UIIntegration - Current location:', location.pathname);
+  console.log('🔄 UIIntegration - Routes component re-rendering with key:', location.pathname);
+  
+  // Extract the relative path for UIIntegration (remove /ui prefix)
+  const relativePath = location.pathname.replace('/ui', '') || '/';
+  console.log('🎯 UIIntegration - Relative path for routing:', relativePath);
   
   // Using proxy components to connect to the actual UI components
   return (
     <ObserverProvider>
-      <Routes key={location.pathname}>
+      <Routes key={relativePath}>
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="demo" element={<OnboardingDemo />} />
