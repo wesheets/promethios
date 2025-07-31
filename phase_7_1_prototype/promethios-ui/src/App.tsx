@@ -97,7 +97,7 @@ const AppContent: React.FC = () => {
                   <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
                   
                   {/* UI Integration Routes */}
-                  <Route path="/ui/*" element={<UIIntegration />} />
+                  <Route path="/ui/*" element={<UIIntegration key={location.pathname} />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<Navigate to="/" replace />} />
