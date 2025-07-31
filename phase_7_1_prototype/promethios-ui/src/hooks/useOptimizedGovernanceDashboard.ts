@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { optimizedDataBridge } from '../services/OptimizedExistingDataBridge';
 
@@ -63,6 +64,7 @@ export interface BackendHealthStatus {
 
 export function useOptimizedGovernanceDashboard() {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const mountedRef = useRef(true);
   
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -165,7 +167,7 @@ export function useOptimizedGovernanceDashboard() {
     } else {
       setLoading(false);
     }
-  }, [currentUser?.uid, refreshMetrics]);
+  }, [currentUser?.uid, location.pathname, refreshMetrics]);
 
   // Smart periodic refresh - only if not cached
   useEffect(() => {

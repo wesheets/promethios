@@ -193,7 +193,10 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
 
   const handleNavigation = (path: string) => {
     console.log('🔄 Navigating to:', path);
-    navigate(path);
+    // Add a small delay to ensure React processes the click event properly
+    setTimeout(() => {
+      navigate(path);
+    }, 0);
   };
 
   const isActive = (path: string) => {
@@ -225,7 +228,13 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
                     cursor: 'pointer',
                     '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
                   }}
-                  onClick={() => child.path && handleNavigation(child.path)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (child.path) {
+                      handleNavigation(child.path);
+                    }
+                  }}
                 >
                   <Box sx={{ mr: 1, display: 'flex' }}>{child.icon}</Box>
                   <Typography variant="body2">{child.label}</Typography>
@@ -269,7 +278,13 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
         <Tooltip key={item.id} title={item.label} placement="right" arrow>
           <ListItem disablePadding>
             <ListItemButton
-              onClick={() => item.path && handleNavigation(item.path)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (item.path) {
+                  handleNavigation(item.path);
+                }
+              }}
               sx={{
                 minHeight: 48,
                 justifyContent: 'center',
@@ -300,7 +315,9 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
       <React.Fragment key={item.id}>
         <ListItem disablePadding>
           <ListItemButton
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (hasChildren) {
                 handleSectionToggle(item.id);
               } else if (item.path) {
