@@ -5,12 +5,12 @@ import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernance
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 import { 
   Box, Typography, CircularProgress, Alert, Button, Table, TableBody, TableCell, 
-  TableContainer, TableHead, TableRow, Paper, TablePagination 
+  TableContainer, TableHead, TableRow, Paper, TablePagination, Checkbox 
 } from '@mui/material';
 
-// Incremental version - STEP 2: Add pagination
+// Incremental version - STEP 3: Add bulk selection with checkboxes
 const IncrementalGovernancePage: React.FC = () => {
-  console.log('🎯 IncrementalGovernancePage Step 2 rendering');
+  console.log('🎯 IncrementalGovernancePage Step 3 rendering');
   
   const { currentUser } = useAuth();
   const { metrics, loading, error, refreshMetrics } = useOptimizedGovernanceDashboard();
@@ -23,11 +23,14 @@ const IncrementalGovernancePage: React.FC = () => {
   const [scorecards, setScorecards] = useState<any[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
   
-  // STEP 2: Add pagination state (copied from SimplifiedGovernanceOverviewPage)
+  // Pagination state (from Step 2)
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
-  // Load agent data (same as Step 1)
+  // STEP 3: Add bulk selection state (copied from SimplifiedGovernanceOverviewPage)
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
+  
+  // Load agent data (same as previous steps)
   useEffect(() => {
     const loadRealAgentData = async () => {
       if (!currentUser) return;
@@ -65,7 +68,7 @@ const IncrementalGovernancePage: React.FC = () => {
     loadRealAgentData();
   }, [currentUser, metrics?.agents]);
 
-  // STEP 2: Pagination handlers (copied from SimplifiedGovernanceOverviewPage)
+  // Pagination handlers (from Step 2)
   const handleChangePage = (event: unknown, newPage: number) => {
     console.log('🔄 Pagination: Changing to page', newPage);
     setPage(newPage);
@@ -78,12 +81,40 @@ const IncrementalGovernancePage: React.FC = () => {
     setPage(0);
   };
 
-  // STEP 2: Paginated data
+  // STEP 3: Bulk selection handlers (copied from SimplifiedGovernanceOverviewPage)
+  const handleSelectAgent = (agentId: string, checked: boolean) => {
+    console.log('🔄 Selection: Agent', agentId, checked ? 'selected' : 'deselected');
+    setSelectedAgents(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(agentId);
+      } else {
+        newSet.delete(agentId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    console.log('🔄 Selection: Select all', checked);
+    if (checked) {
+      const allIds = new Set(scorecards.map(s => s.agentId));
+      setSelectedAgents(allIds);
+    } else {
+      setSelectedAgents(new Set());
+    }
+  };
+
+  // Paginated data (from Step 2)
   const paginatedScorecards = useMemo(() => {
     const startIndex = page * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return scorecards.slice(startIndex, endIndex);
   }, [scorecards, page, rowsPerPage]);
+
+  // STEP 3: Selection state calculations
+  const isAllSelected = scorecards.length > 0 && selectedAgents.size === scorecards.length;
+  const isIndeterminate = selectedAgents.size > 0 && selectedAgents.size < scorecards.length;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -121,7 +152,7 @@ const IncrementalGovernancePage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Incremental Governance Test - Step 2
+          Incremental Governance Test - Step 3
         </Typography>
         
         <Button 
@@ -170,10 +201,10 @@ const IncrementalGovernancePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* STEP 2: Agent Table WITH PAGINATION */}
+      {/* STEP 3: Agent Table WITH PAGINATION AND BULK SELECTION */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ color: '#10B981', mb: 2 }}>
-          Agent Scorecards (Step 2: WITH PAGINATION)
+          Agent Scorecards (Step 3: WITH BULK SELECTION)
         </Typography>
         
         {loadingAgents ? (
@@ -187,6 +218,23 @@ const IncrementalGovernancePage: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow>
+                    {/* STEP 3: SELECT ALL CHECKBOX */}
+                    <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                      <Checkbox
+                        checked={isAllSelected}
+                        indeterminate={isIndeterminate}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        sx={{
+                          color: '#a0aec0',
+                          '&.Mui-checked': {
+                            color: '#3182ce',
+                          },
+                          '&.MuiCheckbox-indeterminate': {
+                            color: '#3182ce',
+                          },
+                        }}
+                      />
+                    </TableCell>
                     <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Agent</TableCell>
                     <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Type</TableCell>
                     <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>Trust Score</TableCell>
@@ -196,6 +244,23 @@ const IncrementalGovernancePage: React.FC = () => {
                 <TableBody>
                   {paginatedScorecards.map((scorecard) => (
                     <TableRow key={scorecard.agentId}>
+                      {/* STEP 3: INDIVIDUAL CHECKBOX WITH STOPPROPAGATION */}
+                      <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
+                        <Checkbox
+                          checked={selectedAgents.has(scorecard.agentId)}
+                          onChange={(e) => {
+                            // THIS IS THE SUSPECT! stopPropagation might interfere with navigation
+                            e.stopPropagation();
+                            handleSelectAgent(scorecard.agentId, e.target.checked);
+                          }}
+                          sx={{
+                            color: '#a0aec0',
+                            '&.Mui-checked': {
+                              color: '#3182ce',
+                            },
+                          }}
+                        />
+                      </TableCell>
                       <TableCell sx={{ color: 'white', borderColor: '#4a5568' }}>
                         {scorecard.name}
                       </TableCell>
@@ -214,7 +279,7 @@ const IncrementalGovernancePage: React.FC = () => {
               </Table>
             </TableContainer>
             
-            {/* STEP 2: PAGINATION COMPONENT - This is the prime suspect! */}
+            {/* Pagination (from Step 2) */}
             <TablePagination
               component="div"
               count={scorecards.length}
@@ -243,19 +308,22 @@ const IncrementalGovernancePage: React.FC = () => {
       {/* Navigation Test */}
       <Box sx={{ mt: 4, p: 2, backgroundColor: '#2d3748', borderRadius: 1 }}>
         <Typography variant="h6" sx={{ color: '#10B981', mb: 2 }}>
-          Navigation Test - Step 2
+          Navigation Test - Step 3
         </Typography>
         <Typography variant="body1" sx={{ color: '#a0aec0' }}>
-          Added: PAGINATION with TablePagination component
+          Added: BULK SELECTION with checkboxes and stopPropagation()
         </Typography>
         <Typography variant="body2" sx={{ color: '#6B7280', mt: 1 }}>
-          Current path: {location.pathname} | Page: {page + 1} | Rows per page: {rowsPerPage}
+          Current path: {location.pathname} | Selected: {selectedAgents.size} agents
         </Typography>
         <Typography variant="body2" sx={{ color: '#6B7280', mt: 1 }}>
-          Total agents: {scorecards.length} | Showing: {paginatedScorecards.length}
+          Page: {page + 1} | Rows per page: {rowsPerPage} | Total: {scorecards.length}
         </Typography>
         <Typography variant="body2" sx={{ color: '#EF4444', mt: 1, fontWeight: 'bold' }}>
-          🎯 If navigation breaks now, PAGINATION is the culprit!
+          🎯 If navigation breaks now, BULK SELECTION/CHECKBOXES is the culprit!
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#F59E0B', mt: 1 }}>
+          ⚠️ Pay attention to the stopPropagation() in checkbox onChange handlers!
         </Typography>
       </Box>
     </Box>
