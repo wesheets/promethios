@@ -1,12 +1,13 @@
 """
 Promethios Standalone Chatbot API
-Main FastAPI application entry point
+Simple FastAPI application for deployment testing
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
-from .routes import router
+import json
 
 # Create FastAPI app
 app = FastAPI(
@@ -26,8 +27,15 @@ if cors_origins and cors_origins[0]:
         allow_headers=["*"],
     )
 
-# Include routes
-app.include_router(router, prefix="/api/v1")
+# Request/Response models
+class ChatRequest(BaseModel):
+    message: str
+    chatbot_id: str = "demo"
+
+class ChatResponse(BaseModel):
+    response: str
+    chatbot_id: str
+    governance_applied: bool = True
 
 # Health check endpoint
 @app.get("/health")
@@ -47,6 +55,34 @@ async def root():
         "message": "Promethios Standalone Chatbot API",
         "version": "1.0.0",
         "docs": "/docs"
+    }
+
+# Demo chat endpoint
+@app.post("/api/v1/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Simple demo chat endpoint"""
+    try:
+        # Simple demo response
+        demo_response = f"Hello! You said: '{request.message}'. This is a demo response from the Promethios governed chatbot."
+        
+        return ChatResponse(
+            response=demo_response,
+            chatbot_id=request.chatbot_id,
+            governance_applied=True
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Chatbot info endpoint
+@app.get("/api/v1/chatbot/{chatbot_id}")
+async def get_chatbot_info(chatbot_id: str):
+    """Get chatbot information"""
+    return {
+        "id": chatbot_id,
+        "name": "Demo Chatbot",
+        "status": "active",
+        "governance_enabled": True,
+        "created_at": "2025-07-31T12:00:00Z"
     }
 
 if __name__ == "__main__":
