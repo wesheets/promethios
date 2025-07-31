@@ -45,6 +45,9 @@ const AppContent: React.FC = () => {
   console.log("🔧 App - Location object:", location);
   console.log("🔧 App - About to render UIIntegration with key:", location.pathname);
   
+  // Define isUIRoute to determine if we're on a UI route
+  const isUIRoute = location.pathname.startsWith('/ui');
+  
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       {/* Only show NewHeader for non-UI routes */}
