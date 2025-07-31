@@ -45,6 +45,7 @@ import AutoRefreshTestPage from './pages/AutoRefreshTestPage';
 import ModalNotificationTestPage from './pages/ModalNotificationTestPage';
 import WorkingGovernancePage from './pages/WorkingGovernancePage';
 import MinimalGovernancePage from './pages/MinimalGovernancePage';
+import IncrementalGovernancePage from './pages/IncrementalGovernancePage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
@@ -275,20 +276,20 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Governance Routes - MINIMAL TEST */}
+        {/* Governance Routes - INCREMENTAL TEST STEP 1 */}
         <Route path="governance/overview" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <MinimalGovernancePage />
+              <IncrementalGovernancePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
-        {/* Governance Dashboard route - MINIMAL TEST */}
+        {/* Governance Dashboard route - INCREMENTAL TEST STEP 1 */}
         <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <MinimalGovernancePage />
+              <IncrementalGovernancePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
