@@ -28,22 +28,29 @@ interface MainLayoutProxyProps {
 const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   console.log("MainLayoutProxy rendering...");
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
-  const { preferences } = useUserPreferences();
+  const { currentUser, loading } = useAuth();
+  const { navCollapsed } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
 
-  // Debug authentication state
   console.log("Current user:", currentUser);
   console.log("Is admin:", isAdmin);
   console.log("Location:", location.pathname);
 
-  // For logged-out users, show existing NewHeader
-  if (!currentUser) {
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        <CssBaseline />
-        <NewHeader />
-        <TestAuth />
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }} key={location.pathname}>
+      <CssBaseline />
+      
+      {/* Show different layouts based on authentication */}
+      {!currentUser ? (
+        // Not logged in - show existing layout
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <CssBaseline />
+          <NewHeader />
+          <TestAuth />
         <Box 
           component="main" 
           sx={{
