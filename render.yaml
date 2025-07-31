@@ -1,30 +1,58 @@
 services:
-  # API Service
+  # Backend API Service
   - type: web
-    name: promethios-kernel-api
+    name: promethios-chatbot-api
     env: python
+    plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn src.api_server:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn src.main_standalone_chatbot:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: PROMETHIOS_KERNEL_PATH
-        value: /opt/render/project/src/governance_core.py
+      - key: DATABASE_URL
+        fromDatabase:
+          name: promethios-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://chat.promethios.ai,http://localhost:3000
+    healthCheckPath: /health
+    
+  # Frontend Static Site
+  - type: static
+    name: promethios-chatbot-frontend
+    buildCommand: cd ui/standalone-chatbot && npm install && npm run build
+    staticPublishPath: ui/standalone-chatbot/build
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: promethios-chatbot-api
+          property: host
+      - key: REACT_APP_FIREBASE_API_KEY
+        sync: false
+      - key: REACT_APP_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: REACT_APP_FIREBASE_PROJECT_ID
+        sync: false
+      - key: REACT_APP_STRIPE_PUBLISHABLE_KEY
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+        
+databases:
+  - name: promethios-db
+    databaseName: promethios_chatbot
+    user: promethios_user
 
-  # UI Service
-  - type: web
-    name: promethios-ui
-    env: python
-    buildCommand: cd promethios_ui_surface && pip install -r requirements.txt
-    startCommand: cd promethios_ui_surface && python -m src.main
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: FLASK_APP
-        value: src.main
-      - key: FLASK_ENV
-        value: production
-      - key: LOG_DATA_DIR
-        value: /opt/render/project/src/logs
-      - key: API_URL
-        value: https://promethios-kernel-api.onrender.com
