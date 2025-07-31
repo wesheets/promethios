@@ -41,6 +41,7 @@ import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
 import AuditReportsPage from './components/audit/AuditReportsPage';
 import TestGovernancePage from './pages/TestGovernancePage';
 import StepByStepGovernancePage from './pages/StepByStepGovernancePage';
+import AutoRefreshTestPage from './pages/AutoRefreshTestPage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
@@ -280,11 +281,11 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* New Governance Dashboard route - NUCLEAR TEST */}
+        {/* New Governance Dashboard route - AUTO-REFRESH TEST */}
         <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <TestGovernancePage />
+              <AutoRefreshTestPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
