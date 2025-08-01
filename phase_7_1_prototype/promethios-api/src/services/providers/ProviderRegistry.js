@@ -509,6 +509,6 @@ class ProviderRegistry {
   }
 }
 
-// Export singleton instance
-module.exports = new ProviderRegistry();
+// Export the class, not an instance
+module.exports = ProviderRegistry;
 
