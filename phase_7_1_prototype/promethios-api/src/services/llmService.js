@@ -289,29 +289,80 @@ async function callHuggingFace(message, systemMessage, options = {}) {
   }
 
   try {
-    const model = options.model || 'meta-llama/Llama-2-7b-chat-hf';
+    // Use a model that's more likely to be available on free tier
+    const model = options.model || 'microsoft/DialoGPT-large';
     
     console.log('🔧 HUGGINGFACE DEBUG: Calling HuggingFace API with model:', model);
     
-    const prompt = `<s>[INST] <<SYS>>\n${systemMessage}\n<</SYS>>\n\n${message} [/INST]`;
+    // Try different approaches based on model type
+    let response;
     
-    const response = await hf.textGeneration({
-      model: model,
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 512,
-        temperature: 0.7,
-        repetition_penalty: 1.1,
-        return_full_text: false,
-      },
-    });
+    if (model.includes('DialoGPT')) {
+      // For DialoGPT models, use conversational approach
+      response = await hf.conversational({
+        model: model,
+        inputs: {
+          past_user_inputs: [],
+          generated_responses: [],
+          text: message
+        },
+        parameters: {
+          max_length: 512,
+          temperature: 0.7,
+        },
+      });
+      
+      const responseText = response.generated_text || response.conversation?.generated_responses?.[0] || 'No response generated';
+      console.log('🔧 HUGGINGFACE DEBUG: DialoGPT response received, length:', responseText.length);
+      return responseText;
+      
+    } else {
+      // For other models, use text generation
+      const prompt = `System: ${systemMessage}\nUser: ${message}\nAssistant:`;
+      
+      response = await hf.textGeneration({
+        model: model,
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 512,
+          temperature: 0.7,
+          repetition_penalty: 1.1,
+          return_full_text: false,
+        },
+      });
 
-    const responseText = response.generated_text;
-    console.log('🔧 HUGGINGFACE DEBUG: Response received, length:', responseText.length);
+      const responseText = response.generated_text;
+      console.log('🔧 HUGGINGFACE DEBUG: Text generation response received, length:', responseText.length);
+      return responseText;
+    }
     
-    return responseText;
   } catch (error) {
     console.error('❌ HUGGINGFACE DEBUG: Error:', error);
+    
+    // If the primary model fails, try a fallback approach
+    if (error.message?.includes('No Inference Provider available')) {
+      console.log('🔧 HUGGINGFACE DEBUG: Trying fallback approach with simple text generation');
+      
+      try {
+        // Fallback to a very basic model that should be available
+        const fallbackResponse = await hf.textGeneration({
+          model: 'gpt2',
+          inputs: `Q: ${message}\nA:`,
+          parameters: {
+            max_new_tokens: 100,
+            temperature: 0.8,
+            return_full_text: false,
+          },
+        });
+        
+        return fallbackResponse.generated_text || 'I apologize, but I am currently experiencing technical difficulties with the HuggingFace service.';
+        
+      } catch (fallbackError) {
+        console.error('❌ HUGGINGFACE DEBUG: Fallback also failed:', fallbackError);
+        return 'I apologize, but the HuggingFace service is currently unavailable. Please try again later or use a different provider.';
+      }
+    }
+    
     throw error;
   }
 }
