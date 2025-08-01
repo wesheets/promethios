@@ -9,7 +9,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
-// import AgentDetailModal from '../components/AgentDetailModal'; // REMOVED - Navigation Killer!
+import AgentDetailModal from '../components/AgentDetailModal';
 import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
 import { useNotifications } from '../hooks/useNotifications';
 import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension';
@@ -651,7 +651,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Governance Overview - FIXED: AgentDetailModal Removed
+          Governance Overview
         </Typography>
         
         <Box display="flex" alignItems="center" gap={2}>
@@ -1348,13 +1348,12 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
 
       </Card>
 
-      {/* Agent Detail Modal - REMOVED - Navigation Killer!
+      {/* Agent Detail Modal */}
       <AgentDetailModal
         open={modalOpen}
         onClose={handleCloseModal}
         agent={selectedAgent}
       />
-      */}
 
       {/* Bulk Actions Floating Action Button */}
       {selectedCount > 0 && (
