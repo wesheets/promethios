@@ -9,10 +9,10 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
-import AgentDetailModal from '../components/AgentDetailModal';
+// import AgentDetailModal from '../components/AgentDetailModal'; // REMOVED - STEP 1
 import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
-import { useNotifications } from '../hooks/useNotifications';
-import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension';
+// import { useNotifications } from '../hooks/useNotifications'; // REMOVED - STEP 1 PRIME SUSPECT
+// import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension'; // REMOVED - STEP 1
 import {
   Box,
   Grid,
@@ -123,7 +123,7 @@ const ReverseTestGovernancePage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Modal state
-  const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null);
+  // const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null); // REMOVED - STEP 1
   const [modalOpen, setModalOpen] = useState(false);
   
   // Bulk actions state
@@ -131,8 +131,10 @@ const ReverseTestGovernancePage: React.FC = () => {
   const [bulkActionMenuAnchor, setBulkActionMenuAnchor] = useState<null | HTMLElement>(null);
   
   // Notifications state
-  const { notifications, unreadCount } = useNotifications({ type: 'governance' });
-  const [notificationExtension] = useState(() => new GovernanceNotificationExtension());
+  // const { notifications, unreadCount } = useNotifications({ type: 'governance' }); // REMOVED - STEP 1 PRIME SUSPECT
+  const notifications = []; // Mock for removed notifications
+  const unreadCount = 0; // Mock for removed notifications
+  // const [notificationExtension] = useState(() => new GovernanceNotificationExtension()); // REMOVED - STEP 1
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('info');
@@ -651,7 +653,7 @@ const ReverseTestGovernancePage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Reverse Test - FULL ORIGINAL PAGE
+          Reverse Test - STEP 1: Removed useNotifications
         </Typography>
         
         <Box display="flex" alignItems="center" gap={2}>
