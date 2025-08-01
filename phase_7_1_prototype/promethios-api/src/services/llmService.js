@@ -280,9 +280,9 @@ async function callGemini(message, systemMessage, options = {}) {
   }
 }
 
-// HuggingFace implementation
+// HuggingFace implementation - UPDATED 8/1/2025 for 404 fix
 async function callHuggingFace(message, systemMessage, options = {}) {
-  console.log('🔧 HUGGINGFACE DEBUG: Starting HuggingFace call');
+  console.log('🔧 HUGGINGFACE DEBUG: Starting HuggingFace call - NEW VERSION');
   
   if (!hf) {
     throw new Error('HuggingFace client not initialized - API key missing');
