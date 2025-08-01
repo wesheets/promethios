@@ -289,57 +289,49 @@ async function callHuggingFace(message, systemMessage, options = {}) {
   }
 
   try {
-    // Use models that are more likely to be available on free tier
-    const model = options.model || 'microsoft/DialoGPT-medium';
+    // Start with the most basic model that's guaranteed to exist
+    const model = options.model || 'gpt2';
     
     console.log('🔧 HUGGINGFACE DEBUG: Calling HuggingFace API with model:', model);
     
-    // Use text generation for all models - this is the most reliable approach
-    let prompt;
-    
-    if (model.includes('DialoGPT')) {
-      // For DialoGPT models, use a simple conversational format
-      prompt = `${message}`;
-    } else if (model.includes('llama') || model.includes('Llama')) {
-      // For Llama models, use the chat template format
-      prompt = `<s>[INST] <<SYS>>\n${systemMessage}\n<</SYS>>\n\n${message} [/INST]`;
-    } else {
-      // For other models, use a simple format
-      prompt = `System: ${systemMessage}\nUser: ${message}\nAssistant:`;
-    }
+    // Use simple text generation with basic prompt
+    const prompt = `Human: ${message}\nAssistant:`;
     
     const response = await hf.textGeneration({
       model: model,
       inputs: prompt,
       parameters: {
-        max_new_tokens: 256,
+        max_new_tokens: 100,
         temperature: 0.7,
-        repetition_penalty: 1.1,
         return_full_text: false,
         do_sample: true,
       },
     });
 
     const responseText = response.generated_text || 'No response generated';
-    console.log('🔧 HUGGINGFACE DEBUG: Response received, length:', responseText.length);
+    console.log('✅ HUGGINGFACE DEBUG: Response received, length:', responseText.length);
     
     // Clean up the response
     const cleanedResponse = responseText.trim();
     return cleanedResponse || 'I apologize, but I was unable to generate a proper response.';
     
   } catch (error) {
-    console.error('❌ HUGGINGFACE DEBUG: Error:', error);
+    console.error('❌ HUGGINGFACE DEBUG: Error details:', {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText,
+      name: error.name
+    });
     
-    // If the primary model fails, try a fallback approach
-    if (error.message?.includes('No Inference Provider available') || 
-        error.message?.includes('Model') && error.message?.includes('is currently loading')) {
-      console.log('🔧 HUGGINGFACE DEBUG: Trying fallback with simpler model');
+    // Handle 404 errors specifically
+    if (error.message?.includes('404') || error.status === 404) {
+      console.log('🔧 HUGGINGFACE DEBUG: 404 error - model not found, trying different approach');
       
       try {
-        // Fallback to a very basic model that should be available
-        const fallbackResponse = await hf.textGeneration({
-          model: 'gpt2',
-          inputs: `Q: ${message}\nA:`,
+        // Try with an even more basic approach
+        const basicResponse = await hf.textGeneration({
+          model: 'distilgpt2',
+          inputs: message,
           parameters: {
             max_new_tokens: 50,
             temperature: 0.8,
@@ -347,21 +339,31 @@ async function callHuggingFace(message, systemMessage, options = {}) {
           },
         });
         
-        const fallbackText = fallbackResponse.generated_text?.trim() || 'I apologize, but I am currently experiencing technical difficulties.';
-        return fallbackText;
+        const basicText = basicResponse.generated_text?.trim() || 'I apologize, but I am currently experiencing technical difficulties.';
+        console.log('✅ HUGGINGFACE DEBUG: Fallback model worked');
+        return basicText;
         
-      } catch (fallbackError) {
-        console.error('❌ HUGGINGFACE DEBUG: Fallback also failed:', fallbackError);
-        return 'I apologize, but the HuggingFace service is currently unavailable. Please try again later or use a different provider.';
+      } catch (basicError) {
+        console.error('❌ HUGGINGFACE DEBUG: Even fallback failed:', basicError);
+        return 'I apologize, but the HuggingFace service is currently unavailable. The model endpoints may be temporarily down.';
       }
     }
     
-    // For other errors, provide a helpful message
-    if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
-      return 'I apologize, but there is an authentication issue with the HuggingFace service. Please contact support.';
+    // Handle other specific errors
+    if (error.message?.includes('503') || error.status === 503 || 
+        error.message?.includes('Model') && error.message?.includes('is currently loading')) {
+      return 'I apologize, but the HuggingFace model is currently loading. Please try again in a few moments.';
     }
     
-    return `I apologize, but I encountered an error: ${error.message || 'Unknown error'}. Please try again or use a different provider.`;
+    if (error.message?.includes('401') || error.message?.includes('unauthorized') || error.status === 401) {
+      return 'I apologize, but there is an authentication issue with the HuggingFace service. Please check the API key configuration.';
+    }
+    
+    if (error.message?.includes('429') || error.status === 429) {
+      return 'I apologize, but the HuggingFace service rate limit has been exceeded. Please try again in a few moments.';
+    }
+    
+    return `I apologize, but I encountered an error with HuggingFace: ${error.message || 'Unknown error'}. Please try again or use a different provider.`;
   }
 }
 
