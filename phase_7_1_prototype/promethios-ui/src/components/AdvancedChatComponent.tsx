@@ -3912,26 +3912,27 @@ useEffect(() => {
     return <DescriptionIcon />;
   };
 
-  if (isLoading && loadingProgress) {
-    return <OptimizedChatLoader progress={loadingProgress} showMetrics={true} />;
-  }
+  // Removed loading screen for better UX - agents load in background
+  // if (isLoading && loadingProgress) {
+  //   return <OptimizedChatLoader progress={loadingProgress} showMetrics={true} />;
+  // }
 
-  if (isLoading) {
-    return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100%',
-        backgroundColor: DARK_THEME.background 
-      }}>
-        <CircularProgress sx={{ color: DARK_THEME.primary }} />
-        <Typography sx={{ ml: 2, color: DARK_THEME.text.primary }}>
-          Loading your agents...
-        </Typography>
-      </Box>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <Box sx={{ 
+  //       display: 'flex', 
+  //       justifyContent: 'center', 
+  //       alignItems: 'center', 
+  //       height: '100%',
+  //       backgroundColor: DARK_THEME.background 
+  //     }}>
+  //       <CircularProgress sx={{ color: DARK_THEME.primary }} />
+  //       <Typography sx={{ ml: 2, color: DARK_THEME.text.primary }}>
+  //         Loading your agents...
+  //       </Typography>
+  //     </Box>
+  //   );
+  // }
 
   return (
     <ChatContainer>
