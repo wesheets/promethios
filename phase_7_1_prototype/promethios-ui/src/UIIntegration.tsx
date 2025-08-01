@@ -281,16 +281,16 @@ const UIIntegration: React.FC = () => {
             <Route path="governance/overview" element={
               <ProtectedRoute requireOnboarding={false}>
                 <MainLayoutProxy>
-                  <ReverseTestGovernancePage />
+                  <SimplifiedGovernanceOverviewPage />
                 </MainLayoutProxy>
               </ProtectedRoute>
             } />
         
-        {/* Governance Dashboard route - REVERSE TEST */}
+        {/* Governance Dashboard route - FIXED: Now points to different component */}
         <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ReverseTestGovernancePage />
+              <SimplifiedGovernanceOverviewPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
