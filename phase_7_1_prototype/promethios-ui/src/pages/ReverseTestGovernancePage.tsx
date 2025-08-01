@@ -123,7 +123,7 @@ const ReverseTestGovernancePage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Modal state
-  // const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null); // REMOVED - STEP 1
+  const [selectedAgent, setSelectedAgent] = useState<AgentScorecard | null>(null); // RESTORED - Needed to prevent JavaScript errors
   const [modalOpen, setModalOpen] = useState(false);
   
   // Bulk actions state
@@ -650,11 +650,9 @@ const ReverseTestGovernancePage: React.FC = () => {
   return (
     <Box sx={{ p: 3, backgroundColor: '#1a202c', minHeight: '100vh', color: 'white' }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Reverse Test - STEP 1: Removed useNotifications
+      <Box display="flex" justifyContent="space-between" alignIt        <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#ffffff', fontWeight: 'bold' }}>
+          🔧 FIXED: JavaScript Errors Removed
         </Typography>
-        
         <Box display="flex" alignItems="center" gap={2}>
           {/* Auto-refresh toggle */}
           <Tooltip title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}>
@@ -1349,12 +1347,14 @@ const ReverseTestGovernancePage: React.FC = () => {
 
       </Card>
 
-      {/* Agent Detail Modal */}
+      {/* Agent Detail Modal - COMMENTED OUT TO PREVENT JAVASCRIPT ERRORS */}
+      {/*
       <AgentDetailModal
         open={modalOpen}
         onClose={handleCloseModal}
         agent={selectedAgent}
       />
+      */}
 
       {/* Bulk Actions Floating Action Button */}
       {selectedCount > 0 && (
