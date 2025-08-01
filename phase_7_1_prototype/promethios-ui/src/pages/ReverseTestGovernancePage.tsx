@@ -10,8 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { useOptimizedGovernanceDashboard } from '../hooks/useOptimizedGovernanceDashboard';
 import { userAgentStorageService, AgentProfile } from '../services/UserAgentStorageService';
 // import AgentDetailModal from '../components/AgentDetailModal'; // REMOVED - STEP 1
-import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils';
-// import { useNotifications } from '../hooks/useNotifications'; // REMOVED - STEP 1 PRIME SUSPECT
+// import { exportToCSV, exportToJSON, exportToPDF } from '../utils/exportUtils'; // REMOVED - STEP 2 PRIME SUSPECT
+import { useNotifications } from '../hooks/useNotifications'; // RESTORED - useNotifications is innocent
 // import { GovernanceNotificationExtension } from '../extensions/GovernanceNotificationExtension'; // REMOVED - STEP 1
 import {
   Box,
@@ -131,9 +131,7 @@ const ReverseTestGovernancePage: React.FC = () => {
   const [bulkActionMenuAnchor, setBulkActionMenuAnchor] = useState<null | HTMLElement>(null);
   
   // Notifications state
-  // const { notifications, unreadCount } = useNotifications({ type: 'governance' }); // REMOVED - STEP 1 PRIME SUSPECT
-  const notifications = []; // Mock for removed notifications
-  const unreadCount = 0; // Mock for removed notifications
+  const { notifications, unreadCount } = useNotifications({ type: 'governance' }); // RESTORED - useNotifications is innocent
   // const [notificationExtension] = useState(() => new GovernanceNotificationExtension()); // REMOVED - STEP 1
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -200,16 +198,17 @@ const ReverseTestGovernancePage: React.FC = () => {
     setSelectedAgent(null);
   };
 
+  // REMOVED EXPORT FUNCTIONS - STEP 2 PRIME SUSPECT
   const handleExportCSV = () => {
-    exportToCSV(filteredAndSortedScorecards, 'governance-report');
+    console.log('Export CSV disabled for testing');
   };
 
   const handleExportJSON = () => {
-    exportToJSON(filteredAndSortedScorecards, 'governance-report');
+    console.log('Export JSON disabled for testing');
   };
 
   const handleExportPDF = () => {
-    exportToPDF(filteredAndSortedScorecards, 'governance-report');
+    console.log('Export PDF disabled for testing');
   };
 
   // Bulk action handlers
