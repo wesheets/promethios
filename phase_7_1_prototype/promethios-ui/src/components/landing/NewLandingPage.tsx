@@ -438,21 +438,23 @@ const NewLandingPage: React.FC = () => {
         
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
-          <div className="max-w-screen-xl mx-auto w-full">
-            {/* The OS of AI Safety Header - Full Width */}
-            <div className="mb-12">
-              <div className="flex items-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
+          {/* The OS of AI Safety Header - Full Width Spanning */}
+          <div className="w-full mb-12">
+            <div className="max-w-screen-xl mx-auto">
+              <div className="flex items-center gap-4 text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white justify-start w-full">
                 <span>The</span>
                 <img 
                   src="/oslogo.png" 
                   alt="Promethios OS" 
-                  className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 xl:h-20 xl:w-20 object-contain"
+                  className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 xl:h-28 xl:w-28 object-contain"
                 />
                 <span>of AI Safety</span>
               </div>
-              <div className="w-full h-1 bg-white/30 mt-4"></div>
+              <div className="w-full h-1 bg-white/30 mt-6"></div>
             </div>
-            
+          </div>
+          
+          <div className="max-w-screen-xl mx-auto w-full">
             {/* New Hero Section Layout */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
               {/* Left Column - Main Headline and CTA */}
