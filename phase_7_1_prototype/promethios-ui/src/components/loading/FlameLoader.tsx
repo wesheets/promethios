@@ -32,26 +32,26 @@ const FlameLoader: React.FC<FlameLoaderProps> = ({ onComplete }) => {
       if (!isSkipped) setPhase('playing');
     }, 500));
 
-    // Phase 2: Show skip button after 2 seconds
+    // Phase 2: Show skip button after 3 seconds
     timers.push(setTimeout(() => {
       const skipButton = document.getElementById('flame-skip-button');
       if (skipButton && !isSkipped) {
         skipButton.style.opacity = '1';
       }
-    }, 2000));
-
-    // Phase 3: Start fade out (after 3 seconds total)
-    timers.push(setTimeout(() => {
-      if (!isSkipped) setPhase('fadeOut');
     }, 3000));
 
-    // Phase 4: Complete (after 3.5 seconds total)
+    // Phase 3: Start fade out (after 5.5 seconds total)
+    timers.push(setTimeout(() => {
+      if (!isSkipped) setPhase('fadeOut');
+    }, 5500));
+
+    // Phase 4: Complete (after 6 seconds total)
     timers.push(setTimeout(() => {
       if (!isSkipped) {
         setPhase('complete');
         onComplete();
       }
-    }, 3500));
+    }, 6000));
 
     return () => {
       timers.forEach(timer => clearTimeout(timer));
@@ -93,7 +93,7 @@ const FlameLoader: React.FC<FlameLoaderProps> = ({ onComplete }) => {
           autoPlay
           muted
           playsInline
-          className={`w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain transition-opacity duration-300 ${
+          className={`w-96 h-96 md:w-[30rem] md:h-[30rem] lg:w-[36rem] lg:h-[36rem] object-contain transition-opacity duration-300 ${
             phase === 'playing' ? 'opacity-100' : 'opacity-80'
           }`}
           onLoadedData={() => {
@@ -112,13 +112,13 @@ const FlameLoader: React.FC<FlameLoaderProps> = ({ onComplete }) => {
         </video>
 
         {/* Logo beneath the flame */}
-        <div className={`mt-8 transition-opacity duration-300 ${
+        <div className={`mt-12 transition-opacity duration-300 ${
           phase === 'playing' ? 'opacity-100' : 'opacity-80'
         }`}>
           <img 
             src="/promethios-logo-new.png" 
             alt="Promethios" 
-            className="h-12 md:h-16 lg:h-20 object-contain"
+            className="h-20 md:h-28 lg:h-36 object-contain"
           />
         </div>
       </div>
