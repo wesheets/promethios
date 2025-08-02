@@ -1832,6 +1832,7 @@ useEffect(() => {
       console.log('provider === "anthropic":', provider === 'anthropic');
       console.log('provider === "cohere":', provider === 'cohere');
       console.log('provider === "huggingface":', provider === 'huggingface');
+      console.log('provider === "hugging face":', provider === 'hugging face');
       console.log('provider === "google":', provider === 'google');
       console.log('apiEndpoint exists:', !!apiEndpoint);
 
@@ -2111,7 +2112,7 @@ useEffect(() => {
           throw error;
         }
         
-      } else if (provider === 'huggingface') {
+      } else if (provider === 'huggingface' || provider === 'hugging face') {
         console.log('🔧 HUGGINGFACE DEBUG: Taking HuggingFace path...');
         console.log('🔧 HUGGINGFACE DEBUG: API_BASE_URL:', API_BASE_URL);
         console.log('🔧 HUGGINGFACE DEBUG: Agent details:', {
