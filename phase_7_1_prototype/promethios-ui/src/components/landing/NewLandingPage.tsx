@@ -443,7 +443,11 @@ const NewLandingPage: React.FC = () => {
             <div className="mb-12">
               <div className="flex items-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
                 <span>The</span>
-                <img src="/oslogo.png" alt="Promethios OS" className="h-10 w-10 sm:h-12 w-12 lg:h-16 w-16 xl:h-20 w-20" />
+                <img 
+                  src="/oslogo.png" 
+                  alt="Promethios OS" 
+                  className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 xl:h-20 xl:w-20 object-contain"
+                />
                 <span>of AI Safety</span>
               </div>
               <div className="w-full h-1 bg-white/30 mt-4"></div>
@@ -489,6 +493,11 @@ const NewLandingPage: React.FC = () => {
                 {/* Trust Note */}
                 <p className="text-sm text-gray-400 mb-4">
                   Trust is not public. Access requires accountability.
+                </p>
+
+                {/* Compatibility Line */}
+                <p className="text-sm text-gray-300 mb-6 font-medium">
+                  Compatible with 12 commercial LLM models including OpenAI, Anthropic, Gemini, or your custom model
                 </p>
 
                 {/* Features */}
@@ -640,36 +649,55 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* The Solution Section */}
-      <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold mb-8 text-gray-900">
-              ✅ The Solution: Promethios
+      {/* The Solution Section - Energy Flow */}
+      <section className="relative w-full min-h-screen overflow-hidden">
+        {/* Energy Flow Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            style={{ filter: 'brightness(0.7)' }}
+          >
+            <source src="/energy-flow-solution.mp4" type="video/mp4" />
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/50"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 w-full min-h-screen flex flex-col justify-center py-24 px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <h2 className="text-6xl md:text-7xl font-bold mb-8 text-white">
+              The Solution: Promethios
             </h2>
-            <p className="text-xl text-gray-700 leading-relaxed max-w-4xl mx-auto">
-              Promethios wraps any LLM agent with live governance,<br />
-              giving you control, visibility, and safety — without rewriting your code.
+            <p className="text-2xl text-gray-200 leading-relaxed max-w-4xl mx-auto">
+              Transform any LLM into a governed agent with three simple steps
             </p>
           </div>
 
-          {/* How It Works - 4 Steps */}
-          <div className="space-y-16">
-            {/* Step 1 */}
-            <div className="flex flex-col lg:flex-row items-center gap-12">
-              <div className="lg:w-1/2">
-                <div className="text-6xl font-bold text-blue-600 mb-4">1</div>
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">Wrap Any Agent, Any Model</h3>
-                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                  Inject Promethios into any LLM or agent framework.<br />
-                  OpenAI, Claude, LLaMA, AutoGen, LangChain — we work with all of them.
-                </p>
-                <div className="text-blue-600 font-semibold">
-                  → Instant compatibility · No vendor lock-in · Zero retraining
+          {/* Three Main Steps - WRAP → TEST → DEPLOY */}
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+            
+            {/* WRAP */}
+            <div className="group relative">
+              <div className="bg-black/60 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8 h-full hover:border-blue-400/50 transition-all duration-300">
+                <div className="text-center mb-6">
+                  <div className="text-6xl font-bold text-blue-400 mb-4">1</div>
+                  <h3 className="text-3xl font-bold text-white mb-4">WRAP</h3>
+                  <div className="w-16 h-1 bg-blue-400 mx-auto mb-6"></div>
                 </div>
-              </div>
-              <div className="lg:w-1/2">
-                <div className="bg-gray-900 rounded-lg p-6 text-green-400 font-mono text-sm">
+                
+                <h4 className="text-xl font-bold text-white mb-4">Wrap Any Agent, Any Model</h4>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Inject Promethios into any LLM or agent framework. OpenAI, Claude, LLaMA, AutoGen, LangChain — we work with all of them.
+                </p>
+                
+                {/* Code Example */}
+                <div className="bg-gray-900/80 rounded-lg p-4 text-green-400 font-mono text-sm mb-4">
                   <div className="text-gray-500"># Wrap any agent in 3 lines</div>
                   <div className="mt-2">
                     <span className="text-blue-400">from</span> promethios <span className="text-blue-400">import</span> govern<br />
@@ -677,106 +705,118 @@ const NewLandingPage: React.FC = () => {
                     <span className="text-gray-500"># That's it. Now it's governed.</span>
                   </div>
                 </div>
+                
+                <div className="text-blue-400 font-semibold text-sm">
+                  → Instant compatibility · No vendor lock-in · Zero retraining
+                </div>
               </div>
             </div>
 
-            {/* Step 2 */}
-            <div className="flex flex-col lg:flex-row-reverse items-center gap-12">
-              <div className="lg:w-1/2">
-                <div className="text-6xl font-bold text-green-600 mb-4">2</div>
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">See Governance in Action</h3>
-                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                  Test trust scores. Analyze hallucination rates.<br />
-                  Block unsafe output. Inject live policies.<br />
-                  See how your agents behave before they go live.
+            {/* TEST */}
+            <div className="group relative">
+              <div className="bg-black/60 backdrop-blur-sm border border-green-500/30 rounded-2xl p-8 h-full hover:border-green-400/50 transition-all duration-300">
+                <div className="text-center mb-6">
+                  <div className="text-6xl font-bold text-green-400 mb-4">2</div>
+                  <h3 className="text-3xl font-bold text-white mb-4">TEST</h3>
+                  <div className="w-16 h-1 bg-green-400 mx-auto mb-6"></div>
+                </div>
+                
+                <h4 className="text-xl font-bold text-white mb-4">See Governance in Action</h4>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Test trust scores. Analyze hallucination rates. Block unsafe output. Inject live policies. See how your agents behave before they go live.
                 </p>
-                <div className="text-green-600 font-semibold">
+                
+                {/* Dashboard Preview */}
+                <div className="bg-gray-900/80 rounded-lg p-4 mb-4">
+                  <div className="text-sm text-green-400 mb-3 font-semibold">GOVERNANCE DASHBOARD</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Trust Score</span>
+                      <span className="text-green-400 font-bold">94.2%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Hallucinations Blocked</span>
+                      <span className="text-blue-400 font-bold">23</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Policy Violations</span>
+                      <span className="text-red-400 font-bold">0</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-green-400 font-semibold text-sm">
                   → Trust analytics · Policy enforcement · Memory logs
                 </div>
               </div>
-              <div className="lg:w-1/2">
-                <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
-                  <div className="text-sm text-gray-500 mb-4">GOVERNANCE DASHBOARD</div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700">Trust Score</span>
-                      <span className="text-green-600 font-bold">94.2%</span>
+            </div>
+
+            {/* DEPLOY */}
+            <div className="group relative">
+              <div className="bg-black/60 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-8 h-full hover:border-purple-400/50 transition-all duration-300">
+                <div className="text-center mb-6">
+                  <div className="text-6xl font-bold text-purple-400 mb-4">3</div>
+                  <h3 className="text-3xl font-bold text-white mb-4">DEPLOY</h3>
+                  <div className="w-16 h-1 bg-purple-400 mx-auto mb-6"></div>
+                </div>
+                
+                <h4 className="text-xl font-bold text-white mb-4">Deploy with Oversight</h4>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Ship agents into apps, APIs, or vertical SaaS — and keep tabs on them. Promethios watches behavior in real-time, from anywhere.
+                </p>
+                
+                {/* Live Monitoring */}
+                <div className="bg-gray-900/80 rounded-lg p-4 mb-4">
+                  <div className="text-sm text-purple-400 mb-3 font-semibold">LIVE MONITORING</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                      <span className="text-gray-300">Agent deployed to production</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700">Hallucinations Blocked</span>
-                      <span className="text-blue-600 font-bold">23</span>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                      <span className="text-gray-300">Real-time governance active</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700">Policy Violations</span>
-                      <span className="text-red-600 font-bold">0</span>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+                      <span className="text-gray-300">Cross-platform sync enabled</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col lg:flex-row items-center gap-12">
-              <div className="lg:w-1/2">
-                <div className="text-6xl font-bold text-purple-600 mb-4">3</div>
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">Deploy with Oversight</h3>
-                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                  Ship agents into apps, APIs, or vertical SaaS — and keep tabs on them.<br />
-                  Promethios watches behavior in real-time, from anywhere.
-                </p>
-                <div className="text-purple-600 font-semibold">
+                
+                <div className="text-purple-400 font-semibold text-sm">
                   → Cross-platform tracking · Time-release memory · Loop snapshots
                 </div>
               </div>
-              <div className="lg:w-1/2">
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
-                  <div className="text-sm text-purple-600 mb-4 font-semibold">LIVE MONITORING</div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      <span>Agent deployed to production</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                      <span>Real-time governance active</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                      <span>Cross-platform sync enabled</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
+          </div>
 
-            {/* Step 4 */}
-            <div className="flex flex-col lg:flex-row-reverse items-center gap-12">
-              <div className="lg:w-1/2">
-                <div className="text-6xl font-bold text-orange-600 mb-4">4</div>
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">Govern Continuously</h3>
-                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                  Agents learn. So does Promethios.<br />
-                  Track drift, log reflection failures, catch blind spots — and evolve with them.
-                </p>
-                <div className="text-orange-600 font-semibold">
-                  → Memory drift detection · Contract versioning · Feedback injection
+          {/* Continuous AI Accountability Section */}
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-black/60 backdrop-blur-sm border border-orange-500/30 rounded-2xl p-12">
+              <h3 className="text-4xl font-bold text-white mb-6">Continuous AI Accountability</h3>
+              <p className="text-xl text-gray-200 mb-8 leading-relaxed">
+                Agents learn. So does Promethios.<br />
+                Track drift, log reflection failures, catch blind spots — and evolve with them.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="bg-gray-900/60 rounded-lg p-6">
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Memory Drift</div>
+                  <div className="text-gray-300 text-sm">Detection & correction</div>
+                </div>
+                <div className="bg-gray-900/60 rounded-lg p-6">
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Contract Versioning</div>
+                  <div className="text-gray-300 text-sm">Automated updates</div>
+                </div>
+                <div className="bg-gray-900/60 rounded-lg p-6">
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Feedback Injection</div>
+                  <div className="text-gray-300 text-sm">Real-time learning</div>
                 </div>
               </div>
-              <div className="lg:w-1/2">
-                <div className="bg-orange-50 rounded-lg p-6 border border-orange-200">
-                  <div className="text-sm text-orange-600 mb-4 font-semibold">CONTINUOUS LEARNING</div>
-                  <div className="space-y-3">
-                    <div className="text-sm text-gray-700">
-                      <span className="font-medium">Drift Detection:</span> Active
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-medium">Policy Updates:</span> 3 this week
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-medium">Feedback Loop:</span> Optimizing
-                    </div>
-                  </div>
-                </div>
+              
+              <div className="mt-8 text-orange-400 font-semibold">
+                → Memory drift detection · Contract versioning · Feedback injection
               </div>
             </div>
           </div>
