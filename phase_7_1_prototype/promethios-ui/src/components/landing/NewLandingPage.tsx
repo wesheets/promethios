@@ -440,8 +440,8 @@ const NewLandingPage: React.FC = () => {
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
             {/* Full-Width OS Header */}
-            <div className="mb-8 text-center">
-              <div className="flex items-center justify-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
+            <div className="mb-12">
+              <div className="flex items-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
                 <span>The</span>
                 <img 
                   src="/oslogo.png" 
