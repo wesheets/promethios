@@ -439,6 +439,16 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
+            {/* The OS of AI Safety Header - Full Width */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
+                <span>The</span>
+                <img src="/oslogo.png" alt="Promethios OS" className="h-10 w-10 sm:h-12 w-12 lg:h-16 w-16 xl:h-20 w-20" />
+                <span>of AI Safety</span>
+              </div>
+              <div className="w-full h-1 bg-white/30 mt-4"></div>
+            </div>
+            
             {/* New Hero Section Layout */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
               {/* Left Column - Main Headline and CTA */}
@@ -470,6 +480,11 @@ const NewLandingPage: React.FC = () => {
                     Govern Your AI
                   </Link>
                 </div>
+
+                {/* Compatibility Line */}
+                <p className="text-sm text-gray-300 font-medium mb-4">
+                  Compatible with 12 commercial LLM models including OpenAI, Anthropic, Gemini, or your custom model
+                </p>
 
                 {/* Trust Note */}
                 <p className="text-sm text-gray-400 mb-4">
