@@ -443,6 +443,13 @@ const NewLandingPage: React.FC = () => {
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
               {/* Left Column - Main Headline and CTA */}
               <div className="lg:w-7/12">
+                {/* OS of AI Safety Header */}
+                <div className="mb-6">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-2">
+                    The OS of AI Safety
+                  </h2>
+                </div>
+
                 {/* Main Headline - Large and Bold */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight">
                   Turn Any LLM Into a<br />
@@ -474,6 +481,11 @@ const NewLandingPage: React.FC = () => {
                 {/* Trust Note */}
                 <p className="text-sm text-gray-400 mb-4">
                   Trust is not public. Access requires accountability.
+                </p>
+
+                {/* Compatibility Line */}
+                <p className="text-sm text-gray-300 mb-6 font-medium">
+                  Compatible with 12 commercial LLM models including OpenAI, Anthropic, Gemini, or your custom model
                 </p>
 
                 {/* Features */}
