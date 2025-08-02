@@ -439,23 +439,23 @@ const NewLandingPage: React.FC = () => {
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
           <div className="max-w-screen-xl mx-auto w-full">
+            {/* Full-Width OS Header */}
+            <div className="mb-8 text-center">
+              <div className="flex items-center justify-center gap-3 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white">
+                <span>The</span>
+                <img 
+                  src="/oslogo.png" 
+                  alt="Promethios OS" 
+                  className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 xl:h-20 xl:w-20 object-contain"
+                />
+                <span>of AI Safety</span>
+              </div>
+            </div>
+
             {/* New Hero Section Layout */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
               {/* Left Column - Main Headline and CTA */}
               <div className="lg:w-7/12">
-                {/* The [Logo] of AI Safety Header */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400">
-                    <span>The</span>
-                    <img 
-                      src="/oslogo.png" 
-                      alt="Promethios OS" 
-                      className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 object-contain"
-                    />
-                    <span>of AI Safety</span>
-                  </div>
-                </div>
-
                 {/* Main Headline - Large and Bold */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight">
                   Turn Any LLM Into a<br />
