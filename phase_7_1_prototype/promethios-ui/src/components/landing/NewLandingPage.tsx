@@ -443,11 +443,17 @@ const NewLandingPage: React.FC = () => {
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
               {/* Left Column - Main Headline and CTA */}
               <div className="lg:w-7/12">
-                {/* OS of AI Safety Header */}
+                {/* The [Logo] of AI Safety Header */}
                 <div className="mb-6">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-2">
-                    The OS of AI Safety
-                  </h2>
+                  <div className="flex items-center gap-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400">
+                    <span>The</span>
+                    <img 
+                      src="/oslogo.png" 
+                      alt="Promethios OS" 
+                      className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 object-contain"
+                    />
+                    <span>of AI Safety</span>
+                  </div>
                 </div>
 
                 {/* Main Headline - Large and Bold */}
