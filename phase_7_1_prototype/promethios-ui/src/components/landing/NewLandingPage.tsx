@@ -446,7 +446,7 @@ const NewLandingPage: React.FC = () => {
                 <img 
                   src="/oslogo.png" 
                   alt="Promethios OS" 
-                  className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 xl:h-28 xl:w-28 object-contain"
+                  className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 xl:h-40 xl:w-40 object-contain"
                 />
                 <span>of AI Safety</span>
               </div>
