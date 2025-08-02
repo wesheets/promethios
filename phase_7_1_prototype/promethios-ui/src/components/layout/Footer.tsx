@@ -51,7 +51,7 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-gray-900 text-white py-16 w-full">
+    <footer className="bg-black text-white py-16 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Pre-footer CTA Banner */}
         <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-xl p-8 mb-16 text-center">
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
           {/* Logo and Newsletter */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8" />
+              <img src="/promethioslogonewest.png" alt="Promethios Logo" className="h-40" />
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               The observability and compliance layer for multi-agent AI systems. 

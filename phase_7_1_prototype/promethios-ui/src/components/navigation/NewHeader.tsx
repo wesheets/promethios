@@ -24,13 +24,13 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} ${className}`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-black text-white border-b border-gray-700 ${className}`}>
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-32">
           {/* Logo and brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/PROMETHIOSLOGO1.png" alt="Promethios Logo" className="h-8" />
+              <img src="/promethioslogonewest.png" alt="Promethios Logo" className="h-40" />
             </Link>
           </div>
 
@@ -111,15 +111,8 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
 
           {/* User section */}
           <div className="flex items-center">
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
-            
             {user ? (
-              <div className="relative ml-4">
+              <div className="relative">
                 <button 
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center space-x-2 focus:outline-none"
@@ -127,28 +120,28 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                     {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <span className="hidden md:block">{user.email || 'User'}</span>
+                  <span className="hidden md:block text-white">{user.email || 'User'}</span>
                 </button>
                 {userMenuOpen && (
-                  <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} ring-1 ring-black ring-opacity-5`}>
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5">
                     <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                       <Link 
                         to="/ui/dashboard" 
-                        className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                         onClick={() => setUserMenuOpen(false)}
                       >
                         Dashboard
                       </Link>
                       <Link 
                         to="/settings" 
-                        className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                         onClick={() => setUserMenuOpen(false)}
                       >
                         Settings
                       </Link>
                       <button 
                         onClick={handleLogout}
-                        className={`block w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                       >
                         Sign out
                       </button>
@@ -157,10 +150,10 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
                 )}
               </div>
             ) : (
-              <div className="ml-4 flex items-center md:ml-6">
+              <div className="flex items-center">
                 <Link 
                   to="/login" 
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Sign in
                 </Link>
