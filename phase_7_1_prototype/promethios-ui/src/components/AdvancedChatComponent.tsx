@@ -2337,8 +2337,8 @@ useEffect(() => {
             },
             body: JSON.stringify({
               message: messageContent,
-              agentId: agentIdToUse,
-              systemMessage: systemMessage,
+              agent_id: agentIdToUse,
+              system_message: systemMessage,
               userId: currentUser?.uid || 'anonymous',
               provider: 'grok',
               model: agent.model || 'grok-beta',
@@ -2423,8 +2423,8 @@ useEffect(() => {
             },
             body: JSON.stringify({
               message: messageContent,
-              agentId: agentIdToUse,
-              systemMessage: systemMessage,
+              agent_id: agentIdToUse,
+              system_message: systemMessage,
               userId: currentUser?.uid || 'anonymous',
               provider: 'perplexity',
               model: agent.model || 'llama-3.1-sonar-small-128k-online',
