@@ -450,6 +450,8 @@ const NewLandingPage: React.FC = () => {
                 />
                 <span>of AI Safety</span>
               </div>
+              {/* Subtle separator line */}
+              <div className="w-full h-px bg-white/30 mt-4"></div>
             </div>
 
             {/* New Hero Section Layout */}
