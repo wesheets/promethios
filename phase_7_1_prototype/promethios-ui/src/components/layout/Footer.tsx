@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
           {/* Logo and Newsletter */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <img src="/promethioslogonewest.png" alt="Promethios Logo" className="h-8" />
+              <img src="/promethioslogonewest.png" alt="Promethios Logo" className="h-40" />
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               The observability and compliance layer for multi-agent AI systems. 
