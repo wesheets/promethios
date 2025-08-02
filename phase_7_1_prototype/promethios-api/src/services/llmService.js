@@ -2,12 +2,18 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');
 const { HfInference } = require('@huggingface/inference');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
+const governanceContextService = require('./governanceContextService');
 
 // Initialize LLM clients with optional API keys for testing
 let openai = null;
 let anthropic = null;
 let cohere = null;
 let hf = null;
+let gemini = null;
+let grok = null;
+let perplexity = null;
 
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -59,315 +65,439 @@ try {
   console.log('⚠️ HuggingFace initialization failed - using fallback responses');
 }
 
-class LLMService {
-  // Promethios Local Model
-  async callPrometheosModel(message, systemPrompt) {
-    try {
-      console.log('🤖 Calling Promethios local model...');
-      
-      // Combine system prompt and user message
-      const fullPrompt = systemPrompt ? 
-        `${systemPrompt}\n\nUser: ${message}` : 
-        message;
-      
-      const response = await fetch('http://localhost:3000/api/model/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: fullPrompt,
-          agent_id: 'promethios-ai-assistant',
-          max_length: 512,
-          temperature: 0.7
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Promethios model API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data.response || "Hello! I'm Promethios AI Assistant. How can I help you today?";
-      
-    } catch (error) {
-      console.error('Promethios model error:', error);
-      
-      // Fallback response that identifies as Promethios
-      return `Hello! I'm Promethios AI Assistant, your governance-focused AI companion. I'm designed to provide helpful, accurate, and ethically-aligned responses. While I'm experiencing some technical difficulties at the moment, I'm still here to assist you with information, analysis, and guidance. How can I help you today?`;
-    }
+try {
+  if (process.env.GOOGLE_API_KEY) {
+    gemini = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    console.log('✅ Google Gemini client initialized');
+  } else {
+    console.log('⚠️ Google API key not found - using fallback responses');
   }
+} catch (error) {
+  console.log('⚠️ Google Gemini initialization failed - using fallback responses');
+}
 
-  // OpenAI GPT-3.5 for Baseline Agent
-  async callOpenAIGPT35(message, systemPrompt) {
-    if (!openai) {
-      return `I'm a straightforward, rule-based agent providing clear and direct responses. Regarding your message: "${message.substring(0, 100)}..." - I would typically provide a factual, no-nonsense answer focusing on the core information you need. How can I help you with specific, actionable guidance?`;
-    }
-    
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 500,
-        temperature: 0.3
-      });
-      return response.choices[0].message.content;
-    } catch (error) {
-      console.error('OpenAI GPT-3.5 error:', error);
-      return `I encountered a technical issue but can still help. For your query about "${message.substring(0, 50)}...", I would provide a direct, factual response. Please try again or rephrase your question.`;
-    }
+try {
+  if (process.env.GROK_API_KEY) {
+    grok = new OpenAI({
+      apiKey: process.env.GROK_API_KEY,
+      baseURL: 'https://api.x.ai/v1',
+    });
+    console.log('✅ Grok (X.AI) client initialized');
+  } else {
+    console.log('⚠️ Grok API key not found - using fallback responses');
   }
+} catch (error) {
+  console.log('⚠️ Grok initialization failed - using fallback responses');
+}
 
-  // OpenAI GPT-4 for Creative Agent
-  async callOpenAIGPT4(message, systemPrompt) {
-    if (!openai) {
-      return `I'm your creative thinking partner! While I'm in simulation mode, I can still brainstorm with you. For "${message.substring(0, 100)}..." I'd explore innovative angles, think outside the box, and generate multiple creative solutions. What creative challenge can we tackle together?`;
-    }
-    
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 600,
-        temperature: 0.8
-      });
-      return response.choices[0].message.content;
-    } catch (error) {
-      console.error('OpenAI GPT-4 error:', error);
-      return `Even with technical hiccups, creativity flows! For your idea about "${message.substring(0, 50)}...", I'd suggest exploring unconventional approaches, combining unexpected elements, and thinking beyond traditional boundaries. What creative direction interests you most?`;
-    }
+try {
+  if (process.env.PERPLEXITY_API_KEY) {
+    perplexity = new OpenAI({
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      baseURL: 'https://api.perplexity.ai',
+    });
+    console.log('✅ Perplexity client initialized');
+  } else {
+    console.log('⚠️ Perplexity API key not found - using fallback responses');
   }
+} catch (error) {
+  console.log('⚠️ Perplexity initialization failed - using fallback responses');
+}
 
-  // Anthropic Claude for Factual Agent
-  async callAnthropic(message, systemPrompt) {
-    if (!anthropic) {
-      return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
-    }
-    
-    try {
-      const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 500,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: message }
-        ]
-      });
-      return response.content[0].text;
-    } catch (error) {
-      console.error('Anthropic error details:', {
-        message: error.message,
-        status: error.status,
-        type: error.type,
-        error: error.error,
-        stack: error.stack
-      });
-      // Return fallback response instead of throwing error
-      return `I'm your accuracy-focused research assistant. I prioritize factual correctness and well-sourced information. For your query "${message.substring(0, 100)}..." I would typically provide verified facts, cite reliable sources, and clearly distinguish between confirmed information and areas of uncertainty. What factual information can I help you research?`;
-    }
-  }
+// Main generateResponse function that routes to appropriate provider
+async function generateResponse(agentId, message, systemMessage, userId, options = {}) {
+  console.log('🔧 LLM SERVICE: generateResponse called with:', {
+    agentId,
+    messageLength: message?.length,
+    systemMessageLength: systemMessage?.length,
+    userId,
+    provider: options.provider,
+    model: options.model
+  });
 
-  // Cohere for Governance Agent
-  async callCohere(message, systemPrompt) {
-    if (!cohere) {
-      return `I'm your compliance and ethics specialist. Trust Score: 0.85 | Status: Operational. While in simulation mode, I focus on policy adherence, risk assessment, and ethical considerations. For your request "${message.substring(0, 100)}..." I would evaluate compliance requirements, assess potential risks, and ensure responsible practices. How can I help you navigate governance requirements?`;
-    }
+  try {
+    const provider = options.provider?.toLowerCase();
     
-    try {
-      const response = await cohere.chat({
-        model: 'command',
-        message: message,
-        preamble: systemPrompt,
-        max_tokens: 500,
-        temperature: 0.3
-      });
-      return response.text;
-    } catch (error) {
-      console.error('Cohere error:', error);
-      return `Trust Score: 0.80 | Status: Resilient. Even with connectivity issues, I maintain governance standards. For "${message.substring(0, 50)}...", I would assess compliance implications, evaluate ethical considerations, and recommend responsible approaches. What governance guidance do you need?`;
-    }
-  }
-
-  // HuggingFace for Multi-Tool Agent
-  async callHuggingFace(message, systemPrompt) {
-    if (!hf) {
-      return `I'm your systems integration specialist! While in simulation mode, I can still help with API connections, workflow automation, and tool orchestration. For your challenge "${message.substring(0, 100)}..." I'd consider which tools to combine, how to automate the process, and what integrations would be most effective. What systems do you need to connect?`;
-    }
-    
-    try {
-      // Use a more reliable HuggingFace model for text generation
-      const response = await hf.textGeneration({
-        model: 'microsoft/DialoGPT-medium',
-        inputs: `${systemPrompt}\n\nHuman: ${message}\nAssistant:`,
-        parameters: {
-          max_new_tokens: 150,
-          temperature: 0.7,
-          do_sample: true,
-          return_full_text: false,
-          stop: ['Human:', '\n\n']
-        }
-      });
+    // Route to appropriate provider based on agent configuration
+    switch (provider) {
+      case 'openai':
+        return await callOpenAI(message, systemMessage, options);
       
-      let generatedText = response.generated_text || '';
-      
-      // Clean up the response
-      generatedText = generatedText.replace(/^Assistant:\s*/, '').trim();
-      
-      // If response is too short or empty, provide a fallback
-      if (!generatedText || generatedText.length < 10) {
-        return `I'm ready to help with API integration and automation! For "${message.substring(0, 50)}...", I'd recommend exploring tool combinations and workflow optimization. What systems need connecting?`;
-      }
-      
-      return `generatedText}`;
-    } catch (error) {
-      console.error('HuggingFace error:', error);
-      return `Despite technical challenges, I'm still your automation expert! For "${message.substring(0, 50)}...", I'd focus on robust integrations, error handling, and scalable solutions. What workflow needs optimization?`;
-    }
-  }
-
-  // Generate system prompts for each agent type
-  getSystemPrompt(agentId) {
-    const prompts = {
-      'baseline-agent': `You are a Baseline Agent designed for straightforward, rule-based responses. Provide clear, direct answers without advanced reasoning or creativity. Focus on basic information and simple guidance. Keep responses concise and factual.`,
-      
-      'factual-agent': `You are a Factual Agent specialized in accuracy and information retrieval. Prioritize correctness over creativity. Always verify claims when possible, cite sources if available, and acknowledge when you're uncertain. Focus on providing well-researched, precise information.`,
-      
-      'creative-agent': `You are a Creative Agent focused on innovative and diverse responses. Excel at brainstorming, creative problem-solving, and thinking outside conventional boundaries. Generate original ideas, explore unconventional solutions, and approach problems with imagination and creativity.`,
-      
-      'governance-agent': `You are a Governance-Focused Agent that emphasizes compliance with rules, ethical guidelines, and responsible AI practices. Always consider policy adherence, risk assessment, and ethical implications in your responses. Prioritize transparency, accountability, and compliance checking.`,
-      
-      'multi-tool-agent': `You are a Multi-Tool Agent capable of integrating with various systems and APIs. Demonstrate knowledge of tool use, workflow automation, and API integration. Approach problems with a systems-thinking mindset and consider how multiple tools can work together to solve complex challenges.`
-    };
-    
-    return prompts[agentId] || 'You are a helpful AI assistant.';
-  }
-
-  // Main method to call appropriate LLM based on agent
-  async generateResponse(agentId, message, customSystemMessage = null) {
-    // Use custom system message if provided, otherwise generate default
-    const systemPrompt = customSystemMessage || this.getSystemPrompt(agentId);
-    
-    // Handle legacy hardcoded agent IDs (for backward compatibility)
-    switch (agentId) {
-      case 'baseline-agent':
-        return await this.callOpenAIGPT35(message, systemPrompt);
-      
-      case 'factual-agent':
-        return await this.callAnthropic(message, systemPrompt);
-      
-      case 'creative-agent':
-        return await this.callOpenAIGPT4(message, systemPrompt);
-      
-      case 'governance-agent':
-        return await this.callCohere(message, systemPrompt);
-      
-      case 'multi-tool-agent':
-        return await this.callHuggingFace(message, systemPrompt);
-    }
-    
-    // Handle real user agent IDs by looking up agent configuration
-    // For now, we'll need to determine the provider from the agent ID
-    // This is a temporary solution until we have proper agent lookup
-    console.log(`🔍 Looking up real agent: ${agentId}`);
-    
-    // Check if this is a Promethios agent
-    if (agentId.toLowerCase().includes('promethios') || 
-        agentId.toLowerCase().includes('governance') ||
-        agentId === 'test' || // Handle the test agent as Promethios
-        customSystemMessage?.toLowerCase().includes('promethios')) {
-      console.log(`🎯 Using Promethios local model for agent: ${agentId}`);
-      return await this.callPrometheosModel(message, systemPrompt);
-    }
-    
-    // Try to determine provider from agent ID pattern or use a default rotation
-    // This is a simplified approach - in production, you'd query the database
-    const agentHash = this.hashAgentId(agentId);
-    const providers = ['openai-gpt4', 'anthropic', 'cohere'];
-    const selectedProvider = providers[agentHash % providers.length];
-    
-    console.log(`🎯 Selected provider for agent ${agentId}: ${selectedProvider}`);
-    
-    switch (selectedProvider) {
-      case 'openai-gpt4':
-        return await this.callOpenAIGPT4(message, systemPrompt);
       case 'anthropic':
-        return await this.callAnthropic(message, systemPrompt);
+      case 'claude':
+        return await callAnthropic(message, systemMessage, options);
+      
       case 'cohere':
-        return await this.callCohere(message, systemPrompt);
+        return await callCohere(message, systemMessage, options);
+      
+      case 'google':
+      case 'gemini':
+        return await callGemini(message, systemMessage, options);
+      
+      case 'huggingface':
+        return await callHuggingFace(message, systemMessage, options);
+      
+      case 'grok':
+      case 'x.ai':
+        return await callGrok(message, systemMessage, options);
+      
+      case 'perplexity':
+        return await callPerplexity(message, systemMessage, options);
+      
       default:
-        return await this.callOpenAIGPT4(message, systemPrompt); // fallback
+        console.log('🔧 LLM SERVICE: Unknown provider, defaulting to OpenAI:', provider);
+        return await callOpenAI(message, systemMessage, options);
     }
-  }
-  
-  /**
-   * Generate response using full agent configuration object
-   */
-  async generateResponseWithAgent(agent, message, customSystemMessage = null) {
-    console.log(`🤖 Generating response for agent: ${agent.name} (${agent.id})`);
-    console.log(`🔧 Agent provider: ${agent.provider || 'default'}, model: ${agent.model || 'default'}`);
-    
-    // Use agent's system prompt or custom message
-    const systemPrompt = customSystemMessage || agent.systemPrompt || this.getSystemPrompt(agent.id);
-    
-    // Use agent's specified provider or fallback to default behavior
-    const provider = agent.provider || 'openai';
-    const model = agent.model || 'gpt-3.5-turbo';
-    
-    try {
-      // Check if this is a Promethios agent first
-      if (agent.provider?.toLowerCase() === 'promethios' ||
-          agent.name?.toLowerCase().includes('promethios') ||
-          agent.id?.toLowerCase().includes('promethios')) {
-        console.log(`🎯 Using Promethios local model for agent: ${agent.name}`);
-        return await this.callPrometheosModel(message, systemPrompt);
-      }
-      
-      switch (provider.toLowerCase()) {
-        case 'openai':
-          if (model.includes('gpt-4')) {
-            return await this.callOpenAIGPT4(message, systemPrompt);
-          } else {
-            return await this.callOpenAIGPT35(message, systemPrompt);
-          }
-        
-        case 'anthropic':
-          return await this.callAnthropic(message, systemPrompt);
-        
-        case 'cohere':
-          return await this.callCohere(message, systemPrompt);
-        
-        case 'huggingface':
-          return await this.callHuggingFace(message, systemPrompt);
-        
-        default:
-          console.log(`⚠️ Unknown provider ${provider}, falling back to OpenAI GPT-3.5`);
-          return await this.callOpenAIGPT35(message, systemPrompt);
-      }
-    } catch (error) {
-      console.error(`❌ Error generating response for ${agent.name}:`, error);
-      
-      // Fallback response
-      return `I apologize, but I'm experiencing technical difficulties and cannot provide a response at this time. (Agent: ${agent.name})`;
-    }
-  }
-  
-  // Simple hash function to consistently map agent IDs to providers
-  hashAgentId(agentId) {
-    let hash = 0;
-    for (let i = 0; i < agentId.length; i++) {
-      const char = agentId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash);
+  } catch (error) {
+    console.error('❌ LLM SERVICE: Error in generateResponse:', error);
+    throw error;
   }
 }
 
-module.exports = new LLMService();
+// OpenAI implementation
+async function callOpenAI(message, systemMessage, options = {}) {
+  console.log('🔧 OPENAI DEBUG: Starting OpenAI call');
+  
+  if (!openai) {
+    throw new Error('OpenAI client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'gpt-4';
+    const messages = [
+      { role: 'system', content: systemMessage },
+      { role: 'user', content: message }
+    ];
+
+    console.log('🔧 OPENAI DEBUG: Calling OpenAI API with model:', model);
+    
+    const response = await openai.chat.completions.create({
+      model: model,
+      messages: messages,
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log('🔧 OPENAI DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ OPENAI DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// Anthropic implementation
+async function callAnthropic(message, systemMessage, options = {}) {
+  console.log('🔧 ANTHROPIC DEBUG: Starting Anthropic call');
+  
+  if (!anthropic) {
+    throw new Error('Anthropic client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'claude-3-sonnet-20240229';
+    
+    console.log('🔧 ANTHROPIC DEBUG: Calling Anthropic API with model:', model);
+    
+    const response = await anthropic.messages.create({
+      model: model,
+      max_tokens: 1000,
+      system: systemMessage,
+      messages: [
+        { role: 'user', content: message }
+      ],
+    });
+
+    const responseText = response.content[0].text;
+    console.log('🔧 ANTHROPIC DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ ANTHROPIC DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// Cohere implementation
+async function callCohere(message, systemMessage, options = {}) {
+  console.log('🔧 COHERE DEBUG: Starting Cohere call');
+  
+  if (!cohere) {
+    throw new Error('Cohere client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'command-r-plus';
+    
+    console.log('🔧 COHERE DEBUG: Calling Cohere API with model:', model);
+    
+    const response = await cohere.chat({
+      model: model,
+      message: message,
+      preamble: systemMessage,
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const responseText = response.text;
+    console.log('🔧 COHERE DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ COHERE DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// Gemini implementation
+async function callGemini(message, systemMessage, options = {}) {
+  console.log('🔧 GEMINI DEBUG: Starting Gemini call');
+  
+  if (!gemini) {
+    throw new Error('Gemini client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'gemini-pro';
+    
+    console.log('🔧 GEMINI DEBUG: Calling Gemini API with model:', model);
+    
+    const genAI = gemini.getGenerativeModel({ model: model });
+    
+    const prompt = `${systemMessage}\n\nUser: ${message}`;
+    const result = await genAI.generateContent(prompt);
+    const response = await result.response;
+    const responseText = response.text();
+    
+    console.log('🔧 GEMINI DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ GEMINI DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// HuggingFace implementation - UPDATED 8/1/2025 for 404 fix
+async function callHuggingFace(message, systemMessage, options = {}) {
+  console.log('🔧 HUGGINGFACE DEBUG: Starting HuggingFace call - NEW VERSION');
+  
+  if (!hf) {
+    throw new Error('HuggingFace client not initialized - API key missing');
+  }
+
+  try {
+    // Try using a direct HTTP approach instead of the HfInference library
+    console.log('🔧 HUGGINGFACE DEBUG: Attempting direct API call to avoid 404');
+    
+    const model = options.model || 'gpt2';
+    const prompt = `Human: ${message}\nAssistant:`;
+    
+    console.log('🔧 HUGGINGFACE DEBUG: Using model:', model);
+    console.log('🔧 HUGGINGFACE DEBUG: Prompt:', prompt.substring(0, 100) + '...');
+    
+    // Try direct fetch to HuggingFace API
+    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.7,
+          return_full_text: false,
+        }
+      })
+    });
+
+    console.log('🔧 HUGGINGFACE DEBUG: Response status:', response.status);
+    console.log('🔧 HUGGINGFACE DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ HUGGINGFACE DEBUG: API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      
+      if (response.status === 404) {
+        return `I apologize, but the HuggingFace model "${model}" was not found (404 error). This might be a temporary issue with the HuggingFace service.`;
+      }
+      
+      throw new Error(`HuggingFace API error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ HUGGINGFACE DEBUG: Successful response:', result);
+    
+    // Handle different response formats
+    let responseText = '';
+    if (Array.isArray(result) && result.length > 0) {
+      responseText = result[0].generated_text || result[0].text || '';
+    } else if (result.generated_text) {
+      responseText = result.generated_text;
+    } else if (result.text) {
+      responseText = result.text;
+    } else {
+      responseText = 'I apologize, but I received an unexpected response format.';
+    }
+    
+    const cleanedResponse = responseText.trim();
+    return cleanedResponse || 'I apologize, but I was unable to generate a proper response.';
+    
+  } catch (error) {
+    console.error('❌ HUGGINGFACE DEBUG: Error details:', {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText,
+      name: error.name,
+      stack: error.stack
+    });
+    
+    // Fallback to the original HfInference library approach
+    console.log('🔧 HUGGINGFACE DEBUG: Falling back to HfInference library');
+    
+    try {
+      const model = options.model || 'gpt2';
+      const prompt = `Human: ${message}\nAssistant:`;
+      
+      const response = await hf.textGeneration({
+        model: model,
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.7,
+          return_full_text: false,
+          do_sample: true,
+        },
+      });
+
+      const responseText = response.generated_text || 'No response generated';
+      console.log('✅ HUGGINGFACE DEBUG: Fallback successful');
+      return responseText.trim() || 'I apologize, but I was unable to generate a proper response.';
+      
+    } catch (fallbackError) {
+      console.error('❌ HUGGINGFACE DEBUG: Fallback also failed:', fallbackError);
+      
+      if (error.message?.includes('404') || fallbackError.message?.includes('404')) {
+        return 'I apologize, but there is a 404 error with the HuggingFace service. This suggests the model endpoint is not available or there is an issue with the API configuration.';
+      }
+      
+      return `I apologize, but I encountered an error with HuggingFace: ${error.message || 'Unknown error'}. Please try again or use a different provider.`;
+    }
+  }
+}
+
+// Grok implementation
+async function callGrok(message, systemMessage, options = {}) {
+  console.log('🔧 GROK DEBUG: Starting Grok call');
+  
+  if (!grok) {
+    throw new Error('Grok client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'grok-beta';
+    const messages = [
+      { role: 'system', content: systemMessage },
+      { role: 'user', content: message }
+    ];
+
+    console.log('🔧 GROK DEBUG: Calling Grok API with model:', model);
+    
+    const response = await grok.chat.completions.create({
+      model: model,
+      messages: messages,
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log('🔧 GROK DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ GROK DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// Perplexity implementation
+async function callPerplexity(message, systemMessage, options = {}) {
+  console.log('🔧 PERPLEXITY DEBUG: Starting Perplexity call');
+  
+  if (!perplexity) {
+    throw new Error('Perplexity client not initialized - API key missing');
+  }
+
+  try {
+    const model = options.model || 'llama-3.1-sonar-small-128k-online';
+    const messages = [
+      { role: 'system', content: systemMessage },
+      { role: 'user', content: message }
+    ];
+
+    console.log('🔧 PERPLEXITY DEBUG: Calling Perplexity API with model:', model);
+    
+    const response = await perplexity.chat.completions.create({
+      model: model,
+      messages: messages,
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log('🔧 PERPLEXITY DEBUG: Response received, length:', responseText.length);
+    
+    return responseText;
+  } catch (error) {
+    console.error('❌ PERPLEXITY DEBUG: Error:', error);
+    throw error;
+  }
+}
+
+// Export the service with all methods
+module.exports = {
+  generateResponse,
+  callOpenAI,
+  callAnthropic,
+  callCohere,
+  callGemini,
+  callHuggingFace,
+  callGrok,
+  callPerplexity,
+  
+  // Legacy method names for backward compatibility
+  callOpenAIGPT35: callOpenAI,
+  callOpenAIGPT4: callOpenAI,
+  
+  // LLMService class for backward compatibility
+  LLMService: class LLMService {
+    async generateResponse(agentId, message, systemMessage, userId, options = {}) {
+      return generateResponse(agentId, message, systemMessage, userId, options);
+    }
+    
+    async callOpenAI(message, systemPrompt) {
+      return callOpenAI(message, systemPrompt);
+    }
+    
+    async callAnthropic(message, systemPrompt) {
+      return callAnthropic(message, systemPrompt);
+    }
+    
+    async callCohere(message, systemPrompt) {
+      return callCohere(message, systemPrompt);
+    }
+    
+    async callGemini(message, systemPrompt) {
+      return callGemini(message, systemPrompt);
+    }
+  }
+};
 

@@ -5,7 +5,7 @@
  * Provides CRUD operations with Firebase/localStorage fallback for policy data.
  */
 
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage, UnifiedStorageService } from './UnifiedStorageService';
 
 // Policy interfaces matching the API schema
 export interface PolicyRule {

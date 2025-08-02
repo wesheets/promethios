@@ -13,6 +13,9 @@ export class FirebaseStorageProvider implements StorageProvider {
   name = 'firebase';
   private isInitialized = false;
   private fallbackProvider?: StorageProvider;
+  private static connectionStatus: boolean | null = null;
+  private static lastConnectionTest: number = 0;
+  private static readonly CONNECTION_CACHE_DURATION = 30000; // 30 seconds
 
   constructor(fallbackProvider?: StorageProvider) {
     this.fallbackProvider = fallbackProvider;
@@ -38,9 +41,18 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
+      // Use cached connection status if recent
+      const now = Date.now();
+      if (FirebaseStorageProvider.connectionStatus !== null && 
+          (now - FirebaseStorageProvider.lastConnectionTest) < FirebaseStorageProvider.CONNECTION_CACHE_DURATION) {
+        return FirebaseStorageProvider.connectionStatus;
+      }
+
       // Check if Firebase is properly configured
       if (!db) {
         console.error('🚨 Firebase database not initialized - check firebase/config.ts');
+        FirebaseStorageProvider.connectionStatus = false;
+        FirebaseStorageProvider.lastConnectionTest = now;
         return false;
       }
 
@@ -52,9 +64,18 @@ export class FirebaseStorageProvider implements StorageProvider {
       
       // If we can read (even if document doesn't exist), Firebase is available
       console.log('✅ Firebase connection test successful - Firebase is available');
+      
+      // Cache the successful connection
+      FirebaseStorageProvider.connectionStatus = true;
+      FirebaseStorageProvider.lastConnectionTest = now;
+      
       return true;
     } catch (error) {
       console.error('❌ Firebase not available:', error);
+      
+      // Cache the failed connection
+      FirebaseStorageProvider.connectionStatus = false;
+      FirebaseStorageProvider.lastConnectionTest = now;
       
       // Check specific error types
       if (error instanceof Error) {
@@ -75,14 +96,25 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      // Always check availability for each operation
-      const available = await this.isAvailable();
-      if (!available) {
+      // Use cached connection status to avoid repeated tests
+      if (FirebaseStorageProvider.connectionStatus === false) {
         if (this.fallbackProvider) {
-          console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
+          console.log(`📱 Firebase known unavailable, using fallback for key: ${key}`);
           return this.fallbackProvider.get<T>(key);
         }
         return null;
+      }
+
+      // Only test connection if we don't have cached status
+      if (FirebaseStorageProvider.connectionStatus === null) {
+        const available = await this.isAvailable();
+        if (!available) {
+          if (this.fallbackProvider) {
+            console.log(`📱 Firebase unavailable, using fallback for key: ${key}`);
+            return this.fallbackProvider.get<T>(key);
+          }
+          return null;
+        }
       }
 
       // Parse the key to get collection and document

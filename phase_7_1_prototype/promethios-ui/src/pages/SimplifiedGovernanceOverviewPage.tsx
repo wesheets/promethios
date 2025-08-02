@@ -142,10 +142,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Navigation detection - prevent rendering when not on governance overview
-  if (location.pathname !== '/ui/governance/overview') {
-    return null;
-  }
+  // Component renders normally - React Router handles route matching
 
   // Helper functions
   const getAgentTypeIcon = (type: string) => {
@@ -312,14 +309,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
   }, []);
 
-  // Detect navigation changes and redirect if not on governance overview
-  useEffect(() => {
-    // If the location changes to a different governance page, this component should not render
-    if (location.pathname !== '/ui/governance/overview') {
-      // Force a page reload to ensure proper navigation
-      window.location.href = location.pathname;
-    }
-  }, [location.pathname]);
+  // Navigation is handled by React Router - no forced reloads needed
 
   // Monitor for violations (optimized to prevent render loops)
   useEffect(() => {
@@ -332,22 +322,30 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     }
   }, [scorecards.length]); // Only depend on scorecards.length to prevent excessive re-renders
 
-  // Load real agent data including multi-agent systems
+  // Load real agent data including multi-agent systems (optimized with caching)
   useEffect(() => {
     const loadRealAgentData = async () => {
       if (!currentUser) return;
+      
+      // Check if we already have cached agent data from the optimized hook
+      if (metrics?.agents && Object.keys(metrics.agents).length > 0) {
+        // Use metrics data if available to avoid redundant loading
+        console.log('🚀 Using cached agent data from optimized metrics');
+        return;
+      }
       
       setLoadingAgents(true);
       try {
         // Set current user in storage service
         userAgentStorageService.setCurrentUser(currentUser);
         
-        // Load individual agents
+        // Load individual agents (this should use cached data from optimized bridge)
         const agents = await userAgentStorageService.loadUserAgents();
+        console.log(`📊 Loaded ${agents.length} agents from unified storage for user ${currentUser.uid}`);
         
-        // Load multi-agent systems
-        const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
-        const storageService = new UnifiedStorageService();
+        // Load multi-agent systems (optimized import)
+        const { unifiedStorage } = await import('../services/UnifiedStorageService');
+        const storageService = unifiedStorage;
         const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
         
         // Filter main systems (not testing/production variants)
@@ -503,6 +501,8 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
         
         const allScorecards = [...agentScorecards, ...validMultiAgentScorecards];
         
+        console.log(`📊 Loaded ${allScorecards.length} unique agents (production only)`);
+        
         // Add a test multi-agent system if none were loaded from storage
         if (validMultiAgentScorecards.length === 0) {
           const testMultiAgentSystem: AgentScorecard = {
@@ -534,7 +534,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
     };
     
     loadRealAgentData();
-  }, [currentUser]);
+  }, [currentUser, metrics?.agents]); // Removed location.pathname to prevent navigation interference
 
   // Apply filters, search, and sorting with memoization to prevent render loops
   const filteredAndSortedScorecards = useMemo(() => {
@@ -600,14 +600,11 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
   useEffect(() => {
     return () => {
       // Clear any intervals or timeouts that might interfere with navigation
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-      // Clear any pending state updates (removed setLoading as it doesn't exist in this component)
+      // Use a ref or state to track intervals instead of depending on refreshInterval
       setLoadingAgents(false);
       setRefreshing(false);
     };
-  }, [refreshInterval]);
+  }, []); // Empty dependency array to run only on mount/unmount
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -654,7 +651,7 @@ const SimplifiedGovernanceOverviewPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-          Governance Overview
+          Governance Overview - Navigation Issue Unresolved
         </Typography>
         
         <Box display="flex" alignItems="center" gap={2}>

@@ -9,7 +9,7 @@
  * @version 1.0.0
  */
 
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { 
   DualAgentWrapper, 
   TestingWrapper, 
@@ -42,7 +42,7 @@ export class DualWrapperStorageService {
   };
 
   constructor(config?: Partial<DualWrapperStorageConfig>) {
-    this.unifiedStorage = new UnifiedStorageService();
+    this.unifiedStorage = unifiedStorage;
     this.config = {
       enableBackups: config?.enableBackups ?? true,
       backupRetention: config?.backupRetention ?? { days: 30 },

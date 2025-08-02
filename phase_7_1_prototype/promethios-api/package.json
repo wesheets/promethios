@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
+    "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.0.6",
+    "@mistralai/mistralai": "^1.7.5",
+    "axios": "^1.11.0",
     "cohere-ai": "^7.17.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",

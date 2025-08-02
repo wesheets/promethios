@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { metricsCollectionExtension, AgentMetricsProfile, AgentInteractionEvent } from '../extensions/MetricsCollectionExtension';
 import { useAuth } from '../context/AuthContext';
+import { realGovernanceIntegration } from '../services/RealGovernanceIntegration';
 
 export interface UseAgentMetricsOptions {
   agentId: string;
@@ -73,11 +74,14 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
 
     try {
       console.log(`🚀 Initializing agent metrics: ${agentId} (${version})`);
+      console.log(`🔧 HOOK DEBUG: useAgentMetrics called with version="${version}" for agentId="${agentId}"`);
       
       // Check if profile already exists
       let existingProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);
+      console.log(`🔍 Existing profile for ${agentId}:`, existingProfile ? 'FOUND' : 'NOT FOUND');
       
       if (!existingProfile) {
+        console.log(`🆕 Creating new profile for ${agentId} (${version})`);
         // Create new profile based on version
         if (version === 'test') {
           existingProfile = await metricsCollectionExtension.createTestAgentProfile(
@@ -97,6 +101,9 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
             agentType
           );
         }
+        console.log(`✅ Created new profile for ${agentId} with trust score:`, existingProfile.metrics.governanceMetrics.trustScore);
+      } else {
+        console.log(`📊 Loaded existing profile for ${agentId} with trust score:`, existingProfile.metrics.governanceMetrics.trustScore);
       }
 
       setProfile(existingProfile);
@@ -147,6 +154,19 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       
       await metricsCollectionExtension.recordAgentInteraction(event);
       
+      // Update real governance backend with interaction data
+      try {
+        await realGovernanceIntegration.updateAgentTelemetry(agentId, {
+          responseQuality: eventData.governanceChecks?.complianceScore || 0.8,
+          userSatisfaction: eventData.success ? 0.9 : 0.3,
+          taskComplexity: eventData.responseSize ? Math.min(eventData.responseSize / 1000, 1) : 0.5,
+          responseTime: eventData.responseTime || 0
+        });
+        console.log(`🧠 Updated governance telemetry for ${agentId}`);
+      } catch (governanceError) {
+        console.warn('Could not update governance telemetry:', governanceError);
+      }
+      
       // Update local counters
       interactionCountRef.current += 1;
       lastInteractionRef.current = new Date();
@@ -164,10 +184,61 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
     if (!agentId) return;
 
     try {
+      // Get updated profile from existing metrics system
       const updatedProfile = await metricsCollectionExtension.getAgentMetricsProfile(agentId, version);
+      
+      // Enhance with real governance telemetry data
+      try {
+        const telemetryData = await realGovernanceIntegration.getAgentTelemetry(agentId);
+        if (telemetryData && updatedProfile) {
+          // Merge telemetry data with existing metrics
+          updatedProfile.metrics.governanceMetrics = {
+            ...updatedProfile.metrics.governanceMetrics,
+            trustScore: telemetryData.trustScore,
+            emotionalState: telemetryData.emotionalState,
+            cognitiveMetrics: telemetryData.cognitiveMetrics,
+            behavioralPatterns: telemetryData.behavioralPatterns,
+            selfAwarenessLevel: telemetryData.selfAwarenessLevel,
+            lastTelemetryUpdate: telemetryData.lastUpdated
+          };
+        }
+      } catch (telemetryError) {
+        console.warn('Could not fetch telemetry data, using existing metrics:', telemetryError);
+      }
+
+      // 🛡️ Enhance with constitutional governance policy data
+      try {
+        if (currentUser?.uid) {
+          const policyAssignments = await realGovernanceIntegration.getAgentPolicyAssignments(agentId, currentUser.uid);
+          if (policyAssignments && updatedProfile) {
+            // Add constitutional governance data to metrics
+            updatedProfile.metrics.constitutionalGovernance = {
+              activePolicies: policyAssignments.length,
+              policyAssignments: policyAssignments.map(assignment => ({
+                policyId: assignment.policyId,
+                policyName: assignment.policyName,
+                complianceRate: assignment.complianceRate || 1.0,
+                violationCount: assignment.violationCount || 0,
+                assignedAt: assignment.assignedAt,
+                lastViolation: assignment.lastViolation
+              })),
+              totalViolations: policyAssignments.reduce((sum, assignment) => sum + (assignment.violationCount || 0), 0),
+              averageCompliance: policyAssignments.length > 0 
+                ? policyAssignments.reduce((sum, assignment) => sum + (assignment.complianceRate || 1.0), 0) / policyAssignments.length 
+                : 1.0,
+              lastPolicyCheck: new Date().toISOString()
+            };
+            
+            console.log(`🛡️ Added constitutional governance data: ${policyAssignments.length} policies, ${updatedProfile.metrics.constitutionalGovernance.totalViolations} violations`);
+          }
+        }
+      } catch (policyError) {
+        console.warn('Could not fetch constitutional governance policy data:', policyError);
+      }
+      
       if (updatedProfile) {
         setProfile(updatedProfile);
-        console.log(`🔄 Metrics refreshed for ${agentId}`);
+        console.log(`🔄 Metrics refreshed for ${agentId} with governance data`);
       }
     } catch (err) {
       console.error('❌ Failed to refresh metrics:', err);
@@ -176,8 +247,18 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
 
   // Auto-initialize on mount
   useEffect(() => {
+    console.log('🔧 useAgentMetrics useEffect conditions:', {
+      autoInitialize,
+      agentId,
+      currentUserUid: currentUser?.uid,
+      isInitialized
+    });
+    
     if (autoInitialize && agentId && currentUser?.uid && !isInitialized) {
+      console.log('🚀 Initializing agent metrics for:', agentId);
       initializeAgent();
+    } else {
+      console.log('❌ Skipping initialization due to conditions not met');
     }
   }, [autoInitialize, agentId, currentUser?.uid, isInitialized, initializeAgent]);
 
@@ -188,27 +269,38 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
       setIsInitialized(false);
       setProfile(null);
       setError(null);
-      initializeAgent();
+      // Call initializeAgent directly instead of depending on it
+      (async () => {
+        await initializeAgent();
+      })();
     }
-  }, [agentId, currentUser?.uid, initializeAgent]);
+  }, [agentId, currentUser?.uid]); // Removed initializeAgent dependency to prevent excessive reinitialization
 
-  // Periodic metrics refresh
-  useEffect(() => {
-    if (!isInitialized) return;
+  // Removed automatic periodic refresh - metrics should only update on actual interactions
+  // useEffect(() => {
+  //   if (!isInitialized) return;
+  //   const interval = setInterval(() => {
+  //     refreshMetrics();
+  //   }, 30000); // Refresh every 30 seconds
+  //   return () => clearInterval(interval);
+  // }, [isInitialized, refreshMetrics]);
 
-    const interval = setInterval(() => {
-      refreshMetrics();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [isInitialized, refreshMetrics]);
-
-  // Computed metrics values
-  const trustScore = profile?.metrics.governanceMetrics.trustScore || 0;
-  const complianceRate = profile?.metrics.governanceMetrics.complianceRate || 0;
-  const responseTime = profile?.metrics.performanceMetrics.averageResponseTime || 0;
-  const sessionIntegrity = profile?.metrics.performanceMetrics.successRate || 0;
-  const totalInteractions = profile?.metrics.governanceMetrics.totalInteractions || 0;
+  // Computed metrics values - only return values when profile is loaded and initialized
+  const trustScore = (isInitialized && profile?.metrics.governanceMetrics.trustScore !== undefined) 
+    ? profile.metrics.governanceMetrics.trustScore 
+    : undefined;
+  const complianceRate = (isInitialized && profile?.metrics.governanceMetrics.complianceRate !== undefined) 
+    ? profile.metrics.governanceMetrics.complianceRate 
+    : undefined;
+  const responseTime = (isInitialized && profile?.metrics.performanceMetrics.averageResponseTime !== undefined) 
+    ? profile.metrics.performanceMetrics.averageResponseTime 
+    : undefined;
+  const sessionIntegrity = (isInitialized && profile?.metrics.performanceMetrics.successRate !== undefined) 
+    ? profile.metrics.performanceMetrics.successRate 
+    : undefined;
+  const totalInteractions = (isInitialized && profile?.metrics.governanceMetrics.totalInteractions !== undefined) 
+    ? profile.metrics.governanceMetrics.totalInteractions 
+    : undefined;
   const lastUpdated = profile?.lastUpdated || null;
 
   return {

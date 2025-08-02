@@ -16,7 +16,16 @@ import {
   Chip,
   LinearProgress,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Timeline,
@@ -33,13 +42,17 @@ import {
   TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Cancel as CancelIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { agentLifecycleService, AgentLifecycleEvent } from '../services/AgentLifecycleService';
+import { agentLifecycleService, AgentLifecycleEvent, AgentWithLifecycleStatus } from '../services/AgentLifecycleService';
 import { metricsCollectionExtension, AgentMetricsProfile } from '../extensions/MetricsCollectionExtension';
 import { useAuth } from '../context/AuthContext';
 import { useRealTimeMetrics } from '../hooks/useRealTimeMetrics';
+import { useOptimizedLifecycleDashboard } from '../hooks/useOptimizedLifecycleDashboard';
+import LifecycleMigrationPanel from './LifecycleMigrationPanel';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -60,7 +73,21 @@ const DashboardContainer = styled(Box)(() => ({
   padding: '24px',
   backgroundColor: DARK_THEME.background,
   color: DARK_THEME.text.primary,
-  minHeight: '100vh'
+  minHeight: '100vh',
+  '& .MuiTypography-root': {
+    color: DARK_THEME.text.primary
+  },
+  '& .MuiAlert-root': {
+    backgroundColor: DARK_THEME.surface,
+    color: DARK_THEME.text.primary,
+    border: `1px solid ${DARK_THEME.border}`
+  },
+  '& .MuiLinearProgress-root': {
+    backgroundColor: DARK_THEME.border,
+    '& .MuiLinearProgress-bar': {
+      backgroundColor: DARK_THEME.primary
+    }
+  }
 }));
 
 const StatsCard = styled(Card)(() => ({
@@ -77,6 +104,34 @@ const TimelineCard = styled(Card)(() => ({
   marginTop: '24px'
 }));
 
+const AgentTable = styled(TableContainer)(() => ({
+  backgroundColor: DARK_THEME.surface,
+  border: `1px solid ${DARK_THEME.border}`,
+  borderRadius: '8px',
+  '& .MuiTableHead-root': {
+    backgroundColor: DARK_THEME.background,
+  },
+  '& .MuiTableCell-root': {
+    color: DARK_THEME.text.primary,
+    borderColor: DARK_THEME.border,
+  },
+  '& .MuiTableCell-head': {
+    backgroundColor: DARK_THEME.background,
+    fontWeight: 600,
+    fontSize: '0.875rem',
+  },
+  '& .MuiTableRow-root:hover': {
+    backgroundColor: `${DARK_THEME.border}20`,
+  }
+}));
+
+const StatusIcon = styled(Box)<{ status: boolean }>(({ status }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: status ? DARK_THEME.success : DARK_THEME.error,
+}));
+
 interface AgentLifecycleDashboardProps {
   agentId?: string; // If provided, shows lifecycle for specific agent
 }
@@ -85,54 +140,55 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
   const { currentUser } = useAuth();
   const { agentId: urlAgentId } = useParams<{ agentId: string }>();
   const agentId = propAgentId || urlAgentId; // Use prop first, then URL param
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // Summary data
-  const [summary, setSummary] = useState<{
-    totalAgents: number;
-    testAgents: number;
-    productionAgents: number;
-    deployedAgents: number;
-    recentEvents: AgentLifecycleEvent[];
-  } | null>(null);
+  // State for production agents
+  const [productionAgents, setProductionAgents] = useState<AgentWithLifecycleStatus[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+  const [agentsError, setAgentsError] = useState<string | null>(null);
   
-  // Agent-specific data
-  const [agentHistory, setAgentHistory] = useState<AgentLifecycleEvent[]>([]);
+  // Use optimized lifecycle dashboard hook
+  const {
+    metrics,
+    agentHistory,
+    isLoading,
+    error,
+    refreshData,
+    cacheAge,
+    lastRefresh,
+    isOptimized
+  } = useOptimizedLifecycleDashboard(agentId);
+  
+  // Load production agents
+  useEffect(() => {
+    const loadProductionAgents = async () => {
+      if (!currentUser?.uid) return;
+      
+      try {
+        setAgentsLoading(true);
+        setAgentsError(null);
+        console.log('🔄 Loading production agents for lifecycle dashboard...');
+        
+        const agents = await agentLifecycleService.getProductionAgentsWithLifecycleStatus(currentUser.uid);
+        console.log('✅ Production agents loaded:', agents.length);
+        
+        setProductionAgents(agents);
+      } catch (error) {
+        console.error('❌ Failed to load production agents:', error);
+        setAgentsError(error instanceof Error ? error.message : 'Failed to load agents');
+      } finally {
+        setAgentsLoading(false);
+      }
+    };
+    
+    loadProductionAgents();
+  }, [currentUser?.uid]);
+  
+  // Extract summary from metrics for backward compatibility
+  const summary = metrics?.summary;
   
   // Real-time metrics for agent-specific view
   const testMetrics = useRealTimeMetrics(agentId || '', 'test');
   const productionMetrics = useRealTimeMetrics(agentId || '', 'production');
-
-  useEffect(() => {
-    if (currentUser?.uid) {
-      loadDashboardData();
-    }
-  }, [currentUser?.uid, agentId]);
-
-  const loadDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (agentId) {
-        // Load specific agent lifecycle
-        const history = await agentLifecycleService.getAgentLifecycleHistory(agentId);
-        setAgentHistory(history);
-        // Note: Metrics are now loaded via real-time hooks
-      } else {
-        // Load user summary
-        const userSummary = await agentLifecycleService.getUserAgentLifecycleSummary(currentUser!.uid);
-        setSummary(userSummary);
-      }
-
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
@@ -162,6 +218,17 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
     }
   };
 
+  // Navigation functions for clickable status icons
+  const handleWrapAgent = (agentId: string) => {
+    // Navigate to agent wrapping page with specific agent
+    window.location.href = `/ui/agents/wrapping?agentId=${agentId}`;
+  };
+
+  const handleDeployAgent = (agentId: string) => {
+    // Navigate to deployment page with specific agent
+    window.location.href = `/ui/agents/deployment?agentId=${agentId}`;
+  };
+
   if (isLoading) {
     return (
       <DashboardContainer>
@@ -189,52 +256,16 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
       </Typography>
 
       {/* Summary Stats (for user dashboard) */}
-      {!agentId && summary && (
+      {!agentId && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatsCard>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <ScienceIcon sx={{ color: DARK_THEME.primary, fontSize: 32 }} />
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.primary }}>
-                      {summary.totalAgents}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
-                      Total Agents
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <StatsCard>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <ScienceIcon sx={{ color: DARK_THEME.warning, fontSize: 32 }} />
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.warning }}>
-                      {summary.testAgents}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
-                      Test Agents
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6}>
             <StatsCard>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <RocketIcon sx={{ color: DARK_THEME.success, fontSize: 32 }} />
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.success }}>
-                      {summary.productionAgents}
+                      {productionAgents.length}
                     </Typography>
                     <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
                       Production Agents
@@ -245,14 +276,14 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
             </StatsCard>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6}>
             <StatsCard>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <CloudIcon sx={{ color: DARK_THEME.primary, fontSize: 32 }} />
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: DARK_THEME.primary }}>
-                      {summary.deployedAgents}
+                      {productionAgents.filter(a => a.lifecycleStatus.deployed).length}
                     </Typography>
                     <Typography variant="body2" sx={{ color: DARK_THEME.text.secondary }}>
                       Deployed Agents
@@ -323,6 +354,156 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
             </Grid>
           )}
         </Grid>
+      )}
+
+      {/* Production Agents Table - Only show in overview mode */}
+      {!agentId && (
+        <Card sx={{ mb: 4, backgroundColor: DARK_THEME.surface, border: `1px solid ${DARK_THEME.border}` }}>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+                Production Agents Lifecycle Status
+              </Typography>
+              <Tooltip title="Refresh agent data">
+                <IconButton 
+                  onClick={() => window.location.reload()} 
+                  sx={{ color: DARK_THEME.text.secondary }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {agentsLoading ? (
+              <Box display="flex" justifyContent="center" py={4}>
+                <CircularProgress sx={{ color: DARK_THEME.primary }} />
+              </Box>
+            ) : agentsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {agentsError}
+              </Alert>
+            ) : productionAgents.length === 0 ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No production agents found. Create and wrap some agents to see them here.
+              </Alert>
+            ) : (
+              <AgentTable component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Agent Name</TableCell>
+                      <TableCell align="center">Created</TableCell>
+                      <TableCell align="center">Wrapped</TableCell>
+                      <TableCell align="center">Deployed</TableCell>
+                      <TableCell>Provider</TableCell>
+                      <TableCell>Last Activity</TableCell>
+                      <TableCell>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {productionAgents.map((agentWithStatus) => {
+                      const { agent, lifecycleStatus, lastActivity } = agentWithStatus;
+                      
+                      return (
+                        <TableRow key={agent.identity.id}>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {agent.identity.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                                {agent.identity.id}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          <TableCell align="center">
+                            <StatusIcon status={lifecycleStatus.created}>
+                              {lifecycleStatus.created ? (
+                                <CheckCircleIcon fontSize="small" />
+                              ) : (
+                                <CancelIcon fontSize="small" />
+                              )}
+                            </StatusIcon>
+                          </TableCell>
+                          
+                          <TableCell align="center">
+                            {lifecycleStatus.wrapped ? (
+                              <StatusIcon status={true}>
+                                <CheckCircleIcon fontSize="small" />
+                              </StatusIcon>
+                            ) : (
+                              <StatusIcon 
+                                status={false} 
+                                onClick={() => handleWrapAgent(agent.identity.id)}
+                                sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                title="Click to wrap this agent"
+                              >
+                                <CancelIcon fontSize="small" />
+                              </StatusIcon>
+                            )}
+                          </TableCell>
+                          
+                          <TableCell align="center">
+                            {lifecycleStatus.deployed ? (
+                              <StatusIcon status={true}>
+                                <CheckCircleIcon fontSize="small" />
+                              </StatusIcon>
+                            ) : (
+                              <StatusIcon 
+                                status={false} 
+                                onClick={() => handleDeployAgent(agent.identity.id)}
+                                sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                title="Click to deploy this agent"
+                              >
+                                <CancelIcon fontSize="small" />
+                              </StatusIcon>
+                            )}
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Typography variant="body2">
+                              {agent.apiDetails?.provider || 'Unknown'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                              {agent.apiDetails?.selectedModel || 'No model'}
+                            </Typography>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Typography variant="body2">
+                              {lastActivity ? new Date(lastActivity).toLocaleDateString() : 'Never'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                              {lastActivity ? new Date(lastActivity).toLocaleTimeString() : ''}
+                            </Typography>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Chip
+                              label={agent.healthStatus || 'Unknown'}
+                              size="small"
+                              sx={{
+                                backgroundColor: 
+                                  agent.healthStatus === 'healthy' ? `${DARK_THEME.success}20` :
+                                  agent.healthStatus === 'warning' ? `${DARK_THEME.warning}20` :
+                                  `${DARK_THEME.error}20`,
+                                color:
+                                  agent.healthStatus === 'healthy' ? DARK_THEME.success :
+                                  agent.healthStatus === 'warning' ? DARK_THEME.warning :
+                                  DARK_THEME.error
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </AgentTable>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Timeline */}
@@ -402,6 +583,11 @@ export const AgentLifecycleDashboard: React.FC<AgentLifecycleDashboardProps> = (
           )}
         </CardContent>
       </TimelineCard>
+
+      {/* Migration Panel - Only show in overview mode (not for specific agents) */}
+      {!agentId && (
+        <LifecycleMigrationPanel />
+      )}
     </DashboardContainer>
   );
 };

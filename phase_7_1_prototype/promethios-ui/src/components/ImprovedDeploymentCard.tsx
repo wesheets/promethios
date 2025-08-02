@@ -23,7 +23,7 @@ import {
   ExpandMore,
   ExpandLess
 } from '@mui/icons-material';
-import { UnifiedStorageService } from '../services/UnifiedStorageService';
+import { unifiedStorage } from '../services/UnifiedStorageService';
 import AgentMetricsWidget from './AgentMetricsWidget';
 
 interface RealDeploymentResult {
@@ -55,7 +55,7 @@ const ImprovedDeploymentCard: React.FC<ImprovedDeploymentCardProps> = ({ deploym
   useEffect(() => {
     const loadAgentData = async () => {
       try {
-        const storage = new UnifiedStorageService();
+        const storage = unifiedStorage;
         
         // Try multiple key formats to find the agent
         const possibleKeys = [

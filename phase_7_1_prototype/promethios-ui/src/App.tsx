@@ -39,10 +39,14 @@ import UIIntegration from './UIIntegration';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
-  console.log('🚀 AppContent component is executing!');
+  console.log("🚀 AppContent component is executing!");
   const location = useLocation();
-  const isUIRoute = location.pathname.startsWith('/ui/');
-  console.log('📍 Current location:', location.pathname);
+  console.log("📍 Current location:", location.pathname);
+  console.log("🔧 App - Location object:", location);
+  console.log("🔧 App - About to render UIIntegration with key:", location.pathname);
+  
+  // Define isUIRoute to determine if we're on a UI route
+  const isUIRoute = location.pathname.startsWith('/ui');
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">

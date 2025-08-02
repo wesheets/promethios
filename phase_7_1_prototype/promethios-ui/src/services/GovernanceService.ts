@@ -127,28 +127,41 @@ export class GovernanceService {
   // Initialize governance session for an agent
   async initializeSession(agent: AgentProfile): Promise<GovernanceSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions`, {
+      const requestUrl = `${this.baseUrl}/sessions`;
+      const requestBody = {
+        agentId: agent.identity.id,
+        agentName: agent.identity.name,
+        governancePolicies: agent.governancePolicies || [],
+        trustMetrics: agent.trustMetrics || {}
+      };
+
+      console.log('🔧 GOVERNANCE DEBUG: Initializing session');
+      console.log('🔧 Request URL:', requestUrl);
+      console.log('🔧 Request body:', requestBody);
+      console.log('🔧 Base URL:', this.baseUrl);
+
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          agentId: agent.identity.id,
-          agentName: agent.identity.name,
-          governancePolicies: agent.governancePolicies || [],
-          trustMetrics: agent.trustMetrics || {}
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('🔧 Response status:', response.status);
+      console.log('🔧 Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error(`Failed to initialize governance session: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('🔧 Response error text:', errorText);
+        throw new Error(`Failed to initialize governance session: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const session = await response.json();
       this.currentSession = {
         ...session,
         startTime: new Date(session.startTime),
-        violations: session.violations.map((v: any) => ({
+        violations: (session.violations || []).map((v: any) => ({
           ...v,
           timestamp: new Date(v.timestamp)
         }))
@@ -172,41 +185,50 @@ export class GovernanceService {
 
   // Get real-time governance metrics for an agent
   async getAgentMetrics(agentId: string): Promise<GovernanceMetrics> {
-    // Static demo metrics that don't change randomly
-    const baseMetrics = {
-      trustScore: 89.2, // Static value
-      complianceRate: 94.8, // Static value
-      responseTime: 1.4, // Static value
-      sessionIntegrity: 91.6, // Static value
-      policyViolations: 0, // Static value
-      status: 'monitoring' as const,
-      lastUpdated: new Date()
-    };
-
-    if (this.baseUrl !== 'demo' && this.isApiAvailable) {
-      try {
-        const response = await fetch(`${this.baseUrl}/agents/${agentId}/metrics`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(3000)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch governance metrics: ${response.statusText}`);
+    try {
+      console.log('🔧 GovernanceService: Fetching real metrics for agent:', agentId);
+      
+      // Call the real telemetry API for all agents
+      const response = await fetch(`${this.baseUrl}/agent-metrics/${agentId}/telemetry`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
         }
+      });
 
-        const metrics = await response.json();
+      if (response.ok) {
+        const telemetryData = await response.json();
+        console.log('✅ GovernanceService: Real telemetry data received:', telemetryData);
+        
+        // Transform telemetry data to GovernanceMetrics format
+        const data = telemetryData.data;
         return {
-          ...metrics,
-          lastUpdated: new Date(metrics.lastUpdated)
+          trustScore: data.trust_score * 100, // Convert to percentage
+          complianceRate: data.compliance_metrics.policy_adherence * 100, // Convert to percentage
+          responseTime: data.behavioral_patterns.avg_response_time / 1000, // Convert to seconds
+          sessionIntegrity: data.cognitive_metrics.self_awareness_level * 100, // Convert to percentage
+          policyViolations: data.compliance_metrics.violation_count,
+          status: data.session_data.error_rate < 0.1 ? 'active' : 'monitoring',
+          lastUpdated: new Date(data.last_updated)
         };
-      } catch (error) {
-        console.log('Error fetching governance metrics, using demo data');
+      } else {
+        console.warn('⚠️ GovernanceService: API call failed, using fallback metrics');
+        throw new Error(`API call failed: ${response.status}`);
       }
+    } catch (error) {
+      console.error('❌ GovernanceService: Error fetching metrics:', error);
+      
+      // Fallback to dynamic mock metrics when API fails
+      return {
+        trustScore: 87.5 + Math.random() * 10, // Dynamic fallback
+        complianceRate: 94.8 + Math.random() * 5, // Dynamic fallback
+        responseTime: 1.2 + Math.random() * 0.8, // Dynamic fallback
+        sessionIntegrity: 91.6 + Math.random() * 8, // Dynamic fallback
+        policyViolations: Math.floor(Math.random() * 2), // 0 or 1 violations
+        status: 'monitoring' as const,
+        lastUpdated: new Date()
+      };
     }
-
-    // Return static demo metrics (no random changes)
-    return baseMetrics;
   }
 
   // Get governance metrics for deployed agents

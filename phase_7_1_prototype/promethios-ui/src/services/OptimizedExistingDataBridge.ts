@@ -70,20 +70,23 @@ export class OptimizedExistingDataBridge {
     console.log(`📊 OptimizedDataBridge: Getting dashboard metrics for user: ${this.currentUser}`);
 
     try {
-      // Try to get from cache first
+      // Try to get from cache first with extended duration
       const cacheKey = `dashboard-${this.currentUser}`;
       const cached = universalCache.get<DashboardMetrics>(cacheKey, 'dashboard-metrics');
       
       if (cached) {
         console.log(`⚡ Dashboard metrics served from cache (${Date.now() - startTime}ms)`);
-      console.log(`🔍 Cached dashboard metrics:`, {
-        totalAgents: cached.agents?.total,
-        governanceScore: cached.governance?.score,
-        trustScore: cached.trust?.averageScore,
-        fullCachedData: cached
-      });
+        console.log(`🔍 Cached dashboard metrics:`, {
+          totalAgents: cached.agents?.total,
+          governanceScore: cached.governance?.score,
+          trustScore: cached.trust?.averageScore,
+          cacheAge: Date.now() - new Date(cached.lastUpdated).getTime(),
+          fullCachedData: cached
+        });
         return cached;
       }
+
+      console.log(`🔄 Cache miss - loading fresh dashboard metrics for user: ${this.currentUser}`);
 
       // Load data in parallel using batch queries
       const queries: FirebaseQuery[] = [

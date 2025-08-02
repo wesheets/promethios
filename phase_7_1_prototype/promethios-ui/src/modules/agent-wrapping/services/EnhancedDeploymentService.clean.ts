@@ -6,7 +6,7 @@
  */
 
 import { DeploymentService } from './DeploymentService';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { DualAgentWrapper } from '../types/DualAgentWrapper';
 import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
@@ -42,7 +42,7 @@ export class EnhancedDeploymentService extends DeploymentService {
     console.log('🔧 Initializing EnhancedDeploymentService');
     
     try {
-      this.storage = new UnifiedStorageService();
+      this.storage = unifiedStorage;
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService:', error);

@@ -1,0 +1,165 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =============================================================================
+    // PUBLIC COLLECTIONS (No authentication required)
+    // =============================================================================
+    
+    // Waitlist - Allow anyone to join waitlist and read waitlist data
+    match /waitlist/{document} {
+      allow read, write: if true;
+    }
+    
+    // Subscribers - Allow anyone to subscribe and read subscription data
+    match /subscribers/{document} {
+      allow read, write: if true;
+    }
+    
+    // =============================================================================
+    // USER-SPECIFIC COLLECTIONS (Authentication required)
+    // =============================================================================
+    
+    // User profiles and preferences - Users can only access their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User preferences - Users can only access their own preferences
+    match /userPreferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // =============================================================================
+    // AGENT MANAGEMENT COLLECTIONS (Authenticated users only)
+    // =============================================================================
+    
+    // Agent identities - Read/write for authenticated users
+    match /agentIdentities/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Agent attestations - Read/write for authenticated users
+    match /agentAttestations/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Agent roles - Read for all authenticated users, write for authenticated users
+    match /agentRoles/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Agent role assignments - Read/write for authenticated users
+    match /agentRoleAssignments/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Multi-agent systems - Read/write for authenticated users
+    match /multiAgentSystems/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // GOVERNANCE & SCORING COLLECTIONS (Authenticated users only)
+    // =============================================================================
+    
+    // Scorecard results - Read/write for authenticated users
+    match /scorecardResults/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Scorecard templates - Read/write for authenticated users
+    match /scorecardTemplates/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Governance data - Read/write for authenticated users
+    match /governance/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // METRICS & MONITORING COLLECTIONS (Authenticated users only)
+    // =============================================================================
+    
+    // Application metrics - Read/write for authenticated users
+    match /metrics/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // System-wide metrics - Read/write for authenticated users
+    match /system_wide_metrics/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Test agent metrics - Read/write for authenticated users
+    match /test_agent_metrics/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Multi-agent chats - Read/write for authenticated users
+    match /multiAgentChats/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // AGENT LIFECYCLE & DEPLOYMENT (Authenticated users only)
+    // =============================================================================
+    
+    // Agent lifecycle events - Read/write for authenticated users
+    match /agent-lifecycle-events/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Agents collection - Read/write for authenticated users
+    match /agents/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Connection test - Read/write for authenticated users
+    match /connection-test/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Deployment results - Read/write for authenticated users
+    match /deployment-result/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // ADMIN COLLECTIONS (Authenticated users - can be enhanced with admin checks)
+    // =============================================================================
+    
+    // Admin users - Read for authenticated users, write for authenticated users
+    // TODO: Enhance with admin role verification
+    match /admins/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // TEST & DEVELOPMENT COLLECTIONS (Authenticated users only)
+    // =============================================================================
+    
+    // Test documents - Read/write for authenticated users
+    match /test-doc/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // User collection - Read/write for authenticated users
+    match /user/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =============================================================================
+    // FALLBACK RULE (Deny by default)
+    // =============================================================================
+    
+    // Any other collections require authentication
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+

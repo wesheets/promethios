@@ -35,11 +35,13 @@ class OpenAIProvider {
         // Prepare messages array for ChatCompletion
         const messages = [];
         
-        // Add system message if provided
+        // Add system message with governance context if provided
         if (systemPrompt) {
+            // Enhance system prompt with governance context for production agents
+            const enhancedSystemPrompt = await this.enhanceWithGovernanceContext(systemPrompt, options);
             messages.push({
                 role: 'system',
-                content: systemPrompt
+                content: enhancedSystemPrompt
             });
         }
         

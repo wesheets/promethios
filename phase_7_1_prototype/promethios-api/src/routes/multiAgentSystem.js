@@ -3,6 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const sessionManager = require('../services/sessionManager');
 const llmService = require('../services/llmService');
+const multiAgentAuditService = require('../services/multiAgentAuditService');
 
 // In-memory storage for demo (in production, use database)
 const contexts = new Map();
@@ -44,6 +45,19 @@ router.post('/context', async (req, res) => {
 
     // Store context (in production, save to database)
     contexts.set(context.context_id, context);
+
+    // Log context creation with cryptographic audit
+    try {
+      await multiAgentAuditService.logContextCreation(
+        context.context_id,
+        context,
+        req.body.createdBy || 'system'
+      );
+      console.log(`🤖 MAS context audit logged: ${context.context_id}`);
+    } catch (auditError) {
+      console.error('Error logging MAS context audit:', auditError);
+      // Continue execution even if audit fails
+    }
 
     // Log for debugging
     console.log(`Created multi-agent context: ${context.context_id}`);

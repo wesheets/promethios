@@ -16,12 +16,7 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Tooltip,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Divider
+  Tooltip
 } from '@mui/material';
 import {
   Shield as ShieldIcon,
@@ -30,14 +25,11 @@ import {
   Visibility as VisibilityIcon,
   Error as ErrorIcon,
   TrendingUp as TrendingUpIcon,
-  Info as InfoIcon,
-  Download as DownloadIcon,
-  MoreVert as MoreVertIcon,
-  DataObject as DataObjectIcon,
-  History as HistoryIcon
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
+import { realGovernanceIntegration, AgentTelemetryData } from '../services/RealGovernanceIntegration';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -88,10 +80,43 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
   refreshInterval = 30000,
   onMetricsUpdate
 }) => {
-  const agentMetrics = useAgentMetrics(agentId, version, true);
+  const agentMetrics = useAgentMetrics({
+    agentId,
+    agentName: 'Agent',
+    agentType: 'single',
+    version: version || 'test',
+    autoInitialize: true
+  });
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
-  const [downloadMenuAnchor, setDownloadMenuAnchor] = useState<null | HTMLElement>(null);
-  const downloadMenuOpen = Boolean(downloadMenuAnchor);
+  const [telemetryData, setTelemetryData] = useState<AgentTelemetryData | null>(null);
+  const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
+
+  console.log(`🔧 AgentMetricsWidget: Initialized for agent ${agentId} with version ${version}`);
+  console.log(`🔧 AgentMetricsWidget: Metrics hook state:`, {
+    isLoading: agentMetrics.isLoading,
+    isInitialized: agentMetrics.isInitialized,
+    error: agentMetrics.error,
+    profile: agentMetrics.profile
+  });
+
+  // Load real governance telemetry data
+  useEffect(() => {
+    const loadTelemetry = async () => {
+      setIsLoadingTelemetry(true);
+      try {
+        const data = await realGovernanceIntegration.getAgentTelemetry(agentId);
+        setTelemetryData(data);
+      } catch (error) {
+        console.warn('Failed to load telemetry data:', error);
+      } finally {
+        setIsLoadingTelemetry(false);
+      }
+    };
+
+    loadTelemetry();
+    const interval = setInterval(loadTelemetry, refreshInterval);
+    return () => clearInterval(interval);
+  }, [agentId, refreshInterval]);
 
   // Trigger callback when metrics update
   useEffect(() => {
@@ -107,15 +132,18 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
     }
   }, [agentMetrics.trustScore, agentMetrics.complianceRate, agentMetrics.responseTime]);
 
-  const formatPercentage = (value: number): string => {
+  const formatPercentage = (value: number | undefined): string => {
+    if (value === undefined) return '--';
     return `${(value * 100).toFixed(1)}%`;
   };
 
-  const formatTime = (milliseconds: number): string => {
+  const formatTime = (milliseconds: number | undefined): string => {
+    if (milliseconds === undefined) return '--';
     return `${(milliseconds / 1000).toFixed(1)}s`;
   };
 
-  const getScoreColor = (score: number): string => {
+  const getScoreColor = (score: number | undefined): string => {
+    if (score === undefined) return DARK_THEME.text.secondary;
     if (score >= 0.9) return DARK_THEME.success;
     if (score >= 0.7) return DARK_THEME.warning;
     return DARK_THEME.error;
@@ -125,63 +153,161 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
     return ver === 'production' ? DARK_THEME.success : DARK_THEME.warning;
   };
 
-  // Download functionality
-  const handleDownloadMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setDownloadMenuAnchor(event.currentTarget);
-  };
+  // Download functionality for transparency
+  const downloadMetricsData = async () => {
+    try {
+      const governanceData = await realGovernanceIntegration.getGovernanceDataForDownload(agentId);
+      const combinedData = {
+        basicMetrics: {
+          agentId,
+          agentName,
+          version,
+          trustScore: agentMetrics.trustScore,
+          complianceRate: agentMetrics.complianceRate,
+          responseTime: agentMetrics.responseTime,
+          lastUpdated: lastUpdateTime.toISOString()
+        },
+        governanceData,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'agent_metrics_with_governance',
+          format: 'json'
+        }
+      };
 
-  const handleDownloadMenuClose = () => {
-    setDownloadMenuAnchor(null);
-  };
-
-  const downloadJSON = (data: any, filename: string) => {
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    handleDownloadMenuClose();
-  };
-
-  const handleDownloadCurrentMetrics = () => {
-    const metricsData = {
-      agentId,
-      agentName,
-      version,
-      timestamp: new Date().toISOString(),
-      metrics: {
-        trustScore: agentMetrics.trustScore,
-        complianceRate: agentMetrics.complianceRate,
-        responseTime: agentMetrics.responseTime,
-        sessionIntegrity: agentMetrics.sessionIntegrity
-      },
-      profile: agentMetrics.profile,
-      rawData: agentMetrics
-    };
-    downloadJSON(metricsData, `${agentId}_metrics_${new Date().toISOString().split('T')[0]}.json`);
-  };
-
-  const handleDownloadFullProfile = () => {
-    if (agentMetrics.profile) {
-      downloadJSON(agentMetrics.profile, `${agentId}_full_profile_${new Date().toISOString().split('T')[0]}.json`);
+      const blob = new Blob([JSON.stringify(combinedData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_metrics_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download metrics data:', error);
     }
   };
 
-  const handleDownloadGovernanceHistory = () => {
-    const governanceData = {
-      agentId,
-      timestamp: new Date().toISOString(),
-      governanceMetrics: agentMetrics.profile?.metrics?.governanceMetrics,
-      interactions: agentMetrics.profile?.metrics?.interactions || [],
-      violations: agentMetrics.profile?.metrics?.violations || [],
-      trustHistory: agentMetrics.profile?.metrics?.trustHistory || []
-    };
-    downloadJSON(governanceData, `${agentId}_governance_history_${new Date().toISOString().split('T')[0]}.json`);
+  const downloadTelemetryData = async () => {
+    if (!telemetryData) return;
+    
+    try {
+      const fullTelemetryData = {
+        telemetryData,
+        emotionalState: telemetryData.emotionalState,
+        cognitiveMetrics: telemetryData.cognitiveMetrics,
+        behavioralPatterns: telemetryData.behavioralPatterns,
+        selfAwarenessLevel: telemetryData.selfAwarenessLevel,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'agent_telemetry_and_self_awareness',
+          format: 'json',
+          notes: 'Emotional, cognitive, and behavioral telemetry data for recursive improvement'
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(fullTelemetryData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_telemetry_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download telemetry data:', error);
+    }
+  };
+
+  const downloadCompleteGovernanceHistory = async () => {
+    if (!agentId) return;
+    
+    try {
+      // Get comprehensive governance data
+      const governanceData = await realGovernanceIntegration.getGovernanceDataForDownload(agentId);
+      
+      // 🛡️ Get constitutional governance policy data
+      let constitutionalGovernanceData = null;
+      try {
+        const { useAuth } = await import('../context/AuthContext');
+        const currentUser = useAuth().currentUser;
+        if (currentUser?.uid) {
+          const policyAssignments = await realGovernanceIntegration.getAgentPolicyAssignments(agentId, currentUser.uid);
+          constitutionalGovernanceData = {
+            activePolicies: policyAssignments.length,
+            policyAssignments,
+            totalViolations: policyAssignments.reduce((sum, assignment) => sum + (assignment.violationCount || 0), 0),
+            averageCompliance: policyAssignments.length > 0 
+              ? policyAssignments.reduce((sum, assignment) => sum + (assignment.complianceRate || 1.0), 0) / policyAssignments.length 
+              : 1.0,
+            lastPolicyCheck: new Date().toISOString()
+          };
+        }
+      } catch (error) {
+        console.warn('Could not fetch constitutional governance data for download:', error);
+      }
+      
+      // Get chat history if available
+      let chatHistory = null;
+      try {
+        const chatStorageService = new (await import('../services/ChatStorageService')).ChatStorageService();
+        chatHistory = await chatStorageService.loadAgentChatHistory(agentId);
+      } catch (error) {
+        console.warn('Could not load chat history:', error);
+      }
+
+      const completeData = {
+        agentProfile: {
+          agentId,
+          agentName,
+          version,
+          lastUpdated: lastUpdateTime.toISOString()
+        },
+        realTimeMetrics: {
+          trustScore: agentMetrics.trustScore,
+          complianceRate: agentMetrics.complianceRate,
+          responseTime: agentMetrics.responseTime,
+          sessionIntegrity: agentMetrics.sessionIntegrity,
+          policyViolations: agentMetrics.policyViolations
+        },
+        governanceData,
+        constitutionalGovernance: constitutionalGovernanceData,
+        chatHistory: chatHistory ? {
+          messageCount: chatHistory.messageCount,
+          sessionCount: chatHistory.governanceMetrics.sessionCount,
+          messages: chatHistory.messages.map(msg => ({
+            id: msg.id,
+            timestamp: msg.timestamp,
+            sender: msg.sender,
+            contentLength: msg.content.length,
+            governanceData: msg.governanceData,
+            shadowGovernanceData: msg.shadowGovernanceData,
+            constitutionalEnforcement: msg.governanceData?.constitutionalEnforcement
+          }))
+        } : null,
+        downloadInfo: {
+          timestamp: new Date().toISOString(),
+          dataType: 'complete_governance_transparency_report',    format: 'json',
+          description: 'Complete transparency report including real-time metrics, governance data, telemetry, self-awareness prompts, and chat history',
+          dataSource: 'Promethios Governance Backend + Firebase Storage',
+          confidenceLevel: governanceData?.transparency?.confidenceLevel || 0.85
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(completeData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${agentId}_complete_governance_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download complete governance history:', error);
+    }
   };
 
   if (agentMetrics.error) {
@@ -219,7 +345,7 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             <Typography variant={compact ? "subtitle2" : "h6"} sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
               {agentName || agentId} Metrics
             </Typography>
-            <Box display="flex" gap={1} alignItems="center">
+            <Box display="flex" gap={1}>
               <Chip 
                 label={version.toUpperCase()} 
                 size="small"
@@ -240,205 +366,181 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
                   }}
                 />
               )}
-              {!compact && (
-                <Tooltip title="Download Backend Data">
-                  <IconButton
-                    onClick={handleDownloadMenuOpen}
-                    size="small"
-                    sx={{ 
-                      color: DARK_THEME.text.secondary,
-                      '&:hover': { 
-                        color: DARK_THEME.primary,
-                        backgroundColor: DARK_THEME.primary + '10'
-                      }
-                    }}
-                  >
-                    <DownloadIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
             </Box>
           </Box>
         )}
 
-        <Grid container spacing={compact ? 1 : 2}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Trust Score */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  TRUST SCORE
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.trustScore), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.trustScore)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <ShieldIcon sx={{ color: DARK_THEME.primary, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                TRUST SCORE
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.trustScore * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.trustScore)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.trustScore), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.trustScore)}
+            </Typography>
+            <LinearProgress 
+              variant={agentMetrics.trustScore === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.trustScore === undefined ? 0 : agentMetrics.trustScore * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.trustScore),
+                  borderRadius: 4
+                }
+              }} 
+            />
+          </Box>
 
           {/* Compliance Rate */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <CheckCircleIcon sx={{ color: DARK_THEME.success, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  COMPLIANCE
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.complianceRate), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.complianceRate)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <CheckCircleIcon sx={{ color: DARK_THEME.success, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                COMPLIANCE RATE
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.complianceRate * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.complianceRate)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.complianceRate), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.complianceRate)}
+            </Typography>
+            <LinearProgress 
+              variant={agentMetrics.complianceRate === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.complianceRate === undefined ? 0 : agentMetrics.complianceRate * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.complianceRate),
+                  borderRadius: 4
+                }
+              }} 
+            />
+          </Box>
 
           {/* Response Time */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <SpeedIcon sx={{ color: DARK_THEME.primary, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  RESPONSE TIME
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                {formatTime(agentMetrics.responseTime)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <SpeedIcon sx={{ color: '#38bdf8', fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                RESPONSE TIME
               </Typography>
-            </MetricItem>
-          </Grid>
+            </Box>
+            <Typography variant="h3" sx={{ color: '#38bdf8', fontWeight: 'bold' }}>
+              {formatTime(agentMetrics.responseTime)}
+            </Typography>
+          </Box>
 
           {/* Session Integrity */}
-          <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 6} md={compact ? 6 : 3}>
-            <MetricItem>
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <VisibilityIcon sx={{ color: DARK_THEME.warning, fontSize: compact ? 16 : 20 }} />
-                <Typography variant={compact ? "caption" : "subtitle2"} sx={{ color: DARK_THEME.text.primary }}>
-                  INTEGRITY
-                </Typography>
-              </Box>
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: getScoreColor(agentMetrics.sessionIntegrity), fontWeight: 'bold' }}>
-                {formatPercentage(agentMetrics.sessionIntegrity)}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <VisibilityIcon sx={{ color: DARK_THEME.warning, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                SESSION INTEGRITY
               </Typography>
-              {!compact && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={agentMetrics.sessionIntegrity * 100}
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: DARK_THEME.border,
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getScoreColor(agentMetrics.sessionIntegrity)
-                    }
-                  }} 
-                />
-              )}
-            </MetricItem>
-          </Grid>
-        </Grid>
-
-        {/* Additional Stats for non-compact view */}
-        {!compact && agentMetrics.profile && (
-          <Box mt={2} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Total Interactions
-                </Typography>
-                <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
-                  {agentMetrics.profile.metrics.governanceMetrics.totalInteractions}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Violations
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  color: agentMetrics.profile.metrics.governanceMetrics.totalViolations > 0 ? DARK_THEME.error : DARK_THEME.success, 
-                  fontWeight: 'bold' 
-                }}>
-                  {agentMetrics.profile.metrics.governanceMetrics.totalViolations}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                  Last Updated
-                </Typography>
-                <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
-                  {lastUpdateTime.toLocaleTimeString()}
-                </Typography>
-              </Grid>
-              {version === 'production' && agentMetrics.profile.deployments.length > 0 && (
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
-                    Deployments
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: DARK_THEME.primary, fontWeight: 'bold' }}>
-                    {agentMetrics.profile.deployments.length}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-        )}
-
-        {/* Download Menu */}
-        <Menu
-          anchorEl={downloadMenuAnchor}
-          open={downloadMenuOpen}
-          onClose={handleDownloadMenuClose}
-          PaperProps={{
-            sx: {
-              backgroundColor: DARK_THEME.surface,
-              border: `1px solid ${DARK_THEME.border}`,
-              '& .MuiMenuItem-root': {
-                color: DARK_THEME.text.primary,
-                '&:hover': {
-                  backgroundColor: DARK_THEME.primary + '20'
+            </Box>
+            <Typography variant="h3" sx={{ color: getScoreColor(agentMetrics.sessionIntegrity), fontWeight: 'bold', mb: 1 }}>
+              {formatPercentage(agentMetrics.sessionIntegrity)}
+            </Typography>
+            <LinearProgress 
+              variant={agentMetrics.sessionIntegrity === undefined ? "indeterminate" : "determinate"}
+              value={agentMetrics.sessionIntegrity === undefined ? 0 : agentMetrics.sessionIntegrity * 100}
+              sx={{ 
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: DARK_THEME.border,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getScoreColor(agentMetrics.sessionIntegrity),
+                  borderRadius: 4
                 }
-              }
-            }
-          }}
-        >
-          <MenuItem onClick={handleDownloadCurrentMetrics}>
-            <DataObjectIcon sx={{ mr: 1, fontSize: 18 }} />
-            Current Metrics JSON
-          </MenuItem>
-          <MenuItem onClick={handleDownloadFullProfile}>
-            <DataObjectIcon sx={{ mr: 1, fontSize: 18 }} />
-            Full Agent Profile
-          </MenuItem>
-          <Divider sx={{ backgroundColor: DARK_THEME.border }} />
-          <MenuItem onClick={handleDownloadGovernanceHistory}>
-            <HistoryIcon sx={{ mr: 1, fontSize: 18 }} />
-            Governance History
-          </MenuItem>
-        </Menu>
+              }} 
+            />
+          </Box>
+
+          {/* Policy Violations */}
+          <Box>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <ErrorIcon sx={{ color: DARK_THEME.success, fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                POLICY VIOLATIONS
+              </Typography>
+            </Box>
+            <Typography variant="h3" sx={{ 
+              color: agentMetrics.profile?.metrics.governanceMetrics.totalViolations > 0 ? DARK_THEME.error : DARK_THEME.success, 
+              fontWeight: 'bold' 
+            }}>
+              {agentMetrics.profile?.metrics.governanceMetrics.totalViolations || 0}
+            </Typography>
+            <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, display: 'block', mt: 1 }}>
+              Last updated: {lastUpdateTime.toLocaleTimeString()}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Download Section for Transparency */}
+        <Box mt={3} pt={2} borderTop={`1px solid ${DARK_THEME.border}`}>
+          <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mb: 1, display: 'block' }}>
+            Download Data for Transparency
+          </Typography>
+          <Box display="flex" gap={1} flexWrap="wrap">
+            <Chip
+              label="📊 Metrics + Governance"
+              size="small"
+              onClick={downloadMetricsData}
+              sx={{
+                backgroundColor: DARK_THEME.primary + '20',
+                color: DARK_THEME.primary,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: DARK_THEME.primary + '30'
+                }
+              }}
+            />
+            {telemetryData && (
+              <Chip
+                label="🧠 Telemetry + Self-Awareness"
+                size="small"
+                onClick={downloadTelemetryData}
+                sx={{
+                  backgroundColor: DARK_THEME.success + '20',
+                  color: DARK_THEME.success,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: DARK_THEME.success + '30'
+                  }
+                }}
+              />
+            )}
+            <Chip
+              label="📋 Complete Governance History"
+              size="small"
+              onClick={downloadCompleteGovernanceHistory}
+              sx={{
+                backgroundColor: DARK_THEME.warning + '20',
+                color: DARK_THEME.warning,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: DARK_THEME.warning + '30'
+                }
+              }}
+            />
+            {isLoadingTelemetry && (
+              <Chip
+                label="Loading telemetry..."
+                size="small"
+                sx={{
+                  backgroundColor: DARK_THEME.warning + '20',
+                  color: DARK_THEME.warning
+                }}
+              />
+            )}
+          </Box>
+        </Box>
       </CardContent>
     </MetricsCard>
   );

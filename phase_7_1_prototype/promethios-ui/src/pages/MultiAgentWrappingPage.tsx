@@ -57,7 +57,7 @@ const MultiAgentWrappingPage: React.FC = () => {
       
       // Load from unified storage first
       const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
-      const storageService = new UnifiedStorageService();
+      const storageService = unifiedStorage;
       
       // Get user's system list
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];

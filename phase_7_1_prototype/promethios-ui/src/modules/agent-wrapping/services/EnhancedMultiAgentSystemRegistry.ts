@@ -25,7 +25,7 @@ import {
 import MultiAgentSystemRegistry from './MultiAgentSystemRegistry';
 import { DualAgentWrapperRegistry } from './DualAgentWrapperRegistry';
 import { MultiAgentGovernanceEngine, MultiAgentGovernanceConfig } from './governance/MultiAgentGovernanceEngine';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { GovernanceConfiguration } from '../types/dualWrapper';
 
 /**
@@ -43,7 +43,7 @@ export class EnhancedMultiAgentSystemRegistry extends MultiAgentSystemRegistry {
 
   constructor() {
     super();
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.dualWrapperRegistry = new DualAgentWrapperRegistry(this.storage as any);
   }
 

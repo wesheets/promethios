@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Create governed AI chatbots with real-time transparency and trust scoring. Build trustworthy AI experiences with Promethios." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://chat.promethios.ai/" />
+    <meta property="og:title" content="Promethios Chatbots - Governed AI for Everyone" />
+    <meta property="og:description" content="Create governed AI chatbots with real-time transparency and trust scoring. Build trustworthy AI experiences with Promethios." />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://chat.promethios.ai/" />
+    <meta property="twitter:title" content="Promethios Chatbots - Governed AI for Everyone" />
+    <meta property="twitter:description" content="Create governed AI chatbots with real-time transparency and trust scoring. Build trustworthy AI experiences with Promethios." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/og-image.png" />
+    
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        gray: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <title>Promethios Chatbots - Governed AI for Everyone</title>
+    
+    <!-- Analytics -->
+    <script>
+        // Add your analytics code here
+    </script>
+</head>
+<body class="bg-gray-900 text-white">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    
+    <!-- Demo Widget Script -->
+    <script>
+        // Configuration for demo widget
+        window.demoConfig = {
+            apiUrl: '/api/standalone-chatbot',
+            theme: 'dark',
+            position: 'bottom-right',
+            primaryColor: '#6366f1',
+            title: 'Governed AI Demo',
+            subtitle: 'Powered by Anthropic + Promethios',
+            showBranding: true
+        };
+    </script>
+</body>
+</html>
+

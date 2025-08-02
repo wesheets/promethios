@@ -88,6 +88,7 @@ import AgentManageModal from '../components/AgentManageModal';
 // import { useScorecards } from '../modules/agent-identity/hooks/useScorecards';
 // import { AgentProfile as BaseAgentProfile, SystemProfile, CombinedProfile } from '../modules/agent-identity/types/multiAgent';
 import PublishToRegistryModal from '../components/PublishToRegistryModal';
+import { isPromethiosNativeCreationEnabled, isPromethiosNativeManagementEnabled } from '../config/features';
 // Temporarily disabled to avoid backend dependency errors
 // import { agentBackendService } from '../services/agentBackendService';
 
@@ -422,8 +423,8 @@ const AddAgentDialog: React.FC<AddAgentDialogProps> = ({ open, onClose, onAgentA
         apiDetails: {
           endpoint: agentData.apiEndpoint.trim(),
           key: agentData.apiKey.trim(),
-          provider: agentData.provider?.trim() || 'Custom',
-          selectedModel: agentData.selectedModel,
+          provider: agentData.provider?.trim() || 'Unknown',
+          selectedModel: agentData.selectedModel || 'default',
           selectedCapabilities: agentData.selectedCapabilities,
           selectedContextLength: agentData.selectedContextLength,
           discoveredInfo: agentData.discoveredInfo
@@ -605,6 +606,8 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
           },
         }}
       >
+        {/* Create Promethios LLM option - hidden by feature flag */}
+        {isPromethiosNativeCreationEnabled() && (
         <MenuItem onClick={() => navigate('/ui/agents/create-promethios-llm')} sx={{ py: 2 }}>
           <ListItemIcon>
             <Security sx={{ color: '#3b82f6' }} />
@@ -615,7 +618,10 @@ const AddNewAgentButton: React.FC<AddNewAgentButtonProps> = ({ onShowAddAgentDia
             secondaryTypographyProps={{ sx: { color: '#a0aec0' } }}
           />
         </MenuItem>
+        )}
+        {isPromethiosNativeCreationEnabled() && (
         <Divider sx={{ borderColor: '#4a5568', my: 1 }} />
+        )}
         {/* Temporarily hidden wrapper options
         <MenuItem onClick={() => navigate('/ui/agents/wrap-chatgpt')} sx={{ py: 2 }}>
           <ListItemIcon>
@@ -1446,11 +1452,11 @@ const AgentProfileCard: React.FC<{
 };
 // Main Agent Profiles Page Component
 const AgentProfilesPage: React.FC = () => {
+  const navigate = useNavigate();
   // Get tab from URL parameter
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialTab = parseInt(searchParams.get('tab') || '0', 10);
-  
   const [tabValue, setTabValue] = useState(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -1520,8 +1526,8 @@ const AgentProfilesPage: React.FC = () => {
   const loadMultiAgentSystems = async () => {
     try {
       setSystemsLoading(true);
-      const { UnifiedStorageService } = await import('../services/UnifiedStorageService');
-      const storageService = new UnifiedStorageService();
+      const { unifiedStorage } = await import('../services/UnifiedStorageService');
+      const storageService = unifiedStorage;
       
       // Get user's system list
       const userSystems = await storageService.get('user', 'multi-agent-systems') || [];
@@ -1973,6 +1979,8 @@ const AgentProfilesPage: React.FC = () => {
                 </Box>
               } 
             />
+            {/* Promethios Native Agents tab - hidden by feature flag */}
+            {isPromethiosNativeManagementEnabled() && (
             <Tab 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
@@ -1981,6 +1989,7 @@ const AgentProfilesPage: React.FC = () => {
                 </Box>
               } 
             />
+            )}
             <Tab 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
@@ -2087,22 +2096,22 @@ const AgentProfilesPage: React.FC = () => {
                 </Grid>
               </Grid>
 
-              {/* Recent Activity */}
+              {/* All Agents */}
               <Typography variant="h6" gutterBottom>
-                Recent Activity
+                All Agents
               </Typography>
               <Grid container spacing={3}>
-                {/* Show mix of agents and systems */}
-                {[...filteredAgentProfiles.slice(0, 2), ...filteredSystemProfiles.slice(0, 1)].map((profile, index) => (
-                  <Grid item xs={12} md={6} lg={4} key={index}>
+                {/* Show all agents and systems */}
+                {[...filteredAgentProfiles, ...filteredSystemProfiles].map((profile, index) => (
+                  <Grid item xs={12} md={6} lg={4} key={profile.identity.id}>
                     {'systemType' in profile.identity ? (
                       <SystemProfileCard profile={profile as SystemProfile} />
                     ) : (
                       <AgentProfileCard 
                         profile={profile as AgentProfile}
-                        selectionMode={false}
-                        isSelected={false}
-                        onSelectionChange={() => {}}
+                        selectionMode={selectionMode}
+                        isSelected={selectedAgents.includes(profile.identity.id)}
+                        onSelectionChange={handleAgentSelection}
                         onManageAgent={handleManageAgent}
                       />
                     )}
@@ -2113,6 +2122,8 @@ const AgentProfilesPage: React.FC = () => {
           )}
         </TabPanel>
 
+        {/* Promethios Native Agents TabPanel - hidden by feature flag */}
+        {isPromethiosNativeManagementEnabled() && (
         <TabPanel value={tabValue} index={1}>
           {/* Promethios Native Agents Tab */}
           {combinedLoading ? (
@@ -2143,8 +2154,9 @@ const AgentProfilesPage: React.FC = () => {
             </Grid>
           )}
         </TabPanel>
+        )}
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={isPromethiosNativeManagementEnabled() ? 2 : 1}>
           {/* Wrapped API Agents Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
@@ -2175,7 +2187,7 @@ const AgentProfilesPage: React.FC = () => {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={isPromethiosNativeManagementEnabled() ? 3 : 2}>
           {/* Multi-Agent Systems Tab */}
           {combinedLoading ? (
             <Box display="flex" justifyContent="center" py={8}>
@@ -2212,13 +2224,9 @@ const AgentProfilesPage: React.FC = () => {
               // Refresh agents from storage to get the latest data
               await handleRefreshAgents();
               
-              // Show publish to registry modal after successful creation
-              setWrappedAgentData({
-                name: newAgent.identity.name,
-                type: 'single',
-                governanceTier: 'enhanced'
-              });
-              setShowPublishModal(true);
+              // Redirect to Agent Wrapping Wizard to complete the wrapping process
+              // Start at step 1 (Governance Setup) since API configuration is already done
+              navigate(`/ui/agents/wrapping?agentId=${newAgent.identity.id}`);
               
             } catch (error) {
               console.error('Failed to create agent:', error);

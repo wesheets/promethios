@@ -26,16 +26,16 @@ export class UniversalDataCache {
 
   private configs = new Map<string, CacheConfig>([
     // Agent data - cache longer since it changes less frequently
-    ['agents', { ttl: 10 * 60 * 1000, maxSize: 500, version: '1.0.0' }],
-    ['agent-scorecards', { ttl: 15 * 60 * 1000, maxSize: 200, version: '1.0.0' }],
+    ['agents', { ttl: 15 * 60 * 1000, maxSize: 500, version: '1.0.0' }], // Increased from 10min to 15min
+    ['agent-scorecards', { ttl: 20 * 60 * 1000, maxSize: 200, version: '1.0.0' }], // Increased from 15min to 20min
     
-    // Governance data - cache shorter since it changes more frequently
-    ['policies', { ttl: 5 * 60 * 1000, maxSize: 100, version: '1.0.0' }],
-    ['violations', { ttl: 2 * 60 * 1000, maxSize: 100, version: '1.0.0' }],
+    // Governance data - optimized cache times for better performance
+    ['policies', { ttl: 10 * 60 * 1000, maxSize: 100, version: '1.0.0' }], // Increased from 5min to 10min
+    ['violations', { ttl: 5 * 60 * 1000, maxSize: 100, version: '1.0.0' }], // Increased from 2min to 5min
     
-    // Metrics - cache very short since they should be real-time
-    ['trust-metrics', { ttl: 1 * 60 * 1000, maxSize: 50, version: '1.0.0' }],
-    ['dashboard-metrics', { ttl: 30 * 1000, maxSize: 10, version: '1.0.0' }],
+    // Metrics - cache for better performance while maintaining reasonable freshness
+    ['trust-metrics', { ttl: 3 * 60 * 1000, maxSize: 50, version: '1.0.0' }], // Increased from 1min to 3min
+    ['dashboard-metrics', { ttl: 10 * 60 * 1000, maxSize: 10, version: '1.0.0' }], // Increased from 5min to 10min
     
     // Static data - cache longer
     ['system-health', { ttl: 30 * 1000, maxSize: 10, version: '1.0.0' }],

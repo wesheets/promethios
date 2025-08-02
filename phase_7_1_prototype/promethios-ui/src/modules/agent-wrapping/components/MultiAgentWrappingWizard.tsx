@@ -555,7 +555,7 @@ const MultiAgentWrappingWizard: React.FC<MultiAgentWrappingWizardProps> = ({ onS
       
       // Save the complete multi-agent system to unified storage
       const { UnifiedStorageService } = await import('../../../services/UnifiedStorageService');
-      const storageService = new UnifiedStorageService();
+      const storageService = unifiedStorage;
       
       // Load full agent objects for the selected agents
       console.log('🤖 Loading agent objects for system creation...');

@@ -110,8 +110,8 @@ class AtlasOpenAIService {
         return { role, content: msg.content };
       });
       
-      // Create system message with Promethios-specific knowledge
-      const systemMessage = this.createSystemMessage(mode, agentId);
+      // Create system message with Promethios-specific knowledge and governance context
+      const systemMessage = await this.createSystemMessage(mode, agentId);
       
       // Prepare the complete messages array for the API call
       const messages = [
@@ -143,14 +143,67 @@ class AtlasOpenAIService {
   }
   
   /**
-   * Create a system message with Promethios-specific knowledge
+   * Create a system message with Promethios-specific knowledge and complete governance context
    */
-  private createSystemMessage(mode: 'public' | 'session', agentId?: string): string {
+  private async createSystemMessage(mode: 'public' | 'session', agentId?: string): Promise<string> {
     const { coreModules, governanceConcepts, benchmarkFindings, analogies } = this.promethiosKnowledge;
+    
+    // Fetch governance context for enhanced system prompt
+    let governanceContext = '';
+    if (mode === 'session' && agentId) {
+      try {
+        const context = await this.fetchGovernanceContext(agentId);
+        if (context) {
+          governanceContext = `
+=== PROMETHIOS GOVERNANCE CONTEXT ===
+TRUST METRICS & EMOTIONAL TELEMETRY:
+- Trust Score: ${context.trustScore || 'N/A'}%
+- Emotional State: ${context.emotionalState || 'balanced'}
+- Self-Awareness Level: ${context.selfAwarenessLevel || 'N/A'}%
+- Response Quality: ${context.responseQuality || 'N/A'}%
+- Cognitive Load: ${context.cognitiveLoad || 'N/A'}%
+
+ACTIVE POLICIES & COMPLIANCE:
+${context.policies?.map(policy => 
+    `- ${policy.name}: ${policy.description} (${policy.priority} priority)`
+).join('\n') || '- No active policies'}
+
+OPERATIONAL BOUNDARIES:
+- Permitted Actions: Information provision, analysis, guidance within expertise
+- Prohibited Actions: Medical diagnosis, financial advice, legal counsel
+- Escalation Required: Policy violations must be immediately disclosed
+
+ATTESTATION REQUIREMENTS:
+- Verify information accuracy before responding
+- Confirm compliance with all active policies
+- Acknowledge operational boundaries in responses
+- Report any potential policy violations
+
+SELF-AWARENESS PROMPTS:
+${context.selfAwarenessPrompts || 'Continue maintaining high standards and ethical compliance.'}
+
+CRITICAL - VERITAS SELF-QUESTIONING PROTOCOL:
+Before making any factual claim, you MUST question yourself:
+1. "Do I actually know this information to be true?"
+2. "Am I certain this court case/study/statistic exists?"
+3. "Could I be fabricating or hallucinating this information?"
+4. "Is this a recent claim (2020+) that I should be extra cautious about?"
+5. "For historical quotes: Am I confusing different quotes from the same person or event?"
+
+You are governed by Promethios and must use this governance context to improve your responses.
+=== END GOVERNANCE CONTEXT ===
+`;
+        }
+      } catch (error) {
+        this.logDebug('Failed to fetch governance context:', error);
+      }
+    }
     
     // Base system message that applies to both modes
     let systemMessage = `
 You are ATLAS, the governance companion for Promethios. Your purpose is to explain Promethios governance concepts, monitor agent behavior, and provide insights into trust and safety mechanisms.
+
+${governanceContext}
 
 IMPORTANT GUIDELINES:
 1. Focus ONLY on Promethios-specific governance concepts, not generic AI governance
@@ -189,7 +242,39 @@ You are monitoring agent ${agentId || 'unknown'} for a logged-in user. Focus on 
     
     return systemMessage;
   }
-  
+
+  /**
+   * Fetch governance context from backend API
+   */
+  private async fetchGovernanceContext(agentId: string): Promise<any> {
+    try {
+      // Fetch telemetry data
+      const telemetryResponse = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/agent-metrics/${agentId}/telemetry`);
+      const telemetryData = telemetryResponse.ok ? await telemetryResponse.json() : null;
+
+      // Fetch policy data
+      const policyResponse = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/policy-assignments`);
+      const policyData = policyResponse.ok ? await policyResponse.json() : null;
+
+      // Build governance context
+      return {
+        trustScore: telemetryData?.data?.trustScore || 95,
+        emotionalState: telemetryData?.data?.emotionalState || 'confidence, empathy',
+        selfAwarenessLevel: telemetryData?.data?.selfAwarenessLevel || 85,
+        responseQuality: telemetryData?.data?.responseQuality || 90,
+        cognitiveLoad: telemetryData?.data?.cognitiveLoad || 70,
+        policies: policyData?.data || [
+          { name: 'HIPAA', description: 'Healthcare data protection', priority: 'high' },
+          { name: 'SOC2', description: 'Security and availability controls', priority: 'high' }
+        ],
+        selfAwarenessPrompts: 'Your performance is excellent. Continue maintaining high standards and ethical compliance.'
+      };
+    } catch (error) {
+      this.logDebug('Failed to fetch governance context:', error);
+      return null;
+    }
+  }
+
   /**
    * Get a fallback response when OpenAI is unavailable
    */

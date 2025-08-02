@@ -6,13 +6,14 @@
  */
 
 import { DeploymentService } from './DeploymentService';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { deployedAgentAPI, AgentAPIKey } from '../../../services/api/deployedAgentAPI';
 import { DualAgentWrapper } from '../types/DualAgentWrapper';
 import { DeploymentTarget, DeploymentMethod } from '../types/DeploymentTypes';
 import { enhancedAgentIdentityRegistry } from '../../agent-identity/services/EnhancedAgentIdentityRegistry';
 import { metricsCollectionExtension } from '../../../extensions/MetricsCollectionExtension';
 import { agentLifecycleService } from '../../../services/AgentLifecycleService';
+import { useAgentDeployedHook, useAgentWrappedHook } from '../../../hooks/LifecycleHooks';
 
 // Types
 export interface EnhancedDeploymentPackage {
@@ -41,15 +42,16 @@ export interface RealDeploymentResult {
  * Enhanced Deployment Service with Promethios integration
  */
 export class EnhancedDeploymentService extends DeploymentService {
+  private static instance: EnhancedDeploymentService | null = null;
   private storage: UnifiedStorageService;
   private apiKeys: Map<string, AgentAPIKey> = new Map();
 
-  constructor() {
+  private constructor() {
     super();
     console.log('🔧 Initializing EnhancedDeploymentService');
     
     try {
-      this.storage = new UnifiedStorageService();
+      this.storage = unifiedStorage;
       console.log('✅ UnifiedStorageService created successfully');
     } catch (error) {
       console.error('❌ Error creating UnifiedStorageService:', error);
@@ -95,6 +97,18 @@ export class EnhancedDeploymentService extends DeploymentService {
     }
     
     console.log('✅ EnhancedDeploymentService initialization complete');
+  }
+
+  public static getInstance(): EnhancedDeploymentService {
+    if (!EnhancedDeploymentService.instance) {
+      EnhancedDeploymentService.instance = new EnhancedDeploymentService();
+    }
+    return EnhancedDeploymentService.instance;
+  }
+
+  // For backward compatibility
+  public static create(): EnhancedDeploymentService {
+    return EnhancedDeploymentService.getInstance();
   }
 
   /**
@@ -256,23 +270,19 @@ export class EnhancedDeploymentService extends DeploymentService {
           // Create production agent ID (if different from test agent ID)
           const productionAgentId = agentId.includes('-test') ? agentId.replace('-test', '-production') : `${agentId}-production`;
           
-          // Handle agent wrapping (test to production promotion)
-          const wrappingResult = await agentLifecycleService.onAgentWrapped(agentId, productionAgentId, userId);
-          if (!wrappingResult.success) {
-            throw new Error(`Agent wrapping failed: ${wrappingResult.error}`);
-          }
+          // Handle agent wrapping (test to production promotion) using lifecycle hooks
+          await useAgentWrappedHook(agentId, productionAgentId, userId);
+          console.log('✅ Agent wrapping lifecycle event triggered successfully');
           
-          // Handle agent deployment
-          const deploymentResult = await agentLifecycleService.onAgentDeployed(
+          // Handle agent deployment using lifecycle hooks
+          await useAgentDeployedHook(
             productionAgentId,
             deploymentId,
             result.url || '',
             userId,
             'production'
           );
-          if (!deploymentResult.success) {
-            throw new Error(`Agent deployment lifecycle failed: ${deploymentResult.error}`);
-          }
+          console.log('✅ Agent deployment lifecycle event triggered successfully');
           
           console.log('✅ Agent lifecycle processing completed successfully');
         } catch (lifecycleError) {
@@ -536,16 +546,6 @@ export class EnhancedDeploymentService extends DeploymentService {
   }
 }
 
-// Singleton instance
-let _enhancedDeploymentServiceInstance: EnhancedDeploymentService | null = null;
-
-export function getEnhancedDeploymentService(): EnhancedDeploymentService {
-  if (!_enhancedDeploymentServiceInstance) {
-    _enhancedDeploymentServiceInstance = new EnhancedDeploymentService();
-  }
-  return _enhancedDeploymentServiceInstance;
-}
-
-// Simple export for direct use
-export const enhancedDeploymentService = getEnhancedDeploymentService();
+// Singleton instance export
+export const enhancedDeploymentService = EnhancedDeploymentService.getInstance();
 

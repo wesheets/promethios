@@ -5,7 +5,7 @@
  * Handles real-time streaming, historical search, download capabilities, and audit trails.
  */
 
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage } from './UnifiedStorageService';
 import { deployedAgentAPI } from './api/deployedAgentAPI';
 
 export interface LogEntry {
@@ -109,7 +109,7 @@ class LogAccessService {
   private retentionPolicy: LogRetentionPolicy;
 
   constructor() {
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.retentionPolicy = {
       realTimeRetention: 24, // 24 hours
       recentRetention: 7, // 7 days

@@ -135,12 +135,14 @@ const NewHeader: React.FC<NewHeaderProps> = ({ className }) => {
                       <Link 
                         to="/ui/dashboard" 
                         className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => setUserMenuOpen(false)}
                       >
                         Dashboard
                       </Link>
                       <Link 
                         to="/settings" 
                         className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => setUserMenuOpen(false)}
                       >
                         Settings
                       </Link>

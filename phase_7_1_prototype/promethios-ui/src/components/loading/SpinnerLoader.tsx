@@ -64,23 +64,7 @@ export const DashboardSpinnerLoader: React.FC<{
     );
   }
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="dashboard-loader-container loading">
-        <div className="dashboard-spinner-wrapper">
-          <SpinnerLoader 
-            size="large" 
-            color="primary"
-            text="Loading Dashboard"
-            subtext="Preparing your governance metrics..."
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Loaded state
+  // Always show children - no loading spinner
   return <>{children}</>;
 };
 

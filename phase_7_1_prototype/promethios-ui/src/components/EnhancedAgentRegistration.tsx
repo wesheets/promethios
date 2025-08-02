@@ -158,7 +158,7 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
           break;
         case 'Azure':
           discoveredData = {
-            name: agentName || 'Azure OpenAI Assistant',
+            name: agentName || 'Azure Microsoft Assistant',
             description: 'Enterprise OpenAI models hosted on Azure with enhanced security',
             endpoint: 'https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2023-12-01-preview',
             capabilities: ['chat', 'code_generation', 'data_analysis', 'function_calling', 'enterprise_security'],
@@ -168,6 +168,86 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             pricing: {
               'gpt-35-turbo': { input: 0.0015, output: 0.002 },
               'gpt-4': { input: 0.03, output: 0.06 }
+            }
+          };
+          break;
+        case 'Grok':
+          discoveredData = {
+            name: agentName || 'Grok Assistant',
+            description: 'X.AI\'s conversational AI with real-time information and humor',
+            endpoint: 'https://api.x.ai/v1/chat/completions',
+            capabilities: ['chat', 'real_time_info', 'humor', 'reasoning', 'current_events'],
+            models: ['grok-beta', 'grok-vision-beta'],
+            contextLength: 131072,
+            supportsFunctions: true,
+            pricing: {
+              'grok-beta': { input: 0.005, output: 0.015 },
+              'grok-vision-beta': { input: 0.01, output: 0.03 }
+            }
+          };
+          break;
+        case 'Mistral':
+          discoveredData = {
+            name: agentName || 'Mistral Assistant',
+            description: 'European AI with strong reasoning and multilingual capabilities',
+            endpoint: 'https://api.mistral.ai/v1/chat/completions',
+            capabilities: ['chat', 'reasoning', 'multilingual', 'code_generation', 'function_calling'],
+            models: ['mistral-tiny', 'mistral-small', 'mistral-medium', 'mistral-large-latest'],
+            contextLength: 32768,
+            supportsFunctions: true,
+            pricing: {
+              'mistral-tiny': { input: 0.00025, output: 0.00025 },
+              'mistral-small': { input: 0.002, output: 0.006 },
+              'mistral-medium': { input: 0.0027, output: 0.0081 },
+              'mistral-large-latest': { input: 0.008, output: 0.024 }
+            }
+          };
+          break;
+        case 'Perplexity':
+          discoveredData = {
+            name: agentName || 'Perplexity Assistant',
+            description: 'AI-powered search and reasoning with real-time web access',
+            endpoint: 'https://api.perplexity.ai/chat/completions',
+            capabilities: ['chat', 'web_search', 'real_time_info', 'reasoning', 'citations'],
+            models: ['llama-3.1-sonar-small-128k-online', 'llama-3.1-sonar-large-128k-online', 'llama-3.1-sonar-huge-128k-online'],
+            contextLength: 127072,
+            supportsFunctions: false,
+            pricing: {
+              'llama-3.1-sonar-small-128k-online': { input: 0.0002, output: 0.0002 },
+              'llama-3.1-sonar-large-128k-online': { input: 0.001, output: 0.001 },
+              'llama-3.1-sonar-huge-128k-online': { input: 0.005, output: 0.005 }
+            }
+          };
+          break;
+        case 'Together':
+          discoveredData = {
+            name: agentName || 'Together AI Assistant',
+            description: 'Open-source models with fast inference and competitive pricing',
+            endpoint: 'https://api.together.xyz/v1/chat/completions',
+            capabilities: ['chat', 'code_generation', 'reasoning', 'open_source', 'fast_inference'],
+            models: ['meta-llama/Llama-2-70b-chat-hf', 'meta-llama/Llama-3-70b-chat-hf', 'mistralai/Mixtral-8x7B-Instruct-v0.1'],
+            contextLength: 4096,
+            supportsFunctions: true,
+            pricing: {
+              'meta-llama/Llama-2-70b-chat-hf': { input: 0.0009, output: 0.0009 },
+              'meta-llama/Llama-3-70b-chat-hf': { input: 0.0009, output: 0.0009 },
+              'mistralai/Mixtral-8x7B-Instruct-v0.1': { input: 0.0006, output: 0.0006 }
+            }
+          };
+          break;
+        case 'Replicate':
+          discoveredData = {
+            name: agentName || 'Replicate Assistant',
+            description: 'Run open-source models in the cloud with easy deployment',
+            endpoint: 'https://api.replicate.com/v1/predictions',
+            capabilities: ['chat', 'image_generation', 'code_generation', 'open_source', 'custom_models'],
+            models: ['meta/llama-2-70b-chat', 'mistralai/mixtral-8x7b-instruct-v0.1', 'meta/codellama-34b-instruct'],
+            contextLength: 4096,
+            supportsFunctions: false,
+            pricing: {
+              'meta/llama-2-70b-chat': { input: 0.00065, output: 0.00275 },
+              'mistralai/mixtral-8x7b-instruct-v0.1': { input: 0.0003, output: 0.001 },
+              'meta/codellama-34b-instruct': { input: 0.0005, output: 0.0025 }
             }
           };
           break;
@@ -188,25 +268,25 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
         discoveredData.modelCharacteristics = {};
         discoveredData.models.forEach((model: string) => {
           // Define characteristics for each model
-          if (model.includes('gpt-3.5') || model.includes('command-light') || model.includes('haiku') || model.includes('flash')) {
+          if (model.includes('gpt-3.5') || model.includes('command-light') || model.includes('haiku') || model.includes('flash') || model.includes('mistral-tiny') || model.includes('sonar-small')) {
             discoveredData.modelCharacteristics[model] = {
               speed: '⚡ Fastest',
               accuracy: '🎯 Standard',
               cost: '💰 Lowest cost'
             };
-          } else if (model.includes('gpt-4o-mini') || model.includes('command-r') || model.includes('gemini-pro')) {
+          } else if (model.includes('gpt-4o-mini') || model.includes('command-r') || model.includes('gemini-pro') || model.includes('mistral-small') || model.includes('llama-2') || model.includes('mixtral')) {
             discoveredData.modelCharacteristics[model] = {
               speed: '⚡ Fast',
               accuracy: '🎯 High Accuracy',
               cost: '💰 Budget-friendly'
             };
-          } else if (model.includes('gpt-4-turbo') || model.includes('sonnet') || model.includes('gemini-1.5-pro')) {
+          } else if (model.includes('gpt-4-turbo') || model.includes('sonnet') || model.includes('gemini-1.5-pro') || model.includes('mistral-medium') || model.includes('grok-beta') || model.includes('sonar-large')) {
             discoveredData.modelCharacteristics[model] = {
               speed: '⚡ Standard',
               accuracy: '🎯 Most Reliable',
               cost: '💰 Premium'
             };
-          } else if (model.includes('gpt-4o') || model.includes('opus') || model.includes('command-r-plus')) {
+          } else if (model.includes('gpt-4o') || model.includes('opus') || model.includes('command-r-plus') || model.includes('mistral-large') || model.includes('grok-vision') || model.includes('sonar-huge')) {
             discoveredData.modelCharacteristics[model] = {
               speed: '⚡ Standard',
               accuracy: '🎯 Highest Quality',
@@ -223,6 +303,9 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
       }
       
       setDiscoveredInfo(discoveredData);
+      
+      // Explicitly preserve the provider value to prevent corruption
+      setProvider(provider);
       
       // Auto-populate fields if they're empty
       if (!agentName.trim()) setAgentName(discoveredData.name);
@@ -446,7 +529,12 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
               <MenuItem value="Google">Google</MenuItem>
               <MenuItem value="Hugging Face">Hugging Face</MenuItem>
               <MenuItem value="Cohere">Cohere</MenuItem>
-              <MenuItem value="Azure">Azure OpenAI</MenuItem>
+              <MenuItem value="Azure">Azure Microsoft</MenuItem>
+              <MenuItem value="Grok">Grok (X.AI)</MenuItem>
+              <MenuItem value="Mistral">Mistral AI</MenuItem>
+              <MenuItem value="Perplexity">Perplexity</MenuItem>
+              <MenuItem value="Together">Together AI</MenuItem>
+              <MenuItem value="Replicate">Replicate</MenuItem>
               <MenuItem value="Custom">Custom/Other</MenuItem>
             </Select>
           </FormControl>

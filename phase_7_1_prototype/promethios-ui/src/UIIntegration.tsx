@@ -38,11 +38,20 @@ import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage
 import EnhancedDeployPage from './pages/EnhancedDeployPage';
 import EnhancedEmotionalVeritasPage from './pages/EnhancedEmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
+import AuditReportsPage from './components/audit/AuditReportsPage';
+import TestGovernancePage from './pages/TestGovernancePage';
+import StepByStepGovernancePage from './pages/StepByStepGovernancePage';
+import AutoRefreshTestPage from './pages/AutoRefreshTestPage';
+import ModalNotificationTestPage from './pages/ModalNotificationTestPage';
+import WorkingGovernancePage from './pages/WorkingGovernancePage';
+import MinimalGovernancePage from './pages/MinimalGovernancePage';
+import ReverseTestGovernancePage from './pages/ReverseTestGovernancePage';
+import IncrementalGovernancePage from './pages/IncrementalGovernancePage';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
-import UserProfileSettingsPage from './pages/UserProfileSettingsPage';
+import UserProfilePage from './pages/UserProfilePage';
 import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
@@ -73,6 +82,14 @@ import PrometheosLLMCreationPage from './pages/PrometheosLLMCreationPage';
  */
 const UIIntegration: React.FC = () => {
   const location = useLocation();
+  
+  // Debug logging
+  console.log('📍 UIIntegration - Current location:', location.pathname);
+  console.log('🔄 UIIntegration - Routes component re-rendering with key:', location.pathname);
+  
+  // Extract the relative path for UIIntegration (remove /ui prefix)
+  const relativePath = location.pathname.replace('/ui', '') || '/';
+  console.log('🎯 UIIntegration - Relative path for routing:', relativePath);
   
   // Using proxy components to connect to the actual UI components
   return (
@@ -260,8 +277,17 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Governance Routes */}
-        <Route path="governance/overview" element={
+        {/* Governance Routes - INCREMENTAL TEST STEP 1 */}
+            <Route path="governance/overview" element={
+              <ProtectedRoute requireOnboarding={false}>
+                <MainLayoutProxy>
+                  <SimplifiedGovernanceOverviewPage />
+                </MainLayoutProxy>
+              </ProtectedRoute>
+            } />
+        
+        {/* Governance Dashboard route - FIXED: Now points to different component */}
+        <Route path="governance/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <SimplifiedGovernanceOverviewPage />
@@ -274,6 +300,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnhancedGovernanceOverviewPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Modal/Notification Test Route */}
+        <Route path="governance/modal-test" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ModalNotificationTestPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -307,6 +342,14 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnhancedGovernanceReportsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/audit-reports" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AuditReportsPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -351,16 +394,16 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
-        
-        {/* Settings Routes */}
-        <Route path="settings/profile" element={
+                {/* Clean Profile Route - New Implementation */}
+        <Route path="profile" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <UserProfileSettingsPage />
+              <UserProfilePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
+        {/* Settings Routes - Other pages */}
         <Route path="settings/preferences" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
@@ -401,10 +444,10 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Default Settings route - redirect to profile */}
+        {/* Default Settings route - redirect to preferences */}
         <Route path="settings" element={
           <ProtectedRoute requireOnboarding={false}>
-            <Navigate to="/ui/settings/profile" replace />
+            <Navigate to="/ui/settings/preferences" replace />
           </ProtectedRoute>
         } />
         

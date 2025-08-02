@@ -24,8 +24,8 @@ export class ParallelFirebaseManager {
   private pendingQueries = new Map<string, Promise<any>>();
   private queryQueue: FirebaseQuery[] = [];
   private isProcessing = false;
-  private maxConcurrent = 5; // Maximum concurrent Firebase requests
-  private batchSize = 10; // Maximum queries per batch
+  private maxConcurrent = 3; // Reduced from 5 to prevent Firebase throttling
+  private batchSize = 6; // Reduced from 10 for faster processing
 
   /**
    * Execute multiple Firebase queries in parallel with caching
@@ -51,22 +51,38 @@ export class ParallelFirebaseManager {
 
     console.log(`🔄 Fetching ${uncachedQueries.length} queries from Firebase (${cacheResults.size} from cache)`);
 
-    // Group queries by priority
-    const priorityGroups = this.groupQueriesByPriority(uncachedQueries);
+    // Simplified processing - execute in smaller chunks for better performance
+    const chunks = this.chunkQueries(uncachedQueries, this.batchSize);
     
-    // Process high priority queries first
-    for (const [priority, groupQueries] of priorityGroups) {
-      console.log(`⚡ Processing ${groupQueries.length} ${priority} priority queries`);
-      const groupResults = await this.executeQueriesInParallel<T>(groupQueries);
-      groupResults.forEach((result, id) => {
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      console.log(`⚡ Processing chunk ${i + 1}: ${chunk.length} queries`);
+      const chunkResults = await this.executeQueriesInParallel<T>(chunk);
+      chunkResults.forEach((result, id) => {
         results.set(id, result);
       });
+      
+      // Small delay between chunks to prevent Firebase rate limiting
+      if (i < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
     }
 
     const totalTime = Date.now() - startTime;
     console.log(`✅ Batch query complete: ${results.size} results in ${totalTime}ms`);
     
     return results;
+  }
+
+  /**
+   * Chunk queries into smaller groups for better performance
+   */
+  private chunkQueries(queries: FirebaseQuery[], chunkSize: number): FirebaseQuery[][] {
+    const chunks: FirebaseQuery[][] = [];
+    for (let i = 0; i < queries.length; i += chunkSize) {
+      chunks.push(queries.slice(i, i + chunkSize));
+    }
+    return chunks;
   }
 
   /**

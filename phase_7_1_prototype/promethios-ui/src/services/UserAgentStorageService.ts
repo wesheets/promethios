@@ -250,19 +250,19 @@ export class UserAgentStorageService {
       console.log('🔍 Production keys found:', productionKeys.length, productionKeys.slice(0, 3));
       console.log('🔍 Other keys found:', otherKeys.length, otherKeys.slice(0, 3));
       
-      // Filter for production agents AND native agents
+      // Filter for ONLY production agents and native agents (no testing agents)
       const userPrefix = `${this.currentUserId}_`;
       console.log('🔍 Looking for production agents with prefix:', userPrefix);
       console.log('🔍 Sample key analysis:');
       keyParts.slice(0, 5).forEach(key => {
-        console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')}`);
+        console.log(`  Key: "${key}" | Starts with prefix: ${key.startsWith(userPrefix)} | Has -production: ${key.includes('-production')} | Has -testing: ${key.includes('-testing')}`);
       });
       
-      // Include both production agents and native agents (promethios-llm-*)
+      // Include ONLY production agents and native agents (promethios-llm-*) - NO testing agents
       const userKeyParts = keyParts.filter(keyPart => 
         keyPart.startsWith(userPrefix) && 
         !keyPart.includes('scorecard') &&
-        (keyPart.includes('-production') || keyPart.startsWith(`${userPrefix}promethios-llm-`)) // Include native agents
+        (keyPart.includes('-production') || keyPart.startsWith(`${userPrefix}promethios-llm-`)) // Only production and native agents
       );
       console.log('🔍 Filtered production + native agent key parts:', userKeyParts);
       
@@ -272,7 +272,8 @@ export class UserAgentStorageService {
         console.log('⚠️ No production agents found, checking for any user agents...');
         fallbackKeyParts = keyParts.filter(keyPart => 
           keyPart.startsWith(userPrefix) && 
-          !keyPart.includes('scorecard')
+          !keyPart.includes('scorecard') &&
+          !keyPart.includes('-testing') // Still exclude testing in fallback
         );
         console.log('🔍 Fallback: Found user agent key parts:', fallbackKeyParts);
       }
@@ -283,7 +284,7 @@ export class UserAgentStorageService {
       // Reconstruct full keys for loading
       const userKeys = finalKeyParts.map(keyPart => `agents/${keyPart}`);
       console.log('🔍 Final agent keys for loading:', userKeys);
-      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production + native agents' : 'fallback to any user agents');
+      console.log('🔍 Loading strategy:', userKeyParts.length > 0 ? 'production + native agents only' : 'fallback to any user agents (excluding testing)');
 
       const agents: AgentProfile[] = [];
 
@@ -299,15 +300,55 @@ export class UserAgentStorageService {
             // Migrate legacy agents that don't have apiDetails
             if (!agentData.apiDetails && (agentData.apiKey || agentData.apiEndpoint || agentData.provider)) {
               console.log('🔧 Migrating legacy agent to include apiDetails:', agentData.identity?.name);
-              agentData.apiDetails = {
-                endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1',
-                key: agentData.apiKey || agentData.key || '',
-                provider: agentData.provider || 'OpenAI',
-                selectedModel: agentData.model || 'gpt-4',
-                selectedCapabilities: agentData.capabilities || [],
-                selectedContextLength: agentData.contextLength || 4096,
-                discoveredInfo: agentData.discoveredInfo || null,
-              };
+              
+              // Detect if this is a Claude agent based on name or existing configuration
+              const isClaudeAgent = agentData.identity?.name?.toLowerCase().includes('claude') ||
+                                   agentData.provider?.toLowerCase().includes('claude') ||
+                                   agentData.provider?.toLowerCase().includes('anthropic') ||
+                                   agentData.apiEndpoint?.includes('anthropic.com');
+              
+              // Clean up any Firebase logs that may have contaminated the API key
+              let cleanApiKey = agentData.apiKey || agentData.key || '';
+              if (cleanApiKey.includes('Firestore') || cleanApiKey.includes('Firebase') || cleanApiKey.includes('🔥')) {
+                console.warn('🧹 Detected Firebase log contamination in API key, clearing it');
+                cleanApiKey = '';
+              }
+              
+              if (isClaudeAgent) {
+                console.log('🤖 Configuring Claude/Anthropic agent');
+                // Preserve existing model if it's a valid Claude model, otherwise use default
+                let preservedModel = agentData.selectedModel || agentData.model;
+                const validClaudeModels = ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus', 'claude-3.5-sonnet', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'];
+                
+                // Only override if the current model is clearly wrong (like gpt-4)
+                if (!preservedModel || preservedModel.startsWith('gpt-') || !validClaudeModels.some(valid => preservedModel.includes(valid.split('-')[2]))) {
+                  preservedModel = 'claude-3-5-sonnet-20241022'; // Default to current Claude model
+                  console.log('🔧 Using default Claude model for agent with invalid model:', agentData.selectedModel || agentData.model);
+                } else {
+                  console.log('✅ Preserving existing valid Claude model:', preservedModel);
+                }
+                
+                agentData.apiDetails = {
+                  endpoint: agentData.apiEndpoint || 'https://api.anthropic.com/v1/messages',
+                  key: cleanApiKey,
+                  provider: 'Anthropic',
+                  selectedModel: preservedModel,
+                  selectedCapabilities: agentData.capabilities || agentData.selectedCapabilities || [],
+                  selectedContextLength: agentData.contextLength || agentData.selectedContextLength || 200000,
+                  discoveredInfo: agentData.discoveredInfo || null,
+                };
+              } else {
+                console.log('🤖 Configuring OpenAI agent');
+                agentData.apiDetails = {
+                  endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1/chat/completions',
+                  key: cleanApiKey,
+                  provider: agentData.provider || 'OpenAI',
+                  selectedModel: agentData.selectedModel || agentData.model || 'gpt-4',
+                  selectedCapabilities: agentData.capabilities || agentData.selectedCapabilities || [],
+                  selectedContextLength: agentData.contextLength || agentData.selectedContextLength || 4096,
+                  discoveredInfo: agentData.discoveredInfo || null,
+                };
+              }
               
               // Save the migrated agent back to storage
               try {
@@ -315,6 +356,51 @@ export class UserAgentStorageService {
                 console.log('✅ Successfully migrated agent with apiDetails:', agentData.identity?.name);
               } catch (migrationError) {
                 console.error('❌ Failed to save migrated agent:', migrationError);
+              }
+            }
+            
+            // Fix corrupted apiDetails for existing agents (one-time fix)
+            else if (agentData.apiDetails) {
+              let needsUpdate = false;
+              const isClaudeAgent = agentData.identity?.name?.toLowerCase().includes('claude') ||
+                                   agentData.apiDetails.provider?.toLowerCase().includes('anthropic') ||
+                                   agentData.apiDetails.endpoint?.includes('anthropic.com');
+              
+              // Fix Claude agents that have wrong models (like gpt-4)
+              if (isClaudeAgent && agentData.apiDetails.selectedModel?.startsWith('gpt-')) {
+                console.log('🔧 Fixing Claude agent with wrong model:', agentData.identity?.name, 'Current model:', agentData.apiDetails.selectedModel);
+                agentData.apiDetails.selectedModel = 'claude-3-5-sonnet-20241022'; // Use current model instead of deprecated
+                agentData.apiDetails.provider = 'Anthropic';
+                needsUpdate = true;
+              }
+              
+              // Fix deprecated Claude models
+              if (isClaudeAgent && agentData.apiDetails.selectedModel === 'claude-3-sonnet-20240229') {
+                console.log('🔧 Updating deprecated Claude model for agent:', agentData.identity?.name);
+                agentData.apiDetails.selectedModel = 'claude-3-5-sonnet-20241022'; // Update to current model
+                needsUpdate = true;
+              }
+              
+              // Fix agents with blank providers
+              if (!agentData.apiDetails.provider || agentData.apiDetails.provider.trim() === '') {
+                if (isClaudeAgent) {
+                  agentData.apiDetails.provider = 'Anthropic';
+                  needsUpdate = true;
+                } else if (agentData.apiDetails.endpoint?.includes('openai.com')) {
+                  agentData.apiDetails.provider = 'OpenAI';
+                  needsUpdate = true;
+                }
+                console.log('🔧 Fixed blank provider for agent:', agentData.identity?.name, 'Set to:', agentData.apiDetails.provider);
+              }
+              
+              // Save the corrected agent if changes were made
+              if (needsUpdate) {
+                try {
+                  await unifiedStorage.store('agents', key.replace('agents/', ''), agentData);
+                  console.log('✅ Successfully fixed corrupted agent data:', agentData.identity?.name);
+                } catch (fixError) {
+                  console.error('❌ Failed to save fixed agent:', fixError);
+                }
               }
             }
             
@@ -343,21 +429,33 @@ export class UserAgentStorageService {
         }
       }
 
-      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'production agents' : 'fallback to any user agents'}`);
+      console.log(`Loaded ${agents.length} agents for user ${this.currentUserId} using strategy: ${userKeyParts.length > 0 ? 'testing + production + native agents' : 'fallback to any user agents'}`);
+      
+      // For chat interface, prioritize testing agents over production agents
+      // Testing agents are meant for user interaction and demonstration
+      const testingAgents = agents.filter(agent => agent.identity.id.includes('-testing'));
+      const productionAgents = agents.filter(agent => agent.identity.id.includes('-production'));
+      const otherAgents = agents.filter(agent => !agent.identity.id.includes('-testing') && !agent.identity.id.includes('-production'));
+      
+      // Prioritize testing agents first, then others, then production agents last
+      const prioritizedAgents = [...testingAgents, ...otherAgents, ...productionAgents];
+      
+      console.log(`🎯 Agent prioritization: ${testingAgents.length} testing, ${otherAgents.length} other, ${productionAgents.length} production`);
+      console.log(`🎯 Prioritized agent order:`, prioritizedAgents.map(a => `${a.identity.name} (${a.identity.id})`));
       
     // Cache the loaded agents for OptimizedDataBridge to use
-    if (this.currentUserId && agents.length > 0) {
+    if (this.currentUserId && prioritizedAgents.length > 0) {
       const { universalCache } = await import('./UniversalDataCache');
-      universalCache.set(this.currentUserId, agents, 'agents', 600); // Cache for 10 minutes
-      console.log(`💾 Cached ${agents.length} agents for OptimizedDataBridge access`);
+      universalCache.set(this.currentUserId, prioritizedAgents, 'agents', 600); // Cache for 10 minutes
+      console.log(`💾 Cached ${prioritizedAgents.length} prioritized agents for OptimizedDataBridge access`);
       
       // Invalidate dashboard metrics cache so OptimizedDataBridge recalculates with fresh agent data
       const dashboardCacheKey = `dashboard-${this.currentUserId}`;
       universalCache.invalidate('dashboard-metrics', dashboardCacheKey);
-      console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${agents.length} agents`);
+      console.log(`🔄 Invalidated dashboard metrics cache to force recalculation with ${prioritizedAgents.length} agents`);
     }
       
-      return agents;
+      return prioritizedAgents;
     } catch (error) {
       console.error('Error loading user production agents:', error);
       return [];

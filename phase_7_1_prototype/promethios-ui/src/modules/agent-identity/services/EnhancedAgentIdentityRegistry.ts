@@ -3,7 +3,7 @@
  * Creates one-to-one relationship between wrapped agents and governance identities
  */
 
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { AgentIdentity, AgentModelLink, AgentAttestation } from '../types';
 import { ExtendedAgentWrapper } from '../../agent-wrapping/types/introspection';
 
@@ -16,7 +16,7 @@ export class EnhancedAgentIdentityRegistry {
   private currentUserId: string | null = null;
 
   private constructor() {
-    this.storageService = new UnifiedStorageService();
+    this.storageService = unifiedStorage;
   }
 
   public static getInstance(): EnhancedAgentIdentityRegistry {

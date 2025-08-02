@@ -12,7 +12,7 @@
 import { DualAgentWrapperRegistry } from '../services/DualAgentWrapperRegistry';
 import { EnhancedMultiAgentSystemRegistry } from '../services/EnhancedMultiAgentSystemRegistry';
 import { DeploymentService } from '../services/DeploymentService';
-import { UnifiedStorageService } from '../../../services/UnifiedStorageService';
+import { unifiedStorage } from '../../../services/UnifiedStorageService';
 import { GovernanceConfiguration } from '../types/dualWrapper';
 import { CreateMultiAgentDualWrapperRequest } from '../types/enhancedMultiAgent';
 
@@ -24,7 +24,7 @@ export class EndToEndDualWrappingTest {
   private testUserId: string = 'test-user-e2e';
 
   constructor() {
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.dualRegistry = new DualAgentWrapperRegistry(this.storage as any);
     this.multiAgentRegistry = new EnhancedMultiAgentSystemRegistry();
     this.deploymentService = new DeploymentService();

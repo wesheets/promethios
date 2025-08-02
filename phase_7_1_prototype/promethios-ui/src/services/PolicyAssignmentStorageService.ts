@@ -5,7 +5,7 @@
  * with support for multi-policy per agent governance.
  */
 
-import { UnifiedStorageService } from './UnifiedStorageService';
+import { unifiedStorage, UnifiedStorageService } from './UnifiedStorageService';
 
 // Interfaces
 export interface PolicyAssignment {

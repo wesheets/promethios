@@ -5,7 +5,7 @@
  */
 
 import { metricsService } from '../services/MetricsCollectionService';
-import { UnifiedStorageService } from '../services/UnifiedStorageService';
+import { unifiedStorage } from '../services/UnifiedStorageService';
 import { deployedAgentAPI } from '../services/api/deployedAgentAPI';
 import { DeployedAgentDataProcessor } from '../services/DeployedAgentDataProcessor';
 import { notificationBackendService } from '../services/notificationBackendService';
@@ -208,7 +208,7 @@ export class MetricsCollectionExtension {
   private dataProcessor: DeployedAgentDataProcessor;
 
   private constructor() {
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
     this.dataProcessor = new DeployedAgentDataProcessor();
   } static getInstance(): MetricsCollectionExtension {
     if (!MetricsCollectionExtension.instance) {
@@ -1318,15 +1318,15 @@ export class MetricsCollectionExtension {
     return {
       governanceMetrics: {
         totalInteractions: 0,
-        trustScore: 1.0, // Start with perfect trust
-        complianceRate: 1.0, // Start with perfect compliance
+        trustScore: 1.0, // Start with perfect trust (1.0 = 100% after UI conversion)
+        complianceRate: 1.0, // Start with perfect compliance (1.0 = 100% after UI conversion)
         totalViolations: 0,
         policyViolations: []
       },
       performanceMetrics: {
         averageResponseTime: 0,
         totalRequests: 0,
-        successRate: 1.0,
+        successRate: 1.0, // Start with perfect success rate (1.0 = 100% after UI conversion)
         errorRate: 0,
         uptimePercentage: 100,
         lastActiveAt: new Date()

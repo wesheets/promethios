@@ -7,7 +7,7 @@
 import { EnhancedDeploymentService } from '../modules/agent-wrapping/services/EnhancedDeploymentService';
 import { DualAgentWrapper } from '../modules/agent-wrapping/types/dualWrapper';
 import { DeploymentPackage, DeploymentTarget, DeploymentStatus } from '../modules/agent-wrapping/services/DeploymentService';
-import { UnifiedStorageService } from '../services/UnifiedStorageService';
+import { unifiedStorage } from '../services/UnifiedStorageService';
 import { deployedAgentAPI } from '../services/api/deployedAgentAPI';
 
 export interface DeploymentConfig {
@@ -63,7 +63,7 @@ export class DeploymentExtension {
 
   private constructor() {
     this.deploymentService = new EnhancedDeploymentService();
-    this.storage = new UnifiedStorageService();
+    this.storage = unifiedStorage;
   }
 
   static getInstance(): DeploymentExtension {
