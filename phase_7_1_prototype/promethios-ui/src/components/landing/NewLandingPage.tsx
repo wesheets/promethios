@@ -674,6 +674,44 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Black Line Separator */}
+      <div className="w-full h-1 bg-black"></div>
+
+      {/* The Black Box Problem Section */}
+      <section 
+        className="relative w-full min-h-screen flex items-center justify-center"
+        style={{
+          backgroundImage: 'url(/black-cube.png)',
+          backgroundAttachment: 'fixed',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/60"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-6xl md:text-7xl font-bold mb-6 text-white">
+            The Black Box Problem
+          </h2>
+          <p className="text-2xl md:text-3xl text-gray-200 mb-12 leading-relaxed">
+            LLMs produce confident answers… but how do we trust them?
+          </p>
+          
+          <div className="space-y-8 text-xl md:text-2xl text-gray-300 leading-relaxed max-w-4xl mx-auto">
+            <p>LLMs are powerful — but unpredictable.</p>
+            <p>They hallucinate, drift, break contracts, and can't explain why.</p>
+            <p className="text-white font-semibold">You can't trust them in production without governance.</p>
+          </div>
+          
+          <div className="mt-12 text-2xl md:text-3xl text-red-400 font-mono">
+            🧠 → No oversight · No accountability · No trust
+          </div>
+        </div>
+      </section>
+
       {/* The Solution Section */}
       <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-6xl mx-auto">
