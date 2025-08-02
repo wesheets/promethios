@@ -2346,7 +2346,7 @@ useEffect(() => {
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
               })),
-              attachments: currentAttachments.map(att => ({
+              attachments: attachments.map(att => ({
                 id: att.id,
                 name: att.name,
                 type: att.type,
@@ -2432,7 +2432,7 @@ useEffect(() => {
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
               })),
-              attachments: currentAttachments.map(att => ({
+              attachments: attachments.map(att => ({
                 id: att.id,
                 name: att.name,
                 type: att.type,
