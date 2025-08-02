@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import NewHeader from './components/navigation/NewHeader';
 import Footer from './components/layout/Footer';
 import NewLandingPage from './components/landing/NewLandingPage';
+import FlameLoader from './components/loading/FlameLoader';
 import LoginWaitlistPage from './components/auth/LoginWaitlistPage';
 import EmailVerification from './components/auth/EmailVerification';
 import OnboardingFlow from './components/auth/OnboardingFlow';
@@ -41,12 +42,26 @@ import UIIntegration from './UIIntegration';
 const AppContent: React.FC = () => {
   console.log("🚀 AppContent component is executing!");
   const location = useLocation();
+  const [loaderComplete, setLoaderComplete] = useState(false);
+  
   console.log("📍 Current location:", location.pathname);
   console.log("🔧 App - Location object:", location);
   console.log("🔧 App - About to render UIIntegration with key:", location.pathname);
   
   // Define isUIRoute to determine if we're on a UI route
   const isUIRoute = location.pathname.startsWith('/ui');
+  
+  // Show flame loader only on landing page and if not completed
+  const showFlameLoader = location.pathname === '/' && !loaderComplete;
+  
+  const handleLoaderComplete = () => {
+    setLoaderComplete(true);
+  };
+
+  // If we're showing the flame loader, render only that
+  if (showFlameLoader) {
+    return <FlameLoader onComplete={handleLoaderComplete} />;
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
