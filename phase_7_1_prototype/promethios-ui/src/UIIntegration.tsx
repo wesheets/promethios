@@ -38,6 +38,7 @@ import EnhancedGovernanceReportsPage from './pages/EnhancedGovernanceReportsPage
 import EnhancedDeployPage from './pages/EnhancedDeployPage';
 import EnhancedEmotionalVeritasPage from './pages/EnhancedEmotionalVeritasPage';
 import EnterpriseVeritasDashboard from './pages/EnterpriseVeritasDashboard';
+import AutonomousGovernanceDashboard from './components/governance/AutonomousGovernanceDashboard';
 import AuditReportsPage from './components/audit/AuditReportsPage';
 import TestGovernancePage from './pages/TestGovernancePage';
 import StepByStepGovernancePage from './pages/StepByStepGovernancePage';
@@ -366,6 +367,15 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <EnterpriseVeritasDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Autonomous Governance Dashboard */}
+        <Route path="governance/autonomous" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AutonomousGovernanceDashboard />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

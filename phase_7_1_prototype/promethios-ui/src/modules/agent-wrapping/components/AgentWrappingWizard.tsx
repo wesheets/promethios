@@ -66,6 +66,18 @@ export interface WizardFormData {
   enableRateLimiting: boolean;
   maxRequestsPerMinute: number;
   
+  // Autonomous Cognition Configuration
+  autonomousCognition?: {
+    enabled: boolean;
+    autonomyLevel: 'minimal' | 'standard' | 'enhanced' | 'maximum';
+    monitoringLevel: 'minimal' | 'standard' | 'enhanced' | 'maximum';
+    allowedTriggerTypes: string[];
+    consentRequirements: {
+      alwaysAsk: boolean;
+      trustThreshold: number;
+    };
+  };
+  
   // Step 4: Review (computed)
   estimatedCost: string;
   securityScore: number;

@@ -3,6 +3,7 @@
  * 
  * Adds real-time governance feedback, comparison mode,
  * and enhanced visualization based on multi-agent innovations.
+ * Now includes autonomous cognition configuration.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -34,7 +35,9 @@ import {
   Tab,
   Paper,
   Avatar,
-  Badge
+  Badge,
+  Checkbox,
+  FormGroup
 } from '@mui/material';
 import {
   Security,
@@ -48,7 +51,10 @@ import {
   Preview,
   CheckCircle,
   Warning,
-  Error
+  Error,
+  Psychology,
+  AutoAwesome,
+  Lightbulb
 } from '@mui/icons-material';
 import { WizardFormData } from '../AgentWrappingWizard';
 
@@ -312,6 +318,7 @@ const EnhancedGovernanceStep: React.FC<GovernanceStepProps> = ({
           <Tab label="Trust & Security" icon={<Security />} />
           <Tab label="Monitoring & Controls" icon={<Visibility />} />
           <Tab label="Preview & Compare" icon={<Preview />} />
+          <Tab label="Autonomous Cognition" icon={<Psychology />} />
         </Tabs>
 
         {/* Tab 0: Trust & Security */}
@@ -666,6 +673,207 @@ const EnhancedGovernanceStep: React.FC<GovernanceStepProps> = ({
                             </Box>
                           </Grid>
                         </Grid>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
+        {/* Tab 3: Autonomous Cognition */}
+        {activeTab === 3 && (
+          <Box p={3}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Card variant="outlined">
+                  <CardHeader
+                    avatar={<Psychology color="primary" />}
+                    title="Autonomous Cognition Configuration"
+                    subheader="Configure autonomous thinking capabilities for your agent"
+                  />
+                  <CardContent>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.autonomousCognition?.enabled || false}
+                          onChange={(e) => updateFormData({ 
+                            autonomousCognition: { 
+                              ...formData.autonomousCognition, 
+                              enabled: e.target.checked,
+                              autonomyLevel: 'standard',
+                              monitoringLevel: 'standard',
+                              allowedTriggerTypes: ['curiosity', 'creative_synthesis'],
+                              consentRequirements: {
+                                alwaysAsk: true,
+                                trustThreshold: 80
+                              }
+                            } 
+                          })}
+                          color="primary"
+                        />
+                      }
+                      label="Enable Autonomous Cognition"
+                    />
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Allow your agent to think autonomously and explore ideas beyond direct user requests.
+                      All autonomous processes are governed by your selected policies and require user consent.
+                    </Typography>
+
+                    {formData.autonomousCognition?.enabled && (
+                      <Box sx={{ mt: 3 }}>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Autonomy Level
+                            </Typography>
+                            <FormControl fullWidth>
+                              <Select
+                                value={formData.autonomousCognition?.autonomyLevel || 'standard'}
+                                onChange={(e) => updateFormData({ 
+                                  autonomousCognition: { 
+                                    ...formData.autonomousCognition, 
+                                    autonomyLevel: e.target.value as any
+                                  } 
+                                })}
+                              >
+                                <MenuItem value="minimal">Minimal - Basic autonomous responses</MenuItem>
+                                <MenuItem value="standard">Standard - Moderate autonomous exploration</MenuItem>
+                                <MenuItem value="enhanced">Enhanced - Advanced autonomous thinking</MenuItem>
+                                <MenuItem value="maximum">Maximum - Full autonomous capabilities</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Monitoring Level
+                            </Typography>
+                            <FormControl fullWidth>
+                              <Select
+                                value={formData.autonomousCognition?.monitoringLevel || 'standard'}
+                                onChange={(e) => updateFormData({ 
+                                  autonomousCognition: { 
+                                    ...formData.autonomousCognition, 
+                                    monitoringLevel: e.target.value as any
+                                  } 
+                                })}
+                              >
+                                <MenuItem value="minimal">Minimal - Basic monitoring</MenuItem>
+                                <MenuItem value="standard">Standard - Regular monitoring</MenuItem>
+                                <MenuItem value="enhanced">Enhanced - Detailed monitoring</MenuItem>
+                                <MenuItem value="maximum">Maximum - Complete oversight</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+
+                          <Grid item xs={12}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Allowed Autonomous Triggers
+                            </Typography>
+                            <FormGroup row>
+                              {[
+                                { id: 'curiosity', label: 'Curiosity Exploration', icon: <Lightbulb /> },
+                                { id: 'creative_synthesis', label: 'Creative Synthesis', icon: <AutoAwesome /> },
+                                { id: 'ethical_reflection', label: 'Ethical Reflection', icon: <Psychology /> },
+                                { id: 'problem_solving', label: 'Problem Solving', icon: <Assessment /> },
+                                { id: 'knowledge_gap', label: 'Knowledge Gap Exploration', icon: <Lightbulb /> }
+                              ].map((trigger) => (
+                                <FormControlLabel
+                                  key={trigger.id}
+                                  control={
+                                    <Checkbox
+                                      checked={formData.autonomousCognition?.allowedTriggerTypes?.includes(trigger.id) || false}
+                                      onChange={(e) => {
+                                        const currentTriggers = formData.autonomousCognition?.allowedTriggerTypes || [];
+                                        const newTriggers = e.target.checked
+                                          ? [...currentTriggers, trigger.id]
+                                          : currentTriggers.filter(t => t !== trigger.id);
+                                        updateFormData({ 
+                                          autonomousCognition: { 
+                                            ...formData.autonomousCognition, 
+                                            allowedTriggerTypes: newTriggers
+                                          } 
+                                        });
+                                      }}
+                                    />
+                                  }
+                                  label={
+                                    <Box display="flex" alignItems="center" gap={1}>
+                                      {trigger.icon}
+                                      {trigger.label}
+                                    </Box>
+                                  }
+                                />
+                              ))}
+                            </FormGroup>
+                          </Grid>
+
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Consent Requirements
+                            </Typography>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={formData.autonomousCognition?.consentRequirements?.alwaysAsk || true}
+                                  onChange={(e) => updateFormData({ 
+                                    autonomousCognition: { 
+                                      ...formData.autonomousCognition, 
+                                      consentRequirements: {
+                                        ...formData.autonomousCognition?.consentRequirements,
+                                        alwaysAsk: e.target.checked
+                                      }
+                                    } 
+                                  })}
+                                />
+                              }
+                              label="Always ask for permission"
+                            />
+                            <Typography variant="caption" display="block" color="text.secondary">
+                              When disabled, agent can auto-consent for low-risk autonomous processes based on trust level
+                            </Typography>
+                          </Grid>
+
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Trust Threshold for Auto-Consent: {formData.autonomousCognition?.consentRequirements?.trustThreshold || 80}%
+                            </Typography>
+                            <Slider
+                              value={formData.autonomousCognition?.consentRequirements?.trustThreshold || 80}
+                              onChange={(e, value) => updateFormData({ 
+                                autonomousCognition: { 
+                                  ...formData.autonomousCognition, 
+                                  consentRequirements: {
+                                    ...formData.autonomousCognition?.consentRequirements,
+                                    trustThreshold: value as number
+                                  }
+                                } 
+                              })}
+                              min={50}
+                              max={100}
+                              step={5}
+                              marks={[
+                                { value: 50, label: '50%' },
+                                { value: 75, label: '75%' },
+                                { value: 100, label: '100%' }
+                              ]}
+                              disabled={formData.autonomousCognition?.consentRequirements?.alwaysAsk}
+                            />
+                          </Grid>
+                        </Grid>
+
+                        <Alert severity="info" sx={{ mt: 3 }}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Autonomous Cognition Safety
+                          </Typography>
+                          All autonomous processes are governed by your selected policies and include:
+                          • Real-time risk assessment and emotional safety checks
+                          • Complete audit logging for compliance and monitoring
+                          • Emergency stop capabilities for immediate intervention
+                          • User consent management with configurable permissions
+                        </Alert>
                       </Box>
                     )}
                   </CardContent>

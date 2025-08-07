@@ -69,75 +69,116 @@ interface SimplePolicy {
   rules: SimpleRule[];
 }
 
-// Policy templates for quick start
-const POLICY_TEMPLATES = {
-  SECURITY: {
-    name: 'Basic Security Policy',
-    icon: SecurityIcon,
-    color: '#f44336',
-    description: 'Protect against common security threats and data breaches',
-    rules: [
-      {
-        id: '1',
-        name: 'Block Personal Information',
-        condition: 'contains_personal_info',
-        action: 'alert' as const,
-        description: 'Alert when personal information like SSN, credit cards, or addresses are detected'
-      },
-      {
-        id: '2', 
-        name: 'Block Low Trust Content',
-        condition: 'trust_score_low',
-        action: 'deny' as const,
-        description: 'Block responses that have low trust or confidence scores'
-      }
-    ]
-  },
-  COMPLIANCE: {
-    name: 'Data Compliance Policy',
-    icon: ComplianceIcon,
-    color: '#2196f3',
-    description: 'Ensure compliance with data protection regulations like GDPR',
-    rules: [
-      {
-        id: '1',
-        name: 'Log Sensitive Data Access',
-        condition: 'accessing_sensitive_data',
-        action: 'log' as const,
-        description: 'Keep records of when sensitive data is accessed for audit purposes'
-      },
-      {
-        id: '2',
-        name: 'Require User Consent',
-        condition: 'no_user_consent',
-        action: 'deny' as const,
-        description: 'Block actions that require user consent when consent is not given'
-      }
-    ]
-  },
-  CONTENT: {
-    name: 'Content Safety Policy',
-    icon: EthicalIcon,
-    color: '#9c27b0',
-    description: 'Ensure AI responses are safe, appropriate, and unbiased',
-    rules: [
-      {
-        id: '1',
-        name: 'Block Harmful Content',
-        condition: 'contains_harmful_content',
-        action: 'deny' as const,
-        description: 'Block responses containing violence, hate speech, or inappropriate content'
-      },
-      {
-        id: '2',
-        name: 'Check for Bias',
-        condition: 'potential_bias_detected',
-        action: 'alert' as const,
-        description: 'Alert when responses might contain bias or discrimination'
-      }
-    ]
-  }
+import { unifiedPolicyRegistry, STANDARD_POLICY_IDS } from '../../services/UnifiedPolicyRegistry';
+
+// Policy templates for quick start - now connected to comprehensive policies
+const getEnhancedPolicyTemplates = () => {
+  const hipaaPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.HIPAA);
+  const soxPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.SOX);
+  const gdprPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.GDPR);
+
+  return {
+    SECURITY: {
+      name: 'Basic Security Policy',
+      icon: SecurityIcon,
+      color: '#f44336',
+      description: 'Protect against common security threats and data breaches',
+      rules: [
+        {
+          id: '1',
+          name: 'Block Personal Information',
+          condition: 'contains_personal_info',
+          action: 'alert' as const,
+          description: 'Alert when personal information like SSN, credit cards, or addresses are detected'
+        },
+        {
+          id: '2', 
+          name: 'Block Low Trust Content',
+          condition: 'trust_score_low',
+          action: 'deny' as const,
+          description: 'Block responses that have low trust or confidence scores'
+        }
+      ]
+    },
+    COMPLIANCE: {
+      name: 'Comprehensive Compliance Policy',
+      icon: ComplianceIcon,
+      color: '#2196f3',
+      description: `Enterprise-grade compliance with ${hipaaPolicy?.rules.length || 17} HIPAA, ${soxPolicy?.rules.length || 15} SOX, and ${gdprPolicy?.rules.length || 25} GDPR rules`,
+      comprehensive: true,
+      availablePolicies: [
+        {
+          id: STANDARD_POLICY_IDS.HIPAA,
+          name: hipaaPolicy?.name || 'HIPAA Compliance',
+          description: hipaaPolicy?.summary || 'Healthcare data protection',
+          ruleCount: hipaaPolicy?.rules.length || 17,
+          framework: hipaaPolicy?.legalFramework || 'HIPAA'
+        },
+        {
+          id: STANDARD_POLICY_IDS.SOX,
+          name: soxPolicy?.name || 'SOX Compliance',
+          description: soxPolicy?.summary || 'Financial reporting controls',
+          ruleCount: soxPolicy?.rules.length || 15,
+          framework: soxPolicy?.legalFramework || 'Sarbanes-Oxley Act'
+        },
+        {
+          id: STANDARD_POLICY_IDS.GDPR,
+          name: gdprPolicy?.name || 'GDPR Compliance',
+          description: gdprPolicy?.summary || 'EU data protection',
+          ruleCount: gdprPolicy?.rules.length || 25,
+          framework: gdprPolicy?.legalFramework || 'GDPR'
+        }
+      ],
+      rules: [
+        {
+          id: '1',
+          name: 'Comprehensive Healthcare Compliance',
+          condition: 'healthcare_data_detected',
+          action: 'escalate' as const,
+          description: `Apply all ${hipaaPolicy?.rules.length || 17} HIPAA rules for healthcare data protection`
+        },
+        {
+          id: '2',
+          name: 'Financial Reporting Controls',
+          condition: 'financial_data_detected',
+          action: 'log' as const,
+          description: `Apply all ${soxPolicy?.rules.length || 15} SOX rules for financial data integrity`
+        },
+        {
+          id: '3',
+          name: 'Personal Data Protection',
+          condition: 'personal_data_detected',
+          action: 'alert' as const,
+          description: `Apply all ${gdprPolicy?.rules.length || 25} GDPR rules for personal data protection`
+        }
+      ]
+    },
+    CONTENT: {
+      name: 'Content Safety Policy',
+      icon: EthicalIcon,
+      color: '#9c27b0',
+      description: 'Ensure AI responses are safe, appropriate, and unbiased',
+      rules: [
+        {
+          id: '1',
+          name: 'Block Harmful Content',
+          condition: 'contains_harmful_content',
+          action: 'deny' as const,
+          description: 'Block responses containing violence, hate speech, or inappropriate content'
+        },
+        {
+          id: '2',
+          name: 'Check for Bias',
+          condition: 'potential_bias_detected',
+          action: 'alert' as const,
+          description: 'Alert when responses might contain bias or discrimination'
+        }
+      ]
+    }
+  };
 };
+
+const POLICY_TEMPLATES = getEnhancedPolicyTemplates();
 
 // Common conditions with user-friendly descriptions
 const COMMON_CONDITIONS = {

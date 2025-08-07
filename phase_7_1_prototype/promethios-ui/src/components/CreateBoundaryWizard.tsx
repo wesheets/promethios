@@ -103,6 +103,12 @@ const WIZARD_STEPS = [
     icon: Settings
   },
   {
+    id: 'autonomous-cognition',
+    title: 'Autonomous Cognition',
+    description: 'Configure autonomous thinking capabilities',
+    icon: Business
+  },
+  {
     id: 'review',
     title: 'Review & Deploy',
     description: 'Confirm your trust boundary',
@@ -157,36 +163,56 @@ const TRUST_LEVEL_DESCRIPTIONS = {
   100: { label: 'Full Access', description: 'Complete trust', permissions: ['All operations', 'Compliance reporting', 'Administrative access'] }
 };
 
-const POLICY_TEMPLATES = [
-  {
-    id: 'hipaa',
-    name: 'HIPAA Compliance',
-    description: 'Healthcare data protection',
-    icon: '🏥',
-    requirements: ['Data encryption', 'Access logging', 'Audit trails']
-  },
-  {
-    id: 'sox',
-    name: 'SOX Compliance',
-    description: 'Financial reporting controls',
-    icon: '💰',
-    requirements: ['Financial controls', 'Change management', 'Documentation']
-  },
-  {
-    id: 'gdpr',
-    name: 'GDPR Compliance',
-    description: 'EU data protection',
-    icon: '🇪🇺',
-    requirements: ['Data minimization', 'Consent management', 'Right to deletion']
-  },
-  {
-    id: 'custom',
-    name: 'Custom Policy',
-    description: 'Define your own rules',
-    icon: '⚙️',
-    requirements: ['Custom rules', 'Flexible configuration']
-  }
-];
+import { unifiedPolicyRegistry, STANDARD_POLICY_IDS } from '../services/UnifiedPolicyRegistry';
+
+// Get comprehensive policy templates from the registry
+const getComprehensivePolicyTemplates = () => {
+  const hipaaPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.HIPAA);
+  const soxPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.SOX);
+  const gdprPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.GDPR);
+  const customPolicy = unifiedPolicyRegistry.getPolicy(STANDARD_POLICY_IDS.CUSTOM);
+
+  return [
+    {
+      id: STANDARD_POLICY_IDS.HIPAA,
+      name: hipaaPolicy?.name || 'HIPAA Compliance',
+      description: hipaaPolicy?.summary || 'Healthcare data protection',
+      icon: '🏥',
+      requirements: hipaaPolicy?.rules.slice(0, 3).map(rule => rule.name) || ['Data encryption', 'Access logging', 'Audit trails'],
+      ruleCount: hipaaPolicy?.rules.length || 0,
+      legalFramework: hipaaPolicy?.legalFramework || 'HIPAA'
+    },
+    {
+      id: STANDARD_POLICY_IDS.SOX,
+      name: soxPolicy?.name || 'SOX Compliance',
+      description: soxPolicy?.summary || 'Financial reporting controls',
+      icon: '💰',
+      requirements: soxPolicy?.rules.slice(0, 3).map(rule => rule.name) || ['Financial controls', 'Change management', 'Documentation'],
+      ruleCount: soxPolicy?.rules.length || 0,
+      legalFramework: soxPolicy?.legalFramework || 'Sarbanes-Oxley Act'
+    },
+    {
+      id: STANDARD_POLICY_IDS.GDPR,
+      name: gdprPolicy?.name || 'GDPR Compliance',
+      description: gdprPolicy?.summary || 'EU data protection',
+      icon: '🇪🇺',
+      requirements: gdprPolicy?.rules.slice(0, 3).map(rule => rule.name) || ['Data minimization', 'Consent management', 'Right to deletion'],
+      ruleCount: gdprPolicy?.rules.length || 0,
+      legalFramework: gdprPolicy?.legalFramework || 'GDPR'
+    },
+    {
+      id: STANDARD_POLICY_IDS.CUSTOM,
+      name: customPolicy?.name || 'Custom Policy',
+      description: customPolicy?.summary || 'Define your own rules',
+      icon: '⚙️',
+      requirements: customPolicy?.rules.slice(0, 3).map(rule => rule.name) || ['Custom rules', 'Flexible configuration'],
+      ruleCount: customPolicy?.rules.length || 0,
+      legalFramework: customPolicy?.legalFramework || 'Organization-specific'
+    }
+  ];
+};
+
+const POLICY_TEMPLATES = getComprehensivePolicyTemplates();
 
 export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
   open,
@@ -207,7 +233,23 @@ export const CreateBoundaryWizard: React.FC<CreateBoundaryWizardProps> = ({
     boundaryType: 'direct',
     description: '',
     expiresAt: '',
-    policies: [] as string[]
+    policies: [] as string[],
+    autonomousCognition: {
+      enabled: false,
+      autonomyLevel: 'standard' as 'minimal' | 'standard' | 'enhanced' | 'maximum',
+      allowedTriggerTypes: ['curiosity', 'creative_synthesis'] as string[],
+      consentRequirements: {
+        alwaysAsk: true,
+        autoConsentTypes: [] as string[],
+        trustThreshold: 80
+      },
+      riskThresholds: {
+        maxRiskScore: 70,
+        escalationThreshold: 80,
+        emergencyStopThreshold: 90
+      },
+      monitoringLevel: 'standard' as 'minimal' | 'standard' | 'enhanced' | 'maximum'
+    }
   });
 
   const currentStepData = WIZARD_STEPS[currentStep];
