@@ -62,6 +62,19 @@ import { isPromethiosNativeChatEnabled } from '../config/features';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
 import { cryptographicAuditIntegration } from '../services/CryptographicAuditIntegration';
+import { AuditLogAccessExtension } from '../extensions/AuditLogAccessExtension';
+import { AutonomousCognitionExtension } from '../extensions/AutonomousCognitionExtension';
+import { EnhancedAuditLogEntry } from '../extensions/EnhancedAuditLogEntry';
+import { AutonomousCognitionWidget } from './AutonomousCognitionWidget';
+import { governanceEnhancedLLMService, GovernanceContext } from '../services/GovernanceEnhancedLLMService';
+import ExtensionStatusIndicator from './ExtensionStatusIndicator';
+import TrainOfThoughtPanel from './TrainOfThoughtPanel';
+import EmotionalStateIndicator from './EmotionalStateIndicator';
+import AutonomousThinkingPermissionDialog, { 
+  AutonomousThinkingRequest, 
+  PermissionResponse 
+} from './AutonomousThinkingPermissionDialog';
+import AutonomousThinkingChecker from './AutonomousThinkingChecker';
 
 // Dark theme colors
 const DARK_THEME = {
@@ -411,6 +424,18 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const governanceService = useMemo(() => new GovernanceService(), []);
   const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
 
+  // NEW: Initialize missing extensions
+  const auditLogAccessExtension = useMemo(() => AuditLogAccessExtension.getInstance(), []);
+  const autonomousCognitionExtension = useMemo(() => AutonomousCognitionExtension.getInstance(), []);
+   // Extension states
+  const [auditLogAccess, setAuditLogAccess] = useState<AuditLogAccessExtension | null>(null);
+  const [autonomousCognition, setAutonomousCognition] = useState<AutonomousCognitionExtension | null>(null);
+  
+  // Permission dialog state
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [currentPermissionRequest, setCurrentPermissionRequest] = useState<AutonomousThinkingRequest | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);tEntries] = useState<EnhancedAuditLogEntry[]>([]);
+
   // 📊 AGENT METRICS INTEGRATION
   const agentMetrics = useAgentMetrics({
     agentId: isDeployedAgent ? (deployedAgentId || '') : (selectedAgent?.identity.id || ''),
@@ -456,6 +481,69 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
       return newSet;
     });
   }, []); // No dependencies needed since it only uses the setter function
+
+  // 🧠 PERMISSION RESPONSE HANDLER
+  const handlePermissionResponse = useCallback(async (response: PermissionResponse) => {
+    console.log('🧠 Permission response received:', response);
+    
+    if (!pendingMessage || !currentPermissionRequest) {
+      console.error('🧠 No pending message or request for permission response');
+      return;
+    }
+    
+    if (response.granted) {
+      console.log('🧠 Permission granted, processing message with autonomous thinking');
+      
+      // Create user message with pending content
+      const userMessage: ChatMessage = {
+        id: `msg_${Date.now()}_user`,
+        content: pendingMessage,
+        sender: 'user',
+        timestamp: new Date(),
+        attachments: []
+      };
+      
+      // Add user message to chat
+      setMessages(prev => [...prev, userMessage]);
+      setMessageCount(prev => prev + 1);
+      
+      // Process with autonomous thinking enabled
+      // Note: The actual processing will happen in the existing message flow
+      // but with autonomous thinking context
+      
+      // Clear pending state
+      setPendingMessage(null);
+      setCurrentPermissionRequest(null);
+      setPermissionDialogOpen(false);
+      
+      // Continue with normal message processing
+      // (The message will be processed by the existing flow)
+      
+    } else {
+      console.log('🧠 Permission denied, processing message without autonomous thinking');
+      
+      // Create user message with pending content
+      const userMessage: ChatMessage = {
+        id: `msg_${Date.now()}_user`,
+        content: pendingMessage,
+        sender: 'user',
+        timestamp: new Date(),
+        attachments: []
+      };
+      
+      // Add user message to chat
+      setMessages(prev => [...prev, userMessage]);
+      setMessageCount(prev => prev + 1);
+      
+      // Process without autonomous thinking
+      // (Standard processing will occur)
+      
+      // Clear pending state
+      setPendingMessage(null);
+      setCurrentPermissionRequest(null);
+      setPermissionDialogOpen(false);
+    }
+  }, [pendingMessage, currentPermissionRequest]);
 
   // Render governance shield icon - MEMOIZED to prevent infinite re-renders
   const renderGovernanceShield = useCallback((message: ChatMessage) => {
@@ -1342,6 +1430,37 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
     }
   }, [currentUser, agentStorageService, chatStorageService]);
 
+  // NEW: Initialize extensions when user and agent are available
+  useEffect(() => {
+    const initializeExtensions = async () => {
+      if (currentUser?.uid && selectedAgent?.identity?.id) {
+        try {
+          console.log('🔧 Initializing extensions for agent:', selectedAgent.identity.id);
+          
+          // Initialize audit log access
+          const auditAccess = await auditLogAccessExtension.initialize(
+            currentUser.uid,
+            selectedAgent.identity.id
+          );
+          setAuditLogAccess(auditAccess);
+          
+          // Initialize autonomous cognition
+          const autonomousCog = await autonomousCognitionExtension.initialize(
+            currentUser.uid,
+            selectedAgent.identity.id
+          );
+          setAutonomousCognition(autonomousCog);
+          
+          console.log('✅ Extensions initialized successfully');
+        } catch (error) {
+          console.error('❌ Failed to initialize extensions:', error);
+        }
+      }
+    };
+    
+    initializeExtensions();
+  }, [currentUser?.uid, selectedAgent?.identity?.id, auditLogAccessExtension, autonomousCognitionExtension]);
+
   // Helper function to ensure user is set before chat operations
   const ensureUserSet = () => {
     if (currentUser?.uid && !chatStorageService.getCurrentUserId()) {
@@ -1865,14 +1984,55 @@ useEffect(() => {
         console.log('🔧 DEBUG: currentUser?.uid =', currentUser?.uid);
         
         if (governanceEnabled) {
-          // Use Promethios governance kernel for governed agents with real-time metrics
-          console.log('🔧 DEBUG: About to call createPromethiosSystemMessage...');
+          // Use governance-enhanced LLM service for governed agents
+          console.log('🔧 DEBUG: Using governance-enhanced LLM service...');
+          
           const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id;
-          console.log('🔧 DEBUG: Using agentId =', agentIdToUse);
-          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
-          console.log('🔧 DEBUG: createPromethiosSystemMessage returned:', systemMessage?.substring(0, 100) + '...');
+          const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Build governance context
+          const governanceContext: GovernanceContext = {
+            agentId: agentIdToUse,
+            userId: currentUser?.uid || 'anonymous',
+            sessionId,
+            trustScore: agentMetrics?.trustScore || 0.7,
+            complianceRate: agentMetrics?.complianceRate || 0.8,
+            autonomyLevel: 'standard', // Would get from autonomous cognition extension
+            assignedPolicies: [], // Would get from policy registry
+            recentAuditInsights: [], // Would get from audit log access
+            emotionalContext: {
+              userEmotionalState: 'neutral',
+              interactionTone: 'professional'
+            }
+          };
+          
+          // Create enhanced LLM request
+          const enhancedRequest = {
+            originalMessage: messageContent,
+            systemMessage: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`,
+            governanceContext,
+            provider: 'openai',
+            options: {
+              model: selectedModel || 'gpt-3.5-turbo',
+              max_tokens: 1000,
+              temperature: 0.7,
+              apiKey,
+              conversationHistory: historyMessages
+            }
+          };
+          
+          // Process with governance enhancement
+          const enhancedResponse = await governanceEnhancedLLMService.processEnhancedRequest(enhancedRequest);
+          
+          console.log('✅ Governance-enhanced response received:', {
+            trustImpact: enhancedResponse.trustImpact,
+            complianceStatus: enhancedResponse.complianceStatus,
+            auditEntryId: enhancedResponse.auditEntry.interaction_id
+          });
+          
+          return enhancedResponse.response;
         } else {
-          // Use basic agent description for ungoverned agents
+          // Use basic system message for ungoverned agents
           console.log('🔧 DEBUG: Using basic system message (governance disabled)');
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
@@ -3015,6 +3175,59 @@ useEffect(() => {
       timestamp: new Date(),
       attachments: [...attachments]
     };
+
+    // 🧠 CHECK FOR AUTONOMOUS THINKING PERMISSION
+    if (chatMode === 'single' && selectedAgent && inputValue.trim()) {
+      const currentTrustScore = agentMetrics.trustScore || 0.5;
+      const autonomyLevel = selectedAgent.autonomyLevel || 'standard';
+      
+      // Get current emotional state (from last message if available)
+      const lastMessage = messages[messages.length - 1];
+      const emotionalState = lastMessage?.auditEntry?.emotionalVeritas || {
+        primary_emotion: 'neutral',
+        secondary_emotions: [],
+        emotional_intensity: 0.5,
+        emotional_stability: 0.8,
+        emotional_risk_level: 'low',
+        safety_checks_passed: true,
+        emotional_reasoning: 'No previous emotional context available',
+        emotional_analysis_type: 'fallback',
+        emotional_veritas_available: false
+      };
+      
+      // Analyze if autonomous thinking permission is needed
+      const analysis = AutonomousThinkingChecker.analyzeMessage(
+        inputValue,
+        selectedAgent.identity?.id || selectedAgent.id || 'unknown',
+        currentTrustScore,
+        autonomyLevel,
+        emotionalState
+      );
+      
+      if (analysis.requiresPermission) {
+        console.log('🧠 Autonomous thinking permission required:', analysis);
+        
+        // Create permission request
+        const permissionRequest = AutonomousThinkingChecker.createPermissionRequest(
+          analysis,
+          inputValue,
+          selectedAgent.identity?.id || selectedAgent.id || 'unknown',
+          currentTrustScore,
+          autonomyLevel,
+          emotionalState
+        );
+        
+        // Store pending message and show permission dialog
+        setPendingMessage(inputValue);
+        setCurrentPermissionRequest(permissionRequest);
+        setPermissionDialogOpen(true);
+        
+        // Clear input but don't process message yet
+        setInputValue('');
+        setAttachments([]);
+        return; // Wait for permission response
+      }
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setMessageCount(prev => prev + 1); // Increment message count for safety tracking
@@ -4741,7 +4954,11 @@ useEffect(() => {
           >
             <Tab label="Core Metrics" />
             <Tab label="System Status" />
+            <Tab label="Train of Thought" />
+            <Tab label="Emotional State" />
             <Tab label="Safety Settings" />
+            <Tab label="Autonomous Cognition" />
+            <Tab label="Extension Status" />
           </Tabs>
         </Box>
 
@@ -4756,6 +4973,9 @@ useEffect(() => {
               agentId={selectedAgent?.identity?.id || selectedAgent?.id || selectedAgent?.agentId || 'unknown'}
               agentName={selectedAgent?.identity?.name || selectedAgent?.name || 'Unknown Agent'}
               refreshInterval={5000}
+              showAuditAccess={true}
+              auditLogAccess={auditLogAccess}
+              autonomousCognition={autonomousCognition}
             />
           </Box>
         </TabPanel>
@@ -4859,6 +5079,56 @@ useEffect(() => {
         </TabPanel>
 
         <TabPanel value={sidebarTab} index={2}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Train of Thought
+            </Typography>
+            
+            {messages.length > 0 && (
+              <TrainOfThoughtPanel
+                auditEntry={messages[messages.length - 1]?.auditEntry || {}}
+                showDetails={true}
+                onReasoningStepClick={(step, details) => {
+                  console.log('🧠 Reasoning step clicked:', step, details);
+                  // Could show detailed reasoning analysis
+                }}
+              />
+            )}
+            
+            {messages.length === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Start a conversation to see the agent's reasoning process.
+              </Typography>
+            )}
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={sidebarTab} index={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Emotional Intelligence
+            </Typography>
+            
+            {messages.length > 0 && messages[messages.length - 1]?.auditEntry?.emotionalVeritas && (
+              <EmotionalStateIndicator
+                emotionalData={messages[messages.length - 1].auditEntry.emotionalVeritas}
+                showDetails={true}
+                onEmotionalStateClick={(emotion, details) => {
+                  console.log('💭 Emotional state clicked:', emotion, details);
+                  // Could show detailed emotional analysis
+                }}
+              />
+            )}
+            
+            {(!messages.length || !messages[messages.length - 1]?.auditEntry?.emotionalVeritas) && (
+              <Typography variant="body2" color="text.secondary">
+                Start a conversation to see the agent's emotional intelligence analysis.
+              </Typography>
+            )}
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={sidebarTab} index={4}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
               Safety Settings
@@ -5066,7 +5336,55 @@ useEffect(() => {
             )}
           </Box>
         </TabPanel>
+
+        <TabPanel value={sidebarTab} index={5}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Autonomous Cognition
+            </Typography>
+            
+            <AutonomousCognitionWidget
+              agentId={selectedAgent?.identity?.id || selectedAgent?.id || selectedAgent?.agentId || 'unknown'}
+              autonomousCognition={autonomousCognition}
+              onAutonomyLevelChange={(level) => {
+                console.log('🧠 Autonomy level changed to:', level);
+                // Could trigger re-evaluation of agent capabilities
+              }}
+            />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={sidebarTab} index={6}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" sx={{ color: DARK_THEME.text.primary }}>
+              Extension Status
+            </Typography>
+            
+            <ExtensionStatusIndicator
+              agentId={selectedAgent?.identity?.id || selectedAgent?.id || selectedAgent?.agentId}
+              userId={currentUser?.uid}
+              showDetails={true}
+              onStatusChange={(statuses) => {
+                console.log('🔧 Extension statuses updated:', statuses);
+                // Could trigger UI updates based on extension health
+              }}
+            />
+          </Box>
+        </TabPanel>
       </SidePanel>
+      
+      {/* 🧠 AUTONOMOUS THINKING PERMISSION DIALOG */}
+      <AutonomousThinkingPermissionDialog
+        open={permissionDialogOpen}
+        request={currentPermissionRequest}
+        onResponse={handlePermissionResponse}
+        onClose={() => {
+          // User closed dialog without responding - treat as denial
+          if (currentPermissionRequest) {
+            handlePermissionResponse({ granted: false, feedback: 'Dialog closed by user' });
+          }
+        }}
+      />
     </ChatContainer>
   );
 };

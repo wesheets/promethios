@@ -69,6 +69,10 @@ interface AgentMetricsWidgetProps {
   showTitle?: boolean;
   refreshInterval?: number; // in milliseconds
   onMetricsUpdate?: (metrics: any) => void;
+  // NEW: Audit log access integration
+  showAuditAccess?: boolean;
+  auditLogAccess?: any; // AuditLogAccessExtension instance
+  autonomousCognition?: any; // AutonomousCognitionExtension instance
 }
 
 export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
@@ -78,7 +82,11 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
   compact = false,
   showTitle = true,
   refreshInterval = 30000,
-  onMetricsUpdate
+  onMetricsUpdate,
+  // NEW: Audit log access props
+  showAuditAccess = false,
+  auditLogAccess,
+  autonomousCognition
 }) => {
   const agentMetrics = useAgentMetrics({
     agentId,
@@ -90,6 +98,14 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   const [telemetryData, setTelemetryData] = useState<AgentTelemetryData | null>(null);
   const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
+
+  // NEW: Audit log access state
+  const [auditHistory, setAuditHistory] = useState<any[]>([]);
+  const [policyCompliance, setPolicyCompliance] = useState<any>(null);
+  const [assignedPolicies, setAssignedPolicies] = useState<any[]>([]);
+  const [showAuditPanel, setShowAuditPanel] = useState(false);
+  const [showPolicyDetails, setShowPolicyDetails] = useState(false);
+  const [autonomyLevel, setAutonomyLevel] = useState<string>('standard');
 
   console.log(`🔧 AgentMetricsWidget: Initialized for agent ${agentId} with version ${version}`);
   console.log(`🔧 AgentMetricsWidget: Metrics hook state:`, {
@@ -131,6 +147,51 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
       setLastUpdateTime(new Date());
     }
   }, [agentMetrics.trustScore, agentMetrics.complianceRate, agentMetrics.responseTime]);
+
+  // NEW: Load audit log access data when extensions are available
+  useEffect(() => {
+    const loadAuditData = async () => {
+      if (auditLogAccess && agentId) {
+        try {
+          console.log('🔧 Loading audit data for agent:', agentId);
+          
+          // Load audit history
+          const history = await auditLogAccess.getMyAuditHistory(agentId);
+          setAuditHistory(history);
+          
+          // Load policy compliance analysis
+          const compliance = await auditLogAccess.analyzeMyPolicyCompliance(agentId);
+          setPolicyCompliance(compliance);
+          
+          // Load assigned policies
+          const policies = await auditLogAccess.getMyAssignedPolicies(agentId);
+          setAssignedPolicies(policies);
+          
+          console.log('✅ Audit data loaded successfully');
+        } catch (error) {
+          console.error('❌ Failed to load audit data:', error);
+        }
+      }
+    };
+    
+    loadAuditData();
+  }, [auditLogAccess, agentId]);
+
+  // NEW: Load autonomous cognition level
+  useEffect(() => {
+    const loadAutonomyLevel = async () => {
+      if (autonomousCognition && agentId) {
+        try {
+          const level = await autonomousCognition.getCurrentAutonomyLevel(agentId);
+          setAutonomyLevel(level);
+        } catch (error) {
+          console.error('❌ Failed to load autonomy level:', error);
+        }
+      }
+    };
+    
+    loadAutonomyLevel();
+  }, [autonomousCognition, agentId]);
 
   const formatPercentage = (value: number | undefined): string => {
     if (value === undefined) return '--';
@@ -541,6 +602,143 @@ export const AgentMetricsWidget: React.FC<AgentMetricsWidgetProps> = ({
             )}
           </Box>
         </Box>
+
+        {/* NEW: Audit Log Access Section */}
+        {showAuditAccess && auditLogAccess && (
+          <Box mt={3}>
+            <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold', mb: 2 }}>
+              🔍 Audit Log Access
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box 
+                  onClick={() => setShowAuditPanel(!showAuditPanel)}
+                  sx={{ 
+                    p: 2, 
+                    border: `1px solid ${DARK_THEME.border}`, 
+                    borderRadius: 1, 
+                    cursor: 'pointer',
+                    backgroundColor: showAuditPanel ? DARK_THEME.primary + '20' : 'transparent',
+                    '&:hover': { backgroundColor: DARK_THEME.primary + '10' }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
+                    📋 My Audit History
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                    {auditHistory.length} entries • Click to {showAuditPanel ? 'hide' : 'view'}
+                  </Typography>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <Box 
+                  onClick={() => setShowPolicyDetails(!showPolicyDetails)}
+                  sx={{ 
+                    p: 2, 
+                    border: `1px solid ${DARK_THEME.border}`, 
+                    borderRadius: 1, 
+                    cursor: 'pointer',
+                    backgroundColor: showPolicyDetails ? DARK_THEME.primary + '20' : 'transparent',
+                    '&:hover': { backgroundColor: DARK_THEME.primary + '10' }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
+                    📜 Policy Compliance
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                    {assignedPolicies.length} policies • {((policyCompliance?.overallComplianceRate || 0.8) * 100).toFixed(1)}% compliance
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+
+            {/* Audit History Panel */}
+            {showAuditPanel && (
+              <Box mt={2} p={2} sx={{ border: `1px solid ${DARK_THEME.border}`, borderRadius: 1, backgroundColor: DARK_THEME.background }}>
+                <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, mb: 1 }}>
+                  Recent Audit Entries
+                </Typography>
+                {auditHistory.slice(0, 5).map((entry, index) => (
+                  <Box key={index} sx={{ mb: 1, p: 1, backgroundColor: DARK_THEME.surface, borderRadius: 1 }}>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                      {entry.interaction_type}: {entry.user_message?.substring(0, 50)}...
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: getScoreColor(entry.trust_impact) }}>
+                      Trust Impact: {entry.trust_impact?.toFixed(2) || 'N/A'}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {/* Policy Details Panel */}
+            {showPolicyDetails && (
+              <Box mt={2} p={2} sx={{ border: `1px solid ${DARK_THEME.border}`, borderRadius: 1, backgroundColor: DARK_THEME.background }}>
+                <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, mb: 1 }}>
+                  Assigned Policies
+                </Typography>
+                {assignedPolicies.map((policy, index) => (
+                  <Box key={index} sx={{ mb: 2, p: 2, backgroundColor: DARK_THEME.surface, borderRadius: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography variant="body2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold' }}>
+                        {policy.policyName}
+                      </Typography>
+                      <Chip 
+                        label={`${(policy.complianceRate * 100).toFixed(1)}%`}
+                        size="small"
+                        sx={{ 
+                          backgroundColor: getScoreColor(policy.complianceRate) + '20',
+                          color: getScoreColor(policy.complianceRate)
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                      Violations: {policy.violationCount || 0} • Rules: {policy.policyContent?.rules?.length || 0}
+                    </Typography>
+                    {policy.policyContent?.rules?.slice(0, 2).map((rule: any, ruleIndex: number) => (
+                      <Typography key={ruleIndex} variant="caption" sx={{ display: 'block', color: DARK_THEME.text.secondary, mt: 0.5 }}>
+                        • {rule.name}
+                      </Typography>
+                    ))}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* NEW: Autonomous Cognition Section */}
+        {showAuditAccess && autonomousCognition && (
+          <Box mt={3}>
+            <Typography variant="subtitle2" sx={{ color: DARK_THEME.text.primary, fontWeight: 'bold', mb: 2 }}>
+              🧠 Autonomous Cognition
+            </Typography>
+            
+            <Box p={2} sx={{ border: `1px solid ${DARK_THEME.border}`, borderRadius: 1 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="body2" sx={{ color: DARK_THEME.text.primary }}>
+                  Current Autonomy Level
+                </Typography>
+                <Chip 
+                  label={autonomyLevel.toUpperCase()}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: DARK_THEME.primary + '20',
+                    color: DARK_THEME.primary
+                  }}
+                />
+              </Box>
+              <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary }}>
+                Based on trust score and governance compliance
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </CardContent>
     </MetricsCard>
   );
