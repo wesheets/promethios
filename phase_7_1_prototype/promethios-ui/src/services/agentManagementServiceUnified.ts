@@ -66,7 +66,7 @@ interface AgentManagementMetrics {
   complianceRate: number;
 }
 
-class AgentManagementServiceUnified {
+export class AgentManagementServiceUnified {
   private multiAgentService: MultiAgentService;
   private userId: string = '';
   private isStorageReady: boolean = false;
