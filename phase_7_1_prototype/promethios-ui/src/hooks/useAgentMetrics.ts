@@ -286,20 +286,20 @@ export const useAgentMetrics = (options: UseAgentMetricsOptions): AgentMetricsHo
   // }, [isInitialized, refreshMetrics]);
 
   // Computed metrics values - only return values when profile is loaded and initialized
-  const trustScore = (isInitialized && profile?.metrics.governanceMetrics.trustScore !== undefined) 
-    ? profile.metrics.governanceMetrics.trustScore 
+  const trustScore = (isInitialized && profile?.metrics.trustScore !== undefined) 
+    ? profile.metrics.trustScore 
     : undefined;
-  const complianceRate = (isInitialized && profile?.metrics.governanceMetrics.complianceRate !== undefined) 
-    ? profile.metrics.governanceMetrics.complianceRate 
+  const complianceRate = (isInitialized && profile?.metrics.governanceMetrics.policyCompliance !== undefined) 
+    ? profile.metrics.governanceMetrics.policyCompliance 
     : undefined;
-  const responseTime = (isInitialized && profile?.metrics.performanceMetrics.averageResponseTime !== undefined) 
-    ? profile.metrics.performanceMetrics.averageResponseTime 
+  const responseTime = (isInitialized && profile?.metrics.responseTime !== undefined) 
+    ? profile.metrics.responseTime 
     : undefined;
-  const sessionIntegrity = (isInitialized && profile?.metrics.performanceMetrics.successRate !== undefined) 
-    ? profile.metrics.performanceMetrics.successRate 
+  const sessionIntegrity = (isInitialized && profile?.metrics.sessionIntegrity !== undefined) 
+    ? profile.metrics.sessionIntegrity 
     : undefined;
-  const totalInteractions = (isInitialized && profile?.metrics.governanceMetrics.totalInteractions !== undefined) 
-    ? profile.metrics.governanceMetrics.totalInteractions 
+  const totalInteractions = (isInitialized && profile?.metrics.totalInteractions !== undefined) 
+    ? profile.metrics.totalInteractions 
     : undefined;
   const lastUpdated = profile?.lastUpdated || null;
 
