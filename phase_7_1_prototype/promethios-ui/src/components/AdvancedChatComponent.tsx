@@ -434,7 +434,8 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   // Permission dialog state
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
   const [currentPermissionRequest, setCurrentPermissionRequest] = useState<AutonomousThinkingRequest | null>(null);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);tEntries] = useState<EnhancedAuditLogEntry[]>([]);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [auditLogEntries, setAuditLogEntries] = useState<EnhancedAuditLogEntry[]>([]);
 
   // 📊 AGENT METRICS INTEGRATION
   const agentMetrics = useAgentMetrics({
