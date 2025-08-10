@@ -66,7 +66,7 @@ import {
   Groups as CollaborationIcon,
   AccountTree as WorkflowIcon,
   History as ConversationHistoryIcon,
-  Template as TemplateIcon,
+  Description as TemplateIcon,
   Analytics as AnalyticsIcon,
   Save as SaveIcon,
   Share as ShareIcon,
