@@ -15,13 +15,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Timeline,
-  TimelineItem,
-  TimelineOppositeContent,
-  TimelineSeparator,
-  TimelineDot,
-  TimelineConnector,
-  TimelineContent,
   Chip,
   LinearProgress,
   Tooltip,
@@ -30,6 +23,15 @@ import {
   Alert,
   Divider
 } from '@mui/material';
+import {
+  Timeline,
+  TimelineItem,
+  TimelineOppositeContent,
+  TimelineSeparator,
+  TimelineDot,
+  TimelineConnector,
+  TimelineContent
+} from '@mui/lab';
 import {
   ExpandMore,
   Psychology,
