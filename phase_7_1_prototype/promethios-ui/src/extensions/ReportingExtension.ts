@@ -172,7 +172,7 @@ export interface ReportGenerationProgress {
   errors?: string[];
 }
 
-class ReportingExtension extends Extension {
+export class ReportingExtension extends Extension {
   private baseUrl: string;
   private wsConnection: WebSocket | null = null;
   private progressCallbacks: Map<string, (progress: ReportGenerationProgress) => void> = new Map();
