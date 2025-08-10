@@ -8,7 +8,7 @@ import { useAdminCheck } from '../hooks/useAdminCheck';
 // Import navigation components
 import NewHeader from '../components/navigation/NewHeader';
 import HeaderNavigation from '../components/HeaderNavigation';
-import CollapsibleNavigation from '../components/CollapsibleNavigation';
+import CollapsibleNavigationEnhanced from '../components/CollapsibleNavigationEnhanced';
 import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
 import SuperEnhancedObserverButton from '../components/SuperEnhancedObserverButton';
@@ -86,7 +86,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       
       <Box sx={{ display: 'flex', flex: 1, height: 'calc(100vh - 64px)' }}>
         {/* Collapsible Left Navigation for logged-in users */}
-        <CollapsibleNavigation 
+        <CollapsibleNavigationEnhanced 
           userPermissions={['view']}
           isAdmin={isAdmin}
         />

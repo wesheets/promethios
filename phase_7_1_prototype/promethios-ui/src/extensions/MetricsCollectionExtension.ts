@@ -14,6 +14,30 @@ import { authApiService } from '../services/authApiService';
 import { userAgentStorageService } from '../services/UserAgentStorageService';
 import type { User } from 'firebase/auth';
 
+export interface AgentMetricsProfile {
+  agentId: string;
+  agentName: string;
+  version: 'test' | 'production';
+  userId: string;
+  deploymentId?: string;
+  createdAt: Date;
+  lastUpdated: Date;
+  metrics: {
+    trustScore: number;
+    complianceRate: number;
+    responseTime: number;
+    sessionIntegrity: number;
+    totalInteractions: number;
+    governanceMetrics: {
+      policyCompliance: number;
+      auditTrailCompleteness: number;
+      transparencyScore: number;
+      ethicalReasoningScore: number;
+    };
+  };
+  status: 'active' | 'inactive' | 'suspended';
+}
+
 export interface MetricsCollectionConfig {
   // Collection settings
   enableRealTimeCollection: boolean;
@@ -828,6 +852,119 @@ export class MetricsCollectionExtension extends Extension {
   getCollectionStats(): any {
     return { ...this.collectionStats };
   }
+
+  /**
+   * Get agent metrics profile (compatibility method for useAgentMetrics hook)
+   */
+  async getAgentMetricsProfile(agentId: string, version: 'test' | 'production' = 'test'): Promise<AgentMetricsProfile | null> {
+    try {
+      // Get metrics from trust metrics extension
+      const trustMetrics = await this.trustMetricsExtension?.getAgentMetrics(agentId);
+      
+      if (!trustMetrics) {
+        return null;
+      }
+
+      // Create profile from existing metrics
+      const profile: AgentMetricsProfile = {
+        agentId,
+        agentName: trustMetrics.agentName || 'Unknown Agent',
+        version,
+        userId: this.userId,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+        metrics: {
+          trustScore: trustMetrics.trustScore || 0,
+          complianceRate: trustMetrics.complianceRate || 0,
+          responseTime: trustMetrics.averageResponseTime || 0,
+          sessionIntegrity: trustMetrics.sessionIntegrity || 0,
+          totalInteractions: trustMetrics.totalInteractions || 0,
+          governanceMetrics: {
+            policyCompliance: trustMetrics.policyCompliance || 0,
+            auditTrailCompleteness: trustMetrics.auditTrailCompleteness || 0,
+            transparencyScore: trustMetrics.transparencyScore || 0,
+            ethicalReasoningScore: trustMetrics.ethicalReasoningScore || 0
+          }
+        },
+        status: 'active'
+      };
+
+      return profile;
+    } catch (error) {
+      console.error('Error getting agent metrics profile:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create test agent profile (compatibility method)
+   */
+  async createTestAgentProfile(agentId: string, agentName: string, userId: string): Promise<AgentMetricsProfile> {
+    const profile: AgentMetricsProfile = {
+      agentId,
+      agentName,
+      version: 'test',
+      userId,
+      createdAt: new Date(),
+      lastUpdated: new Date(),
+      metrics: {
+        trustScore: 0.85,
+        complianceRate: 0.92,
+        responseTime: 1200,
+        sessionIntegrity: 0.95,
+        totalInteractions: 0,
+        governanceMetrics: {
+          policyCompliance: 0.90,
+          auditTrailCompleteness: 0.88,
+          transparencyScore: 0.85,
+          ethicalReasoningScore: 0.87
+        }
+      },
+      status: 'active'
+    };
+
+    // Store the profile (in memory for now)
+    this.agentProfiles.set(`${agentId}-test`, profile);
+    
+    return profile;
+  }
+
+  /**
+   * Create production agent profile (compatibility method)
+   */
+  async createProductionAgentProfile(agentId: string, agentName: string, userId: string, deploymentId: string): Promise<AgentMetricsProfile> {
+    const profile: AgentMetricsProfile = {
+      agentId,
+      agentName,
+      version: 'production',
+      userId,
+      deploymentId,
+      createdAt: new Date(),
+      lastUpdated: new Date(),
+      metrics: {
+        trustScore: 0.90,
+        complianceRate: 0.95,
+        responseTime: 800,
+        sessionIntegrity: 0.98,
+        totalInteractions: 0,
+        governanceMetrics: {
+          policyCompliance: 0.95,
+          auditTrailCompleteness: 0.92,
+          transparencyScore: 0.88,
+          ethicalReasoningScore: 0.90
+        }
+      },
+      status: 'active'
+    };
+
+    // Store the profile (in memory for now)
+    this.agentProfiles.set(`${agentId}-production`, profile);
+    
+    return profile;
+  }
+
+  // Add agent profiles storage
+  private agentProfiles: Map<string, AgentMetricsProfile> = new Map();
 }
 
 // Export singleton instance
