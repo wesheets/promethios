@@ -72,6 +72,13 @@ import DeployedAgentChatPage from './pages/DeployedAgentChatPage';
 import AgentLifecycleDashboard from './components/AgentLifecycleDashboard';
 import PrometheosLLMManagePage from './pages/PrometheosLLMManagePage';
 import PrometheosLLMCreationPage from './pages/PrometheosLLMCreationPage';
+// MAS Pages
+import MASThinkTankPage from './pages/MASThinkTankPage';
+import MASConversationHistoryPage from './pages/MASConversationHistoryPage';
+import MASWorkflowTemplatesPage from './pages/MASWorkflowTemplatesPage';
+import MASAnalyticsPage from './pages/MASAnalyticsPage';
+import MASDataCollectionAdminPage from './pages/MASDataCollectionAdminPage';
+import ProcessBuilderPage from './pages/ProcessBuilderPage';
 
 /**
  * UIIntegration Component
@@ -493,6 +500,47 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* MAS (Multi-Agent Systems) Routes */}
+        <Route path="mas/think-tank" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <MASThinkTankPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="mas/process-builder" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ProcessBuilderPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="mas/conversations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <MASConversationHistoryPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="mas/templates" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <MASWorkflowTemplatesPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="mas/analytics" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <MASAnalyticsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         {/* Benchmark Chat Page route */}
         <Route path="agents/benchmark/chat" element={
           <ProtectedRoute requireOnboarding={false}>
@@ -513,6 +561,15 @@ const UIIntegration: React.FC = () => {
         <Route path="admin/dashboard/*" element={
           <ProtectedRoute requireOnboarding={true}>
             <SimpleAdminDashboard />
+          </ProtectedRoute>
+        } />
+        
+        {/* Admin MAS Data Collection route */}
+        <Route path="admin/mas-data-collection" element={
+          <ProtectedRoute requireOnboarding={true}>
+            <MainLayoutProxy>
+              <MASDataCollectionAdminPage />
+            </MainLayoutProxy>
           </ProtectedRoute>
         } />
         
