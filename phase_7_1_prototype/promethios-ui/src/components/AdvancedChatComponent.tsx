@@ -77,7 +77,7 @@ import AutonomousThinkingPermissionDialog, {
 import AutonomousThinkingChecker from './AutonomousThinkingChecker';
 
 // Dark theme colors
-const DARK_THEME = {
+export const DARK_THEME = {
   background: '#1a202c',
   surface: '#2d3748',
   border: '#4a5568',
