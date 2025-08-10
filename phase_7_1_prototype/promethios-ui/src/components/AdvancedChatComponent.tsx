@@ -75,6 +75,9 @@ import AutonomousThinkingPermissionDialog, {
   PermissionResponse 
 } from './AutonomousThinkingPermissionDialog';
 import AutonomousThinkingChecker from './AutonomousThinkingChecker';
+import { ModernChatGovernanceAdapter } from '../services/ModernChatGovernanceAdapter';
+import { ModernChatGovernedInsightsQAService } from '../services/ModernChatGovernedInsightsQAService';
+import { EnhancedAuditLoggingService } from '../services/EnhancedAuditLoggingService';
 
 // Dark theme colors
 export const DARK_THEME = {
@@ -423,6 +426,11 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
   const governanceService = useMemo(() => new GovernanceService(), []);
   const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
+
+  // ✨ ENHANCED GOVERNANCE SERVICES (Added alongside existing services)
+  const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
+  const governedInsightsQAService = useMemo(() => ModernChatGovernedInsightsQAService.getInstance(), []);
+  const enhancedAuditLoggingService = useMemo(() => EnhancedAuditLoggingService.getInstance(), []);
 
   // NEW: Initialize missing extensions
   const auditLogAccessExtension = useMemo(() => AuditLogAccessExtension.getInstance(), []);
@@ -3708,6 +3716,43 @@ useEffect(() => {
           console.log('✅ Cryptographic audit: Agent response logged');
         } catch (auditError) {
           console.warn('⚠️ Cryptographic audit logging failed:', auditError);
+        }
+        
+        // ✨ ENHANCED AUDIT LOGGING (47+ fields) - Added as additional layer
+        try {
+          await enhancedAuditLoggingService.createEnhancedAuditEntry({
+            agentId: selectedAgent.identity.id,
+            userId: currentUser?.uid || 'anonymous',
+            sessionId: `chat_${Date.now()}`,
+            interactionType: 'chat_response',
+            userMessage: userMessage.content,
+            agentResponse: agentMessage.content,
+            governanceMetrics: agentMessage.governanceData,
+            emotionalContext: agentMessage.governanceData?.emotionalState,
+            autonomousContext: currentPermissionRequest ? {
+              requestType: currentPermissionRequest.type,
+              approved: true
+            } : undefined,
+            policyContext: agentMessage.governanceData?.policies
+          });
+          console.log('✅ Enhanced audit logging: 47+ field audit entry created');
+        } catch (enhancedAuditError) {
+          console.warn('⚠️ Enhanced audit logging failed:', enhancedAuditError);
+        }
+        
+        // 🧠 Q&A DATA COLLECTION - Added as additional layer
+        try {
+          await governedInsightsQAService.generateQAFromInteraction({
+            agentId: selectedAgent.identity.id,
+            userId: currentUser?.uid || 'anonymous',
+            userMessage: userMessage.content,
+            agentResponse: agentMessage.content,
+            governanceContext: agentMessage.governanceData,
+            sessionId: `chat_${Date.now()}`
+          });
+          console.log('✅ Q&A data collection: Governance insights generated');
+        } catch (qaError) {
+          console.warn('⚠️ Q&A data collection failed:', qaError);
         }
         
         // Scroll to bottom after agent response
