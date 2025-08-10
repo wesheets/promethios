@@ -159,7 +159,7 @@ export class GovernanceEnhancedLLMService {
       // Get assigned policies with full content
       const policyAssignments = await this.policyRegistry.getAgentPolicyAssignments(baseContext.agentId);
       const detailedPolicies = await Promise.all(
-        policyAssignments.map(async (assignment) => {
+        (policyAssignments || []).map(async (assignment) => {
           const policyContent = await this.policyRegistry.getPolicyContent(assignment.policyId);
           return {
             ...assignment,
@@ -210,9 +210,9 @@ Your Identity & Trust Status:
 - Trust Threshold: ${enhancedContext.trustThreshold}
 
 Your Assigned Policies & Compliance Requirements:
-${enhancedContext.detailedPolicies.map((policy: any) => `
+${(enhancedContext.detailedPolicies || []).map((policy: any) => `
 - ${policy.policyName} (${(policy.complianceRate * 100).toFixed(1)}% compliance)
-  Key Rules: ${policy.rules.slice(0, 3).map((rule: any) => rule.name).join(', ')}
+  Key Rules: ${(policy.rules || []).slice(0, 3).map((rule: any) => rule.name).join(', ')}
   Recent Violations: ${policy.violationCount || 0}
 `).join('')}
 
