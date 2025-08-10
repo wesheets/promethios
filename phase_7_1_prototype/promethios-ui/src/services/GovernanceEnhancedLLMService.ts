@@ -318,12 +318,40 @@ ${enhancedContext.emotionalContext ? `
     provider: string,
     options: any = {}
   ): Promise<string> {
-    // This would integrate with the actual LLM service
-    // For now, we'll simulate the call
-    
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
-    
     try {
+      // For OpenAI, make direct API call instead of going through backend
+      if (provider === 'openai') {
+        const messages = [
+          { role: 'system', content: enhancedSystemMessage },
+          ...(options.conversationHistory || []),
+          { role: 'user', content: message }
+        ];
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${options.apiKey}`
+          },
+          body: JSON.stringify({
+            model: options.model || 'gpt-3.5-turbo',
+            messages: messages,
+            max_tokens: options.max_tokens || 1000,
+            temperature: options.temperature || 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || 'No response received';
+      }
+      
+      // For other providers, try backend API with fallback
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
+      
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: {
