@@ -2821,7 +2821,7 @@ useEffect(() => {
         }
 
         // Convert conversation history for backend API
-        const historyMessages = conversationHistory
+        const grokHistoryMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage token limits
           .map(msg => ({
@@ -2831,14 +2831,14 @@ useEffect(() => {
 
         console.log('🔧 GROK DEBUG: Conversation history prepared:', {
           totalMessages: conversationHistory.length,
-          filteredMessages: historyMessages.length
+          filteredMessages: grokHistoryMessages.length
         });
 
         const requestPayload = {
           agent_id: 'grok-agent', // Maps to Grok in backend
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
-          conversation_history: historyMessages, // Include conversation history
+          conversation_history: grokHistoryMessages, // Include conversation history
           governance_enabled: governanceEnabled,
           provider: 'grok',
           model: selectedModel || 'grok-beta',
@@ -2932,7 +2932,7 @@ useEffect(() => {
         }
 
         // Convert conversation history for backend API
-        const historyMessages = conversationHistory
+        const perplexityHistoryMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage token limits
           .map(msg => ({
@@ -2942,14 +2942,14 @@ useEffect(() => {
 
         console.log('🔧 PERPLEXITY DEBUG: Conversation history prepared:', {
           totalMessages: conversationHistory.length,
-          filteredMessages: historyMessages.length
+          filteredMessages: perplexityHistoryMessages.length
         });
 
         const requestPayload = {
           agent_id: 'perplexity-agent', // Maps to Perplexity in backend
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
-          conversation_history: historyMessages, // Include conversation history
+          conversation_history: perplexityHistoryMessages, // Include conversation history
           governance_enabled: governanceEnabled,
           provider: 'perplexity',
           model: selectedModel || 'llama-3.1-sonar-small-128k-online',
@@ -3019,7 +3019,7 @@ useEffect(() => {
         
       } else if (apiEndpoint) {
         // Convert conversation history for custom API
-        const historyMessages = conversationHistory
+        const customApiHistoryMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage payload size
           .map(msg => ({
@@ -3040,7 +3040,7 @@ useEffect(() => {
             agent_name: agent.agentName || agent.identity?.name,
             agent_description: agent.description || agent.identity?.description,
             model: selectedModel,
-            conversation_history: historyMessages, // Include conversation history
+            conversation_history: customApiHistoryMessages, // Include conversation history
             attachments: attachments.map(att => ({
               name: att.name,
               type: att.type,
