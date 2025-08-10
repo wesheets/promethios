@@ -1995,57 +1995,16 @@ useEffect(() => {
         console.log('🔧 DEBUG: currentUser?.uid =', currentUser?.uid);
         
         if (governanceEnabled) {
-          // Use governance-enhanced LLM service for governed agents
-          console.log('🔧 DEBUG: Using governance-enhanced LLM service...');
-          
-          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id || selectedAgent?.id;
-          const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          
-          // Build governance context
-          const governanceContext: GovernanceContext = {
-            agentId: agentIdToUse,
-            userId: currentUser?.uid || 'anonymous',
-            sessionId,
-            trustScore: agentMetrics?.trustScore || 0.7,
-            complianceRate: agentMetrics?.complianceRate || 0.8,
-            autonomyLevel: 'standard', // Would get from autonomous cognition extension
-            assignedPolicies: [], // Would get from policy registry
-            recentAuditInsights: [], // Would get from audit log access
-            emotionalContext: {
-              userEmotionalState: 'neutral',
-              interactionTone: 'professional'
-            }
-          };
-          
-          // Create enhanced LLM request
-          const enhancedRequest = {
-            originalMessage: messageContent,
-            systemMessage: `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`,
-            governanceContext,
-            provider: 'openai',
-            options: {
-              model: selectedModel || 'gpt-3.5-turbo',
-              max_tokens: 1000,
-              temperature: 0.7,
-              apiKey,
-              conversationHistory: openaiHistoryMessages
-            }
-          };
-          
-          // Process with governance enhancement
-          const enhancedResponse = await governanceEnhancedLLMService.processEnhancedRequest(enhancedRequest);
-          
-          console.log('✅ Governance-enhanced response received:', {
-            trustImpact: enhancedResponse.trustImpact,
-            complianceStatus: enhancedResponse.complianceStatus,
-            auditEntryId: enhancedResponse.auditEntry.interaction_id
-          });
-          
-          return enhancedResponse.response;
+          console.log('🔧 OPENAI DEBUG: Creating governance system message...');
+          // Use Promethios governance kernel for governed agents with real-time metrics
+          const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
+          systemMessage = await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid);
+          console.log('🔧 OPENAI DEBUG: Governance system message created, length:', systemMessage?.length);
         } else {
-          // Use basic system message for ungoverned agents
-          console.log('🔧 DEBUG: Using basic system message (governance disabled)');
+          console.log('🔧 OPENAI DEBUG: Creating basic system message...');
+          // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          console.log('🔧 OPENAI DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
         const messages = [
