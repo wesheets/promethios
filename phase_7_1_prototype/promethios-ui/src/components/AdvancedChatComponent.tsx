@@ -1973,6 +1973,16 @@ useEffect(() => {
       
       if (provider === 'openai') {
         console.log('Taking OpenAI path...');
+        
+        // Convert conversation history to OpenAI API format (needed for both governance and non-governance paths)
+        const openaiHistoryMessages = conversationHistory
+          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
+          .slice(-20) // Last 20 messages to manage token limits
+          .map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+        
         // Create system message based on governance setting
         let systemMessage;
         console.log('🔧 DEBUG: governanceEnabled =', governanceEnabled);
@@ -2018,7 +2028,7 @@ useEffect(() => {
               max_tokens: 1000,
               temperature: 0.7,
               apiKey,
-              conversationHistory: historyMessages
+              conversationHistory: openaiHistoryMessages
             }
           };
           
@@ -2038,21 +2048,9 @@ useEffect(() => {
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
         }
 
-        // Convert conversation history to OpenAI API format
-        const historyMessages = conversationHistory
-          .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
-          .slice(-20) // Last 20 messages to manage token limits
-          .map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.content
-          }));
-
         const messages = [
-          {
-            role: 'system',
-            content: systemMessage
-          },
-          ...historyMessages, // Include conversation history
+          { role: 'system', content: systemMessage },
+          ...openaiHistoryMessages, // Include conversation history
           {
             role: 'user',
             content: messageContent
@@ -2105,7 +2103,7 @@ useEffect(() => {
         }
 
         // Convert conversation history for backend API
-        const historyMessages = conversationHistory
+        const anthropicHistoryMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
           .slice(-20) // Last 20 messages to manage token limits
           .map(msg => ({
@@ -2115,14 +2113,14 @@ useEffect(() => {
 
         console.log('🔧 ANTHROPIC DEBUG: Conversation history prepared:', {
           totalMessages: conversationHistory.length,
-          filteredMessages: historyMessages.length
+          filteredMessages: anthropicHistoryMessages.length
         });
 
         const requestPayload = {
           agent_id: 'factual-agent', // Maps to Anthropic in backend
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
-          conversation_history: historyMessages, // Include conversation history
+          conversation_history: anthropicHistoryMessages, // Include conversation history
           governance_enabled: governanceEnabled
         };
 
