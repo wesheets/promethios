@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -28,10 +29,12 @@ googleProvider.setCustomParameters({
 });
 
 const db = getFirestore(app, 'promethios-oregon');
+const storage = getStorage(app);
 console.log('🔧 Firestore initialized with promethios-oregon database (us-west1 region)');
+console.log('🔧 Firebase Storage initialized');
 console.log('🎯 Restored to original database with all user data and sessions!');
 
-export { auth, googleProvider, firebaseConfig, db };
+export { auth, googleProvider, firebaseConfig, db, storage };
 export default app;
 
 
