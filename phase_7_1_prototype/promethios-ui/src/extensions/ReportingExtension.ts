@@ -173,13 +173,21 @@ export interface ReportGenerationProgress {
 }
 
 export class ReportingExtension extends Extension {
+  private static instance: ReportingExtension;
   private baseUrl: string;
   private wsConnection: WebSocket | null = null;
   private progressCallbacks: Map<string, (progress: ReportGenerationProgress) => void> = new Map();
 
-  constructor() {
+  private constructor() {
     super('reporting');
     this.baseUrl = '/api/reporting';
+  }
+
+  public static getInstance(): ReportingExtension {
+    if (!ReportingExtension.instance) {
+      ReportingExtension.instance = new ReportingExtension();
+    }
+    return ReportingExtension.instance;
   }
 
   async initialize(config?: any, user?: User | null): Promise<boolean> {
@@ -640,5 +648,5 @@ export class ReportingExtension extends Extension {
 }
 
 // Export singleton instance
-export const reportingExtension = new ReportingExtension();
+export const reportingExtension = ReportingExtension.getInstance();
 
