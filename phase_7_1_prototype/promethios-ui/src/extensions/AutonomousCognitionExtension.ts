@@ -473,7 +473,7 @@ export class AutonomousCognitionExtension extends Extension {
     this.monitoringInterval = setInterval(async () => {
       await this.monitorActiveProcesses();
       await this.evaluateTriggers();
-      await this.processQueue();
+      await this.processQueueItems();
     }, 5000); // Check every 5 seconds
   }
 
@@ -905,7 +905,7 @@ Metrics[0]?.trustScores?.aggregate || 0.5;
     console.log('Evaluating autonomous process triggers...');
   }
 
-  private async processQueue(): Promise<void> {
+  private async processQueueItems(): Promise<void> {
     // Process any queued autonomous processes that are waiting for approval
     const pendingProcesses = this.processQueue.filter(p => p.status === 'pending');
     

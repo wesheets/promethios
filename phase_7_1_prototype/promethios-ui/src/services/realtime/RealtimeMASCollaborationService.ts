@@ -16,7 +16,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import { 
   SavedMASConversation, 
   ConversationMessage,
