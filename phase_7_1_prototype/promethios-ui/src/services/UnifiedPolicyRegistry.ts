@@ -195,13 +195,21 @@ const STANDARD_POLICIES: PolicyContent[] = [
  * Unified Policy Registry Implementation
  */
 export class UnifiedPolicyRegistry implements PolicyRegistry {
+  private static instance: UnifiedPolicyRegistry;
   private policies: Map<string, PolicyContent> = new Map();
   
-  constructor() {
+  private constructor() {
     // Load standard policies
     STANDARD_POLICIES.forEach(policy => {
       this.policies.set(policy.policy_id, policy);
     });
+  }
+
+  public static getInstance(): UnifiedPolicyRegistry {
+    if (!UnifiedPolicyRegistry.instance) {
+      UnifiedPolicyRegistry.instance = new UnifiedPolicyRegistry();
+    }
+    return UnifiedPolicyRegistry.instance;
   }
   
   getPolicy(policyId: string): PolicyContent | null {
