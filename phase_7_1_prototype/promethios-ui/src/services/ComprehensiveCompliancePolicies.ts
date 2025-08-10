@@ -1129,3 +1129,41 @@ export const COMPREHENSIVE_POLICIES = [
   COMPREHENSIVE_GDPR_POLICY
 ];
 
+/**
+ * ComprehensiveCompliancePolicies Service
+ * Provides access to comprehensive compliance policies
+ */
+export class ComprehensiveCompliancePolicies {
+  private static instance: ComprehensiveCompliancePolicies;
+
+  private constructor() {}
+
+  public static getInstance(): ComprehensiveCompliancePolicies {
+    if (!ComprehensiveCompliancePolicies.instance) {
+      ComprehensiveCompliancePolicies.instance = new ComprehensiveCompliancePolicies();
+    }
+    return ComprehensiveCompliancePolicies.instance;
+  }
+
+  /**
+   * Get all comprehensive policies
+   */
+  public getAllPolicies(): PolicyContent[] {
+    return COMPREHENSIVE_POLICIES;
+  }
+
+  /**
+   * Get policy by ID
+   */
+  public getPolicyById(policyId: string): PolicyContent | undefined {
+    return COMPREHENSIVE_POLICIES.find(policy => policy.policy_id === policyId);
+  }
+
+  /**
+   * Get policies by category
+   */
+  public getPoliciesByCategory(category: string): PolicyContent[] {
+    return COMPREHENSIVE_POLICIES.filter(policy => policy.category === category);
+  }
+}
+
