@@ -72,7 +72,8 @@ import {
   Share as ShareIcon,
   AutoAwesome as OrchestratorIcon,
   Memory as MemoryIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  People
 } from '@mui/icons-material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
