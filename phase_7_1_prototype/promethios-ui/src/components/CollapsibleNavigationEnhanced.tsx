@@ -64,7 +64,7 @@ import {
   // New MAS icons
   Psychology as ThinkTankIcon,
   Groups as CollaborationIcon,
-  Workflow as WorkflowIcon,
+  AccountTree as WorkflowIcon,
   History as ConversationHistoryIcon,
   Template as TemplateIcon,
   Analytics as AnalyticsIcon,
