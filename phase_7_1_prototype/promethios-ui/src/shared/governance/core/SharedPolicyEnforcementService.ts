@@ -696,8 +696,6 @@ export class SharedPolicyEnforcementService implements IPolicyEnforcementService
 
     console.log(`✅ [${this.context}] Initialized ${this.policies.size} policies`);
   }
-}
-
 
   // ============================================================================
   // COMPLIANCE METRICS
