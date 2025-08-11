@@ -155,34 +155,57 @@ class CryptographicAuditIntegrationService {
     try {
       console.log(`🔐 CryptographicAuditIntegration: Fetching audit logs for agent ${agentId}`, options);
       
-      const params = new URLSearchParams();
+      // Use Firebase to fetch audit logs instead of backend API
+      const { db } = await import('../firebase/config');
+      const { collection, query, where, orderBy, limit, getDocs, Timestamp } = await import('firebase/firestore');
       
-      if (options.startDate) params.append('startDate', options.startDate);
-      if (options.endDate) params.append('endDate', options.endDate);
-      if (options.eventType) params.append('eventType', options.eventType);
-      if (options.limit) params.append('limit', options.limit.toString());
-      if (options.verified !== undefined) params.append('verified', options.verified.toString());
+      let auditQuery = query(
+        collection(db, 'audit_logs'),
+        where('agentId', '==', agentId),
+        orderBy('timestamp', 'desc')
+      );
 
-      const queryString = params.toString();
-      const url = `${this.baseUrl}/api/cryptographic-audit/logs/${agentId}${queryString ? `?${queryString}` : ''}`;
-      console.log(`🔐 CryptographicAuditIntegration: Fetching from URL: ${url}`);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log(`🔐 CryptographicAuditIntegration: Logs API response status ${response.status}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch audit logs: ${response.status} ${response.statusText}`);
+      // Apply filters
+      if (options.startDate) {
+        const startTimestamp = Timestamp.fromDate(new Date(options.startDate));
+        auditQuery = query(auditQuery, where('timestamp', '>=', startTimestamp));
       }
 
-      const result = await response.json();
-      const logs = result.data?.logs || result.data || [];
-      console.log(`✅ CryptographicAuditIntegration: Retrieved ${logs.length} audit logs`);
+      if (options.endDate) {
+        const endTimestamp = Timestamp.fromDate(new Date(options.endDate));
+        auditQuery = query(auditQuery, where('timestamp', '<=', endTimestamp));
+      }
+
+      if (options.eventType) {
+        auditQuery = query(auditQuery, where('eventType', '==', options.eventType));
+      }
+
+      if (options.limit) {
+        auditQuery = query(auditQuery, limit(options.limit));
+      }
+
+      const querySnapshot = await getDocs(auditQuery);
+      const logs: AuditLogEntry[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        logs.push({
+          id: doc.id,
+          agentId: data.agentId,
+          userId: data.userId,
+          eventType: data.eventType,
+          eventData: data.eventData,
+          timestamp: data.timestamp?.toDate?.() || new Date(data.timestamp),
+          cryptographicProof: data.cryptographicProof || {
+            hash: 'pending_hash',
+            signature: 'pending_signature',
+            previousHash: 'pending_previous',
+            verificationStatus: 'pending'
+          }
+        });
+      });
+
+      console.log(`✅ CryptographicAuditIntegration: Retrieved ${logs.length} audit logs from Firebase`);
       console.log(`🔐 Sample logs:`, logs.slice(0, 2));
       
       return logs;
