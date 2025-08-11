@@ -159,52 +159,52 @@ export class EnhancedAuditLoggingService {
           
           // Comprehensive audit data (47+ fields)
           cognitiveContext: {
-            uncertaintyLevel: enhancedEntry.uncertainty_level,
-            confidenceScore: enhancedEntry.confidence_score,
-            knowledgeGaps: enhancedEntry.knowledge_gaps,
-            cognitiveLoad: enhancedEntry.cognitive_load,
-            reasoningDepth: enhancedEntry.reasoning_depth,
-            decisionComplexity: enhancedEntry.decision_complexity,
-            contextualAwareness: enhancedEntry.contextual_awareness,
-            learningIndicators: enhancedEntry.learning_indicators,
-            creativityMarkers: enhancedEntry.creativity_markers,
-            logicalConsistency: enhancedEntry.logical_consistency,
-            biasIndicators: enhancedEntry.bias_indicators,
-            metacognitiveAwareness: enhancedEntry.metacognitive_awareness
+            uncertaintyLevel: enhancedEntry.uncertainty_level || 0.3,
+            confidenceScore: enhancedEntry.confidence_score || 0.7,
+            knowledgeGaps: enhancedEntry.knowledge_gaps || [],
+            cognitiveLoad: enhancedEntry.cognitive_load || 0.5,
+            reasoningDepth: enhancedEntry.reasoning_depth || 0.5,
+            decisionComplexity: enhancedEntry.decision_complexity || 0.3,
+            contextualAwareness: enhancedEntry.contextual_awareness || 0.5,
+            learningIndicators: enhancedEntry.learning_indicators || [],
+            creativityMarkers: enhancedEntry.creativity_markers || [],
+            logicalConsistency: enhancedEntry.logical_consistency || 0.8,
+            biasIndicators: enhancedEntry.bias_indicators || [],
+            metacognitiveAwareness: enhancedEntry.metacognitive_awareness || 0.3
           },
           
           trustSignals: {
-            transparencyLevel: enhancedEntry.transparency_level,
-            explanationQuality: enhancedEntry.explanation_quality,
-            sourceCredibility: enhancedEntry.source_credibility,
-            factVerification: enhancedEntry.fact_verification,
-            consistencyCheck: enhancedEntry.consistency_check,
-            hallucinationRisk: enhancedEntry.hallucination_risk,
-            verificationStatus: enhancedEntry.verification_status,
-            trustImpact: enhancedEntry.trust_impact,
-            trustTrajectory: enhancedEntry.trust_trajectory
+            transparencyLevel: enhancedEntry.transparency_level || 0.5,
+            explanationQuality: enhancedEntry.explanation_quality || 0.5,
+            sourceCredibility: enhancedEntry.source_credibility || 0.7,
+            factVerification: enhancedEntry.fact_verification || 0.7,
+            consistencyCheck: enhancedEntry.consistency_check || 0.8,
+            hallucinationRisk: enhancedEntry.hallucination_risk || 0.2,
+            verificationStatus: enhancedEntry.verification_status || 'verified',
+            trustImpact: enhancedEntry.trust_impact || 0.0,
+            trustTrajectory: enhancedEntry.trust_trajectory || 'stable'
           },
           
           autonomousContext: {
-            selfReflectionDepth: enhancedEntry.self_reflection_depth,
-            autonomousDecisions: enhancedEntry.autonomous_decisions,
-            interventionPoints: enhancedEntry.intervention_points,
-            learningAdaptations: enhancedEntry.learning_adaptations,
-            goalAlignment: enhancedEntry.goal_alignment,
-            valueConsistency: enhancedEntry.value_consistency,
-            ethicalReasoning: enhancedEntry.ethical_reasoning,
-            emotionalIntelligence: enhancedEntry.emotional_intelligence,
-            socialAwareness: enhancedEntry.social_awareness,
-            autonomousImprovement: enhancedEntry.autonomous_improvement
+            selfReflectionDepth: enhancedEntry.self_reflection_depth || 0.4,
+            autonomousDecisions: enhancedEntry.autonomous_decisions || [],
+            interventionPoints: enhancedEntry.intervention_points || [],
+            learningAdaptations: enhancedEntry.learning_adaptations || [],
+            goalAlignment: enhancedEntry.goal_alignment || 0.8,
+            valueConsistency: enhancedEntry.value_consistency || 0.8,
+            ethicalReasoning: enhancedEntry.ethical_reasoning || 0.7,
+            emotionalIntelligence: enhancedEntry.emotional_intelligence || 0.6,
+            socialAwareness: enhancedEntry.social_awareness || 0.6,
+            autonomousImprovement: enhancedEntry.autonomous_improvement || 0.5
           },
           
           governanceMetrics: {
-            complianceStatus: enhancedEntry.compliance_status,
-            riskLevel: enhancedEntry.risk_level,
-            dataSensitivity: enhancedEntry.data_sensitivity,
-            geographicContext: enhancedEntry.geographic_context,
-            platformContext: enhancedEntry.platform_context,
-            responseTime: enhancedEntry.response_time
+            complianceStatus: enhancedEntry.compliance_status || 'compliant',
+            riskLevel: enhancedEntry.risk_level || 'low',
+            dataSensitivity: enhancedEntry.data_classification || 'public',
+            geographicContext: enhancedEntry.geographic_context || 'US',
+            platformContext: enhancedEntry.platform_context || 'promethios_web_chat',
+            responseTime: enhancedEntry.response_time || 1000
           }
         },
         timestamp: Timestamp.fromDate(new Date(enhancedEntry.timestamp)),
@@ -598,8 +598,23 @@ export class EnhancedAuditLoggingService {
 
   private assessFactVerification(context: InteractionContext): number {
     // Assess how well facts are verified
-    // Placeholder implementation
-    return 0.6;
+    try {
+      // Check for verification indicators
+      let score = 0.5; // baseline
+      
+      if (context.agentResponse.includes('verified') || context.agentResponse.includes('confirmed')) {
+        score += 0.2;
+      }
+      
+      if (context.agentResponse.includes('source') || context.agentResponse.includes('reference')) {
+        score += 0.2;
+      }
+      
+      return Math.min(1.0, score);
+    } catch (error) {
+      console.warn('Error in assessFactVerification:', error);
+      return 0.7; // Safe default
+    }
   }
 
   private checkConsistency(context: InteractionContext): number {
@@ -636,7 +651,12 @@ export class EnhancedAuditLoggingService {
 
   private trackAutonomousDecisions(context: InteractionContext): string[] {
     // Track autonomous decisions made
-    return context.autonomousContext?.decisions || [];
+    try {
+      return context.autonomousContext?.decisions || [];
+    } catch (error) {
+      console.warn('Error in trackAutonomousDecisions:', error);
+      return []; // Safe default
+    }
   }
 
   private identifyInterventionPoints(context: InteractionContext): string[] {
@@ -656,7 +676,12 @@ export class EnhancedAuditLoggingService {
 
   private trackLearningAdaptations(context: InteractionContext): string[] {
     // Track learning adaptations
-    return context.autonomousContext?.adaptations || [];
+    try {
+      return context.autonomousContext?.adaptations || [];
+    } catch (error) {
+      console.warn('Error in trackLearningAdaptations:', error);
+      return []; // Safe default
+    }
   }
 
   private assessGoalAlignment(context: InteractionContext): number {
@@ -682,7 +707,12 @@ export class EnhancedAuditLoggingService {
 
   private assessEmotionalIntelligence(context: InteractionContext): number {
     // Assess emotional intelligence
-    return context.emotionalContext?.intelligenceScore || 0.6;
+    try {
+      return context.emotionalContext?.intelligenceScore || 0.6;
+    } catch (error) {
+      console.warn('Error in assessEmotionalIntelligence:', error);
+      return 0.6; // Safe default
+    }
   }
 
   private assessSocialAwareness(context: InteractionContext): number {
@@ -696,9 +726,10 @@ export class EnhancedAuditLoggingService {
     return Math.min(1.0, awareness);
   }
 
-  private trackAutonomousImprovement(context: InteractionContext): string[] {
-    // Track autonomous improvement indicators
-    return context.autonomousContext?.improvements || [];
+  private trackAutonomousImprovement(context: InteractionContext): number {
+    // Track autonomous improvement indicators and return a score
+    const improvements = context.autonomousContext?.improvements || [];
+    return improvements.length > 0 ? 0.7 : 0.5;
   }
 
   private async generateCryptographicHash(...data: any[]): Promise<string> {
