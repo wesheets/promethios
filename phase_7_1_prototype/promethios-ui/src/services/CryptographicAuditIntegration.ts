@@ -46,6 +46,58 @@ export interface CryptographicReport {
     cryptographicIntegrity: 'verified' | 'pending' | 'failed';
   };
   auditTrail: AuditLogEntry[];
+  // NEW: Comprehensive audit analytics with 47+ fields analysis
+  comprehensiveAuditAnalytics?: {
+    totalEnhancedInteractions: number;
+    dataQualityScore: number;
+    cognitiveAnalytics: {
+      averageUncertaintyLevel: number;
+      averageConfidenceScore: number;
+      averageCognitiveLoad: number;
+      averageReasoningDepth: number;
+      averageDecisionComplexity: number;
+      averageContextualAwareness: number;
+      averageLogicalConsistency: number;
+      averageMetacognitiveAwareness: number;
+      totalKnowledgeGaps: string[];
+      totalLearningIndicators: string[];
+      totalCreativityMarkers: string[];
+      totalBiasIndicators: string[];
+    };
+    trustAnalytics: {
+      averageTransparencyLevel: number;
+      averageExplanationQuality: number;
+      averageSourceCredibility: number;
+      averageFactVerification: number;
+      averageConsistencyCheck: number;
+      averageHallucinationRisk: number;
+      averageTrustImpact: number;
+      verificationStatusDistribution: Record<string, number>;
+      trustTrajectoryDistribution: Record<string, number>;
+    };
+    autonomousAnalytics: {
+      averageSelfReflectionDepth: number;
+      averageGoalAlignment: number;
+      averageValueConsistency: number;
+      averageEthicalReasoning: number;
+      averageEmotionalIntelligence: number;
+      averageSocialAwareness: number;
+      averageAutonomousImprovement: number;
+      totalAutonomousDecisions: string[];
+      totalInterventionPoints: string[];
+      totalLearningAdaptations: string[];
+    };
+    governanceAnalytics: {
+      complianceStatusDistribution: Record<string, number>;
+      riskLevelDistribution: Record<string, number>;
+      dataSensitivityDistribution: Record<string, number>;
+      geographicContextDistribution: Record<string, number>;
+      platformContextDistribution: Record<string, number>;
+      averageResponseTime: number;
+    };
+    insights: string[];
+    recommendations: string[];
+  };
   cryptographicProof: {
     reportHash: string;
     signature: string;
@@ -56,6 +108,7 @@ export interface CryptographicReport {
     generatedBy: string;
     version: string;
     format: string;
+    auditDataFields?: string;
   };
 }
 
@@ -189,12 +242,82 @@ class CryptographicAuditIntegrationService {
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        
+        // Extract comprehensive audit data if available
+        const eventData = data.eventData || {};
+        const comprehensiveData = {};
+        
+        // Extract cognitive context (12 fields)
+        if (eventData.cognitiveContext) {
+          Object.assign(comprehensiveData, {
+            uncertaintyLevel: eventData.cognitiveContext.uncertaintyLevel,
+            confidenceScore: eventData.cognitiveContext.confidenceScore,
+            knowledgeGaps: eventData.cognitiveContext.knowledgeGaps,
+            cognitiveLoad: eventData.cognitiveContext.cognitiveLoad,
+            reasoningDepth: eventData.cognitiveContext.reasoningDepth,
+            decisionComplexity: eventData.cognitiveContext.decisionComplexity,
+            contextualAwareness: eventData.cognitiveContext.contextualAwareness,
+            learningIndicators: eventData.cognitiveContext.learningIndicators,
+            creativityMarkers: eventData.cognitiveContext.creativityMarkers,
+            logicalConsistency: eventData.cognitiveContext.logicalConsistency,
+            biasIndicators: eventData.cognitiveContext.biasIndicators,
+            metacognitiveAwareness: eventData.cognitiveContext.metacognitiveAwareness
+          });
+        }
+        
+        // Extract trust signals (9 fields)
+        if (eventData.trustSignals) {
+          Object.assign(comprehensiveData, {
+            transparencyLevel: eventData.trustSignals.transparencyLevel,
+            explanationQuality: eventData.trustSignals.explanationQuality,
+            sourceCredibility: eventData.trustSignals.sourceCredibility,
+            factVerification: eventData.trustSignals.factVerification,
+            consistencyCheck: eventData.trustSignals.consistencyCheck,
+            hallucinationRisk: eventData.trustSignals.hallucinationRisk,
+            verificationStatus: eventData.trustSignals.verificationStatus,
+            trustImpact: eventData.trustSignals.trustImpact,
+            trustTrajectory: eventData.trustSignals.trustTrajectory
+          });
+        }
+        
+        // Extract autonomous context (10 fields)
+        if (eventData.autonomousContext) {
+          Object.assign(comprehensiveData, {
+            selfReflectionDepth: eventData.autonomousContext.selfReflectionDepth,
+            autonomousDecisions: eventData.autonomousContext.autonomousDecisions,
+            interventionPoints: eventData.autonomousContext.interventionPoints,
+            learningAdaptations: eventData.autonomousContext.learningAdaptations,
+            goalAlignment: eventData.autonomousContext.goalAlignment,
+            valueConsistency: eventData.autonomousContext.valueConsistency,
+            ethicalReasoning: eventData.autonomousContext.ethicalReasoning,
+            emotionalIntelligence: eventData.autonomousContext.emotionalIntelligence,
+            socialAwareness: eventData.autonomousContext.socialAwareness,
+            autonomousImprovement: eventData.autonomousContext.autonomousImprovement
+          });
+        }
+        
+        // Extract governance metrics (6 fields)
+        if (eventData.governanceMetrics) {
+          Object.assign(comprehensiveData, {
+            complianceStatus: eventData.governanceMetrics.complianceStatus,
+            riskLevel: eventData.governanceMetrics.riskLevel,
+            dataSensitivity: eventData.governanceMetrics.dataSensitivity,
+            geographicContext: eventData.governanceMetrics.geographicContext,
+            platformContext: eventData.governanceMetrics.platformContext,
+            responseTime: eventData.governanceMetrics.responseTime
+          });
+        }
+        
         logs.push({
           id: doc.id,
           agentId: data.agentId,
           userId: data.userId,
           eventType: data.eventType,
-          eventData: data.eventData,
+          eventData: {
+            ...eventData,
+            // Include comprehensive audit data at the top level for easy access
+            comprehensiveAuditData: comprehensiveData
+          },
           timestamp: data.timestamp?.toDate?.() || new Date(data.timestamp),
           cryptographicProof: data.cryptographicProof || {
             hash: 'pending_hash',
@@ -309,6 +432,9 @@ class CryptographicAuditIntegrationService {
       const signature = await this.generateReportSignature(reportData);
       const merkleRoot = await this.calculateMerkleRoot(processedLogs);
 
+      // Generate comprehensive audit analytics from the enhanced data
+      const comprehensiveAnalytics = this.generateComprehensiveAnalytics(processedLogs);
+
       const report: CryptographicReport = {
         reportId: `report_${agentId}_${Date.now()}`,
         agentId,
@@ -324,6 +450,8 @@ class CryptographicAuditIntegrationService {
           cryptographicIntegrity: cryptographicIntegrity as 'verified' | 'pending' | 'failed'
         },
         auditTrail: processedLogs,
+        // NEW: Comprehensive audit analytics section
+        comprehensiveAuditAnalytics: comprehensiveAnalytics,
         cryptographicProof: {
           reportHash,
           signature,
@@ -332,8 +460,9 @@ class CryptographicAuditIntegrationService {
         },
         metadata: {
           generatedBy: 'Promethios Cryptographic Audit System',
-          version: '1.0.0',
-          format: 'JSON'
+          version: '2.0.0', // Updated version to reflect comprehensive audit capabilities
+          format: 'JSON',
+          auditDataFields: '47+ comprehensive fields including cognitive context, trust signals, autonomous context, and governance metrics'
         }
       };
 
@@ -403,6 +532,188 @@ class CryptographicAuditIntegrationService {
       console.error('Error verifying report integrity:', error);
       return false;
     }
+  }
+
+  /**
+   * Generate comprehensive analytics from enhanced audit data
+   */
+  private generateComprehensiveAnalytics(logs: AuditLogEntry[]): any {
+    const comprehensiveLogs = logs.filter(log => 
+      log.eventType === 'enhanced_chat_interaction' && 
+      log.eventData.comprehensiveAuditData
+    );
+
+    if (comprehensiveLogs.length === 0) {
+      return {
+        message: 'No comprehensive audit data available for this time period',
+        totalEnhancedInteractions: 0,
+        cognitiveAnalytics: {},
+        trustAnalytics: {},
+        autonomousAnalytics: {},
+        governanceAnalytics: {}
+      };
+    }
+
+    const comprehensiveData = comprehensiveLogs.map(log => log.eventData.comprehensiveAuditData);
+
+    // Cognitive Analytics (12 fields)
+    const cognitiveAnalytics = {
+      averageUncertaintyLevel: this.calculateAverage(comprehensiveData, 'uncertaintyLevel'),
+      averageConfidenceScore: this.calculateAverage(comprehensiveData, 'confidenceScore'),
+      averageCognitiveLoad: this.calculateAverage(comprehensiveData, 'cognitiveLoad'),
+      averageReasoningDepth: this.calculateAverage(comprehensiveData, 'reasoningDepth'),
+      averageDecisionComplexity: this.calculateAverage(comprehensiveData, 'decisionComplexity'),
+      averageContextualAwareness: this.calculateAverage(comprehensiveData, 'contextualAwareness'),
+      averageLogicalConsistency: this.calculateAverage(comprehensiveData, 'logicalConsistency'),
+      averageMetacognitiveAwareness: this.calculateAverage(comprehensiveData, 'metacognitiveAwareness'),
+      totalKnowledgeGaps: this.aggregateArrays(comprehensiveData, 'knowledgeGaps'),
+      totalLearningIndicators: this.aggregateArrays(comprehensiveData, 'learningIndicators'),
+      totalCreativityMarkers: this.aggregateArrays(comprehensiveData, 'creativityMarkers'),
+      totalBiasIndicators: this.aggregateArrays(comprehensiveData, 'biasIndicators')
+    };
+
+    // Trust Analytics (9 fields)
+    const trustAnalytics = {
+      averageTransparencyLevel: this.calculateAverage(comprehensiveData, 'transparencyLevel'),
+      averageExplanationQuality: this.calculateAverage(comprehensiveData, 'explanationQuality'),
+      averageSourceCredibility: this.calculateAverage(comprehensiveData, 'sourceCredibility'),
+      averageFactVerification: this.calculateAverage(comprehensiveData, 'factVerification'),
+      averageConsistencyCheck: this.calculateAverage(comprehensiveData, 'consistencyCheck'),
+      averageHallucinationRisk: this.calculateAverage(comprehensiveData, 'hallucinationRisk'),
+      averageTrustImpact: this.calculateAverage(comprehensiveData, 'trustImpact'),
+      verificationStatusDistribution: this.getDistribution(comprehensiveData, 'verificationStatus'),
+      trustTrajectoryDistribution: this.getDistribution(comprehensiveData, 'trustTrajectory')
+    };
+
+    // Autonomous Analytics (10 fields)
+    const autonomousAnalytics = {
+      averageSelfReflectionDepth: this.calculateAverage(comprehensiveData, 'selfReflectionDepth'),
+      averageGoalAlignment: this.calculateAverage(comprehensiveData, 'goalAlignment'),
+      averageValueConsistency: this.calculateAverage(comprehensiveData, 'valueConsistency'),
+      averageEthicalReasoning: this.calculateAverage(comprehensiveData, 'ethicalReasoning'),
+      averageEmotionalIntelligence: this.calculateAverage(comprehensiveData, 'emotionalIntelligence'),
+      averageSocialAwareness: this.calculateAverage(comprehensiveData, 'socialAwareness'),
+      averageAutonomousImprovement: this.calculateAverage(comprehensiveData, 'autonomousImprovement'),
+      totalAutonomousDecisions: this.aggregateArrays(comprehensiveData, 'autonomousDecisions'),
+      totalInterventionPoints: this.aggregateArrays(comprehensiveData, 'interventionPoints'),
+      totalLearningAdaptations: this.aggregateArrays(comprehensiveData, 'learningAdaptations')
+    };
+
+    // Governance Analytics (6 fields)
+    const governanceAnalytics = {
+      complianceStatusDistribution: this.getDistribution(comprehensiveData, 'complianceStatus'),
+      riskLevelDistribution: this.getDistribution(comprehensiveData, 'riskLevel'),
+      dataSensitivityDistribution: this.getDistribution(comprehensiveData, 'dataSensitivity'),
+      geographicContextDistribution: this.getDistribution(comprehensiveData, 'geographicContext'),
+      platformContextDistribution: this.getDistribution(comprehensiveData, 'platformContext'),
+      averageResponseTime: this.calculateAverage(comprehensiveData, 'responseTime')
+    };
+
+    return {
+      totalEnhancedInteractions: comprehensiveLogs.length,
+      dataQualityScore: this.calculateDataQualityScore(comprehensiveData),
+      cognitiveAnalytics,
+      trustAnalytics,
+      autonomousAnalytics,
+      governanceAnalytics,
+      insights: this.generateInsights(cognitiveAnalytics, trustAnalytics, autonomousAnalytics, governanceAnalytics),
+      recommendations: this.generateRecommendations(cognitiveAnalytics, trustAnalytics, autonomousAnalytics, governanceAnalytics)
+    };
+  }
+
+  /**
+   * Calculate average for a numeric field across all comprehensive data entries
+   */
+  private calculateAverage(data: any[], field: string): number {
+    const values = data.map(item => item[field]).filter(val => typeof val === 'number' && !isNaN(val));
+    return values.length > 0 ? Math.round((values.reduce((sum, val) => sum + val, 0) / values.length) * 1000) / 1000 : 0;
+  }
+
+  /**
+   * Aggregate arrays from all comprehensive data entries
+   */
+  private aggregateArrays(data: any[], field: string): string[] {
+    const allArrays = data.map(item => item[field]).filter(val => Array.isArray(val));
+    return [...new Set(allArrays.flat())]; // Remove duplicates
+  }
+
+  /**
+   * Get distribution of values for a categorical field
+   */
+  private getDistribution(data: any[], field: string): Record<string, number> {
+    const distribution: Record<string, number> = {};
+    data.forEach(item => {
+      const value = item[field];
+      if (value !== undefined && value !== null) {
+        distribution[value] = (distribution[value] || 0) + 1;
+      }
+    });
+    return distribution;
+  }
+
+  /**
+   * Calculate overall data quality score
+   */
+  private calculateDataQualityScore(data: any[]): number {
+    if (data.length === 0) return 0;
+    
+    let totalFields = 0;
+    let populatedFields = 0;
+    
+    data.forEach(item => {
+      Object.keys(item).forEach(key => {
+        totalFields++;
+        if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+          populatedFields++;
+        }
+      });
+    });
+    
+    return totalFields > 0 ? Math.round((populatedFields / totalFields) * 100) / 100 : 0;
+  }
+
+  /**
+   * Generate insights from comprehensive analytics
+   */
+  private generateInsights(cognitive: any, trust: any, autonomous: any, governance: any): string[] {
+    const insights = [];
+    
+    if (cognitive.averageConfidenceScore > 0.8) {
+      insights.push('Agent demonstrates high confidence levels in responses');
+    }
+    if (trust.averageHallucinationRisk < 0.3) {
+      insights.push('Low hallucination risk indicates reliable information processing');
+    }
+    if (autonomous.averageEthicalReasoning > 0.7) {
+      insights.push('Strong ethical reasoning capabilities observed');
+    }
+    if (governance.complianceStatusDistribution.compliant > 0.9) {
+      insights.push('Excellent governance compliance maintained');
+    }
+    
+    return insights;
+  }
+
+  /**
+   * Generate recommendations from comprehensive analytics
+   */
+  private generateRecommendations(cognitive: any, trust: any, autonomous: any, governance: any): string[] {
+    const recommendations = [];
+    
+    if (cognitive.averageUncertaintyLevel > 0.6) {
+      recommendations.push('Consider additional training to reduce uncertainty in responses');
+    }
+    if (trust.averageTransparencyLevel < 0.5) {
+      recommendations.push('Improve transparency by providing more detailed explanations');
+    }
+    if (autonomous.averageSelfReflectionDepth < 0.5) {
+      recommendations.push('Enhance self-reflection capabilities for better autonomous learning');
+    }
+    if (governance.averageResponseTime > 2000) {
+      recommendations.push('Optimize response time for better user experience');
+    }
+    
+    return recommendations;
   }
 
   /**
