@@ -207,6 +207,7 @@ class CryptographicAuditIntegrationService {
   ): Promise<AuditLogEntry[]> {
     try {
       console.log(`🔐 CryptographicAuditIntegration: Fetching audit logs for agent ${agentId}`, options);
+      console.log(`🔍 AUDIT QUERY DEBUG: Searching for agentId="${agentId}" in Firebase audit_logs collection`);
       
       // Use Firebase to fetch audit logs instead of backend API
       const { db } = await import('../firebase/config');
@@ -222,26 +223,35 @@ class CryptographicAuditIntegrationService {
       if (options.startDate) {
         const startTimestamp = Timestamp.fromDate(new Date(options.startDate));
         auditQuery = query(auditQuery, where('timestamp', '>=', startTimestamp));
+        console.log(`🔍 AUDIT QUERY DEBUG: Added startDate filter: ${options.startDate}`);
       }
 
       if (options.endDate) {
         const endTimestamp = Timestamp.fromDate(new Date(options.endDate));
         auditQuery = query(auditQuery, where('timestamp', '<=', endTimestamp));
+        console.log(`🔍 AUDIT QUERY DEBUG: Added endDate filter: ${options.endDate}`);
       }
 
       if (options.eventType) {
         auditQuery = query(auditQuery, where('eventType', '==', options.eventType));
+        console.log(`🔍 AUDIT QUERY DEBUG: Added eventType filter: ${options.eventType}`);
       }
 
       if (options.limit) {
         auditQuery = query(auditQuery, limit(options.limit));
+        console.log(`🔍 AUDIT QUERY DEBUG: Added limit: ${options.limit}`);
       }
 
+      console.log(`🔍 AUDIT QUERY DEBUG: Executing Firebase query...`);
       const querySnapshot = await getDocs(auditQuery);
+      console.log(`🔍 AUDIT QUERY DEBUG: Query returned ${querySnapshot.size} documents`);
+      
       const logs: AuditLogEntry[] = [];
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        
+        console.log(`🔍 AUDIT QUERY DEBUG: Found document ${doc.id} with agentId="${data.agentId}" eventType="${data.eventType}"`);
         
         // Extract comprehensive audit data if available
         const eventData = data.eventData || {};
@@ -263,6 +273,7 @@ class CryptographicAuditIntegrationService {
             biasIndicators: eventData.cognitiveContext.biasIndicators,
             metacognitiveAwareness: eventData.cognitiveContext.metacognitiveAwareness
           });
+          console.log(`🔍 AUDIT QUERY DEBUG: Document ${doc.id} has comprehensive cognitive context data`);
         }
         
         // Extract trust signals (9 fields)
@@ -278,6 +289,7 @@ class CryptographicAuditIntegrationService {
             trustImpact: eventData.trustSignals.trustImpact,
             trustTrajectory: eventData.trustSignals.trustTrajectory
           });
+          console.log(`🔍 AUDIT QUERY DEBUG: Document ${doc.id} has comprehensive trust signals data`);
         }
         
         // Extract autonomous context (10 fields)
@@ -294,6 +306,7 @@ class CryptographicAuditIntegrationService {
             socialAwareness: eventData.autonomousContext.socialAwareness,
             autonomousImprovement: eventData.autonomousContext.autonomousImprovement
           });
+          console.log(`🔍 AUDIT QUERY DEBUG: Document ${doc.id} has comprehensive autonomous context data`);
         }
         
         // Extract governance metrics (6 fields)
@@ -306,7 +319,11 @@ class CryptographicAuditIntegrationService {
             platformContext: eventData.governanceMetrics.platformContext,
             responseTime: eventData.governanceMetrics.responseTime
           });
+          console.log(`🔍 AUDIT QUERY DEBUG: Document ${doc.id} has comprehensive governance metrics data`);
         }
+        
+        const comprehensiveFieldCount = Object.keys(comprehensiveData).length;
+        console.log(`🔍 AUDIT QUERY DEBUG: Document ${doc.id} extracted ${comprehensiveFieldCount} comprehensive audit fields`);
         
         logs.push({
           id: doc.id,
