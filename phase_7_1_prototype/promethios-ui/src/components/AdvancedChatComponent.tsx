@@ -3161,7 +3161,11 @@ useEffect(() => {
         emotional_veritas_available: false
       };
       
-      // Analyze if autonomous thinking permission is needed
+      // 🧠 AUTONOMOUS THINKING: Now handled by agent directly in conversation
+      // The agent will request permission when needed rather than system auto-detection
+      // This allows for more natural conversation flow and agent autonomy
+      
+      /* DISABLED: Automatic autonomous thinking detection
       const analysis = AutonomousThinkingChecker.analyzeMessage(
         inputValue,
         selectedAgent.identity?.id || selectedAgent.id || 'unknown',
@@ -3173,7 +3177,6 @@ useEffect(() => {
       if (analysis.requiresPermission) {
         console.log('🧠 Autonomous thinking permission required:', analysis);
         
-        // Create permission request
         const permissionRequest = AutonomousThinkingChecker.createPermissionRequest(
           analysis,
           inputValue,
@@ -3183,16 +3186,15 @@ useEffect(() => {
           emotionalState
         );
         
-        // Store pending message and show permission dialog
         setPendingMessage(inputValue);
         setCurrentPermissionRequest(permissionRequest);
         setPermissionDialogOpen(true);
         
-        // Clear input but don't process message yet
         setInputValue('');
         setAttachments([]);
-        return; // Wait for permission response
+        return;
       }
+      */
     }
 
     setMessages(prev => [...prev, userMessage]);
