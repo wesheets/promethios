@@ -284,37 +284,33 @@ class CryptographicAuditIntegrationService {
       
       // Use Firebase to fetch audit logs instead of backend API
       const { db } = await import('../firebase/config');
-      const { collection, query, where, limit, getDocs, Timestamp } = await import('firebase/firestore');
+      const { collection, query, where, getDocs, Timestamp } = await import('firebase/firestore');
       
-      // SIMPLIFIED QUERY: Remove orderBy to avoid composite index requirement
+      // ULTRA-SIMPLIFIED QUERY: Only filter by agentId to avoid ANY index requirement
       let auditQuery = query(
         collection(db, 'audit_logs'),
         where('agentId', '==', agentId)
       );
 
-      // Apply filters (but avoid orderBy to prevent index requirement)
-      if (options.startDate) {
-        const startTimestamp = Timestamp.fromDate(new Date(options.startDate));
-        auditQuery = query(auditQuery, where('timestamp', '>=', startTimestamp));
-        console.log(`🔍 AUDIT QUERY DEBUG: Added startDate filter: ${options.startDate}`);
-      }
-
-      if (options.endDate) {
-        const endTimestamp = Timestamp.fromDate(new Date(options.endDate));
-        auditQuery = query(auditQuery, where('timestamp', '<=', endTimestamp));
-        console.log(`🔍 AUDIT QUERY DEBUG: Added endDate filter: ${options.endDate}`);
-      }
-
+      // Apply only eventType filter if specified (agentId + eventType might still work without index)
       if (options.eventType) {
         auditQuery = query(auditQuery, where('eventType', '==', options.eventType));
         console.log(`🔍 AUDIT QUERY DEBUG: Added eventType filter: ${options.eventType}`);
       }
 
-      // Note: We'll apply limit and sorting after fetching to avoid index issues
+      // NOTE: All date filtering, sorting, and limiting will be done in memory
+      console.log(`🔍 AUDIT QUERY DEBUG: Using ultra-simplified Firebase query (agentId only)`);
+      console.log(`🔍 AUDIT QUERY DEBUG: Date filtering will be done in memory`);
+      if (options.startDate) {
+        console.log(`🔍 AUDIT QUERY DEBUG: Will filter startDate in memory: ${options.startDate}`);
+      }
+      if (options.endDate) {
+        console.log(`🔍 AUDIT QUERY DEBUG: Will filter endDate in memory: ${options.endDate}`);
+      }
 
-      console.log(`🔍 AUDIT QUERY DEBUG: Executing simplified Firebase query (no orderBy)...`);
+      console.log(`🔍 AUDIT QUERY DEBUG: Executing ultra-simplified Firebase query...`);
       const querySnapshot = await getDocs(auditQuery);
-      console.log(`🔍 AUDIT QUERY DEBUG: Query returned ${querySnapshot.size} documents`);
+      console.log(`🔍 AUDIT QUERY DEBUG: Query returned ${querySnapshot.size} documents (before filtering)`);
       
       const logs: AuditLogEntry[] = [];
 
@@ -415,20 +411,43 @@ class CryptographicAuditIntegrationService {
         });
       });
 
-      console.log(`✅ CryptographicAuditIntegration: Retrieved ${logs.length} audit logs from Firebase (before sorting/limiting)`);
+      console.log(`✅ CryptographicAuditIntegration: Retrieved ${logs.length} audit logs from Firebase (before filtering/sorting/limiting)`);
       
-      // SORT AND LIMIT IN MEMORY (to avoid Firebase index requirement)
-      // Sort by timestamp descending (newest first)
-      logs.sort((a, b) => {
+      // FILTER, SORT AND LIMIT IN MEMORY (to avoid Firebase index requirement)
+      
+      // 1. Apply date filters in memory
+      let filteredLogs = logs;
+      
+      if (options.startDate) {
+        const startDate = new Date(options.startDate);
+        filteredLogs = filteredLogs.filter(log => {
+          const logDate = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
+          return logDate >= startDate;
+        });
+        console.log(`🔍 MEMORY FILTER: After startDate filter: ${filteredLogs.length} logs`);
+      }
+      
+      if (options.endDate) {
+        const endDate = new Date(options.endDate);
+        filteredLogs = filteredLogs.filter(log => {
+          const logDate = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
+          return logDate <= endDate;
+        });
+        console.log(`🔍 MEMORY FILTER: After endDate filter: ${filteredLogs.length} logs`);
+      }
+      
+      // 2. Sort by timestamp descending (newest first)
+      filteredLogs.sort((a, b) => {
         const timestampA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
         const timestampB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
         return timestampB - timestampA; // Descending order
       });
+      console.log(`🔍 MEMORY SORT: Sorted ${filteredLogs.length} logs by timestamp (newest first)`);
       
-      // Apply limit if specified
-      const finalLogs = options.limit ? logs.slice(0, options.limit) : logs;
+      // 3. Apply limit if specified
+      const finalLogs = options.limit ? filteredLogs.slice(0, options.limit) : filteredLogs;
       
-      console.log(`✅ CryptographicAuditIntegration: Final result: ${finalLogs.length} audit logs (after sorting/limiting)`);
+      console.log(`✅ CryptographicAuditIntegration: Final result: ${finalLogs.length} audit logs (after filtering/sorting/limiting)`);
       console.log(`🔐 Sample logs:`, finalLogs.slice(0, 2));
       
       return finalLogs;
