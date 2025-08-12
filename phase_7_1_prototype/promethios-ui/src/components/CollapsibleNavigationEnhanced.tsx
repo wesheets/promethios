@@ -48,6 +48,7 @@ import {
   Psychology as VeritasIcon,
   Shield as BoundariesIcon,
   Verified as AttestationsIcon,
+  FlashOn,
   Person as ProfileIcon,
   Tune as PreferencesIcon,
   Business as OrganizationIcon,

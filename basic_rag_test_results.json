@@ -1,0 +1,246 @@
+{
+  "summary": {
+    "total_tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "start_time": "2025-08-12T01:37:03.435949",
+    "end_time": "2025-08-12T01:37:06.077800"
+  },
+  "test_results": {
+    "Basic Document Processor Import": {
+      "status": "PASSED",
+      "details": {
+        "pypdf2": "imported",
+        "docx": "imported",
+        "openpyxl": "imported",
+        "markdown": "imported",
+        "beautifulsoup": "imported",
+        "pandas": "imported"
+      },
+      "timestamp": "2025-08-12T01:37:06.057009"
+    },
+    "Sample Document Creation": {
+      "status": "PASSED",
+      "details": {
+        "temp_dir": "/tmp/tmp9c7niu1s",
+        "files_created": 3,
+        "text_file": "/tmp/tmp9c7niu1s/sample.txt",
+        "json_file": "/tmp/tmp9c7niu1s/config.json",
+        "csv_file": "/tmp/tmp9c7niu1s/features.csv"
+      },
+      "timestamp": "2025-08-12T01:37:06.057509"
+    },
+    "Metadata Extraction": {
+      "status": "PASSED",
+      "details": {
+        "files_processed": 3,
+        "metadata_extracted": 3,
+        "metadata_results": [
+          {
+            "file_name": "sample.txt",
+            "file_path": "/tmp/tmp9c7niu1s/sample.txt",
+            "file_size": 892,
+            "file_type": ".txt",
+            "created_at": "2025-08-12T01:37:06.052233",
+            "modified_at": "2025-08-12T01:37:06.052233",
+            "processed_at": "2025-08-12T01:37:06.057590"
+          },
+          {
+            "file_name": "config.json",
+            "file_path": "/tmp/tmp9c7niu1s/config.json",
+            "file_size": 246,
+            "file_type": ".json",
+            "created_at": "2025-08-12T01:37:06.052233",
+            "modified_at": "2025-08-12T01:37:06.052233",
+            "processed_at": "2025-08-12T01:37:06.057602"
+          },
+          {
+            "file_name": "features.csv",
+            "file_path": "/tmp/tmp9c7niu1s/features.csv",
+            "file_size": 189,
+            "file_type": ".csv",
+            "created_at": "2025-08-12T01:37:06.052233",
+            "modified_at": "2025-08-12T01:37:06.052233",
+            "processed_at": "2025-08-12T01:37:06.057612"
+          }
+        ]
+      },
+      "timestamp": "2025-08-12T01:37:06.057616"
+    },
+    "Basic Text Processing": {
+      "status": "PASSED",
+      "details": {
+        "files_processed": 3,
+        "total_chunks": 3,
+        "processing_results": [
+          {
+            "file_path": "/tmp/tmp9c7niu1s/sample.txt",
+            "file_name": "sample.txt",
+            "file_type": ".txt",
+            "content_length": 892,
+            "chunks_created": 1,
+            "chunks": [
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversational AI capabilities with comprehensive governance and oversight.\n                \n                Key Features\n                - Multi-agent conversation systems\n                - Real-time governance monitoring\n                - Advanced RAG capabilities\n                - Business system integrations\n                - Comprehensive audit logging\n                \n                Getting Started\n                To get started with Promethios, you need to:\n                1. Set up your governance policies\n                2. Configure your knowledge base\n                3. Create your first chatbot\n                4. Deploy to your preferred channels",
+                "chunk_index": 0,
+                "file_name": "sample.txt",
+                "file_type": ".txt"
+              }
+            ]
+          },
+          {
+            "file_path": "/tmp/tmp9c7niu1s/config.json",
+            "file_name": "config.json",
+            "file_type": ".json",
+            "content_length": 246,
+            "chunks_created": 1,
+            "chunks": [
+              {
+                "chunk_id": "config.json_chunk_0",
+                "content": "{\n  \"platform\": \"Promethios\",\n  \"version\": \"1.0.0\",\n  \"features\": [\n    \"governance\",\n    \"rag\",\n    \"integrations\",\n    \"analytics\"\n  ],\n  \"supported_formats\": [\n    \"pdf\",\n    \"docx\",\n    \"txt\",\n    \"md\",\n    \"html\",\n    \"json\",\n    \"csv\"\n  ]\n}",
+                "chunk_index": 0,
+                "file_name": "config.json",
+                "file_type": ".json"
+              }
+            ]
+          },
+          {
+            "file_path": "/tmp/tmp9c7niu1s/features.csv",
+            "file_name": "features.csv",
+            "file_type": ".csv",
+            "content_length": 269,
+            "chunks_created": 1,
+            "chunks": [
+              {
+                "chunk_id": "features.csv_chunk_0",
+                "content": "Feature   Category      Status Priority\n  Governance       Core      Active     High\n         RAG       Core      Active     High\nIntegrations   Business      Active   Medium\n   Analytics Monitoring      Active   Medium\n  Automation   Workflow Development      Low",
+                "chunk_index": 0,
+                "file_name": "features.csv",
+                "file_type": ".csv"
+              }
+            ]
+          }
+        ]
+      },
+      "timestamp": "2025-08-12T01:37:06.073446"
+    },
+    "Basic Keyword Search": {
+      "status": "PASSED",
+      "details": {
+        "queries_tested": 5,
+        "total_chunks": 3,
+        "total_matches": 11,
+        "search_results": [
+          {
+            "query": "governance",
+            "matches": 3,
+            "top_results": [
+              {
+                "chunk_id": "config.json_chunk_0",
+                "content": "{\n  \"platform\": \"Promethios\",\n  \"version\": \"1.0.0\",\n  \"features\": [\n    \"governance\",\n    \"rag\",\n    \"integrations\",\n    \"analytics\"\n  ],\n  \"supported_formats\": [\n    \"pdf\",\n    \"docx\",\n    \"txt\",\n   ...",
+                "score": 0.043478260869565216,
+                "file_name": "config.json"
+              },
+              {
+                "chunk_id": "features.csv_chunk_0",
+                "content": "Feature   Category      Status Priority\n  Governance       Core      Active     High\n         RAG       Core      Active     High\nIntegrations   Business      Active   Medium\n   Analytics Monitoring  ...",
+                "score": 0.041666666666666664,
+                "file_name": "features.csv"
+              },
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversat...",
+                "score": 0.03896103896103896,
+                "file_name": "sample.txt"
+              }
+            ]
+          },
+          {
+            "query": "chatbot",
+            "matches": 1,
+            "top_results": [
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversat...",
+                "score": 0.012987012987012988,
+                "file_name": "sample.txt"
+              }
+            ]
+          },
+          {
+            "query": "features",
+            "matches": 2,
+            "top_results": [
+              {
+                "chunk_id": "config.json_chunk_0",
+                "content": "{\n  \"platform\": \"Promethios\",\n  \"version\": \"1.0.0\",\n  \"features\": [\n    \"governance\",\n    \"rag\",\n    \"integrations\",\n    \"analytics\"\n  ],\n  \"supported_formats\": [\n    \"pdf\",\n    \"docx\",\n    \"txt\",\n   ...",
+                "score": 0.043478260869565216,
+                "file_name": "config.json"
+              },
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversat...",
+                "score": 0.012987012987012988,
+                "file_name": "sample.txt"
+              }
+            ]
+          },
+          {
+            "query": "platform",
+            "matches": 2,
+            "top_results": [
+              {
+                "chunk_id": "config.json_chunk_0",
+                "content": "{\n  \"platform\": \"Promethios\",\n  \"version\": \"1.0.0\",\n  \"features\": [\n    \"governance\",\n    \"rag\",\n    \"integrations\",\n    \"analytics\"\n  ],\n  \"supported_formats\": [\n    \"pdf\",\n    \"docx\",\n    \"txt\",\n   ...",
+                "score": 0.043478260869565216,
+                "file_name": "config.json"
+              },
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversat...",
+                "score": 0.025974025974025976,
+                "file_name": "sample.txt"
+              }
+            ]
+          },
+          {
+            "query": "integrations",
+            "matches": 3,
+            "top_results": [
+              {
+                "chunk_id": "config.json_chunk_0",
+                "content": "{\n  \"platform\": \"Promethios\",\n  \"version\": \"1.0.0\",\n  \"features\": [\n    \"governance\",\n    \"rag\",\n    \"integrations\",\n    \"analytics\"\n  ],\n  \"supported_formats\": [\n    \"pdf\",\n    \"docx\",\n    \"txt\",\n   ...",
+                "score": 0.043478260869565216,
+                "file_name": "config.json"
+              },
+              {
+                "chunk_id": "features.csv_chunk_0",
+                "content": "Feature   Category      Status Priority\n  Governance       Core      Active     High\n         RAG       Core      Active     High\nIntegrations   Business      Active   Medium\n   Analytics Monitoring  ...",
+                "score": 0.041666666666666664,
+                "file_name": "features.csv"
+              },
+              {
+                "chunk_id": "sample.txt_chunk_0",
+                "content": "Promethios Chat Platform Documentation\n                \n                Introduction\n                Promethios is an advanced AI chat platform that provides enterprise-grade\n                conversat...",
+                "score": 0.012987012987012988,
+                "file_name": "sample.txt"
+              }
+            ]
+          }
+        ]
+      },
+      "timestamp": "2025-08-12T01:37:06.073666"
+    },
+    "Governance Integration": {
+      "status": "PASSED",
+      "details": {
+        "governance_adapter": "created",
+        "audit_entry": "created",
+        "context": "rag_basic_test"
+      },
+      "timestamp": "2025-08-12T01:37:06.077445"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "test_name": "Core Promethios Chat System Integration",
+  "timestamp": "2025-08-12T11:25:41.252951+00:00",
+  "tests": {
+    "core_service_imports": {
+      "status": "PASS",
+      "message": "All 5 core services imported successfully"
+    },
+    "core_system_initialization": {
+      "status": "PASS",
+      "message": "Core system initialized successfully in 0.00s"
+    },
+    "chat_to_sale_workflow": {
+      "status": "FAIL",
+      "message": "Chat-to-sale workflow incomplete - missing components"
+    },
+    "agent_handoff_management": {
+      "status": "FAIL",
+      "message": "Agent handoff management incomplete"
+    },
+    "analytics_reporting": {
+      "status": "PASS",
+      "message": "Analytics and reporting working correctly in 0.00s. 1 leads, $500,000 pipeline value"
+    },
+    "concurrent_scalability": {
+      "status": "PASS",
+      "message": "Scalability test successful. 35/35 operations in 0.02s (1744.8 ops/sec)"
+    },
+    "governance_compliance": {
+      "status": "FAIL",
+      "message": "Governance issues: 3/4 operations successful"
+    },
+    "system_health": {
+      "status": "PASS",
+      "message": "System health excellent: 100.0% (6/6 services healthy) in 0.00s"
+    }
+  },
+  "performance_metrics": {
+    "initialization_time": 0.002257,
+    "analytics_time": 0.000205,
+    "total_leads": 1,
+    "pipeline_value": 500000,
+    "throughput": 1744.7657028913259,
+    "concurrent_operations": 35,
+    "success_rate": 100.0,
+    "health_check_time": 0.00281,
+    "health_score": 100.0,
+    "system_metrics": {
+      "total_conversations": 21,
+      "total_leads": 6,
+      "total_opportunities": 1,
+      "total_agents": 4,
+      "total_handoff_requests": 1
+    }
+  },
+  "summary": {
+    "total_tests": 8,
+    "passed": 5,
+    "failed": 3,
+    "success_rate": 62.5,
+    "performance_score": 100,
+    "system_status": "ACCEPTABLE"
+  }
+}

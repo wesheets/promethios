@@ -1,0 +1,53 @@
+{
+  "test_name": "Human Handoff & Lead Management Integration",
+  "timestamp": "2025-08-12T05:53:32.643048+00:00",
+  "tests": {
+    "service_imports": {
+      "status": "PASS",
+      "message": "All services imported successfully"
+    },
+    "service_initialization": {
+      "status": "PASS",
+      "message": "Services initialized successfully"
+    },
+    "agent_management": {
+      "status": "PASS",
+      "message": "Agent management working correctly. Added 1 agent, total: 4"
+    },
+    "handoff_workflow": {
+      "status": "PASS",
+      "message": "Handoff workflow working correctly. Request ID: test_handoff_001"
+    },
+    "lead_capture": {
+      "status": "PASS",
+      "message": "Lead capture working correctly. Lead ID: 18dde465-a31b-459b-8eb5-d8455a717698, Score: 0"
+    },
+    "lead_qualification": {
+      "status": "PASS",
+      "message": "Lead qualification working correctly. Score: 0.66, Status: qualified"
+    },
+    "opportunity_creation": {
+      "status": "PASS",
+      "message": "Opportunity creation working correctly. ID: 153d28c1-bdae-46d3-b401-e5b64e13d67e, Value: $50,000"
+    },
+    "followup_tasks": {
+      "status": "PASS",
+      "message": "Follow-up task management working correctly. Task ID: 29f2580a-1e8e-42bb-8887-515df73847a9"
+    },
+    "analytics_metrics": {
+      "status": "PASS",
+      "message": "Analytics working correctly. Queue: 0 pending, Leads: 1 total"
+    },
+    "governance_integration": {
+      "status": "PASS",
+      "message": "Governance integration working correctly. 3 audit entries created"
+    }
+  },
+  "summary": {
+    "total_tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "success_rate": 100.0
+  }
+}

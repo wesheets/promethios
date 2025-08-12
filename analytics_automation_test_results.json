@@ -1,0 +1,54 @@
+{
+  "test_name": "Analytics and Automation Services Integration Test",
+  "timestamp": "2025-08-12T05:45:59.102864+00:00",
+  "tests": [
+    {
+      "test_name": "Service Initialization",
+      "success": true,
+      "details": "Analytics and automation services initialized",
+      "timestamp": "2025-08-12T05:45:59.113181+00:00"
+    },
+    {
+      "test_name": "Analytics Tracking",
+      "success": false,
+      "details": "Message count mismatch",
+      "timestamp": "2025-08-12T05:45:59.119202+00:00"
+    },
+    {
+      "test_name": "Automation Rules",
+      "success": true,
+      "details": "Created and retrieved 4 rules",
+      "timestamp": "2025-08-12T05:45:59.119703+00:00"
+    },
+    {
+      "test_name": "Workflow Management",
+      "success": true,
+      "details": "Executed workflow: lead_qualification",
+      "timestamp": "2025-08-12T05:45:59.119901+00:00"
+    },
+    {
+      "test_name": "Escalation Rules",
+      "success": true,
+      "details": "Triggered escalation: Frustrated User Escalation",
+      "timestamp": "2025-08-12T05:45:59.120001+00:00"
+    },
+    {
+      "test_name": "Real-time Integration",
+      "success": true,
+      "details": "Triggered 3 actions",
+      "timestamp": "2025-08-12T05:45:59.121204+00:00"
+    },
+    {
+      "test_name": "Dashboard Generation",
+      "success": true,
+      "details": "All required dashboard components present",
+      "timestamp": "2025-08-12T05:45:59.121756+00:00"
+    },
+    {
+      "test_name": "Performance Metrics",
+      "success": true,
+      "details": "All metrics components available",
+      "timestamp": "2025-08-12T05:45:59.122194+00:00"
+    }
+  ]
+}

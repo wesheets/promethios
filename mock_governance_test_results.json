@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-08-12T01:16:18.398064",
+  "tests": [
+    {
+      "test_name": "Universal Governance Adapter Import",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.403800",
+      "details": {
+        "adapter_class": "<class 'UniversalGovernanceAdapter.UniversalGovernanceAdapter'>",
+        "context": "universal"
+      }
+    },
+    {
+      "test_name": "Trust Scoring Functionality",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.403910",
+      "details": {
+        "trust_score": 0.8,
+        "has_trust_data": true
+      }
+    },
+    {
+      "test_name": "Policy Enforcement",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.403978",
+      "details": {
+        "policy_count": 3,
+        "has_policies": true
+      }
+    },
+    {
+      "test_name": "Audit Logging",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.404092",
+      "details": {
+        "audit_entry_id": "test_interaction_001",
+        "has_comprehensive_fields": true
+      }
+    },
+    {
+      "test_name": "Agent Self-Awareness",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.404229",
+      "details": {
+        "prompt_count": 2,
+        "has_self_awareness": true
+      }
+    },
+    {
+      "test_name": "Autonomous Cognition",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.404323",
+      "details": {
+        "approved": true,
+        "risk_level": "low",
+        "has_autonomy": true
+      }
+    },
+    {
+      "test_name": "Chat API Integration",
+      "status": "PASSED",
+      "timestamp": "2025-08-12T01:16:18.404506",
+      "details": {
+        "trust_system_working": true,
+        "audit_system_working": true,
+        "policy_system_working": true,
+        "adapter_context": "chat_test",
+        "integration_status": "functional"
+      }
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0
+  }
+}

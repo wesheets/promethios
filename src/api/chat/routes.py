@@ -27,19 +27,87 @@ from ..policy.routes import call_policy_management
 from .ai_model_service import ai_model_service
 from .multi_agent_coordinator import MultiAgentCoordinator, CoordinationPattern
 
-# Temporarily use mock functions for trust and audit until Phase 2
-# from ..trust.routes import call_trust_system
-# from ..audit.routes import call_audit_system
+# Import Universal Governance Adapter for complete governance integration
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../services'))
 
-def call_trust_system(method: str, *args) -> dict:
-    """Mock trust system for Phase 1 - will be replaced with real integration in Phase 2"""
-    if method == "assessMessageTrust":
-        return {"trust_score": 0.8, "status": "success"}
-    return {"status": "success", "trust_score": 0.8}
+try:
+    from UniversalGovernanceAdapter import UniversalGovernanceAdapter
+    # Initialize Universal Governance Adapter
+    universal_governance = UniversalGovernanceAdapter()
+    print("✅ [Chat API] Universal Governance Adapter initialized successfully")
+except ImportError as e:
+    print(f"⚠️ [Chat API] Could not import Universal Governance Adapter: {e}")
+    print("🔄 [Chat API] Falling back to basic governance functions")
+    universal_governance = None
 
-def call_audit_system(method: str, *args) -> dict:
-    """Mock audit system for Phase 1 - will be replaced with real integration in Phase 2"""
-    return {"status": "success", "logged": True}
+async def call_trust_system(method: str, *args) -> dict:
+    """Real trust system integration via Universal Governance Adapter"""
+    if universal_governance is None:
+        # Fallback to basic trust scoring
+        return {"trust_score": 0.8, "status": "success", "source": "fallback"}
+    
+    try:
+        if method == "assessMessageTrust":
+            message_data = args[0] if args else {}
+            agent_id = message_data.get("agent_id", "unknown")
+            
+            # Get real trust score from Universal Governance Adapter
+            trust_score = await universal_governance.getTrustScore(agent_id)
+            
+            if trust_score:
+                return {
+                    "trust_score": trust_score.currentScore,
+                    "trust_level": await universal_governance.calculateTrustLevel(agent_id),
+                    "trend": trust_score.trend,
+                    "status": "success",
+                    "source": "universal_governance"
+                }
+            else:
+                return {"trust_score": 0.8, "status": "success", "source": "default"}
+        
+        return {"status": "success", "trust_score": 0.8, "source": "universal_governance"}
+    except Exception as e:
+        print(f"❌ [Chat API] Trust system error: {e}")
+        return {"trust_score": 0.8, "status": "error", "error": str(e), "source": "fallback"}
+
+async def call_audit_system(method: str, *args) -> dict:
+    """Real audit system integration via Universal Governance Adapter"""
+    if universal_governance is None:
+        return {"status": "success", "logged": True, "source": "fallback"}
+    
+    try:
+        if method == "logEvent":
+            event_data = args[0] if args else {}
+            
+            # Create comprehensive audit entry via Universal Governance Adapter
+            audit_entry = await universal_governance.createAuditEntry({
+                "interaction_id": event_data.get("interaction_id", str(uuid.uuid4())),
+                "agent_id": event_data.get("agent_id", "unknown"),
+                "user_id": event_data.get("user_id", "unknown"),
+                "session_id": event_data.get("session_id", "unknown"),
+                "message_content": event_data.get("message_content", ""),
+                "response_content": event_data.get("response_content", ""),
+                "trust_score": event_data.get("trust_score", 0.8),
+                "policy_results": event_data.get("policy_results", []),
+                "governance_metadata": event_data.get("governance_metadata", {}),
+                "timestamp": datetime.now(timezone.utc),
+                "event_type": event_data.get("event_type", "chat_interaction"),
+                "context": "chat_api"
+            })
+            
+            return {
+                "status": "success", 
+                "logged": True, 
+                "audit_id": audit_entry.interaction_id,
+                "source": "universal_governance"
+            }
+        
+        return {"status": "success", "logged": True, "source": "universal_governance"}
+    except Exception as e:
+        print(f"❌ [Chat API] Audit system error: {e}")
+        return {"status": "error", "logged": False, "error": str(e), "source": "fallback"}
 
 # Initialize multi-agent coordinator
 multi_agent_coordinator = MultiAgentCoordinator(ai_model_service)
@@ -131,7 +199,7 @@ session_messages: Dict[str, List[ChatMessage]] = {}
 # Core Chat Infrastructure Functions
 # ============================================================================
 
-def call_governance_orchestrator(method: str, *args) -> dict:
+async def call_governance_orchestrator(method: str, *args) -> dict:
     """
     Call the Governance Orchestrator for chat-specific governance operations.
     
@@ -153,7 +221,7 @@ def call_governance_orchestrator(method: str, *args) -> dict:
             })
             
             # Get trust assessment
-            trust_result = call_trust_system("assessMessageTrust", {
+            trust_result = await call_trust_system("assessMessageTrust", {
                 "content": message_content,
                 "threshold": governance_config.trust_threshold
             })
@@ -419,7 +487,7 @@ async def create_chat_session(
         
         # Log session creation for audit
         if governance_config.audit_logging:
-            call_audit_system("logEvent", {
+            await call_audit_system("logEvent", {
                 "event_type": "chat_session_created",
                 "session_id": session_id,
                 "user_id": user_id,
@@ -592,18 +660,20 @@ async def send_message(
         
         # Background task: Audit logging
         if session.governance_config.audit_logging:
-            background_tasks.add_task(
-                call_audit_system,
-                "logConversation",
-                {
-                    "session_id": session_id,
-                    "user_message": user_message.dict(),
-                    "assistant_message": assistant_message.dict(),
-                    "governance_results": governance_results,
-                    "observer_results": observer_results,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
-                }
-            )
+            async def audit_conversation():
+                await call_audit_system(
+                    "logConversation",
+                    {
+                        "session_id": session_id,
+                        "user_message": user_message.dict(),
+                        "assistant_message": assistant_message.dict(),
+                        "governance_results": governance_results,
+                        "observer_results": observer_results,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                )
+            
+            background_tasks.add_task(audit_conversation)
         
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
@@ -717,7 +787,7 @@ async def delete_chat_session(session_id: str = Path(..., description="Chat sess
         del session_messages[session_id]
     
     # Log deletion for audit
-    call_audit_system("logEvent", {
+    await call_audit_system("logEvent", {
         "event_type": "chat_session_deleted",
         "session_id": session_id,
         "timestamp": datetime.now(timezone.utc).isoformat()

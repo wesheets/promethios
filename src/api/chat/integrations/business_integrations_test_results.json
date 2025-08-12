@@ -1,0 +1,135 @@
+{
+  "summary": {
+    "total_tests": 9,
+    "passed": 9,
+    "failed": 0,
+    "start_time": "2025-08-12T01:27:06.011201",
+    "end_time": "2025-08-12T01:27:06.269758"
+  },
+  "test_results": {
+    "Integration Manager Import": {
+      "status": "PASSED",
+      "details": {
+        "integration_manager": "imported",
+        "salesforce": "imported",
+        "hubspot": "imported",
+        "zendesk": "imported",
+        "webhook": "imported"
+      },
+      "timestamp": "2025-08-12T01:27:06.265488"
+    },
+    "Integration Manager Creation": {
+      "status": "PASSED",
+      "details": {
+        "manager_created": true,
+        "governance_adapter": "connected",
+        "initial_integrations": 0
+      },
+      "timestamp": "2025-08-12T01:27:06.268469"
+    },
+    "Salesforce Integration Registration": {
+      "status": "PASSED",
+      "details": {
+        "registration_success": true,
+        "integration_id": "test_salesforce",
+        "status": "inactive"
+      },
+      "timestamp": "2025-08-12T01:27:06.268830"
+    },
+    "HubSpot Integration Registration": {
+      "status": "PASSED",
+      "details": {
+        "registration_success": true,
+        "integration_id": "test_hubspot",
+        "status": "inactive"
+      },
+      "timestamp": "2025-08-12T01:27:06.269062"
+    },
+    "Zendesk Integration Registration": {
+      "status": "PASSED",
+      "details": {
+        "registration_success": true,
+        "integration_id": "test_zendesk",
+        "status": "inactive"
+      },
+      "timestamp": "2025-08-12T01:27:06.269264"
+    },
+    "Webhook Integration Registration": {
+      "status": "PASSED",
+      "details": {
+        "registration_success": true,
+        "integration_id": "test_webhook",
+        "status": "inactive"
+      },
+      "timestamp": "2025-08-12T01:27:06.269469"
+    },
+    "Integration Status Retrieval": {
+      "status": "PASSED",
+      "details": {
+        "total_integrations": 4,
+        "active_integrations": 0,
+        "salesforce_status": "inactive",
+        "hubspot_status": "inactive",
+        "zendesk_status": "inactive",
+        "webhook_status": "inactive"
+      },
+      "timestamp": "2025-08-12T01:27:06.269527"
+    },
+    "Mock Lead Capture Operation": {
+      "status": "PASSED",
+      "details": {
+        "operation_attempted": true,
+        "results_count": 0,
+        "lead_data": {
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@example.com",
+          "phone": "+1-555-123-4567",
+          "company": "Test Company Inc.",
+          "title": "Marketing Manager",
+          "description": "Interested in our chat platform"
+        },
+        "chat_context_id": "test_conv_001"
+      },
+      "timestamp": "2025-08-12T01:27:06.269585"
+    },
+    "Supported Operations Retrieval": {
+      "status": "PASSED",
+      "details": {
+        "integration_types": 6,
+        "operations": {
+          "salesforce": [
+            "create_lead",
+            "create_contact",
+            "create_case",
+            "search_contacts",
+            "search_leads"
+          ],
+          "hubspot": [
+            "create_contact",
+            "create_deal",
+            "create_ticket",
+            "search_contacts",
+            "trigger_workflow"
+          ],
+          "zendesk": [
+            "create_user",
+            "create_ticket",
+            "create_organization",
+            "search_users",
+            "search_knowledge_base"
+          ],
+          "webhook": [
+            "send_webhook",
+            "send_chat_event",
+            "send_lead_capture",
+            "process_inbound_webhook"
+          ],
+          "slack": [],
+          "teams": []
+        }
+      },
+      "timestamp": "2025-08-12T01:27:06.269639"
+    }
+  }
+}
