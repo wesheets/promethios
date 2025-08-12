@@ -51,7 +51,7 @@ import {
   Phone,
   Facebook,
   Api,
-  Slack,
+  Chat as Slack,
   Microsoft,
 } from '@mui/icons-material';
 
