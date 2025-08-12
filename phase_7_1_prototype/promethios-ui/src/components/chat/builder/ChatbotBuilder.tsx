@@ -64,7 +64,7 @@ import {
   Delete as DeleteIcon,
   Preview as PreviewIcon,
   Save as SaveIcon,
-  Deploy as DeployIcon,
+  CloudUpload as DeployIcon,
   SmartToy as BotIcon,
   Palette as BrandIcon,
   Psychology as PersonalityIcon,
