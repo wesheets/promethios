@@ -79,7 +79,7 @@ export interface ChatbotWizardFormData {
 const ChatbotWrappingWizard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   
   const [activeStep, setActiveStep] = useState(0);
   const [chatbotData, setChatbotData] = useState<any>({
@@ -117,12 +117,12 @@ const ChatbotWrappingWizard: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      if (!user) {
+      if (!currentUser) {
         throw new Error('No user authenticated');
       }
 
       console.log('🚀 Starting governed chatbot creation...');
-      console.log('Using user:', user.uid);
+      console.log('Using user:', currentUser.uid);
 
       // Create governance policy from wizard data
       const governancePolicy = {
@@ -245,7 +245,7 @@ const ChatbotWrappingWizard: React.FC = () => {
 
       // Save the chatbot using ChatbotStorageService
       const chatbotService = ChatbotStorageService.getInstance();
-      await chatbotService.createChatbot(user.uid, chatbotProfile);
+      await chatbotService.createChatbot(currentUser.uid, chatbotProfile);
 
       console.log('🎉 Governed chatbot successfully created');
       setShowSuccessDialog(true);
@@ -290,18 +290,18 @@ const ChatbotWrappingWizard: React.FC = () => {
             <Grid container spacing={3}>
               {/* Trust & Security Configuration */}
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                       Trust & Security
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="rgba(255, 255, 255, 0.7)" sx={{ mb: 2 }}>
                       Configure trust thresholds and security policies
                     </Typography>
                     
                     {/* Trust Threshold Slider */}
                     <Box sx={{ mb: 3 }}>
-                      <Typography gutterBottom>Trust Threshold: {chatbotData.trustThreshold || 85}%</Typography>
+                      <Typography gutterBottom sx={{ color: 'white' }}>Trust Threshold: {chatbotData.trustThreshold || 85}%</Typography>
                       <Slider
                         value={chatbotData.trustThreshold || 85}
                         onChange={(e, value) => setChatbotData(prev => ({ ...prev, trustThreshold: value }))}
@@ -315,16 +315,25 @@ const ChatbotWrappingWizard: React.FC = () => {
                           { value: 100, label: '100%' }
                         ]}
                         valueLabelDisplay="auto"
+                        sx={{
+                          color: '#3182ce',
+                          '& .MuiSlider-markLabel': { color: 'rgba(255, 255, 255, 0.7)' }
+                        }}
                       />
                     </Box>
                     
                     {/* Security Level Selection */}
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Security Level</InputLabel>
+                      <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Security Level</InputLabel>
                       <Select
                         value={chatbotData.securityLevel || 'standard'}
                         onChange={(e) => setChatbotData(prev => ({ ...prev, securityLevel: e.target.value }))}
                         label="Security Level"
+                        sx={{
+                          color: 'white',
+                          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                          '& .MuiSvgIcon-root': { color: 'white' }
+                        }}
                       >
                         <MenuItem value="lenient">Lenient - Basic security checks</MenuItem>
                         <MenuItem value="standard">Standard - Balanced security</MenuItem>
@@ -337,21 +346,26 @@ const ChatbotWrappingWizard: React.FC = () => {
 
               {/* Compliance Framework */}
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                       Compliance Framework
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="rgba(255, 255, 255, 0.7)" sx={{ mb: 2 }}>
                       Select applicable compliance requirements
                     </Typography>
                     
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Compliance Framework</InputLabel>
+                      <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Compliance Framework</InputLabel>
                       <Select
                         value={chatbotData.complianceFramework || 'general'}
                         onChange={(e) => setChatbotData(prev => ({ ...prev, complianceFramework: e.target.value }))}
                         label="Compliance Framework"
+                        sx={{
+                          color: 'white',
+                          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                          '& .MuiSvgIcon-root': { color: 'white' }
+                        }}
                       >
                         <MenuItem value="general">General Business</MenuItem>
                         <MenuItem value="healthcare">Healthcare (HIPAA)</MenuItem>
@@ -368,27 +382,30 @@ const ChatbotWrappingWizard: React.FC = () => {
                           <Switch
                             checked={chatbotData.enableAuditLogging !== false}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, enableAuditLogging: e.target.checked }))}
+                            sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
                           />
                         }
-                        label="Enable Audit Logging"
+                        label={<Typography sx={{ color: 'white' }}>Enable Audit Logging</Typography>}
                       />
                       <FormControlLabel
                         control={
                           <Switch
                             checked={chatbotData.enableRealTimeMonitoring !== false}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, enableRealTimeMonitoring: e.target.checked }))}
+                            sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
                           />
                         }
-                        label="Enable Real-time Monitoring"
+                        label={<Typography sx={{ color: 'white' }}>Enable Real-time Monitoring</Typography>}
                       />
                       <FormControlLabel
                         control={
                           <Switch
                             checked={chatbotData.enableContentFiltering || false}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, enableContentFiltering: e.target.checked }))}
+                            sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
                           />
                         }
-                        label="Enable Content Filtering"
+                        label={<Typography sx={{ color: 'white' }}>Enable Content Filtering</Typography>}
                       />
                     </Box>
                   </CardContent>
@@ -397,19 +414,24 @@ const ChatbotWrappingWizard: React.FC = () => {
 
               {/* Chatbot-specific Configuration */}
               <Grid item xs={12}>
-                <Card>
+                <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                       Chatbot Configuration
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
-                          <InputLabel>Personality</InputLabel>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Personality</InputLabel>
                           <Select
                             value={chatbotData.personality || 'professional'}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, personality: e.target.value }))}
                             label="Personality"
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '& .MuiSvgIcon-root': { color: 'white' }
+                            }}
                           >
                             <MenuItem value="professional">Professional</MenuItem>
                             <MenuItem value="friendly">Friendly</MenuItem>
@@ -420,11 +442,16 @@ const ChatbotWrappingWizard: React.FC = () => {
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
-                          <InputLabel>Use Case</InputLabel>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Use Case</InputLabel>
                           <Select
                             value={chatbotData.useCase || 'customer_support'}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, useCase: e.target.value }))}
                             label="Use Case"
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '& .MuiSvgIcon-root': { color: 'white' }
+                            }}
                           >
                             <MenuItem value="customer_support">Customer Support</MenuItem>
                             <MenuItem value="sales">Sales Assistant</MenuItem>
@@ -435,12 +462,17 @@ const ChatbotWrappingWizard: React.FC = () => {
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <FormControl fullWidth>
-                          <InputLabel>Deployment Channels</InputLabel>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Deployment Channels</InputLabel>
                           <Select
                             multiple
                             value={chatbotData.deploymentChannels || ['web']}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, deploymentChannels: e.target.value }))}
                             label="Deployment Channels"
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '& .MuiSvgIcon-root': { color: 'white' }
+                            }}
                           >
                             <MenuItem value="web">Web Widget</MenuItem>
                             <MenuItem value="email">Email</MenuItem>
@@ -468,30 +500,30 @@ const ChatbotWrappingWizard: React.FC = () => {
             
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                       Chatbot Details
                     </Typography>
-                    <Typography><strong>Name:</strong> {chatbotData.agentName || 'Governed Chatbot'}</Typography>
-                    <Typography><strong>Provider:</strong> {chatbotData.provider || 'OpenAI'}</Typography>
-                    <Typography><strong>Model:</strong> {chatbotData.model || 'GPT-4'}</Typography>
-                    <Typography><strong>Personality:</strong> {chatbotData.personality || 'Professional'}</Typography>
-                    <Typography><strong>Use Case:</strong> {chatbotData.useCase || 'Customer Support'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Name:</strong> {chatbotData.agentName || 'Governed Chatbot'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Provider:</strong> {chatbotData.provider || 'OpenAI'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Model:</strong> {chatbotData.model || 'GPT-4'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Personality:</strong> {chatbotData.personality || 'Professional'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Use Case:</strong> {chatbotData.useCase || 'Customer Support'}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card sx={{ backgroundColor: '#2d3748', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                       Governance Settings
                     </Typography>
-                    <Typography><strong>Trust Threshold:</strong> {chatbotData.trustThreshold || 85}%</Typography>
-                    <Typography><strong>Security Level:</strong> {chatbotData.securityLevel || 'Standard'}</Typography>
-                    <Typography><strong>Compliance:</strong> {chatbotData.complianceFramework || 'General'}</Typography>
-                    <Typography><strong>Audit Logging:</strong> {chatbotData.enableAuditLogging !== false ? 'Enabled' : 'Disabled'}</Typography>
-                    <Typography><strong>Real-time Monitoring:</strong> {chatbotData.enableRealTimeMonitoring !== false ? 'Enabled' : 'Disabled'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Trust Threshold:</strong> {chatbotData.trustThreshold || 85}%</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Security Level:</strong> {chatbotData.securityLevel || 'Standard'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Compliance:</strong> {chatbotData.complianceFramework || 'General'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Audit Logging:</strong> {chatbotData.enableAuditLogging !== false ? 'Enabled' : 'Disabled'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Real-time Monitoring:</strong> {chatbotData.enableRealTimeMonitoring !== false ? 'Enabled' : 'Disabled'}</Typography>
                   </CardContent>
                 </Card>
               </Grid>

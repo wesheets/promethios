@@ -97,9 +97,9 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           sx={{
             flexGrow: 1,
             ml: preferences.navigationCollapsed ? '60px' : '260px',
-            pt: 2, // Always add top padding to account for header spacing
-            px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Horizontal padding only for non-chat pages
-            pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Bottom padding only for non-chat pages
+            pt: 4, // Increased top padding to prevent content cutoff under header
+            px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 3, // Increased horizontal padding for better spacing
+            pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 3, // Increased bottom padding
             transition: theme => theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
@@ -108,6 +108,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             height: '100%', // Full height of the flex container
             overflow: 'auto', // Allow scrolling within the content area if needed
             color: 'white', // Light text for dark background
+            // Ensure content doesn't get hidden behind header
+            minHeight: 'calc(100vh - 64px - 32px)', // Account for header height and padding
           }}
         >
           {children}
