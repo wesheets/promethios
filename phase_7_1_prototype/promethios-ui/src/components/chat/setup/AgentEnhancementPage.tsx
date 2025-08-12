@@ -176,10 +176,10 @@ const AgentEnhancementPage: React.FC = () => {
 
   const renderAgentSelection = () => (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ color: 'white' }}>
         Select Agent to Enhance
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" paragraph sx={{ color: '#a0aec0' }}>
         Choose a wrapped agent to enhance with knowledge and training capabilities.
       </Typography>
 
@@ -191,14 +191,16 @@ const AgentEnhancementPage: React.FC = () => {
                 cursor: 'pointer',
                 border: selectedAgent?.id === agent.id ? 2 : 1,
                 borderColor: selectedAgent?.id === agent.id ? 'primary.main' : 'divider',
-                '&:hover': { borderColor: 'primary.main' }
+                '&:hover': { borderColor: 'primary.main' },
+                backgroundColor: '#2d3748',
+                color: 'white'
               }}
               onClick={() => handleAgentSelect(agent)}
             >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
                   <AgentIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">{agent.name}</Typography>
+                  <Typography variant="h6" sx={{ color: 'white' }}>{agent.name}</Typography>
                   <Chip 
                     label={agent.status} 
                     color={agent.status === 'active' ? 'success' : 'default'}
@@ -207,18 +209,18 @@ const AgentEnhancementPage: React.FC = () => {
                   />
                 </Box>
                 
-                <Typography variant="body2" color="text.secondary" paragraph>
+                <Typography variant="body2" color="text.secondary" paragraph sx={{ color: '#a0aec0' }}>
                   {agent.description}
                 </Typography>
 
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="caption">Provider: {agent.provider}</Typography>
-                  <Typography variant="caption">Trust: {agent.trustScore}%</Typography>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>Provider: {agent.provider}</Typography>
+                  <Typography variant="caption" sx={{ color: '#a0aec0' }}>Trust: {agent.trustScore}%</Typography>
                 </Box>
 
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Chip label={agent.governanceLevel} size="small" variant="outlined" />
-                  <Typography variant="caption" color="text.secondary">
+                  <Chip label={agent.governanceLevel} size="small" variant="outlined" sx={{ color: 'white', borderColor: '#a0aec0' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ color: '#a0aec0' }}>
                     Created {agent.createdAt}
                   </Typography>
                 </Box>
@@ -229,14 +231,14 @@ const AgentEnhancementPage: React.FC = () => {
       </Grid>
 
       {wrappedAgents.length === 0 && (
-        <Alert severity="info" sx={{ mt: 3 }}>
+        <Alert severity="info" sx={{ mt: 3, backgroundColor: '#2d3748', color: 'white' }}>
           <Typography variant="body2">
             No wrapped agents found. Please wrap an agent first using the Universal Agent Wrapper.
           </Typography>
           <Button 
             variant="outlined" 
             size="small" 
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, color: 'white', borderColor: 'white' }}
             href="/ui/agents/wrapping"
           >
             Wrap an Agent
@@ -602,21 +604,21 @@ const AgentEnhancementPage: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, backgroundColor: '#1a202c', minHeight: '100vh' }}>
       <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           Enhance Your Agent
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ color: '#a0aec0' }}>
           Add knowledge bases and training capabilities to your wrapped agents for better performance.
         </Typography>
       </Box>
 
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ mb: 4, backgroundColor: '#2d3748', color: 'white' }}>
         <Stepper activeStep={activeStep} sx={{ p: 3 }}>
           {steps.map((label) => (
             <Step key={label}>
-              <StepLabel>{label}</StepLabel>
+              <StepLabel sx={{ '& .MuiStepLabel-label': { color: 'white' } }}>{label}</StepLabel>
             </Step>
           ))}
         </Stepper>

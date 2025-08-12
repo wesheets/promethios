@@ -293,11 +293,11 @@ const AutomationManagement: React.FC<AutomationManagementProps> = ({ className =
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 bg-gray-900 min-h-screen p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Automation Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-white">Automation Management</h2>
           <p className="text-muted-foreground">
             Configure intelligent automation rules, workflows, and escalation policies
           </p>

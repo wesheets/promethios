@@ -314,12 +314,12 @@ const BusinessSystemIntegrations: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gray-900 min-h-screen p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Business System Integrations</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-white">Business System Integrations</h1>
+          <p className="text-gray-300 mt-2">
             Connect your chatbots to CRM, helpdesk, and other business systems for seamless data flow.
           </p>
         </div>

@@ -255,12 +255,12 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ className = '' 
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 bg-gray-900 min-h-screen p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-bold tracking-tight text-white">Analytics Dashboard</h2>
+          <p className="text-gray-300">
             Comprehensive insights into your chat performance and user engagement
           </p>
         </div>
