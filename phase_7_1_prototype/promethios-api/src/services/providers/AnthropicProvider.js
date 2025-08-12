@@ -13,13 +13,50 @@ class AnthropicProvider extends ProviderPlugin {
     super('anthropic', 'Anthropic');
     this.client = null;
     this.supportedModels = [
-      'claude-3-sonnet-20240229',
-      'claude-3-opus-20240229',
-      'claude-3-haiku-20240307',
-      'claude-2.1',
-      'claude-2.0',
-      'claude-instant-1.2'
+      { 
+        id: 'claude-3-sonnet-20240229', 
+        name: 'Claude 3 Sonnet', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      },
+      { 
+        id: 'claude-3-opus-20240229', 
+        name: 'Claude 3 Opus', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      },
+      { 
+        id: 'claude-3-haiku-20240307', 
+        name: 'Claude 3 Haiku', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      },
+      { 
+        id: 'claude-2.1', 
+        name: 'Claude 2.1', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      },
+      { 
+        id: 'claude-2.0', 
+        name: 'Claude 2.0', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      },
+      { 
+        id: 'claude-instant-1.2', 
+        name: 'Claude Instant 1.2', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion'],
+        note: 'Fine-tuning not yet available'
+      }
     ];
+    this.capabilities = ['chat', 'completion', 'fine-tuning-planned'];
   }
 
   /**
@@ -333,6 +370,296 @@ class AnthropicProvider extends ProviderPlugin {
       contextLength: this.getModelContextLength(model),
       costPer1kTokens: this.getModelCost(model)
     }));
+  }
+
+  // ========================================
+  // FINE-TUNING IMPLEMENTATION (PLACEHOLDER)
+  // ========================================
+  // Note: Anthropic does not currently offer public fine-tuning APIs
+  // These methods provide a consistent interface and will be activated
+  // when Anthropic releases fine-tuning capabilities
+
+  /**
+   * Create a fine-tuning job (placeholder for future Anthropic fine-tuning)
+   * @param {Object} trainingData - Training data configuration
+   * @param {Object} options - Fine-tuning options
+   * @returns {Object} Fine-tuning job details
+   */
+  async createFineTuningJob(trainingData, options = {}) {
+    try {
+      // Audit the attempt
+      await this.auditEvent('fine_tuning_job_creation_attempted', {
+        provider: this.providerId,
+        model: options.model,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      // For now, return a placeholder response
+      // This will be replaced with actual Anthropic API calls when available
+      throw new Error('Anthropic fine-tuning is not yet available. Please check back for updates or contact Anthropic for enterprise fine-tuning options.');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_creation_failed', {
+        error: error.message,
+        model: options.model,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get fine-tuning job status (placeholder)
+   * @param {string} jobId - Fine-tuning job ID
+   * @returns {Object} Job status and details
+   */
+  async getFineTuningJob(jobId) {
+    try {
+      await this.auditEvent('fine_tuning_job_retrieval_attempted', {
+        jobId: jobId,
+        provider: this.providerId,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Anthropic fine-tuning is not yet available. Job retrieval not supported.');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_retrieval_failed', {
+        jobId: jobId,
+        error: error.message,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * List fine-tuning jobs (placeholder)
+   * @param {Object} filters - Optional filters for jobs
+   * @returns {Array} List of fine-tuning jobs
+   */
+  async listFineTuningJobs(filters = {}) {
+    try {
+      await this.auditEvent('fine_tuning_jobs_list_attempted', {
+        provider: this.providerId,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      // Return empty array since no fine-tuning is available
+      return [];
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_jobs_list_failed', {
+        error: error.message,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a fine-tuning job (placeholder)
+   * @param {string} jobId - Fine-tuning job ID
+   * @returns {Object} Cancellation result
+   */
+  async cancelFineTuningJob(jobId) {
+    try {
+      await this.auditEvent('fine_tuning_job_cancellation_attempted', {
+        jobId: jobId,
+        provider: this.providerId,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Anthropic fine-tuning is not yet available. Job cancellation not supported.');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_cancellation_failed', {
+        jobId: jobId,
+        error: error.message,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Upload training data (placeholder)
+   * @param {string|Buffer} trainingData - Training data content
+   * @param {Object} options - Upload options
+   * @returns {Object} Upload result
+   */
+  async uploadTrainingData(trainingData, options = {}) {
+    try {
+      await this.auditEvent('training_data_upload_attempted', {
+        provider: this.providerId,
+        filename: options.filename,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Anthropic fine-tuning is not yet available. Training data upload not supported.');
+
+    } catch (error) {
+      await this.auditEvent('training_data_upload_failed', {
+        error: error.message,
+        filename: options.filename,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get fine-tuned model details (placeholder)
+   * @param {string} modelId - Fine-tuned model ID
+   * @returns {Object} Model details and metadata
+   */
+  async getFineTunedModel(modelId) {
+    try {
+      await this.auditEvent('fine_tuned_model_retrieval_attempted', {
+        modelId: modelId,
+        provider: this.providerId,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Anthropic fine-tuning is not yet available. Custom model retrieval not supported.');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuned_model_retrieval_failed', {
+        modelId: modelId,
+        error: error.message,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a fine-tuned model (placeholder)
+   * @param {string} modelId - Fine-tuned model ID
+   * @returns {Object} Deletion result
+   */
+  async deleteFineTunedModel(modelId) {
+    try {
+      await this.auditEvent('fine_tuned_model_deletion_attempted', {
+        modelId: modelId,
+        provider: this.providerId,
+        note: 'Anthropic fine-tuning not yet available',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Anthropic fine-tuning is not yet available. Custom model deletion not supported.');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuned_model_deletion_failed', {
+        modelId: modelId,
+        error: error.message,
+        provider: this.providerId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Estimate fine-tuning cost for Anthropic (placeholder)
+   * @param {string} trainingData - Training data content
+   * @param {Object} options - Fine-tuning options
+   * @returns {Object} Cost estimation
+   */
+  async estimateFineTuningCost(trainingData, options = {}) {
+    try {
+      const lines = trainingData.split('\n').filter(line => line.trim()).length;
+      
+      // Estimate tokens
+      let totalTokens = 0;
+      const dataLines = trainingData.split('\n').filter(line => line.trim());
+      
+      for (const line of dataLines) {
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.messages) {
+            const messageText = parsed.messages.map(m => m.content).join(' ');
+            totalTokens += Math.ceil(messageText.length / 4);
+          } else if (parsed.prompt && parsed.completion) {
+            totalTokens += Math.ceil((parsed.prompt + parsed.completion).length / 4);
+          }
+        } catch (e) {
+          // Skip invalid lines
+        }
+      }
+
+      // Placeholder pricing (estimated based on Claude's inference costs)
+      const model = options.model || 'claude-3-sonnet-20240229';
+      let costPerToken = 0.020; // Estimated higher cost for fine-tuning
+      
+      if (model.includes('opus')) {
+        costPerToken = 0.100; // Higher cost for Opus
+      } else if (model.includes('haiku')) {
+        costPerToken = 0.005; // Lower cost for Haiku
+      }
+
+      const epochs = options.epochs || 3;
+      const totalTrainingTokens = totalTokens * epochs;
+      const estimatedCost = (totalTrainingTokens / 1000) * costPerToken;
+
+      return {
+        estimatedSamples: lines,
+        estimatedTokens: totalTokens,
+        totalTrainingTokens: totalTrainingTokens,
+        epochs: epochs,
+        estimatedCostUSD: estimatedCost,
+        costPerThousandTokens: costPerToken,
+        currency: 'USD',
+        provider: this.providerId,
+        model: model,
+        note: 'Estimated pricing - Anthropic fine-tuning not yet available'
+      };
+
+    } catch (error) {
+      return super.estimateFineTuningCost(trainingData, options);
+    }
+  }
+
+  /**
+   * Check if provider supports fine-tuning
+   * @returns {boolean} False for now, will be true when Anthropic releases fine-tuning
+   */
+  supportsFineTuning() {
+    return false; // Will be true when Anthropic releases fine-tuning APIs
+  }
+
+  /**
+   * Get enterprise fine-tuning information
+   * @returns {Object} Information about enterprise fine-tuning options
+   */
+  getEnterpriseFinetuningInfo() {
+    return {
+      available: false,
+      status: 'planned',
+      message: 'Anthropic is working on fine-tuning capabilities. Contact Anthropic directly for enterprise custom training options.',
+      contactInfo: {
+        email: 'enterprise@anthropic.com',
+        website: 'https://www.anthropic.com/enterprise'
+      },
+      alternatives: [
+        'Use prompt engineering with Claude models',
+        'Implement retrieval-augmented generation (RAG)',
+        'Consider other providers with fine-tuning (OpenAI, Cohere)',
+        'Wait for Anthropic fine-tuning release'
+      ]
+    };
   }
 
   /**

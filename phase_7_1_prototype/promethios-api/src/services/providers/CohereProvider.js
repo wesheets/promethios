@@ -13,13 +13,44 @@ class CohereProvider extends ProviderPlugin {
     super('cohere', 'Cohere');
     this.client = null;
     this.supportedModels = [
-      'command-r-plus',
-      'command-r',
-      'command',
-      'command-nightly',
-      'command-light',
-      'command-light-nightly'
+      { 
+        id: 'command-r-plus', 
+        name: 'Command R+', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion']
+      },
+      { 
+        id: 'command-r', 
+        name: 'Command R', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion']
+      },
+      { 
+        id: 'command', 
+        name: 'Command', 
+        supportsFineTuning: true,
+        capabilities: ['chat', 'completion', 'fine-tuning']
+      },
+      { 
+        id: 'command-nightly', 
+        name: 'Command Nightly', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion']
+      },
+      { 
+        id: 'command-light', 
+        name: 'Command Light', 
+        supportsFineTuning: true,
+        capabilities: ['chat', 'completion', 'fine-tuning']
+      },
+      { 
+        id: 'command-light-nightly', 
+        name: 'Command Light Nightly', 
+        supportsFineTuning: false,
+        capabilities: ['chat', 'completion']
+      }
     ];
+    this.capabilities = ['chat', 'completion', 'fine-tuning'];
   }
 
   /**
@@ -327,6 +358,396 @@ class CohereProvider extends ProviderPlugin {
       contextLength: this.getModelContextLength(model),
       costPer1kTokens: this.getModelCost(model)
     }));
+  }
+
+  // ========================================
+  // FINE-TUNING IMPLEMENTATION
+  // ========================================
+
+  /**
+   * Create a fine-tuning job using Cohere's custom model API
+   * @param {Object} trainingData - Training data configuration
+   * @param {Object} options - Fine-tuning options
+   * @returns {Object} Fine-tuning job details
+   */
+  async createFineTuningJob(trainingData, options = {}) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      // Validate model supports fine-tuning
+      const model = options.model || 'command';
+      const modelInfo = this.supportedModels.find(m => m.id === model);
+      if (!modelInfo || !modelInfo.supportsFineTuning) {
+        throw new Error(`Model ${model} does not support fine-tuning`);
+      }
+
+      // Upload training data first
+      const uploadResult = await this.uploadTrainingData(trainingData.content, {
+        filename: trainingData.filename || 'training_data.jsonl'
+      });
+
+      // Create custom model using Cohere API
+      const customModel = await this.client.createCustomModel({
+        name: options.name || `custom-${model}-${Date.now()}`,
+        dataset: {
+          id: uploadResult.dataset_id
+        },
+        modelType: 'GENERATIVE', // or 'CLASSIFY' for classification
+        hyperparameters: {
+          trainEpochs: options.epochs || 1,
+          trainBatchSize: options.batch_size || 16,
+          learningRate: options.learning_rate || 0.01
+        }
+      });
+
+      // Audit job creation
+      await this.auditEvent('fine_tuning_job_created', {
+        jobId: customModel.id,
+        model: model,
+        datasetId: uploadResult.dataset_id,
+        hyperparameters: customModel.hyperparameters,
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        id: customModel.id,
+        status: customModel.status || 'queued',
+        model: model,
+        name: customModel.name,
+        dataset_id: uploadResult.dataset_id,
+        hyperparameters: customModel.hyperparameters,
+        created_at: new Date().toISOString(),
+        provider: this.providerId
+      };
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_creation_failed', {
+        error: error.message,
+        model: options.model,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get fine-tuning job status
+   * @param {string} jobId - Fine-tuning job ID
+   * @returns {Object} Job status and details
+   */
+  async getFineTuningJob(jobId) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      const customModel = await this.client.getCustomModel(jobId);
+
+      return {
+        id: customModel.id,
+        status: customModel.status,
+        name: customModel.name,
+        model: customModel.baseModel || 'command',
+        dataset_id: customModel.dataset?.id,
+        hyperparameters: customModel.hyperparameters,
+        created_at: customModel.createdAt,
+        updated_at: customModel.updatedAt,
+        completed_at: customModel.completedAt,
+        provider: this.providerId
+      };
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_retrieval_failed', {
+        jobId: jobId,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * List fine-tuning jobs
+   * @param {Object} filters - Optional filters for jobs
+   * @returns {Array} List of fine-tuning jobs
+   */
+  async listFineTuningJobs(filters = {}) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      const customModels = await this.client.listCustomModels({
+        pageSize: filters.limit || 20
+      });
+
+      return customModels.customModels.map(model => ({
+        id: model.id,
+        status: model.status,
+        name: model.name,
+        model: model.baseModel || 'command',
+        created_at: model.createdAt,
+        completed_at: model.completedAt,
+        provider: this.providerId
+      }));
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_jobs_list_failed', {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a fine-tuning job (if supported)
+   * @param {string} jobId - Fine-tuning job ID
+   * @returns {Object} Cancellation result
+   */
+  async cancelFineTuningJob(jobId) {
+    try {
+      // Note: Cohere may not support cancellation of training jobs
+      // This is a placeholder implementation
+      
+      await this.auditEvent('fine_tuning_job_cancellation_attempted', {
+        jobId: jobId,
+        note: 'Cohere does not support job cancellation',
+        timestamp: new Date().toISOString()
+      });
+
+      throw new Error('Cohere does not support cancellation of training jobs');
+
+    } catch (error) {
+      await this.auditEvent('fine_tuning_job_cancellation_failed', {
+        jobId: jobId,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Upload training data for Cohere
+   * @param {string|Buffer} trainingData - Training data content
+   * @param {Object} options - Upload options
+   * @returns {Object} Upload result with dataset ID
+   */
+  async uploadTrainingData(trainingData, options = {}) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      // Convert JSONL to Cohere format
+      const cohereData = this.convertToCohereFormat(trainingData);
+
+      // Create dataset
+      const dataset = await this.client.createDataset({
+        name: options.filename || `dataset-${Date.now()}`,
+        data: cohereData,
+        datasetType: 'generative-finetune-input'
+      });
+
+      await this.auditEvent('training_data_uploaded', {
+        datasetId: dataset.id,
+        filename: options.filename,
+        samples: cohereData.length,
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        dataset_id: dataset.id,
+        name: dataset.name,
+        samples: cohereData.length,
+        status: dataset.status,
+        provider: this.providerId
+      };
+
+    } catch (error) {
+      await this.auditEvent('training_data_upload_failed', {
+        error: error.message,
+        filename: options.filename,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get fine-tuned model details
+   * @param {string} modelId - Fine-tuned model ID
+   * @returns {Object} Model details and metadata
+   */
+  async getFineTunedModel(modelId) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      const customModel = await this.client.getCustomModel(modelId);
+
+      return {
+        id: customModel.id,
+        name: customModel.name,
+        status: customModel.status,
+        base_model: customModel.baseModel,
+        created_at: customModel.createdAt,
+        completed_at: customModel.completedAt,
+        hyperparameters: customModel.hyperparameters,
+        provider: this.providerId
+      };
+
+    } catch (error) {
+      await this.auditEvent('fine_tuned_model_retrieval_failed', {
+        modelId: modelId,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a fine-tuned model
+   * @param {string} modelId - Fine-tuned model ID
+   * @returns {Object} Deletion result
+   */
+  async deleteFineTunedModel(modelId) {
+    try {
+      if (!this.client) {
+        throw new Error('Cohere client not initialized');
+      }
+
+      await this.client.deleteCustomModel(modelId);
+
+      await this.auditEvent('fine_tuned_model_deleted', {
+        modelId: modelId,
+        deleted: true,
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        id: modelId,
+        deleted: true,
+        provider: this.providerId
+      };
+
+    } catch (error) {
+      await this.auditEvent('fine_tuned_model_deletion_failed', {
+        modelId: modelId,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Convert JSONL training data to Cohere format
+   * @param {string} jsonlData - JSONL training data
+   * @returns {Array} Cohere-formatted training data
+   */
+  convertToCohereFormat(jsonlData) {
+    const lines = jsonlData.split('\n').filter(line => line.trim());
+    const cohereData = [];
+
+    for (const line of lines) {
+      try {
+        const parsed = JSON.parse(line);
+        
+        if (parsed.messages) {
+          // Convert chat format to Cohere format
+          const prompt = parsed.messages
+            .filter(m => m.role === 'user')
+            .map(m => m.content)
+            .join('\n');
+          
+          const completion = parsed.messages
+            .filter(m => m.role === 'assistant')
+            .map(m => m.content)
+            .join('\n');
+
+          if (prompt && completion) {
+            cohereData.push({
+              prompt: prompt,
+              completion: completion
+            });
+          }
+        } else if (parsed.prompt && parsed.completion) {
+          // Already in correct format
+          cohereData.push({
+            prompt: parsed.prompt,
+            completion: parsed.completion
+          });
+        }
+      } catch (e) {
+        // Skip invalid lines
+        console.warn('⚠️ Skipping invalid training data line:', line);
+      }
+    }
+
+    return cohereData;
+  }
+
+  /**
+   * Estimate fine-tuning cost for Cohere
+   * @param {string} trainingData - Training data content
+   * @param {Object} options - Fine-tuning options
+   * @returns {Object} Cost estimation
+   */
+  async estimateFineTuningCost(trainingData, options = {}) {
+    try {
+      const lines = trainingData.split('\n').filter(line => line.trim()).length;
+      
+      // Estimate tokens
+      let totalTokens = 0;
+      const dataLines = trainingData.split('\n').filter(line => line.trim());
+      
+      for (const line of dataLines) {
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.messages) {
+            const messageText = parsed.messages.map(m => m.content).join(' ');
+            totalTokens += Math.ceil(messageText.length / 4);
+          } else if (parsed.prompt && parsed.completion) {
+            totalTokens += Math.ceil((parsed.prompt + parsed.completion).length / 4);
+          }
+        } catch (e) {
+          // Skip invalid lines
+        }
+      }
+
+      // Cohere fine-tuning pricing (estimated)
+      const model = options.model || 'command';
+      let costPerToken = 0.002; // $0.002 per 1K tokens (estimated)
+      
+      if (model.includes('command-r')) {
+        costPerToken = 0.004; // Higher cost for R models
+      }
+
+      const epochs = options.epochs || 1;
+      const totalTrainingTokens = totalTokens * epochs;
+      const estimatedCost = (totalTrainingTokens / 1000) * costPerToken;
+
+      return {
+        estimatedSamples: lines,
+        estimatedTokens: totalTokens,
+        totalTrainingTokens: totalTrainingTokens,
+        epochs: epochs,
+        estimatedCostUSD: estimatedCost,
+        costPerThousandTokens: costPerToken,
+        currency: 'USD',
+        provider: this.providerId,
+        model: model
+      };
+
+    } catch (error) {
+      return super.estimateFineTuningCost(trainingData, options);
+    }
   }
 
   /**
