@@ -92,6 +92,11 @@ const AgentWrappingWizard: React.FC = () => {
   const agentId = searchParams.get('agentId');
   const isWrappingExisting = Boolean(agentId);
   
+  // Check if this is coming from the chatbot Quick Start flow
+  const source = searchParams.get('source');
+  const redirectPath = searchParams.get('redirect');
+  const isFromChatbotFlow = source === 'chatbot';
+  
   // Start at step 1 (Governance) if wrapping existing agent, step 0 if new
   const [activeStep, setActiveStep] = useState(isWrappingExisting ? 1 : 0);
   const [agentData, setAgentData] = useState<any>({});
@@ -470,7 +475,16 @@ const AgentWrappingWizard: React.FC = () => {
 
   const handleSuccessClose = () => {
     setShowSuccessDialog(false);
-    navigate('/ui/agents/profiles');
+    
+    // If this came from the chatbot Quick Start flow, redirect to chatbot conversion
+    if (isFromChatbotFlow && redirectPath) {
+      // Pass the newly created agent ID to the conversion page
+      const agentIdToConvert = agentData.identity?.id || agentData.id;
+      navigate(`${redirectPath}?agentId=${agentIdToConvert}`);
+    } else {
+      // Default behavior - go to agent profiles
+      navigate('/ui/agents/profiles');
+    }
   };
 
   const renderStepContent = (step: number) => {

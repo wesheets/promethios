@@ -98,6 +98,7 @@ import AutomationManagement from './components/chat/automation/AutomationManagem
 import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManagement';
 // Import new setup components
 import QuickStartSetup from './components/chat/setup/QuickStartSetup';
+import ChatbotWrappingWizard from './components/chat/builder/ChatbotWrappingWizard';
 import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
 import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
@@ -343,6 +344,14 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <AgentToChatbotConverter />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/builder/chatbot-wrapping" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatbotWrappingWizard />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

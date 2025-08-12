@@ -97,8 +97,8 @@ const QuickStartSetup: React.FC = () => {
     if (path === 'hosted') {
       setShowHostedWizard(true);
     } else {
-      // Navigate to existing agent wrapping wizard with chatbot conversion
-      navigate('/ui/agents/wrapping?source=chatbot&redirect=/ui/chat/convert');
+      // Navigate to dedicated chatbot wrapping wizard for BYOK path
+      navigate('/ui/chat/builder/chatbot-wrapping');
     }
   };
 
