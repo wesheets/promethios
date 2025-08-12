@@ -98,6 +98,8 @@ import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManage
 // Import new setup components
 import QuickStartSetup from './components/chat/setup/QuickStartSetup';
 import HostedApiSetup from './components/chat/setup/HostedApiSetup';
+// Import chatbot management page
+import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
 import BringYourOwnKeySetup from './components/chat/setup/BringYourOwnKeySetup';
 import EnterpriseSetup from './components/chat/setup/EnterpriseSetup';
 // Import new integration components
@@ -331,7 +333,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/chatbots" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatbotBuilder />
+              <ChatbotProfilesPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
