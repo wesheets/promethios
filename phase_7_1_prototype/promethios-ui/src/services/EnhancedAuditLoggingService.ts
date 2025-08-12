@@ -216,8 +216,21 @@ export class EnhancedAuditLoggingService {
         }
       };
       
+      // ENHANCED DEBUGGING: Log detailed information about the audit entry
+      console.log(`🔍 ENHANCED AUDIT DEBUG: Creating audit entry for agent ${enhancedEntry.agent_id}`);
+      console.log(`🔍 ENHANCED AUDIT DEBUG: User ID: ${enhancedEntry.user_id}`);
+      console.log(`🔍 ENHANCED AUDIT DEBUG: Interaction ID: ${enhancedEntry.interaction_id}`);
+      console.log(`🔍 ENHANCED AUDIT DEBUG: Firebase entry structure:`, {
+        agentId: firebaseEntry.agentId,
+        eventType: firebaseEntry.eventType,
+        timestamp: firebaseEntry.timestamp,
+        comprehensiveDataFields: Object.keys(firebaseEntry.eventData).length
+      });
+      
       await addDoc(auditLogsCollection, firebaseEntry);
       console.log(`✅ Enhanced audit entry written immediately to Firebase: ${enhancedEntry.interaction_id}`);
+      console.log(`✅ ENHANCED AUDIT SUCCESS: Entry stored with agentId=${firebaseEntry.agentId}`);
+      
       
     } catch (firebaseError) {
       console.error('❌ Failed to write enhanced audit entry to Firebase immediately:', firebaseError);
