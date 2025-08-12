@@ -73,7 +73,31 @@ import {
   AutoAwesome as OrchestratorIcon,
   Memory as MemoryIcon,
   Insights as InsightsIcon,
-  People
+  People,
+  // Promethios Chat icons
+  QuestionAnswer as PrometheiosChatIcon,
+  SmartToy as ChatbotsIcon,
+  Build as ChatSetupIcon,
+  School as KnowledgeIcon,
+  Link as IntegrationsIcon,
+  BarChart as ChatAnalyticsIcon,
+  FlashOn as AutomationIcon,
+  Api as HostedApiIcon,
+  VpnKey as BYOKIcon,
+  Upload as DocumentUploadIcon,
+  Tune as FineTuningIcon,
+  Phone as VoiceIcon,
+  Email as EmailIcon,
+  Public as WebIcon,
+  Facebook as SocialIcon,
+  Handyman as WorkflowBuilderIcon,
+  PersonAdd as HandoffIcon,
+  Language as MultiLanguageIcon,
+  Palette as BrandingIcon,
+  Speed,
+  Business,
+  Warning,
+  AutoAwesome
 } from '@mui/icons-material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -144,6 +168,100 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       label: 'Dashboard',
       icon: <DashboardIcon />,
       path: '/ui/dashboard',
+    },
+    {
+      id: 'promethios-chat',
+      label: 'Promethios Chat',
+      icon: <PrometheiosChatIcon />,
+      isNew: true,
+      children: [
+        { 
+          id: 'chat-dashboard', 
+          label: 'Chat Dashboard', 
+          icon: <DashboardIcon />, 
+          path: '/ui/chat/dashboard',
+          isNew: true
+        },
+        { 
+          id: 'my-chatbots', 
+          label: 'My Chatbots', 
+          icon: <ChatbotsIcon />, 
+          path: '/ui/chat/chatbots' 
+        },
+        { 
+          id: 'chatbot-setup', 
+          label: 'Chatbot Setup', 
+          icon: <ChatSetupIcon />, 
+          path: '/ui/chat/setup',
+          children: [
+            { id: 'quick-start', label: 'Quick Start', icon: <FlashOn />, path: '/ui/chat/setup/quick-start' },
+            { id: 'hosted-api', label: 'Hosted API', icon: <HostedApiIcon />, path: '/ui/chat/setup/hosted-api' },
+            { id: 'byok', label: 'Bring Your Own Key', icon: <BYOKIcon />, path: '/ui/chat/setup/byok' },
+            { id: 'enterprise', label: 'Enterprise Setup', icon: <OrganizationIcon />, path: '/ui/chat/setup/enterprise' },
+          ]
+        },
+        { 
+          id: 'knowledge-training', 
+          label: 'Knowledge & Training', 
+          icon: <KnowledgeIcon />, 
+          path: '/ui/chat/knowledge',
+          children: [
+            { id: 'document-upload', label: 'Document Upload', icon: <DocumentUploadIcon />, path: '/ui/chat/knowledge/documents' },
+            { id: 'rag-management', label: 'RAG Management', icon: <DataIcon />, path: '/ui/chat/knowledge/rag' },
+            { id: 'fine-tuning', label: 'Fine Tuning', icon: <FineTuningIcon />, path: '/ui/chat/knowledge/fine-tuning' },
+            { id: 'knowledge-bases', label: 'Knowledge Bases', icon: <LibraryBooksIcon />, path: '/ui/chat/knowledge/bases' },
+          ]
+        },
+        { 
+          id: 'chat-integrations', 
+          label: 'Integrations', 
+          icon: <IntegrationsIcon />, 
+          path: '/ui/chat/integrations',
+          children: [
+            { id: 'business-systems', label: 'Business Systems', icon: <OrganizationIcon />, path: '/ui/chat/integrations/business' },
+            { id: 'helpdesk', label: 'Helpdesk', icon: <SupportIcon />, path: '/ui/chat/integrations/helpdesk' },
+            { id: 'crm', label: 'CRM', icon: <People />, path: '/ui/chat/integrations/crm' },
+            { id: 'ecommerce', label: 'E-commerce', icon: <Business />, path: '/ui/chat/integrations/ecommerce' },
+          ]
+        },
+        { 
+          id: 'chat-analytics', 
+          label: 'Analytics & Insights', 
+          icon: <ChatAnalyticsIcon />, 
+          path: '/ui/chat/analytics',
+          children: [
+            { id: 'performance', label: 'Performance', icon: <Speed />, path: '/ui/chat/analytics/performance' },
+            { id: 'governance-metrics', label: 'Governance Metrics', icon: <TrustIcon />, path: '/ui/chat/analytics/governance' },
+            { id: 'customer-satisfaction', label: 'Customer Satisfaction', icon: <Assessment />, path: '/ui/chat/analytics/csat' },
+            { id: 'resolution-rates', label: 'Resolution Rates', icon: <Timeline />, path: '/ui/chat/analytics/resolution' },
+          ]
+        },
+        { 
+          id: 'chat-automation', 
+          label: 'Automation', 
+          icon: <AutomationIcon />, 
+          path: '/ui/chat/automation',
+          children: [
+            { id: 'workflow-builder', label: 'Workflow Builder', icon: <WorkflowBuilderIcon />, path: '/ui/chat/automation/workflows' },
+            { id: 'human-handoff', label: 'Human Handoff', icon: <HandoffIcon />, path: '/ui/chat/automation/handoff' },
+            { id: 'escalation-rules', label: 'Escalation Rules', icon: <Warning />, path: '/ui/chat/automation/escalation' },
+            { id: 'auto-responses', label: 'Auto Responses', icon: <AutoAwesome />, path: '/ui/chat/automation/responses' },
+          ]
+        },
+        { 
+          id: 'deployment', 
+          label: 'Deployment', 
+          icon: <DeployIcon />, 
+          path: '/ui/chat/deployment',
+          children: [
+            { id: 'web-widget', label: 'Web Widget', icon: <WebIcon />, path: '/ui/chat/deployment/web' },
+            { id: 'voice-phone', label: 'Voice & Phone', icon: <VoiceIcon />, path: '/ui/chat/deployment/voice' },
+            { id: 'email-support', label: 'Email Support', icon: <EmailIcon />, path: '/ui/chat/deployment/email' },
+            { id: 'social-media', label: 'Social Media', icon: <SocialIcon />, path: '/ui/chat/deployment/social' },
+            { id: 'api-endpoints', label: 'API Endpoints', icon: <ApiKeyIcon />, path: '/ui/chat/deployment/api' },
+          ]
+        },
+      ],
     },
     {
       id: 'multi-agent-systems',
