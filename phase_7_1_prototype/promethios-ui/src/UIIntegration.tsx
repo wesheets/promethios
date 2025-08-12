@@ -88,6 +88,7 @@ import VoiceDeployment from './components/chat/deployment/VoiceDeployment';
 import EmailDeployment from './components/chat/deployment/EmailDeployment';
 import SocialDeployment from './components/chat/deployment/SocialDeployment';
 import ApiEndpointsDeployment from './components/chat/deployment/ApiEndpointsDeployment';
+import AgentEnhancementPage from './components/chat/setup/AgentEnhancementPage';
 import UniversalKnowledgeManagement from './components/governance/knowledge/UniversalKnowledgeManagement';
 import UniversalTrainingManagement from './components/governance/training/UniversalTrainingManagement';
 import BusinessSystemIntegrations from './components/chat/integrations/BusinessSystemIntegrations';
