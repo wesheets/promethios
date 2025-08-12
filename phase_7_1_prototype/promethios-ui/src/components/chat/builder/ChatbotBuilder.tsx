@@ -88,6 +88,7 @@ import {
   Storage as KnowledgeIcon,
   Speed as PerformanceIcon,
   Analytics as AnalyticsIcon,
+  ChevronRight,
 } from '@mui/icons-material';
 
 interface ChatbotConfig {
