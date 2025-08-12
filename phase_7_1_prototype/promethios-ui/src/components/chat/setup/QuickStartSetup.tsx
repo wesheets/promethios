@@ -8,6 +8,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import ChatbotStorageService from '../../../services/ChatbotStorageService';
 import {
   Box,
   Container,
@@ -51,6 +53,8 @@ interface HostedChatbotData {
 
 const QuickStartSetup: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const chatbotService = ChatbotStorageService.getInstance();
   const [selectedPath, setSelectedPath] = useState<'hosted' | 'byok' | null>(null);
   const [showHostedWizard, setShowHostedWizard] = useState(false);
   const [hostedStep, setHostedStep] = useState(0);
@@ -93,8 +97,8 @@ const QuickStartSetup: React.FC = () => {
     if (path === 'hosted') {
       setShowHostedWizard(true);
     } else {
-      // Navigate to existing agent wrapping wizard
-      navigate('/ui/agents/wrapping?source=chatbot');
+      // Navigate to existing agent wrapping wizard with chatbot conversion
+      navigate('/ui/agents/wrapping?source=chatbot&redirect=/ui/chat/convert');
     }
   };
 
@@ -119,19 +123,30 @@ const QuickStartSetup: React.FC = () => {
     setIsCreating(true);
     
     try {
-      // TODO: Implement hosted chatbot creation
-      // This will create a hosted agent and convert it to a chatbot profile
-      console.log('Creating hosted chatbot:', hostedData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!user?.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create hosted chatbot using the storage service
+      const chatbot = await chatbotService.createHostedChatbot(
+        hostedData.name,
+        hostedData.description,
+        hostedData.provider,
+        hostedData.model,
+        hostedData.personality,
+        hostedData.useCase,
+        user.uid
+      );
+
+      console.log('Hosted chatbot created successfully:', chatbot);
       
       // Navigate to My Chatbots page
       navigate('/ui/chat/chatbots');
       
     } catch (error) {
       console.error('Failed to create hosted chatbot:', error);
-      // TODO: Show error message
+      // TODO: Show error message to user
+      alert('Failed to create chatbot. Please try again.');
     } finally {
       setIsCreating(false);
     }
