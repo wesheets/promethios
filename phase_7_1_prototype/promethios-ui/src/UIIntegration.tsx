@@ -79,6 +79,17 @@ import MASWorkflowTemplatesPage from './pages/MASWorkflowTemplatesPage';
 import MASAnalyticsPage from './pages/MASAnalyticsPage';
 import MASDataCollectionAdminPage from './pages/MASDataCollectionAdminPage';
 import ProcessBuilderPage from './pages/ProcessBuilderPage';
+// Import Chat Components
+import ChatDashboard from './components/chat/dashboard/ChatDashboard';
+import ChatbotBuilder from './components/chat/builder/ChatbotBuilder';
+import ChatDeployment from './components/chat/deployment/ChatDeployment';
+import AgentEnhancementPage from './components/chat/setup/AgentEnhancementPage';
+import UniversalKnowledgeManagement from './components/governance/knowledge/UniversalKnowledgeManagement';
+import UniversalTrainingManagement from './components/governance/training/UniversalTrainingManagement';
+import BusinessSystemIntegrations from './components/chat/integrations/BusinessSystemIntegrations';
+import AnalyticsDashboard from './components/chat/analytics/AnalyticsDashboard';
+import AutomationManagement from './components/chat/automation/AutomationManagement';
+import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManagement';
 
 /**
  * UIIntegration Component
@@ -281,6 +292,248 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <ModernChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Promethios Chat Routes */}
+        <Route path="chat/dashboard" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/chatbots" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatbotBuilder />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentEnhancementPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup/quick-start" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentEnhancementPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup/hosted-api" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentEnhancementPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup/byok" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentEnhancementPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup/enterprise" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AgentEnhancementPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/integrations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <BusinessSystemIntegrations />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/integrations/business" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <BusinessSystemIntegrations />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/integrations/helpdesk" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <BusinessSystemIntegrations />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/integrations/crm" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <BusinessSystemIntegrations />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/integrations/ecommerce" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <BusinessSystemIntegrations />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/analytics" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AnalyticsDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/analytics/performance" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AnalyticsDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/analytics/governance" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AnalyticsDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/analytics/csat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AnalyticsDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/analytics/resolution" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AnalyticsDashboard />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/automation" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AutomationManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/automation/workflows" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AutomationManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/automation/handoff" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <HumanHandoffManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/automation/escalation" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AutomationManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/automation/responses" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AutomationManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment/web" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment/voice" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment/email" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment/social" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/deployment/api" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChatDeployment />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Knowledge & Training Routes - Updated to use governance paths */}
+        <Route path="governance/knowledge" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <UniversalKnowledgeManagement />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="governance/training" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <UniversalTrainingManagement />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
