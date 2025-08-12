@@ -91,12 +91,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           isAdmin={isAdmin}
         />
         
-        {/* Main content area - adjust margin to account for fixed header and collapsible nav */}
+        {/* Main content area - adjust margin to account for collapsible nav only */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            mt: '64px', // Header height
             ml: preferences.navigationCollapsed ? '60px' : '260px',
             transition: theme => theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,
@@ -105,8 +104,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             // Remove padding for chat page and other pages to allow full height usage
             p: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
             backgroundColor: '#1a202c', // Dark background to match the theme
-            height: 'calc(100vh - 64px)', // Exact height minus header - no extra space
-            maxHeight: 'calc(100vh - 64px)', // Prevent overflow
+            height: '100%', // Full height of the flex container
             overflow: 'auto', // Allow scrolling within the content area if needed
             color: 'white', // Light text for dark background
           }}
