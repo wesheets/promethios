@@ -204,12 +204,10 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           id: 'knowledge-training', 
           label: 'Knowledge & Training', 
           icon: <KnowledgeIcon />, 
-          path: '/ui/chat/knowledge',
+          path: '/ui/governance/knowledge',
           children: [
-            { id: 'document-upload', label: 'Document Upload', icon: <DocumentUploadIcon />, path: '/ui/chat/knowledge/documents' },
-            { id: 'rag-management', label: 'RAG Management', icon: <DataIcon />, path: '/ui/chat/knowledge/rag' },
-            { id: 'fine-tuning', label: 'Fine Tuning', icon: <FineTuningIcon />, path: '/ui/chat/knowledge/fine-tuning' },
-            { id: 'knowledge-bases', label: 'Knowledge Bases', icon: <LibraryBooksIcon />, path: '/ui/chat/knowledge/bases' },
+            { id: 'knowledge-management', label: 'Knowledge Management', icon: <KnowledgeIcon />, path: '/ui/governance/knowledge' },
+            { id: 'training-management', label: 'Training & Fine-tuning', icon: <FineTuningIcon />, path: '/ui/governance/training' },
           ]
         },
         { 
@@ -349,6 +347,8 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         { id: 'policies', label: 'Policies', icon: <PoliciesIcon />, path: '/ui/governance/policies' },
         { id: 'violations', label: 'Violations', icon: <ViolationsIcon />, path: '/ui/governance/violations' },
         { id: 'audit-reports', label: 'Audit Reports', icon: <AuditIcon />, path: '/ui/governance/audit-reports' },
+        { id: 'knowledge-management', label: 'Knowledge Management', icon: <KnowledgeIcon />, path: '/ui/governance/knowledge', isNew: true },
+        { id: 'training-management', label: 'Training & Fine-tuning', icon: <FineTuningIcon />, path: '/ui/governance/training', isNew: true },
       ],
     },
     {
