@@ -95,6 +95,24 @@ import BusinessSystemIntegrations from './components/chat/integrations/BusinessS
 import AnalyticsDashboard from './components/chat/analytics/AnalyticsDashboard';
 import AutomationManagement from './components/chat/automation/AutomationManagement';
 import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManagement';
+// Import new setup components
+import QuickStartSetup from './components/chat/setup/QuickStartSetup';
+import HostedApiSetup from './components/chat/setup/HostedApiSetup';
+import BringYourOwnKeySetup from './components/chat/setup/BringYourOwnKeySetup';
+import EnterpriseSetup from './components/chat/setup/EnterpriseSetup';
+// Import new integration components
+import HelpdeskIntegrations from './components/chat/integrations/HelpdeskIntegrations';
+import CrmIntegrations from './components/chat/integrations/CrmIntegrations';
+import EcommerceIntegrations from './components/chat/integrations/EcommerceIntegrations';
+// Import new analytics components
+import PerformanceAnalytics from './components/chat/analytics/PerformanceAnalytics';
+import GovernanceMetrics from './components/chat/analytics/GovernanceMetrics';
+import CustomerSatisfaction from './components/chat/analytics/CustomerSatisfaction';
+import ResolutionRates from './components/chat/analytics/ResolutionRates';
+// Import new automation components
+import WorkflowBuilder from './components/chat/automation/WorkflowBuilder';
+import EscalationRules from './components/chat/automation/EscalationRules';
+import AutoResponses from './components/chat/automation/AutoResponses';
 
 /**
  * UIIntegration Component
@@ -329,7 +347,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/setup/quick-start" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AgentEnhancementPage />
+              <QuickStartSetup />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -337,7 +355,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/setup/hosted-api" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AgentEnhancementPage />
+              <HostedApiSetup />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -345,7 +363,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/setup/byok" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AgentEnhancementPage />
+              <BringYourOwnKeySetup />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -353,7 +371,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/setup/enterprise" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AgentEnhancementPage />
+              <EnterpriseSetup />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -377,7 +395,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/integrations/helpdesk" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <BusinessSystemIntegrations />
+              <HelpdeskIntegrations />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -385,7 +403,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/integrations/crm" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <BusinessSystemIntegrations />
+              <CrmIntegrations />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -393,7 +411,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/integrations/ecommerce" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <BusinessSystemIntegrations />
+              <EcommerceIntegrations />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -409,7 +427,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/analytics/performance" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AnalyticsDashboard />
+              <PerformanceAnalytics />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -417,7 +435,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/analytics/governance" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AnalyticsDashboard />
+              <GovernanceMetrics />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -425,7 +443,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/analytics/csat" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AnalyticsDashboard />
+              <CustomerSatisfaction />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -433,7 +451,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/analytics/resolution" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AnalyticsDashboard />
+              <ResolutionRates />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -449,7 +467,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/automation/workflows" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AutomationManagement />
+              <WorkflowBuilder />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -465,7 +483,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/automation/escalation" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AutomationManagement />
+              <EscalationRules />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -473,7 +491,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/automation/responses" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <AutomationManagement />
+              <AutoResponses />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
