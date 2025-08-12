@@ -82,7 +82,7 @@ import {
   School as KnowledgeIcon,
   Link as IntegrationsIcon,
   BarChart as ChatAnalyticsIcon,
-  Zap as AutomationIcon,
+  AutoAwesome as AutomationIcon,
   Api as HostedApiIcon,
   VpnKey as BYOKIcon,
   Upload as DocumentUploadIcon,
