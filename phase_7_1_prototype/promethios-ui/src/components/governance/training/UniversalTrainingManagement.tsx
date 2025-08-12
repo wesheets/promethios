@@ -240,14 +240,22 @@ const UniversalTrainingManagement: React.FC = () => {
 
   const renderOverview = () => (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ color: 'white' }}>
         Enterprise Fine-tuning Overview
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} paragraph>
         Custom model training as a premium enterprise service across all Promethios verticals.
       </Typography>
 
-      <Alert severity="info" sx={{ mb: 4 }}>
+      <Alert 
+        severity="info" 
+        sx={{ 
+          mb: 4,
+          bgcolor: 'rgba(33, 150, 243, 0.1)', 
+          border: '1px solid rgba(33, 150, 243, 0.3)',
+          '& .MuiAlert-message': { color: 'white' }
+        }}
+      >
         <Typography variant="body2">
           <strong>Fine-tuning is available as a premium enterprise service.</strong> Our expert team works with you to create custom models tailored to your specific needs with full governance oversight.
         </Typography>
@@ -255,47 +263,47 @@ const UniversalTrainingManagement: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <FineTuningIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-              <Typography variant="h4">{fineTuningRequests.length}</Typography>
-              <Typography variant="body2" color="text.secondary">Active Requests</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>{fineTuningRequests.length}</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Active Requests</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-              <Typography variant="h4">60%</Typography>
-              <Typography variant="body2" color="text.secondary">Avg. Performance Gain</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>60%</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Avg. Performance Gain</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <SavingsIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-              <Typography variant="h4">$1.50</Typography>
-              <Typography variant="body2" color="text.secondary">Starting Cost</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>$1.50</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Starting Cost</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <TimelineIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
-              <Typography variant="h4">2-6</Typography>
-              <Typography variant="body2" color="text.secondary">Weeks Delivery</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>2-6</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Weeks Delivery</Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      <Typography variant="h6" gutterBottom>Why Choose Enterprise Fine-tuning?</Typography>
+      <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>Why Choose Enterprise Fine-tuning?</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent>
               <PerformanceIcon sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
               <Typography variant="h6" gutterBottom>Superior Performance</Typography>
@@ -764,21 +772,33 @@ const UniversalTrainingManagement: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3, bgcolor: 'transparent' }}>
       <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           Universal Training Management
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           Enterprise fine-tuning services for all agent types across all Promethios verticals.
         </Typography>
       </Box>
 
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ 
+        mb: 4, 
+        bgcolor: 'rgba(255, 255, 255, 0.05)', 
+        border: '1px solid rgba(255, 255, 255, 0.1)' 
+      }}>
         <Tabs 
           value={selectedTab} 
           onChange={(_, newValue) => setSelectedTab(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            '& .MuiTab-root': { 
+              color: 'rgba(255, 255, 255, 0.7)',
+              '&.Mui-selected': { color: 'white' }
+            },
+            '& .MuiTabs-indicator': { backgroundColor: '#4299e1' }
+          }}
         >
           <Tab label="Overview" />
           <Tab label="Pricing" />
@@ -797,10 +817,17 @@ const UniversalTrainingManagement: React.FC = () => {
       {renderContactDialog()}
 
       <Box mt={4} textAlign="center">
-        <Alert severity="info">
+        <Alert 
+          severity="info" 
+          sx={{ 
+            bgcolor: 'rgba(33, 150, 243, 0.1)', 
+            border: '1px solid rgba(33, 150, 243, 0.3)',
+            '& .MuiAlert-message': { color: 'white' }
+          }}
+        >
           <Typography variant="body2">
             <strong>Ready to get started?</strong> Contact our enterprise team at{' '}
-            <strong>enterprise@promethios.ai</strong> or call <strong>(555) 123-4567</strong> for immediate assistance.
+            <strong>enterprise@promethios.ai</strong> or call <strong>(555) 123-4467</strong> for immediate assistance.
           </Typography>
         </Alert>
       </Box>

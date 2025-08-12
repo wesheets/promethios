@@ -1270,21 +1270,21 @@ const ChatbotBuilder: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3, bgcolor: 'transparent' }}>
       <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
-          <BotIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          <BotIcon sx={{ mr: 2, verticalAlign: 'middle', color: 'white' }} />
           Chatbot Builder
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           Create and customize your AI chatbot with full governance oversight
         </Typography>
       </Box>
 
       <Grid container spacing={4}>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ p: 2, bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
               Build Progress
             </Typography>
             

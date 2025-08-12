@@ -320,53 +320,53 @@ const UniversalKnowledgeManagement: React.FC = () => {
 
   const renderOverview = () => (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ color: 'white' }}>
         Knowledge Management Overview
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} paragraph>
         Manage knowledge bases and RAG capabilities for all your agents across all verticals.
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <AgentIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-              <Typography variant="h4">{wrappedAgents.length}</Typography>
-              <Typography variant="body2" color="text.secondary">Total Agents</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>{wrappedAgents.length}</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Agents</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <DatabaseIcon sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
-              <Typography variant="h4">{knowledgeBases.length}</Typography>
-              <Typography variant="body2" color="text.secondary">Knowledge Bases</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>{knowledgeBases.length}</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Knowledge Bases</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <CloudIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-              <Typography variant="h4">{documents.length}</Typography>
-              <Typography variant="body2" color="text.secondary">Documents</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>{documents.length}</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Documents</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <PerformanceIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-              <Typography variant="h4">94%</Typography>
-              <Typography variant="body2" color="text.secondary">Avg. Accuracy</Typography>
+              <Typography variant="h4" sx={{ color: 'white' }}>94%</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Avg. Accuracy</Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      <Typography variant="h6" gutterBottom>Agents by Vertical</Typography>
+      <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>Agents by Vertical</Typography>
       <Grid container spacing={2}>
         {Object.entries(
           wrappedAgents.reduce((acc, agent) => {
@@ -375,10 +375,10 @@ const UniversalKnowledgeManagement: React.FC = () => {
           }, {} as Record<string, number>)
         ).map(([vertical, count]) => (
           <Grid item xs={12} sm={6} md={2.4} key={vertical}>
-            <Card>
+            <Card sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
               <CardContent sx={{ textAlign: 'center', py: 2 }}>
                 {verticalIcons[vertical as keyof typeof verticalIcons]}
-                <Typography variant="h6" sx={{ mt: 1 }}>{count}</Typography>
+                <Typography variant="h6" sx={{ mt: 1, color: 'white' }}>{count}</Typography>
                 <Chip 
                   label={vertical} 
                   size="small" 
@@ -396,70 +396,69 @@ const UniversalKnowledgeManagement: React.FC = () => {
   const renderAgents = () => (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Wrapped Agents</Typography>
-        <Button variant="outlined" href="/ui/agents/wrapping">
+        <Typography variant="h5" sx={{ color: 'white' }}>Wrapped Agents</Typography>
+        <Button variant="outlined" href="/ui/agents/wrapping" sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
           Wrap New Agent
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Agent</TableCell>
-              <TableCell>Vertical</TableCell>
-              <TableCell>Provider</TableCell>
-              <TableCell>Knowledge Bases</TableCell>
-              <TableCell>Trust Score</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Agent</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Vertical</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Provider</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Knowledge Bases</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Trust Score</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Status</TableCell>
+              <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {wrappedAgents.map((agent) => (
               <TableRow key={agent.id}>
-                <TableCell>
+                <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <Box>
-                    <Typography variant="subtitle2">{agent.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {agent.description}
+                    <Typography variant="subtitle2" sx={{ color: 'white' }}>{agent.name}</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      ID: {agent.id}
                     </Typography>
                   </Box>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <Chip 
-                    icon={verticalIcons[agent.vertical]}
-                    label={agent.vertical}
-                    size="small"
-                    color={verticalColors[agent.vertical]}
+                    label={agent.vertical} 
+                    size="small" 
+                    color={verticalColors[agent.vertical as keyof typeof verticalColors]}
                     sx={{ textTransform: 'capitalize' }}
                   />
                 </TableCell>
-                <TableCell>{agent.provider}</TableCell>
-                <TableCell>{agent.knowledgeBasesCount}</TableCell>
-                <TableCell>
-                  <Box display="flex" alignItems="center">
+                <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{agent.provider}</TableCell>
+                <TableCell sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{agent.knowledgeBasesCount}</TableCell>
+                <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                  <Box display="flex" alignItems="center" gap={1}>
                     <LinearProgress 
                       variant="determinate" 
                       value={agent.trustScore} 
-                      sx={{ width: 60, mr: 1 }}
+                      sx={{ width: 60, height: 6 }}
                     />
-                    <Typography variant="caption">{agent.trustScore}%</Typography>
+                    <Typography variant="body2" sx={{ color: 'white' }}>{agent.trustScore}%</Typography>
                   </Box>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <Chip 
-                    label={agent.status}
-                    size="small"
+                    label={agent.status} 
+                    size="small" 
                     color={agent.status === 'active' ? 'success' : 'default'}
                   />
                 </TableCell>
-                <TableCell>
-                  <IconButton size="small" onClick={() => setSelectedAgent(agent)}>
-                    <ViewIcon />
+                <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                  <IconButton size="small" sx={{ color: 'white' }}>
+                    <SettingsIcon />
                   </IconButton>
-                  <IconButton size="small">
-                    <EditIcon />
+                  <IconButton size="small" sx={{ color: 'white' }}>
+                    <ViewIcon />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -720,21 +719,33 @@ const UniversalKnowledgeManagement: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3, bgcolor: 'transparent' }}>
       <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           Universal Knowledge Management
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           Manage RAG capabilities for all agents across Chat, Education, Kids, Enterprise, and Multi-Agent verticals.
         </Typography>
       </Box>
 
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ 
+        mb: 4, 
+        bgcolor: 'rgba(255, 255, 255, 0.05)', 
+        border: '1px solid rgba(255, 255, 255, 0.1)' 
+      }}>
         <Tabs 
           value={selectedTab} 
           onChange={(_, newValue) => setSelectedTab(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            '& .MuiTab-root': { 
+              color: 'rgba(255, 255, 255, 0.7)',
+              '&.Mui-selected': { color: 'white' }
+            },
+            '& .MuiTabs-indicator': { backgroundColor: '#4299e1' }
+          }}
         >
           <Tab label="Overview" />
           <Tab label="Agents" />
