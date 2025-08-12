@@ -561,10 +561,10 @@ const AgentEnhancementPage: React.FC = () => {
                 onChange={(e) => setContactForm({...contactForm, dataSize: e.target.value})}
                 label="Data Size"
               >
-                <MenuItem value="small">Small (< 1K samples)</MenuItem>
+                <MenuItem value="small">Small (&lt; 1K samples)</MenuItem>
                 <MenuItem value="medium">Medium (1K - 10K samples)</MenuItem>
                 <MenuItem value="large">Large (10K - 100K samples)</MenuItem>
-                <MenuItem value="enterprise">Enterprise (> 100K samples)</MenuItem>
+                <MenuItem value="enterprise">Enterprise (&gt; 100K samples)</MenuItem>
               </Select>
             </FormControl>
           </Grid>
