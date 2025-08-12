@@ -83,7 +83,11 @@ import ProcessBuilderPage from './pages/ProcessBuilderPage';
 import ChatDashboard from './components/chat/dashboard/ChatDashboard';
 import ChatbotBuilder from './components/chat/builder/ChatbotBuilder';
 import ChatDeployment from './components/chat/deployment/ChatDeployment';
-import AgentEnhancementPage from './components/chat/setup/AgentEnhancementPage';
+import WebDeployment from './components/chat/deployment/WebDeployment';
+import VoiceDeployment from './components/chat/deployment/VoiceDeployment';
+import EmailDeployment from './components/chat/deployment/EmailDeployment';
+import SocialDeployment from './components/chat/deployment/SocialDeployment';
+import ApiEndpointsDeployment from './components/chat/deployment/ApiEndpointsDeployment';
 import UniversalKnowledgeManagement from './components/governance/knowledge/UniversalKnowledgeManagement';
 import UniversalTrainingManagement from './components/governance/training/UniversalTrainingManagement';
 import BusinessSystemIntegrations from './components/chat/integrations/BusinessSystemIntegrations';
@@ -484,7 +488,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/deployment/web" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatDeployment />
+              <WebDeployment />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -492,7 +496,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/deployment/voice" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatDeployment />
+              <VoiceDeployment />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -500,7 +504,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/deployment/email" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatDeployment />
+              <EmailDeployment />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -508,7 +512,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/deployment/social" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatDeployment />
+              <SocialDeployment />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -516,7 +520,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/deployment/api" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatDeployment />
+              <ApiEndpointsDeployment />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />

@@ -1118,9 +1118,9 @@ const ChatDeployment: React.FC = () => {
     };
 
     return (
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ p: 3, mb: 3, bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Typography variant="h6">
+          <Typography variant="h6" sx={{ color: 'white' }}>
             Deployment Status
           </Typography>
           
@@ -1129,19 +1129,20 @@ const ChatDeployment: React.FC = () => {
             label={deploymentStatus.status.charAt(0).toUpperCase() + deploymentStatus.status.slice(1)}
             color={getStatusColor(deploymentStatus.status) as any}
             variant="outlined"
+            sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }}
           />
         </Box>
         
         {deploymentStatus.url && (
           <Box mb={2}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} gutterBottom>
               Deployment URL:
             </Typography>
             <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>
+              <Typography variant="body1" sx={{ fontFamily: 'monospace', color: 'white' }}>
                 {deploymentStatus.url}
               </Typography>
-              <IconButton size="small" onClick={() => window.open(deploymentStatus.url, '_blank')}>
+              <IconButton size="small" onClick={() => window.open(deploymentStatus.url, '_blank')} sx={{ color: 'white' }}>
                 <OpenIcon />
               </IconButton>
             </Box>
@@ -1163,6 +1164,7 @@ const ChatDeployment: React.FC = () => {
             startIcon={<RefreshIcon />}
             onClick={handleTestConnection}
             disabled={testingConnection}
+            sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }}
           >
             {testingConnection ? 'Testing...' : 'Test Connection'}
           </Button>
@@ -1171,6 +1173,7 @@ const ChatDeployment: React.FC = () => {
             variant="outlined"
             startIcon={<PreviewIcon />}
             onClick={() => setPreviewOpen(true)}
+            sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }}
           >
             Preview
           </Button>
@@ -1182,18 +1185,18 @@ const ChatDeployment: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box mb={4}>
-        <Typography variant="h4" gutterBottom>
-          <DeployIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
+        <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
+          <DeployIcon sx={{ mr: 2, verticalAlign: 'middle', color: 'white' }} />
           Chat Deployment
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           Deploy your chatbot across multiple channels with comprehensive configuration options
         </Typography>
       </Box>
 
       {renderDeploymentStatus()}
 
-      <Paper sx={{ p: 0 }}>
+      <Paper sx={{ p: 0, bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
