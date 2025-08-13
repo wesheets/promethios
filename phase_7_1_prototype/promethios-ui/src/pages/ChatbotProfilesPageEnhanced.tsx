@@ -49,6 +49,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
 import { ChatbotProfile } from '../types/ChatbotTypes';
+import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 
 // Right panel types
 type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | null;
