@@ -97,7 +97,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           sx={{
             flexGrow: 1,
             ml: preferences.navigationCollapsed ? '60px' : '260px',
-            pt: 3, // Top padding to prevent content cutoff under header
+            pt: 5, // Increased top padding to prevent content cutoff under header
             px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Horizontal padding for content spacing
             pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Bottom padding
             transition: theme => theme.transitions.create(['margin', 'padding'], {

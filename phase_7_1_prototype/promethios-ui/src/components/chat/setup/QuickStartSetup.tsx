@@ -26,6 +26,7 @@ import {
   Alert,
   Chip,
   LinearProgress,
+  CircularProgress,
   List,
   ListItem,
   ListItemIcon,
@@ -613,7 +614,7 @@ const QuickStartSetup: React.FC = () => {
             >
               {isCreating ? (
                 <Box display="flex" alignItems="center">
-                  <LinearProgress size={16} sx={{ mr: 1 }} />
+                  <CircularProgress size={16} sx={{ mr: 1, color: 'white' }} />
                   Creating...
                 </Box>
               ) : hostedStep === 2 ? (
