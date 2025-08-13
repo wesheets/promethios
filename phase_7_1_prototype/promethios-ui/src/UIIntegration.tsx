@@ -101,7 +101,7 @@ import QuickStartSetup from './components/chat/setup/QuickStartSetup';
 import ChatbotWrappingWizard from './components/chat/builder/ChatbotWrappingWizard';
 import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
-import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
+import ChatbotProfilesPageTest from './pages/ChatbotProfilesPageTest';
 import BringYourOwnKeySetup from './components/chat/setup/BringYourOwnKeySetup';
 import BYOKGovernancePricing from './components/chat/setup/BYOKGovernancePricing';
 import EnterpriseSetup from './components/chat/setup/EnterpriseSetup';
@@ -336,7 +336,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/chatbots" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatbotProfilesPage />
+              <ChatbotProfilesPageTest />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
