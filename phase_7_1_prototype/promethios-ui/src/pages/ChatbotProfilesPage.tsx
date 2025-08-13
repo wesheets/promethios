@@ -59,8 +59,9 @@ const ChatbotProfilesPage: React.FC = () => {
   console.log('🔍 ChatbotProfilesPage component mounting...');
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { currentUser: user, loading: authLoading } = useAuth();
   console.log('🔍 ChatbotProfilesPage - user from auth:', user?.uid);
+  console.log('🔍 ChatbotProfilesPage - auth loading:', authLoading);
   const chatbotService = ChatbotStorageService.getInstance();
   
   // State management
@@ -74,10 +75,18 @@ const ChatbotProfilesPage: React.FC = () => {
 
   const loadChatbots = useCallback(async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
+    console.log('🔍 loadChatbots called, authLoading:', authLoading);
     console.log('🔍 ChatbotStorageService instance:', chatbotService);
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('🔍 Auth still loading, waiting...');
+      return;
+    }
+    
     if (!user?.uid) {
-      console.log('🔍 No user UID, keeping loading state until user is available');
-      // Don't set loading to false yet - wait for user to be available
+      console.log('🔍 No user UID after auth loaded, setting loading to false');
+      setLoading(false);
       return;
     }
 
@@ -98,15 +107,16 @@ const ChatbotProfilesPage: React.FC = () => {
       setLoading(false);
       console.log('🔍 Loading set to false');
     }
-  }, [user?.uid, chatbotService]);
+  }, [user?.uid, authLoading, chatbotService]);
 
   // Load chatbots on component mount and when user changes
   useEffect(() => {
     console.log('🔍 ChatbotProfilesPage useEffect triggered, user:', user?.uid);
     console.log('🔍 User object:', user);
+    console.log('🔍 Auth loading:', authLoading);
     console.log('🔍 About to call loadChatbots...');
     loadChatbots();
-  }, [user?.uid, loadChatbots]); // Include loadChatbots in dependencies
+  }, [user?.uid, authLoading, loadChatbots]); // Include authLoading in dependencies
 
   // Dynamic model display function using service
   const getModelDisplayName = (provider?: string, selectedModel?: string): string => {
