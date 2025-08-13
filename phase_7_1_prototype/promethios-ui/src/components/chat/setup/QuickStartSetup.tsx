@@ -670,7 +670,8 @@ const QuickStartSetup: React.FC = () => {
           </Box>
 
           {/* Content */}
-          <Box sx={{ mb: 4 }}>
+          <Container maxWidth="xl" sx={{ px: 2 }}>
+            <Box sx={{ mb: 4 }}>
             {/* Step 1: Plan Selection */}
             {hostedStep === 0 && (
               <Box>
@@ -1258,6 +1259,7 @@ const QuickStartSetup: React.FC = () => {
               </Box>
             )}
           </Box>
+          </Container>
 
           {/* Navigation */}
           <Box sx={{ 
@@ -1266,6 +1268,7 @@ const QuickStartSetup: React.FC = () => {
             alignItems: 'center',
             mt: 6,
             pt: 4,
+            px: 4,
             borderTop: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <Button 
