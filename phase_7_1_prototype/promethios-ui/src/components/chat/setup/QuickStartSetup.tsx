@@ -671,9 +671,7 @@ const QuickStartSetup: React.FC = () => {
           </Box>
 
           {/* Content */}
-          <Box sx={{ mb: 4 }}>255, 0.1)' }}
-            />
-
+          <Box sx={{ mb: 4 }}>
             {/* Step 1: Basic Information */}
             {hostedStep === 0 && (
               <Box>
