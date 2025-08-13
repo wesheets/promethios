@@ -413,6 +413,11 @@ const QuickStartSetup: React.FC = () => {
           </DialogTitle>
 
           <DialogContent sx={{ pb: 2 }}>
+            {/* Debug info */}
+            <Typography variant="caption" sx={{ color: '#10b981', mb: 2, display: 'block' }}>
+              Debug: Dialog open={showHostedWizard.toString()}, Step={hostedStep}, Data={JSON.stringify(hostedData)}
+            </Typography>
+            
             <LinearProgress 
               variant="determinate" 
               value={(hostedStep + 1) / 3 * 100} 

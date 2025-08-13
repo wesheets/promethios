@@ -123,6 +123,12 @@ const ChatbotWrappingWizard: React.FC = () => {
 
       console.log('🚀 Starting governed chatbot creation...');
       console.log('Using user:', currentUser.uid);
+      
+      // Debug: Check if the method exists
+      const chatbotService = ChatbotStorageService.getInstance();
+      console.log('🔍 ChatbotStorageService instance:', chatbotService);
+      console.log('🔍 Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chatbotService)));
+      console.log('🔍 createChatbot method exists:', typeof chatbotService.createChatbot === 'function');
 
       // Create governance policy from wizard data
       const governancePolicy = {
