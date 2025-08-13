@@ -311,6 +311,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               const governanceType = getGovernanceType(chatbot);
               const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
               const isNativeAgent = governanceType === 'BYOK';
+              const isSelected = selectedChatbot?.identity.id === chatbot.identity.id;
               
               return (
                 <Grid item xs={12} sm={6} lg={4} key={chatbot.identity.id}>
@@ -319,17 +320,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       height: '100%',
                       bgcolor: '#1e293b',
                       color: 'white',
-                      border: isNativeAgent ? '2px solid transparent' : '1px solid #334155',
-                      borderImage: isNativeAgent ? 'linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4) 1' : 'none',
-                      boxShadow: isNativeAgent 
-                        ? '0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.2)'
-                        : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      border: isSelected 
+                        ? '3px solid #3b82f6' 
+                        : isNativeAgent 
+                          ? '2px solid transparent' 
+                          : '1px solid #334155',
+                      borderImage: isNativeAgent && !isSelected ? 'linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4) 1' : 'none',
+                      boxShadow: isSelected
+                        ? '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.4)'
+                        : isNativeAgent 
+                          ? '0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.2)'
+                          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                       position: 'relative',
+                      transform: isSelected ? 'translateY(-4px)' : 'none',
                       '&:hover': {
-                        boxShadow: isNativeAgent
-                          ? '0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.3)'
-                          : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        transform: 'translateY(-2px)',
+                        boxShadow: isSelected
+                          ? '0 0 40px rgba(59, 130, 246, 1), 0 0 80px rgba(59, 130, 246, 0.6)'
+                          : isNativeAgent
+                            ? '0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.3)'
+                            : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        transform: isSelected ? 'translateY(-4px)' : 'translateY(-2px)',
                       },
                       transition: 'all 0.3s ease-in-out',
                     }}
