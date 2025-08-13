@@ -52,7 +52,7 @@ import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | null;
+type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -549,7 +549,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               size="small"
                               startIcon={<Chat />}
                               fullWidth
-                              onClick={() => window.open(`/ui/chat?agent=${chatbot.identity.id}`, '_blank')}
+                              onClick={() => openRightPanel(chatbot, 'chat')}
                               sx={{
                                 bgcolor: '#3b82f6',
                                 '&:hover': { bgcolor: '#2563eb' },
@@ -1332,6 +1332,262 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             </Typography>
                           </Box>
                         </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
+                {rightPanelType === 'chat' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Live Chat Interface
+                    </Typography>
+                    
+                    {/* Chat Interface Container */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', height: 'calc(100vh - 200px)' }}>
+                      <CardContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Chat Header */}
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: '#0f172a',
+                            borderBottom: '1px solid #334155',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2
+                          }}
+                        >
+                          <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                            🤖
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {selectedChatbot.identity.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#10b981' }}>
+                              ● Online
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        {/* Chat Messages Area */}
+                        <Box
+                          sx={{
+                            flex: 1,
+                            p: 2,
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}
+                        >
+                          {/* Welcome Message */}
+                          <Box display="flex" alignItems="flex-start" gap={2}>
+                            <Avatar sx={{ bgcolor: '#3b82f6', width: 28, height: 28 }}>
+                              🤖
+                            </Avatar>
+                            <Box
+                              sx={{
+                                bgcolor: '#374151',
+                                color: 'white',
+                                p: 2,
+                                borderRadius: '12px 12px 12px 4px',
+                                maxWidth: '80%'
+                              }}
+                            >
+                              <Typography variant="body2">
+                                Hello! I'm {selectedChatbot.identity.name}. How can I help you today?
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                                Just now
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {/* Example User Message */}
+                          <Box display="flex" justifyContent="flex-end" alignItems="flex-start" gap={2}>
+                            <Box
+                              sx={{
+                                bgcolor: '#3b82f6',
+                                color: 'white',
+                                p: 2,
+                                borderRadius: '12px 12px 4px 12px',
+                                maxWidth: '80%'
+                              }}
+                            >
+                              <Typography variant="body2">
+                                Hi! I'd like to know more about your services.
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#bfdbfe', mt: 1, display: 'block' }}>
+                                Just now
+                              </Typography>
+                            </Box>
+                            <Avatar sx={{ bgcolor: '#64748b', width: 28, height: 28 }}>
+                              👤
+                            </Avatar>
+                          </Box>
+
+                          {/* Bot Response with Typing Indicator */}
+                          <Box display="flex" alignItems="flex-start" gap={2}>
+                            <Avatar sx={{ bgcolor: '#3b82f6', width: 28, height: 28 }}>
+                              🤖
+                            </Avatar>
+                            <Box
+                              sx={{
+                                bgcolor: '#374151',
+                                color: 'white',
+                                p: 2,
+                                borderRadius: '12px 12px 12px 4px',
+                                maxWidth: '80%'
+                              }}
+                            >
+                              <Typography variant="body2" sx={{ mb: 1 }}>
+                                I'd be happy to help you learn about our services! We offer comprehensive AI solutions including:
+                              </Typography>
+                              <Typography variant="body2" component="ul" sx={{ pl: 2, mb: 1 }}>
+                                <li>Custom chatbot development</li>
+                                <li>AI model integration</li>
+                                <li>Governance and compliance tools</li>
+                                <li>Analytics and performance monitoring</li>
+                              </Typography>
+                              <Typography variant="body2">
+                                What specific area would you like to explore first?
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                                Just now
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {/* Typing Indicator */}
+                          <Box display="flex" alignItems="flex-start" gap={2}>
+                            <Avatar sx={{ bgcolor: '#3b82f6', width: 28, height: 28 }}>
+                              🤖
+                            </Avatar>
+                            <Box
+                              sx={{
+                                bgcolor: '#374151',
+                                color: '#94a3b8',
+                                p: 2,
+                                borderRadius: '12px 12px 12px 4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}
+                            >
+                              <Typography variant="body2">
+                                Typing
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                <Box
+                                  sx={{
+                                    width: 4,
+                                    height: 4,
+                                    bgcolor: '#94a3b8',
+                                    borderRadius: '50%',
+                                    animation: 'pulse 1.5s ease-in-out infinite'
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    width: 4,
+                                    height: 4,
+                                    bgcolor: '#94a3b8',
+                                    borderRadius: '50%',
+                                    animation: 'pulse 1.5s ease-in-out infinite 0.2s'
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    width: 4,
+                                    height: 4,
+                                    bgcolor: '#94a3b8',
+                                    borderRadius: '50%',
+                                    animation: 'pulse 1.5s ease-in-out infinite 0.4s'
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        {/* Chat Input Area */}
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderTop: '1px solid #334155',
+                            bgcolor: '#0f172a'
+                          }}
+                        >
+                          <Box display="flex" gap={1} alignItems="flex-end">
+                            <Box
+                              component="input"
+                              placeholder="Type your message..."
+                              sx={{
+                                flex: 1,
+                                p: 1.5,
+                                bgcolor: '#1e293b',
+                                border: '1px solid #374151',
+                                borderRadius: 2,
+                                color: 'white',
+                                fontSize: '0.875rem',
+                                '&:focus': {
+                                  outline: 'none',
+                                  borderColor: '#3b82f6'
+                                },
+                                '&::placeholder': {
+                                  color: '#64748b'
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="contained"
+                              size="small"
+                              sx={{
+                                bgcolor: '#3b82f6',
+                                minWidth: 'auto',
+                                px: 2,
+                                '&:hover': { bgcolor: '#2563eb' }
+                              }}
+                            >
+                              Send
+                            </Button>
+                          </Box>
+                          
+                          {/* Chat Actions */}
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+                            <Typography variant="caption" sx={{ color: '#64748b' }}>
+                              This is a live preview of your chatbot interface
+                            </Typography>
+                            <Stack direction="row" spacing={1}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => openRightPanel(selectedChatbot, 'customize')}
+                                sx={{
+                                  borderColor: '#374151',
+                                  color: '#94a3b8',
+                                  fontSize: '0.75rem',
+                                  '&:hover': { borderColor: '#4b5563' }
+                                }}
+                              >
+                                Customize
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                  borderColor: '#374151',
+                                  color: '#94a3b8',
+                                  fontSize: '0.75rem',
+                                  '&:hover': { borderColor: '#4b5563' }
+                                }}
+                              >
+                                Reset
+                              </Button>
+                            </Stack>
+                          </Box>
+                        </Box>
                       </CardContent>
                     </Card>
                   </Box>
