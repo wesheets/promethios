@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { auth } from '../../../config/firebase';
 import ChatbotStorageService from '../../../services/ChatbotStorageService';
 import {
   Box,
@@ -136,9 +137,13 @@ const QuickStartSetup: React.FC = () => {
     setIsCreating(true);
     
     try {
-      if (!user?.uid) {
+      // Use currentUser from auth context for immediate access
+      const currentUser = auth.currentUser;
+      if (!currentUser?.uid) {
         throw new Error('User not authenticated');
       }
+
+      console.log('🔍 Creating hosted chatbot with user:', currentUser.uid);
 
       // Create hosted chatbot using the storage service
       const chatbot = await chatbotService.createHostedChatbot(
@@ -148,16 +153,16 @@ const QuickStartSetup: React.FC = () => {
         hostedData.model,
         hostedData.personality,
         hostedData.useCase,
-        user.uid
+        currentUser.uid
       );
 
-      console.log('Hosted chatbot created successfully:', chatbot);
+      console.log('✅ Hosted chatbot created successfully:', chatbot);
       
       // Navigate to My Chatbots page
       navigate('/ui/chat/chatbots');
       
     } catch (error) {
-      console.error('Failed to create hosted chatbot:', error);
+      console.error('❌ Failed to create hosted chatbot:', error);
       // TODO: Show error message to user
       alert('Failed to create chatbot. Please try again.');
     } finally {
