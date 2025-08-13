@@ -47,6 +47,7 @@ import {
   VpnKey as BYOKIcon,
   SmartToy as ChatbotIcon,
   Security as SecurityIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 
 interface HostedChatbotData {
