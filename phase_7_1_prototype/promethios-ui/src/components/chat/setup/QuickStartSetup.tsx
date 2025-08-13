@@ -32,14 +32,11 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Tooltip,
   Slider,
   FormControlLabel,
   Switch,
+  Chip,
 } from '@mui/material';
 import {
   Rocket as RocketIcon,
@@ -625,53 +622,77 @@ const QuickStartSetup: React.FC = () => {
         </>
       )}
 
-      {/* Hosted API Wizard Dialog */}
-      <Dialog
-          open={showHostedWizard}
-          onClose={() => setShowHostedWizard(false)}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              backgroundColor: '#1a202c',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              minHeight: '600px',
-            },
+      {/* Full-Width Hosted Wizard */}
+      {showHostedWizard && (
+        <Container 
+          maxWidth={false} 
+          sx={{ 
+            minHeight: '100vh',
+            backgroundColor: '#1a202c',
+            py: 4,
+            px: 4
           }}
         >
-          <DialogTitle>
-            <Box display="flex" alignItems="center">
-              <HostedIcon sx={{ mr: 2, color: '#3182ce' }} />
-              <Box>
-                <Typography variant="h6">Create Hosted Chatbot</Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Step {hostedStep + 1} of 4
-                </Typography>
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center">
+                <HostedIcon sx={{ mr: 2, color: '#3182ce', fontSize: '2rem' }} />
+                <Box>
+                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    Create Hosted Chatbot
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Step {hostedStep + 1} of 4
+                  </Typography>
+                </Box>
               </Box>
+              <Button
+                onClick={() => setShowHostedWizard(false)}
+                sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+              >
+                Cancel
+              </Button>
             </Box>
-          </DialogTitle>
-
-          <DialogContent sx={{ pb: 2 }}>
-            {/* Debug info */}
-            <Typography variant="caption" sx={{ color: '#10b981', mb: 2, display: 'block' }}>
-              Debug: Dialog open={showHostedWizard.toString()}, Step={hostedStep}, Data={JSON.stringify(hostedData)}
-            </Typography>
             
             <LinearProgress 
               variant="determinate" 
-              value={(hostedStep + 1) / 3 * 100} 
-              sx={{ mb: 4, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+              value={(hostedStep + 1) / 4 * 100} 
+              sx={{ 
+                mt: 3, 
+                height: 8, 
+                borderRadius: 4,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: '#3182ce'
+                }
+              }}
+            />
+          </Box>
+
+          {/* Content */}
+          <Box sx={{ mb: 4 }}>255, 0.1)' }}
             />
 
             {/* Step 1: Basic Information */}
             {hostedStep === 0 && (
               <Box>
-                <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
-                  Choose Your Plan
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: 'white', mb: 0, mr: 2 }}>
+                    Choose Your Plan
+                  </Typography>
+                  <Chip 
+                    label="BETA - FREE" 
+                    sx={{ 
+                      backgroundColor: '#10b981', 
+                      color: 'white', 
+                      fontWeight: 'bold',
+                      fontSize: '0.75rem'
+                    }} 
+                  />
+                </Box>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
-                  Select the pricing tier that best fits your needs
+                  During beta, all plans are free! You only pay for AI model token usage.
                 </Typography>
 
                 <Grid container spacing={3}>
@@ -710,8 +731,19 @@ const QuickStartSetup: React.FC = () => {
                             {tier.name}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
-                            <Typography variant="h4" sx={{ color: '#3182ce', fontWeight: 'bold' }}>
+                            <Typography 
+                              variant="h4" 
+                              sx={{ 
+                                color: 'rgba(255, 255, 255, 0.4)', 
+                                fontWeight: 'bold',
+                                textDecoration: 'line-through',
+                                mr: 1
+                              }}
+                            >
                               {tier.price}
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              FREE
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', ml: 1 }}>
                               {tier.period}
@@ -1129,13 +1161,27 @@ const QuickStartSetup: React.FC = () => {
                 </Grid>
               </Box>
             )}
-          </DialogContent>
+          </Box>
 
-          <DialogActions sx={{ p: 3, pt: 1 }}>
+          {/* Navigation */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            mt: 6,
+            pt: 4,
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <Button 
               onClick={handleHostedBack}
               disabled={isCreating}
-              sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+              size="large"
+              sx={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem'
+              }}
             >
               {hostedStep === 0 ? 'Cancel' : 'Back'}
             </Button>
@@ -1143,16 +1189,21 @@ const QuickStartSetup: React.FC = () => {
               variant="contained"
               onClick={handleHostedNext}
               disabled={!isHostedStepValid() || isCreating}
+              size="large"
               sx={{
                 backgroundColor: '#3182ce',
                 color: 'white',
+                px: 6,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
                 '&:hover': { backgroundColor: '#2c5aa0' },
                 '&:disabled': { backgroundColor: '#6b7280' },
               }}
             >
               {isCreating ? (
                 <Box display="flex" alignItems="center">
-                  <CircularProgress size={16} sx={{ mr: 1, color: 'white' }} />
+                  <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
                   Creating...
                 </Box>
               ) : hostedStep === 3 ? (
@@ -1161,8 +1212,9 @@ const QuickStartSetup: React.FC = () => {
                 'Next'
               )}
             </Button>
-          </DialogActions>
-        </Dialog>
+          </Box>
+        </Container>
+      )}
     </Container>
   );
 };

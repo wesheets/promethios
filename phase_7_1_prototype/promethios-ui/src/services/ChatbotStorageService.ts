@@ -312,27 +312,26 @@ export class ChatbotStorageService {
       console.log('🤖 Loading chatbots for user:', ownerId);
       
       // Get all chatbot keys from unified storage
-      const allKeys = await unifiedStorage.keys('chatbots');
+      const allKeys = await unifiedStorage.keys('agents');
       console.log('🔍 All chatbot keys from unified storage:', allKeys);
       
-      // Filter for this user's chatbots
-      const userPrefix = `${ownerId}_`;
-      const userKeys = allKeys.filter(key => {
-        const keyPart = key.replace('chatbots/', '');
-        return keyPart.startsWith(userPrefix);
+      // Filter for this user's chatbots (stored with chatbot- prefix in agents namespace)
+      const userChatbotKeys = allKeys.filter(key => {
+        const keyPart = key.replace('agents/', '');
+        return keyPart.startsWith(`${ownerId}_chatbot-`);
       });
       
-      console.log('🔍 User chatbot keys found:', userKeys);
+      console.log('🔍 User chatbot keys found:', userChatbotKeys);
       
       const chatbots: ChatbotProfile[] = [];
       
       // Load each chatbot from storage
-      for (const key of userKeys) {
+      for (const key of userChatbotKeys) {
         try {
-          const keyPart = key.replace('chatbots/', '');
+          const keyPart = key.replace('agents/', '');
           console.log('🔍 Loading chatbot with key:', keyPart);
           
-          const chatbotData = await unifiedStorage.get<any>('chatbots', keyPart);
+          const chatbotData = await unifiedStorage.get<any>('agents', keyPart);
           if (chatbotData) {
             console.log('🔍 Loaded chatbot data:', chatbotData.identity?.name || 'Unknown');
             
@@ -439,8 +438,8 @@ export class ChatbotStorageService {
       const storageKey = `${chatbot.identity.ownerId}_${chatbot.identity.id}`;
       console.log('🔥 Using storage key:', storageKey);
       
-      // Save to unified storage under 'chatbots' namespace
-      await unifiedStorage.set('chatbots', storageKey, chatbot);
+      // Save to unified storage under 'agents' namespace with chatbot- prefix
+      await unifiedStorage.set('agents', storageKey, chatbot);
       
       console.log('✅ Chatbot successfully persisted to unified storage');
     } catch (error) {
