@@ -432,8 +432,21 @@ export class ChatbotStorageService {
    * Private helper methods
    */
   private async persistChatbot(chatbot: ChatbotProfile): Promise<void> {
-    // TODO: Implement Firebase/database persistence
-    console.log('Persisting chatbot:', chatbot.identity.id);
+    try {
+      console.log('🔥 Persisting chatbot to unified storage:', chatbot.identity.id);
+      
+      // Create the storage key using the same format as getChatbots expects
+      const storageKey = `${chatbot.identity.ownerId}_${chatbot.identity.id}`;
+      console.log('🔥 Using storage key:', storageKey);
+      
+      // Save to unified storage under 'chatbots' namespace
+      await unifiedStorage.set('chatbots', storageKey, chatbot);
+      
+      console.log('✅ Chatbot successfully persisted to unified storage');
+    } catch (error) {
+      console.error('❌ Error persisting chatbot:', error);
+      throw error;
+    }
   }
 
   private createDefaultGovernancePolicy(): GovernancePolicy {
