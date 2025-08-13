@@ -93,10 +93,13 @@ const QuickStartSetup: React.FC = () => {
   ];
 
   const handlePathSelection = (path: 'hosted' | 'byok') => {
+    console.log('🔍 handlePathSelection called with path:', path);
     setSelectedPath(path);
     
     if (path === 'hosted') {
+      console.log('🔍 Setting showHostedWizard to true');
       setShowHostedWizard(true);
+      console.log('🔍 showHostedWizard state should now be true');
     } else {
       // Navigate to dedicated chatbot wrapping wizard for BYOK path
       navigate('/ui/chat/builder/chatbot-wrapping');
