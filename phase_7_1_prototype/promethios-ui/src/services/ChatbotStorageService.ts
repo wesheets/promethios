@@ -222,6 +222,88 @@ export class ChatbotStorageService {
   }
 
   /**
+   * Create a new chatbot directly (for BYOK chatbot wrapping wizard)
+   */
+  public async createChatbot(ownerId: string, chatbotProfile: Partial<ChatbotProfile>): Promise<ChatbotProfile> {
+    const chatbotId = `chatbot-${Date.now()}`;
+    
+    const chatbot: ChatbotProfile = {
+      // Base agent structure
+      identity: {
+        id: chatbotId,
+        name: chatbotProfile.identity?.name || chatbotProfile.agentName || 'Governed Chatbot',
+        version: '1.0.0',
+        description: chatbotProfile.identity?.description || 'Governed AI Chatbot',
+        ownerId: ownerId,
+        creationDate: new Date(),
+        lastModifiedDate: new Date(),
+        status: 'active',
+      },
+      latestScorecard: null,
+      attestationCount: 0,
+      lastActivity: new Date(),
+      healthStatus: chatbotProfile.healthStatus || 'healthy',
+      trustLevel: chatbotProfile.trustLevel || 'medium',
+      isWrapped: true,
+      isDeployed: false,
+      governancePolicy: chatbotProfile.governancePolicy || this.createDefaultGovernancePolicy(),
+      apiDetails: chatbotProfile.apiDetails || {
+        endpoint: 'https://api.openai.com/v1',
+        key: '',
+        provider: 'OpenAI',
+        selectedModel: 'gpt-4',
+      },
+      
+      // Chatbot-specific configuration
+      chatbotConfig: {
+        personality: chatbotProfile.chatbotConfig?.personality || 'professional',
+        useCase: chatbotProfile.chatbotConfig?.useCase || 'customer_support',
+        brandSettings: {
+          name: chatbotProfile.identity?.name || chatbotProfile.agentName || 'Governed Chatbot',
+          colors: {
+            primary: '#3182ce',
+            secondary: '#10b981',
+            background: '#1a202c',
+          },
+          ...chatbotProfile.chatbotConfig?.brandSettings,
+        },
+        deploymentChannels: chatbotProfile.chatbotConfig?.deploymentChannels || [
+          {
+            type: 'web',
+            isActive: true,
+            configuration: {},
+            deployedAt: new Date(),
+          },
+        ],
+        knowledgeBases: chatbotProfile.chatbotConfig?.knowledgeBases || [],
+        automationRules: chatbotProfile.chatbotConfig?.automationRules || [],
+        responseTemplates: chatbotProfile.chatbotConfig?.responseTemplates || [],
+      },
+      
+      // Chatbot metadata
+      chatbotMetadata: {
+        parentAgentId: chatbotProfile.chatbotMetadata?.parentAgentId || null,
+        chatbotType: chatbotProfile.chatbotMetadata?.chatbotType || 'byok',
+        createdVia: chatbotProfile.chatbotMetadata?.creationMethod === 'chatbot_wrapping_wizard' ? 'manual' : 'quick_start',
+        isActive: true,
+        lastDeployment: new Date(),
+      },
+      
+      // Business metrics
+      businessMetrics: chatbotProfile.businessMetrics || this.generateMockMetrics(),
+    };
+
+    // Store the chatbot
+    this.chatbots.set(chatbotId, chatbot);
+    
+    // Persist to storage
+    await this.persistChatbot(chatbot);
+    
+    console.log('✅ Chatbot created successfully:', chatbot.identity.id);
+    return chatbot;
+  }
+
+  /**
    * Get all chatbots for the current user
    */
   public async getChatbots(ownerId: string): Promise<ChatbotProfile[]> {
