@@ -36,6 +36,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from '@mui/material';
 import {
   Rocket as RocketIcon,
@@ -72,13 +73,153 @@ const QuickStartSetup: React.FC = () => {
   });
   const [isCreating, setIsCreating] = useState(false);
 
-  // Available hosted models
+  // Comprehensive hosted models with all supported providers
   const hostedModels = [
-    { provider: 'OpenAI', model: 'gpt-4', name: 'GPT-4', description: 'Most capable model for complex tasks', price: '$0.03/message' },
-    { provider: 'OpenAI', model: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and efficient for most tasks', price: '$0.01/message' },
-    { provider: 'Anthropic', model: 'claude-3-opus', name: 'Claude-3 Opus', description: 'Excellent for analysis and reasoning', price: '$0.04/message' },
-    { provider: 'Anthropic', model: 'claude-3-sonnet', name: 'Claude-3 Sonnet', description: 'Balanced performance and speed', price: '$0.02/message' },
-    { provider: 'Google', model: 'gemini-pro', name: 'Gemini Pro', description: 'Google\'s advanced multimodal model', price: '$0.02/message' },
+    // OpenAI Models
+    { 
+      provider: 'OpenAI', 
+      model: 'gpt-4', 
+      name: 'GPT-4', 
+      description: 'Most capable model for complex tasks', 
+      price: '$0.03/message',
+      costEffective: false,
+      pros: ['Excellent reasoning', 'Complex problem solving', 'High accuracy'],
+      cons: ['Higher cost', 'Slower response time'],
+      category: 'Premium'
+    },
+    { 
+      provider: 'OpenAI', 
+      model: 'gpt-3.5-turbo', 
+      name: 'GPT-3.5 Turbo', 
+      description: 'Fast and efficient for most tasks', 
+      price: '$0.01/message',
+      costEffective: true,
+      pros: ['Fast responses', 'Cost-effective', 'Good for general tasks'],
+      cons: ['Less capable than GPT-4', 'Limited reasoning'],
+      category: 'Balanced'
+    },
+    
+    // Anthropic Models
+    { 
+      provider: 'Anthropic', 
+      model: 'claude-3-opus', 
+      name: 'Claude-3 Opus', 
+      description: 'Excellent for analysis and reasoning', 
+      price: '$0.04/message',
+      costEffective: false,
+      pros: ['Superior reasoning', 'Excellent for analysis', 'Long context'],
+      cons: ['Most expensive', 'Slower responses'],
+      category: 'Premium'
+    },
+    { 
+      provider: 'Anthropic', 
+      model: 'claude-3-sonnet', 
+      name: 'Claude-3 Sonnet', 
+      description: 'Balanced performance and speed', 
+      price: '$0.02/message',
+      costEffective: true,
+      pros: ['Good balance', 'Reliable performance', 'Moderate cost'],
+      cons: ['Not as powerful as Opus', 'Mid-tier capabilities'],
+      category: 'Balanced'
+    },
+    { 
+      provider: 'Anthropic', 
+      model: 'claude-3-haiku', 
+      name: 'Claude-3 Haiku', 
+      description: 'Fast and economical for simple tasks', 
+      price: '$0.005/message',
+      costEffective: true,
+      pros: ['Very fast', 'Most economical', 'Good for simple tasks'],
+      cons: ['Limited capabilities', 'Basic reasoning only'],
+      category: 'Economy'
+    },
+    
+    // Google Models
+    { 
+      provider: 'Google', 
+      model: 'gemini-pro', 
+      name: 'Gemini Pro', 
+      description: 'Google\'s advanced multimodal model', 
+      price: '$0.02/message',
+      costEffective: true,
+      pros: ['Multimodal capabilities', 'Good performance', 'Competitive pricing'],
+      cons: ['Newer model', 'Less proven track record'],
+      category: 'Balanced'
+    },
+    { 
+      provider: 'Google', 
+      model: 'gemini-ultra', 
+      name: 'Gemini Ultra', 
+      description: 'Google\'s most capable model', 
+      price: '$0.035/message',
+      costEffective: false,
+      pros: ['Highest capability', 'Advanced multimodal', 'Latest technology'],
+      cons: ['Premium pricing', 'Limited availability'],
+      category: 'Premium'
+    },
+    
+    // Cohere Models
+    { 
+      provider: 'Cohere', 
+      model: 'command-r-plus', 
+      name: 'Command R+', 
+      description: 'Enterprise-grade conversational AI', 
+      price: '$0.025/message',
+      costEffective: true,
+      pros: ['Enterprise features', 'Good for business', 'Reliable'],
+      cons: ['Less known', 'Limited ecosystem'],
+      category: 'Business'
+    },
+    
+    // HuggingFace Models
+    { 
+      provider: 'HuggingFace', 
+      model: 'meta-llama/Llama-2-70b-chat-hf', 
+      name: 'Llama 2 70B', 
+      description: 'Open-source large language model', 
+      price: '$0.015/message',
+      costEffective: true,
+      pros: ['Open source', 'Good performance', 'Cost-effective'],
+      cons: ['Requires more setup', 'Less polished'],
+      category: 'Open Source'
+    },
+    { 
+      provider: 'HuggingFace', 
+      model: 'mistralai/Mixtral-8x7B-Instruct-v0.1', 
+      name: 'Mixtral 8x7B', 
+      description: 'High-performance mixture of experts model', 
+      price: '$0.012/message',
+      costEffective: true,
+      pros: ['Excellent performance', 'Cost-effective', 'Fast inference'],
+      cons: ['Complex architecture', 'Newer model'],
+      category: 'Open Source'
+    },
+    
+    // Grok (X.AI) Models
+    { 
+      provider: 'Grok', 
+      model: 'grok-beta', 
+      name: 'Grok Beta', 
+      description: 'X.AI\'s conversational AI with real-time data', 
+      price: '$0.03/message',
+      costEffective: false,
+      pros: ['Real-time data access', 'Unique personality', 'Current events'],
+      cons: ['Beta stage', 'Premium pricing', 'Limited availability'],
+      category: 'Specialized'
+    },
+    
+    // Perplexity Models
+    { 
+      provider: 'Perplexity', 
+      model: 'llama-3.1-sonar-small-128k-online', 
+      name: 'Sonar Small', 
+      description: 'Search-augmented AI for current information', 
+      price: '$0.018/message',
+      costEffective: true,
+      pros: ['Search integration', 'Current information', 'Good value'],
+      cons: ['Smaller model', 'Limited reasoning'],
+      category: 'Search-Enhanced'
+    }
   ];
 
   const personalities = [
@@ -640,55 +781,124 @@ const QuickStartSetup: React.FC = () => {
                   Select the AI model that best fits your needs
                 </Typography>
 
-                <Grid container spacing={2}>
-                  {hostedModels.map((model) => (
-                    <Grid item xs={12} key={`${model.provider}-${model.model}`}>
-                      <Card
-                        sx={{
-                          backgroundColor: hostedData.provider === model.provider && hostedData.model === model.model
-                            ? 'rgba(49, 130, 206, 0.2)'
-                            : 'rgba(255, 255, 255, 0.05)',
-                          border: hostedData.provider === model.provider && hostedData.model === model.model
-                            ? '2px solid #3182ce'
-                            : '1px solid rgba(255, 255, 255, 0.1)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                            border: '1px solid rgba(49, 130, 206, 0.3)',
-                          },
-                        }}
-                        onClick={() => setHostedData({ 
-                          ...hostedData, 
-                          provider: model.provider, 
-                          model: model.model 
-                        })}
-                      >
-                        <CardContent sx={{ py: 2 }}>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Box>
-                              <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600 }}>
-                                {model.name}
-                              </Typography>
-                              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                                {model.description}
-                              </Typography>
-                            </Box>
-                            <Chip
-                              label={model.price}
-                              size="small"
+                {/* Group models by provider */}
+                {Object.entries(
+                  hostedModels.reduce((acc, model) => {
+                    if (!acc[model.provider]) acc[model.provider] = [];
+                    acc[model.provider].push(model);
+                    return acc;
+                  }, {} as Record<string, typeof hostedModels>)
+                ).map(([provider, models]) => (
+                  <Box key={provider} sx={{ mb: 4 }}>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: '1.1rem' }}>
+                      {provider}
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {models.map((model) => (
+                        <Grid item xs={12} md={6} key={`${model.provider}-${model.model}`}>
+                          <Tooltip
+                            title={
+                              <Box sx={{ p: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                  {model.name} - {model.category}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  <strong>Pros:</strong> {model.pros.join(', ')}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  <strong>Cons:</strong> {model.cons.join(', ')}
+                                </Typography>
+                                <Typography variant="body2">
+                                  <strong>Best for:</strong> {model.category} use cases
+                                </Typography>
+                              </Box>
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <Card
                               sx={{
-                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                                color: '#10b981',
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                backgroundColor: hostedData.provider === model.provider && hostedData.model === model.model
+                                  ? 'rgba(49, 130, 206, 0.2)'
+                                  : 'rgba(255, 255, 255, 0.05)',
+                                border: hostedData.provider === model.provider && hostedData.model === model.model
+                                  ? '2px solid #3182ce'
+                                  : model.costEffective 
+                                    ? '2px solid rgba(16, 185, 129, 0.5)'
+                                    : '1px solid rgba(255, 255, 255, 0.1)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                position: 'relative',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                                  border: '2px solid rgba(49, 130, 206, 0.5)',
+                                  transform: 'translateY(-2px)',
+                                },
                               }}
-                            />
-                          </Box>
-                        </CardContent>
-                      </Card>
+                              onClick={() => setHostedData({ 
+                                ...hostedData, 
+                                provider: model.provider, 
+                                model: model.model 
+                              })}
+                            >
+                              {model.costEffective && (
+                                <Chip
+                                  label="Best Value"
+                                  size="small"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    backgroundColor: '#10b981',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                  }}
+                                />
+                              )}
+                              <CardContent sx={{ py: 2, pr: model.costEffective ? 10 : 2 }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                                  <Box sx={{ flex: 1 }}>
+                                    <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600, mb: 0.5 }}>
+                                      {model.name}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1, fontSize: '0.875rem' }}>
+                                      {model.description}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Chip
+                                        label={model.price}
+                                        size="small"
+                                        sx={{
+                                          backgroundColor: model.costEffective 
+                                            ? 'rgba(16, 185, 129, 0.2)' 
+                                            : 'rgba(255, 193, 7, 0.2)',
+                                          color: model.costEffective ? '#10b981' : '#ffc107',
+                                          border: `1px solid ${model.costEffective ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 193, 7, 0.3)'}`,
+                                          fontSize: '0.75rem',
+                                        }}
+                                      />
+                                      <Chip
+                                        label={model.category}
+                                        size="small"
+                                        sx={{
+                                          backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                                          color: 'rgba(255, 255, 255, 0.8)',
+                                          border: '1px solid rgba(156, 163, 175, 0.3)',
+                                          fontSize: '0.75rem',
+                                        }}
+                                      />
+                                    </Box>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          </Tooltip>
+                        </Grid>
+                      ))}
                     </Grid>
-                  ))}
-                </Grid>
+                  </Box>
+                ))}
               </Box>
             )}
 
