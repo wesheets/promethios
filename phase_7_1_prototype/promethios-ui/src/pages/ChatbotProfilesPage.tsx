@@ -80,6 +80,7 @@ const ChatbotProfilesPage: React.FC = () => {
 
   const loadChatbots = async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
+    console.log('🔍 ChatbotStorageService instance:', chatbotService);
     if (!user?.uid) {
       console.log('🔍 No user UID, keeping loading state until user is available');
       // Don't set loading to false yet - wait for user to be available
@@ -89,14 +90,19 @@ const ChatbotProfilesPage: React.FC = () => {
     try {
       setLoading(true);
       console.log('🔍 Calling chatbotService.getChatbots with user:', user.uid);
+      console.log('🔍 About to call getChatbots method...');
       const chatbots = await chatbotService.getChatbots(user.uid);
       console.log('🔍 getChatbots returned:', chatbots.length, 'chatbots');
+      console.log('🔍 Chatbot data:', chatbots);
       setChatbotProfiles(chatbots);
+      console.log('🔍 setChatbotProfiles called with:', chatbots.length, 'chatbots');
     } catch (error) {
-      console.error('Failed to load chatbots:', error);
+      console.error('❌ Failed to load chatbots:', error);
+      console.error('❌ Error details:', error);
       setChatbotProfiles([]);
     } finally {
       setLoading(false);
+      console.log('🔍 Loading set to false');
     }
   };
 
