@@ -670,7 +670,7 @@ const QuickStartSetup: React.FC = () => {
           </Box>
 
           {/* Content */}
-          <Container maxWidth="xl" sx={{ px: 2 }}>
+          <Container maxWidth={false} sx={{ px: 6 }}>
             <Box sx={{ mb: 4 }}>
             {/* Step 1: Plan Selection */}
             {hostedStep === 0 && (

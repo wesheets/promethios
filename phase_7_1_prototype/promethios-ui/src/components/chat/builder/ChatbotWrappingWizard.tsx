@@ -562,7 +562,7 @@ const ChatbotWrappingWizard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4, bgcolor: 'transparent' }}>
       <Paper sx={{ p: 4, backgroundColor: '#1a202c', color: 'white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
           <ChatbotIcon sx={{ fontSize: 40, color: '#3182ce', mr: 2 }} />

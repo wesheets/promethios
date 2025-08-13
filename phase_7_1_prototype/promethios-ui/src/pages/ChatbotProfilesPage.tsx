@@ -81,8 +81,8 @@ const ChatbotProfilesPage: React.FC = () => {
   const loadChatbots = async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
     if (!user?.uid) {
-      console.log('🔍 No user UID, setting loading to false');
-      setLoading(false);
+      console.log('🔍 No user UID, keeping loading state until user is available');
+      // Don't set loading to false yet - wait for user to be available
       return;
     }
 
@@ -170,8 +170,8 @@ const ChatbotProfilesPage: React.FC = () => {
     loadChatbots();
   };
 
-  // Empty state
-  if (!loading && chatbotProfiles.length === 0) {
+  // Empty state - only show when user is available and no chatbots found
+  if (!loading && user?.uid && chatbotProfiles.length === 0) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box textAlign="center" py={8}>
@@ -194,6 +194,20 @@ const ChatbotProfilesPage: React.FC = () => {
           >
             Create Your First Chatbot
           </Button>
+        </Box>
+      </Container>
+    );
+  }
+
+  // Loading state - show while waiting for user or chatbots
+  if (loading || !user?.uid) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box textAlign="center" py={8}>
+          <LinearProgress sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+          <Typography variant="h6" sx={{ color: 'white' }}>
+            Loading your chatbots...
+          </Typography>
         </Box>
       </Container>
     );
