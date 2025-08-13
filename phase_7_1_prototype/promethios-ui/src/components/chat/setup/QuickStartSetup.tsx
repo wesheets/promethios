@@ -178,19 +178,20 @@ const QuickStartSetup: React.FC = () => {
     }
   };
 
-  // Path selection view
-  if (!selectedPath) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4, bgcolor: 'transparent' }}>
-        <Box textAlign="center" mb={6}>
-          <RocketIcon sx={{ fontSize: 64, color: '#3182ce', mb: 2 }} />
-          <Typography variant="h3" gutterBottom sx={{ color: 'white', fontWeight: 600 }}>
-            Quick Start
-          </Typography>
-          <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 4 }}>
-            Choose how you'd like to create your AI chatbot
-          </Typography>
-        </Box>
+  return (
+    <Container maxWidth="lg" sx={{ py: 4, bgcolor: 'transparent' }}>
+      {/* Path selection view */}
+      {!selectedPath && (
+        <>
+          <Box textAlign="center" mb={6}>
+            <RocketIcon sx={{ fontSize: 64, color: '#3182ce', mb: 2 }} />
+            <Typography variant="h3" gutterBottom sx={{ color: 'white', fontWeight: 600 }}>
+              Quick Start
+            </Typography>
+            <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 4 }}>
+              Choose how you'd like to create your AI chatbot
+            </Typography>
+          </Box>
 
         <Grid container spacing={4} justifyContent="center">
           {/* Hosted API Path */}
@@ -396,9 +397,11 @@ const QuickStartSetup: React.FC = () => {
             Both options include enterprise-grade governance, security, and compliance features
           </Typography>
         </Box>
+        </>
+      )}
 
-        {/* Hosted API Wizard Dialog */}
-        <Dialog
+      {/* Hosted API Wizard Dialog */}
+      <Dialog
           open={showHostedWizard}
           onClose={() => setShowHostedWizard(false)}
           maxWidth="md"
@@ -642,12 +645,8 @@ const QuickStartSetup: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Container>
-    );
-  }
-
-  // This return should never be reached due to the navigation logic above
-  return null;
+    </Container>
+  );
 };
 
 export default QuickStartSetup;
