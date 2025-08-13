@@ -6,6 +6,7 @@
  */
 
 import { AgentProfile, GovernancePolicy } from './UserAgentStorageService';
+import { unifiedStorage } from './UnifiedStorageService';
 
 export interface ChatbotProfile extends AgentProfile {
   // Chatbot-specific configuration
@@ -307,16 +308,72 @@ export class ChatbotStorageService {
    * Get all chatbots for the current user
    */
   public async getChatbots(ownerId: string): Promise<ChatbotProfile[]> {
-    // TODO: Load from Firebase/database
-    const chatbots = Array.from(this.chatbots.values())
-      .filter(chatbot => chatbot.identity.ownerId === ownerId);
-    
-    // If no chatbots exist, create some mock data for testing
-    if (chatbots.length === 0) {
-      return this.createMockChatbots(ownerId);
+    try {
+      console.log('🤖 Loading chatbots for user:', ownerId);
+      
+      // Get all chatbot keys from unified storage
+      const allKeys = await unifiedStorage.keys('chatbots');
+      console.log('🔍 All chatbot keys from unified storage:', allKeys);
+      
+      // Filter for this user's chatbots
+      const userPrefix = `${ownerId}_`;
+      const userKeys = allKeys.filter(key => {
+        const keyPart = key.replace('chatbots/', '');
+        return keyPart.startsWith(userPrefix);
+      });
+      
+      console.log('🔍 User chatbot keys found:', userKeys);
+      
+      const chatbots: ChatbotProfile[] = [];
+      
+      // Load each chatbot from storage
+      for (const key of userKeys) {
+        try {
+          const keyPart = key.replace('chatbots/', '');
+          console.log('🔍 Loading chatbot with key:', keyPart);
+          
+          const chatbotData = await unifiedStorage.get<any>('chatbots', keyPart);
+          if (chatbotData) {
+            console.log('🔍 Loaded chatbot data:', chatbotData.identity?.name || 'Unknown');
+            
+            // Safely deserialize dates with fallbacks
+            const chatbot: ChatbotProfile = {
+              ...chatbotData,
+              identity: {
+                ...chatbotData.identity,
+                creationDate: chatbotData.identity?.creationDate 
+                  ? new Date(chatbotData.identity.creationDate) 
+                  : new Date(),
+                lastModifiedDate: chatbotData.identity?.lastModifiedDate 
+                  ? new Date(chatbotData.identity.lastModifiedDate) 
+                  : new Date(),
+              },
+              lastActivity: chatbotData.lastActivity ? new Date(chatbotData.lastActivity) : new Date(),
+            };
+            
+            // Add to in-memory cache
+            this.chatbots.set(chatbot.identity.id, chatbot);
+            chatbots.push(chatbot);
+          }
+        } catch (error) {
+          console.error(`Error loading chatbot with key ${key}:`, error);
+        }
+      }
+      
+      console.log(`🤖 Loaded ${chatbots.length} chatbots for user ${ownerId}`);
+      
+      // If no real chatbots exist, return empty array (no mock data)
+      if (chatbots.length === 0) {
+        console.log('🤖 No chatbots found for user, returning empty array');
+        return [];
+      }
+      
+      return chatbots;
+      
+    } catch (error) {
+      console.error('Error loading chatbots:', error);
+      return [];
     }
-    
-    return chatbots;
   }
 
   /**
