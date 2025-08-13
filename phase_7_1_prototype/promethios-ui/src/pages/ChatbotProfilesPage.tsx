@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
@@ -72,13 +72,15 @@ const ChatbotProfilesPage: React.FC = () => {
   const [testChatOpen, setTestChatOpen] = useState(false);
   const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
 
-  // Load chatbots on component mount
+  // Load chatbots on component mount and when user changes
   useEffect(() => {
     console.log('🔍 ChatbotProfilesPage useEffect triggered, user:', user?.uid);
+    console.log('🔍 User object:', user);
+    console.log('🔍 About to call loadChatbots...');
     loadChatbots();
-  }, [user]);
+  }, [user?.uid, loadChatbots]); // Include loadChatbots in dependencies
 
-  const loadChatbots = async () => {
+  const loadChatbots = useCallback(async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
     console.log('🔍 ChatbotStorageService instance:', chatbotService);
     if (!user?.uid) {
@@ -104,7 +106,7 @@ const ChatbotProfilesPage: React.FC = () => {
       setLoading(false);
       console.log('🔍 Loading set to false');
     }
-  };
+  }, [user?.uid, chatbotService]);
 
   // Dynamic model display function using service
   const getModelDisplayName = (provider?: string, selectedModel?: string): string => {
