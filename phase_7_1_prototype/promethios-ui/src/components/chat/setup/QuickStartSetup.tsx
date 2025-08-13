@@ -37,12 +37,16 @@ import {
   DialogContent,
   DialogActions,
   Tooltip,
+  Slider,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Rocket as RocketIcon,
-  CheckCircle as CheckIcon,
   Cloud as HostedIcon,
   VpnKey as BYOKIcon,
+  SmartToy as ChatbotIcon,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 
 interface HostedChatbotData {
@@ -53,6 +57,15 @@ interface HostedChatbotData {
   model: string;
   personality: string;
   useCase: string;
+  // Governance settings
+  trustThreshold: number;
+  securityLevel: string;
+  complianceFramework: string;
+  enableAuditLogging: boolean;
+  enableRealTimeMonitoring: boolean;
+  enableDataRetention: boolean;
+  enableRateLimiting: boolean;
+  enableContentFiltering: boolean;
 }
 
 const QuickStartSetup: React.FC = () => {
@@ -69,7 +82,16 @@ const QuickStartSetup: React.FC = () => {
     provider: '',
     model: '',
     personality: 'professional',
-    useCase: 'customer_support'
+    useCase: 'customer_support',
+    // Governance defaults
+    trustThreshold: 85,
+    securityLevel: 'standard',
+    complianceFramework: 'general',
+    enableAuditLogging: true,
+    enableRealTimeMonitoring: true,
+    enableDataRetention: true,
+    enableRateLimiting: false,
+    enableContentFiltering: true
   });
   const [isCreating, setIsCreating] = useState(false);
 
@@ -906,61 +928,204 @@ const QuickStartSetup: React.FC = () => {
             {hostedStep === 3 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
-                  Chatbot Configuration
+                  Configuration & Governance
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
-                  Customize your chatbot's personality and use case
+                  Customize your chatbot's personality, use case, and governance settings
                 </Typography>
 
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Personality</InputLabel>
-                  <Select
-                    value={hostedData.personality}
-                    onChange={(e) => setHostedData({ ...hostedData, personality: e.target.value })}
-                    sx={{
-                      color: 'white',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
-                    }}
-                  >
-                    {personalities.map((personality) => (
-                      <MenuItem key={personality.value} value={personality.value}>
-                        <Box>
-                          <Typography variant="body1">{personality.label}</Typography>
-                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                            {personality.description}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Grid container spacing={3}>
+                  {/* Personality & Use Case Configuration */}
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center' }}>
+                          <ChatbotIcon sx={{ mr: 1, color: '#3182ce' }} />
+                          Chatbot Personality
+                        </Typography>
+                        
+                        <FormControl fullWidth sx={{ mb: 3 }}>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Personality</InputLabel>
+                          <Select
+                            value={hostedData.personality}
+                            onChange={(e) => setHostedData({ ...hostedData, personality: e.target.value })}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                            }}
+                          >
+                            {personalities.map((personality) => (
+                              <MenuItem key={personality.value} value={personality.value}>
+                                <Box>
+                                  <Typography variant="body1">{personality.label}</Typography>
+                                  <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                                    {personality.description}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
 
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Use Case</InputLabel>
-                  <Select
-                    value={hostedData.useCase}
-                    onChange={(e) => setHostedData({ ...hostedData, useCase: e.target.value })}
-                    sx={{
-                      color: 'white',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
-                    }}
-                  >
-                    {useCases.map((useCase) => (
-                      <MenuItem key={useCase.value} value={useCase.value}>
-                        <Box>
-                          <Typography variant="body1">{useCase.label}</Typography>
-                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                            {useCase.description}
+                        <FormControl fullWidth>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Use Case</InputLabel>
+                          <Select
+                            value={hostedData.useCase}
+                            onChange={(e) => setHostedData({ ...hostedData, useCase: e.target.value })}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3182ce' },
+                            }}
+                          >
+                            {useCases.map((useCase) => (
+                              <MenuItem key={useCase.value} value={useCase.value}>
+                                <Box>
+                                  <Typography variant="body1">{useCase.label}</Typography>
+                                  <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                                    {useCase.description}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Governance Settings */}
+                  <Grid item xs={12} md={6}>
+                    <Card sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center' }}>
+                          <SecurityIcon sx={{ mr: 1, color: '#3182ce' }} />
+                          Governance Settings
+                        </Typography>
+
+                        {/* Trust Threshold */}
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="body2" sx={{ color: 'white', mb: 1 }}>
+                            Trust Threshold: {hostedData.trustThreshold}%
                           </Typography>
+                          <Slider
+                            value={hostedData.trustThreshold}
+                            onChange={(_, value) => setHostedData({ ...hostedData, trustThreshold: value as number })}
+                            min={50}
+                            max={100}
+                            step={5}
+                            marks={[
+                              { value: 50, label: '50%' },
+                              { value: 75, label: '75%' },
+                              { value: 90, label: '90%' },
+                              { value: 100, label: '100%' }
+                            ]}
+                            valueLabelDisplay="auto"
+                            sx={{
+                              color: '#3182ce',
+                              '& .MuiSlider-markLabel': { color: 'rgba(255, 255, 255, 0.7)' }
+                            }}
+                          />
                         </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+
+                        {/* Security Level */}
+                        <FormControl fullWidth sx={{ mb: 3 }}>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Security Level</InputLabel>
+                          <Select
+                            value={hostedData.securityLevel}
+                            onChange={(e) => setHostedData({ ...hostedData, securityLevel: e.target.value })}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '& .MuiSvgIcon-root': { color: 'white' }
+                            }}
+                          >
+                            <MenuItem value="lenient">Lenient - Basic security checks</MenuItem>
+                            <MenuItem value="standard">Standard - Balanced security</MenuItem>
+                            <MenuItem value="strict">Strict - Maximum security</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {/* Compliance Framework */}
+                        <FormControl fullWidth sx={{ mb: 3 }}>
+                          <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Compliance Framework</InputLabel>
+                          <Select
+                            value={hostedData.complianceFramework}
+                            onChange={(e) => setHostedData({ ...hostedData, complianceFramework: e.target.value })}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                              '& .MuiSvgIcon-root': { color: 'white' }
+                            }}
+                          >
+                            <MenuItem value="general">General Business</MenuItem>
+                            <MenuItem value="healthcare">Healthcare (HIPAA)</MenuItem>
+                            <MenuItem value="financial">Financial (SOX)</MenuItem>
+                            <MenuItem value="gdpr">GDPR Compliance</MenuItem>
+                            <MenuItem value="soc2">SOC 2</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {/* Governance Features */}
+                        <Box sx={{ mt: 2 }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={hostedData.enableAuditLogging}
+                                onChange={(e) => setHostedData({ ...hostedData, enableAuditLogging: e.target.checked })}
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
+                              />
+                            }
+                            label={<Typography sx={{ color: 'white' }}>Enable Audit Logging</Typography>}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={hostedData.enableRealTimeMonitoring}
+                                onChange={(e) => setHostedData({ ...hostedData, enableRealTimeMonitoring: e.target.checked })}
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
+                              />
+                            }
+                            label={<Typography sx={{ color: 'white' }}>Enable Real-time Monitoring</Typography>}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={hostedData.enableDataRetention}
+                                onChange={(e) => setHostedData({ ...hostedData, enableDataRetention: e.target.checked })}
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
+                              />
+                            }
+                            label={<Typography sx={{ color: 'white' }}>Enable Data Retention</Typography>}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={hostedData.enableContentFiltering}
+                                onChange={(e) => setHostedData({ ...hostedData, enableContentFiltering: e.target.checked })}
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
+                              />
+                            }
+                            label={<Typography sx={{ color: 'white' }}>Enable Content Filtering</Typography>}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={hostedData.enableRateLimiting}
+                                onChange={(e) => setHostedData({ ...hostedData, enableRateLimiting: e.target.checked })}
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3182ce' } }}
+                              />
+                            }
+                            label={<Typography sx={{ color: 'white' }}>Enable Rate Limiting</Typography>}
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
               </Box>
             )}
           </DialogContent>
