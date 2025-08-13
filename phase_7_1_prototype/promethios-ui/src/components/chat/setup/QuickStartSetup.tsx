@@ -45,6 +45,7 @@ import {
 } from '@mui/icons-material';
 
 interface HostedChatbotData {
+  plan: string;
   name: string;
   description: string;
   provider: string;
@@ -61,6 +62,7 @@ const QuickStartSetup: React.FC = () => {
   const [showHostedWizard, setShowHostedWizard] = useState(false);
   const [hostedStep, setHostedStep] = useState(0);
   const [hostedData, setHostedData] = useState<HostedChatbotData>({
+    plan: '',
     name: '',
     description: '',
     provider: '',
@@ -93,6 +95,58 @@ const QuickStartSetup: React.FC = () => {
     { value: 'technical', label: 'Technical Support', description: 'Help with technical questions' },
   ];
 
+  // Pricing tiers based on old UI
+  const pricingTiers = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: '$29',
+      period: '/month',
+      requests: '10K requests/month',
+      recommended: false,
+      features: [
+        'Basic API access',
+        'Standard support',
+        '99.9% uptime SLA',
+        'Basic monitoring'
+      ],
+      description: 'Perfect for small projects and testing'
+    },
+    {
+      id: 'professional',
+      name: 'Professional',
+      price: '$99',
+      period: '/month',
+      requests: '100K requests/month',
+      recommended: true,
+      features: [
+        'Advanced API features',
+        'Priority support',
+        '99.95% uptime SLA',
+        'Custom domains',
+        'Advanced monitoring'
+      ],
+      description: 'Ideal for growing businesses and production use'
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 'Custom pricing',
+      period: '',
+      requests: 'Unlimited requests',
+      recommended: false,
+      features: [
+        'Full API suite',
+        'Dedicated support',
+        '99.99% uptime SLA',
+        'Custom integrations',
+        'On-premise option',
+        'Advanced security'
+      ],
+      description: 'For large organizations with custom requirements'
+    }
+  ];
+
   const handlePathSelection = (path: 'hosted' | 'byok') => {
     console.log('🔍 handlePathSelection called with path:', path);
     console.log('🔍 Current showHostedWizard state:', showHostedWizard);
@@ -117,7 +171,7 @@ const QuickStartSetup: React.FC = () => {
   };
 
   const handleHostedNext = () => {
-    if (hostedStep < 2) {
+    if (hostedStep < 3) {
       setHostedStep(hostedStep + 1);
     } else {
       handleCreateHostedChatbot();
@@ -173,10 +227,12 @@ const QuickStartSetup: React.FC = () => {
   const isHostedStepValid = () => {
     switch (hostedStep) {
       case 0:
-        return hostedData.name.trim() && hostedData.description.trim();
+        return hostedData.plan.trim() !== '';
       case 1:
-        return hostedData.provider && hostedData.model;
+        return hostedData.name.trim() && hostedData.description.trim();
       case 2:
+        return hostedData.provider && hostedData.model;
+      case 3:
         return hostedData.personality && hostedData.useCase;
       default:
         return false;
@@ -426,7 +482,7 @@ const QuickStartSetup: React.FC = () => {
               <Box>
                 <Typography variant="h6">Create Hosted Chatbot</Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Step {hostedStep + 1} of 3
+                  Step {hostedStep + 1} of 4
                 </Typography>
               </Box>
             </Box>
@@ -446,6 +502,87 @@ const QuickStartSetup: React.FC = () => {
 
             {/* Step 1: Basic Information */}
             {hostedStep === 0 && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+                  Choose Your Plan
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
+                  Select the pricing tier that best fits your needs
+                </Typography>
+
+                <Grid container spacing={3}>
+                  {pricingTiers.map((tier) => (
+                    <Grid item xs={12} md={4} key={tier.id}>
+                      <Card
+                        sx={{
+                          bgcolor: hostedData.plan === tier.id ? 'rgba(49, 130, 206, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                          border: hostedData.plan === tier.id ? '2px solid #3182ce' : '1px solid rgba(255, 255, 255, 0.1)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          position: 'relative',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                          },
+                        }}
+                        onClick={() => setHostedData({ ...hostedData, plan: tier.id })}
+                      >
+                        {tier.recommended && (
+                          <Chip
+                            label="Recommended"
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              top: -8,
+                              right: 16,
+                              bgcolor: '#3182ce',
+                              color: 'white',
+                              fontSize: '0.75rem',
+                            }}
+                          />
+                        )}
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                            {tier.name}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
+                            <Typography variant="h4" sx={{ color: '#3182ce', fontWeight: 'bold' }}>
+                              {tier.price}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', ml: 1 }}>
+                              {tier.period}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 2 }}>
+                            {tier.requests}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 2, fontSize: '0.875rem' }}>
+                            {tier.description}
+                          </Typography>
+                          <List dense sx={{ p: 0 }}>
+                            {tier.features.map((feature, index) => (
+                              <ListItem key={index} sx={{ p: 0, mb: 0.5 }}>
+                                <ListItemIcon sx={{ minWidth: 24 }}>
+                                  <CheckIcon sx={{ color: '#10b981', fontSize: 16 }} />
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={feature}
+                                  primaryTypographyProps={{
+                                    sx: { color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }
+                                  }}
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
+
+            {hostedStep === 1 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                   Basic Information
@@ -494,7 +631,7 @@ const QuickStartSetup: React.FC = () => {
             )}
 
             {/* Step 2: Model Selection */}
-            {hostedStep === 1 && (
+            {hostedStep === 2 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                   Choose Your AI Model
@@ -556,7 +693,7 @@ const QuickStartSetup: React.FC = () => {
             )}
 
             {/* Step 3: Configuration */}
-            {hostedStep === 2 && (
+            {hostedStep === 3 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
                   Chatbot Configuration
@@ -642,7 +779,7 @@ const QuickStartSetup: React.FC = () => {
                   <CircularProgress size={16} sx={{ mr: 1, color: 'white' }} />
                   Creating...
                 </Box>
-              ) : hostedStep === 2 ? (
+              ) : hostedStep === 3 ? (
                 'Create Chatbot'
               ) : (
                 'Next'
