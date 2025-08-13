@@ -72,14 +72,6 @@ const ChatbotProfilesPage: React.FC = () => {
   const [testChatOpen, setTestChatOpen] = useState(false);
   const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
 
-  // Load chatbots on component mount and when user changes
-  useEffect(() => {
-    console.log('🔍 ChatbotProfilesPage useEffect triggered, user:', user?.uid);
-    console.log('🔍 User object:', user);
-    console.log('🔍 About to call loadChatbots...');
-    loadChatbots();
-  }, [user?.uid, loadChatbots]); // Include loadChatbots in dependencies
-
   const loadChatbots = useCallback(async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
     console.log('🔍 ChatbotStorageService instance:', chatbotService);
@@ -107,6 +99,14 @@ const ChatbotProfilesPage: React.FC = () => {
       console.log('🔍 Loading set to false');
     }
   }, [user?.uid, chatbotService]);
+
+  // Load chatbots on component mount and when user changes
+  useEffect(() => {
+    console.log('🔍 ChatbotProfilesPage useEffect triggered, user:', user?.uid);
+    console.log('🔍 User object:', user);
+    console.log('🔍 About to call loadChatbots...');
+    loadChatbots();
+  }, [user?.uid, loadChatbots]); // Include loadChatbots in dependencies
 
   // Dynamic model display function using service
   const getModelDisplayName = (provider?: string, selectedModel?: string): string => {
