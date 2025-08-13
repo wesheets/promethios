@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { auth } from '../../../config/firebase';
+import { auth } from '../../../firebase/config';
 import ChatbotStorageService from '../../../services/ChatbotStorageService';
 import {
   Box,
