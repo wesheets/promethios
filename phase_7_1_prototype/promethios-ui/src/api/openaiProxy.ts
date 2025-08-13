@@ -11,6 +11,12 @@ import { AuditLogAccessExtension } from '../extensions/AuditLogAccessExtension';
 import { AutonomousCognitionExtension } from '../extensions/AutonomousCognitionExtension';
 import { UnifiedPolicyRegistry } from '../services/UnifiedPolicyRegistry';
 
+// Import behavioral modification services
+import { PersonalityInjectionService } from '../services/PersonalityInjectionService';
+import { UseCaseBehaviorService } from '../services/UseCaseBehaviorService';
+import { DeploymentChannelService } from '../services/DeploymentChannelService';
+import { ChatbotStorageService } from '../services/ChatbotStorageService';
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;

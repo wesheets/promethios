@@ -424,7 +424,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                         <FormControl fullWidth>
                           <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Personality</InputLabel>
                           <Select
-                            value={chatbotData.personality || 'professional'}
+                            value={chatbotData.personality || 'no_modification'}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, personality: e.target.value }))}
                             label="Personality"
                             sx={{
@@ -433,6 +433,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                               '& .MuiSvgIcon-root': { color: 'white' }
                             }}
                           >
+                            <MenuItem value="no_modification">No Modification (Keep Original)</MenuItem>
                             <MenuItem value="professional">Professional</MenuItem>
                             <MenuItem value="friendly">Friendly</MenuItem>
                             <MenuItem value="casual">Casual</MenuItem>
@@ -444,7 +445,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                         <FormControl fullWidth>
                           <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Use Case</InputLabel>
                           <Select
-                            value={chatbotData.useCase || 'customer_support'}
+                            value={chatbotData.useCase || 'no_modification'}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, useCase: e.target.value }))}
                             label="Use Case"
                             sx={{
@@ -453,6 +454,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                               '& .MuiSvgIcon-root': { color: 'white' }
                             }}
                           >
+                            <MenuItem value="no_modification">No Modification (Keep Original)</MenuItem>
                             <MenuItem value="customer_support">Customer Support</MenuItem>
                             <MenuItem value="sales">Sales Assistant</MenuItem>
                             <MenuItem value="general">General Assistant</MenuItem>
@@ -465,7 +467,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                           <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Deployment Channels</InputLabel>
                           <Select
                             multiple
-                            value={chatbotData.deploymentChannels || ['web']}
+                            value={chatbotData.deploymentChannels || ['governance_only']}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, deploymentChannels: e.target.value }))}
                             label="Deployment Channels"
                             sx={{
@@ -474,6 +476,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                               '& .MuiSvgIcon-root': { color: 'white' }
                             }}
                           >
+                            <MenuItem value="governance_only">Governance Only (No Channel Modifications)</MenuItem>
                             <MenuItem value="web">Web Widget</MenuItem>
                             <MenuItem value="email">Email</MenuItem>
                             <MenuItem value="slack">Slack</MenuItem>
@@ -508,8 +511,18 @@ const ChatbotWrappingWizard: React.FC = () => {
                     <Typography sx={{ color: 'white' }}><strong>Name:</strong> {chatbotData.agentName || 'Governed Chatbot'}</Typography>
                     <Typography sx={{ color: 'white' }}><strong>Provider:</strong> {chatbotData.provider || 'OpenAI'}</Typography>
                     <Typography sx={{ color: 'white' }}><strong>Model:</strong> {chatbotData.model || 'GPT-4'}</Typography>
-                    <Typography sx={{ color: 'white' }}><strong>Personality:</strong> {chatbotData.personality || 'Professional'}</Typography>
-                    <Typography sx={{ color: 'white' }}><strong>Use Case:</strong> {chatbotData.useCase || 'Customer Support'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Personality:</strong> {
+                      chatbotData.personality === 'no_modification' ? 'No Modification (Keep Original)' : 
+                      (chatbotData.personality || 'No Modification')
+                    }</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Use Case:</strong> {
+                      chatbotData.useCase === 'no_modification' ? 'No Modification (Keep Original)' : 
+                      (chatbotData.useCase || 'No Modification')
+                    }</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Deployment:</strong> {
+                      chatbotData.deploymentChannels?.includes('governance_only') ? 'Governance Only' :
+                      (chatbotData.deploymentChannels?.join(', ') || 'Governance Only')
+                    }</Typography>
                   </CardContent>
                 </Card>
               </Grid>
