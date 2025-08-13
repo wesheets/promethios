@@ -36,7 +36,6 @@ import {
   Slider,
   FormControlLabel,
   Switch,
-  Chip,
 } from '@mui/material';
 import {
   Rocket as RocketIcon,

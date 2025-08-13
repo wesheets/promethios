@@ -122,7 +122,7 @@ const BYOKGovernancePricing: React.FC = () => {
   };
 
   return (
-    <Container maxWidth={false} sx={{ py: 4, px: 3, bgcolor: 'transparent' }}>
+    <Container maxWidth="lg" sx={{ py: 4, bgcolor: 'transparent' }}>
       <Box mb={4}>
         <Typography variant="h4" gutterBottom sx={{ color: 'white' }}>
           <GovernanceIcon sx={{ mr: 2, verticalAlign: 'middle', color: 'white' }} />
