@@ -631,46 +631,709 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               <Box sx={{ p: 3 }}>
                 {rightPanelType === 'analytics' && (
                   <Box>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Analytics Dashboard</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Real-time performance metrics and analytics will be displayed here.
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Analytics Dashboard
                     </Typography>
+                    
+                    {/* Key Metrics */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Response Time
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Satisfaction
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).satisfactionScore.toFixed(1)}/5
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Resolution Rate
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).resolutionRate}%
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Last Active
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).lastActive}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Performance Trends */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Trends
+                        </Typography>
+                        <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            📈 Interactive charts will be displayed here
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* Usage Statistics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Usage Statistics
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Total Conversations
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Governance Alerts
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getMockMetrics(selectedChatbot).governanceAlerts > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).governanceAlerts}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Health Score
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getMockMetrics(selectedChatbot).healthScore >= 90 ? '#10b981' : getMockMetrics(selectedChatbot).healthScore >= 80 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).healthScore}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
 
                 {rightPanelType === 'customize' && (
-                  <Box>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Widget Customizer</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Live chat interface customization with colors, fonts, borders, and branding will be available here.
-                    </Typography>
-                  </Box>
+                  <WidgetCustomizer
+                    chatbot={selectedChatbot}
+                    onSave={(config) => {
+                      console.log('Widget config saved:', config);
+                      // Here you would save the configuration to the chatbot profile
+                      // For now, we'll just log it
+                    }}
+                    onClose={closeRightPanel}
+                  />
                 )}
 
                 {rightPanelType === 'knowledge' && (
                   <Box>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Knowledge Management</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Document management, knowledge base linking, and RAG performance will be shown here.
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Knowledge Management
                     </Typography>
+                    
+                    {/* Knowledge Base Stats */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={4}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 50) + 10}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Documents
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 20) + 80}%
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              RAG Accuracy
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {(Math.random() * 2 + 0.5).toFixed(1)}s
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Retrieval Time
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Document Management */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6" sx={{ color: 'white' }}>
+                            Document Library
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            sx={{ bgcolor: '#3b82f6' }}
+                          >
+                            Upload
+                          </Button>
+                        </Box>
+                        
+                        <Stack spacing={2}>
+                          {['Product Manual v2.1.pdf', 'FAQ Database.docx', 'API Documentation.md', 'Training Guidelines.txt'].map((doc, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                                  📄
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {doc}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                    {Math.floor(Math.random() * 500) + 100} KB • {Math.floor(Math.random() * 30) + 1} days ago
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Stack direction="row" spacing={1}>
+                                <Chip
+                                  label={Math.random() > 0.5 ? 'Active' : 'Indexed'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: Math.random() > 0.5 ? '#10b981' : '#374151',
+                                    color: 'white',
+                                    fontSize: '0.75rem'
+                                  }}
+                                />
+                                <IconButton size="small" sx={{ color: '#64748b' }}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+
+                    {/* RAG Performance */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          RAG Performance
+                        </Typography>
+                        
+                        <Stack spacing={3}>
+                          <Box>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                Retrieval Accuracy
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                                94%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={94}
+                              sx={{
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                              }}
+                            />
+                          </Box>
+                          
+                          <Box>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                Context Relevance
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                                87%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={87}
+                              sx={{
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#3b82f6' }
+                              }}
+                            />
+                          </Box>
+                          
+                          <Box>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                Response Quality
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                                91%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={91}
+                              sx={{
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#f59e0b' }
+                              }}
+                            />
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
 
                 {rightPanelType === 'automation' && (
                   <Box>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Automation & Workflows</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Workflow builder, automation rules, and human handoff settings will be configured here.
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Automation & Workflows
                     </Typography>
+                    
+                    {/* Automation Stats */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 10) + 3}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Active Workflows
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 30) + 70}%
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Automation Rate
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Active Workflows */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6" sx={{ color: 'white' }}>
+                            Active Workflows
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            sx={{ bgcolor: '#8b5cf6' }}
+                          >
+                            Create
+                          </Button>
+                        </Box>
+                        
+                        <Stack spacing={2}>
+                          {[
+                            { name: 'Lead Qualification', trigger: 'New conversation', status: 'Active' },
+                            { name: 'Escalation to Human', trigger: 'Sentiment < 0.3', status: 'Active' },
+                            { name: 'Follow-up Email', trigger: 'Conversation ends', status: 'Paused' },
+                            { name: 'Data Collection', trigger: 'User provides email', status: 'Active' }
+                          ].map((workflow, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Avatar sx={{ bgcolor: '#8b5cf6', width: 32, height: 32 }}>
+                                  ⚡
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {workflow.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                    Trigger: {workflow.trigger}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                  label={workflow.status}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: workflow.status === 'Active' ? '#10b981' : '#f59e0b',
+                                    color: 'white',
+                                    fontSize: '0.75rem'
+                                  }}
+                                />
+                                <IconButton size="small" sx={{ color: '#64748b' }}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+
+                    {/* Automation Rules */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Automation Rules
+                        </Typography>
+                        
+                        <Stack spacing={2}>
+                          {[
+                            { rule: 'Auto-escalate after 3 failed responses', enabled: true },
+                            { rule: 'Send satisfaction survey after resolution', enabled: true },
+                            { rule: 'Collect feedback on negative sentiment', enabled: false },
+                            { rule: 'Schedule follow-up for unresolved issues', enabled: true }
+                          ].map((rule, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Typography variant="body2" sx={{ color: 'white' }}>
+                                {rule.rule}
+                              </Typography>
+                              <Chip
+                                label={rule.enabled ? 'Enabled' : 'Disabled'}
+                                size="small"
+                                sx={{
+                                  bgcolor: rule.enabled ? '#10b981' : '#64748b',
+                                  color: 'white',
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+
+                    {/* Human Handoff Settings */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Human Handoff
+                        </Typography>
+                        
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Escalation Threshold
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              3 failed attempts
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Response Time SLA
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              5 minutes
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Available Agents
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 5) + 2} online
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
 
                 {rightPanelType === 'deployment' && (
                   <Box>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Deployment Settings</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Channel management, API endpoints, and integration status will be managed here.
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Deployment Settings
                     </Typography>
+                    
+                    {/* Deployment Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Deployment Status
+                        </Typography>
+                        
+                        <Box display="flex" alignItems="center" gap={2} mb={2}>
+                          <Avatar sx={{ bgcolor: selectedChatbot.isDeployed ? '#10b981' : '#64748b', width: 40, height: 40 }}>
+                            {selectedChatbot.isDeployed ? '🚀' : '⏸️'}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {selectedChatbot.isDeployed ? 'Live & Active' : 'Offline'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              {selectedChatbot.isDeployed ? 'Serving requests across all channels' : 'Deployment paused'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          sx={{
+                            bgcolor: selectedChatbot.isDeployed ? '#ef4444' : '#10b981',
+                            '&:hover': {
+                              bgcolor: selectedChatbot.isDeployed ? '#dc2626' : '#059669'
+                            }
+                          }}
+                        >
+                          {selectedChatbot.isDeployed ? 'Stop Deployment' : 'Deploy Chatbot'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Channel Management */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6" sx={{ color: 'white' }}>
+                            Active Channels
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            sx={{ bgcolor: '#3b82f6' }}
+                          >
+                            Add Channel
+                          </Button>
+                        </Box>
+                        
+                        <Stack spacing={2}>
+                          {[
+                            { name: 'Website Widget', status: 'Active', users: 1247, icon: '🌐' },
+                            { name: 'WhatsApp Business', status: 'Active', users: 892, icon: '💬' },
+                            { name: 'Facebook Messenger', status: 'Inactive', users: 0, icon: '📘' },
+                            { name: 'Slack Integration', status: 'Active', users: 156, icon: '💼' }
+                          ].map((channel, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                                  {channel.icon}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {channel.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                    {channel.users.toLocaleString()} active users
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                  label={channel.status}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: channel.status === 'Active' ? '#10b981' : '#64748b',
+                                    color: 'white',
+                                    fontSize: '0.75rem'
+                                  }}
+                                />
+                                <IconButton size="small" sx={{ color: '#64748b' }}>
+                                  <Settings fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+
+                    {/* API Endpoints */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          API Endpoints
+                        </Typography>
+                        
+                        <Stack spacing={2}>
+                          <Box
+                            sx={{
+                              p: 2,
+                              bgcolor: '#0f172a',
+                              borderRadius: 1,
+                              border: '1px solid #334155'
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              REST API Endpoint
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                              https://api.promethios.com/v1/chat/{selectedChatbot.identity.id}
+                            </Typography>
+                          </Box>
+                          
+                          <Box
+                            sx={{
+                              p: 2,
+                              bgcolor: '#0f172a',
+                              borderRadius: 1,
+                              border: '1px solid #334155'
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              WebSocket Endpoint
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                              wss://ws.promethios.com/v1/chat/{selectedChatbot.identity.id}
+                            </Typography>
+                          </Box>
+                          
+                          <Box
+                            sx={{
+                              p: 2,
+                              bgcolor: '#0f172a',
+                              borderRadius: 1,
+                              border: '1px solid #334155'
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Widget Embed Code
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'white', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                              &lt;script src="https://widget.promethios.com/embed.js" data-chatbot="{selectedChatbot.identity.id}"&gt;&lt;/script&gt;
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+
+                    {/* Performance Metrics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Deployment Metrics
+                        </Typography>
+                        
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Uptime
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              99.9%
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Response Time
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Daily Requests
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {(getMockMetrics(selectedChatbot).messageVolume / 30).toFixed(0)}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Error Rate
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              0.1%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
 
