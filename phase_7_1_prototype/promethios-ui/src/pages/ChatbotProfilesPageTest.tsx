@@ -5,8 +5,8 @@ const ChatbotProfilesPageTest: React.FC = () => {
   console.log('🔍 ChatbotProfilesPageTest component mounting...');
   
   return (
-    <Container>
-      <Typography variant="h4">
+    <Container sx={{ py: 4 }}>
+      <Typography variant="h4" sx={{ mb: 2 }}>
         Test Chatbot Profiles Page
       </Typography>
       <Typography variant="body1">
