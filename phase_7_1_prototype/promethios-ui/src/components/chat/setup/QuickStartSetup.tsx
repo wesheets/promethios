@@ -263,6 +263,7 @@ const QuickStartSetup: React.FC = () => {
                 <Button
                   variant="contained"
                   fullWidth
+                  onClick={() => handlePathSelection('hosted')}
                   sx={{
                     backgroundColor: '#3182ce',
                     color: 'white',
