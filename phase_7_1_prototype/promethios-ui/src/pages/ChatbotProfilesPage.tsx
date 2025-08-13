@@ -56,9 +56,11 @@ import {
 } from '@mui/icons-material';
 
 const ChatbotProfilesPage: React.FC = () => {
+  console.log('🔍 ChatbotProfilesPage component mounting...');
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  console.log('🔍 ChatbotProfilesPage - user from auth:', user?.uid);
   const chatbotService = ChatbotStorageService.getInstance();
   
   // State management
@@ -72,6 +74,7 @@ const ChatbotProfilesPage: React.FC = () => {
 
   // Load chatbots on component mount
   useEffect(() => {
+    console.log('🔍 ChatbotProfilesPage useEffect triggered, user:', user?.uid);
     loadChatbots();
   }, [user]);
 
