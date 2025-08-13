@@ -249,8 +249,7 @@ const ChatbotWrappingWizard: React.FC = () => {
 
       console.log('Creating governed chatbot:', chatbotProfile);
 
-      // Save the chatbot using ChatbotStorageService
-      const chatbotService = ChatbotStorageService.getInstance();
+      // Save the chatbot using ChatbotStorageService (reuse existing instance)
       await chatbotService.createChatbot(currentUser.uid, chatbotProfile);
 
       console.log('🎉 Governed chatbot successfully created');
