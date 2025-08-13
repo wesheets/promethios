@@ -76,14 +76,18 @@ const ChatbotProfilesPage: React.FC = () => {
   }, [user]);
 
   const loadChatbots = async () => {
+    console.log('🔍 loadChatbots called, user:', user?.uid);
     if (!user?.uid) {
+      console.log('🔍 No user UID, setting loading to false');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('🔍 Calling chatbotService.getChatbots with user:', user.uid);
       const chatbots = await chatbotService.getChatbots(user.uid);
+      console.log('🔍 getChatbots returned:', chatbots.length, 'chatbots');
       setChatbotProfiles(chatbots);
     } catch (error) {
       console.error('Failed to load chatbots:', error);
