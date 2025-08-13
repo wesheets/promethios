@@ -326,8 +326,8 @@ const QuickStartSetup: React.FC = () => {
         console.error('🔍 Error setting showHostedWizard:', error);
       }
     } else {
-      // Navigate to dedicated chatbot wrapping wizard for BYOK path
-      navigate('/ui/chat/builder/chatbot-wrapping');
+      // Navigate to BYOK governance pricing page first
+      navigate('/ui/chat/setup/byok-governance');
     }
   };
 
@@ -672,22 +672,80 @@ const QuickStartSetup: React.FC = () => {
 
           {/* Content */}
           <Box sx={{ mb: 4 }}>
-            {/* Step 1: Basic Information */}
+            {/* Step 1: Plan Selection */}
             {hostedStep === 0 && (
               <Box>
+                {/* Features Overview */}
+                <Card sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', mb: 4 }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Typography variant="h6" sx={{ color: 'white', mr: 2 }}>
+                        Hosted API Benefits
+                      </Typography>
+                      <Chip 
+                        label="BETA - FREE" 
+                        sx={{ 
+                          backgroundColor: '#10b981', 
+                          color: 'white', 
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem'
+                        }} 
+                      />
+                    </Box>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <HostedIcon sx={{ color: '#4299e1', fontSize: '3rem' }} />
+                          <Typography variant="h6" sx={{ color: 'white', mt: 1, mb: 1 }}>
+                            Managed Infrastructure
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Fully managed cloud infrastructure with automatic scaling and maintenance
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <SecurityIcon sx={{ color: '#4299e1', fontSize: '3rem' }} />
+                          <Typography variant="h6" sx={{ color: 'white', mt: 1, mb: 1 }}>
+                            Enterprise Security
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            SOC 2 compliant with end-to-end encryption and advanced threat protection
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <CheckIcon sx={{ color: '#4299e1', fontSize: '3rem' }} />
+                          <Typography variant="h6" sx={{ color: 'white', mt: 1, mb: 1 }}>
+                            Global CDN
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Low-latency access worldwide with edge caching and optimized routing
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <SecurityIcon sx={{ color: '#4299e1', fontSize: '3rem' }} />
+                          <Typography variant="h6" sx={{ color: 'white', mt: 1, mb: 1 }}>
+                            24/7 Support
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Round-the-clock technical support with dedicated account management
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+
+                {/* Plan Selection */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" gutterBottom sx={{ color: 'white', mb: 0, mr: 2 }}>
                     Choose Your Plan
                   </Typography>
-                  <Chip 
-                    label="BETA - FREE" 
-                    sx={{ 
-                      backgroundColor: '#10b981', 
-                      color: 'white', 
-                      fontWeight: 'bold',
-                      fontSize: '0.75rem'
-                    }} 
-                  />
                 </Box>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
                   During beta, all plans are free! You only pay for AI model token usage.
@@ -824,136 +882,177 @@ const QuickStartSetup: React.FC = () => {
               </Box>
             )}
 
-            {/* Step 2: Model Selection */}
+            {/* Step 2: Model Selection - Enhanced Layout */}
             {hostedStep === 2 && (
-              <Box>
-                <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
-                  Choose Your AI Model
+              <Box sx={{ maxWidth: '100%', width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'white', mb: 3 }}>
+                  Select Your AI Model
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
-                  Select the AI model that best fits your needs
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 4 }}>
+                  Choose from our comprehensive selection of AI models across multiple providers. Hover over any model for detailed pros and cons.
                 </Typography>
 
-                {/* Group models by provider */}
-                {Object.entries(
-                  hostedModels.reduce((acc, model) => {
-                    if (!acc[model.provider]) acc[model.provider] = [];
-                    acc[model.provider].push(model);
-                    return acc;
-                  }, {} as Record<string, typeof hostedModels>)
-                ).map(([provider, models]) => (
-                  <Box key={provider} sx={{ mb: 4 }}>
-                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontSize: '1.1rem' }}>
-                      {provider}
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {models.map((model) => (
-                        <Grid item xs={12} md={6} key={`${model.provider}-${model.model}`}>
-                          <Tooltip
-                            title={
-                              <Box sx={{ p: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                  {model.name} - {model.category}
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                  <strong>Pros:</strong> {model.pros.join(', ')}
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                  <strong>Cons:</strong> {model.cons.join(', ')}
-                                </Typography>
-                                <Typography variant="body2">
-                                  <strong>Best for:</strong> {model.category} use cases
-                                </Typography>
-                              </Box>
-                            }
-                            arrow
-                            placement="top"
-                          >
-                            <Card
-                              sx={{
-                                backgroundColor: hostedData.provider === model.provider && hostedData.model === model.model
-                                  ? 'rgba(49, 130, 206, 0.2)'
-                                  : 'rgba(255, 255, 255, 0.05)',
-                                border: hostedData.provider === model.provider && hostedData.model === model.model
-                                  ? '2px solid #3182ce'
-                                  : model.costEffective 
-                                    ? '2px solid rgba(16, 185, 129, 0.5)'
-                                    : '1px solid rgba(255, 255, 255, 0.1)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                position: 'relative',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                                  border: '2px solid rgba(49, 130, 206, 0.5)',
-                                  transform: 'translateY(-2px)',
-                                },
-                              }}
-                              onClick={() => setHostedData({ 
-                                ...hostedData, 
-                                provider: model.provider, 
-                                model: model.model 
-                              })}
-                            >
-                              {model.costEffective && (
-                                <Chip
-                                  label="Best Value"
-                                  size="small"
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    backgroundColor: '#10b981',
-                                    color: 'white',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 'bold',
-                                  }}
-                                />
-                              )}
-                              <CardContent sx={{ py: 2, pr: model.costEffective ? 10 : 2 }}>
-                                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                                  <Box sx={{ flex: 1 }}>
-                                    <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600, mb: 0.5 }}>
-                                      {model.name}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 1, fontSize: '0.875rem' }}>
-                                      {model.description}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                      <Chip
-                                        label={model.price}
-                                        size="small"
-                                        sx={{
-                                          backgroundColor: model.costEffective 
-                                            ? 'rgba(16, 185, 129, 0.2)' 
-                                            : 'rgba(255, 193, 7, 0.2)',
-                                          color: model.costEffective ? '#10b981' : '#ffc107',
-                                          border: `1px solid ${model.costEffective ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 193, 7, 0.3)'}`,
-                                          fontSize: '0.75rem',
-                                        }}
-                                      />
-                                      <Chip
-                                        label={model.category}
-                                        size="small"
-                                        sx={{
-                                          backgroundColor: 'rgba(156, 163, 175, 0.2)',
-                                          color: 'rgba(255, 255, 255, 0.8)',
-                                          border: '1px solid rgba(156, 163, 175, 0.3)',
-                                          fontSize: '0.75rem',
-                                        }}
-                                      />
-                                    </Box>
-                                  </Box>
+                {/* Provider Columns - Full Width Layout */}
+                <Grid container spacing={3} sx={{ width: '100%' }}>
+                  {Object.entries(
+                    hostedModels.reduce((acc, model) => {
+                      if (!acc[model.provider]) acc[model.provider] = [];
+                      acc[model.provider].push(model);
+                      return acc;
+                    }, {} as Record<string, typeof hostedModels>)
+                  ).map(([provider, models]) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={provider}>
+                      <Box sx={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)', 
+                        borderRadius: 2, 
+                        p: 2,
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        height: 'fit-content'
+                      }}>
+                        {/* Provider Header */}
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            color: 'white', 
+                            mb: 2, 
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            pb: 1,
+                            borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
+                          }}
+                        >
+                          {provider}
+                        </Typography>
+                        
+                        {/* Models in this provider */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {models.map((model) => (
+                            <Tooltip
+                              key={`${model.provider}-${model.model}`}
+                              title={
+                                <Box sx={{ p: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                    {model.name} - {model.category}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ mb: 1 }}>
+                                    <strong>Pros:</strong> {model.pros.join(', ')}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ mb: 1 }}>
+                                    <strong>Cons:</strong> {model.cons.join(', ')}
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    <strong>Best for:</strong> {model.category} use cases
+                                  </Typography>
                                 </Box>
-                              </CardContent>
-                            </Card>
-                          </Tooltip>
-                        </Grid>
-                      ))}
+                              }
+                              arrow
+                              placement="right"
+                            >
+                              <Card
+                                sx={{
+                                  backgroundColor: hostedData.provider === model.provider && hostedData.model === model.model
+                                    ? 'rgba(49, 130, 206, 0.3)'
+                                    : 'rgba(255, 255, 255, 0.05)',
+                                  border: hostedData.provider === model.provider && hostedData.model === model.model
+                                    ? '2px solid #3182ce'
+                                    : model.costEffective 
+                                      ? '2px solid rgba(16, 185, 129, 0.5)'
+                                      : '1px solid rgba(255, 255, 255, 0.1)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  position: 'relative',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(49, 130, 206, 0.15)',
+                                    border: '2px solid rgba(49, 130, 206, 0.7)',
+                                    transform: 'translateY(-2px)',
+                                  },
+                                }}
+                                onClick={() => setHostedData({ 
+                                  ...hostedData, 
+                                  provider: model.provider, 
+                                  model: model.model 
+                                })}
+                              >
+                                {model.costEffective && (
+                                  <Chip
+                                    label="Best Value"
+                                    size="small"
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 4,
+                                      right: 4,
+                                      backgroundColor: '#10b981',
+                                      color: 'white',
+                                      fontSize: '0.65rem',
+                                      fontWeight: 'bold',
+                                      height: '20px',
+                                    }}
+                                  />
+                                )}
+                                <CardContent sx={{ p: 2, pb: '16px !important' }}>
+                                  <Typography 
+                                    variant="subtitle2" 
+                                    sx={{ 
+                                      color: 'white', 
+                                      fontWeight: 600, 
+                                      mb: 0.5,
+                                      fontSize: '0.9rem',
+                                      pr: model.costEffective ? 7 : 0
+                                    }}
+                                  >
+                                    {model.name}
+                                  </Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: 'rgba(255, 255, 255, 0.7)', 
+                                      mb: 1, 
+                                      fontSize: '0.8rem',
+                                      lineHeight: 1.3
+                                    }}
+                                  >
+                                    {model.description}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    <Chip
+                                      label={model.price}
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: model.costEffective 
+                                          ? 'rgba(16, 185, 129, 0.2)' 
+                                          : 'rgba(255, 193, 7, 0.2)',
+                                        color: model.costEffective ? '#10b981' : '#ffc107',
+                                        border: `1px solid ${model.costEffective ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 193, 7, 0.3)'}`,
+                                        fontSize: '0.7rem',
+                                        height: '20px',
+                                        width: 'fit-content'
+                                      }}
+                                    />
+                                    <Chip
+                                      label={model.category}
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                                        color: 'rgba(255, 255, 255, 0.8)',
+                                        border: '1px solid rgba(156, 163, 175, 0.3)',
+                                        fontSize: '0.7rem',
+                                        height: '20px',
+                                        width: 'fit-content'
+                                      }}
+                                    />
+                                  </Box>
+                                </CardContent>
+                              </Card>
+                            </Tooltip>
+                          ))}
+                        </Box>
+                      </Box>
                     </Grid>
-                  </Box>
-                ))}
+                  ))}
+                </Grid>
               </Box>
-            )}
+            )} 
 
             {/* Step 3: Configuration */}
             {hostedStep === 3 && (

@@ -103,6 +103,7 @@ import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
 import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
 import BringYourOwnKeySetup from './components/chat/setup/BringYourOwnKeySetup';
+import BYOKGovernancePricing from './components/chat/setup/BYOKGovernancePricing';
 import EnterpriseSetup from './components/chat/setup/EnterpriseSetup';
 // Import new integration components
 import HelpdeskIntegrations from './components/chat/integrations/HelpdeskIntegrations';
@@ -377,6 +378,12 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <HostedApiSetup />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="chat/setup/byok-governance" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <BYOKGovernancePricing />
           </ProtectedRoute>
         } />
         
