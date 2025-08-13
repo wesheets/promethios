@@ -315,10 +315,11 @@ export class ChatbotStorageService {
       const allKeys = await unifiedStorage.keys('agents');
       console.log('🔍 All chatbot keys from unified storage:', allKeys);
       
-      // Filter for this user's chatbots (stored with chatbot- prefix in agents namespace)
+      // Filter for this user's chatbots (stored with format: {userId}_{chatbotId})
       const userChatbotKeys = allKeys.filter(key => {
         const keyPart = key.replace('agents/', '');
-        return keyPart.startsWith(`${ownerId}_chatbot-`);
+        // Check if key starts with userId_ and contains chatbot- in the ID part
+        return keyPart.startsWith(`${ownerId}_`) && keyPart.includes('chatbot-');
       });
       
       console.log('🔍 User chatbot keys found:', userChatbotKeys);
