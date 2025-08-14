@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -26,8 +26,13 @@ import {
   Paper,
   Tab,
   Tabs,
-  ColorPicker,
   Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Popover,
+  Badge,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -53,8 +58,17 @@ import {
   Close,
   Minimize,
   OpenInFull,
+  Info,
+  ColorLens,
+  FormatSize,
+  ChatBubble,
+  Branding,
+  PlayArrow,
+  TouchApp,
 } from '@mui/icons-material';
 import { ChatbotProfile } from '../../../types/ChatbotTypes';
+import { useWidgetCustomizer } from '../../../context/WidgetCustomizerContext';
+import ColorPicker from './ColorPicker';
 
 interface WidgetCustomizerProps {
   chatbot: ChatbotProfile;
@@ -88,6 +102,8 @@ interface WidgetConfig {
   botBubbleColor: string;
   bubbleRadius: number;
   bubbleShadow: boolean;
+  bubbleSpacing: number;
+  bubbleMaxWidth: number;
   
   // Header & Branding
   showHeader: boolean;
@@ -96,6 +112,21 @@ interface WidgetConfig {
   showAvatar: boolean;
   avatarUrl: string;
   showStatus: boolean;
+  
+  // Branding & Attribution
+  showPoweredBy: boolean;
+  poweredByText: string;
+  poweredByRemovable: boolean; // Based on tier
+  customBranding: boolean;
+  brandingText: string;
+  brandingUrl: string;
+  
+  // Widget Appearance & Behavior
+  initialState: 'minimized' | 'bubble' | 'expanded';
+  bubbleIcon: string;
+  bubbleText: string;
+  bubblePosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  expandAnimation: 'slide' | 'fade' | 'scale' | 'bounce';
   
   // Input & Controls
   inputPlaceholder: string;
@@ -108,6 +139,8 @@ interface WidgetConfig {
   typingIndicator: boolean;
   messageAnimations: boolean;
   hoverEffects: boolean;
+  pulseEffect: boolean;
+  slideInEffect: boolean;
   
   // Welcome & Greeting
   showWelcomeMessage: boolean;
@@ -119,6 +152,7 @@ interface WidgetConfig {
   minimizable: boolean;
   draggable: boolean;
   autoOpen: boolean;
+  autoOpenDelay: number;
   
   // Advanced Features
   showThinking: boolean;
@@ -126,6 +160,7 @@ interface WidgetConfig {
   showTimestamps: boolean;
   showReadReceipts: boolean;
   enableSounds: boolean;
+  soundNotifications: boolean;
 }
 
 const defaultConfig: WidgetConfig = {
@@ -150,6 +185,8 @@ const defaultConfig: WidgetConfig = {
   botBubbleColor: '#f3f4f6',
   bubbleRadius: 18,
   bubbleShadow: true,
+  bubbleSpacing: 12,
+  bubbleMaxWidth: 80,
   
   showHeader: true,
   headerTitle: 'Chat Support',
@@ -157,6 +194,21 @@ const defaultConfig: WidgetConfig = {
   showAvatar: true,
   avatarUrl: '',
   showStatus: true,
+  
+  // Branding & Attribution
+  showPoweredBy: true,
+  poweredByText: 'Powered by Promethios',
+  poweredByRemovable: false, // Based on tier
+  customBranding: false,
+  brandingText: '',
+  brandingUrl: '',
+  
+  // Widget Appearance & Behavior
+  initialState: 'bubble',
+  bubbleIcon: '💬',
+  bubbleText: 'Chat with us!',
+  bubblePosition: 'bottom-right',
+  expandAnimation: 'slide',
   
   inputPlaceholder: 'Type your message...',
   showAttachments: true,
@@ -167,6 +219,8 @@ const defaultConfig: WidgetConfig = {
   typingIndicator: true,
   messageAnimations: true,
   hoverEffects: true,
+  pulseEffect: true,
+  slideInEffect: true,
   
   showWelcomeMessage: true,
   welcomeMessage: 'Hello! How can I help you today?',
@@ -176,17 +230,21 @@ const defaultConfig: WidgetConfig = {
   minimizable: true,
   draggable: false,
   autoOpen: false,
+  autoOpenDelay: 3000,
   
   showThinking: true,
   thinkingText: 'AI is thinking...',
   showTimestamps: false,
   showReadReceipts: false,
   enableSounds: true,
+  soundNotifications: true,
 };
 
 const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, onClose }) => {
-  const [config, setConfig] = useState<WidgetConfig>(defaultConfig);
+  const { config, updateConfig, resetConfig, setActiveChatbotId } = useWidgetCustomizer();
   const [activeTab, setActiveTab] = useState(0);
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const [colorPickerAnchor, setColorPickerAnchor] = useState<HTMLElement | null>(null);
   const [previewMessages, setPreviewMessages] = useState([
     { id: 1, type: 'bot', text: config.welcomeMessage, timestamp: new Date() },
     { id: 2, type: 'user', text: 'Hello! I need help with my account.', timestamp: new Date() },
@@ -196,8 +254,24 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
   const [isThinking, setIsThinking] = useState(false);
   const [previewMinimized, setPreviewMinimized] = useState(false);
 
-  const updateConfig = (key: keyof WidgetConfig, value: any) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+  // Set active chatbot when component mounts
+  useEffect(() => {
+    setActiveChatbotId(chatbot.identity.id);
+  }, [chatbot.identity.id, setActiveChatbotId]);
+
+  // Color picker handlers
+  const handleColorClick = (colorKey: string, event: React.MouseEvent<HTMLElement>) => {
+    setColorPickerOpen(colorKey);
+    setColorPickerAnchor(event.currentTarget);
+  };
+
+  const handleColorChange = (colorKey: string, color: string) => {
+    updateConfig(colorKey as keyof WidgetConfig, color);
+  };
+
+  const handleColorPickerClose = () => {
+    setColorPickerOpen(null);
+    setColorPickerAnchor(null);
   };
 
   const handleSave = () => {
@@ -205,7 +279,7 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
   };
 
   const handleReset = () => {
-    setConfig(defaultConfig);
+    resetConfig();
   };
 
   const simulateTyping = () => {
@@ -303,20 +377,35 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
                     <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Primary Color</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
+                        onClick={(e) => handleColorClick('primaryColor', e)}
                         sx={{
                           width: 40,
                           height: 40,
                           bgcolor: config.primaryColor,
                           borderRadius: 1,
-                          border: '1px solid #334155',
+                          border: '2px solid #334155',
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
                         }}
                       />
                       <TextField
                         size="small"
                         value={config.primaryColor}
                         onChange={(e) => updateConfig('primaryColor', e.target.value)}
-                        sx={{ flex: 1 }}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
                       />
                     </Box>
                   </Box>
@@ -325,6 +414,204 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Secondary Color</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => handleColorClick('secondaryColor', e)}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: config.secondaryColor,
+                          borderRadius: 1,
+                          border: '2px solid #334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={config.secondaryColor}
+                        onChange={(e) => updateConfig('secondaryColor', e.target.value)}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Background</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => handleColorClick('backgroundColor', e)}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: config.backgroundColor,
+                          borderRadius: 1,
+                          border: '2px solid #334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={config.backgroundColor}
+                        onChange={(e) => updateConfig('backgroundColor', e.target.value)}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Text Color</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => handleColorClick('textColor', e)}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: config.textColor,
+                          borderRadius: 1,
+                          border: '2px solid #334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={config.textColor}
+                        onChange={(e) => updateConfig('textColor', e.target.value)}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              <Typography variant="h6" sx={{ color: 'white', mt: 3, mb: 2 }}>Chat Bubble Colors</Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>User Bubbles</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => handleColorClick('userBubbleColor', e)}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: config.userBubbleColor,
+                          borderRadius: 1,
+                          border: '2px solid #334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={config.userBubbleColor}
+                        onChange={(e) => updateConfig('userBubbleColor', e.target.value)}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Bot Bubbles</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => handleColorClick('botBubbleColor', e)}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: config.botBubbleColor,
+                          borderRadius: 1,
+                          border: '2px solid #334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            borderColor: '#3b82f6',
+                          },
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={config.botBubbleColor}
+                        onChange={(e) => updateConfig('botBubbleColor', e.target.value)}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: '#0f172a',
+                            color: 'white',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#4b5563' },
+                            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Stack>
+          )}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
                         sx={{
@@ -1131,6 +1418,35 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
           Save & Deploy
         </Button>
       </Box>
+
+      {/* Color Picker Popover */}
+      <Popover
+        open={Boolean(colorPickerOpen)}
+        anchorEl={colorPickerAnchor}
+        onClose={handleColorPickerClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        sx={{
+          '& .MuiPopover-paper': {
+            bgcolor: 'transparent',
+            boxShadow: 'none',
+          },
+        }}
+      >
+        {colorPickerOpen && (
+          <ColorPicker
+            color={config[colorPickerOpen as keyof WidgetConfig] as string}
+            onChange={(color) => handleColorChange(colorPickerOpen, color)}
+            onClose={handleColorPickerClose}
+          />
+        )}
+      </Popover>
 
       {/* CSS Animations */}
       <style>
