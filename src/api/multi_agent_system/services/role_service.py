@@ -474,7 +474,7 @@ class AgentRoleService:
         return {
             "roles": roles,
             "total_roles": len(roles),
-            "categories": list(set(def.category for def in self.role_definitions.values()))
+            "categories": list(set(definition.category for definition in self.role_definitions.values()))
         }
     
     async def validate_role_assignment(

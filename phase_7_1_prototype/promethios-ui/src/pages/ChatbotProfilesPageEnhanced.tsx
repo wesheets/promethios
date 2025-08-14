@@ -1505,112 +1505,91 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 )}
 
                 {rightPanelType === 'chat' && (
-                  <Box>
-                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
-                      Live Chat Interface
-                    </Typography>
-                    
+                  <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
+                    {/* Modern Chat Header */}
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: '#1e293b',
+                        borderBottom: '1px solid #334155',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>
+                          Chat with Your Agent
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b' }}>
+                          {selectedChatbot?.identity.name || 'Select an agent to start chatting...'}
+                        </Typography>
+                      </Box>
+                      {activeSession && (
+                        <Box textAlign="right">
+                          <Typography variant="caption" sx={{ color: '#64748b' }}>
+                            Session: {activeSession.sessionId.slice(-8)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+
                     {chatLoading && !activeSession ? (
-                      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+                      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
                         <CircularProgress sx={{ color: '#3b82f6' }} />
                         <Typography variant="body2" sx={{ color: '#94a3b8', ml: 2 }}>
                           Initializing chat session...
                         </Typography>
                       </Box>
                     ) : (
-                      <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', height: 'calc(100vh - 200px)' }}>
-                        <CardContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          {/* Chat Header */}
-                          <Box
-                            sx={{
-                              p: 2,
-                              bgcolor: widgetConfig.primaryColor,
-                              borderBottom: '1px solid #334155',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between'
-                            }}
-                          >
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Avatar sx={{ 
-                                bgcolor: 'rgba(255,255,255,0.2)', 
-                                width: 32, 
-                                height: 32,
-                                fontSize: '1rem'
-                              }}>
+                      <>
+                        {/* Chat Messages Area */}
+                        <Box
+                          sx={{
+                            flex: 1,
+                            p: 2,
+                            bgcolor: '#0f172a',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}
+                        >
+                          {chatMessages.length === 0 ? (
+                            <Box
+                              display="flex"
+                              justifyContent="center"
+                              alignItems="center"
+                              flex={1}
+                              flexDirection="column"
+                              gap={2}
+                            >
+                              <Avatar sx={{ bgcolor: '#3b82f6', width: 48, height: 48 }}>
                                 🤖
                               </Avatar>
-                              <Box>
-                                <Typography 
-                                  variant="body1" 
-                                  sx={{ 
-                                    color: 'white', 
-                                    fontWeight: 'bold',
-                                    fontFamily: widgetConfig.fontFamily,
-                                    fontSize: `${widgetConfig.fontSize + 2}px`
-                                  }}
-                                >
-                                  {selectedChatbot.identity.name}
-                                </Typography>
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontFamily: widgetConfig.fontFamily
-                                  }}
-                                >
-                                  ● {widgetConfig.headerSubtitle} {activeSession && `• Session: ${activeSession.sessionId.slice(-8)}`}
-                                </Typography>
-                              </Box>
+                              <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center' }}>
+                                {selectedChatbot ? 
+                                  `Start a conversation with ${selectedChatbot.identity.name}` :
+                                  'Select an agent to start chatting...'
+                                }
+                              </Typography>
                             </Box>
-                            
-                            {/* Session Info */}
-                            {activeSession && (
-                              <Box textAlign="right">
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    color: 'rgba(255,255,255,0.7)',
-                                    fontFamily: widgetConfig.fontFamily
-                                  }}
-                                >
-                                  Trust: {activeSession.trustLevel} • Autonomy: {activeSession.autonomyLevel}
-                                </Typography>
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    color: 'rgba(255,255,255,0.7)', 
-                                    display: 'block',
-                                    fontFamily: widgetConfig.fontFamily
-                                  }}
-                                >
-                                  Messages: {activeSession.governanceMetrics.totalMessages}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-
-                          {/* Chat Messages Area */}
-                          <Box
-                            sx={{
-                              flex: 1,
-                              p: 2,
-                              overflowY: 'auto',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 2
-                            }}
-                          >
-                            {chatMessages.map((message) => (
+                          ) : (
+                            chatMessages.map((message) => (
                               <Box
                                 key={message.id}
                                 display="flex"
                                 alignItems="flex-start"
-                                gap={2}
+                                gap={1.5}
                                 justifyContent={message.type === 'user' ? 'flex-end' : 'flex-start'}
                               >
                                 {message.type !== 'user' && (
-                                  <Avatar sx={{ bgcolor: message.type === 'system' ? '#ef4444' : '#3b82f6', width: 28, height: 28 }}>
+                                  <Avatar sx={{ 
+                                    bgcolor: message.type === 'system' ? '#ef4444' : '#3b82f6', 
+                                    width: 24, 
+                                    height: 24,
+                                    fontSize: '0.75rem'
+                                  }}>
                                     {message.type === 'system' ? '⚠️' : '🤖'}
                                   </Avatar>
                                 )}
@@ -1618,200 +1597,209 @@ const ChatbotProfilesPageContent: React.FC = () => {
                                 <Box
                                   sx={{
                                     bgcolor: message.type === 'user' ? '#3b82f6' : 
-                                            message.type === 'system' ? '#ef4444' : '#374151',
+                                            message.type === 'system' ? '#ef4444' : '#1e293b',
                                     color: 'white',
-                                    p: 2,
+                                    p: 1.5,
                                     borderRadius: message.type === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                                    maxWidth: '80%',
-                                    position: 'relative'
+                                    maxWidth: '85%',
+                                    border: message.type === 'bot' ? '1px solid #334155' : 'none'
                                   }}
                                 >
-                                  <Typography variant="body2">
+                                  <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                                     {message.text}
                                   </Typography>
-                                  <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-                                    <Typography variant="caption" sx={{ 
-                                      color: message.type === 'user' ? '#bfdbfe' : '#94a3b8'
-                                    }}>
-                                      {message.timestamp.toLocaleTimeString()}
-                                    </Typography>
-                                    {message.trustScore && (
-                                      <Chip
-                                        label={`Trust: ${(message.trustScore * 100).toFixed(0)}%`}
-                                        size="small"
-                                        sx={{
-                                          bgcolor: message.trustScore > 0.8 ? '#10b981' : 
-                                                  message.trustScore > 0.6 ? '#f59e0b' : '#ef4444',
-                                          color: 'white',
-                                          fontSize: '0.65rem',
-                                          height: '16px'
-                                        }}
-                                      />
-                                    )}
-                                  </Box>
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      color: message.type === 'user' ? '#bfdbfe' : '#64748b',
+                                      display: 'block',
+                                      mt: 0.5,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    {message.timestamp.toLocaleTimeString()}
+                                  </Typography>
                                 </Box>
                                 
                                 {message.type === 'user' && (
-                                  <Avatar sx={{ bgcolor: '#64748b', width: 28, height: 28 }}>
+                                  <Avatar sx={{ bgcolor: '#64748b', width: 24, height: 24, fontSize: '0.75rem' }}>
                                     👤
                                   </Avatar>
                                 )}
                               </Box>
-                            ))}
+                            ))
+                          )}
 
-                            {/* Typing Indicator */}
-                            {isTyping && (
-                              <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Avatar sx={{ bgcolor: '#3b82f6', width: 28, height: 28 }}>
-                                  🤖
-                                </Avatar>
-                                <Box
-                                  sx={{
-                                    bgcolor: '#374151',
-                                    color: '#94a3b8',
-                                    p: 2,
-                                    borderRadius: '12px 12px 12px 4px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1
-                                  }}
-                                >
-                                  <Typography variant="body2">
-                                    Thinking...
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                    <Box
-                                      sx={{
-                                        width: 4,
-                                        height: 4,
-                                        bgcolor: '#94a3b8',
-                                        borderRadius: '50%',
-                                        animation: 'pulse 1.5s ease-in-out infinite'
-                                      }}
-                                    />
-                                    <Box
-                                      sx={{
-                                        width: 4,
-                                        height: 4,
-                                        bgcolor: '#94a3b8',
-                                        borderRadius: '50%',
-                                        animation: 'pulse 1.5s ease-in-out infinite 0.2s'
-                                      }}
-                                    />
-                                    <Box
-                                      sx={{
-                                        width: 4,
-                                        height: 4,
-                                        bgcolor: '#94a3b8',
-                                        borderRadius: '50%',
-                                        animation: 'pulse 1.5s ease-in-out infinite 0.4s'
-                                      }}
-                                    />
-                                  </Box>
-                                </Box>
-                              </Box>
-                            )}
-                          </Box>
-
-                          {/* Chat Input Area */}
-                          <Box
-                            sx={{
-                              p: 2,
-                              borderTop: '1px solid #334155',
-                              bgcolor: '#0f172a'
-                            }}
-                          >
-                            <Box display="flex" gap={1} alignItems="flex-end">
+                          {/* Typing Indicator */}
+                          {isTyping && (
+                            <Box display="flex" alignItems="flex-start" gap={1.5}>
+                              <Avatar sx={{ bgcolor: '#3b82f6', width: 24, height: 24, fontSize: '0.75rem' }}>
+                                🤖
+                              </Avatar>
                               <Box
-                                component="input"
-                                value={messageInput}
-                                onChange={(e) => setMessageInput(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Type your message..."
-                                disabled={chatLoading}
                                 sx={{
-                                  flex: 1,
-                                  p: 1.5,
                                   bgcolor: '#1e293b',
-                                  border: '1px solid #374151',
-                                  borderRadius: 2,
-                                  color: 'white',
-                                  fontSize: '0.875rem',
-                                  '&:focus': {
-                                    outline: 'none',
-                                    borderColor: '#3b82f6'
-                                  },
-                                  '&::placeholder': {
-                                    color: '#64748b'
-                                  },
-                                  '&:disabled': {
-                                    opacity: 0.5,
-                                    cursor: 'not-allowed'
-                                  }
-                                }}
-                              />
-                              <Button
-                                variant="contained"
-                                size="small"
-                                onClick={sendMessage}
-                                disabled={chatLoading || !messageInput.trim()}
-                                startIcon={chatLoading ? <CircularProgress size={16} /> : <Send />}
-                                sx={{
-                                  bgcolor: '#3b82f6',
-                                  minWidth: 'auto',
-                                  px: 2,
-                                  '&:hover': { bgcolor: '#2563eb' },
-                                  '&:disabled': {
-                                    bgcolor: '#374151',
-                                    color: '#64748b'
-                                  }
+                                  border: '1px solid #334155',
+                                  color: '#94a3b8',
+                                  p: 1.5,
+                                  borderRadius: '12px 12px 12px 4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1
                                 }}
                               >
-                                {chatLoading ? 'Sending...' : 'Send'}
-                              </Button>
+                                <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                                  Thinking...
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  {[0, 0.2, 0.4].map((delay, index) => (
+                                    <Box
+                                      key={index}
+                                      sx={{
+                                        width: 3,
+                                        height: 3,
+                                        bgcolor: '#94a3b8',
+                                        borderRadius: '50%',
+                                        animation: `pulse 1.5s ease-in-out infinite ${delay}s`
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
                             </Box>
-                            
-                            {/* Chat Actions */}
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                {activeSession ? 
-                                  `Live chat with governance • Trust: ${activeSession.trustLevel}` :
-                                  'This is a live preview of your chatbot interface'
-                                }
-                              </Typography>
-                              <Stack direction="row" spacing={1}>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={() => openRightPanel(selectedChatbot, 'customize')}
-                                  sx={{
-                                    borderColor: '#374151',
-                                    color: '#94a3b8',
-                                    fontSize: '0.75rem',
-                                    '&:hover': { borderColor: '#4b5563' }
-                                  }}
-                                >
-                                  Customize
-                                </Button>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={resetChat}
-                                  disabled={chatLoading}
-                                  sx={{
-                                    borderColor: '#374151',
-                                    color: '#94a3b8',
-                                    fontSize: '0.75rem',
-                                    '&:hover': { borderColor: '#4b5563' }
-                                  }}
-                                >
-                                  Reset
-                                </Button>
-                              </Stack>
-                            </Box>
+                          )}
+                        </Box>
+
+                        {/* Compact Trust Scores - Horizontal at Bottom */}
+                        {activeSession && (
+                          <Box
+                            sx={{
+                              p: 1.5,
+                              bgcolor: '#1e293b',
+                              borderTop: '1px solid #334155',
+                              borderBottom: '1px solid #334155'
+                            }}
+                          >
+                            <Grid container spacing={2} alignItems="center">
+                              <Grid item xs={3}>
+                                <Box textAlign="center">
+                                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                    Trust
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                                    {Math.round((activeSession.governanceMetrics.averageTrustScore || 0.75) * 100)}%
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={3}>
+                                <Box textAlign="center">
+                                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                    Messages
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                                    {activeSession.governanceMetrics.totalMessages}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={3}>
+                                <Box textAlign="center">
+                                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                    Violations
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ 
+                                    color: activeSession.governanceMetrics.policyViolations > 0 ? '#ef4444' : '#10b981', 
+                                    fontWeight: 'bold',
+                                    fontSize: '0.875rem'
+                                  }}>
+                                    {activeSession.governanceMetrics.policyViolations}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={3}>
+                                <Box textAlign="center">
+                                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                    Level
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                                    {activeSession.autonomyLevel}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
                           </Box>
-                        </CardContent>
-                      </Card>
+                        )}
+
+                        {/* Chat Input Area */}
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: '#0f172a',
+                            borderTop: '1px solid #334155'
+                          }}
+                        >
+                          <Box display="flex" gap={1} alignItems="flex-end">
+                            <Box
+                              component="input"
+                              value={messageInput}
+                              onChange={(e) => setMessageInput(e.target.value)}
+                              onKeyPress={handleKeyPress}
+                              placeholder={selectedChatbot ? "Type your message..." : "Select an agent first..."}
+                              disabled={chatLoading || !selectedChatbot}
+                              sx={{
+                                flex: 1,
+                                p: 1.5,
+                                bgcolor: '#1e293b',
+                                border: '1px solid #374151',
+                                borderRadius: 2,
+                                color: 'white',
+                                fontSize: '0.875rem',
+                                '&:focus': {
+                                  outline: 'none',
+                                  borderColor: '#3b82f6'
+                                },
+                                '&::placeholder': {
+                                  color: '#64748b'
+                                },
+                                '&:disabled': {
+                                  opacity: 0.5,
+                                  cursor: 'not-allowed'
+                                }
+                              }}
+                            />
+                            <IconButton
+                              size="small"
+                              sx={{ color: '#64748b', '&:hover': { color: '#94a3b8' } }}
+                            >
+                              🎤
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              sx={{ color: '#64748b', '&:hover': { color: '#94a3b8' } }}
+                            >
+                              📎
+                            </IconButton>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={sendMessage}
+                              disabled={chatLoading || !messageInput.trim() || !selectedChatbot}
+                              startIcon={chatLoading ? <CircularProgress size={14} /> : <Send />}
+                              sx={{
+                                bgcolor: '#3b82f6',
+                                minWidth: 'auto',
+                                px: 2,
+                                '&:hover': { bgcolor: '#2563eb' },
+                                '&:disabled': {
+                                  bgcolor: '#374151',
+                                  color: '#64748b'
+                                }
+                              }}
+                            >
+                              {chatLoading ? 'Sending...' : 'Send'}
+                            </Button>
+                          </Box>
+                        </Box>
+                      </>
                     )}
                   </Box>
                 )}
