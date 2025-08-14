@@ -8,7 +8,7 @@
 
 // Backend API configuration
 const BACKEND_API_BASE = 'http://localhost:3001'; // Promethios API server
-const CHAT_ENDPOINT = '/chat';
+const CHAT_ENDPOINT = '/api/chat'; // FIXED: Added /api prefix for correct endpoint
 
 // Import shared types for compatibility
 import {
@@ -148,7 +148,17 @@ export class UniversalGovernanceAdapter {
 
   private async callBackendAPI(endpoint: string, data: any): Promise<any> {
     try {
-      const response = await fetch(`${BACKEND_API_BASE}${endpoint}`, {
+      const url = `${BACKEND_API_BASE}${endpoint}`;
+      console.log(`🌐 [Universal] Calling backend API: ${url}`);
+      console.log(`📤 [Universal] Request data:`, {
+        agent_id: data.agent_id,
+        message: data.message?.substring(0, 100) + '...',
+        provider: data.provider,
+        model: data.model,
+        governance_enabled: data.governance_enabled
+      });
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,11 +167,27 @@ export class UniversalGovernanceAdapter {
         body: JSON.stringify(data),
       });
 
+      console.log(`📥 [Universal] Response status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
-        throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`❌ [Universal] Backend API error:`, {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log(`✅ [Universal] Backend API success:`, {
+        session_id: result.session_id,
+        response_length: result.response?.length,
+        governance_enabled: result.governance_enabled,
+        trust_score: result.governance_metrics?.trust_score
+      });
+
+      return result;
     } catch (error) {
       console.error('❌ [Universal] Backend API call failed:', error);
       throw error;
@@ -190,8 +216,8 @@ export class UniversalGovernanceAdapter {
         governance_enabled: true,
         session_id: context?.sessionId || `universal_${Date.now()}`,
         system_message: agentConfig?.systemPrompt || 'You are a helpful AI assistant with governance oversight.',
-        provider: agentConfig?.provider || 'openai',
-        model: agentConfig?.model || 'gpt-4',
+        provider: 'openai', // FIXED: Specify OpenAI as provider (API key is available)
+        model: 'gpt-4', // FIXED: Use GPT-4 model for high-quality responses
         conversationHistory: context?.conversationHistory || []
       };
 
