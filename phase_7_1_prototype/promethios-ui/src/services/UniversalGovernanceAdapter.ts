@@ -217,7 +217,7 @@ export class UniversalGovernanceAdapter {
         session_id: context?.sessionId || `universal_${Date.now()}`,
         system_message: agentConfig?.systemPrompt || 'You are a helpful AI assistant with governance oversight.',
         provider: 'openai', // FIXED: Specify OpenAI as provider (API key is available)
-        model: 'gpt-4', // FIXED: Use GPT-4 model for high-quality responses
+        model: 'gpt-4.1-mini', // FIXED: Use allowed model instead of gpt-4
         conversationHistory: context?.conversationHistory || []
       };
 
