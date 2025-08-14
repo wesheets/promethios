@@ -612,27 +612,13 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
               </Grid>
             </Stack>
           )}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          bgcolor: config.secondaryColor,
-                          borderRadius: 1,
-                          border: '1px solid #334155',
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        value={config.secondaryColor}
-                        onChange={(e) => updateConfig('secondaryColor', e.target.value)}
-                        sx={{ flex: 1 }}
-                      />
-                    </Box>
-                  </Box>
-                </Grid>
 
+          {/* Layout Tab */}
+          {activeTab === 2 && (
+            <Stack spacing={3}>
+              <Typography variant="subtitle1" sx={{ color: 'white' }}>Widget Layout</Typography>
+              
+              <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>Background</Typography>
@@ -681,9 +667,12 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
                   </Box>
                 </Grid>
               </Grid>
+            </Stack>
+          )}
 
-              <Divider sx={{ bgcolor: '#334155' }} />
-
+          {/* Chat Bubbles Tab */}
+          {activeTab === 3 && (
+            <Stack spacing={3}>
               <Typography variant="subtitle1" sx={{ color: 'white' }}>Chat Bubble Colors</Typography>
               
               <Grid container spacing={2}>

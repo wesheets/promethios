@@ -1,10 +1,12 @@
 /**
  * Chat Panel Governance Service
  * 
- * Integrates with the real Promethios governance API that powers modern chat
- * for real-time agent functionality, trust management, and policy enforcement.
+ * Uses the Universal Governance Adapter as the unified solution for
+ * real-time agent functionality, trust management, and policy enforcement.
+ * This provides the same capabilities as modern chat but in a simplified, unified way.
  */
 
+import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
@@ -54,33 +56,15 @@ export interface ChatResponse {
 }
 
 export class ChatPanelGovernanceService {
+  private universalAdapter: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
   private activeSessions: Map<string, ChatSession> = new Map();
   private messageQueue: Map<string, ChatMessage[]> = new Map();
-  private governanceApiBase: string;
 
   constructor() {
-    console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service with real API integration');
+    console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service with Universal Governance Adapter');
+    this.universalAdapter = new UniversalGovernanceAdapter();
     this.agentConfigService = new AgentConfigurationService();
-    
-    // Use the real Promethios governance API
-    this.governanceApiBase = 'http://localhost:8000/api';
-    
-    // Test API connection
-    this.testGovernanceConnection();
-  }
-
-  private async testGovernanceConnection(): Promise<void> {
-    try {
-      const response = await fetch(`${this.governanceApiBase}/health`);
-      if (response.ok) {
-        console.log('✅ [ChatPanel] Connected to real Promethios governance API');
-      } else {
-        console.warn('⚠️ [ChatPanel] Governance API not responding, using fallback mode');
-      }
-    } catch (error) {
-      console.warn('⚠️ [ChatPanel] Could not connect to governance API, using fallback mode:', error);
-    }
   }
 
   // ============================================================================
