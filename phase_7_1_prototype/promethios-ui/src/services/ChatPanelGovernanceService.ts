@@ -207,16 +207,16 @@ export class ChatPanelGovernanceService {
 
   async startChatSession(chatbot: ChatbotProfile): Promise<ChatSession> {
     try {
-      console.log(`🚀 [ChatPanel] Starting chat session for agent ${chatbot.id}`);
+      console.log(`🚀 [ChatPanel] Starting chat session for agent ${chatbot.identity.id}`);
       
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Get initial trust score
-      const trustData = await this.getTrustScore(chatbot.id);
+      const trustData = await this.getTrustScore(chatbot.identity.id);
       
       const session: ChatSession = {
         sessionId,
-        agentId: chatbot.id,
+        agentId: chatbot.identity.id, // FIXED: Use chatbot.identity.id instead of chatbot.id
         startTime: new Date(),
         messageCount: 0,
         trustScore: trustData.currentScore,
@@ -240,7 +240,7 @@ export class ChatPanelGovernanceService {
       // Create audit entry for session start
       await this.createAuditEntry({
         interaction_id: `session_start_${sessionId}`,
-        agent_id: chatbot.id,
+        agent_id: chatbot.identity.id, // FIXED: Use chatbot.identity.id
         session_id: sessionId,
         interaction_type: 'session_start',
         user_message: '',
