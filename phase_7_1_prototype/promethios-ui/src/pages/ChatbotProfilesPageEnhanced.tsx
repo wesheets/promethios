@@ -45,6 +45,7 @@ import {
   Send,
   Api,
   SmartToy,
+  CheckCircle,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
