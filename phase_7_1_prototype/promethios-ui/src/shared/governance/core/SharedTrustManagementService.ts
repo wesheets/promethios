@@ -580,8 +580,10 @@ export class SharedTrustManagementService implements ITrustManagementService {
 
     const recentEvents = history.events.slice(-10);
     const consistentEvents = recentEvents.filter(e => 
-      e.description.toLowerCase().includes('consistent') ||
-      e.description.toLowerCase().includes('reliable')
+      e && e.description && typeof e.description === 'string' && (
+        e.description.toLowerCase().includes('consistent') ||
+        e.description.toLowerCase().includes('reliable')
+      )
     );
 
     if (consistentEvents.length >= 3) {
@@ -620,8 +622,10 @@ export class SharedTrustManagementService implements ITrustManagementService {
 
   private analyzeCompliancePattern(history: TrustHistory): TrustPattern | null {
     const complianceEvents = history.events.filter(e => 
-      e.description.toLowerCase().includes('policy') ||
-      e.description.toLowerCase().includes('compliance')
+      e && e.description && typeof e.description === 'string' && (
+        e.description.toLowerCase().includes('policy') ||
+        e.description.toLowerCase().includes('compliance')
+      )
     );
 
     if (complianceEvents.length >= 3) {

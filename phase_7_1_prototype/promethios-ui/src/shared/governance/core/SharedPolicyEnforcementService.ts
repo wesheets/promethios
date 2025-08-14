@@ -830,6 +830,45 @@ export class SharedPolicyEnforcementService implements IPolicyEnforcementService
   // UNIVERSAL GOVERNANCE ADAPTER COMPATIBILITY METHODS
   // ============================================================================
 
+  async getApplicablePolicies(agentId: string, context: GovernanceContext): Promise<Policy[]> {
+    try {
+      console.log(`📋 [${this.context}] Getting applicable policies for agent ${agentId}`);
+      
+      // Get agent's policy assignments
+      const assignments = this.policyAssignments.get(agentId) || [];
+      const activeAssignments = assignments.filter(a => a.isActive);
+      
+      if (activeAssignments.length === 0) {
+        console.log(`ℹ️ [${this.context}] No policy assignments found for agent ${agentId}, using default policies`);
+        
+        // Return default policies for all agents
+        const defaultPolicies = Array.from(this.policies.values()).filter(p => p.isActive);
+        console.log(`✅ [${this.context}] Returning ${defaultPolicies.length} default policies`);
+        return defaultPolicies;
+      }
+      
+      // Get policies for active assignments
+      const applicablePolicies: Policy[] = [];
+      
+      for (const assignment of activeAssignments) {
+        const policy = this.policies.get(assignment.policyId);
+        if (policy && policy.isActive) {
+          applicablePolicies.push(policy);
+        }
+      }
+      
+      console.log(`✅ [${this.context}] Found ${applicablePolicies.length} applicable policies for agent ${agentId}`);
+      return applicablePolicies;
+    } catch (error) {
+      console.error(`❌ [${this.context}] Failed to get applicable policies:`, error);
+      
+      // Fallback to default policies
+      const defaultPolicies = Array.from(this.policies.values()).filter(p => p.isActive);
+      console.log(`🔄 [${this.context}] Fallback: returning ${defaultPolicies.length} default policies`);
+      return defaultPolicies;
+    }
+  }
+
   async enforcePolicy(agentId: string, content: string, context: GovernanceContext): Promise<PolicyEnforcementResult> {
     try {
       console.log(`🛡️ [${this.context}] Enforcing policies for agent ${agentId}`);
