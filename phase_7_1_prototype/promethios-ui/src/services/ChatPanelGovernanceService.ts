@@ -72,12 +72,26 @@ export class ChatPanelGovernanceService {
       
       console.log(`🚀 [ChatPanel] Starting chat session for chatbot ${chatbot.identity.name}`);
 
-      // Initialize governance session
-      await this.universalAdapter.initializeUniversalGovernance();
+      // Ensure governance is initialized (but don't fail if it's not)
+      try {
+        await this.universalAdapter.initializeUniversalGovernance();
+      } catch (error) {
+        console.warn('⚠️ [ChatPanel] Governance initialization failed, continuing with basic functionality:', error);
+      }
 
-      // Get initial trust and autonomy levels
-      const trustScore = await this.universalAdapter.getTrustScore(chatbot.identity.id);
-      const autonomyLevel = await this.universalAdapter.getAutonomyLevel(chatbot.identity.id);
+      // Get initial trust and autonomy levels with fallbacks
+      let trustScore;
+      let autonomyLevel = 'standard';
+      let trustLevel = 'medium';
+
+      try {
+        trustScore = await this.universalAdapter.getTrustScore(chatbot.identity.id);
+        autonomyLevel = await this.universalAdapter.getAutonomyLevel(chatbot.identity.id);
+        trustLevel = await this.universalAdapter.calculateTrustLevel(chatbot.identity.id);
+      } catch (error) {
+        console.warn('⚠️ [ChatPanel] Failed to get governance metrics, using defaults:', error);
+        trustScore = { currentScore: 0.75, lastUpdated: new Date(), factors: [] };
+      }
 
       // Create chat session
       const session: ChatSession = {
@@ -88,7 +102,7 @@ export class ChatPanelGovernanceService {
         isActive: true,
         startTime: new Date(),
         lastActivity: new Date(),
-        trustLevel: await this.universalAdapter.calculateTrustLevel(chatbot.identity.id),
+        trustLevel,
         autonomyLevel,
         governanceMetrics: {
           totalMessages: 0,

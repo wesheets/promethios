@@ -50,7 +50,10 @@ export class UniversalGovernanceAdapter {
     this.sharedChainOfThought = new SharedChainOfThoughtService('universal');
     this.sharedSynchronization = new SharedSynchronizationService('universal');
 
-    this.initializeUniversalGovernance();
+    // Initialize asynchronously without blocking constructor
+    this.initializeUniversalGovernance().catch(error => {
+      console.error('❌ [Universal] Failed to initialize universal governance:', error);
+    });
   }
 
   // ============================================================================
