@@ -1583,37 +1583,36 @@ const ChatbotProfilesPageContent: React.FC = () => {
                                 display="flex"
                                 alignItems="flex-start"
                                 gap={1.5}
-                                justifyContent={message.type === 'user' ? 'flex-end' : 'flex-start'}
+                                justifyContent={message.sender === 'user' ? 'flex-end' : 'flex-start'}
                               >
-                                {message.type !== 'user' && (
+                                {message.sender !== 'user' && (
                                   <Avatar sx={{ 
-                                    bgcolor: message.type === 'system' ? '#ef4444' : '#3b82f6', 
+                                    bgcolor: message.sender === 'system' ? '#ef4444' : '#3b82f6', 
                                     width: 24, 
                                     height: 24,
                                     fontSize: '0.75rem'
                                   }}>
-                                    {message.type === 'system' ? '⚠️' : '🤖'}
+                                    {message.sender === 'system' ? '⚠️' : '🤖'}
                                   </Avatar>
                                 )}
                                 
                                 <Box
                                   sx={{
-                                    bgcolor: message.type === 'user' ? '#3b82f6' : 
-                                            message.type === 'system' ? '#ef4444' : '#1e293b',
+                                    bgcolor: message.sender === 'user' ? '#3b82f6' : '#1e293b',
                                     color: 'white',
                                     p: 1.5,
-                                    borderRadius: message.type === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                                    borderRadius: 2,
                                     maxWidth: '85%',
-                                    border: message.type === 'bot' ? '1px solid #334155' : 'none'
+                                    border: message.sender === 'agent' ? '1px solid #334155' : 'none'
                                   }}
                                 >
                                   <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                                    {message.text}
+                                    {message.content}
                                   </Typography>
                                   <Typography 
                                     variant="caption" 
                                     sx={{ 
-                                      color: message.type === 'user' ? '#bfdbfe' : '#64748b',
+                                      color: message.sender === 'user' ? '#bfdbfe' : '#64748b',
                                       display: 'block',
                                       mt: 0.5,
                                       fontSize: '0.7rem'
@@ -1623,7 +1622,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                                   </Typography>
                                 </Box>
                                 
-                                {message.type === 'user' && (
+                                {message.sender === 'user' && (
                                   <Avatar sx={{ bgcolor: '#64748b', width: 24, height: 24, fontSize: '0.75rem' }}>
                                     👤
                                   </Avatar>
