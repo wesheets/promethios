@@ -85,6 +85,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser: user, loading: authLoading } = useAuth();
+  const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
   console.log('🔍 ChatbotProfilesPageEnhanced - user from auth:', user?.uid);
   console.log('🔍 ChatbotProfilesPageEnhanced - auth loading:', authLoading);
   
@@ -176,21 +177,53 @@ const ChatbotProfilesPageContent: React.FC = () => {
     setSelectedChatbot(chatbot);
     setRightPanelType(panelType);
     
+    // Set active chatbot for widget customizer
+    setActiveChatbotId(chatbot.identity.id);
+    
     // If opening chat panel, initialize chat session
     if (panelType === 'chat') {
       try {
         setChatLoading(true);
         console.log(`💬 [ChatPanel] Initializing chat session for ${chatbot.identity.name}`);
         
-        // Start new chat session
+        // Start new chat session with governance
         const session = await chatPanelGovernanceService.startChatSession(chatbot, user?.uid || 'anonymous');
         setActiveSession(session);
         setChatMessages(session.messages);
         setMessageInput('');
         
         console.log(`✅ [ChatPanel] Chat session initialized:`, session.sessionId);
+        console.log(`🎨 [ChatPanel] Using widget config:`, getChatbotConfig(chatbot.identity.id));
       } catch (error) {
         console.error(`❌ [ChatPanel] Failed to initialize chat session:`, error);
+        // Create a fallback session for UI testing
+        const fallbackSession: ChatSession = {
+          sessionId: `fallback_${Date.now()}`,
+          chatbotId: chatbot.identity.id,
+          userId: user?.uid || 'anonymous',
+          messages: [{
+            id: '1',
+            type: 'bot',
+            text: 'Hello! I\'m having trouble connecting to the governance system, but I\'m here to help!',
+            timestamp: new Date(),
+            trustScore: 0.5,
+            governanceStatus: 'flagged'
+          }],
+          isActive: true,
+          startTime: new Date(),
+          lastActivity: new Date(),
+          trustLevel: 'unknown',
+          autonomyLevel: 'limited',
+          governanceMetrics: {
+            totalMessages: 1,
+            flaggedMessages: 0,
+            blockedMessages: 0,
+            averageTrustScore: 0.5,
+            policyViolations: 0
+          }
+        };
+        setActiveSession(fallbackSession);
+        setChatMessages(fallbackSession.messages);
       } finally {
         setChatLoading(false);
       }
@@ -1491,7 +1524,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           <Box
                             sx={{
                               p: 2,
-                              bgcolor: '#0f172a',
+                              bgcolor: widgetConfig.primaryColor,
                               borderBottom: '1px solid #334155',
                               display: 'flex',
                               alignItems: 'center',
@@ -1499,15 +1532,34 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             }}
                           >
                             <Box display="flex" alignItems="center" gap={2}>
-                              <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                              <Avatar sx={{ 
+                                bgcolor: 'rgba(255,255,255,0.2)', 
+                                width: 32, 
+                                height: 32,
+                                fontSize: '1rem'
+                              }}>
                                 🤖
                               </Avatar>
                               <Box>
-                                <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                <Typography 
+                                  variant="body1" 
+                                  sx={{ 
+                                    color: 'white', 
+                                    fontWeight: 'bold',
+                                    fontFamily: widgetConfig.fontFamily,
+                                    fontSize: `${widgetConfig.fontSize + 2}px`
+                                  }}
+                                >
                                   {selectedChatbot.identity.name}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#10b981' }}>
-                                  ● Online {activeSession && `• Session: ${activeSession.sessionId.slice(-8)}`}
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: 'rgba(255,255,255,0.8)',
+                                    fontFamily: widgetConfig.fontFamily
+                                  }}
+                                >
+                                  ● {widgetConfig.headerSubtitle} {activeSession && `• Session: ${activeSession.sessionId.slice(-8)}`}
                                 </Typography>
                               </Box>
                             </Box>
@@ -1515,10 +1567,23 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             {/* Session Info */}
                             {activeSession && (
                               <Box textAlign="right">
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: 'rgba(255,255,255,0.7)',
+                                    fontFamily: widgetConfig.fontFamily
+                                  }}
+                                >
                                   Trust: {activeSession.trustLevel} • Autonomy: {activeSession.autonomyLevel}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: 'rgba(255,255,255,0.7)', 
+                                    display: 'block',
+                                    fontFamily: widgetConfig.fontFamily
+                                  }}
+                                >
                                   Messages: {activeSession.governanceMetrics.totalMessages}
                                 </Typography>
                               </Box>
