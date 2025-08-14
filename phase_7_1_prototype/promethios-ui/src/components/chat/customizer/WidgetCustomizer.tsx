@@ -1516,10 +1516,6 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
               </Paper>
             </Stack>
           )}
-                sx={{ color: '#94a3b8' }}
-              />
-            </Stack>
-          )}
 
           {/* Behavior Tab */}
           {activeTab === 6 && (
