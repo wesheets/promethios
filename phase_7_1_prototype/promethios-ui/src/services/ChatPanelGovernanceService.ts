@@ -7,6 +7,8 @@
 
 import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { ChatbotProfile } from '../types/ChatbotTypes';
+import { AgentConfigurationService } from './AgentConfigurationService';
+import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
 
 // Message Types
 export interface ChatMessage {
@@ -54,12 +56,14 @@ export interface ChatResponse {
 
 export class ChatPanelGovernanceService {
   private universalAdapter: UniversalGovernanceAdapter;
+  private agentConfigService: AgentConfigurationService;
   private activeSessions: Map<string, ChatSession> = new Map();
   private messageQueue: Map<string, ChatMessage[]> = new Map();
 
   constructor() {
     console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service');
     this.universalAdapter = new UniversalGovernanceAdapter();
+    this.agentConfigService = new AgentConfigurationService();
   }
 
   // ============================================================================
@@ -77,6 +81,36 @@ export class ChatPanelGovernanceService {
         await this.universalAdapter.initializeUniversalGovernance();
       } catch (error) {
         console.warn('⚠️ [ChatPanel] Governance initialization failed, continuing with basic functionality:', error);
+      }
+
+      // Load agent configuration and initialize with tools
+      let agentConfig: AgentConfiguration | null = null;
+      try {
+        console.log(`🔧 [ChatPanel] Loading agent configuration for ${chatbot.identity.id}`);
+        agentConfig = await this.agentConfigService.getConfiguration(chatbot.identity.id);
+        
+        if (agentConfig) {
+          // Create runtime configuration
+          const runtimeConfig: RuntimeConfiguration = {
+            agentId: chatbot.identity.id,
+            sessionId,
+            configuration: agentConfig,
+            context: {
+              sessionType: 'chat',
+              userContext: { userId },
+              environmentContext: { platform: 'web' }
+            }
+          };
+
+          // Initialize Universal Governance Adapter with agent configuration
+          await this.universalAdapter.initializeWithConfiguration(runtimeConfig);
+          
+          console.log(`✅ [ChatPanel] Agent initialized with ${agentConfig.toolProfile.enabledTools.filter(t => t.enabled).length} enabled tools`);
+        } else {
+          console.log(`ℹ️ [ChatPanel] No custom configuration found for agent ${chatbot.identity.id}, using defaults`);
+        }
+      } catch (error) {
+        console.warn('⚠️ [ChatPanel] Failed to load agent configuration, continuing with defaults:', error);
       }
 
       // Get initial trust and autonomy levels with fallbacks
@@ -312,8 +346,47 @@ export class ChatPanelGovernanceService {
         }
       );
 
-      // Generate contextual response based on user message
-      let responseText = this.generateContextualResponse(userMessage, session);
+      // Check if user message requires tool usage
+      let toolResults: any[] = [];
+      let responseText = '';
+      
+      try {
+        // Determine if tools should be used based on user message
+        const toolsNeeded = this.analyzeMessageForToolUsage(userMessage);
+        
+        if (toolsNeeded.length > 0) {
+          console.log(`🛠️ [ChatPanel] User message requires tools: ${toolsNeeded.join(', ')}`);
+          
+          // Execute required tools
+          for (const toolName of toolsNeeded) {
+            try {
+              const toolResult = await this.universalAdapter.executeToolAction(
+                toolName,
+                this.extractToolParameters(toolName, userMessage),
+                { sessionId: session.sessionId, userId: session.userId }
+              );
+              
+              if (toolResult.success !== false) {
+                toolResults.push({ tool: toolName, result: toolResult });
+                console.log(`✅ [ChatPanel] Tool ${toolName} executed successfully`);
+              }
+            } catch (toolError) {
+              console.warn(`⚠️ [ChatPanel] Tool ${toolName} execution failed:`, toolError);
+              // Continue with other tools or fallback response
+            }
+          }
+        }
+
+        // Generate response based on tool results or fallback to contextual response
+        if (toolResults.length > 0) {
+          responseText = this.generateToolBasedResponse(userMessage, toolResults);
+        } else {
+          responseText = this.generateContextualResponse(userMessage, session);
+        }
+      } catch (error) {
+        console.warn(`⚠️ [ChatPanel] Tool analysis/execution failed, using contextual response:`, error);
+        responseText = this.generateContextualResponse(userMessage, session);
+      }
 
       // Add autonomous thinking if approved
       let autonomousThoughts: string[] = [];
@@ -459,6 +532,129 @@ export class ChatPanelGovernanceService {
       console.error(`❌ [ChatPanel] Failed to get chatbot status:`, error);
       return null;
     }
+  }
+
+  // ============================================================================
+  // TOOL INTEGRATION METHODS
+  // ============================================================================
+
+  private analyzeMessageForToolUsage(message: string): string[] {
+    const toolsNeeded: string[] = [];
+    const lowerMessage = message.toLowerCase();
+
+    // Web search triggers
+    if (lowerMessage.includes('search') || lowerMessage.includes('find') || 
+        lowerMessage.includes('look up') || lowerMessage.includes('what is') ||
+        lowerMessage.includes('tell me about')) {
+      toolsNeeded.push('web_search');
+    }
+
+    // Email triggers
+    if (lowerMessage.includes('send email') || lowerMessage.includes('email') ||
+        lowerMessage.includes('contact') || lowerMessage.includes('notify')) {
+      toolsNeeded.push('email_sender');
+    }
+
+    // Calendar triggers
+    if (lowerMessage.includes('schedule') || lowerMessage.includes('calendar') ||
+        lowerMessage.includes('appointment') || lowerMessage.includes('meeting')) {
+      toolsNeeded.push('calendar_manager');
+    }
+
+    // Document generation triggers
+    if (lowerMessage.includes('create document') || lowerMessage.includes('generate report') ||
+        lowerMessage.includes('write') || lowerMessage.includes('document')) {
+      toolsNeeded.push('document_generator');
+    }
+
+    // E-commerce triggers (Shopify)
+    if (lowerMessage.includes('product') || lowerMessage.includes('inventory') ||
+        lowerMessage.includes('order') || lowerMessage.includes('shopify')) {
+      toolsNeeded.push('shopify_integration');
+    }
+
+    return toolsNeeded;
+  }
+
+  private extractToolParameters(toolName: string, message: string): any {
+    const lowerMessage = message.toLowerCase();
+
+    switch (toolName) {
+      case 'web_search':
+        // Extract search query
+        const searchTerms = message.replace(/search for|find|look up|what is|tell me about/gi, '').trim();
+        return { query: searchTerms || message };
+
+      case 'email_sender':
+        // Extract email details (simplified)
+        return {
+          subject: `Message from chat: ${message.substring(0, 50)}...`,
+          body: message,
+          to: 'support@promethios.com' // Default recipient
+        };
+
+      case 'calendar_manager':
+        // Extract calendar details (simplified)
+        return {
+          title: `Scheduled from chat: ${message.substring(0, 30)}...`,
+          description: message,
+          duration: 30 // Default 30 minutes
+        };
+
+      case 'document_generator':
+        // Extract document details
+        return {
+          title: `Generated Document`,
+          content: message,
+          format: 'pdf'
+        };
+
+      case 'shopify_integration':
+        // Extract product search terms
+        const productQuery = message.replace(/product|inventory|order|shopify/gi, '').trim();
+        return { query: productQuery || 'all products' };
+
+      default:
+        return { input: message };
+    }
+  }
+
+  private generateToolBasedResponse(userMessage: string, toolResults: any[]): string {
+    if (toolResults.length === 0) {
+      return "I tried to help with your request, but couldn't access the necessary tools at the moment. Let me provide a general response instead.";
+    }
+
+    let response = "I've processed your request using my available tools. Here's what I found:\n\n";
+
+    for (const { tool, result } of toolResults) {
+      switch (tool) {
+        case 'web_search':
+          response += `🔍 **Search Results**: I found relevant information about your query. ${result.summary || 'Results are available.'}\n\n`;
+          break;
+
+        case 'email_sender':
+          response += `📧 **Email Sent**: I've sent your message to the appropriate team. You should receive a response soon.\n\n`;
+          break;
+
+        case 'calendar_manager':
+          response += `📅 **Calendar Updated**: I've scheduled your request. You'll receive a calendar invitation shortly.\n\n`;
+          break;
+
+        case 'document_generator':
+          response += `📄 **Document Created**: I've generated a document based on your request. It's ready for download.\n\n`;
+          break;
+
+        case 'shopify_integration':
+          response += `🛍️ **Product Information**: I've retrieved the latest product details from our inventory system.\n\n`;
+          break;
+
+        default:
+          response += `🔧 **Tool Result**: I've processed your request using ${tool}.\n\n`;
+      }
+    }
+
+    response += "Is there anything else you'd like me to help you with?";
+    return response;
   }
 
   // ============================================================================
