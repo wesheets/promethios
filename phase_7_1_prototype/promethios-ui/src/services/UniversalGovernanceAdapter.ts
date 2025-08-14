@@ -7,7 +7,7 @@
  */
 
 // Backend API configuration
-const BACKEND_API_BASE = 'http://localhost:3001'; // Promethios API server
+const BACKEND_API_BASE = 'https://promethios-phase-7-1-api.onrender.com'; // Deployed Promethios API server (same as modern chat)
 const CHAT_ENDPOINT = '/api/chat'; // FIXED: Added /api prefix for correct endpoint
 
 // Import shared types for compatibility
