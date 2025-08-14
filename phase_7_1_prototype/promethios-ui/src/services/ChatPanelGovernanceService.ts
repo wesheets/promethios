@@ -1,152 +1,79 @@
 /**
  * Chat Panel Governance Service
  * 
- * Connects directly to the backend APIs for real governance functionality,
- * mirroring exactly how the modern chat works but with a unified interface.
+ * Provides governance functionality for the chat panel using the Universal Governance Adapter.
+ * This service acts as a bridge between the chat interface and the universal governance system,
+ * ensuring consistent governance behavior across all chat implementations.
  */
 
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
+import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
-// Backend API Configuration - Use real Promethios governance APIs
-const API_BASE_URL = 'http://localhost:8000';
-
-// Backend API Response Types
-interface TrustScoreResponse {
-  currentScore: number;
-  lastUpdated: string;
-  factors: Array<{
-    type: string;
-    value: number;
-    weight: number;
-  }>;
-}
-
-interface PolicyEnforcementResponse {
-  allowed: boolean;
-  violations: string[];
-  warnings: string[];
-  complianceScore: number;
-}
-
-interface AuditEntryResponse {
+// Chat Panel Response Types
+interface ChatMessage {
   id: string;
-  timestamp: string;
-  status: 'success' | 'error';
-}
-
-interface ChatMessageResponse {
-  response: string;
-  trustScore: number;
-  governanceStatus: 'approved' | 'flagged' | 'blocked';
-  metadata?: any;
-}
-
-// Message Types
-export interface ChatMessage {
-  id: string;
-  type: 'user' | 'bot' | 'system';
-  text: string;
+  content: string;
+  sender: 'user' | 'agent';
   timestamp: Date;
-  agentId?: string;
   trustScore?: number;
-  governanceStatus?: 'approved' | 'flagged' | 'blocked';
-  metadata?: any;
+  governanceStatus?: string;
 }
 
-export interface ChatSession {
+interface ChatSession {
   sessionId: string;
-  chatbotId: string;
-  userId: string;
-  messages: ChatMessage[];
-  isActive: boolean;
+  agentId: string;
   startTime: Date;
-  lastActivity: Date;
-  trustLevel: string;
-  autonomyLevel: string;
+  endTime?: Date;
+  messageCount: number;
+  trustScore: number;
   governanceMetrics: {
-    totalMessages: number;
-    flaggedMessages: number;
-    blockedMessages: number;
-    averageTrustScore: number;
-    policyViolations: number;
+    violations: number;
+    warnings: number;
+    complianceScore: number;
   };
 }
 
-export interface ChatResponse {
-  message: ChatMessage;
+interface GovernanceMetrics {
   trustScore: number;
-  governanceStatus: 'approved' | 'flagged' | 'blocked';
-  reasoning?: string;
-  suggestedActions?: string[];
-  autonomousThinking?: {
-    enabled: boolean;
-    thoughts?: string[];
-    confidence?: number;
-  };
+  messageCount: number;
+  violations: number;
+  autonomyLevel: string;
 }
 
 export class ChatPanelGovernanceService {
+  private universalGovernance: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
   private activeSessions: Map<string, ChatSession> = new Map();
-  private messageQueue: Map<string, ChatMessage[]> = new Map();
+  private sessionMetrics: Map<string, GovernanceMetrics> = new Map();
 
   constructor() {
-    console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service with Backend API Integration');
+    console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter');
+    this.universalGovernance = new UniversalGovernanceAdapter();
     this.agentConfigService = new AgentConfigurationService();
   }
 
   // ============================================================================
-  // BACKEND API INTEGRATION
+  // UNIVERSAL GOVERNANCE INTEGRATION
   // ============================================================================
 
-  private async callBackendAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<any> {
+  private async getTrustScore(agentId: string): Promise<{ currentScore: number; lastUpdated: string; factors: any[] }> {
     try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      const options: RequestInit = {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      if (data && method === 'POST') {
-        options.body = JSON.stringify(data);
-      }
-
-      console.log(`🌐 [ChatPanel] Calling backend API: ${method} ${url}`);
+      const trustScore = await this.universalGovernance.getTrustScore(agentId);
       
-      const response = await fetch(url, options);
-      
-      if (!response.ok) {
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      if (trustScore) {
+        return {
+          currentScore: trustScore.currentScore,
+          lastUpdated: trustScore.lastUpdated?.toISOString() || new Date().toISOString(),
+          factors: trustScore.history || []
+        };
       }
-
-      const result = await response.json();
-      console.log(`✅ [ChatPanel] Backend API response received`);
-      return result;
-    } catch (error) {
-      console.error(`❌ [ChatPanel] Backend API call failed:`, error);
-      throw error;
-    }
-  }
-
-  private async getTrustScore(agentId: string): Promise<TrustScoreResponse> {
-    try {
-      // Use the real trust API endpoint from phase_6_3_new
-      const response = await this.callBackendAPI(`/trust/evaluate`, 'POST', {
-        agent_id: agentId,
-        target_id: agentId,
-        context: { interaction_history: 10, environment: 'chat_panel' },
-        evidence: [{ type: 'interaction_quality', value: 0.8 }],
-        trust_dimensions: ['reliability', 'competence', 'benevolence']
-      });
       
       return {
-        currentScore: response.trust_score || 0.75,
+        currentScore: 0.75,
         lastUpdated: new Date().toISOString(),
-        factors: response.trust_factors || []
+        factors: []
       };
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to get trust score, using default:`, error);
@@ -160,33 +87,27 @@ export class ChatPanelGovernanceService {
 
   private async updateTrustScore(agentId: string, event: any): Promise<void> {
     try {
-      await this.callBackendAPI('/trust/update', 'POST', {
-        agent_id: agentId,
-        event_type: event.type,
-        event_data: event,
-        timestamp: new Date().toISOString()
-      });
+      await this.universalGovernance.updateTrustScore(agentId, event);
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to update trust score:`, error);
     }
   }
 
-  private async enforcePolicy(agentId: string, content: string, context: any): Promise<PolicyEnforcementResponse> {
+  private async enforcePolicy(agentId: string, content: string, context: any): Promise<{ allowed: boolean; violations: string[]; warnings: string[]; complianceScore: number }> {
     try {
-      // Use the real policy API endpoint from phase_6_3_new
-      const response = await this.callBackendAPI('/policy/enforce', 'POST', {
-        agent_id: agentId,
+      const policyResult = await this.universalGovernance.enforcePolicy(agentId, content, {
+        agentId,
         content,
         context,
-        policy_type: 'content_safety',
-        enforcement_level: 'strict'
+        timestamp: new Date(),
+        sessionId: context.sessionId || 'unknown'
       });
       
       return {
-        allowed: response.allowed !== false,
-        violations: response.violations || [],
-        warnings: response.warnings || [],
-        complianceScore: response.compliance_score || 1.0
+        allowed: !policyResult.violations || policyResult.violations.length === 0,
+        violations: policyResult.violations || [],
+        warnings: policyResult.warnings || [],
+        complianceScore: policyResult.complianceScore || 1.0
       };
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to enforce policy, allowing by default:`, error);
@@ -199,27 +120,23 @@ export class ChatPanelGovernanceService {
     }
   }
 
-  private async createAuditEntry(entry: any): Promise<AuditEntryResponse> {
+  private async createAuditEntry(entry: any): Promise<{ id: string; timestamp: string; status: string }> {
     try {
-      // Use the real audit API endpoint from phase_6_3_new
-      const response = await this.callBackendAPI('/audit/log', 'POST', {
+      const auditEntry = await this.universalGovernance.createAuditEntry({
+        interaction_id: entry.interaction_id || `chat_${Date.now()}`,
         agent_id: entry.agent_id,
-        event_type: entry.interaction_type || 'chat_interaction',
-        event_details: {
-          user_message: entry.user_message,
-          agent_response: entry.agent_response,
-          trust_score: entry.trust_score,
-          governance_status: entry.governance_status,
-          session_id: entry.session_id
-        },
-        source: 'chat_panel',
-        severity: 'info',
-        timestamp: entry.timestamp
+        user_id: entry.user_id || 'unknown',
+        session_id: entry.session_id,
+        message_content: entry.user_message,
+        response_content: entry.agent_response,
+        trust_score: entry.trust_score,
+        governance_status: entry.governance_status,
+        timestamp: new Date()
       });
       
       return {
-        id: response.audit_id || `audit_${Date.now()}`,
-        timestamp: response.timestamp || new Date().toISOString(),
+        id: auditEntry.interaction_id,
+        timestamp: auditEntry.timestamp?.toISOString() || new Date().toISOString(),
         status: 'success'
       };
     } catch (error) {
@@ -232,30 +149,25 @@ export class ChatPanelGovernanceService {
     }
   }
 
-  private async generateChatResponse(sessionId: string, message: string, agentId: string, context: any): Promise<ChatMessageResponse> {
+  private async generateChatResponse(sessionId: string, message: string, agentId: string, context: any): Promise<{ response: string; trustScore: number; governanceStatus: string; metadata: any }> {
     try {
-      // Use the real governance loop execution endpoint
-      const response = await this.callBackendAPI('/loop/execute', 'POST', {
-        agent_id: agentId,
-        user_message: message,
-        session_id: sessionId,
-        context: {
-          ...context,
+      // Use the Universal Governance Adapter's enhanced response generation
+      const enhancedResponse = await this.universalGovernance.enhanceResponseWithGovernance(
+        message, // Use the user message as base for enhancement
+        agentId,
+        {
+          sessionId,
           environment: 'chat_panel',
-          governance_enabled: true
-        },
-        governance_config: {
-          trust_threshold: 0.6,
-          policy_enforcement: 'strict',
-          audit_level: 'comprehensive'
+          governance_enabled: true,
+          ...context
         }
-      });
+      );
       
       return {
-        response: response.agent_response || this.generateFallbackResponse(message),
-        trustScore: response.trust_score || 0.75,
-        governanceStatus: response.governance_status || 'approved',
-        metadata: response.governance_metadata || { source: 'governance_loop' }
+        response: enhancedResponse.enhancedContent || this.generateFallbackResponse(message),
+        trustScore: enhancedResponse.trustScore || 0.75,
+        governanceStatus: enhancedResponse.governanceStatus || 'approved',
+        metadata: enhancedResponse.metadata || { source: 'universal_governance' }
       };
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to generate chat response, using fallback:`, error);
@@ -271,103 +183,67 @@ export class ChatPanelGovernanceService {
   private generateFallbackResponse(message: string): string {
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
-      return "I'd be happy to help you! I can assist with questions about our services, provide information about features, or help you get started. What specific area would you like to explore?";
+    if (lowerMessage.includes('governance') || lowerMessage.includes('trust') || lowerMessage.includes('policy')) {
+      return "I'm here to help with governance-related questions! Our AI governance system ensures secure, compliant, and trustworthy interactions through advanced trust scoring, policy enforcement, and comprehensive audit trails.";
     }
     
-    if (lowerMessage.includes('service') || lowerMessage.includes('what do you do')) {
-      return "We offer comprehensive AI solutions including custom chatbot development, AI model integration, governance and compliance tools, and analytics and performance monitoring. What specific service interests you most?";
+    if (lowerMessage.includes('help') || lowerMessage.includes('what') || lowerMessage.includes('how')) {
+      return "I'd be happy to assist you! I'm powered by an advanced governance framework that monitors trust levels, enforces policies, and maintains detailed audit logs to ensure safe and reliable AI interactions.";
     }
     
-    return "Thank you for your message! I'm here to help with any questions you might have about our services and capabilities. How can I assist you today?";
+    return "Thank you for your message! I'm here to provide helpful, governance-compliant responses. Our system continuously monitors trust levels and policy compliance to ensure the highest standards of AI safety and reliability.";
   }
 
   // ============================================================================
-  // SESSION MANAGEMENT
+  // CHAT SESSION MANAGEMENT
   // ============================================================================
 
-  async startChatSession(chatbot: ChatbotProfile, userId: string = 'user'): Promise<ChatSession> {
+  async startChatSession(chatbot: ChatbotProfile): Promise<ChatSession> {
     try {
-      const sessionId = `chat_session_${chatbot.identity.id}_${Date.now()}`;
+      console.log(`🚀 [ChatPanel] Starting chat session for agent ${chatbot.id}`);
       
-      console.log(`🚀 [ChatPanel] Starting chat session for chatbot ${chatbot.identity.name}`);
-
-      // Load agent configuration 
-      let agentConfig: AgentConfiguration | null = null;
-      try {
-        console.log(`🔧 [ChatPanel] Loading agent configuration for ${chatbot.identity.id}`);
-        agentConfig = await this.agentConfigService.getConfiguration(chatbot.identity.id);
-        
-        if (agentConfig) {
-          console.log(`✅ [ChatPanel] Agent configuration loaded with ${agentConfig.toolProfile.enabledTools.filter(t => t.enabled).length} enabled tools`);
-        } else {
-          console.log(`ℹ️ [ChatPanel] No custom configuration found for agent ${chatbot.identity.id}, using defaults`);
-        }
-      } catch (error) {
-        console.warn('⚠️ [ChatPanel] Failed to load agent configuration, continuing with defaults:', error);
-      }
-
-      // Get initial trust score from backend
-      const trustScoreData = await this.getTrustScore(chatbot.identity.id);
-      const trustScore = trustScoreData.currentScore;
-
-      // Calculate trust and autonomy levels
-      const trustLevel = trustScore >= 0.8 ? 'high' : trustScore >= 0.6 ? 'medium' : 'low';
-      const autonomyLevel = trustScore >= 0.8 ? 'enhanced' : trustScore >= 0.6 ? 'standard' : 'restricted';
-
-      // Create chat session
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Get initial trust score
+      const trustData = await this.getTrustScore(chatbot.id);
+      
       const session: ChatSession = {
         sessionId,
-        chatbotId: chatbot.identity.id,
-        userId,
-        messages: [],
-        isActive: true,
+        agentId: chatbot.id,
         startTime: new Date(),
-        lastActivity: new Date(),
-        trustLevel,
-        autonomyLevel,
+        messageCount: 0,
+        trustScore: trustData.currentScore,
         governanceMetrics: {
-          totalMessages: 0,
-          flaggedMessages: 0,
-          blockedMessages: 0,
-          averageTrustScore: trustScore,
-          policyViolations: 0,
+          violations: 0,
+          warnings: 0,
+          complianceScore: 1.0
         }
       };
 
-      // Add welcome message
-      const welcomeMessage: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        type: 'bot',
-        text: `Hello! I'm ${chatbot.identity.name}. How can I help you today?`,
-        timestamp: new Date(),
-        agentId: chatbot.identity.id,
-        trustScore: trustScore,
-        governanceStatus: 'approved'
-      };
-
-      session.messages.push(welcomeMessage);
       this.activeSessions.set(sessionId, session);
+      
+      // Initialize session metrics
+      this.sessionMetrics.set(sessionId, {
+        trustScore: trustData.currentScore,
+        messageCount: 0,
+        violations: 0,
+        autonomyLevel: 'standard'
+      });
 
       // Create audit entry for session start
       await this.createAuditEntry({
         interaction_id: `session_start_${sessionId}`,
-        agent_id: chatbot.identity.id,
-        user_id: userId,
+        agent_id: chatbot.id,
+        session_id: sessionId,
         interaction_type: 'session_start',
-        timestamp: new Date().toISOString(),
-        trust_score: trustScore,
-        governance_status: 'approved'
+        user_message: '',
+        agent_response: '',
+        trust_score: trustData.currentScore,
+        governance_status: 'approved',
+        timestamp: new Date().toISOString()
       });
 
-      console.log(`✅ [ChatPanel] Chat session started:`, {
-        sessionId,
-        chatbotName: chatbot.identity.name,
-        trustLevel: session.trustLevel,
-        autonomyLevel: session.autonomyLevel,
-        trustScore: trustScore
-      });
-
+      console.log(`✅ [ChatPanel] Chat session started successfully: ${sessionId}`);
       return session;
     } catch (error) {
       console.error(`❌ [ChatPanel] Failed to start chat session:`, error);
@@ -377,222 +253,162 @@ export class ChatPanelGovernanceService {
 
   async endChatSession(sessionId: string): Promise<void> {
     try {
+      console.log(`🏁 [ChatPanel] Ending chat session: ${sessionId}`);
+      
       const session = this.activeSessions.get(sessionId);
       if (!session) {
-        console.warn(`⚠️ [ChatPanel] Session ${sessionId} not found`);
+        console.warn(`⚠️ [ChatPanel] Session not found: ${sessionId}`);
         return;
       }
 
-      console.log(`🛑 [ChatPanel] Ending chat session ${sessionId}`);
-
-      // Update session status
-      session.isActive = false;
-      session.lastActivity = new Date();
-
+      session.endTime = new Date();
+      
       // Create audit entry for session end
       await this.createAuditEntry({
         interaction_id: `session_end_${sessionId}`,
-        agent_id: session.chatbotId,
-        user_id: session.userId,
+        agent_id: session.agentId,
+        session_id: sessionId,
         interaction_type: 'session_end',
-        timestamp: new Date().toISOString(),
-        session_duration: Date.now() - session.startTime.getTime(),
-        message_count: session.messages.length,
-        trust_impact: 0,
-        governance_status: 'approved'
-      });
-
-      // Remove from active sessions
-      this.activeSessions.delete(sessionId);
-
-      console.log(`✅ [ChatPanel] Chat session ended successfully`);
-    } catch (error) {
-      console.error(`❌ [ChatPanel] Failed to end chat session:`, error);
-    }
-  }
-
-  getActiveSession(sessionId: string): ChatSession | null {
-    return this.activeSessions.get(sessionId) || null;
-  }
-
-  // ============================================================================
-  // MESSAGE PROCESSING
-  // ============================================================================
-
-  async sendMessage(sessionId: string, userMessage: string): Promise<ChatResponse> {
-    try {
-      const session = this.activeSessions.get(sessionId);
-      if (!session) {
-        throw new Error(`Session ${sessionId} not found`);
-      }
-
-      console.log(`📤 [ChatPanel] Processing user message in session ${sessionId}`);
-
-      // Create user message
-      const userMsg: ChatMessage = {
-        id: `msg_${Date.now()}_user`,
-        type: 'user',
-        text: userMessage,
-        timestamp: new Date(),
-        agentId: session.chatbotId,
-        governanceStatus: 'approved'
-      };
-
-      // Add user message to session
-      session.messages.push(userMsg);
-      session.lastActivity = new Date();
-      session.governanceMetrics.totalMessages++;
-
-      // Policy enforcement check using backend API
-      const policyEnforcement = await this.enforcePolicy(
-        session.chatbotId,
-        userMessage,
-        {
-          userId: session.userId,
-          sessionId: session.sessionId,
-          environment: 'chat_panel',
-          timestamp: new Date().toISOString()
-        }
-      );
-
-      if (!policyEnforcement.allowed) {
-        console.warn(`🚫 [ChatPanel] Message blocked by policy enforcement`);
-        
-        const blockedResponse: ChatMessage = {
-          id: `msg_${Date.now()}_blocked`,
-          type: 'system',
-          text: 'This message was blocked due to policy violations. Please rephrase your request.',
-          timestamp: new Date(),
-          agentId: session.chatbotId,
-          governanceStatus: 'blocked'
-        };
-
-        session.messages.push(blockedResponse);
-        session.governanceMetrics.blockedMessages++;
-        session.governanceMetrics.policyViolations++;
-
-        return {
-          message: blockedResponse,
-          trustScore: 0,
-          governanceStatus: 'blocked',
-          reasoning: policyEnforcement.violations.join(', ')
-        };
-      }
-
-      // Generate bot response using backend API
-      const chatResponse = await this.generateChatResponse(
-        sessionId,
-        userMessage,
-        session.chatbotId,
-        {
-          userId: session.userId,
-          sessionHistory: session.messages.slice(-5), // Last 5 messages for context
-          agentConfig: await this.agentConfigService.getConfiguration(session.chatbotId)
-        }
-      );
-
-      // Create bot message
-      const botMessage: ChatMessage = {
-        id: `msg_${Date.now()}_bot`,
-        type: 'bot',
-        text: chatResponse.response,
-        timestamp: new Date(),
-        agentId: session.chatbotId,
-        trustScore: chatResponse.trustScore,
-        governanceStatus: chatResponse.governanceStatus,
-        metadata: chatResponse.metadata
-      };
-
-      // Add to session
-      session.messages.push(botMessage);
-
-      // Update session metrics
-      session.governanceMetrics.averageTrustScore = 
-        (session.governanceMetrics.averageTrustScore + chatResponse.trustScore) / 2;
-
-      // Update trust score based on interaction
-      await this.updateTrustScore(session.chatbotId, {
-        type: 'message_exchange',
-        quality: 0.8,
-        helpfulness: 0.85,
-        accuracy: 0.9,
+        user_message: '',
+        agent_response: '',
+        trust_score: session.trustScore,
+        governance_status: 'completed',
         timestamp: new Date().toISOString()
       });
 
-      // Create audit entry
+      this.activeSessions.delete(sessionId);
+      this.sessionMetrics.delete(sessionId);
+      
+      console.log(`✅ [ChatPanel] Chat session ended successfully: ${sessionId}`);
+    } catch (error) {
+      console.error(`❌ [ChatPanel] Failed to end chat session:`, error);
+      throw error;
+    }
+  }
+
+  async sendMessage(sessionId: string, message: string): Promise<ChatMessage> {
+    try {
+      console.log(`💬 [ChatPanel] Processing message in session: ${sessionId}`);
+      
+      const session = this.activeSessions.get(sessionId);
+      if (!session) {
+        throw new Error(`Session not found: ${sessionId}`);
+      }
+
+      const metrics = this.sessionMetrics.get(sessionId);
+      if (!metrics) {
+        throw new Error(`Session metrics not found: ${sessionId}`);
+      }
+
+      // 1. Policy Enforcement
+      const policyResult = await this.enforcePolicy(session.agentId, message, { sessionId });
+      
+      if (!policyResult.allowed) {
+        console.warn(`🚫 [ChatPanel] Message blocked by policy:`, policyResult.violations);
+        
+        // Update metrics
+        metrics.violations += policyResult.violations.length;
+        session.governanceMetrics.violations += policyResult.violations.length;
+        
+        // Create audit entry for blocked message
+        await this.createAuditEntry({
+          interaction_id: `blocked_${Date.now()}`,
+          agent_id: session.agentId,
+          session_id: sessionId,
+          interaction_type: 'message_blocked',
+          user_message: message,
+          agent_response: '',
+          trust_score: session.trustScore,
+          governance_status: 'blocked',
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          id: `msg_${Date.now()}`,
+          content: `I cannot process that message due to policy violations: ${policyResult.violations.join(', ')}. Please rephrase your request.`,
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: session.trustScore,
+          governanceStatus: 'blocked'
+        };
+      }
+
+      // 2. Generate Response
+      const chatResponse = await this.generateChatResponse(sessionId, message, session.agentId, { sessionId });
+      
+      // 3. Update Trust Score
+      await this.updateTrustScore(session.agentId, {
+        type: 'message_interaction',
+        quality: 'good',
+        compliance: policyResult.complianceScore,
+        sessionId
+      });
+
+      // 4. Update Session Metrics
+      session.messageCount++;
+      session.trustScore = chatResponse.trustScore;
+      session.governanceMetrics.complianceScore = policyResult.complianceScore;
+      
+      metrics.messageCount++;
+      metrics.trustScore = chatResponse.trustScore;
+
+      // 5. Create Audit Entry
       await this.createAuditEntry({
         interaction_id: `msg_${Date.now()}`,
-        agent_id: session.chatbotId,
-        user_id: session.userId,
-        interaction_type: 'message_exchange',
-        user_message: userMessage,
+        agent_id: session.agentId,
+        session_id: sessionId,
+        interaction_type: 'chat_interaction',
+        user_message: message,
         agent_response: chatResponse.response,
-        timestamp: new Date().toISOString(),
         trust_score: chatResponse.trustScore,
         governance_status: chatResponse.governanceStatus,
-        policy_violations: policyEnforcement.violations,
-        session_id: sessionId
+        timestamp: new Date().toISOString()
       });
 
-      console.log(`✅ [ChatPanel] Message processed successfully:`, {
+      console.log(`✅ [ChatPanel] Message processed successfully`);
+      
+      return {
+        id: `msg_${Date.now()}`,
+        content: chatResponse.response,
+        sender: 'agent',
+        timestamp: new Date(),
         trustScore: chatResponse.trustScore,
         governanceStatus: chatResponse.governanceStatus
-      });
-
-      return {
-        message: botMessage,
-        trustScore: chatResponse.trustScore,
-        governanceStatus: chatResponse.governanceStatus,
-        reasoning: chatResponse.metadata?.reasoning
       };
     } catch (error) {
       console.error(`❌ [ChatPanel] Failed to process message:`, error);
-      
-      // Return error response
-      const errorMessage: ChatMessage = {
-        id: `msg_${Date.now()}_error`,
-        type: 'system',
-        text: 'I apologize, but I encountered an error processing your message. Please try again.',
-        timestamp: new Date(),
-        governanceStatus: 'flagged'
-      };
-
-      return {
-        message: errorMessage,
-        trustScore: 0,
-        governanceStatus: 'flagged',
-        reasoning: error.message
-      };
+      throw error;
     }
   }
 
   // ============================================================================
-  // UTILITY METHODS
+  // GOVERNANCE METRICS & MONITORING
   // ============================================================================
+
+  getSessionMetrics(sessionId: string): GovernanceMetrics | null {
+    return this.sessionMetrics.get(sessionId) || null;
+  }
 
   getAllActiveSessions(): ChatSession[] {
     return Array.from(this.activeSessions.values());
   }
 
-  getSessionCount(): number {
-    return this.activeSessions.size;
+  async getAgentTrustLevel(agentId: string): Promise<string> {
+    try {
+      return await this.universalGovernance.calculateTrustLevel(agentId);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get trust level:`, error);
+      return 'standard';
+    }
   }
 
-  async cleanup(): Promise<void> {
-    console.log('🧹 [ChatPanel] Cleaning up governance service');
-    
-    // End all active sessions
-    for (const sessionId of this.activeSessions.keys()) {
-      await this.endChatSession(sessionId);
+  async getComplianceMetrics(agentId: string): Promise<any> {
+    try {
+      return await this.universalGovernance.getComplianceMetrics(agentId);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get compliance metrics:`, error);
+      return { complianceScore: 1.0, violations: 0, warnings: 0 };
     }
-    
-    // Clear message queues
-    this.messageQueue.clear();
-    
-    console.log('✅ [ChatPanel] Cleanup completed');
   }
 }
-
-// Export singleton instance
-export const chatPanelGovernanceService = new ChatPanelGovernanceService();
 
