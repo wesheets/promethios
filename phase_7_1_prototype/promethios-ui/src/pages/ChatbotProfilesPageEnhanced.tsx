@@ -50,9 +50,11 @@ import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
+import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
+import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | null;
+type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -631,6 +633,23 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             }}
                           >
                             Knowledge
+                          </Button>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Settings />}
+                            fullWidth
+                            onClick={() => openRightPanel(chatbot, 'tools')}
+                            sx={{
+                              borderColor: '#374151',
+                              color: '#94a3b8',
+                              '&:hover': { borderColor: '#4b5563', bgcolor: '#1e293b' },
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            Tools
                           </Button>
                         </Grid>
                         <Grid item xs={6}>
@@ -1736,6 +1755,18 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       Basic configuration, model selection, and governance settings will be available here.
                     </Typography>
                   </Box>
+                )}
+
+                {rightPanelType === 'tools' && (
+                  <ToolConfigurationPanel
+                    chatbot={selectedChatbot}
+                    onClose={closeRightPanel}
+                    onSave={(toolProfile: AgentToolProfile) => {
+                      console.log('Tool profile saved:', toolProfile);
+                      // Here you would save the tool configuration to the backend
+                      closeRightPanel();
+                    }}
+                  />
                 )}
               </Box>
             </>
