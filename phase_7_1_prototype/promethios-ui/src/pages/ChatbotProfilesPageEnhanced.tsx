@@ -255,8 +255,16 @@ const ChatbotProfilesPageContent: React.FC = () => {
       // Send message through governance service
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim());
       
-      // Update messages with the response
-      setChatMessages(prev => [...prev, response.message]);
+      // Add user message first
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        content: messageInput.trim(),
+        sender: 'user',
+        timestamp: new Date()
+      };
+      
+      // Update messages with user message and bot response
+      setChatMessages(prev => [...prev, userMessage, response]);
       setMessageInput('');
       
       console.log(`✅ [ChatPanel] Message sent and response received`);
@@ -266,10 +274,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
       // Add error message
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
-        type: 'system',
-        text: 'Sorry, I encountered an error. Please try again.',
+        content: 'Sorry, I encountered an error. Please try again.',
+        sender: 'agent',
         timestamp: new Date(),
-        governanceStatus: 'flagged'
+        governanceStatus: 'error'
       };
       setChatMessages(prev => [...prev, errorMessage]);
     } finally {
