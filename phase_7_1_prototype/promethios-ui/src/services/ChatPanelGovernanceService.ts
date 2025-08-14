@@ -412,3 +412,19 @@ export class ChatPanelGovernanceService {
   }
 }
 
+
+
+// Export types for external use
+export type { ChatMessage, ChatSession, GovernanceMetrics };
+
+// Export a singleton instance for easy use
+export const chatPanelGovernanceService = new ChatPanelGovernanceService();
+
+// Legacy export for compatibility
+export interface ChatResponse {
+  response: string;
+  trustScore: number;
+  governanceStatus: string;
+  metadata: any;
+}
+
