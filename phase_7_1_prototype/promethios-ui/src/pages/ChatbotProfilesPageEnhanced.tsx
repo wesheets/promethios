@@ -43,6 +43,8 @@ import {
   Edit,
   Deploy,
   Send,
+  Api,
+  SmartToy,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
