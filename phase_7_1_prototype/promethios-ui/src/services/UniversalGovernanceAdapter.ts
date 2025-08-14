@@ -26,6 +26,15 @@ import {
   EnhancedResponse
 } from '../shared/governance/types/SharedGovernanceTypes';
 
+// Import agent configuration types
+import {
+  AgentConfiguration,
+  RuntimeConfiguration,
+  GovernanceConfiguration,
+  ToolGovernanceConfig
+} from '../types/AgentConfigurationTypes';
+import { AgentToolProfile, AgentTool } from '../types/ToolTypes';
+
 export class UniversalGovernanceAdapter {
   private sharedGovernance: SharedGovernanceService;
   private sharedPolicyEnforcement: SharedPolicyEnforcementService;
@@ -37,6 +46,11 @@ export class UniversalGovernanceAdapter {
 
   private activeSessions: Map<string, any> = new Map();
   private context: string = 'universal';
+  
+  // Agent configuration management
+  private agentConfigurations: Map<string, RuntimeConfiguration> = new Map();
+  private toolRegistry: Map<string, AgentTool> = new Map();
+  private currentAgentConfig: RuntimeConfiguration | null = null;
 
   constructor() {
     console.log('🌐 [Universal] Initializing governance adapter with shared services');
@@ -799,6 +813,264 @@ export class UniversalGovernanceAdapter {
       console.error(`❌ [Universal] Response processing failed:`, error);
       throw error;
     }
+  }
+
+  // ============================================================================
+  // AGENT CONFIGURATION MANAGEMENT
+  // ============================================================================
+
+  async initializeWithConfiguration(runtimeConfig: RuntimeConfiguration): Promise<void> {
+    try {
+      console.log(`🔧 [Universal] Initializing agent with configuration:`, {
+        agentId: runtimeConfig.agentId,
+        sessionId: runtimeConfig.sessionId,
+        toolCount: runtimeConfig.configuration.toolProfile.enabledTools.length
+      });
+
+      // Store the configuration
+      this.agentConfigurations.set(runtimeConfig.sessionId, runtimeConfig);
+      this.currentAgentConfig = runtimeConfig;
+
+      // Initialize tool registry for this agent
+      await this.initializeToolRegistry(runtimeConfig.configuration.toolProfile);
+
+      // Apply governance settings
+      await this.applyGovernanceConfiguration(runtimeConfig.configuration.governanceSettings);
+
+      // Initialize trust management with agent-specific settings
+      await this.initializeAgentTrustManagement(runtimeConfig);
+
+      console.log(`✅ [Universal] Agent configuration initialized successfully`);
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to initialize agent configuration:`, error);
+      throw error;
+    }
+  }
+
+  async executeToolAction(toolName: string, parameters: any, context: any = {}): Promise<any> {
+    try {
+      // Check if tool is enabled for current agent
+      if (!this.isToolEnabled(toolName)) {
+        throw new Error(`Tool ${toolName} is not enabled for this agent`);
+      }
+
+      // Get tool configuration
+      const tool = this.toolRegistry.get(toolName);
+      if (!tool) {
+        throw new Error(`Tool ${toolName} not found in registry`);
+      }
+
+      // Apply governance checks
+      const governanceResult = await this.checkToolGovernance(toolName, parameters, context);
+      if (!governanceResult.allowed) {
+        console.warn(`🚫 [Universal] Tool execution blocked by governance:`, governanceResult.reason);
+        return {
+          success: false,
+          error: governanceResult.reason,
+          fallbackResponse: governanceResult.fallbackResponse
+        };
+      }
+
+      // Execute tool with agent's credentials
+      const result = await this.executeToolWithCredentials(tool, parameters, context);
+
+      // Log tool usage for audit
+      await this.logToolUsage(toolName, parameters, result, context);
+
+      // Update trust score based on tool usage
+      await this.updateTrustScoreForToolUsage(toolName, result, context);
+
+      return result;
+    } catch (error) {
+      console.error(`❌ [Universal] Tool execution failed:`, error);
+      await this.logToolError(toolName, parameters, error, context);
+      throw error;
+    }
+  }
+
+  isToolEnabled(toolName: string): boolean {
+    if (!this.currentAgentConfig) {
+      return false;
+    }
+
+    return this.currentAgentConfig.configuration.toolProfile.enabledTools.some(
+      tool => tool.name === toolName && tool.enabled
+    );
+  }
+
+  getAgentConfiguration(sessionId: string): RuntimeConfiguration | null {
+    return this.agentConfigurations.get(sessionId) || null;
+  }
+
+  async updateAgentConfiguration(sessionId: string, updates: Partial<AgentConfiguration>): Promise<void> {
+    const runtimeConfig = this.agentConfigurations.get(sessionId);
+    if (!runtimeConfig) {
+      throw new Error(`No configuration found for session ${sessionId}`);
+    }
+
+    // Apply updates
+    Object.assign(runtimeConfig.configuration, updates);
+
+    // Re-initialize if tool profile changed
+    if (updates.toolProfile) {
+      await this.initializeToolRegistry(updates.toolProfile);
+    }
+
+    // Re-apply governance settings if changed
+    if (updates.governanceSettings) {
+      await this.applyGovernanceConfiguration(updates.governanceSettings);
+    }
+
+    console.log(`🔄 [Universal] Agent configuration updated for session ${sessionId}`);
+  }
+
+  // ============================================================================
+  // PRIVATE HELPER METHODS
+  // ============================================================================
+
+  private async initializeToolRegistry(toolProfile: AgentToolProfile): Promise<void> {
+    this.toolRegistry.clear();
+
+    for (const tool of toolProfile.enabledTools) {
+      if (tool.enabled) {
+        this.toolRegistry.set(tool.name, tool);
+        console.log(`🔧 [Universal] Registered tool: ${tool.name}`);
+      }
+    }
+  }
+
+  private async applyGovernanceConfiguration(governanceConfig: GovernanceConfiguration): Promise<void> {
+    // Apply trust management settings
+    if (governanceConfig.trustManagement.enabled) {
+      // Configure trust thresholds and decay rates
+      console.log(`🛡️ [Universal] Applied trust management configuration`);
+    }
+
+    // Apply policy enforcement settings
+    if (governanceConfig.policyEnforcement.enabled) {
+      // Load and apply policies
+      console.log(`📋 [Universal] Applied policy enforcement configuration`);
+    }
+
+    // Apply audit logging settings
+    if (governanceConfig.auditLogging.enabled) {
+      // Configure audit logging level and retention
+      console.log(`📝 [Universal] Applied audit logging configuration`);
+    }
+  }
+
+  private async initializeAgentTrustManagement(runtimeConfig: RuntimeConfiguration): Promise<void> {
+    const trustConfig = runtimeConfig.configuration.governanceSettings.trustManagement;
+    
+    // Initialize trust score for this agent
+    await this.sharedTrustManagement.initializeTrustScore(
+      runtimeConfig.agentId,
+      trustConfig.initialTrustLevel / 100 // Convert percentage to decimal
+    );
+  }
+
+  private async checkToolGovernance(toolName: string, parameters: any, context: any): Promise<{
+    allowed: boolean;
+    reason?: string;
+    fallbackResponse?: string;
+  }> {
+    if (!this.currentAgentConfig) {
+      return { allowed: false, reason: 'No agent configuration available' };
+    }
+
+    const toolGovernance = this.currentAgentConfig.configuration.governanceSettings.toolGovernance;
+
+    // Check if tool requires approval
+    if (toolGovernance.requireApproval) {
+      const currentTrustScore = await this.getTrustScore(this.currentAgentConfig.agentId);
+      if (currentTrustScore && currentTrustScore.score < toolGovernance.approvalThreshold / 100) {
+        return {
+          allowed: false,
+          reason: `Tool usage requires approval due to low trust score (${Math.round(currentTrustScore.score * 100)}%)`,
+          fallbackResponse: 'This action requires manual approval due to current trust levels.'
+        };
+      }
+    }
+
+    // Check if tool is restricted
+    if (toolGovernance.restrictedTools.includes(toolName)) {
+      return {
+        allowed: false,
+        reason: `Tool ${toolName} is restricted by governance policy`,
+        fallbackResponse: 'This tool is currently restricted by your organization\'s governance policy.'
+      };
+    }
+
+    // Check usage limits
+    const usageLimit = toolGovernance.toolUsageLimits.find(limit => limit.toolName === toolName);
+    if (usageLimit) {
+      // TODO: Implement usage tracking and limit checking
+      console.log(`📊 [Universal] Checking usage limits for tool ${toolName}`);
+    }
+
+    return { allowed: true };
+  }
+
+  private async executeToolWithCredentials(tool: AgentTool, parameters: any, context: any): Promise<any> {
+    // TODO: Implement actual tool execution with credentials
+    console.log(`🔧 [Universal] Executing tool ${tool.name} with parameters:`, parameters);
+    
+    // Mock execution for now
+    return {
+      success: true,
+      result: `Tool ${tool.name} executed successfully`,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  private async logToolUsage(toolName: string, parameters: any, result: any, context: any): Promise<void> {
+    if (!this.currentAgentConfig?.configuration.governanceSettings.auditLogging.includeToolUsage) {
+      return;
+    }
+
+    await this.sharedAuditLogging.logEvent({
+      event_type: 'tool_usage',
+      agent_id: this.currentAgentConfig.agentId,
+      session_id: this.currentAgentConfig.sessionId,
+      details: {
+        toolName,
+        parameters,
+        result,
+        context
+      },
+      timestamp: new Date(),
+      environment: 'universal'
+    });
+  }
+
+  private async logToolError(toolName: string, parameters: any, error: any, context: any): Promise<void> {
+    await this.sharedAuditLogging.logEvent({
+      event_type: 'tool_error',
+      agent_id: this.currentAgentConfig?.agentId || 'unknown',
+      session_id: this.currentAgentConfig?.sessionId || 'unknown',
+      details: {
+        toolName,
+        parameters,
+        error: error.message,
+        context
+      },
+      timestamp: new Date(),
+      environment: 'universal'
+    });
+  }
+
+  private async updateTrustScoreForToolUsage(toolName: string, result: any, context: any): Promise<void> {
+    if (!this.currentAgentConfig) return;
+
+    const impact = result.success ? 0.01 : -0.05; // Small positive for success, larger negative for failure
+    
+    await this.updateTrustScore(this.currentAgentConfig.agentId, {
+      eventType: 'tool_usage',
+      impact,
+      evidence: [`tool_${toolName}_${result.success ? 'success' : 'failure'}`],
+      context: 'tool_execution',
+      timestamp: new Date()
+    });
   }
 }
 

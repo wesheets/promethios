@@ -30,8 +30,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Tab,
   Tabs,
+  Tab,
+  CircularProgress,
   Stack,
   LinearProgress,
 } from '@mui/material';
@@ -69,6 +70,8 @@ import {
   ToolCategory,
   AgentToolProfile 
 } from '../../types/ToolTypes';
+import { AgentConfigurationService } from '../../services/AgentConfigurationService';
+import { AgentConfiguration } from '../../types/AgentConfigurationTypes';
 
 interface ToolConfigurationPanelProps {
   chatbot: ChatbotProfile;
@@ -116,6 +119,63 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<ToolConfiguration | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // Initialize configuration service
+  const configService = new AgentConfigurationService();
+
+  // Load existing configuration on mount
+  useEffect(() => {
+    loadAgentConfiguration();
+  }, [chatbot.identity.id]);
+
+  const loadAgentConfiguration = async () => {
+    try {
+      setLoading(true);
+      const config = await configService.getConfiguration(chatbot.identity.id);
+      if (config) {
+        setToolProfile(config.toolProfile);
+      }
+    } catch (error) {
+      console.error('Failed to load agent configuration:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveConfiguration = async () => {
+    try {
+      setSaveStatus('saving');
+      
+      // Create updated configuration
+      const updatedConfig: Partial<AgentConfiguration> = {
+        toolProfile: {
+          ...toolProfile,
+          lastUpdated: new Date(),
+          totalToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled).length,
+          enterpriseToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled && t.tier === 'enterprise').length
+        }
+      };
+
+      // Save configuration
+      await configService.saveConfiguration(chatbot.identity.id, updatedConfig);
+      
+      // Notify parent component
+      if (onSave) {
+        onSave(updatedConfig);
+      }
+
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      
+      console.log('✅ Tool configuration saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save tool configuration:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  };
 
   // Filter tools by category and search
   const getFilteredTools = (categoryId?: string) => {
@@ -135,22 +195,18 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
     return filtered;
   };
 
-  // Toggle tool enabled state
-  const toggleTool = (toolId: string) => {
-    const tool = AVAILABLE_TOOLS.find(t => t.id === toolId);
-    if (!tool) return;
-
-    const isEnabled = toolProfile.enabledTools.includes(toolId);
+  // Toggle tool enabled/disabled
+  const toggleTool = (tool: ToolConfiguration) => {
+    const existingTool = toolProfile.enabledTools.find(t => t.name === tool.name);
+    const isEnabled = existingTool?.enabled || false;
     
     if (isEnabled) {
       // Disable tool
       setToolProfile(prev => ({
         ...prev,
-        enabledTools: prev.enabledTools.filter(id => id !== toolId),
-        toolConfigurations: {
-          ...prev.toolConfigurations,
-          [toolId]: { ...tool, enabled: false }
-        },
+        enabledTools: prev.enabledTools.map(t => 
+          t.name === tool.name ? { ...t, enabled: false } : t
+        ),
         totalToolsEnabled: prev.totalToolsEnabled - 1,
         enterpriseToolsEnabled: tool.tier === 'enterprise' 
           ? prev.enterpriseToolsEnabled - 1 
@@ -158,20 +214,32 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
         lastUpdated: new Date(),
       }));
     } else {
-      // Enable tool
-      setToolProfile(prev => ({
-        ...prev,
-        enabledTools: [...prev.enabledTools, toolId],
-        toolConfigurations: {
-          ...prev.toolConfigurations,
-          [toolId]: { ...tool, enabled: true }
-        },
-        totalToolsEnabled: prev.totalToolsEnabled + 1,
-        enterpriseToolsEnabled: tool.tier === 'enterprise' 
-          ? prev.enterpriseToolsEnabled + 1 
-          : prev.enterpriseToolsEnabled,
-        lastUpdated: new Date(),
-      }));
+      // Enable tool or add new tool
+      const newTool = {
+        name: tool.name,
+        enabled: true,
+        tier: tool.tier,
+        category: tool.category,
+        configuration: {},
+        credentials: {}
+      };
+
+      setToolProfile(prev => {
+        const existingIndex = prev.enabledTools.findIndex(t => t.name === tool.name);
+        const updatedTools = existingIndex >= 0 
+          ? prev.enabledTools.map(t => t.name === tool.name ? newTool : t)
+          : [...prev.enabledTools, newTool];
+
+        return {
+          ...prev,
+          enabledTools: updatedTools,
+          totalToolsEnabled: prev.totalToolsEnabled + (existingIndex >= 0 ? 0 : 1),
+          enterpriseToolsEnabled: tool.tier === 'enterprise' 
+            ? prev.enterpriseToolsEnabled + (existingIndex >= 0 ? 0 : 1)
+            : prev.enterpriseToolsEnabled,
+          lastUpdated: new Date(),
+        };
+      });
     }
   };
 
@@ -225,7 +293,8 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
 
   // Render tool card
   const renderToolCard = (tool: ToolConfiguration) => {
-    const isEnabled = toolProfile.enabledTools.includes(tool.id);
+    const existingTool = toolProfile.enabledTools.find(t => t.name === tool.name);
+    const isEnabled = existingTool?.enabled || false;
     const IconComponent = getIconComponent(tool.icon);
     const tierColors = getTierBadge(tool.tier);
 
@@ -267,7 +336,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
             </Box>
             <Switch
               checked={isEnabled}
-              onChange={() => toggleTool(tool.id)}
+              onChange={() => toggleTool(tool)}
               sx={{
                 '& .MuiSwitch-switchBase.Mui-checked': {
                   color: '#3b82f6',
@@ -574,13 +643,24 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
           </Button>
           <Button
             variant="contained"
-            onClick={() => onSave(toolProfile)}
+            onClick={saveConfiguration}
+            disabled={saveStatus === 'saving'}
             sx={{
-              bgcolor: '#3b82f6',
-              '&:hover': { bgcolor: '#2563eb' }
+              bgcolor: saveStatus === 'saved' ? '#10b981' : '#3b82f6',
+              '&:hover': { 
+                bgcolor: saveStatus === 'saved' ? '#059669' : '#2563eb' 
+              },
+              '&:disabled': {
+                bgcolor: '#475569',
+                color: '#94a3b8'
+              }
             }}
           >
-            Save & Deploy Tools
+            {saveStatus === 'saving' && <CircularProgress size={16} sx={{ mr: 1 }} />}
+            {saveStatus === 'saved' ? '✓ Saved' : 
+             saveStatus === 'saving' ? 'Saving...' : 
+             saveStatus === 'error' ? 'Error - Retry' : 
+             'Save & Deploy Tools'}
           </Button>
         </Box>
       </Box>
