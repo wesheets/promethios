@@ -1821,22 +1821,6 @@ const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, on
               </Paper>
             </Stack>
           )}
-                sx={{ color: '#94a3b8' }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={config.showTimestamps}
-                    onChange={(e) => updateConfig('showTimestamps', e.target.checked)}
-                    sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#3b82f6' } }}
-                  />
-                }
-                label="Show Timestamps"
-                sx={{ color: '#94a3b8' }}
-              />
-            </Stack>
-          )}
         </Box>
 
         {/* Live Preview */}
