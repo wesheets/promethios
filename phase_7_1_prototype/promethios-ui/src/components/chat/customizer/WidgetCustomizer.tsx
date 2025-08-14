@@ -28,14 +28,14 @@ import {
   TextFields as TypographyIcon,
   ViewQuilt as LayoutIcon,
   ChatBubble as ChatBubblesIcon,
-  Branding as BrandingIcon,
+  Label as BrandingIcon,
   Animation as AnimationsIcon,
   Settings as BehaviorIcon,
   Close as CloseIcon,
   Send as SendIcon,
   AttachFile as AttachFileIcon,
   EmojiEmotions as EmojiEmotionsIcon,
-  TestTube as TestTubeIcon,
+  Science as TestTubeIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useWidgetCustomizer } from '../../../context/WidgetCustomizerContext';
