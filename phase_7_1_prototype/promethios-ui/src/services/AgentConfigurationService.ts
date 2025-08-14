@@ -33,6 +33,25 @@ export class AgentConfigurationService {
   // CONFIGURATION MANAGEMENT
   // ============================================================================
 
+  async getConfiguration(agentId: string): Promise<AgentConfiguration | null> {
+    try {
+      console.log(`📁 [Config] Loading configuration for agent ${agentId}`);
+      
+      const configuration = await this.loadConfiguration(agentId);
+      
+      if (configuration) {
+        console.log(`✅ [Config] Configuration loaded successfully for agent ${agentId}`);
+        return configuration;
+      } else {
+        console.log(`ℹ️ [Config] No configuration found for agent ${agentId}, will use defaults`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`❌ [Config] Failed to load configuration for agent ${agentId}:`, error);
+      return null;
+    }
+  }
+
   async saveConfiguration(agentId: string, configuration: AgentConfiguration): Promise<void> {
     try {
       // Validate configuration
@@ -302,9 +321,44 @@ export class AgentConfigurationService {
   }
 
   private async loadFromStorage(agentId: string): Promise<AgentConfiguration | null> {
-    // TODO: Implement actual loading from database/storage
-    const stored = localStorage.getItem(`agent_config_${agentId}`);
-    return stored ? JSON.parse(stored) : null;
+    try {
+      // Try to load from localStorage first
+      const stored = localStorage.getItem(`agent_config_${agentId}`);
+      if (stored) {
+        console.log(`📁 [Config] Found stored configuration for agent ${agentId}`);
+        return JSON.parse(stored);
+      }
+
+      // If no stored configuration, create a default one
+      console.log(`🔧 [Config] No stored configuration found for agent ${agentId}, creating default configuration`);
+      
+      const defaultConfig: AgentConfiguration = {
+        identity: {
+          id: agentId,
+          name: `Agent ${agentId}`,
+          description: 'AI Assistant with comprehensive tool access',
+          organizationId: 'default',
+          version: '1.0.0'
+        },
+        toolProfile: this.getDefaultToolProfile(),
+        governanceSettings: this.getDefaultGovernanceSettings(),
+        personalitySettings: this.getDefaultPersonalitySettings(),
+        deploymentSettings: this.getDefaultDeploymentSettings(),
+        widgetCustomization: this.getDefaultWidgetConfig(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: 1
+      };
+
+      // Save the default configuration for future use
+      await this.saveConfiguration(agentId, defaultConfig);
+      
+      console.log(`✅ [Config] Default configuration created and saved for agent ${agentId}`);
+      return defaultConfig;
+    } catch (error) {
+      console.error(`❌ [Config] Failed to load/create configuration for agent ${agentId}:`, error);
+      return null;
+    }
   }
 
   private async persistTemplate(template: ConfigurationTemplate): Promise<void> {
