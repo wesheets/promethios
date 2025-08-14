@@ -8,7 +8,7 @@
 
 // Backend API configuration
 const BACKEND_API_BASE = 'https://promethios-phase-7-1-api.onrender.com'; // Deployed Promethios API server (same as modern chat)
-const CHAT_ENDPOINT = '/api/chat'; // FIXED: Added /api prefix for correct endpoint
+const CHAT_ENDPOINT = '/api/chat'; // Backend API endpoint
 
 // Import shared types for compatibility
 import {
@@ -155,8 +155,10 @@ export class UniversalGovernanceAdapter {
         message: data.message?.substring(0, 100) + '...',
         provider: data.provider,
         model: data.model,
-        governance_enabled: data.governance_enabled
+        governance_enabled: data.governance_enabled,
+        session_id: data.session_id
       });
+      console.log(`📤 [Universal] Full request body:`, JSON.stringify(data, null, 2));
 
       const response = await fetch(url, {
         method: 'POST',
