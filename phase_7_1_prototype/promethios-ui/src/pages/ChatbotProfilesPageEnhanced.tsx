@@ -19,6 +19,8 @@ import {
   Tooltip,
   Badge,
   CircularProgress,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Analytics,
