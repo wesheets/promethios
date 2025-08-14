@@ -80,7 +80,7 @@ import {
   SmartToy as ChatbotsIcon,
   Build as ChatSetupIcon,
   School as KnowledgeIcon,
-  Link as IntegrationsIcon,
+  Link as ChatIntegrationsIcon,
   BarChart as ChatAnalyticsIcon,
   AutoAwesome as AutomationIcon,
   Api as HostedApiIcon,
@@ -214,7 +214,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         { 
           id: 'chat-integrations', 
           label: 'Integrations', 
-          icon: <IntegrationsIcon />, 
+          icon: <ChatIntegrationsIcon />, 
           path: '/ui/chat/integrations',
           children: [
             { id: 'business-systems', label: 'Business Systems', icon: <OrganizationIcon />, path: '/ui/chat/integrations/business' },
