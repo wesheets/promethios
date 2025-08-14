@@ -505,6 +505,12 @@ export class SharedTrustManagementService implements ITrustManagementService {
   }
 
   private isEventRelevantToFactor(event: TrustEvent, factorType: string): boolean {
+    // Add null/undefined checks to prevent toLowerCase errors
+    if (!event || !event.description || typeof event.description !== 'string') {
+      console.warn(`⚠️ [${this.context}] Invalid event description for factor relevance check`);
+      return false;
+    }
+    
     const eventDescription = event.description.toLowerCase();
     
     switch (factorType) {
@@ -722,6 +728,69 @@ export class SharedTrustManagementService implements ITrustManagementService {
     };
 
     return timeframeMap[timeframe.toLowerCase()] || timeframeMap['day'];
+  }
+
+  // ============================================================================
+  // UNIVERSAL GOVERNANCE ADAPTER COMPATIBILITY METHODS
+  // ============================================================================
+
+  async getTrustScore(agentId: string): Promise<TrustScore | null> {
+    try {
+      console.log(`🤝 [${this.context}] Getting trust score for agent ${agentId}`);
+      
+      // Check if we have a cached trust score
+      let trustScore = this.trustScores.get(agentId);
+      
+      if (!trustScore) {
+        // Calculate trust score if not cached
+        trustScore = await this.calculateTrustScore(agentId);
+      }
+      
+      console.log(`✅ [${this.context}] Trust score retrieved:`, {
+        agentId,
+        currentScore: trustScore.currentScore,
+        trend: trustScore.trend
+      });
+      
+      return trustScore;
+    } catch (error) {
+      console.error(`❌ [${this.context}] Failed to get trust score:`, error);
+      return null;
+    }
+  }
+
+  async initializeTrustScore(agentId: string, initialScore: number = 0.75): Promise<TrustScore> {
+    try {
+      console.log(`🚀 [${this.context}] Initializing trust score for agent ${agentId} with score ${initialScore}`);
+      
+      const trustScore: TrustScore = {
+        agentId,
+        currentScore: initialScore,
+        previousScore: initialScore,
+        trend: 'stable',
+        confidence: 0.5, // Medium confidence for new agents
+        lastUpdated: new Date(),
+        factors: this.initializeTrustFactors()
+      };
+      
+      // Store the trust score
+      this.trustScores.set(agentId, trustScore);
+      
+      // Create initial trust event
+      await this.addTrustEvent(agentId, {
+        eventType: 'initialization',
+        description: 'Trust score initialized for new agent',
+        impact: 0,
+        timestamp: new Date(),
+        context: { source: 'initialization', agentId }
+      });
+      
+      console.log(`✅ [${this.context}] Trust score initialized for agent ${agentId}`);
+      return trustScore;
+    } catch (error) {
+      console.error(`❌ [${this.context}] Failed to initialize trust score:`, error);
+      throw new Error(`Trust score initialization failed: ${error.message}`);
+    }
   }
 }
 

@@ -825,5 +825,110 @@ export class SharedPolicyEnforcementService implements IPolicyEnforcementService
       return [];
     }
   }
+
+  // ============================================================================
+  // UNIVERSAL GOVERNANCE ADAPTER COMPATIBILITY METHODS
+  // ============================================================================
+
+  async enforcePolicy(agentId: string, content: string, context: GovernanceContext): Promise<PolicyEnforcementResult> {
+    try {
+      console.log(`🛡️ [${this.context}] Enforcing policies for agent ${agentId}`);
+      
+      // Get applicable policies for this agent
+      const applicablePolicies = await this.getApplicablePolicies(agentId, context);
+      
+      if (applicablePolicies.length === 0) {
+        console.log(`ℹ️ [${this.context}] No applicable policies found for agent ${agentId}`);
+        return {
+          allowed: true,
+          policies: [],
+          violations: [],
+          warnings: [],
+          overallComplianceScore: 100,
+          recommendations: []
+        };
+      }
+      
+      // Check compliance against all applicable policies
+      const complianceResults: PolicyComplianceResult[] = [];
+      const violations: PolicyViolation[] = [];
+      const warnings: string[] = [];
+      
+      for (const policy of applicablePolicies) {
+        const complianceResult = await this.checkPolicyCompliance(content, policy);
+        complianceResults.push(complianceResult);
+        
+        // Handle violations
+        for (const violatedRuleId of complianceResult.violatedRules) {
+          const rule = policy.rules.find(r => r.ruleId === violatedRuleId);
+          if (rule) {
+            const violation: PolicyViolation = {
+              violationId: `violation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              policyId: policy.policyId,
+              ruleId: rule.ruleId,
+              agentId,
+              description: `Policy violation: ${rule.name} - ${rule.description}`,
+              severity: policy.severity,
+              timestamp: new Date(),
+              context: {
+                content: content.substring(0, 100) + '...', // Truncated content for logging
+                agentId,
+                sessionId: context.sessionId || 'unknown'
+              },
+              status: 'active'
+            };
+            violations.push(violation);
+          }
+        }
+        
+        // Collect warnings
+        warnings.push(...complianceResult.warnings);
+      }
+      
+      // Calculate overall compliance score
+      const overallComplianceScore = complianceResults.length > 0 
+        ? complianceResults.reduce((sum, result) => sum + result.complianceScore, 0) / complianceResults.length
+        : 100;
+      
+      // Determine if action is allowed
+      const criticalViolations = violations.filter(v => v.severity === 'critical');
+      const allowed = criticalViolations.length === 0;
+      
+      // Generate recommendations
+      const recommendations: string[] = [];
+      if (violations.length > 0) {
+        recommendations.push('Review and address policy violations before proceeding');
+        recommendations.push('Consider additional compliance training');
+      }
+      if (warnings.length > 0) {
+        recommendations.push('Address policy warnings to improve compliance score');
+      }
+      if (overallComplianceScore < 80) {
+        recommendations.push('Compliance score below threshold - review policies and procedures');
+      }
+      
+      const result: PolicyEnforcementResult = {
+        allowed,
+        policies: applicablePolicies.map(p => p.policyId),
+        violations,
+        warnings,
+        overallComplianceScore,
+        recommendations
+      };
+      
+      console.log(`✅ [${this.context}] Policy enforcement completed:`, {
+        agentId,
+        allowed,
+        violations: violations.length,
+        warnings: warnings.length,
+        complianceScore: overallComplianceScore.toFixed(1) + '%'
+      });
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ [${this.context}] Policy enforcement failed:`, error);
+      throw new Error(`Policy enforcement failed: ${error.message}`);
+    }
+  }
 }
 
