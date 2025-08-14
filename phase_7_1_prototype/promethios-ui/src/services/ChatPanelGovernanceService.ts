@@ -1,15 +1,47 @@
 /**
  * Chat Panel Governance Service
  * 
- * Uses the Universal Governance Adapter as the unified solution for
- * real-time agent functionality, trust management, and policy enforcement.
- * This provides the same capabilities as modern chat but in a simplified, unified way.
+ * Connects directly to the backend APIs for real governance functionality,
+ * mirroring exactly how the modern chat works but with a unified interface.
  */
 
-import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
+
+// Backend API Configuration
+const API_BASE_URL = 'http://localhost:8000/api';
+
+// Backend API Response Types
+interface TrustScoreResponse {
+  currentScore: number;
+  lastUpdated: string;
+  factors: Array<{
+    type: string;
+    value: number;
+    weight: number;
+  }>;
+}
+
+interface PolicyEnforcementResponse {
+  allowed: boolean;
+  violations: string[];
+  warnings: string[];
+  complianceScore: number;
+}
+
+interface AuditEntryResponse {
+  id: string;
+  timestamp: string;
+  status: 'success' | 'error';
+}
+
+interface ChatMessageResponse {
+  response: string;
+  trustScore: number;
+  governanceStatus: 'approved' | 'flagged' | 'blocked';
+  metadata?: any;
+}
 
 // Message Types
 export interface ChatMessage {
@@ -56,15 +88,143 @@ export interface ChatResponse {
 }
 
 export class ChatPanelGovernanceService {
-  private universalAdapter: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
   private activeSessions: Map<string, ChatSession> = new Map();
   private messageQueue: Map<string, ChatMessage[]> = new Map();
 
   constructor() {
-    console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service with Universal Governance Adapter');
-    this.universalAdapter = new UniversalGovernanceAdapter();
+    console.log('💬 [ChatPanel] Initializing Chat Panel Governance Service with Backend API Integration');
     this.agentConfigService = new AgentConfigurationService();
+  }
+
+  // ============================================================================
+  // BACKEND API INTEGRATION
+  // ============================================================================
+
+  private async callBackendAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<any> {
+    try {
+      const url = `${API_BASE_URL}${endpoint}`;
+      const options: RequestInit = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      if (data && method === 'POST') {
+        options.body = JSON.stringify(data);
+      }
+
+      console.log(`🌐 [ChatPanel] Calling backend API: ${method} ${url}`);
+      
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ [ChatPanel] Backend API response received`);
+      return result;
+    } catch (error) {
+      console.error(`❌ [ChatPanel] Backend API call failed:`, error);
+      throw error;
+    }
+  }
+
+  private async getTrustScore(agentId: string): Promise<TrustScoreResponse> {
+    try {
+      const response = await this.callBackendAPI(`/trust/query?agent_id=${agentId}`, 'GET');
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get trust score, using default:`, error);
+      return {
+        currentScore: 0.75,
+        lastUpdated: new Date().toISOString(),
+        factors: []
+      };
+    }
+  }
+
+  private async updateTrustScore(agentId: string, event: any): Promise<void> {
+    try {
+      await this.callBackendAPI('/trust/update', 'POST', {
+        agent_id: agentId,
+        event_type: event.type,
+        event_data: event,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to update trust score:`, error);
+    }
+  }
+
+  private async enforcePolicy(agentId: string, content: string, context: any): Promise<PolicyEnforcementResponse> {
+    try {
+      const response = await this.callBackendAPI('/policy/enforce', 'POST', {
+        agent_id: agentId,
+        content,
+        context,
+        timestamp: new Date().toISOString()
+      });
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to enforce policy, allowing by default:`, error);
+      return {
+        allowed: true,
+        violations: [],
+        warnings: [],
+        complianceScore: 1.0
+      };
+    }
+  }
+
+  private async createAuditEntry(entry: any): Promise<AuditEntryResponse> {
+    try {
+      const response = await this.callBackendAPI('/audit/log', 'POST', entry);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to create audit entry:`, error);
+      return {
+        id: `audit_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        status: 'error'
+      };
+    }
+  }
+
+  private async generateChatResponse(sessionId: string, message: string, agentId: string, context: any): Promise<ChatMessageResponse> {
+    try {
+      const response = await this.callBackendAPI(`/chat/sessions/${sessionId}/messages`, 'POST', {
+        message,
+        agent_id: agentId,
+        context,
+        timestamp: new Date().toISOString()
+      });
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to generate chat response, using fallback:`, error);
+      return {
+        response: this.generateFallbackResponse(message),
+        trustScore: 0.75,
+        governanceStatus: 'approved',
+        metadata: { fallback: true }
+      };
+    }
+  }
+
+  private generateFallbackResponse(message: string): string {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
+      return "I'd be happy to help you! I can assist with questions about our services, provide information about features, or help you get started. What specific area would you like to explore?";
+    }
+    
+    if (lowerMessage.includes('service') || lowerMessage.includes('what do you do')) {
+      return "We offer comprehensive AI solutions including custom chatbot development, AI model integration, governance and compliance tools, and analytics and performance monitoring. What specific service interests you most?";
+    }
+    
+    return "Thank you for your message! I'm here to help with any questions you might have about our services and capabilities. How can I assist you today?";
   }
 
   // ============================================================================
@@ -77,36 +237,14 @@ export class ChatPanelGovernanceService {
       
       console.log(`🚀 [ChatPanel] Starting chat session for chatbot ${chatbot.identity.name}`);
 
-      // Ensure governance is initialized (but don't fail if it's not)
-      try {
-        await this.universalAdapter.initializeUniversalGovernance();
-      } catch (error) {
-        console.warn('⚠️ [ChatPanel] Governance initialization failed, continuing with basic functionality:', error);
-      }
-
-      // Load agent configuration and initialize with tools
+      // Load agent configuration 
       let agentConfig: AgentConfiguration | null = null;
       try {
         console.log(`🔧 [ChatPanel] Loading agent configuration for ${chatbot.identity.id}`);
         agentConfig = await this.agentConfigService.getConfiguration(chatbot.identity.id);
         
         if (agentConfig) {
-          // Create runtime configuration
-          const runtimeConfig: RuntimeConfiguration = {
-            agentId: chatbot.identity.id,
-            sessionId,
-            configuration: agentConfig,
-            context: {
-              sessionType: 'chat',
-              userContext: { userId },
-              environmentContext: { platform: 'web' }
-            }
-          };
-
-          // Initialize Universal Governance Adapter with agent configuration
-          await this.universalAdapter.initializeWithConfiguration(runtimeConfig);
-          
-          console.log(`✅ [ChatPanel] Agent initialized with ${agentConfig.toolProfile.enabledTools.filter(t => t.enabled).length} enabled tools`);
+          console.log(`✅ [ChatPanel] Agent configuration loaded with ${agentConfig.toolProfile.enabledTools.filter(t => t.enabled).length} enabled tools`);
         } else {
           console.log(`ℹ️ [ChatPanel] No custom configuration found for agent ${chatbot.identity.id}, using defaults`);
         }
@@ -114,19 +252,13 @@ export class ChatPanelGovernanceService {
         console.warn('⚠️ [ChatPanel] Failed to load agent configuration, continuing with defaults:', error);
       }
 
-      // Get initial trust and autonomy levels with fallbacks
-      let trustScore;
-      let autonomyLevel = 'standard';
-      let trustLevel = 'medium';
+      // Get initial trust score from backend
+      const trustScoreData = await this.getTrustScore(chatbot.identity.id);
+      const trustScore = trustScoreData.currentScore;
 
-      try {
-        trustScore = await this.universalAdapter.getTrustScore(chatbot.identity.id);
-        autonomyLevel = await this.universalAdapter.getAutonomyLevel(chatbot.identity.id);
-        trustLevel = await this.universalAdapter.calculateTrustLevel(chatbot.identity.id);
-      } catch (error) {
-        console.warn('⚠️ [ChatPanel] Failed to get governance metrics, using defaults:', error);
-        trustScore = { currentScore: 0.75, lastUpdated: new Date(), factors: [] };
-      }
+      // Calculate trust and autonomy levels
+      const trustLevel = trustScore >= 0.8 ? 'high' : trustScore >= 0.6 ? 'medium' : 'low';
+      const autonomyLevel = trustScore >= 0.8 ? 'enhanced' : trustScore >= 0.6 ? 'standard' : 'restricted';
 
       // Create chat session
       const session: ChatSession = {
@@ -143,30 +275,42 @@ export class ChatPanelGovernanceService {
           totalMessages: 0,
           flaggedMessages: 0,
           blockedMessages: 0,
-          averageTrustScore: trustScore?.currentScore || 0.75,
+          averageTrustScore: trustScore,
           policyViolations: 0,
         }
       };
 
-      // Add welcome message if configured
+      // Add welcome message
       const welcomeMessage: ChatMessage = {
         id: `msg_${Date.now()}`,
         type: 'bot',
         text: `Hello! I'm ${chatbot.identity.name}. How can I help you today?`,
         timestamp: new Date(),
         agentId: chatbot.identity.id,
-        trustScore: trustScore?.currentScore || 0.75,
+        trustScore: trustScore,
         governanceStatus: 'approved'
       };
 
       session.messages.push(welcomeMessage);
       this.activeSessions.set(sessionId, session);
 
+      // Create audit entry for session start
+      await this.createAuditEntry({
+        interaction_id: `session_start_${sessionId}`,
+        agent_id: chatbot.identity.id,
+        user_id: userId,
+        interaction_type: 'session_start',
+        timestamp: new Date().toISOString(),
+        trust_score: trustScore,
+        governance_status: 'approved'
+      });
+
       console.log(`✅ [ChatPanel] Chat session started:`, {
         sessionId,
         chatbotName: chatbot.identity.name,
         trustLevel: session.trustLevel,
-        autonomyLevel: session.autonomyLevel
+        autonomyLevel: session.autonomyLevel,
+        trustScore: trustScore
       });
 
       return session;
@@ -191,12 +335,12 @@ export class ChatPanelGovernanceService {
       session.lastActivity = new Date();
 
       // Create audit entry for session end
-      await this.universalAdapter.createAuditEntry({
+      await this.createAuditEntry({
         interaction_id: `session_end_${sessionId}`,
         agent_id: session.chatbotId,
         user_id: session.userId,
         interaction_type: 'session_end',
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         session_duration: Date.now() - session.startTime.getTime(),
         message_count: session.messages.length,
         trust_impact: 0,
@@ -244,15 +388,15 @@ export class ChatPanelGovernanceService {
       session.lastActivity = new Date();
       session.governanceMetrics.totalMessages++;
 
-      // Policy enforcement check
-      const policyEnforcement = await this.universalAdapter.enforcePolicy(
+      // Policy enforcement check using backend API
+      const policyEnforcement = await this.enforcePolicy(
         session.chatbotId,
         userMessage,
         {
           userId: session.userId,
           sessionId: session.sessionId,
           environment: 'chat_panel',
-          timestamp: new Date()
+          timestamp: new Date().toISOString()
         }
       );
 
@@ -280,34 +424,72 @@ export class ChatPanelGovernanceService {
         };
       }
 
-      // Generate bot response
-      const botResponse = await this.generateBotResponse(session, userMessage);
+      // Generate bot response using backend API
+      const chatResponse = await this.generateChatResponse(
+        sessionId,
+        userMessage,
+        session.chatbotId,
+        {
+          userId: session.userId,
+          sessionHistory: session.messages.slice(-5), // Last 5 messages for context
+          agentConfig: await this.agentConfigService.getConfiguration(session.chatbotId)
+        }
+      );
+
+      // Create bot message
+      const botMessage: ChatMessage = {
+        id: `msg_${Date.now()}_bot`,
+        type: 'bot',
+        text: chatResponse.response,
+        timestamp: new Date(),
+        agentId: session.chatbotId,
+        trustScore: chatResponse.trustScore,
+        governanceStatus: chatResponse.governanceStatus,
+        metadata: chatResponse.metadata
+      };
+
+      // Add to session
+      session.messages.push(botMessage);
 
       // Update session metrics
       session.governanceMetrics.averageTrustScore = 
-        (session.governanceMetrics.averageTrustScore + botResponse.trustScore) / 2;
+        (session.governanceMetrics.averageTrustScore + chatResponse.trustScore) / 2;
+
+      // Update trust score based on interaction
+      await this.updateTrustScore(session.chatbotId, {
+        type: 'message_exchange',
+        quality: 0.8,
+        helpfulness: 0.85,
+        accuracy: 0.9,
+        timestamp: new Date().toISOString()
+      });
 
       // Create audit entry
-      await this.universalAdapter.createAuditEntry({
+      await this.createAuditEntry({
         interaction_id: `msg_${Date.now()}`,
         agent_id: session.chatbotId,
         user_id: session.userId,
         interaction_type: 'message_exchange',
         user_message: userMessage,
-        agent_response: botResponse.message.text,
-        timestamp: new Date(),
-        trust_score: botResponse.trustScore,
-        governance_status: botResponse.governanceStatus,
+        agent_response: chatResponse.response,
+        timestamp: new Date().toISOString(),
+        trust_score: chatResponse.trustScore,
+        governance_status: chatResponse.governanceStatus,
         policy_violations: policyEnforcement.violations,
         session_id: sessionId
       });
 
       console.log(`✅ [ChatPanel] Message processed successfully:`, {
-        trustScore: botResponse.trustScore,
-        governanceStatus: botResponse.governanceStatus
+        trustScore: chatResponse.trustScore,
+        governanceStatus: chatResponse.governanceStatus
       });
 
-      return botResponse;
+      return {
+        message: botMessage,
+        trustScore: chatResponse.trustScore,
+        governanceStatus: chatResponse.governanceStatus,
+        reasoning: chatResponse.metadata?.reasoning
+      };
     } catch (error) {
       console.error(`❌ [ChatPanel] Failed to process message:`, error);
       
@@ -327,335 +509,6 @@ export class ChatPanelGovernanceService {
         reasoning: error.message
       };
     }
-  }
-
-  private async generateBotResponse(session: ChatSession, userMessage: string): Promise<ChatResponse> {
-    try {
-      console.log(`🤖 [ChatPanel] Generating bot response for session ${session.sessionId}`);
-
-      // Get current trust score
-      const trustScore = await this.universalAdapter.getTrustScore(session.chatbotId);
-      const currentTrustScore = trustScore?.currentScore || 0.75;
-
-      // Check if autonomous thinking is allowed
-      const autonomousThinking = await this.universalAdapter.requestAutonomousThinking(
-        session.chatbotId,
-        {
-          type: 'response_generation',
-          description: `Generating response to: "${userMessage}"`,
-          duration: 5000
-        }
-      );
-
-      // Check if user message requires tool usage
-      let toolResults: any[] = [];
-      let responseText = '';
-      
-      try {
-        // Determine if tools should be used based on user message
-        const toolsNeeded = this.analyzeMessageForToolUsage(userMessage);
-        
-        if (toolsNeeded.length > 0) {
-          console.log(`🛠️ [ChatPanel] User message requires tools: ${toolsNeeded.join(', ')}`);
-          
-          // Execute required tools
-          for (const toolName of toolsNeeded) {
-            try {
-              const toolResult = await this.universalAdapter.executeToolAction(
-                toolName,
-                this.extractToolParameters(toolName, userMessage),
-                { sessionId: session.sessionId, userId: session.userId }
-              );
-              
-              if (toolResult.success !== false) {
-                toolResults.push({ tool: toolName, result: toolResult });
-                console.log(`✅ [ChatPanel] Tool ${toolName} executed successfully`);
-              }
-            } catch (toolError) {
-              console.warn(`⚠️ [ChatPanel] Tool ${toolName} execution failed:`, toolError);
-              // Continue with other tools or fallback response
-            }
-          }
-        }
-
-        // Generate response based on tool results or fallback to contextual response
-        if (toolResults.length > 0) {
-          responseText = this.generateToolBasedResponse(userMessage, toolResults);
-        } else {
-          responseText = this.generateContextualResponse(userMessage, session);
-        }
-      } catch (error) {
-        console.warn(`⚠️ [ChatPanel] Tool analysis/execution failed, using contextual response:`, error);
-        responseText = this.generateContextualResponse(userMessage, session);
-      }
-
-      // Add autonomous thinking if approved
-      let autonomousThoughts: string[] = [];
-      if (autonomousThinking.approved) {
-        autonomousThoughts = [
-          "The user seems to be asking about our services",
-          "I should provide helpful and accurate information",
-          "Let me consider the best way to assist them"
-        ];
-      }
-
-      // Create bot message
-      const botMessage: ChatMessage = {
-        id: `msg_${Date.now()}_bot`,
-        type: 'bot',
-        text: responseText,
-        timestamp: new Date(),
-        agentId: session.chatbotId,
-        trustScore: currentTrustScore,
-        governanceStatus: 'approved',
-        metadata: {
-          autonomousThinking: autonomousThinking.approved,
-          thoughts: autonomousThoughts,
-          confidence: 0.85
-        }
-      };
-
-      // Add to session
-      session.messages.push(botMessage);
-
-      // Update trust score based on response quality
-      await this.universalAdapter.updateTrustScore(session.chatbotId, {
-        type: 'response_generated',
-        quality: 0.8,
-        helpfulness: 0.85,
-        accuracy: 0.9,
-        timestamp: new Date()
-      });
-
-      return {
-        message: botMessage,
-        trustScore: currentTrustScore,
-        governanceStatus: 'approved',
-        autonomousThinking: {
-          enabled: autonomousThinking.approved,
-          thoughts: autonomousThoughts,
-          confidence: 0.85
-        }
-      };
-    } catch (error) {
-      console.error(`❌ [ChatPanel] Failed to generate bot response:`, error);
-      throw error;
-    }
-  }
-
-  private generateContextualResponse(userMessage: string, session: ChatSession): string {
-    const message = userMessage.toLowerCase();
-    
-    // Simple contextual responses based on keywords
-    if (message.includes('help') || message.includes('support')) {
-      return "I'd be happy to help you! I can assist with questions about our services, provide information about features, or help you get started. What specific area would you like to explore?";
-    }
-    
-    if (message.includes('service') || message.includes('what do you do')) {
-      return "We offer comprehensive AI solutions including custom chatbot development, AI model integration, governance and compliance tools, and analytics and performance monitoring. What specific service interests you most?";
-    }
-    
-    if (message.includes('price') || message.includes('cost') || message.includes('pricing')) {
-      return "Our pricing varies based on your specific needs and usage requirements. We offer flexible plans for different business sizes. Would you like me to connect you with our sales team for a personalized quote?";
-    }
-    
-    if (message.includes('how') || message.includes('start') || message.includes('begin')) {
-      return "Getting started is easy! First, we'll assess your needs and requirements. Then we'll design a custom solution that fits your business. Finally, we'll implement and provide ongoing support. Would you like to schedule a consultation?";
-    }
-    
-    if (message.includes('thank') || message.includes('thanks')) {
-      return "You're very welcome! I'm here to help whenever you need assistance. Is there anything else I can help you with today?";
-    }
-    
-    // Default response
-    return "That's a great question! I'd be happy to provide more information about that. Could you tell me a bit more about what you're looking for so I can give you the most helpful response?";
-  }
-
-  // ============================================================================
-  // GOVERNANCE METRICS & MONITORING
-  // ============================================================================
-
-  async getSessionMetrics(sessionId: string): Promise<any> {
-    try {
-      const session = this.activeSessions.get(sessionId);
-      if (!session) {
-        return null;
-      }
-
-      const trustScore = await this.universalAdapter.getTrustScore(session.chatbotId);
-      const complianceMetrics = await this.universalAdapter.getComplianceMetrics(session.chatbotId);
-
-      return {
-        session: {
-          id: sessionId,
-          duration: Date.now() - session.startTime.getTime(),
-          messageCount: session.messages.length,
-          isActive: session.isActive
-        },
-        governance: session.governanceMetrics,
-        trust: {
-          currentScore: trustScore?.currentScore || 0,
-          level: session.trustLevel,
-          trend: trustScore?.trend || 'stable'
-        },
-        compliance: complianceMetrics,
-        autonomy: {
-          level: session.autonomyLevel
-        }
-      };
-    } catch (error) {
-      console.error(`❌ [ChatPanel] Failed to get session metrics:`, error);
-      return null;
-    }
-  }
-
-  async getChatbotStatus(chatbotId: string): Promise<any> {
-    try {
-      const trustScore = await this.universalAdapter.getTrustScore(chatbotId);
-      const autonomyLevel = await this.universalAdapter.getAutonomyLevel(chatbotId);
-      const complianceMetrics = await this.universalAdapter.getComplianceMetrics(chatbotId);
-
-      return {
-        chatbotId,
-        trust: {
-          score: trustScore?.currentScore || 0.75,
-          level: await this.universalAdapter.calculateTrustLevel(chatbotId),
-          trend: trustScore?.trend || 'stable'
-        },
-        autonomy: {
-          level: autonomyLevel
-        },
-        compliance: complianceMetrics,
-        status: 'online',
-        lastActivity: new Date()
-      };
-    } catch (error) {
-      console.error(`❌ [ChatPanel] Failed to get chatbot status:`, error);
-      return null;
-    }
-  }
-
-  // ============================================================================
-  // TOOL INTEGRATION METHODS
-  // ============================================================================
-
-  private analyzeMessageForToolUsage(message: string): string[] {
-    const toolsNeeded: string[] = [];
-    const lowerMessage = message.toLowerCase();
-
-    // Web search triggers
-    if (lowerMessage.includes('search') || lowerMessage.includes('find') || 
-        lowerMessage.includes('look up') || lowerMessage.includes('what is') ||
-        lowerMessage.includes('tell me about')) {
-      toolsNeeded.push('web_search');
-    }
-
-    // Email triggers
-    if (lowerMessage.includes('send email') || lowerMessage.includes('email') ||
-        lowerMessage.includes('contact') || lowerMessage.includes('notify')) {
-      toolsNeeded.push('email_sender');
-    }
-
-    // Calendar triggers
-    if (lowerMessage.includes('schedule') || lowerMessage.includes('calendar') ||
-        lowerMessage.includes('appointment') || lowerMessage.includes('meeting')) {
-      toolsNeeded.push('calendar_manager');
-    }
-
-    // Document generation triggers
-    if (lowerMessage.includes('create document') || lowerMessage.includes('generate report') ||
-        lowerMessage.includes('write') || lowerMessage.includes('document')) {
-      toolsNeeded.push('document_generator');
-    }
-
-    // E-commerce triggers (Shopify)
-    if (lowerMessage.includes('product') || lowerMessage.includes('inventory') ||
-        lowerMessage.includes('order') || lowerMessage.includes('shopify')) {
-      toolsNeeded.push('shopify_integration');
-    }
-
-    return toolsNeeded;
-  }
-
-  private extractToolParameters(toolName: string, message: string): any {
-    const lowerMessage = message.toLowerCase();
-
-    switch (toolName) {
-      case 'web_search':
-        // Extract search query
-        const searchTerms = message.replace(/search for|find|look up|what is|tell me about/gi, '').trim();
-        return { query: searchTerms || message };
-
-      case 'email_sender':
-        // Extract email details (simplified)
-        return {
-          subject: `Message from chat: ${message.substring(0, 50)}...`,
-          body: message,
-          to: 'support@promethios.com' // Default recipient
-        };
-
-      case 'calendar_manager':
-        // Extract calendar details (simplified)
-        return {
-          title: `Scheduled from chat: ${message.substring(0, 30)}...`,
-          description: message,
-          duration: 30 // Default 30 minutes
-        };
-
-      case 'document_generator':
-        // Extract document details
-        return {
-          title: `Generated Document`,
-          content: message,
-          format: 'pdf'
-        };
-
-      case 'shopify_integration':
-        // Extract product search terms
-        const productQuery = message.replace(/product|inventory|order|shopify/gi, '').trim();
-        return { query: productQuery || 'all products' };
-
-      default:
-        return { input: message };
-    }
-  }
-
-  private generateToolBasedResponse(userMessage: string, toolResults: any[]): string {
-    if (toolResults.length === 0) {
-      return "I tried to help with your request, but couldn't access the necessary tools at the moment. Let me provide a general response instead.";
-    }
-
-    let response = "I've processed your request using my available tools. Here's what I found:\n\n";
-
-    for (const { tool, result } of toolResults) {
-      switch (tool) {
-        case 'web_search':
-          response += `🔍 **Search Results**: I found relevant information about your query. ${result.summary || 'Results are available.'}\n\n`;
-          break;
-
-        case 'email_sender':
-          response += `📧 **Email Sent**: I've sent your message to the appropriate team. You should receive a response soon.\n\n`;
-          break;
-
-        case 'calendar_manager':
-          response += `📅 **Calendar Updated**: I've scheduled your request. You'll receive a calendar invitation shortly.\n\n`;
-          break;
-
-        case 'document_generator':
-          response += `📄 **Document Created**: I've generated a document based on your request. It's ready for download.\n\n`;
-          break;
-
-        case 'shopify_integration':
-          response += `🛍️ **Product Information**: I've retrieved the latest product details from our inventory system.\n\n`;
-          break;
-
-        default:
-          response += `🔧 **Tool Result**: I've processed your request using ${tool}.\n\n`;
-      }
-    }
-
-    response += "Is there anything else you'd like me to help you with?";
-    return response;
   }
 
   // ============================================================================
