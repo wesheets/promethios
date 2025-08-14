@@ -187,9 +187,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
         console.log(`💬 [ChatPanel] Initializing chat session for ${chatbot.identity.name}`);
         
         // Start new chat session with governance
-        const session = await chatPanelGovernanceService.startChatSession(chatbot, user?.uid || 'anonymous');
+        const session = await chatPanelGovernanceService.startChatSession(chatbot);
         setActiveSession(session);
-        setChatMessages(session.messages);
+        setChatMessages([]);
         setMessageInput('');
         
         console.log(`✅ [ChatPanel] Chat session initialized:`, session.sessionId);
@@ -199,31 +199,25 @@ const ChatbotProfilesPageContent: React.FC = () => {
         // Create a fallback session for UI testing
         const fallbackSession: ChatSession = {
           sessionId: `fallback_${Date.now()}`,
-          chatbotId: chatbot.identity.id,
-          userId: user?.uid || 'anonymous',
-          messages: [{
-            id: '1',
-            type: 'bot',
-            text: 'Hello! I\'m having trouble connecting to the governance system, but I\'m here to help!',
-            timestamp: new Date(),
-            trustScore: 0.5,
-            governanceStatus: 'flagged'
-          }],
-          isActive: true,
+          agentId: chatbot.identity.id,
           startTime: new Date(),
-          lastActivity: new Date(),
-          trustLevel: 'unknown',
-          autonomyLevel: 'limited',
+          messageCount: 0,
+          trustScore: 0.75,
           governanceMetrics: {
-            totalMessages: 1,
-            flaggedMessages: 0,
-            blockedMessages: 0,
-            averageTrustScore: 0.5,
-            policyViolations: 0
+            violations: 0,
+            warnings: 0,
+            complianceScore: 1.0
           }
         };
         setActiveSession(fallbackSession);
-        setChatMessages(fallbackSession.messages);
+        setChatMessages([{
+          id: '1',
+          content: 'Hello! I\'m having trouble connecting to the governance system, but I\'m here to help!',
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: 0.75,
+          governanceStatus: 'approved'
+        }]);
       } finally {
         setChatLoading(false);
       }
@@ -301,9 +295,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
       }
       
       // Start new session
-      const newSession = await chatPanelGovernanceService.startChatSession(selectedChatbot, user?.uid || 'anonymous');
+      const newSession = await chatPanelGovernanceService.startChatSession(selectedChatbot);
       setActiveSession(newSession);
-      setChatMessages(newSession.messages);
+      setChatMessages([]);
       setMessageInput('');
       
       console.log(`🔄 [ChatPanel] Chat reset successfully`);
