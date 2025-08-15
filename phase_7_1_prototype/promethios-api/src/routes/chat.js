@@ -3,6 +3,7 @@ const router = express.Router();
 const llmService = require('../services/llmService');
 const policyEnforcementService = require('../services/policyEnforcementService');
 const governanceContextService = require('../services/governanceContextService'); // CRITICAL FIX: Import governance context service
+const ragService = require('../services/ragService'); // RAG service for knowledge base integration
 
 // Import the real Promethios GovernanceCore
 const { spawn } = require('child_process');
@@ -247,8 +248,25 @@ router.post('/', async (req, res) => {
                         userId,
                         { agentConfiguration: agent_configuration } // Pass agent config to governance service
                     );
+
+                    // RAG INTEGRATION: Retrieve knowledge base context if agent has knowledge bases
+                    let ragContext = '';
+                    if (agent_configuration?.knowledgeBases?.length > 0) {
+                        console.log(`🧠 [Chat] Retrieving knowledge base context for agent ${agent_id}`);
+                        
+                        // Process knowledge base if not already processed
+                        await ragService.processKnowledgeBase(agent_id, agent_configuration.knowledgeBases);
+                        
+                        // Retrieve relevant knowledge for user query
+                        ragContext = await ragService.generateRAGContext(agent_id, message);
+                        
+                        console.log(`✅ [Chat] RAG context generated: ${ragContext.length} characters`);
+                    }
+
+                    // Combine governance context with RAG context
+                    const finalSystemMessage = governanceEnhancedSystemMessage + ragContext;
                     
-                    response = await llmService.generateResponse(agent_id, message, governanceEnhancedSystemMessage, userId, {
+                    response = await llmService.generateResponse(agent_id, message, finalSystemMessage, userId, {
                         attachments: attachments,
                         provider: provider,
                         model: model,
