@@ -59,7 +59,7 @@ class GovernanceContextService {
   /**
    * Inject governance context into system prompt
    */
-  async injectGovernanceContext(originalSystemPrompt, agentId, userId) {
+  async injectGovernanceContext(originalSystemPrompt, agentId, userId, additionalContext = {}) {
     console.log(`🔧 GovernanceContextService: Starting injection for agent ${agentId}, user ${userId}`);
     
     try {
@@ -69,6 +69,16 @@ class GovernanceContextService {
         metricsCount: Object.keys(context.metrics).length,
         policiesCount: context.policies.length,
         violationsCount: context.violations.length
+      });
+      
+      // Extract agent configuration if provided
+      const agentConfig = additionalContext.agentConfiguration || {};
+      console.log(`🤖 GovernanceContextService: Agent configuration context:`, {
+        hasPersonality: !!agentConfig.personality,
+        hasBehavior: !!agentConfig.behavior,
+        knowledgeBasesCount: agentConfig.knowledgeBases?.length || 0,
+        enabledToolsCount: agentConfig.enabledTools?.length || 0,
+        hasBrandSettings: !!agentConfig.brandSettings
       });
       
       const governanceSection = `
@@ -116,6 +126,22 @@ If you have ANY doubt about a factual claim, you must:
 
 GOVERNANCE INSTRUCTIONS:
 ${context.governanceInstructions.join('\n')}
+
+${agentConfig.personality || agentConfig.behavior || agentConfig.knowledgeBases?.length || agentConfig.enabledTools?.length ? `
+AGENT CONFIGURATION STATUS:
+${agentConfig.personality ? `- Personality: ${agentConfig.personality.toUpperCase()} mode active` : ''}
+${agentConfig.behavior ? `- Behavior: ${agentConfig.behavior} behavior pattern enabled` : ''}
+${agentConfig.knowledgeBases?.length ? `- Knowledge Access: ${agentConfig.knowledgeBases.length} specialized knowledge base(s) available` : ''}
+${agentConfig.enabledTools?.length ? `- Tool Access: ${agentConfig.enabledTools.length} tool(s) enabled for use` : ''}
+${agentConfig.brandSettings?.name ? `- Brand Identity: Representing ${agentConfig.brandSettings.name}` : ''}
+${agentConfig.automationRules?.length ? `- Automation: ${agentConfig.automationRules.length} workflow rule(s) configured` : ''}
+
+AGENT IDENTITY AWARENESS:
+You are a unique agent with specific configuration settings that define your personality, behavior, and capabilities. 
+Your responses should reflect your configured personality (${agentConfig.personality || 'default'}) and behavior patterns.
+${agentConfig.knowledgeBases?.length ? `Reference your specialized knowledge bases when relevant to user questions.` : ''}
+${agentConfig.brandSettings?.name ? `Always maintain consistency with your brand identity as ${agentConfig.brandSettings.name}.` : ''}
+` : ''}
 
 Remember: You are being monitored for governance compliance. Your responses will be evaluated against these policies and metrics.
 === END GOVERNANCE CONTEXT ===

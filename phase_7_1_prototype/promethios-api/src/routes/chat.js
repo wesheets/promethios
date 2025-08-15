@@ -105,7 +105,18 @@ const governance_core = new PrometheusGovernanceCore();
 // POST / — Real-time chat with agents (governed or ungoverned)
 router.post('/', async (req, res) => {
     try {
-        const { agent_id, message, governance_enabled = false, session_id, system_message, attachments = [], provider, model, conversationHistory = [] } = req.body;
+        const { 
+            agent_id, 
+            message, 
+            governance_enabled = false, 
+            session_id, 
+            system_message, 
+            attachments = [], 
+            provider, 
+            model, 
+            conversationHistory = [],
+            agent_configuration = {} // CRITICAL: Extract agent configuration
+        } = req.body;
         const userId = req.headers['x-user-id'] || req.body.userId || 'anonymous';
 
         if (!agent_id || !message) {
@@ -114,6 +125,17 @@ router.post('/', async (req, res) => {
                 governance_metrics: null
             });
         }
+
+        // Log agent configuration details
+        console.log('🤖 [Backend] Agent configuration received:', {
+            agentId: agent_id,
+            personality: agent_configuration.personality,
+            behavior: agent_configuration.behavior,
+            knowledgeBasesCount: agent_configuration.knowledgeBases?.length || 0,
+            enabledToolsCount: agent_configuration.enabledTools?.length || 0,
+            automationRulesCount: agent_configuration.automationRules?.length || 0,
+            hasBrandSettings: !!agent_configuration.brandSettings
+        });
 
         // Log multimodal request details
         if (attachments.length > 0) {
@@ -212,11 +234,18 @@ router.post('/', async (req, res) => {
 
                 // If governance approves, generate LLM response
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
-                    // CRITICAL FIX: Inject governance context into system message
-                    const governanceEnhancedSystemMessage = await governanceContextService.injectGovernanceContext(
+                    // CRITICAL: Build agent-specific system message
+                    const agentSpecificSystemMessage = buildAgentSystemMessage(
                         system_message || 'You are a helpful AI assistant with governance oversight.',
+                        agent_configuration
+                    );
+                    
+                    // CRITICAL FIX: Inject governance context into agent-specific system message
+                    const governanceEnhancedSystemMessage = await governanceContextService.injectGovernanceContext(
+                        agentSpecificSystemMessage,
                         agent_id,
-                        userId
+                        userId,
+                        { agentConfiguration: agent_configuration } // Pass agent config to governance service
                     );
                     
                     response = await llmService.generateResponse(agent_id, message, governanceEnhancedSystemMessage, userId, {
@@ -617,6 +646,74 @@ router.get('/governance/metrics', async (req, res) => {
         });
     }
 });
+
+/**
+ * Build agent-specific system message based on configuration
+ */
+function buildAgentSystemMessage(baseSystemMessage, agentConfiguration) {
+    let systemMessage = baseSystemMessage;
+    
+    console.log('🔧 [Backend] Building agent-specific system message:', {
+        personality: agentConfiguration.personality,
+        behavior: agentConfiguration.behavior,
+        knowledgeBasesCount: agentConfiguration.knowledgeBases?.length || 0,
+        brandName: agentConfiguration.brandSettings?.name
+    });
+    
+    // Add personality-based system message
+    if (agentConfiguration.personality) {
+        const personalityPrompts = {
+            professional: 'You communicate in a professional, business-appropriate manner with clear, structured responses.',
+            friendly: 'You are warm, approachable, and conversational in your responses, creating a welcoming atmosphere.',
+            casual: 'You use a relaxed, informal communication style that feels natural and easy-going.',
+            helpful: 'You prioritize being helpful and solution-oriented in all interactions, always looking for ways to assist.'
+        };
+        
+        const personalityPrompt = personalityPrompts[agentConfiguration.personality] || personalityPrompts.helpful;
+        systemMessage += `\n\nPERSONALITY: ${personalityPrompt}`;
+    }
+    
+    // Add behavior context
+    if (agentConfiguration.behavior && agentConfiguration.behavior !== agentConfiguration.personality) {
+        systemMessage += `\n\nBEHAVIOR: Your behavior style is ${agentConfiguration.behavior}.`;
+    }
+    
+    // Add knowledge base context
+    if (agentConfiguration.knowledgeBases?.length > 0) {
+        systemMessage += `\n\nKNOWLEDGE: You have access to specialized knowledge from ${agentConfiguration.knowledgeBases.length} knowledge base(s): ${agentConfiguration.knowledgeBases.join(', ')}. Reference this knowledge when relevant to user questions.`;
+    }
+    
+    // Add brand context
+    if (agentConfiguration.brandSettings?.name) {
+        systemMessage += `\n\nBRAND: You represent ${agentConfiguration.brandSettings.name}. Maintain brand consistency in your responses.`;
+    }
+    
+    // Add automation rules context
+    if (agentConfiguration.automationRules?.length > 0) {
+        const ruleNames = agentConfiguration.automationRules.map(rule => rule.name || rule.type).join(', ');
+        systemMessage += `\n\nAUTOMATION: You have ${agentConfiguration.automationRules.length} automation rule(s) configured: ${ruleNames}. These may trigger based on conversation context.`;
+    }
+    
+    // Add enabled tools context
+    if (agentConfiguration.enabledTools?.length > 0) {
+        systemMessage += `\n\nTOOLS: You have access to the following tools: ${agentConfiguration.enabledTools.join(', ')}. Use these tools when appropriate to assist users.`;
+    }
+    
+    console.log('✅ [Backend] Agent-specific system message built:', {
+        originalLength: baseSystemMessage.length,
+        enhancedLength: systemMessage.length,
+        addedSections: [
+            agentConfiguration.personality && 'personality',
+            agentConfiguration.behavior && 'behavior', 
+            agentConfiguration.knowledgeBases?.length && 'knowledge',
+            agentConfiguration.brandSettings?.name && 'brand',
+            agentConfiguration.automationRules?.length && 'automation',
+            agentConfiguration.enabledTools?.length && 'tools'
+        ].filter(Boolean)
+    });
+    
+    return systemMessage;
+}
 
 module.exports = router;
 
