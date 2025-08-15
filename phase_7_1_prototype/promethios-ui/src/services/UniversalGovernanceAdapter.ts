@@ -571,10 +571,20 @@ export class UniversalGovernanceAdapter {
     try {
       console.log('📝 [Universal] Creating audit entry');
       
-      // For now, create a basic audit entry
-      // In the future, this could call a backend audit API
+      // Call backend audit API to create entry
+      const auditRequest = {
+        agentId: entry.agentId,
+        action: entry.action || 'chat_interaction',
+        details: entry.details || {},
+        outcome: entry.outcome || 'success',
+        timestamp: new Date().toISOString()
+      };
+
+      const auditResponse = await this.callBackendAPI('/audit/log', auditRequest);
+      
+      // Create local audit entry structure
       const auditEntry: AuditEntry = {
-        id: `audit_${Date.now()}`,
+        id: auditResponse.id || `audit_${Date.now()}`,
         timestamp: new Date(),
         agentId: entry.agentId || 'unknown',
         action: entry.action || 'unknown',
@@ -604,6 +614,83 @@ export class UniversalGovernanceAdapter {
     } catch (error) {
       console.error('❌ [Universal] Failed to create audit entry:', error);
       return null;
+    }
+  }
+
+  /**
+   * Read audit logs for an agent (for AI self-reflection)
+   */
+  async getAuditLogs(agentId: string, options: {
+    limit?: number;
+    startDate?: Date;
+    endDate?: Date;
+    includeDetails?: boolean;
+  } = {}): Promise<any[]> {
+    try {
+      console.log(`📖 [Universal] Reading audit logs for agent ${agentId}`);
+      
+      // Call backend audit API to get logs
+      const auditQuery = {
+        agent_id: agentId,
+        limit: options.limit || 50,
+        start_date: options.startDate?.toISOString(),
+        end_date: options.endDate?.toISOString(),
+        include_details: options.includeDetails || true
+      };
+
+      const auditLogs = await this.callBackendAPI('/audit/query', auditQuery);
+      
+      console.log(`✅ [Universal] Retrieved ${auditLogs.length} audit log entries for agent ${agentId}`);
+      
+      return auditLogs;
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to read audit logs for agent ${agentId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get audit log summary for AI self-awareness
+   */
+  async getAuditLogSummary(agentId: string): Promise<{
+    totalEntries: number;
+    averageTrustScore: number;
+    recentViolations: number;
+    lastActivity: Date | null;
+    topActions: string[];
+  }> {
+    try {
+      console.log(`📊 [Universal] Getting audit log summary for agent ${agentId}`);
+      
+      // Get recent audit logs
+      const recentLogs = await this.getAuditLogs(agentId, { 
+        limit: 100,
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+      });
+
+      // Calculate summary metrics
+      const summary = {
+        totalEntries: recentLogs.length,
+        averageTrustScore: recentLogs.length > 0 
+          ? recentLogs.reduce((sum, log) => sum + (log.trustScore || 0), 0) / recentLogs.length 
+          : 0,
+        recentViolations: recentLogs.filter(log => log.violations && log.violations.length > 0).length,
+        lastActivity: recentLogs.length > 0 ? new Date(recentLogs[0].timestamp) : null,
+        topActions: [...new Set(recentLogs.map(log => log.action).filter(Boolean))].slice(0, 5)
+      };
+
+      console.log(`✅ [Universal] Audit summary for agent ${agentId}:`, summary);
+      
+      return summary;
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to get audit summary for agent ${agentId}:`, error);
+      return {
+        totalEntries: 0,
+        averageTrustScore: 0,
+        recentViolations: 0,
+        lastActivity: null,
+        topActions: []
+      };
     }
   }
 
