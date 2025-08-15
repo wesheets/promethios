@@ -10,6 +10,7 @@ import { ChatbotProfile } from '../types/ChatbotTypes';
 import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
 import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
+import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory } from './ChatStorageService';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -45,13 +46,15 @@ interface GovernanceMetrics {
 export class ChatPanelGovernanceService {
   private universalGovernance: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
-  private activeSessions: Map<string, ChatSession> = new Map();
-  private sessionMetrics: Map<string, GovernanceMetrics> = new Map();
+  private chatStorageService: ChatStorageService;
+  private currentSession: ChatSession | null = null;
+  private conversationHistory: ChatMessage[] = [];
 
   constructor() {
     console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter');
     this.universalGovernance = new UniversalGovernanceAdapter();
     this.agentConfigService = new AgentConfigurationService();
+    this.chatStorageService = new ChatStorageService();
   }
 
   // ============================================================================
@@ -209,6 +212,29 @@ export class ChatPanelGovernanceService {
     try {
       console.log(`🚀 [ChatPanel] Starting chat session for agent ${chatbot.identity.id}`);
       
+      // Initialize chat storage service with current user
+      await this.chatStorageService.setCurrentUser('current-user'); // TODO: Get actual user ID
+      
+      // Load existing chat history for this agent
+      console.log(`📚 [ChatPanel] Loading chat history for agent: ${chatbot.identity.id}`);
+      const existingHistory = await this.chatStorageService.loadAgentChatHistory(chatbot.identity.id);
+      
+      if (existingHistory) {
+        console.log(`✅ [ChatPanel] Loaded ${existingHistory.messages.length} previous messages`);
+        // Convert stored messages to chat panel format
+        this.conversationHistory = existingHistory.messages.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          sender: msg.sender as 'user' | 'agent',
+          timestamp: msg.timestamp,
+          trustScore: msg.governanceData?.trustScore,
+          governanceStatus: msg.governanceData?.approved ? 'approved' : 'pending'
+        }));
+      } else {
+        console.log(`📝 [ChatPanel] No existing history found, starting fresh conversation`);
+        this.conversationHistory = [];
+      }
+      
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Get initial trust score
@@ -218,7 +244,7 @@ export class ChatPanelGovernanceService {
         sessionId,
         agentId: chatbot.identity.id, // FIXED: Use chatbot.identity.id instead of chatbot.id
         startTime: new Date(),
-        messageCount: 0,
+        messageCount: this.conversationHistory.length, // FIXED: Use existing message count
         trustScore: trustData.currentScore,
         governanceMetrics: {
           violations: 0,
@@ -232,7 +258,7 @@ export class ChatPanelGovernanceService {
       // Initialize session metrics
       this.sessionMetrics.set(sessionId, {
         trustScore: trustData.currentScore,
-        messageCount: 0,
+        messageCount: this.conversationHistory.length, // FIXED: Use existing message count
         violations: 0,
         autonomyLevel: 'standard'
       });
@@ -359,7 +385,63 @@ export class ChatPanelGovernanceService {
       metrics.messageCount++;
       metrics.trustScore = chatResponse.trustScore;
 
-      // 5. Create Audit Entry
+      // 5. Save messages to persistent storage
+      console.log(`💾 [ChatPanel] Saving messages to persistent storage`);
+      
+      // Save user message
+      const userMessage: StoredChatMessage = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        content: message,
+        sender: 'user',
+        timestamp: new Date(),
+        agentId: session.agentId,
+        governanceData: {
+          trustScore: metrics.trustScore,
+          violations: policyResult.violations,
+          approved: policyResult.allowed
+        }
+      };
+      
+      await this.chatStorageService.saveMessage(session.agentId, userMessage);
+      
+      // Save agent response
+      const agentMessage: StoredChatMessage = {
+        id: `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        content: chatResponse.response,
+        sender: 'agent',
+        timestamp: new Date(),
+        agentId: session.agentId,
+        agentName: 'OpenAI Assistant', // TODO: Get actual agent name
+        governanceData: {
+          trustScore: chatResponse.trustScore,
+          violations: [],
+          approved: true
+        }
+      };
+      
+      await this.chatStorageService.saveMessage(session.agentId, agentMessage);
+      
+      // Update local conversation history
+      this.conversationHistory.push(
+        {
+          id: userMessage.id,
+          content: message,
+          sender: 'user',
+          timestamp: new Date(),
+          trustScore: metrics.trustScore,
+          governanceStatus: policyResult.allowed ? 'approved' : 'blocked'
+        },
+        {
+          id: agentMessage.id,
+          content: chatResponse.response,
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: chatResponse.trustScore,
+          governanceStatus: chatResponse.governanceStatus
+        }
+      );
+
+      // 6. Create Audit Entry
       await this.createAuditEntry({
         interaction_id: `msg_${Date.now()}`,
         agent_id: session.agentId,
@@ -372,10 +454,10 @@ export class ChatPanelGovernanceService {
         timestamp: new Date().toISOString()
       });
 
-      console.log(`✅ [ChatPanel] Message processed successfully`);
+      console.log(`✅ [ChatPanel] Message processed and saved successfully`);
       
       return {
-        id: `msg_${Date.now()}`,
+        id: agentMessage.id,
         content: chatResponse.response,
         sender: 'agent',
         timestamp: new Date(),
@@ -386,6 +468,25 @@ export class ChatPanelGovernanceService {
       console.error(`❌ [ChatPanel] Failed to process message:`, error);
       throw error;
     }
+  }
+
+  // ============================================================================
+  // CONVERSATION HISTORY MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get conversation history for the current session
+   */
+  getConversationHistory(): ChatMessage[] {
+    return [...this.conversationHistory];
+  }
+
+  /**
+   * Clear conversation history (for testing or reset)
+   */
+  clearConversationHistory(): void {
+    console.log(`🗑️ [ChatPanel] Clearing conversation history`);
+    this.conversationHistory = [];
   }
 
   // ============================================================================
