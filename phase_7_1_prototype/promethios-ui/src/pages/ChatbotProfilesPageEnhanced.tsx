@@ -51,13 +51,14 @@ import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
+import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | null;
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -660,6 +661,23 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           <Button
                             variant="outlined"
                             size="small"
+                            startIcon={<SmartToy />}
+                            fullWidth
+                            onClick={() => openRightPanel(chatbot, 'personality')}
+                            sx={{
+                              borderColor: '#374151',
+                              color: '#94a3b8',
+                              '&:hover': { borderColor: '#4b5563', bgcolor: '#1e293b' },
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            Personality
+                          </Button>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Button
+                            variant="outlined"
+                            size="small"
                             startIcon={<Psychology />}
                             fullWidth
                             onClick={() => openRightPanel(chatbot, 'knowledge')}
@@ -916,6 +934,38 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       // For now, we'll just log it
                     }}
                     onClose={closeRightPanel}
+                  />
+                )}
+
+                {rightPanelType === 'personality' && (
+                  <PersonalityEditor
+                    chatbot={selectedChatbot}
+                    onSave={async (updates) => {
+                      try {
+                        console.log('Personality updates:', updates);
+                        
+                        // Update the chatbot using ChatbotStorageService
+                        const chatbotStorageService = ChatbotStorageService.getInstance();
+                        const updatedChatbot = await chatbotStorageService.updateChatbot(selectedChatbot.identity.id, updates);
+                        
+                        if (updatedChatbot) {
+                          // Update local state
+                          setChatbots(prev => prev.map(bot => 
+                            bot.identity.id === selectedChatbot.identity.id ? updatedChatbot : bot
+                          ));
+                          setSelectedChatbot(updatedChatbot);
+                          
+                          console.log('✅ Personality settings saved successfully');
+                          // You could show a success message here
+                        }
+                        
+                        closeRightPanel();
+                      } catch (error) {
+                        console.error('❌ Failed to save personality settings:', error);
+                        // You could show an error message here
+                      }
+                    }}
+                    onCancel={closeRightPanel}
                   />
                 )}
 
