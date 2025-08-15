@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const llmService = require('../services/llmService');
 const policyEnforcementService = require('../services/policyEnforcementService');
+const governanceContextService = require('../services/governanceContextService'); // CRITICAL FIX: Import governance context service
 
 // Import the real Promethios GovernanceCore
 const { spawn } = require('child_process');
@@ -211,7 +212,14 @@ router.post('/', async (req, res) => {
 
                 // If governance approves, generate LLM response
                 if (governance_result.status === 'success' || governance_result.status === 'fallback') {
-                    response = await llmService.generateResponse(agent_id, message, system_message, userId, {
+                    // CRITICAL FIX: Inject governance context into system message
+                    const governanceEnhancedSystemMessage = await governanceContextService.injectGovernanceContext(
+                        system_message || 'You are a helpful AI assistant with governance oversight.',
+                        agent_id,
+                        userId
+                    );
+                    
+                    response = await llmService.generateResponse(agent_id, message, governanceEnhancedSystemMessage, userId, {
                         attachments: attachments,
                         provider: provider,
                         model: model,
