@@ -41,6 +41,16 @@ interface BackendChatRequest {
   provider?: string;
   model?: string;
   conversationHistory?: Array<{role: string, content: string}>;
+  agent_configuration?: {
+    personality?: string;
+    behavior?: string;
+    knowledgeBases?: string[];
+    enabledTools?: string[];
+    automationRules?: any[];
+    governanceMetrics?: any;
+    responseTemplates?: any[];
+    brandSettings?: any;
+  };
 }
 
 interface BackendChatResponse {
@@ -197,6 +207,176 @@ export class UniversalGovernanceAdapter {
   }
 
   // ============================================================================
+  // AGENT CONFIGURATION LOADING (Chatbot Wrapper + Scorecard)
+  // ============================================================================
+
+  /**
+   * Load complete agent configuration from both chatbot wrapper and scorecard
+   * Priority: Scorecard settings override chatbot wrapper settings
+   */
+  private async loadCompleteAgentConfiguration(agentId: string): Promise<any> {
+    try {
+      console.log(`🔧 [Universal] Loading complete configuration for agent ${agentId}`);
+      
+      // 1. Load from chatbot wrapper (initial configuration)
+      const chatbotConfig = await this.loadChatbotWrapperConfig(agentId);
+      console.log(`📦 [Universal] Chatbot wrapper config loaded:`, {
+        personality: chatbotConfig?.personality,
+        behavior: chatbotConfig?.behavior,
+        hasKnowledgeBases: chatbotConfig?.knowledgeBases?.length > 0,
+        hasAutomationRules: chatbotConfig?.automationRules?.length > 0
+      });
+      
+      // 2. Load from scorecard (if assigned - overrides wrapper settings)
+      const scorecardConfig = await this.loadScorecardConfig(agentId);
+      if (scorecardConfig) {
+        console.log(`🏆 [Universal] Scorecard config loaded - overriding wrapper settings:`, {
+          hasPersonalityOverride: !!scorecardConfig.personality,
+          hasBehaviorOverride: !!scorecardConfig.behavior,
+          hasToolOverrides: !!scorecardConfig.enabledTools
+        });
+      }
+      
+      // 3. Merge configurations (scorecard overrides wrapper)
+      const mergedConfig = {
+        // Base configuration from chatbot wrapper
+        personality: chatbotConfig?.personality || 'professional',
+        behavior: chatbotConfig?.behavior || 'helpful',
+        knowledgeBases: chatbotConfig?.knowledgeBases || [],
+        automationRules: chatbotConfig?.automationRules || [],
+        responseTemplates: chatbotConfig?.responseTemplates || [],
+        brandSettings: chatbotConfig?.brandSettings || {},
+        governanceMetrics: chatbotConfig?.governanceMetrics || {},
+        provider: chatbotConfig?.provider || 'openai',
+        model: chatbotConfig?.model || 'gpt-4.1-mini',
+        
+        // Scorecard overrides (if available)
+        ...(scorecardConfig && {
+          personality: scorecardConfig.personality || chatbotConfig?.personality,
+          behavior: scorecardConfig.behavior || chatbotConfig?.behavior,
+          enabledTools: scorecardConfig.enabledTools || [],
+          governanceMetrics: {
+            ...chatbotConfig?.governanceMetrics,
+            ...scorecardConfig.governanceMetrics
+          }
+        })
+      };
+      
+      console.log(`✅ [Universal] Complete agent configuration merged:`, {
+        agentId,
+        personality: mergedConfig.personality,
+        behavior: mergedConfig.behavior,
+        knowledgeBasesCount: mergedConfig.knowledgeBases.length,
+        automationRulesCount: mergedConfig.automationRules.length,
+        enabledToolsCount: mergedConfig.enabledTools?.length || 0
+      });
+      
+      return mergedConfig;
+      
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to load agent configuration for ${agentId}:`, error);
+      
+      // Return default configuration to ensure chat continues working
+      return {
+        personality: 'professional',
+        behavior: 'helpful',
+        knowledgeBases: [],
+        automationRules: [],
+        responseTemplates: [],
+        brandSettings: {},
+        governanceMetrics: {},
+        enabledTools: [],
+        provider: 'openai',
+        model: 'gpt-4.1-mini'
+      };
+    }
+  }
+
+  /**
+   * Load configuration from chatbot wrapper (initial settings)
+   */
+  private async loadChatbotWrapperConfig(agentId: string): Promise<any> {
+    try {
+      // Import ChatbotStorageService dynamically to avoid circular dependencies
+      const { ChatbotStorageService } = await import('./ChatbotStorageService');
+      const chatbotService = ChatbotStorageService.getInstance();
+      
+      // Load chatbot profile which contains the wrapper configuration
+      const chatbots = await chatbotService.getChatbots('current-user'); // TODO: Get actual user ID
+      const chatbot = chatbots.find(c => c.identity.id === agentId);
+      
+      if (chatbot) {
+        return {
+          personality: chatbot.chatbotConfig.personality,
+          behavior: chatbot.chatbotConfig.personality, // Map personality to behavior for now
+          knowledgeBases: chatbot.chatbotConfig.knowledgeBases,
+          automationRules: chatbot.chatbotConfig.automationRules,
+          responseTemplates: chatbot.chatbotConfig.responseTemplates,
+          brandSettings: chatbot.chatbotConfig.brandSettings,
+          governanceMetrics: chatbot.governancePolicy,
+          provider: chatbot.apiDetails?.provider,
+          model: chatbot.apiDetails?.selectedModel
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to load chatbot wrapper config:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Load configuration from scorecard (overrides wrapper settings)
+   */
+  private async loadScorecardConfig(agentId: string): Promise<any> {
+    try {
+      // TODO: Implement scorecard configuration loading
+      // This would load from the agent scorecard system
+      console.log(`🏆 [Universal] Loading scorecard config for ${agentId} (TODO: implement)`);
+      
+      // For now, return null (no scorecard overrides)
+      // Later this will load from the scorecard database/storage
+      return null;
+      
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to load scorecard config:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Build system message from agent configuration
+   */
+  private buildSystemMessage(agentConfig: any): string {
+    let systemMessage = 'You are a helpful AI assistant with governance oversight.';
+    
+    // Add personality-based system message
+    if (agentConfig.personality) {
+      const personalityPrompts = {
+        professional: 'You communicate in a professional, business-appropriate manner.',
+        friendly: 'You are warm, approachable, and conversational in your responses.',
+        casual: 'You use a relaxed, informal communication style.',
+        helpful: 'You prioritize being helpful and solution-oriented in all interactions.'
+      };
+      
+      systemMessage += ` ${personalityPrompts[agentConfig.personality] || personalityPrompts.helpful}`;
+    }
+    
+    // Add knowledge base context
+    if (agentConfig.knowledgeBases?.length > 0) {
+      systemMessage += ` You have access to specialized knowledge from ${agentConfig.knowledgeBases.length} knowledge base(s).`;
+    }
+    
+    // Add brand context
+    if (agentConfig.brandSettings?.name) {
+      systemMessage += ` You represent ${agentConfig.brandSettings.name}.`;
+    }
+    
+    return systemMessage;
+  }
+
+  // ============================================================================
   // REAL AI RESPONSE GENERATION (Core Feature)
   // ============================================================================
 
@@ -208,19 +388,30 @@ export class UniversalGovernanceAdapter {
     try {
       console.log(`🤖 [Universal] Generating governance-enhanced response for agent ${agentId}`);
       
-      // Get agent configuration to determine provider and model
-      const agentConfig = this.agentConfigurations.get(agentId) || this.currentAgentConfig;
+      // CRITICAL: Load complete agent configuration (chatbot wrapper + scorecard)
+      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId);
       
-      // Prepare backend chat request
+      // Prepare backend chat request with full agent configuration
       const chatRequest: BackendChatRequest = {
         agent_id: agentId,
         message: message,
         governance_enabled: true,
         session_id: context?.sessionId || `universal_${Date.now()}`,
-        system_message: agentConfig?.systemPrompt || 'You are a helpful AI assistant with governance oversight.',
-        provider: 'openai', // FIXED: Specify OpenAI as provider (API key is available)
-        model: 'gpt-4.1-mini', // FIXED: Use allowed model instead of gpt-4
-        conversationHistory: context?.conversationHistory || []
+        system_message: this.buildSystemMessage(fullAgentConfig),
+        provider: fullAgentConfig.provider || 'openai',
+        model: fullAgentConfig.model || 'gpt-4.1-mini',
+        conversationHistory: context?.conversationHistory || [],
+        // CRITICAL: Pass complete agent configuration to backend
+        agent_configuration: {
+          personality: fullAgentConfig.personality,
+          behavior: fullAgentConfig.behavior,
+          knowledgeBases: fullAgentConfig.knowledgeBases,
+          enabledTools: fullAgentConfig.enabledTools,
+          automationRules: fullAgentConfig.automationRules,
+          governanceMetrics: fullAgentConfig.governanceMetrics,
+          responseTemplates: fullAgentConfig.responseTemplates,
+          brandSettings: fullAgentConfig.brandSettings
+        }
       };
 
       // Call real backend API (same as modern chat)
