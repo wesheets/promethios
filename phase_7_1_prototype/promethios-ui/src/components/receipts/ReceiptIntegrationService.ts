@@ -6,7 +6,7 @@
  * receipt generation for Salesforce, Shopify, email, SMS, and other tool operations.
  */
 
-import { ToolReceiptExtension, ToolAction, BusinessContext } from '../../extensions/ToolReceiptExtension';
+import { ComprehensiveToolReceiptExtension, EnhancedToolReceipt, ComprehensiveToolAction } from '../../extensions/ComprehensiveToolReceiptExtension';
 import { UniversalGovernanceAdapter } from '../../services/UniversalGovernanceAdapter';
 
 export interface ToolExecutionContext {
@@ -15,7 +15,7 @@ export interface ToolExecutionContext {
   actionType: string;
   parameters: Record<string, any>;
   userIntent: string;
-  businessContext: BusinessContext;
+  businessContext: any; // Changed from BusinessContext to any
 }
 
 export interface ToolExecutionResult {
@@ -41,12 +41,12 @@ export interface ToolExecutionResult {
  */
 export class ReceiptIntegrationService {
   private static instance: ReceiptIntegrationService;
-  private receiptExtension: ToolReceiptExtension;
+  private receiptExtension: ComprehensiveToolReceiptExtension;
   private governanceAdapter: UniversalGovernanceAdapter;
 
   private constructor() {
-    this.receiptExtension = ToolReceiptExtension.getInstance();
-    this.governanceAdapter = UniversalGovernanceAdapter.getInstance();
+    this.receiptExtension = new ComprehensiveToolReceiptExtension();
+    this.governanceAdapter = new UniversalGovernanceAdapter();
   }
 
   static getInstance(): ReceiptIntegrationService {
@@ -83,13 +83,17 @@ export class ReceiptIntegrationService {
       const result = await toolExecutor();
       
       // Create tool action object for receipt
-      const toolAction: ToolAction = {
+      const toolAction: ComprehensiveToolAction = {
         toolName: context.toolName,
         actionType: context.actionType,
         parameters: context.parameters,
         userIntent: context.userIntent,
         expectedOutcome: this.generateExpectedOutcome(context),
-        businessContext: context.businessContext
+        businessContext: context.businessContext,
+        toolCategory: this.getToolCategory(context.toolName),
+        riskLevel: this.calculateRiskLevel(context),
+        complianceRequirements: this.getComplianceRequirements(context),
+        dataClassification: 'confidential'
       };
 
       // Generate receipt
@@ -112,13 +116,17 @@ export class ReceiptIntegrationService {
       console.error(`❌ Error executing ${context.toolName}:`, error);
       
       // Generate receipt for failed operation
-      const toolAction: ToolAction = {
+      const toolAction: ComprehensiveToolAction = {
         toolName: context.toolName,
         actionType: context.actionType,
         parameters: context.parameters,
         userIntent: context.userIntent,
         expectedOutcome: this.generateExpectedOutcome(context),
-        businessContext: context.businessContext
+        businessContext: context.businessContext,
+        toolCategory: this.getToolCategory(context.toolName),
+        riskLevel: this.calculateRiskLevel(context),
+        complianceRequirements: this.getComplianceRequirements(context),
+        dataClassification: 'confidential'
       };
 
       const failureResult = {
@@ -613,6 +621,57 @@ export class ReceiptIntegrationService {
     }
     
     return `Execute ${actionType} using ${toolName}`;
+  }
+
+  /**
+   * Helper method to determine tool category
+   */
+  private getToolCategory(toolName: string): 'communication' | 'crm' | 'ecommerce' | 'financial' | 'data' | 'file' | 'web' | 'ai' | 'security' | 'integration' {
+    switch (toolName) {
+      case 'email':
+      case 'sms':
+      case 'slack':
+        return 'communication';
+      case 'salesforce':
+        return 'crm';
+      case 'shopify':
+        return 'ecommerce';
+      default:
+        return 'integration';
+    }
+  }
+
+  /**
+   * Helper method to calculate risk level
+   */
+  private calculateRiskLevel(context: ToolExecutionContext): 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 {
+    // Simple risk calculation based on tool and action type
+    let risk = 3; // Default medium-low risk
+    
+    if (context.toolName === 'salesforce') risk += 2; // CRM data is sensitive
+    if (context.actionType.includes('create') || context.actionType.includes('update')) risk += 1;
+    if (context.actionType.includes('delete')) risk += 3;
+    
+    return Math.min(10, Math.max(1, risk)) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  }
+
+  /**
+   * Helper method to get compliance requirements
+   */
+  private getComplianceRequirements(context: ToolExecutionContext): string[] {
+    const requirements: string[] = [];
+    
+    if (context.toolName === 'salesforce') {
+      requirements.push('GDPR', 'CCPA');
+    }
+    if (context.toolName === 'email') {
+      requirements.push('CAN-SPAM', 'GDPR');
+    }
+    if (context.toolName === 'sms') {
+      requirements.push('TCPA', 'GDPR');
+    }
+    
+    return requirements;
   }
 }
 
