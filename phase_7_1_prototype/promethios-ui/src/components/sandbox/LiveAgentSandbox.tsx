@@ -577,5 +577,6 @@ const LiveAgentSandbox: React.FC<LiveAgentSandboxProps> = ({
   );
 };
 
+export { LiveAgentSandbox };
 export default LiveAgentSandbox;
 

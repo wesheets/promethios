@@ -57,13 +57,10 @@ import {
   Step,
   StepLabel,
   StepContent,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-  TimelineOppositeContent
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon
 } from '@mui/material';
 import {
   Search,

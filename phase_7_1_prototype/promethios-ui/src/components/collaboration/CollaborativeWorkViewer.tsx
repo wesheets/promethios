@@ -82,7 +82,7 @@ import {
   Timeline as TimelineIcon,
   Feedback,
   History,
-  Template,
+  Description as Template,
   Analytics,
   PlayArrow,
   Pause,

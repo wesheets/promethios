@@ -752,5 +752,6 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   );
 };
 
+export { AgentReceiptViewer };
 export default AgentReceiptViewer;
 

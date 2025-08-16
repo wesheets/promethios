@@ -611,5 +611,6 @@ const AgentMemoryViewer: React.FC<AgentMemoryViewerProps> = ({
   );
 };
 
+export { AgentMemoryViewer };
 export default AgentMemoryViewer;
 
