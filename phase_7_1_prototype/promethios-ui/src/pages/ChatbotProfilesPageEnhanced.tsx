@@ -62,6 +62,7 @@ import { ChatbotStorageService } from '../services/ChatbotStorageService';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
+import { SimplifiedKnowledgeViewer } from '../components/knowledge/SimplifiedKnowledgeViewer';
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
@@ -71,7 +72,7 @@ import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | null;
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -1004,23 +1005,23 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <Button
-                        variant={workspaceSelectedTab === 'knowledge' ? 'contained' : 'outlined'}
+                        variant={workspaceSelectedTab === 'ai_knowledge' ? 'contained' : 'outlined'}
                         size="small"
                         startIcon={<Psychology />}
                         fullWidth
                         onClick={() => {
-                          setWorkspaceSelectedTab('knowledge');
-                          setRightPanelType('knowledge');
+                          setWorkspaceSelectedTab('ai_knowledge');
+                          setRightPanelType('ai_knowledge');
                         }}
                         sx={{
                           borderColor: '#374151',
-                          color: workspaceSelectedTab === 'knowledge' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'knowledge' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'knowledge' ? '#2563eb' : '#1e293b' },
+                          color: workspaceSelectedTab === 'ai_knowledge' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#2563eb' : '#1e293b' },
                           fontSize: '0.75rem',
                         }}
                       >
-                        Knowledge
+                        AI Knowledge
                       </Button>
                     </Grid>
                     <Grid item xs={6}>
@@ -2414,6 +2415,35 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       </CardContent>
                     </Card>
                   </Box>
+                )}
+
+                {rightPanelType === 'ai_knowledge' && (
+                  <SimplifiedKnowledgeViewer
+                    agentId={selectedChatbot.identity.id}
+                    onContentLoad={(content) => {
+                      // Load content context into chat
+                      console.log('Loading knowledge content into chat:', content);
+                      
+                      // Add the content as a system message to provide context
+                      const contextMessage: ChatMessage = {
+                        id: `context_${Date.now()}`,
+                        content: `Loading context: ${content.title || content.name || 'Knowledge item'}`,
+                        sender: 'system',
+                        timestamp: new Date(),
+                        trustScore: 1.0,
+                        governanceStatus: 'approved'
+                      };
+                      
+                      setChatMessages(prev => [...prev, contextMessage]);
+                      
+                      // Optionally pre-fill the message input with a relevant prompt
+                      setMessageInput(`Continue working on: ${content.title || content.name || 'this item'}`);
+                    }}
+                    onShare={(content) => {
+                      // Handle sharing through governance
+                      console.log('Sharing knowledge content:', content);
+                    }}
+                  />
                 )}
 
                 {rightPanelType === 'tools' && (
