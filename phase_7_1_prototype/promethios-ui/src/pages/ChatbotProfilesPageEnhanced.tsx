@@ -41,7 +41,6 @@ import {
   AutoAwesome,
   Add,
   Edit,
-  Deploy,
   Send,
   Api,
   SmartToy,
@@ -1179,7 +1178,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       <Button
                         variant="contained"
                         size="small"
-                        startIcon={<Deploy />}
+                        startIcon={<Rocket />}
                         fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('deployment');
