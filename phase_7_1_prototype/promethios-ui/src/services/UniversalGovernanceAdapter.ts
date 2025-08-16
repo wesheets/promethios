@@ -695,6 +695,283 @@ export class UniversalGovernanceAdapter {
   }
 
   // ============================================================================
+  // MULTI-AGENT GOVERNANCE INTEGRATION
+  // ============================================================================
+
+  /**
+   * Create multi-agent collaboration context with governance
+   */
+  async createMultiAgentContext(request: {
+    name: string;
+    agentIds: string[];
+    collaborationModel: string;
+    governanceEnabled?: boolean;
+    policies?: any[];
+  }): Promise<any> {
+    try {
+      console.log(`🤝 [Universal] Creating multi-agent context: ${request.name}`);
+      
+      const contextRequest = {
+        name: request.name,
+        agent_ids: request.agentIds,
+        collaboration_model: request.collaborationModel,
+        governance_enabled: request.governanceEnabled ?? true,
+        policies: request.policies || [],
+        universal_governance: true
+      };
+
+      const context = await this.callBackendAPI('/multi-agent/context/create', contextRequest);
+      
+      console.log(`✅ [Universal] Multi-agent context created: ${context.context_id}`);
+      return context;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to create multi-agent context:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send message in multi-agent context with governance validation
+   */
+  async sendMultiAgentMessage(request: {
+    contextId: string;
+    fromAgentId: string;
+    toAgentIds: string[];
+    message: any;
+    requireResponse?: boolean;
+  }): Promise<any> {
+    try {
+      console.log(`📤 [Universal] Sending multi-agent message from ${request.fromAgentId}`);
+      
+      const messageRequest = {
+        context_id: request.contextId,
+        from_agent_id: request.fromAgentId,
+        to_agent_ids: request.toAgentIds,
+        message: request.message,
+        require_response: request.requireResponse || false,
+        governance_validation: true,
+        universal_governance: true
+      };
+
+      const result = await this.callBackendAPI('/multi-agent/message/send', messageRequest);
+      
+      // Create audit entry for multi-agent communication
+      await this.createAuditEntry({
+        agentId: request.fromAgentId,
+        action: 'multi_agent_communication',
+        details: {
+          contextId: request.contextId,
+          recipientCount: request.toAgentIds.length,
+          messageType: typeof request.message,
+          governanceApproved: result.governance_approved
+        },
+        trustScore: result.trust_impact || 0,
+        timestamp: new Date()
+      });
+      
+      console.log(`✅ [Universal] Multi-agent message sent successfully`);
+      return result;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to send multi-agent message:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get multi-agent collaboration metrics with governance data
+   */
+  async getMultiAgentMetrics(contextId: string): Promise<any> {
+    try {
+      console.log(`📊 [Universal] Getting multi-agent metrics for context: ${contextId}`);
+      
+      const metrics = await this.callBackendAPI('/multi-agent/metrics', { 
+        context_id: contextId,
+        include_governance: true,
+        universal_governance: true
+      });
+      
+      console.log(`✅ [Universal] Retrieved multi-agent metrics`);
+      return metrics;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to get multi-agent metrics:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Validate multi-agent collaboration decision
+   */
+  async validateCollaborativeDecision(decision: {
+    contextId: string;
+    participatingAgents: string[];
+    decisionType: string;
+    content: any;
+  }): Promise<{
+    approved: boolean;
+    trustImpact: number;
+    violations: any[];
+    recommendations: string[];
+  }> {
+    try {
+      console.log(`🔍 [Universal] Validating collaborative decision: ${decision.decisionType}`);
+      
+      const validationRequest = {
+        context_id: decision.contextId,
+        participating_agents: decision.participatingAgents,
+        decision_type: decision.decisionType,
+        content: decision.content,
+        governance_validation: true,
+        universal_governance: true
+      };
+
+      const result = await this.callBackendAPI('/multi-agent/decision/validate', validationRequest);
+      
+      // Create audit entries for all participating agents
+      for (const agentId of decision.participatingAgents) {
+        await this.createAuditEntry({
+          agentId,
+          action: 'collaborative_decision',
+          details: {
+            contextId: decision.contextId,
+            decisionType: decision.decisionType,
+            approved: result.approved,
+            violations: result.violations
+          },
+          trustScore: result.trust_impact,
+          timestamp: new Date()
+        });
+      }
+      
+      console.log(`✅ [Universal] Collaborative decision validation completed`);
+      return result;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to validate collaborative decision:', error);
+      return {
+        approved: false,
+        trustImpact: -0.1,
+        violations: [{ type: 'validation_error', message: error.message }],
+        recommendations: ['Review decision parameters and try again']
+      };
+    }
+  }
+
+  /**
+   * Get trust relationships between agents
+   */
+  async getAgentTrustRelationships(agentId: string): Promise<any[]> {
+    try {
+      console.log(`🤝 [Universal] Getting trust relationships for agent: ${agentId}`);
+      
+      const relationships = await this.callBackendAPI('/multi-agent/trust/relationships', {
+        agent_id: agentId,
+        universal_governance: true
+      });
+      
+      console.log(`✅ [Universal] Retrieved ${relationships.length} trust relationships`);
+      return relationships;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to get trust relationships:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Update trust score between agents
+   */
+  async updateAgentTrustScore(fromAgentId: string, toAgentId: string, trustDelta: number, reason: string): Promise<boolean> {
+    try {
+      console.log(`📈 [Universal] Updating trust score: ${fromAgentId} -> ${toAgentId} (${trustDelta})`);
+      
+      const updateRequest = {
+        from_agent_id: fromAgentId,
+        to_agent_id: toAgentId,
+        trust_delta: trustDelta,
+        reason: reason,
+        universal_governance: true
+      };
+
+      await this.callBackendAPI('/multi-agent/trust/update', updateRequest);
+      
+      // Create audit entries for trust update
+      await this.createAuditEntry({
+        agentId: fromAgentId,
+        action: 'trust_score_update',
+        details: {
+          targetAgent: toAgentId,
+          trustDelta: trustDelta,
+          reason: reason
+        },
+        trustScore: trustDelta,
+        timestamp: new Date()
+      });
+      
+      console.log(`✅ [Universal] Trust score updated successfully`);
+      return true;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to update trust score:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Share pattern between agents with governance validation
+   */
+  async shareAgentPattern(sourceAgentId: string, targetAgentIds: string[], pattern: any): Promise<boolean> {
+    try {
+      console.log(`🔄 [Universal] Sharing pattern from ${sourceAgentId} to ${targetAgentIds.length} agents`);
+      
+      const shareRequest = {
+        source_agent_id: sourceAgentId,
+        target_agent_ids: targetAgentIds,
+        pattern: pattern,
+        governance_validation: true,
+        universal_governance: true
+      };
+
+      const result = await this.callBackendAPI('/multi-agent/pattern/share', shareRequest);
+      
+      // Create audit entries for pattern sharing
+      await this.createAuditEntry({
+        agentId: sourceAgentId,
+        action: 'pattern_sharing',
+        details: {
+          patternId: pattern.patternId,
+          targetAgents: targetAgentIds,
+          approved: result.approved
+        },
+        trustScore: result.trust_impact || 0,
+        timestamp: new Date()
+      });
+      
+      console.log(`✅ [Universal] Pattern sharing completed`);
+      return result.approved;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to share pattern:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get shared patterns for an agent
+   */
+  async getSharedPatterns(agentId: string): Promise<any[]> {
+    try {
+      console.log(`📋 [Universal] Getting shared patterns for agent: ${agentId}`);
+      
+      const patterns = await this.callBackendAPI('/multi-agent/pattern/list', {
+        agent_id: agentId,
+        universal_governance: true
+      });
+      
+      console.log(`✅ [Universal] Retrieved ${patterns.length} shared patterns`);
+      return patterns;
+    } catch (error) {
+      console.error('❌ [Universal] Failed to get shared patterns:', error);
+      return [];
+    }
+  }
+
+  // ============================================================================
   // AGENT CONFIGURATION MANAGEMENT
   // ============================================================================
 

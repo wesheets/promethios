@@ -4,9 +4,12 @@
  * Provides comprehensive governance controls for multi-agent systems including
  * emergent behavior detection, cross-platform interaction monitoring, and
  * real-time intervention capabilities for AI debate systems.
+ * 
+ * Now integrated with UniversalGovernanceAdapter for consistent governance.
  */
 
 import { observerService } from './observers';
+import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
 export interface GovernanceEvent {
   id: string;
@@ -46,12 +49,27 @@ export interface InterventionResult {
 
 export class MultiAgentGovernanceWrapper {
   private governanceStates = new Map<string, GovernanceState>();
+  private universalGovernance: UniversalGovernanceAdapter;
   private interventionThresholds = {
     trustScore: 0.3, // Minimum trust score before intervention
     emergentBehaviorSeverity: 'high', // Minimum severity for intervention
     collaborationHealth: 40, // Minimum collaboration health percentage
     maxInterventions: 5 // Maximum interventions per session
   };
+
+  constructor() {
+    this.universalGovernance = new UniversalGovernanceAdapter();
+    this.initializeUniversalGovernance();
+  }
+
+  private async initializeUniversalGovernance(): Promise<void> {
+    try {
+      await this.universalGovernance.initialize();
+      console.log('✅ [MultiAgentGov] UniversalGovernanceAdapter initialized');
+    } catch (error) {
+      console.error('❌ [MultiAgentGov] Failed to initialize UniversalGovernanceAdapter:', error);
+    }
+  }
 
   /**
    * Initialize governance for a multi-agent session
