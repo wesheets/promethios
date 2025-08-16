@@ -1253,7 +1253,7 @@ export class ProblemSolvingWorkflowsExtension extends Extension {
             type: 'workflow_shared',
             workflowId: workflow.id,
             title: workflow.title || 'Workflow',
-            type: this.getWorkflowType(workflow),
+            workflowType: this.getWorkflowType(workflow),
             permissions,
             message: `Workflow shared: ${workflow.title || 'Workflow'}`
           }

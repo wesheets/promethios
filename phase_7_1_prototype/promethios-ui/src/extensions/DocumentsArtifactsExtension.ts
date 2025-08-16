@@ -840,7 +840,7 @@ export class DocumentsArtifactsExtension extends Extension {
             type: 'artifact_shared',
             artifactId: artifact.id,
             title: artifact.title,
-            type: artifact.type,
+            artifactType: artifact.type,
             permissions,
             message: message || `Artifact shared: ${artifact.title}`
           }

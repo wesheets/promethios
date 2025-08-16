@@ -1125,7 +1125,7 @@ export class AnalysisInsightsExtension extends Extension {
             type: 'analysis_shared',
             analysisId: analysis.id,
             title: analysis.title || 'Analysis',
-            type: this.getAnalysisType(analysis),
+            analysisType: this.getAnalysisType(analysis),
             permissions,
             message: `Analysis shared: ${analysis.title || 'Analysis'}`
           }

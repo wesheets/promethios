@@ -1,13 +1,65 @@
 /**
  * Comprehensive Tool Receipt Extension
  * 
- * Extends the base ToolReceiptExtension to provide receipt generation
- * for all identified tools in the Promethios platform. This includes
- * communication tools, CRM integrations, e-commerce platforms, financial
- * services, and more.
+ * Provides receipt generation for all identified tools in the Promethios platform. 
+ * This includes communication tools, CRM integrations, e-commerce platforms, 
+ * financial services, and more.
  */
 
-import { ToolReceiptExtension, ToolAction, ToolReceipt, BusinessContext } from './ToolReceiptExtension';
+import { Extension } from './Extension';
+import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
+
+// Tool Receipt Interfaces
+export interface ToolAction {
+  id: string;
+  toolName: string;
+  action: string;
+  parameters: Record<string, any>;
+  timestamp: Date;
+  agentId: string;
+  sessionId: string;
+  businessContext?: BusinessContext;
+  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  complianceRequirements?: string[];
+  dataClassification?: 'public' | 'internal' | 'confidential' | 'restricted';
+}
+
+export interface ToolReceipt {
+  id: string;
+  toolAction: ToolAction;
+  executionResult: any;
+  status: 'success' | 'failure' | 'partial';
+  timestamp: Date;
+  duration: number;
+  errorMessage?: string;
+  businessImpact?: BusinessImpact;
+  auditTrail: AuditEntry[];
+  hash: string;
+}
+
+export interface BusinessContext {
+  department: string;
+  project?: string;
+  customer?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  complianceRequired: boolean;
+  budgetImpact?: number;
+  strategicImportance?: 'low' | 'medium' | 'high';
+}
+
+export interface BusinessImpact {
+  costSavings?: number;
+  timeValue?: number;
+  riskMitigation?: string;
+  strategicValue?: string;
+}
+
+export interface AuditEntry {
+  timestamp: Date;
+  action: string;
+  details: string;
+  agentId: string;
+}
 
 // Browser-compatible crypto utilities
 const browserCrypto = {
@@ -92,8 +144,14 @@ export interface EnhancedToolReceipt extends ToolReceipt {
  * Comprehensive Tool Receipt Extension
  * Provides receipt generation for all Promethios tools
  */
-export class ComprehensiveToolReceiptExtension extends ToolReceiptExtension {
+export class ComprehensiveToolReceiptExtension extends Extension {
   private static instance: ComprehensiveToolReceiptExtension;
+  private universalGovernance: UniversalGovernanceAdapter;
+
+  constructor() {
+    super();
+    this.universalGovernance = new UniversalGovernanceAdapter();
+  }
 
   static getInstance(): ComprehensiveToolReceiptExtension {
     if (!ComprehensiveToolReceiptExtension.instance) {
