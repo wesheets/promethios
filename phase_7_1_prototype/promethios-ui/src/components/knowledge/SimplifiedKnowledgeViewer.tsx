@@ -156,6 +156,8 @@ export const SimplifiedKnowledgeViewer: React.FC<SimplifiedKnowledgeViewerProps>
   onContentLoad,
   onShare
 }) => {
+  console.log('🧠 SimplifiedKnowledgeViewer rendering with agentId:', agentId);
+  
   // State management
   const [activeTab, setActiveTab] = useState(0);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner');
@@ -440,6 +442,8 @@ export const SimplifiedKnowledgeViewer: React.FC<SimplifiedKnowledgeViewerProps>
 
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {console.log('🎨 SimplifiedKnowledgeViewer rendering UI, experienceLevel:', experienceLevel)}
+      
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
