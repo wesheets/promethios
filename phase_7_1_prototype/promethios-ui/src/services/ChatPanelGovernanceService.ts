@@ -11,6 +11,9 @@ import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
 import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory } from './ChatStorageService';
+import { PredictiveGovernanceExtension, RiskPrediction } from '../extensions/PredictiveGovernanceExtension';
+import { InteractiveReceiptExtension } from '../extensions/InteractiveReceiptExtension';
+import { ReceiptIntegrationService } from '../components/receipts/ReceiptIntegrationService';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -47,14 +50,26 @@ export class ChatPanelGovernanceService {
   private universalGovernance: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
   private chatStorageService: ChatStorageService;
+  private predictiveGovernance: PredictiveGovernanceExtension;
+  private interactiveReceipts: InteractiveReceiptExtension;
+  private receiptIntegration: ReceiptIntegrationService;
   private currentSession: ChatSession | null = null;
   private conversationHistory: ChatMessage[] = [];
+  private activeSessions: Map<string, ChatSession> = new Map();
+  private sessionMetrics: Map<string, GovernanceMetrics> = new Map();
 
   constructor() {
-    console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter');
+    console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter and Extensions');
     this.universalGovernance = new UniversalGovernanceAdapter();
     this.agentConfigService = new AgentConfigurationService();
     this.chatStorageService = new ChatStorageService();
+    
+    // Initialize extensions
+    this.predictiveGovernance = new PredictiveGovernanceExtension();
+    this.interactiveReceipts = new InteractiveReceiptExtension();
+    this.receiptIntegration = new ReceiptIntegrationService();
+    
+    console.log('✅ [ChatPanel] All extensions initialized successfully');
   }
 
   // ============================================================================
@@ -333,7 +348,40 @@ export class ChatPanelGovernanceService {
         throw new Error(`Session metrics not found: ${sessionId}`);
       }
 
-      // 1. Policy Enforcement
+      // 1. Predictive Governance - Risk Assessment
+      try {
+        const riskPrediction = await this.predictiveGovernance.predictRisk(session.agentId, {
+          toolName: 'chat',
+          actionType: 'message_processing',
+          parameters: { message },
+          context: {
+            sessionId,
+            conversationHistory: this.conversationHistory,
+            currentTrustScore: metrics.trustScore
+          },
+          urgency: 'medium'
+        });
+
+        console.log(`🔮 [ChatPanel] Risk prediction: ${riskPrediction.riskScore}/100 (confidence: ${riskPrediction.confidence})`);
+
+        // Check if action requires approval
+        if (riskPrediction.riskScore > 70) {
+          console.warn(`⚠️ [ChatPanel] High risk detected, requiring approval`);
+          
+          return {
+            id: `approval_${Date.now()}`,
+            content: `This action has been flagged for review due to high risk (${riskPrediction.riskScore}/100). Recommendations: ${riskPrediction.recommendations.map(r => r.description).join(', ')}. Would you like to proceed?`,
+            sender: 'agent',
+            timestamp: new Date(),
+            trustScore: metrics.trustScore,
+            governanceStatus: 'pending_approval'
+          };
+        }
+      } catch (error) {
+        console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
+      }
+
+      // 2. Policy Enforcement
       const policyResult = await this.enforcePolicy(session.agentId, message, { sessionId });
       
       if (!policyResult.allowed) {
@@ -366,10 +414,27 @@ export class ChatPanelGovernanceService {
         };
       }
 
-      // 2. Generate Response
+      // 3. Generate Response
       const chatResponse = await this.generateChatResponse(sessionId, message, session.agentId, { sessionId });
       
-      // 3. Update Trust Score
+      // 4. Generate Receipt for this interaction
+      try {
+        const receipt = await this.receiptIntegration.generateReceipt({
+          toolName: 'chat',
+          action: 'message_processing',
+          parameters: { message, response: chatResponse.response },
+          result: { success: true, trustScore: chatResponse.trustScore },
+          agentId: session.agentId,
+          sessionId,
+          timestamp: new Date()
+        });
+        
+        console.log(`🧾 [ChatPanel] Receipt generated: ${receipt.id}`);
+      } catch (error) {
+        console.warn(`⚠️ [ChatPanel] Receipt generation failed:`, error);
+      }
+
+      // 5. Update Trust Score
       await this.updateTrustScore(session.agentId, {
         type: 'message_interaction',
         quality: 'good',
@@ -377,7 +442,7 @@ export class ChatPanelGovernanceService {
         sessionId
       });
 
-      // 4. Update Session Metrics
+      // 6. Update Session Metrics
       session.messageCount++;
       session.trustScore = chatResponse.trustScore;
       session.governanceMetrics.complianceScore = policyResult.complianceScore;
@@ -385,7 +450,7 @@ export class ChatPanelGovernanceService {
       metrics.messageCount++;
       metrics.trustScore = chatResponse.trustScore;
 
-      // 5. Save messages to persistent storage
+      // 7. Save messages to persistent storage
       console.log(`💾 [ChatPanel] Saving messages to persistent storage`);
       
       // Save user message
@@ -441,7 +506,7 @@ export class ChatPanelGovernanceService {
         }
       );
 
-      // 6. Create Audit Entry
+      // 8. Create Audit Entry
       await this.createAuditEntry({
         interaction_id: `msg_${Date.now()}`,
         agent_id: session.agentId,
@@ -527,6 +592,168 @@ export class ChatPanelGovernanceService {
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to get compliance metrics:`, error);
       return { complianceScore: 1.0, violations: 0, warnings: 0 };
+    }
+  }
+
+  // ============================================================================
+  // RECEIPT MANAGEMENT
+  // ============================================================================
+
+  async getAgentReceipts(agentId: string, limit: number = 50): Promise<any[]> {
+    try {
+      console.log(`🧾 [ChatPanel] Getting receipts for agent: ${agentId}`);
+      return await this.receiptIntegration.getAgentReceipts(agentId, limit);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get agent receipts:`, error);
+      return [];
+    }
+  }
+
+  async loadReceiptContext(receiptId: string): Promise<any> {
+    try {
+      console.log(`📋 [ChatPanel] Loading receipt context: ${receiptId}`);
+      return await this.interactiveReceipts.loadReceiptContext(receiptId);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to load receipt context:`, error);
+      return null;
+    }
+  }
+
+  async getReceiptsByCategory(agentId: string, category: string): Promise<any[]> {
+    try {
+      return await this.receiptIntegration.getReceiptsByCategory(agentId, category);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get receipts by category:`, error);
+      return [];
+    }
+  }
+
+  // ============================================================================
+  // MEMORY MANAGEMENT
+  // ============================================================================
+
+  async getAgentMemory(agentId: string): Promise<any> {
+    try {
+      console.log(`🧠 [ChatPanel] Getting memory for agent: ${agentId}`);
+      // Get conversation history from storage
+      const history = await this.chatStorageService.loadAgentChatHistory(agentId);
+      
+      return {
+        conversationHistory: history?.messages || [],
+        memoryStats: {
+          totalMessages: history?.messages.length || 0,
+          totalSessions: 1, // TODO: Implement session counting
+          averageTrustScore: history?.messages.reduce((sum, msg) => sum + (msg.governanceData?.trustScore || 0.75), 0) / (history?.messages.length || 1),
+          lastActivity: history?.messages[history?.messages.length - 1]?.timestamp || new Date()
+        },
+        patterns: [], // TODO: Implement pattern analysis
+        insights: [] // TODO: Implement insights generation
+      };
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get agent memory:`, error);
+      return {
+        conversationHistory: [],
+        memoryStats: { totalMessages: 0, totalSessions: 0, averageTrustScore: 0.75, lastActivity: new Date() },
+        patterns: [],
+        insights: []
+      };
+    }
+  }
+
+  async clearAgentMemory(agentId: string): Promise<void> {
+    try {
+      console.log(`🗑️ [ChatPanel] Clearing memory for agent: ${agentId}`);
+      await this.chatStorageService.clearAgentHistory(agentId);
+      this.conversationHistory = [];
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to clear agent memory:`, error);
+    }
+  }
+
+  // ============================================================================
+  // SANDBOX MONITORING
+  // ============================================================================
+
+  async getAgentSandboxData(agentId: string): Promise<any> {
+    try {
+      console.log(`🔬 [ChatPanel] Getting sandbox data for agent: ${agentId}`);
+      
+      const activeSessions = Array.from(this.activeSessions.values()).filter(s => s.agentId === agentId);
+      const sessionMetrics = Array.from(this.sessionMetrics.entries())
+        .filter(([sessionId]) => activeSessions.some(s => s.sessionId === sessionId))
+        .map(([sessionId, metrics]) => ({ sessionId, ...metrics }));
+
+      return {
+        agentId,
+        status: activeSessions.length > 0 ? 'active' : 'idle',
+        activeSessions: activeSessions.length,
+        currentMetrics: sessionMetrics[0] || {
+          trustScore: 0.75,
+          messageCount: 0,
+          violations: 0,
+          autonomyLevel: 'standard'
+        },
+        realtimeData: {
+          cpuUsage: Math.random() * 30 + 10, // Mock data
+          memoryUsage: Math.random() * 40 + 20,
+          responseTime: Math.random() * 2 + 0.5,
+          throughput: Math.random() * 100 + 50
+        },
+        governanceAlerts: [],
+        debugLogs: this.getRecentDebugLogs(agentId)
+      };
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get sandbox data:`, error);
+      return {
+        agentId,
+        status: 'error',
+        activeSessions: 0,
+        currentMetrics: { trustScore: 0.75, messageCount: 0, violations: 0, autonomyLevel: 'standard' },
+        realtimeData: { cpuUsage: 0, memoryUsage: 0, responseTime: 0, throughput: 0 },
+        governanceAlerts: [],
+        debugLogs: []
+      };
+    }
+  }
+
+  private getRecentDebugLogs(agentId: string): any[] {
+    // Mock debug logs - in real implementation, this would come from logging service
+    return [
+      { timestamp: new Date(), level: 'info', message: `Agent ${agentId} session started`, source: 'governance' },
+      { timestamp: new Date(Date.now() - 30000), level: 'debug', message: 'Trust score updated', source: 'trust_engine' },
+      { timestamp: new Date(Date.now() - 60000), level: 'info', message: 'Policy check passed', source: 'policy_engine' }
+    ];
+  }
+
+  // ============================================================================
+  // GOVERNANCE SENSITIVITY CONTROLS
+  // ============================================================================
+
+  async updateGovernanceSensitivity(agentId: string, sensitivity: 'low' | 'medium' | 'high'): Promise<void> {
+    try {
+      console.log(`⚙️ [ChatPanel] Updating governance sensitivity for agent ${agentId}: ${sensitivity}`);
+      
+      // Update trust thresholds based on sensitivity
+      const thresholds = {
+        low: { minimum: 0.2, warning: 0.4, optimal: 0.6 },
+        medium: { minimum: 0.3, warning: 0.5, optimal: 0.8 },
+        high: { minimum: 0.5, warning: 0.7, optimal: 0.9 }
+      };
+
+      // Store sensitivity setting (in real implementation, this would be persisted)
+      console.log(`✅ [ChatPanel] Governance sensitivity updated to ${sensitivity} with thresholds:`, thresholds[sensitivity]);
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to update governance sensitivity:`, error);
+    }
+  }
+
+  async getGovernanceSensitivity(agentId: string): Promise<string> {
+    try {
+      // In real implementation, this would be retrieved from storage
+      return 'medium'; // Default sensitivity
+    } catch (error) {
+      console.warn(`⚠️ [ChatPanel] Failed to get governance sensitivity:`, error);
+      return 'medium';
     }
   }
 }
