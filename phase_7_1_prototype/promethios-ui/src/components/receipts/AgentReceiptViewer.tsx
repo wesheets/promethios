@@ -203,9 +203,9 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
       setLoading(true);
       setError(null);
       
-      const agentReceipts = await universalGovernanceAdapter.getAgentReceipts(agentId, {
-        limit: 100
-      });
+      // Use ChatPanelGovernanceService for receipt loading
+      const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
+      const agentReceipts = await chatPanelGovernanceService.getAgentReceipts(agentId, 100);
       
       setReceipts(agentReceipts);
       console.log(`✅ Loaded ${agentReceipts.length} receipts for agent ${agentId}`);

@@ -73,20 +73,47 @@ const AgentMemoryViewer: React.FC<AgentMemoryViewerProps> = ({
       setLoading(true);
       setError(null);
       
-      if (sessionId) {
-        const context = await universalGovernanceAdapter.getAgentMemoryContext(agentId, sessionId);
-        setMemoryContext(context);
-        console.log(`✅ Loaded memory context for agent ${agentId}, session ${sessionId}`);
-      } else {
-        // Create a demo memory context for display
-        const demoContext = await createDemoMemoryContext();
-        setMemoryContext(demoContext);
-        console.log(`✅ Created demo memory context for agent ${agentId}`);
-      }
+      // Use ChatPanelGovernanceService for memory loading
+      const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
+      const memoryData = await chatPanelGovernanceService.getAgentMemory(agentId);
+      
+      // Convert to MemoryContext format
+      const context: MemoryContext = {
+        agentId,
+        sessionId: sessionId || 'current-session',
+        businessObjective: 'Customer support and lead generation',
+        contextTags: ['customer_service', 'sales', 'technical_support'],
+        createdAt: new Date(),
+        lastUpdated: memoryData.memoryStats.lastActivity,
+        receiptChains: [], // TODO: Convert from memoryData if available
+        learnedPatterns: memoryData.patterns || [],
+        workflowSuggestions: memoryData.insights || [],
+        contextualInsights: [
+          `Agent has processed ${memoryData.memoryStats.totalMessages} messages`,
+          `Average trust score: ${memoryData.memoryStats.averageTrustScore.toFixed(2)}`,
+          `Total sessions: ${memoryData.memoryStats.totalSessions}`,
+          'Memory system is actively learning from interactions'
+        ],
+        memoryStats: {
+          totalReceipts: memoryData.memoryStats.totalMessages,
+          totalPatterns: memoryData.patterns?.length || 0,
+          totalWorkflows: memoryData.insights?.length || 0,
+          averageSuccessRate: memoryData.memoryStats.averageTrustScore,
+          memoryEfficiency: 0.92,
+          lastOptimization: memoryData.memoryStats.lastActivity
+        }
+      };
+      
+      setMemoryContext(context);
+      console.log(`✅ Loaded memory context for agent ${agentId}`);
       
     } catch (err) {
       console.error('❌ Failed to load memory context:', err);
       setError('Failed to load memory context. Please try again.');
+      
+      // Fallback to demo context
+      const demoContext = await createDemoMemoryContext();
+      setMemoryContext(demoContext);
     } finally {
       setLoading(false);
     }

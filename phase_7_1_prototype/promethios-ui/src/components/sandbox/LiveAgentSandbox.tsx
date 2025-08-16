@@ -102,6 +102,41 @@ const LiveAgentSandbox: React.FC<LiveAgentSandboxProps> = ({
   const [autoScroll, setAutoScroll] = useState(true);
   const eventsEndRef = useRef<HTMLDivElement>(null);
 
+  // Load initial sandbox data
+  useEffect(() => {
+    const loadSandboxData = async () => {
+      try {
+        const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
+        const sandboxData = await chatPanelGovernanceService.getAgentSandboxData(agentId);
+        
+        setAgentState(prev => ({
+          ...prev,
+          status: sandboxData.status === 'active' ? 'processing' : 'idle',
+          memoryUsage: sandboxData.realtimeData.memoryUsage,
+          governanceScore: Math.round(sandboxData.currentMetrics.trustScore * 100),
+          lastActivity: new Date()
+        }));
+
+        // Convert debug logs to events
+        const debugEvents: SandboxEvent[] = sandboxData.debugLogs.map((log: any, index: number) => ({
+          id: `debug_${index}`,
+          timestamp: log.timestamp,
+          type: 'governance_check' as const,
+          title: log.source,
+          description: log.message,
+          status: log.level === 'error' ? 'error' : log.level === 'warning' ? 'warning' : 'info' as const
+        }));
+
+        setEvents(debugEvents);
+        console.log(`✅ Loaded sandbox data for agent ${agentId}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to load sandbox data:`, error);
+      }
+    };
+
+    loadSandboxData();
+  }, [agentId]);
+
   // Mock real-time events simulation
   useEffect(() => {
     if (!isMonitoring || !isActive) return;
