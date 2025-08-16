@@ -21,6 +21,13 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Slider,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Analytics,
@@ -48,6 +55,7 @@ import {
   Receipt,
   Memory,
   Computer,
+  Security,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
@@ -115,6 +123,11 @@ const ChatbotProfilesPageContent: React.FC = () => {
   // Workspace mode management
   const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
   const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
+
+  // Governance sensitivity controls
+  const [governanceSensitivity, setGovernanceSensitivity] = useState<'low' | 'medium' | 'high'>('medium');
+  const [trustThreshold, setTrustThreshold] = useState<number>(70);
+  const [riskCategories, setRiskCategories] = useState<string[]>(['financial_transactions', 'data_access']);
 
   // Mock metrics data - in real implementation, this would come from analytics service
   const getMockMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => ({
@@ -1113,6 +1126,27 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         }}
                       >
                         Sandbox
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'governance' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Security />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('governance');
+                          setRightPanelType('governance');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'governance' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'governance' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'governance' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Governance
                       </Button>
                     </Grid>
                   </Grid>
@@ -2235,6 +2269,151 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       console.log('Debug action:', action);
                     }}
                   />
+                )}
+
+                {rightPanelType === 'governance' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Governance Sensitivity
+                    </Typography>
+                    
+                    {/* Governance Sensitivity Controls */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Approval Sensitivity
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                          Configure when the agent should ask for approval before taking actions
+                        </Typography>
+                        
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                          <InputLabel sx={{ color: '#94a3b8' }}>Sensitivity Level</InputLabel>
+                          <Select
+                            value={governanceSensitivity}
+                            onChange={(e) => setGovernanceSensitivity(e.target.value as 'low' | 'medium' | 'high')}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                              '& .MuiSvgIcon-root': { color: '#94a3b8' }
+                            }}
+                          >
+                            <MenuItem value="low">Low - Minimal approvals required</MenuItem>
+                            <MenuItem value="medium">Medium - Balanced approach</MenuItem>
+                            <MenuItem value="high">High - Frequent approval requests</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                          Current setting: <strong style={{ color: '#3b82f6' }}>{governanceSensitivity.toUpperCase()}</strong>
+                        </Typography>
+
+                        {/* Trust Threshold Controls */}
+                        <Typography variant="subtitle2" sx={{ color: 'white', mb: 1, fontWeight: 'bold' }}>
+                          Trust Threshold: {trustThreshold}%
+                        </Typography>
+                        <Slider
+                          value={trustThreshold}
+                          onChange={(_, value) => setTrustThreshold(value as number)}
+                          min={0}
+                          max={100}
+                          step={5}
+                          sx={{
+                            color: '#3b82f6',
+                            '& .MuiSlider-thumb': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-track': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-rail': { bgcolor: '#374151' }
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#64748b', mt: 1 }}>
+                          Actions below this trust level will require approval
+                        </Typography>
+
+                        {/* Risk Categories */}
+                        <Typography variant="subtitle2" sx={{ color: 'white', mt: 3, mb: 2, fontWeight: 'bold' }}>
+                          Risk Categories Requiring Approval
+                        </Typography>
+                        
+                        {['financial_transactions', 'data_access', 'external_communications', 'system_changes'].map((category) => (
+                          <FormControlLabel
+                            key={category}
+                            control={
+                              <Checkbox
+                                checked={riskCategories.includes(category)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setRiskCategories([...riskCategories, category]);
+                                  } else {
+                                    setRiskCategories(riskCategories.filter(c => c !== category));
+                                  }
+                                }}
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label={category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                        ))}
+
+                        {/* Apply Button */}
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          onClick={() => {
+                            // Apply governance settings
+                            console.log('Applying governance settings:', {
+                              sensitivity: governanceSensitivity,
+                              trustThreshold,
+                              riskCategories
+                            });
+                          }}
+                          sx={{
+                            mt: 3,
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' }
+                          }}
+                        >
+                          Apply Governance Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Current Governance Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Current Governance Status
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Trust Score</Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {activeSession?.trustScore ? (activeSession.trustScore * 100).toFixed(0) : '75'}%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Compliance</Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              {activeSession?.governanceMetrics?.complianceScore ? (activeSession.governanceMetrics.complianceScore * 100).toFixed(0) : '100'}%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Violations</Typography>
+                            <Typography variant="h6" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              {activeSession?.governanceMetrics?.violations || 0}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Warnings</Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {activeSession?.governanceMetrics?.warnings || 0}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  </Box>
                 )}
 
                 {rightPanelType === 'tools' && (
