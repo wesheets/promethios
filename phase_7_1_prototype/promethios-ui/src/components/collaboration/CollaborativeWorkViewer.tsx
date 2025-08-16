@@ -82,7 +82,7 @@ import {
   Timeline as TimelineIcon,
   Feedback,
   History,
-  Description as Template,
+  Description,
   Analytics,
   PlayArrow,
   Pause,
@@ -656,7 +656,7 @@ export const CollaborativeWorkViewer: React.FC<CollaborativeWorkViewerProps> = (
                 onClick={() => setShowCreateFromTemplate(true)}
                 sx={{ color: '#3b82f6' }}
               >
-                <Template />
+                <Description />
               </IconButton>
             </Tooltip>
             <Tooltip title="View Analytics">
@@ -1014,7 +1014,7 @@ export const CollaborativeWorkViewer: React.FC<CollaborativeWorkViewerProps> = (
             </Typography>
             {templates.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Template sx={{ fontSize: 48, color: '#4b5563', mb: 2 }} />
+                <Description sx={{ fontSize: 48, color: '#4b5563', mb: 2 }} />
                 <Typography variant="body1" sx={{ color: '#94a3b8', mb: 2 }}>
                   No templates found
                 </Typography>
