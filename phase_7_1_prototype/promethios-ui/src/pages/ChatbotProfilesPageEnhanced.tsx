@@ -45,9 +45,15 @@ import {
   Api,
   SmartToy,
   CheckCircle,
+  Receipt,
+  Memory,
+  Computer,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
+import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
+import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
+import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
@@ -57,7 +63,7 @@ import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'workspace' | null;
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -1044,6 +1050,69 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         }}
                       >
                         Automation
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'receipts' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Receipt />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('receipts');
+                          setRightPanelType('receipts');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'receipts' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'receipts' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'receipts' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Receipts
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'memory' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Memory />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('memory');
+                          setRightPanelType('memory');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'memory' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'memory' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'memory' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Memory
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'sandbox' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Computer />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('sandbox');
+                          setRightPanelType('sandbox');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'sandbox' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'sandbox' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'sandbox' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Sandbox
                       </Button>
                     </Grid>
                   </Grid>
@@ -2136,6 +2205,36 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       Basic configuration, model selection, and governance settings will be available here.
                     </Typography>
                   </Box>
+                )}
+
+                {rightPanelType === 'receipts' && (
+                  <AgentReceiptViewer
+                    chatbot={selectedChatbot}
+                    onReceiptClick={(receipt) => {
+                      // Load receipt context into chat
+                      console.log('Loading receipt context:', receipt);
+                    }}
+                  />
+                )}
+
+                {rightPanelType === 'memory' && (
+                  <AgentMemoryViewer
+                    chatbot={selectedChatbot}
+                    onMemoryLoad={(memory) => {
+                      // Load memory context into chat
+                      console.log('Loading memory context:', memory);
+                    }}
+                  />
+                )}
+
+                {rightPanelType === 'sandbox' && (
+                  <LiveAgentSandbox
+                    chatbot={selectedChatbot}
+                    onDebugAction={(action) => {
+                      // Handle debug actions
+                      console.log('Debug action:', action);
+                    }}
+                  />
                 )}
 
                 {rightPanelType === 'tools' && (
