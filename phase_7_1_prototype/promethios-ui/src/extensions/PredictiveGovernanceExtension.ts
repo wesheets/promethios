@@ -24,7 +24,7 @@ import { ComprehensiveToolReceiptExtension, EnhancedToolReceipt } from './Compre
 import { RecursiveMemoryExtension, PatternAnalysis } from './RecursiveMemoryExtension';
 import { CrossAgentMemoryExtension, SharedPattern } from './CrossAgentMemoryExtension';
 import { AuditLogAccessExtension } from './AuditLogAccessExtension';
-import { universalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
+import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
 
 export interface RiskPrediction {
   predictionId: string;
@@ -222,6 +222,7 @@ export class PredictiveGovernanceExtension extends Extension {
   private memoryExtension: RecursiveMemoryExtension;
   private crossAgentExtension: CrossAgentMemoryExtension;
   private auditExtension: AuditLogAccessExtension;
+  private governanceAdapter: UniversalGovernanceAdapter;
   
   private predictiveModels: Map<string, PredictiveModel> = new Map();
   private activePredictions: Map<string, RiskPrediction> = new Map();
@@ -235,6 +236,7 @@ export class PredictiveGovernanceExtension extends Extension {
     this.memoryExtension = new RecursiveMemoryExtension();
     this.crossAgentExtension = new CrossAgentMemoryExtension();
     this.auditExtension = new AuditLogAccessExtension();
+    this.governanceAdapter = new UniversalGovernanceAdapter();
   }
 
   async initialize(): Promise<boolean> {
