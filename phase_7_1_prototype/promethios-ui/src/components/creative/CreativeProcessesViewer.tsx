@@ -84,6 +84,7 @@ import {
   MenuBook,
   Build,
   Star,
+  Route,
   TrendingUp,
   TrendingDown,
   TrendingFlat,
@@ -398,7 +399,7 @@ const iterationTypeIcons: Record<string, React.ReactElement> = {
 const storyTypeIcons: Record<string, React.ReactElement> = {
   'narrative': <MenuBook />,
   'brand_story': <Business />,
-  'user_journey': <Timeline />,
+  'user_journey': <Route />,
   'case_study': <School />,
   'scenario': <Visibility />,
   'vision': <Star />,
