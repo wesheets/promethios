@@ -463,51 +463,55 @@ const ChatbotProfilesPageContent: React.FC = () => {
         }}
       >
         <Container sx={{ py: 4 }}>
-          {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-            <Box>
-              <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                My Chatbots ({filteredChatbots.length})
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#64748b', mt: 1 }}>
-                Manage and monitor your AI-powered chatbots
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleCreateNew}
-              sx={{
-                bgcolor: '#3b82f6',
-                '&:hover': { bgcolor: '#2563eb' },
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-              }}
-            >
-              Create New Chatbot
-            </Button>
-          </Box>
+          {/* Header - Only show when NOT in workspace mode */}
+          {!isWorkspaceMode && (
+            <>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                <Box>
+                  <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    My Chatbots ({filteredChatbots.length})
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#64748b', mt: 1 }}>
+                    Manage and monitor your AI-powered chatbots
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={handleCreateNew}
+                  sx={{
+                    bgcolor: '#3b82f6',
+                    '&:hover': { bgcolor: '#2563eb' },
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1.5,
+                  }}
+                >
+                  Create New Chatbot
+                </Button>
+              </Box>
 
-          {/* Filter Tabs */}
-          <Box sx={{ mb: 4 }}>
-            <Tabs 
-              value={filterTab} 
-              onChange={(e, newValue) => setFilterTab(newValue)}
-              sx={{
-                '& .MuiTab-root': { 
-                  color: '#64748b',
-                  '&.Mui-selected': { color: '#3b82f6' }
-                },
-                '& .MuiTabs-indicator': { bgcolor: '#3b82f6' }
-              }}
-            >
-              <Tab label={`All (${chatbotProfiles.length})`} />
-              <Tab label={`Hosted API (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Hosted API').length})`} />
-              <Tab label={`BYOK (${chatbotProfiles.filter(c => getGovernanceType(c) === 'BYOK').length})`} />
-              <Tab label={`Enterprise (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Enterprise').length})`} />
-            </Tabs>
-          </Box>
+              {/* Filter Tabs */}
+              <Box sx={{ mb: 4 }}>
+                <Tabs 
+                  value={filterTab} 
+                  onChange={(e, newValue) => setFilterTab(newValue)}
+                  sx={{
+                    '& .MuiTab-root': { 
+                      color: '#64748b',
+                      '&.Mui-selected': { color: '#3b82f6' }
+                    },
+                    '& .MuiTabs-indicator': { bgcolor: '#3b82f6' }
+                  }}
+                >
+                  <Tab label={`All (${chatbotProfiles.length})`} />
+                  <Tab label={`Hosted API (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Hosted API').length})`} />
+                  <Tab label={`BYOK (${chatbotProfiles.filter(c => getGovernanceType(c) === 'BYOK').length})`} />
+                  <Tab label={`Enterprise (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Enterprise').length})`} />
+                </Tabs>
+              </Box>
+            </>
+          )}
 
           {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
           {!isWorkspaceMode && (
@@ -813,16 +817,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
           {isWorkspaceMode && selectedChatbot && (
             <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
               {/* Breadcrumbs */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
-                <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box component="span" sx={{ cursor: 'pointer', '&:hover': { color: '#3b82f6' } }} onClick={closeRightPanel}>
-                    ← {selectedChatbot.identity.name}
-                  </Box>
-                  <Box component="span" sx={{ color: '#64748b' }}>•</Box>
-                  <Box component="span" sx={{ color: '#3b82f6' }}>Command Center</Box>
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
-                  {getMockMetrics(selectedChatbot).healthScore}% Health • Live • Enterprise
+              <Box sx={{ mb: 2, p: 1.5 }}>
+                <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }} onClick={closeRightPanel}>
+                  ← Chatbots
                 </Typography>
               </Box>
 
