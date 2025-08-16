@@ -405,29 +405,75 @@ export const SimplifiedKnowledgeViewer: React.FC<SimplifiedKnowledgeViewerProps>
 
   // Render repository content
   const renderRepositoryContent = (tabId: string) => {
-    const commonProps = {
-      agentId,
-      onContentLoad,
-      onShare
-    };
+    const chatbot = { identity: { id: agentId } }; // Create chatbot object from agentId
 
     switch (tabId) {
       case 'research':
-        return <ResearchRepositoryViewer {...commonProps} />;
+        return (
+          <ResearchRepositoryViewer 
+            chatbot={chatbot}
+            onResearchLoad={(research) => onContentLoad?.(research)}
+            onThreadLoad={(thread) => onContentLoad?.(thread)}
+            onSourceLoad={(source) => onContentLoad?.(source)}
+          />
+        );
       case 'documents':
-        return <DocumentsRepositoryViewer {...commonProps} />;
+        return (
+          <DocumentsRepositoryViewer 
+            chatbot={chatbot}
+            onDocumentLoad={(document) => onContentLoad?.(document)}
+            onVersionLoad={(document, version) => onContentLoad?.({ document, version })}
+            onTemplateLoad={(template) => onContentLoad?.(template)}
+          />
+        );
       case 'analysis':
-        return <AnalysisInsightsViewer {...commonProps} />;
+        return (
+          <AnalysisInsightsViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       case 'workflows':
-        return <ProblemSolvingWorkflowsViewer {...commonProps} />;
+        return (
+          <ProblemSolvingWorkflowsViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       case 'learning':
-        return <LearningAdaptationViewer {...commonProps} />;
+        return (
+          <LearningAdaptationViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       case 'collaboration':
-        return <CollaborativeWorkViewer {...commonProps} />;
+        return (
+          <CollaborativeWorkViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       case 'creative':
-        return <CreativeProcessesViewer {...commonProps} />;
+        return (
+          <CreativeProcessesViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       case 'relationship':
-        return <RelationshipContextViewer {...commonProps} />;
+        return (
+          <RelationshipContextViewer 
+            agentId={agentId}
+            onContentLoad={onContentLoad}
+            onShare={onShare}
+          />
+        );
       default:
         return (
           <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
