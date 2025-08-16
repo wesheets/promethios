@@ -58,7 +58,7 @@ import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | null;
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'workspace' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -106,6 +106,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+
+  // Workspace mode management
+  const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
+  const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
 
   // Mock metrics data - in real implementation, this would come from analytics service
   const getMockMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => ({
@@ -181,8 +185,52 @@ const ChatbotProfilesPageContent: React.FC = () => {
     // Set active chatbot for widget customizer
     setActiveChatbotId(chatbot.identity.id);
     
+    // If opening workspace mode, enable workspace and initialize chat session
+    if (panelType === 'workspace') {
+      setIsWorkspaceMode(true);
+      try {
+        setChatLoading(true);
+        console.log(`🚀 [Workspace] Initializing Command Center for ${chatbot.identity.name}`);
+        
+        // Start new chat session with governance
+        const session = await chatPanelGovernanceService.startChatSession(chatbot);
+        setActiveSession(session);
+        setChatMessages([]);
+        setMessageInput('');
+        
+        console.log(`✅ [Workspace] Command Center initialized:`, session.sessionId);
+        console.log(`🎨 [Workspace] Using widget config:`, getChatbotConfig(chatbot.identity.id));
+      } catch (error) {
+        console.error(`❌ [Workspace] Failed to initialize Command Center:`, error);
+        // Create a fallback session for UI testing
+        const fallbackSession: ChatSession = {
+          sessionId: `fallback_${Date.now()}`,
+          agentId: chatbot.identity.id,
+          startTime: new Date(),
+          messageCount: 0,
+          trustScore: 0.75,
+          governanceMetrics: {
+            violations: 0,
+            warnings: 0,
+            complianceScore: 1.0
+          }
+        };
+        setActiveSession(fallbackSession);
+        setChatMessages([{
+          id: '1',
+          content: 'Hello! I\'m having trouble connecting to the governance system, but I\'m here to help!',
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: 0.75,
+          governanceStatus: 'approved'
+        }]);
+      } finally {
+        setChatLoading(false);
+      }
+    }
     // If opening chat panel, initialize chat session
-    if (panelType === 'chat') {
+    else if (panelType === 'chat') {
+      setIsWorkspaceMode(false);
       try {
         setChatLoading(true);
         console.log(`💬 [ChatPanel] Initializing chat session for ${chatbot.identity.name}`);
@@ -222,25 +270,30 @@ const ChatbotProfilesPageContent: React.FC = () => {
       } finally {
         setChatLoading(false);
       }
+    } else {
+      // For other panel types, disable workspace mode
+      setIsWorkspaceMode(false);
     }
   };
 
   const closeRightPanel = async () => {
     // Clean up chat session if active
-    if (activeSession && rightPanelType === 'chat') {
+    if (activeSession && (rightPanelType === 'chat' || rightPanelType === 'workspace')) {
       try {
         await chatPanelGovernanceService.endChatSession(activeSession.sessionId);
         setActiveSession(null);
         setChatMessages([]);
         setMessageInput('');
-        console.log(`✅ [ChatPanel] Chat session ended successfully`);
+        console.log(`✅ [${rightPanelType === 'workspace' ? 'Workspace' : 'ChatPanel'}] Session ended successfully`);
       } catch (error) {
-        console.error(`❌ [ChatPanel] Failed to end chat session:`, error);
+        console.error(`❌ [${rightPanelType === 'workspace' ? 'Workspace' : 'ChatPanel'}] Failed to end session:`, error);
       }
     }
     
     setSelectedChatbot(null);
     setRightPanelType(null);
+    setIsWorkspaceMode(false);
+    setWorkspaceSelectedTab('analytics');
   };
 
   // Chat message handling
@@ -457,14 +510,15 @@ const ChatbotProfilesPageContent: React.FC = () => {
             </Tabs>
           </Box>
 
-          {/* Chatbot Scorecards Grid */}
-          <Grid container spacing={3}>
-            {filteredChatbots.map((chatbot) => {
-              const metrics = getMockMetrics(chatbot);
-              const governanceType = getGovernanceType(chatbot);
-              const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
-              const isNativeAgent = governanceType === 'BYOK';
-              const isSelected = selectedChatbot?.identity.id === chatbot.identity.id;
+          {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
+          {!isWorkspaceMode && (
+            <Grid container spacing={3}>
+              {filteredChatbots.map((chatbot) => {
+                const metrics = getMockMetrics(chatbot);
+                const governanceType = getGovernanceType(chatbot);
+                const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
+                const isNativeAgent = governanceType === 'BYOK';
+                const isSelected = selectedChatbot?.identity.id === chatbot.identity.id;
               
               return (
                 <Grid item xs={12} sm={6} lg={4} key={chatbot.identity.id}>
@@ -729,40 +783,24 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
                       {/* Primary Actions */}
                       <Box mt={2}>
-                        <Grid container spacing={1}>
-                          <Grid item xs={6}>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<Chat />}
-                              fullWidth
-                              onClick={() => openRightPanel(chatbot, 'chat')}
-                              sx={{
-                                bgcolor: '#3b82f6',
-                                '&:hover': { bgcolor: '#2563eb' },
-                                fontWeight: 600,
-                              }}
-                            >
-                              Chat
-                            </Button>
-                          </Grid>
-                          <Grid item xs={6}>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<Rocket />}
-                              fullWidth
-                              onClick={() => openRightPanel(chatbot, 'deployment')}
-                              sx={{
-                                bgcolor: '#10b981',
-                                '&:hover': { bgcolor: '#059669' },
-                                fontWeight: 600,
-                              }}
-                            >
-                              Deploy
-                            </Button>
-                          </Grid>
-                        </Grid>
+                        <Button
+                          variant="contained"
+                          size="medium"
+                          startIcon={<Rocket />}
+                          fullWidth
+                          onClick={() => openRightPanel(chatbot, 'workspace')}
+                          sx={{
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' },
+                            fontWeight: 600,
+                            py: 1.5,
+                            fontSize: '0.875rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          🚀 Command Center
+                        </Button>
                       </Box>
                     </CardContent>
                   </Card>
@@ -770,6 +808,145 @@ const ChatbotProfilesPageContent: React.FC = () => {
               );
             })}
           </Grid>
+          )}
+
+          {/* Chat Interface - Only show when IN workspace mode */}
+          {isWorkspaceMode && selectedChatbot && (
+            <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
+              {/* Breadcrumbs */}
+              <Box sx={{ mb: 3, p: 2, bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
+                <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box component="span" sx={{ cursor: 'pointer', '&:hover': { color: '#3b82f6' } }} onClick={closeRightPanel}>
+                    ← {selectedChatbot.identity.name}
+                  </Box>
+                  <Box component="span" sx={{ color: '#64748b' }}>•</Box>
+                  <Box component="span" sx={{ color: '#3b82f6' }}>Command Center</Box>
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+                  {getMockMetrics(selectedChatbot).healthScore}% Health • Live • Enterprise
+                </Typography>
+              </Box>
+
+              {/* Chat Interface */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
+                {/* Chat Header */}
+                <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
+                  <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                    Chat with Your Agent
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    {selectedChatbot.identity.name}
+                  </Typography>
+                  {activeSession && (
+                    <Typography variant="caption" sx={{ color: '#64748b', float: 'right' }}>
+                      Session: {activeSession.sessionId.slice(-8)}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* Chat Messages */}
+                <Box sx={{ flex: 1, p: 3, overflowY: 'auto', minHeight: 0 }}>
+                  {chatLoading && chatMessages.length === 0 ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    <Stack spacing={2}>
+                      {chatMessages.map((message) => (
+                        <Box
+                          key={message.id}
+                          sx={{
+                            display: 'flex',
+                            justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              maxWidth: '70%',
+                              p: 2,
+                              borderRadius: 2,
+                              bgcolor: message.sender === 'user' ? '#3b82f6' : '#374151',
+                              color: 'white',
+                            }}
+                          >
+                            <Typography variant="body2">{message.content}</Typography>
+                            <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                              {message.timestamp.toLocaleTimeString()}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                      {isTyping && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                          <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#374151' }}>
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Agent is typing...
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+                    </Stack>
+                  )}
+                </Box>
+
+                {/* Chat Input */}
+                <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+                    <Box sx={{ flex: 1, position: 'relative' }}>
+                      <Box
+                        component="textarea"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
+                        placeholder="Type your message..."
+                        disabled={chatLoading}
+                        sx={{
+                          width: '100%',
+                          minHeight: '44px',
+                          maxHeight: '120px',
+                          p: 2,
+                          pr: 6,
+                          bgcolor: '#0f172a',
+                          border: '1px solid #334155',
+                          borderRadius: 2,
+                          color: 'white',
+                          fontSize: '14px',
+                          fontFamily: 'inherit',
+                          resize: 'vertical',
+                          '&:focus': {
+                            outline: 'none',
+                            borderColor: '#3b82f6',
+                          },
+                          '&::placeholder': {
+                            color: '#64748b',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Button
+                      variant="contained"
+                      onClick={sendMessage}
+                      disabled={!messageInput.trim() || chatLoading}
+                      sx={{
+                        minWidth: '44px',
+                        height: '44px',
+                        bgcolor: '#3b82f6',
+                        '&:hover': { bgcolor: '#2563eb' },
+                        '&:disabled': { bgcolor: '#374151' },
+                      }}
+                    >
+                      <Send sx={{ fontSize: 20 }} />
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          )}
         </Container>
       </Box>
 
@@ -813,6 +990,213 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   </IconButton>
                 </Box>
               </Box>
+
+              {/* Scorecard Buttons - Only show in workspace mode */}
+              {isWorkspaceMode && (
+                <Box sx={{ p: 3, borderBottom: '1px solid #334155', bgcolor: '#0f172a' }}>
+                  {/* Agent Metrics */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={4}>
+                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                          Health
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 600 }}>
+                          {getMockMetrics(selectedChatbot).healthScore}%
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                          Trust Score
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600 }}>
+                          {getMockMetrics(selectedChatbot).trustScore}/100
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                          Messages
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 600 }}>
+                          {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  {/* Scorecard Navigation Buttons */}
+                  <Grid container spacing={1} sx={{ mb: 2 }}>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'analytics' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Analytics />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('analytics');
+                          setRightPanelType('analytics');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'analytics' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'analytics' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'analytics' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Analytics
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'customize' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Palette />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('customize');
+                          setRightPanelType('customize');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'customize' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'customize' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'customize' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Customize
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'personality' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<SmartToy />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('personality');
+                          setRightPanelType('personality');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'personality' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'personality' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'personality' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Personality
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'knowledge' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Psychology />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('knowledge');
+                          setRightPanelType('knowledge');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'knowledge' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'knowledge' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'knowledge' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Knowledge
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'tools' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<Settings />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('tools');
+                          setRightPanelType('tools');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'tools' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'tools' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'tools' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Tools
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant={workspaceSelectedTab === 'automation' ? 'contained' : 'outlined'}
+                        size="small"
+                        startIcon={<AutoAwesome />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('automation');
+                          setRightPanelType('automation');
+                        }}
+                        sx={{
+                          borderColor: '#374151',
+                          color: workspaceSelectedTab === 'automation' ? 'white' : '#94a3b8',
+                          bgcolor: workspaceSelectedTab === 'automation' ? '#3b82f6' : 'transparent',
+                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'automation' ? '#2563eb' : '#1e293b' },
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Automation
+                      </Button>
+                    </Grid>
+                  </Grid>
+
+                  {/* Chat and Deploy Buttons */}
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<Chat />}
+                        fullWidth
+                        sx={{
+                          bgcolor: '#3b82f6',
+                          '&:hover': { bgcolor: '#2563eb' },
+                          fontWeight: 600,
+                        }}
+                      >
+                        Chat
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<Deploy />}
+                        fullWidth
+                        onClick={() => {
+                          setWorkspaceSelectedTab('deployment');
+                          setRightPanelType('deployment');
+                        }}
+                        sx={{
+                          bgcolor: '#10b981',
+                          '&:hover': { bgcolor: '#059669' },
+                          fontWeight: 600,
+                        }}
+                      >
+                        Deploy
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
 
               {/* Panel Content */}
               <Box sx={{ p: 3 }}>
