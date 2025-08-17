@@ -81,6 +81,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
+import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
+import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
@@ -94,7 +96,7 @@ import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -150,6 +152,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [connectedAppsMenuOpen, setConnectedAppsMenuOpen] = useState(false);
+  const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
+  const [selectedConnectedApps, setSelectedConnectedApps] = useState<ConnectedApp[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // File attachment and voice recording states
@@ -350,6 +355,19 @@ const ChatbotProfilesPageContent: React.FC = () => {
     }
   }, [user?.uid, authLoading, chatbotService]);
 
+  const loadConnectedApps = async () => {
+    try {
+      const apps = await connectedAppsService.getAllApps();
+      setConnectedApps(apps);
+      
+      // Set initially connected apps
+      const connected = apps.filter(app => app.status === 'connected');
+      setSelectedConnectedApps(connected);
+    } catch (error) {
+      console.error('Failed to load connected apps:', error);
+    }
+  };
+
   // Load chatbots on component mount and when user changes
   useEffect(() => {
     console.log('🔍 ChatbotProfilesPageEnhanced useEffect triggered, user:', user?.uid);
@@ -357,6 +375,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     console.log('🔍 Auth loading:', authLoading);
     console.log('🔍 About to call loadChatbots...');
     loadChatbots();
+    loadConnectedApps();
   }, [user?.uid, authLoading, loadChatbots]);
 
   // Filter chatbots based on search
@@ -712,6 +731,31 @@ const ChatbotProfilesPageContent: React.FC = () => {
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+                {/* Connected Apps Preview */}
+                {selectedConnectedApps.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', mb: 1, display: 'block' }}>
+                      Connected Apps:
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {selectedConnectedApps.map((app) => (
+                        <Chip
+                          key={app.id}
+                          avatar={<Avatar sx={{ bgcolor: 'transparent', fontSize: '0.7rem' }}>{app.icon}</Avatar>}
+                          label={app.name}
+                          onDelete={() => setSelectedConnectedApps(prev => prev.filter(a => a.id !== app.id))}
+                          size="small"
+                          sx={{ 
+                            bgcolor: '#3b82f6', 
+                            color: 'white',
+                            '& .MuiChip-deleteIcon': { color: 'white' }
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+                
                 {/* Attached Files Preview */}
                 {attachedFiles.length > 0 && (
                   <Box sx={{ mb: 2 }}>
@@ -819,10 +863,152 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     <ImageIcon sx={{ mr: 2 }} />
                     Create image
                   </MenuItem>
-                  <MenuItem onClick={() => setAddMenuAnchor(null)}>
-                    <CodeIcon sx={{ mr: 2 }} />
-                    Connected apps
+                  <MenuItem 
+                    onClick={() => {
+                      setConnectedAppsMenuOpen(true);
+                      setAddMenuAnchor(null);
+                    }}
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CodeIcon sx={{ mr: 2 }} />
+                      Connected apps
+                    </Box>
+                    {selectedConnectedApps.length > 0 && (
+                      <Chip
+                        label={selectedConnectedApps.length}
+                        size="small"
+                        sx={{
+                          bgcolor: '#3b82f6',
+                          color: 'white',
+                          height: 20,
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    )}
                   </MenuItem>
+                </Menu>
+
+                {/* Connected Apps Submenu */}
+                <Menu
+                  anchorEl={addMenuAnchor}
+                  open={connectedAppsMenuOpen}
+                  onClose={() => setConnectedAppsMenuOpen(false)}
+                  anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: '#1e293b',
+                      border: '1px solid #334155',
+                      minWidth: 300,
+                      '& .MuiMenuItem-root': {
+                        color: 'white',
+                        '&:hover': { bgcolor: '#374151' }
+                      }
+                    }
+                  }}
+                >
+                  <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
+                    <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+                      Connected Apps
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                      Select apps to use in this conversation
+                    </Typography>
+                  </Box>
+                  
+                  {connectedApps.filter(app => app.status === 'connected').length === 0 ? (
+                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                        No connected apps available
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setConnectedAppsMenuOpen(false);
+                          setRightPanelType('integrations');
+                        }}
+                        sx={{
+                          borderColor: '#3b82f6',
+                          color: '#3b82f6',
+                          '&:hover': {
+                            borderColor: '#2563eb',
+                            bgcolor: 'rgba(59, 130, 246, 0.1)'
+                          }
+                        }}
+                      >
+                        Connect Apps
+                      </Button>
+                    </Box>
+                  ) : (
+                    <>
+                      {connectedApps
+                        .filter(app => app.status === 'connected')
+                        .map((app) => {
+                          const isSelected = selectedConnectedApps.some(selected => selected.id === app.id);
+                          return (
+                            <MenuItem
+                              key={app.id}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedConnectedApps(prev => prev.filter(a => a.id !== app.id));
+                                } else {
+                                  setSelectedConnectedApps(prev => [...prev, app]);
+                                }
+                              }}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                bgcolor: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+                              }}
+                            >
+                              <Avatar sx={{ width: 24, height: 24, fontSize: '0.8rem' }}>
+                                {app.icon}
+                              </Avatar>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {app.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                  {app.description.slice(0, 40)}...
+                                </Typography>
+                              </Box>
+                              {isSelected && (
+                                <CheckCircle sx={{ color: '#10b981', fontSize: 16 }} />
+                              )}
+                            </MenuItem>
+                          );
+                        })}
+                      
+                      <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setConnectedAppsMenuOpen(false);
+                            setRightPanelType('integrations');
+                          }}
+                          sx={{
+                            borderColor: '#475569',
+                            color: '#94a3b8',
+                            '&:hover': {
+                              borderColor: '#64748b',
+                              bgcolor: 'rgba(148, 163, 184, 0.1)'
+                            }
+                          }}
+                        >
+                          Manage Connections
+                        </Button>
+                      </Box>
+                    </>
+                  )}
                 </Menu>
                 
                 {/* Hidden File Input */}
@@ -863,6 +1049,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     { key: 'personality', label: 'PERSONALITY' },
                     { key: 'knowledge', label: 'AI KNOWLEDGE' },
                     { key: 'tools', label: 'TOOLS' },
+                    { key: 'integrations', label: 'INTEGRATIONS' },
                     { key: 'automation', label: 'AUTOMATION' },
                     { key: 'receipts', label: 'RECEIPTS' },
                     { key: 'memory', label: 'MEMORY' },
@@ -1033,6 +1220,20 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       } catch (error) {
                         console.error('❌ Failed to save tool configuration:', error);
                       }
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'integrations' && (
+                  <ConnectedAppsPanel
+                    onClose={() => setRightPanelType(null)}
+                    onAppConnect={(app: ConnectedApp) => {
+                      console.log('✅ App connected:', app.name);
+                      // You could update the chatbot's connected apps here
+                    }}
+                    onAppDisconnect={(app: ConnectedApp) => {
+                      console.log('✅ App disconnected:', app.name);
+                      // You could update the chatbot's connected apps here
                     }}
                   />
                 )}
