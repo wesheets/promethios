@@ -460,11 +460,6 @@ export class ChatPanelGovernanceService {
       } catch (error) {
         console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
       }
-          };
-        }
-      } catch (error) {
-        console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
-      }
 
       // 2. Policy Enforcement
       const policyResult = await this.enforcePolicy(session.agentId, message, { sessionId });
