@@ -1053,11 +1053,6 @@ export class UniversalGovernanceAdapter {
   getGovernanceContext(): GovernanceContext | null {
     return this.governanceContext;
   }
-}
-
-// Export singleton instance for easy use
-export const universalGovernanceAdapter = new UniversalGovernanceAdapter();
-
 
   // ============================================================================
   // MAIN CHAT MESSAGE PROCESSING WITH GOVERNANCE
@@ -1312,4 +1307,8 @@ export const universalGovernanceAdapter = new UniversalGovernanceAdapter();
       // Don't throw - this is post-processing
     }
   }
+}
+
+// Export singleton instance for easy use
+export const universalGovernanceAdapter = new UniversalGovernanceAdapter();
 
