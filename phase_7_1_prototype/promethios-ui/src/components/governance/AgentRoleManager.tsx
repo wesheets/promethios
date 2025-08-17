@@ -40,7 +40,8 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
-  Badge
+  Badge,
+  Slider
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -48,19 +49,15 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Assignment as AssignmentIcon,
-  Security as SecurityIcon,
-  Psychology as PsychologyIcon,
   Groups as GroupsIcon,
   Analytics as AnalyticsIcon,
+  Security as SecurityIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
-  Info as InfoIcon,
-  Star as StarIcon,
-  WorkOutline as WorkIcon,
-  Functions as FunctionsIcon,
-  Chat as ChatIcon,
-  Engineering as EngineeringIcon,
-  Person as PersonIcon
+  Error as ErrorIcon,
+  Person as PersonIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon
 } from '@mui/icons-material';
 
 import { AgentRoleService, AgentRole, RoleAssignment, RoleValidationResult, RoleContextualData } from '../../services/AgentRoleService';
@@ -604,92 +601,243 @@ export const AgentRoleManager: React.FC<AgentRoleManagerProps> = ({
 
       {/* Create Custom Role Dialog */}
       <Dialog open={createRoleDialogOpen} onClose={() => setCreateRoleDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create Custom Role</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PersonIcon sx={{ mr: 1, color: '#607d8b' }} />
+            Create Custom Agent Role
+          </Box>
+        </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Role Name"
-                value={newRole.name}
-                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Compliance Level</InputLabel>
-                <Select
-                  value={newRole.complianceLevel}
-                  onChange={(e) => setNewRole({ ...newRole, complianceLevel: e.target.value as any })}
-                  label="Compliance Level"
-                >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                  <MenuItem value="critical">Critical</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                value={newRole.description}
-                onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                multiline
-                rows={3}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Permissions (comma-separated)"
-                value={newRole.permissions.join(', ')}
-                onChange={(e) => setNewRole({ 
-                  ...newRole, 
-                  permissions: e.target.value.split(',').map(p => p.trim()).filter(p => p) 
-                })}
-                placeholder="data_processing, task_execution, quality_control"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Responsibilities (comma-separated)"
-                value={newRole.responsibilities.join(', ')}
-                onChange={(e) => setNewRole({ 
-                  ...newRole, 
-                  responsibilities: e.target.value.split(',').map(r => r.trim()).filter(r => r) 
-                })}
-                placeholder="Execute tasks, Monitor quality, Report progress"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body2" gutterBottom>
-                Minimum Trust Score: {(newRole.trustScoreMinimum * 100).toFixed(0)}%
-              </Typography>
-              <Box sx={{ px: 2 }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={newRole.trustScoreMinimum}
-                  onChange={(e) => setNewRole({ ...newRole, trustScoreMinimum: parseFloat(e.target.value) })}
-                  style={{ width: '100%' }}
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={3}>
+              {/* Basic Information */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Basic Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Role Name"
+                  value={newRole.name}
+                  onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                  required
+                  error={!newRole.name}
+                  helperText={!newRole.name ? 'Role name is required' : ''}
                 />
-              </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={newRole.category}
+                    onChange={(e) => setNewRole({ ...newRole, category: e.target.value as AgentRole['category'] })}
+                    label="Category"
+                  >
+                    <MenuItem value="workflow">Workflow</MenuItem>
+                    <MenuItem value="functional">Functional</MenuItem>
+                    <MenuItem value="communication">Communication</MenuItem>
+                    <MenuItem value="specialized">Specialized</MenuItem>
+                    <MenuItem value="custom">Custom</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Description"
+                  value={newRole.description}
+                  onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                  required
+                  error={!newRole.description}
+                  helperText={!newRole.description ? 'Description is required' : 'Describe the role\'s purpose and responsibilities'}
+                />
+              </Grid>
+
+              {/* Governance Requirements */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Governance Requirements
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" gutterBottom>
+                  Minimum Trust Score: {(newRole.trustScoreMinimum * 100).toFixed(0)}%
+                </Typography>
+                <Box sx={{ px: 2 }}>
+                  <Slider
+                    value={newRole.trustScoreMinimum}
+                    onChange={(_, value) => setNewRole({ ...newRole, trustScoreMinimum: value as number })}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    marks={[
+                      { value: 0, label: '0%' },
+                      { value: 0.5, label: '50%' },
+                      { value: 1, label: '100%' }
+                    ]}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${(value * 100).toFixed(0)}%`}
+                  />
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Compliance Level</InputLabel>
+                  <Select
+                    value={newRole.complianceLevel}
+                    onChange={(e) => setNewRole({ ...newRole, complianceLevel: e.target.value as 'low' | 'medium' | 'high' | 'critical' })}
+                    label="Compliance Level"
+                  >
+                    <MenuItem value="low">
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#4caf50', mr: 1 }} />
+                        Low
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="medium">
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ff9800', mr: 1 }} />
+                        Medium
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="high">
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#f44336', mr: 1 }} />
+                        High
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="critical">
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#d32f2f', mr: 1 }} />
+                        Critical
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Permissions */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Permissions
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <TextField
+                  fullWidth
+                  label="Add Permission"
+                  placeholder="e.g., data_processing, quality_control, user_interaction"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const permission = (e.target as HTMLInputElement).value.trim();
+                      if (permission && !newRole.permissions.includes(permission)) {
+                        setNewRole({
+                          ...newRole,
+                          permissions: [...newRole.permissions, permission]
+                        });
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                  helperText="Press Enter to add permissions"
+                />
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {newRole.permissions.map((permission, index) => (
+                    <Chip
+                      key={index}
+                      label={permission.replace(/_/g, ' ')}
+                      onDelete={() => {
+                        setNewRole({
+                          ...newRole,
+                          permissions: newRole.permissions.filter((_, i) => i !== index)
+                        });
+                      }}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Grid>
+
+              {/* Responsibilities */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Responsibilities
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <TextField
+                  fullWidth
+                  label="Add Responsibility"
+                  placeholder="e.g., Analyze data patterns, Generate reports, Ensure quality standards"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const responsibility = (e.target as HTMLInputElement).value.trim();
+                      if (responsibility && !newRole.responsibilities.includes(responsibility)) {
+                        setNewRole({
+                          ...newRole,
+                          responsibilities: [...newRole.responsibilities, responsibility]
+                        });
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                  helperText="Press Enter to add responsibilities"
+                />
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {newRole.responsibilities.map((responsibility, index) => (
+                    <Chip
+                      key={index}
+                      label={responsibility}
+                      onDelete={() => {
+                        setNewRole({
+                          ...newRole,
+                          responsibilities: newRole.responsibilities.filter((_, i) => i !== index)
+                        });
+                      }}
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Grid>
+
+              {/* Validation Preview */}
+              {(newRole.name || newRole.description) && (
+                <Grid item xs={12}>
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Role Preview:</strong> {newRole.name} - {newRole.description}
+                      <br />
+                      <strong>Governance:</strong> {(newRole.trustScoreMinimum * 100).toFixed(0)}% trust score minimum, {newRole.complianceLevel} compliance level
+                      <br />
+                      <strong>Permissions:</strong> {newRole.permissions.length} permissions defined
+                      <br />
+                      <strong>Responsibilities:</strong> {newRole.responsibilities.length} responsibilities defined
+                    </Typography>
+                  </Alert>
+                </Grid>
+              )}
             </Grid>
-          </Grid>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateRoleDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setCreateRoleDialogOpen(false)}>
+            Cancel
+          </Button>
           <Button 
-            onClick={handleCreateCustomRole} 
-            variant="contained"
-            disabled={!newRole.name || !newRole.description}
+            variant="contained" 
+            onClick={handleCreateCustomRole}
+            disabled={!newRole.name || !newRole.description || newRole.permissions.length === 0}
           >
             Create Role
           </Button>

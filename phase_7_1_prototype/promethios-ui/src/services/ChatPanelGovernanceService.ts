@@ -14,6 +14,8 @@ import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory 
 import { PredictiveGovernanceExtension, RiskPrediction } from '../extensions/PredictiveGovernanceExtension';
 import { InteractiveReceiptExtension } from '../extensions/InteractiveReceiptExtension';
 import { ReceiptIntegrationService } from '../components/receipts/ReceiptIntegrationService';
+import { ReceiptRoleContextService, RoleReceiptContext } from './ReceiptRoleContextService';
+import { AgentRoleService, AgentRole } from './AgentRoleService';
 import { auth } from '../firebase/config';
 
 // Chat Panel Response Types
@@ -26,6 +28,11 @@ interface ChatMessage {
   governanceStatus?: string;
   attachments?: File[];
   isError?: boolean;
+  
+  // Role Context Integration
+  activeRole?: AgentRole;
+  roleContextReceipt?: RoleReceiptContext;
+  rolePerformanceImpact?: number;
 }
 
 interface ChatSession {
@@ -56,6 +63,11 @@ export class ChatPanelGovernanceService {
   private predictiveGovernance: PredictiveGovernanceExtension;
   private interactiveReceipts: InteractiveReceiptExtension;
   private receiptIntegration: ReceiptIntegrationService;
+  
+  // Role Context Integration
+  private receiptRoleContext: ReceiptRoleContextService;
+  private agentRoleService: AgentRoleService;
+  
   private currentSession: ChatSession | null = null;
   private conversationHistory: ChatMessage[] = [];
   private activeSessions: Map<string, ChatSession> = new Map();
@@ -72,7 +84,11 @@ export class ChatPanelGovernanceService {
     this.interactiveReceipts = new InteractiveReceiptExtension();
     this.receiptIntegration = new ReceiptIntegrationService();
     
-    console.log('✅ [ChatPanel] All extensions initialized successfully');
+    // Initialize role context services
+    this.receiptRoleContext = ReceiptRoleContextService.getInstance();
+    this.agentRoleService = new AgentRoleService();
+    
+    console.log('✅ [ChatPanel] All extensions and role context services initialized successfully');
   }
 
   // ============================================================================
@@ -555,10 +571,91 @@ export class ChatPanelGovernanceService {
         };
       }
 
-      // 3. Generate Response
-      const chatResponse = await this.generateChatResponse(sessionId, message, session.agentId, { sessionId }, attachments);
+      // 3. Role Context Integration - Get Active Role
+      let activeRole: AgentRole | undefined;
+      let roleContextReceipt: RoleReceiptContext | undefined;
+      let rolePerformanceImpact = 0;
       
-      // 4. Generate Receipt for this interaction
+      try {
+        // Get assigned roles for this agent
+        const assignedRoles = await this.agentRoleService.getAssignedRoles(session.agentId);
+        if (assignedRoles.length > 0) {
+          // Use the first assigned role (in a more sophisticated system, we could select based on context)
+          activeRole = assignedRoles[0];
+          console.log(`🎭 [ChatPanel] Active role: ${activeRole.name} (${activeRole.category})`);
+          
+          // Validate role suitability for this interaction
+          const availableRoles = await this.agentRoleService.getAllRoles();
+          const roleRecommendations = await this.receiptRoleContext.getContextualRoleRecommendations(
+            session.agentId,
+            message,
+            { personality: 'professional', behavior: 'helpful', useCase: 'general_assistant' }, // TODO: Get from personality config
+            availableRoles
+          );
+          
+          const currentRoleRecommendation = roleRecommendations.find(rec => rec.role.id === activeRole!.id);
+          if (currentRoleRecommendation && currentRoleRecommendation.suitabilityScore < 0.6) {
+            console.warn(`⚠️ [ChatPanel] Current role ${activeRole.name} may not be optimal for this interaction (suitability: ${(currentRoleRecommendation.suitabilityScore * 100).toFixed(0)}%)`);
+          }
+        } else {
+          console.log(`🎭 [ChatPanel] No roles assigned to agent ${session.agentId}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ [ChatPanel] Failed to get role context:`, error);
+      }
+
+      // 4. Generate Response with Role Context
+      const chatResponse = await this.generateChatResponse(
+        sessionId, 
+        message, 
+        session.agentId, 
+        { 
+          sessionId, 
+          activeRole,
+          personalityConfig: { personality: 'professional', behavior: 'helpful', useCase: 'general_assistant' } // TODO: Get from actual config
+        }, 
+        attachments
+      );
+      
+      // 5. Create Role Context Receipt if role is active
+      if (activeRole) {
+        try {
+          const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          roleContextReceipt = await this.receiptRoleContext.linkReceiptToRoleContext(
+            `receipt_${messageId}`,
+            session.agentId,
+            activeRole,
+            'professional', // TODO: Get from actual personality config
+            {
+              userMessage: message,
+              agentResponse: chatResponse.response,
+              attachments,
+              processingTime: Date.now() - session.startTime.getTime(),
+              capabilitiesUtilized: this.extractCapabilitiesFromResponse(chatResponse.response, activeRole),
+              knowledgeSourcesAccessed: this.extractKnowledgeSourcesFromResponse(chatResponse.response),
+              taskCompleted: this.assessTaskCompletion(message, chatResponse.response),
+              errors: this.detectErrors(chatResponse.response),
+              hasAttachments: attachments && attachments.length > 0,
+              usedRAG: false, // TODO: Detect RAG usage
+              policyViolations: policyResult.violations || []
+            }
+          );
+          
+          // Calculate role performance impact
+          rolePerformanceImpact = this.calculateRolePerformanceImpact(
+            activeRole,
+            message,
+            chatResponse.response,
+            chatResponse.trustScore
+          );
+          
+          console.log(`🧾 [ChatPanel] Role context receipt created: ${roleContextReceipt.receiptId} (Impact: ${(rolePerformanceImpact * 100).toFixed(0)}%)`);
+        } catch (error) {
+          console.warn(`⚠️ [ChatPanel] Failed to create role context receipt:`, error);
+        }
+      }
+      
+      // 6. Generate Receipt for this interaction
       try {
         // Check if generateReceipt method exists before calling it
         if (this.receiptIntegration && typeof this.receiptIntegration.generateReceipt === 'function') {
@@ -632,7 +729,7 @@ export class ChatPanelGovernanceService {
       
       await this.chatStorageService.saveMessage(agentMessage, session.agentId);
       
-      // Update local conversation history
+      // Update local conversation history with role context
       this.conversationHistory.push(
         {
           id: userMessage.id,
@@ -640,7 +737,10 @@ export class ChatPanelGovernanceService {
           sender: 'user',
           timestamp: new Date(),
           trustScore: metrics.trustScore,
-          governanceStatus: policyResult.allowed ? 'approved' : 'blocked'
+          governanceStatus: policyResult.allowed ? 'approved' : 'blocked',
+          activeRole,
+          roleContextReceipt,
+          rolePerformanceImpact
         },
         {
           id: agentMessage.id,
@@ -648,11 +748,14 @@ export class ChatPanelGovernanceService {
           sender: 'agent',
           timestamp: new Date(),
           trustScore: chatResponse.trustScore,
-          governanceStatus: chatResponse.governanceStatus
+          governanceStatus: chatResponse.governanceStatus,
+          activeRole,
+          roleContextReceipt,
+          rolePerformanceImpact
         }
       );
 
-      // 8. Create Audit Entry
+      // 8. Create Audit Entry with Role Context
       await this.createAuditEntry({
         interaction_id: `msg_${Date.now()}`,
         agent_id: session.agentId,
@@ -662,10 +765,17 @@ export class ChatPanelGovernanceService {
         agent_response: chatResponse.response,
         trust_score: chatResponse.trustScore,
         governance_status: chatResponse.governanceStatus,
+        role_context: activeRole ? {
+          role_id: activeRole.id,
+          role_name: activeRole.name,
+          role_category: activeRole.category,
+          performance_impact: rolePerformanceImpact,
+          receipt_id: roleContextReceipt?.receiptId
+        } : undefined,
         timestamp: new Date().toISOString()
       });
 
-      console.log(`✅ [ChatPanel] Message processed and saved successfully`);
+      console.log(`✅ [ChatPanel] Message processed and saved successfully with role context`);
       
       return {
         id: agentMessage.id,
@@ -673,7 +783,10 @@ export class ChatPanelGovernanceService {
         sender: 'agent',
         timestamp: new Date(),
         trustScore: chatResponse.trustScore,
-        governanceStatus: chatResponse.governanceStatus
+        governanceStatus: chatResponse.governanceStatus,
+        activeRole,
+        roleContextReceipt,
+        rolePerformanceImpact
       };
     } catch (error) {
       console.error(`❌ [ChatPanel] Failed to process message:`, error);
@@ -879,6 +992,260 @@ export class ChatPanelGovernanceService {
       { timestamp: new Date(Date.now() - 30000), level: 'debug', message: 'Trust score updated', source: 'trust_engine' },
       { timestamp: new Date(Date.now() - 60000), level: 'info', message: 'Policy check passed', source: 'policy_engine' }
     ];
+  }
+
+  // ============================================================================
+  // ROLE CONTEXT HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Extract capabilities utilized from the agent response
+   */
+  private extractCapabilitiesFromResponse(response: string, role: AgentRole): string[] {
+    const capabilities: string[] = [];
+    
+    // Analyze response content to identify which capabilities were used
+    const responseAnalysis = {
+      hasAnalysis: /analyz|evaluat|assess|examin/i.test(response),
+      hasCreation: /creat|generat|build|develop/i.test(response),
+      hasProcessing: /process|transform|convert|parse/i.test(response),
+      hasValidation: /valid|verif|check|confirm/i.test(response),
+      hasDecision: /decid|choos|select|recommend/i.test(response)
+    };
+
+    // Map analysis to role capabilities
+    if (responseAnalysis.hasAnalysis && role.capabilities.some(cap => cap.name.includes('analysis'))) {
+      capabilities.push('data_analysis');
+    }
+    if (responseAnalysis.hasCreation && role.capabilities.some(cap => cap.name.includes('creation'))) {
+      capabilities.push('content_creation');
+    }
+    if (responseAnalysis.hasProcessing && role.capabilities.some(cap => cap.name.includes('processing'))) {
+      capabilities.push('data_processing');
+    }
+    if (responseAnalysis.hasValidation && role.capabilities.some(cap => cap.name.includes('validation'))) {
+      capabilities.push('quality_validation');
+    }
+    if (responseAnalysis.hasDecision && role.capabilities.some(cap => cap.name.includes('decision'))) {
+      capabilities.push('decision_making');
+    }
+
+    return capabilities;
+  }
+
+  /**
+   * Extract knowledge sources accessed from the response
+   */
+  private extractKnowledgeSourcesFromResponse(response: string): string[] {
+    const knowledgeSources: string[] = [];
+    
+    // Look for indicators of knowledge source usage
+    if (/according to|based on|research shows|studies indicate/i.test(response)) {
+      knowledgeSources.push('research_database');
+    }
+    if (/documentation|manual|guide|specification/i.test(response)) {
+      knowledgeSources.push('technical_documentation');
+    }
+    if (/policy|regulation|compliance|standard/i.test(response)) {
+      knowledgeSources.push('policy_database');
+    }
+    
+    return knowledgeSources;
+  }
+
+  /**
+   * Assess if the task was completed successfully
+   */
+  private assessTaskCompletion(userMessage: string, agentResponse: string): boolean {
+    // Simple heuristic for task completion assessment
+    const userMessageLength = userMessage.length;
+    const responseLength = agentResponse.length;
+    
+    // If response is significantly longer than question, likely completed
+    if (responseLength > userMessageLength * 2) return true;
+    
+    // Check for completion indicators
+    const completionIndicators = ['completed', 'done', 'finished', 'here is', 'here are', 'solution', 'answer'];
+    const hasCompletionIndicator = completionIndicators.some(indicator => 
+      agentResponse.toLowerCase().includes(indicator)
+    );
+    
+    return hasCompletionIndicator;
+  }
+
+  /**
+   * Detect errors in the agent response
+   */
+  private detectErrors(agentResponse: string): string[] {
+    const errors: string[] = [];
+    
+    // Check for common error patterns
+    if (agentResponse.toLowerCase().includes('error')) {
+      errors.push('Response contains error mention');
+    }
+    
+    if (agentResponse.toLowerCase().includes('sorry') && agentResponse.toLowerCase().includes('cannot')) {
+      errors.push('Agent unable to complete request');
+    }
+    
+    if (agentResponse.length < 20) {
+      errors.push('Response too brief');
+    }
+    
+    return errors;
+  }
+
+  /**
+   * Calculate role performance impact for this interaction
+   */
+  private calculateRolePerformanceImpact(
+    role: AgentRole,
+    userMessage: string,
+    agentResponse: string,
+    trustScore: number
+  ): number {
+    let impact = 0;
+    
+    // Positive factors
+    if (role.category === 'specialized') impact += 0.1;
+    if (trustScore >= role.governanceRequirements.trustScoreMinimum) impact += 0.2;
+    if (agentResponse.length > userMessage.length * 2) impact += 0.1; // Comprehensive response
+    if (this.assessTaskCompletion(userMessage, agentResponse)) impact += 0.2;
+    
+    // Negative factors
+    const errors = this.detectErrors(agentResponse);
+    impact -= errors.length * 0.1;
+    
+    if (agentResponse.length < 50) impact -= 0.1; // Too brief
+    
+    return Math.max(-1, Math.min(1, impact));
+  }
+
+  /**
+   * Get role performance insights for an agent
+   */
+  async getRolePerformanceInsights(agentId: string): Promise<{
+    currentRoleEffectiveness: number;
+    recommendedRoleChanges: Array<{
+      currentRole: string;
+      recommendedRole: string;
+      reason: string;
+      expectedImprovement: number;
+    }>;
+    personalityRoleAlignment: number;
+    governanceImpact: {
+      trustScoreInfluence: number;
+      complianceScoreInfluence: number;
+      riskMitigation: number;
+    };
+  }> {
+    try {
+      // Get role selection insights from receipt context service
+      const roleInsights = await this.receiptRoleContext.getRoleSelectionInsights(agentId);
+      
+      // Get current role assignments
+      const assignedRoles = await this.agentRoleService.getAssignedRoles(agentId);
+      const currentRole = assignedRoles.length > 0 ? assignedRoles[0] : null;
+
+      // Calculate current role effectiveness
+      let currentRoleEffectiveness = 0.7; // Default
+      if (currentRole) {
+        const roleAnalytics = await this.receiptRoleContext.analyzeRolePerformance(currentRole.id, agentId);
+        currentRoleEffectiveness = roleAnalytics.successRate / 100;
+      }
+
+      // Generate role change recommendations
+      const recommendedRoleChanges = roleInsights.recommendedRoles
+        .filter(rec => !currentRole || rec.roleId !== currentRole.id)
+        .slice(0, 3)
+        .map(rec => ({
+          currentRole: currentRole?.name || 'None',
+          recommendedRole: rec.roleName,
+          reason: rec.reason,
+          expectedImprovement: rec.confidence - currentRoleEffectiveness
+        }));
+
+      // Calculate personality-role alignment
+      const personalityRoleAlignment = currentRole ? 
+        await this.calculatePersonalityRoleAlignment(agentId, currentRole) : 0.5;
+
+      // Calculate governance impact
+      const governanceImpact = await this.calculateGovernanceImpact(agentId, currentRole);
+
+      return {
+        currentRoleEffectiveness,
+        recommendedRoleChanges,
+        personalityRoleAlignment,
+        governanceImpact
+      };
+
+    } catch (error) {
+      console.error('❌ [ChatPanel] Failed to get role performance insights:', error);
+      // Return default values
+      return {
+        currentRoleEffectiveness: 0.7,
+        recommendedRoleChanges: [],
+        personalityRoleAlignment: 0.5,
+        governanceImpact: {
+          trustScoreInfluence: 0,
+          complianceScoreInfluence: 0,
+          riskMitigation: 0
+        }
+      };
+    }
+  }
+
+  /**
+   * Calculate personality-role alignment
+   */
+  private async calculatePersonalityRoleAlignment(agentId: string, role: AgentRole): Promise<number> {
+    try {
+      // Get personality-role mapping from receipt context service
+      const personalityMapping = await this.receiptRoleContext.getPersonalityRoleMapping('professional'); // Default
+      
+      const compatibleRole = personalityMapping.compatibleRoles.find(cr => cr.roleId === role.id);
+      return compatibleRole?.compatibilityScore || 0.5;
+    } catch (error) {
+      console.warn('⚠️ [ChatPanel] Failed to calculate personality-role alignment:', error);
+      return 0.5;
+    }
+  }
+
+  /**
+   * Calculate governance impact of the current role
+   */
+  private async calculateGovernanceImpact(agentId: string, role: AgentRole | null): Promise<{
+    trustScoreInfluence: number;
+    complianceScoreInfluence: number;
+    riskMitigation: number;
+  }> {
+    if (!role) {
+      return {
+        trustScoreInfluence: 0,
+        complianceScoreInfluence: 0,
+        riskMitigation: 0
+      };
+    }
+
+    try {
+      // Get role analytics to determine governance impact
+      const roleAnalytics = await this.receiptRoleContext.analyzeRolePerformance(role.id, agentId);
+      
+      return {
+        trustScoreInfluence: (roleAnalytics.averageTrustScore - 0.7) / 0.3, // Normalized impact
+        complianceScoreInfluence: (roleAnalytics.averageComplianceScore - 0.7) / 0.3,
+        riskMitigation: role.governanceRequirements.complianceLevel === 'critical' ? 0.8 : 
+                       role.governanceRequirements.complianceLevel === 'high' ? 0.6 :
+                       role.governanceRequirements.complianceLevel === 'medium' ? 0.4 : 0.2
+      };
+    } catch (error) {
+      console.warn('⚠️ [ChatPanel] Failed to calculate governance impact:', error);
+      return {
+        trustScoreInfluence: 0,
+        complianceScoreInfluence: 0,
+        riskMitigation: 0.2
+      };
+    }
   }
 
   // ============================================================================

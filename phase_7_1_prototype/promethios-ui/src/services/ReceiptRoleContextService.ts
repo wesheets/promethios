@@ -463,7 +463,7 @@ export class ReceiptRoleContextService {
           reason = 'High trust scores indicate good governance compliance';
           confidence = 0.6;
         } else {
-          reason = 'Limited positive performance data';
+          reason = 'Limited performance data available';
           confidence = 0.3;
         }
 
@@ -474,7 +474,7 @@ export class ReceiptRoleContextService {
           confidence
         };
       })
-      .filter(rec => rec.confidence > 0.5)
+      .filter(rec => rec.confidence > 0.3)
       .sort((a, b) => b.confidence - a.confidence);
   }
 
@@ -484,7 +484,6 @@ export class ReceiptRoleContextService {
     warning: string;
     severity: 'low' | 'medium' | 'high';
   }> {
-    const roleGroups = this.groupByRole(contexts);
     const warnings: Array<{
       roleId: string;
       roleName: string;
@@ -492,34 +491,36 @@ export class ReceiptRoleContextService {
       severity: 'low' | 'medium' | 'high';
     }> = [];
 
-    Object.entries(roleGroups).forEach(([roleId, roleContexts]) => {
-      const successRate = this.calculateSuccessRate(roleContexts);
-      const avgTrustScore = this.calculateAverage(roleContexts.map(c => c.governanceMetrics.trustScore));
-      const violationRate = roleContexts.filter(c => c.governanceMetrics.policyViolations.length > 0).length / roleContexts.length;
+    const roleGroups = this.groupByRole(contexts);
 
-      if (successRate < 50) {
+    Object.entries(roleGroups).forEach(([roleId, roleContexts]) => {
+      const avgTrustScore = this.calculateAverage(roleContexts.map(c => c.governanceMetrics.trustScore));
+      const successRate = this.calculateSuccessRate(roleContexts);
+      const violationCount = roleContexts.reduce((sum, c) => sum + c.governanceMetrics.policyViolations.length, 0);
+
+      if (avgTrustScore < 0.5) {
         warnings.push({
           roleId,
           roleName: roleContexts[0].roleName,
-          warning: `Low success rate (${successRate.toFixed(0)}%) - consider role reassignment`,
+          warning: 'Consistently low trust scores indicate governance issues',
           severity: 'high'
         });
       }
 
-      if (avgTrustScore < 0.6) {
+      if (successRate < 60) {
         warnings.push({
           roleId,
           roleName: roleContexts[0].roleName,
-          warning: `Low trust score (${(avgTrustScore * 100).toFixed(0)}%) - governance concerns`,
+          warning: 'Low success rate suggests role may not be suitable for current tasks',
           severity: 'medium'
         });
       }
 
-      if (violationRate > 0.3) {
+      if (violationCount > roleContexts.length * 0.3) {
         warnings.push({
           roleId,
           roleName: roleContexts[0].roleName,
-          warning: `High policy violation rate (${(violationRate * 100).toFixed(0)}%)`,
+          warning: 'Frequent policy violations detected',
           severity: 'high'
         });
       }
@@ -539,14 +540,51 @@ export class ReceiptRoleContextService {
       difficulty: 'easy' | 'medium' | 'hard';
     }> = [];
 
-    // Analyze patterns and suggest optimizations
+    // Analyze patterns across all contexts
     const roleGroups = this.groupByRole(contexts);
     const roleCount = Object.keys(roleGroups).length;
 
-    if (roleCount > 5) {
+    if (roleCount < 3) {
       suggestions.push({
-        suggestion: 'Consider consolidating similar roles to reduce complexity',
-        impact: 'Improved consistency and easier management',
+        suggestion: 'Consider assigning additional specialized roles to improve task coverage',
+        impact: 'Better task specialization and improved performance',
+        difficulty: 'easy'
+      });
+    }
+
+    // Check for underutilized capabilities
+    const allCapabilities = new Set<string>();
+    contexts.forEach(context => {
+      Object.keys(context.capabilityUtilization).forEach(cap => allCapabilities.add(cap));
+    });
+
+    const underutilizedCapabilities = Array.from(allCapabilities).filter(capability => {
+      const avgUtilization = this.calculateAverage(
+        contexts
+          .filter(c => c.capabilityUtilization[capability])
+          .map(c => c.capabilityUtilization[capability].effectiveness)
+      );
+      return avgUtilization < 0.6;
+    });
+
+    if (underutilizedCapabilities.length > 0) {
+      suggestions.push({
+        suggestion: `Improve utilization of capabilities: ${underutilizedCapabilities.slice(0, 3).join(', ')}`,
+        impact: 'Enhanced role effectiveness and better task outcomes',
+        difficulty: 'medium'
+      });
+    }
+
+    // Check knowledge source diversity
+    const knowledgeSources = new Set<string>();
+    contexts.forEach(context => {
+      context.knowledgeAccess.sourcesAccessed.forEach(source => knowledgeSources.add(source));
+    });
+
+    if (knowledgeSources.size < 3) {
+      suggestions.push({
+        suggestion: 'Expand knowledge base access to include more diverse sources',
+        impact: 'More comprehensive and accurate responses',
         difficulty: 'medium'
       });
     }
@@ -554,46 +592,263 @@ export class ReceiptRoleContextService {
     return suggestions;
   }
 
-  private calculateCapabilityEffectiveness(capability: any, interactionData: any): number {
-    // Simple effectiveness calculation based on success and error rates
-    const baseEffectiveness = capability.level;
-    const errorPenalty = (interactionData.errors?.length || 0) * 0.1;
-    const successBonus = interactionData.taskCompleted ? 0.1 : 0;
+  private identifyStrengthAreas(currentContexts: RoleReceiptContext[], otherContexts: RoleReceiptContext[]): string[] {
+    const currentCapabilities = this.findCommonCapabilities(currentContexts);
+    const otherCapabilities = this.findCommonCapabilities(otherContexts);
     
-    return Math.max(0, Math.min(1, baseEffectiveness - errorPenalty + successBonus));
+    return currentCapabilities.filter(cap => !otherCapabilities.includes(cap));
+  }
+
+  private identifyImprovementAreas(currentContexts: RoleReceiptContext[], otherContexts: RoleReceiptContext[]): string[] {
+    const currentCapabilities = this.findCommonCapabilities(currentContexts);
+    const otherCapabilities = this.findCommonCapabilities(otherContexts);
+    
+    return otherCapabilities.filter(cap => !currentCapabilities.includes(cap));
+  }
+
+  private calculateCapabilityEffectiveness(capability: any, interactionData: any): number {
+    // Simple effectiveness calculation based on interaction success
+    if (interactionData.taskCompleted && interactionData.errors?.length === 0) {
+      return Math.min(1.0, capability.level + 0.1);
+    } else if (interactionData.taskCompleted) {
+      return capability.level;
+    } else {
+      return Math.max(0.1, capability.level - 0.2);
+    }
   }
 
   private getCapabilityUsageCount(capabilityName: string, interactionData: any): number {
     // Count how many times this capability was used in the interaction
-    return interactionData.capabilityUsage?.[capabilityName] || 0;
+    return interactionData.capabilityUsage?.[capabilityName] || 1;
   }
 
-  private identifyStrengthAreas(contexts: RoleReceiptContext[], otherContexts: RoleReceiptContext[]): string[] {
-    const strengths: string[] = [];
+  /**
+   * Enhanced method to get personality-role compatibility mapping
+   */
+  async getPersonalityRoleMapping(personalityType: string): Promise<PersonalityRoleMapping> {
+    try {
+      // Get all contexts for this personality type
+      const personalityContexts = Array.from(this.roleContextCache.values())
+        .filter(context => context.personalityMode === personalityType);
+
+      if (personalityContexts.length === 0) {
+        // Return default mapping if no data available
+        return this.getDefaultPersonalityRoleMapping(personalityType);
+      }
+
+      // Analyze role compatibility
+      const roleGroups = this.groupByRole(personalityContexts);
+      const compatibleRoles = Object.entries(roleGroups).map(([roleId, contexts]) => {
+        const avgTrustScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.trustScore));
+        const successRate = this.calculateSuccessRate(contexts);
+        const compatibilityScore = (avgTrustScore + (successRate / 100)) / 2;
+
+        return {
+          roleId,
+          roleName: contexts[0].roleName,
+          compatibilityScore,
+          synergies: this.identifyPersonalityRoleSynergies(personalityType, contexts),
+          potentialConflicts: this.identifyPersonalityRoleConflicts(personalityType, contexts)
+        };
+      });
+
+      // Calculate performance modifiers
+      const performanceModifiers = this.calculatePersonalityPerformanceModifiers(personalityContexts);
+
+      return {
+        personalityType,
+        compatibleRoles: compatibleRoles.sort((a, b) => b.compatibilityScore - a.compatibilityScore),
+        performanceModifiers
+      };
+
+    } catch (error) {
+      console.error('❌ [ReceiptRoleContext] Failed to get personality-role mapping:', error);
+      return this.getDefaultPersonalityRoleMapping(personalityType);
+    }
+  }
+
+  private getDefaultPersonalityRoleMapping(personalityType: string): PersonalityRoleMapping {
+    const defaultMappings: { [key: string]: Partial<PersonalityRoleMapping> } = {
+      'professional': {
+        compatibleRoles: [
+          { roleId: 'coordinator', roleName: 'Coordinator', compatibilityScore: 0.9, synergies: ['structured_approach', 'clear_communication'], potentialConflicts: [] },
+          { roleId: 'quality_assurer', roleName: 'Quality Assurer', compatibilityScore: 0.85, synergies: ['attention_to_detail', 'compliance_focus'], potentialConflicts: [] }
+        ],
+        performanceModifiers: {
+          trustScoreMultiplier: 1.1,
+          complianceScoreMultiplier: 1.15,
+          capabilityBoosts: { 'quality_control': 0.1, 'compliance_checking': 0.15 },
+          communicationStyleImpact: 'Formal and structured communication enhances trust'
+        }
+      },
+      'friendly': {
+        compatibleRoles: [
+          { roleId: 'facilitator', roleName: 'Facilitator', compatibilityScore: 0.9, synergies: ['interpersonal_skills', 'collaboration'], potentialConflicts: [] },
+          { roleId: 'content_creator', roleName: 'Content Creator', compatibilityScore: 0.8, synergies: ['engaging_content', 'user_connection'], potentialConflicts: [] }
+        ],
+        performanceModifiers: {
+          trustScoreMultiplier: 1.05,
+          complianceScoreMultiplier: 1.0,
+          capabilityBoosts: { 'communication_management': 0.15, 'collaboration_facilitation': 0.1 },
+          communicationStyleImpact: 'Warm communication style improves user satisfaction'
+        }
+      }
+    };
+
+    const mapping = defaultMappings[personalityType] || defaultMappings['professional'];
     
-    const currentTrustScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.trustScore));
-    const otherTrustScore = this.calculateAverage(otherContexts.map(c => c.governanceMetrics.trustScore));
+    return {
+      personalityType,
+      compatibleRoles: mapping.compatibleRoles || [],
+      performanceModifiers: mapping.performanceModifiers || {
+        trustScoreMultiplier: 1.0,
+        complianceScoreMultiplier: 1.0,
+        capabilityBoosts: {},
+        communicationStyleImpact: 'Neutral impact on performance'
+      }
+    };
+  }
+
+  private identifyPersonalityRoleSynergies(personalityType: string, contexts: RoleReceiptContext[]): string[] {
+    const synergies: string[] = [];
     
-    if (currentTrustScore > otherTrustScore + 0.1) {
-      strengths.push('Higher trust scores');
+    const avgTrustScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.trustScore));
+    const successRate = this.calculateSuccessRate(contexts);
+
+    if (avgTrustScore > 0.8) {
+      synergies.push('high_trust_alignment');
+    }
+    
+    if (successRate > 85) {
+      synergies.push('excellent_task_completion');
     }
 
-    return strengths;
-  }
-
-  private identifyImprovementAreas(contexts: RoleReceiptContext[], otherContexts: RoleReceiptContext[]): string[] {
-    const improvements: string[] = [];
-    
-    const currentErrorRate = this.calculateAverage(contexts.map(c => c.performanceMetrics.errorCount));
-    const otherErrorRate = this.calculateAverage(otherContexts.map(c => c.performanceMetrics.errorCount));
-    
-    if (currentErrorRate > otherErrorRate + 1) {
-      improvements.push('Reduce error rates');
+    // Add personality-specific synergies
+    switch (personalityType) {
+      case 'professional':
+        synergies.push('structured_approach', 'clear_communication');
+        break;
+      case 'friendly':
+        synergies.push('user_engagement', 'collaborative_spirit');
+        break;
+      case 'casual':
+        synergies.push('approachable_communication', 'flexible_interaction');
+        break;
+      case 'helpful':
+        synergies.push('solution_focused', 'user_centric');
+        break;
     }
 
-    return improvements;
+    return synergies;
   }
+
+  private identifyPersonalityRoleConflicts(personalityType: string, contexts: RoleReceiptContext[]): string[] {
+    const conflicts: string[] = [];
+    
+    const avgTrustScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.trustScore));
+    const violationCount = contexts.reduce((sum, c) => sum + c.governanceMetrics.policyViolations.length, 0);
+
+    if (avgTrustScore < 0.6) {
+      conflicts.push('trust_score_concerns');
+    }
+    
+    if (violationCount > contexts.length * 0.2) {
+      conflicts.push('policy_compliance_issues');
+    }
+
+    return conflicts;
+  }
+
+  private calculatePersonalityPerformanceModifiers(contexts: RoleReceiptContext[]): PersonalityRoleMapping['performanceModifiers'] {
+    const avgTrustScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.trustScore));
+    const avgComplianceScore = this.calculateAverage(contexts.map(c => c.governanceMetrics.complianceScore));
+    
+    // Calculate capability boosts based on performance
+    const capabilityBoosts: { [capability: string]: number } = {};
+    const allCapabilities = new Set<string>();
+    contexts.forEach(context => {
+      Object.keys(context.capabilityUtilization).forEach(cap => allCapabilities.add(cap));
+    });
+
+    allCapabilities.forEach(capability => {
+      const avgEffectiveness = this.calculateAverage(
+        contexts
+          .filter(c => c.capabilityUtilization[capability])
+          .map(c => c.capabilityUtilization[capability].effectiveness)
+      );
+      
+      if (avgEffectiveness > 0.8) {
+        capabilityBoosts[capability] = 0.1;
+      } else if (avgEffectiveness > 0.7) {
+        capabilityBoosts[capability] = 0.05;
+      }
+    });
+
+    return {
+      trustScoreMultiplier: avgTrustScore > 0.8 ? 1.1 : (avgTrustScore > 0.6 ? 1.05 : 1.0),
+      complianceScoreMultiplier: avgComplianceScore > 0.8 ? 1.1 : (avgComplianceScore > 0.6 ? 1.05 : 1.0),
+      capabilityBoosts,
+      communicationStyleImpact: this.generateCommunicationStyleImpact(contexts)
+    };
+  }
+
+  private generateCommunicationStyleImpact(contexts: RoleReceiptContext[]): string {
+    const avgSatisfaction = contexts
+      .filter(c => c.performanceMetrics.userSatisfaction !== undefined)
+      .reduce((sum, c) => sum + (c.performanceMetrics.userSatisfaction || 0), 0) / contexts.length;
+
+    if (avgSatisfaction > 0.8) {
+      return 'Communication style significantly enhances user satisfaction';
+    } else if (avgSatisfaction > 0.6) {
+      return 'Communication style positively impacts user experience';
+    } else if (avgSatisfaction > 0.4) {
+      return 'Communication style has neutral impact on user experience';
+    } else {
+      return 'Communication style may need adjustment for better user experience';
+    }
+  }
+
+  /**
+   * Generate role recommendation based on context analysis
+   */
+  private generateRoleRecommendation(roleId: string, roleContexts: RoleReceiptContext[]): {
+    roleId: string;
+    roleName: string;
+    reason: string;
+    confidence: number;
+  } {
+    let reason: string;
+    let confidence: number;
+
+    if (roleContexts.length === 0) {
+      reason = 'No performance data available';
+      confidence = 0.1;
+    } else {
+      const avgSuccessRate = roleContexts.reduce((sum, ctx) => sum + (ctx.taskCompleted ? 1 : 0), 0) / roleContexts.length;
+      
+      if (avgSuccessRate > 0.8) {
+        reason = 'Excellent performance history with high success rate';
+        confidence = 0.9;
+      } else if (avgSuccessRate > 0.6) {
+        reason = 'Good performance with consistent results';
+        confidence = 0.7;
+      } else if (avgSuccessRate > 0.4) {
+        reason = 'Moderate performance, may benefit from optimization';
+        confidence = 0.5;
+      } else {
+        reason = 'Limited positive performance data';
+        confidence = 0.3;
+      }
+    }
+
+    return {
+      roleId,
+      roleName: roleContexts[0]?.roleName || 'Unknown Role',
+      reason,
+      confidence
+    };
+  }
+
 }
 
 export default ReceiptRoleContextService;
-

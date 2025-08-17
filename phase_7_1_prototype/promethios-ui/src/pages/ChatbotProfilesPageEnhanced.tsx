@@ -1658,23 +1658,6 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   </Box>
                 )}
                 
-                {rightPanelType === 'governance' && (
-                  <Box>
-                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
-                      Governance Controls
-                    </Typography>
-                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
-                      <CardContent>
-                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                          Trust & Safety
-                        </Typography>
-                        <Typography sx={{ color: '#64748b' }}>
-                          Governance controls coming soon...
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                )}
                 
                 {!rightPanelType && (
                   <Box sx={{ textAlign: 'center', mt: 8 }}>
@@ -1932,77 +1915,11 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   />
                 )}
 
-                {rightPanelType === 'governance' && (
+                {rightPanelType === 'policies' && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
-                      Governance Controls
+                      Policy Management
                     </Typography>
-                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
-                      <CardContent>
-                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                          Trust & Safety
-                        </Typography>
-                        <Typography sx={{ color: '#64748b' }}>
-                          Governance controls coming soon...
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                )}
-                          </Grid>
-                        </Box>
-
-                        {/* Upload Knowledge Documents */}
-                        <Button
-                          variant="outlined"
-                          fullWidth
-                          component="label"
-                          sx={{
-                            mb: 2,
-                            borderColor: '#3b82f6',
-                            color: '#3b82f6',
-                            '&:hover': { borderColor: '#2563eb', bgcolor: 'rgba(59, 130, 246, 0.1)' }
-                          }}
-                        >
-                          📄 Upload Knowledge Documents
-                          <input
-                            type="file"
-                            hidden
-                            multiple
-                            accept=".pdf,.doc,.docx,.txt,.md"
-                            onChange={(e) => {
-                              const files = Array.from(e.target.files || []);
-                              console.log('📚 [RAG] Uploading knowledge documents:', files.map(f => f.name));
-                              // TODO: Integrate with RAG service
-                            }}
-                          />
-                        </Button>
-
-                        {/* Knowledge Base Settings */}
-                        <Box sx={{ mt: 2 }}>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                defaultChecked
-                                sx={{ color: '#3b82f6' }}
-                              />
-                            }
-                            label="Enable RAG for this agent"
-                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
-                          />
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                defaultChecked
-                                sx={{ color: '#3b82f6' }}
-                              />
-                            }
-                            label="Auto-update knowledge base"
-                            sx={{ color: '#94a3b8', display: 'block' }}
-                          />
-                        </Box>
-                      </CardContent>
-                    </Card>
 
                     {/* Policy Management Section */}
                     <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
