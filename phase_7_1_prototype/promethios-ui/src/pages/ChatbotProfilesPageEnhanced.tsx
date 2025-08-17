@@ -871,69 +871,28 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             </Typography>
                           </Box>
 
-                          {/* Action Buttons */}
-                          <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+                          {/* Action Button - Single Command Center */}
+                          <Box sx={{ mt: 'auto' }}>
                             <Button
                               variant="contained"
-                              size="small"
-                              startIcon={<Chat />}
+                              size="medium"
+                              startIcon={<Rocket />}
+                              fullWidth
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRightPanelAction('chat', chatbot);
+                                handleChatbotSelect(chatbot);
                               }}
                               sx={{
-                                flex: 1,
                                 bgcolor: '#3b82f6',
                                 '&:hover': { bgcolor: '#2563eb' },
-                                fontSize: '0.75rem',
-                                py: 0.5,
+                                fontWeight: 600,
+                                py: 1.5,
+                                fontSize: '0.875rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
                               }}
                             >
-                              Chat
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<Settings />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRightPanelAction('settings', chatbot);
-                              }}
-                              sx={{
-                                borderColor: '#64748b',
-                                color: '#64748b',
-                                fontSize: '0.75rem',
-                                py: 0.5,
-                                '&:hover': {
-                                  borderColor: '#3b82f6',
-                                  color: '#3b82f6',
-                                  bgcolor: 'rgba(59, 130, 246, 0.1)'
-                                }
-                              }}
-                            >
-                              Config
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<Api />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRightPanelAction('tools', chatbot);
-                              }}
-                              sx={{
-                                borderColor: '#64748b',
-                                color: '#64748b',
-                                fontSize: '0.75rem',
-                                py: 0.5,
-                                '&:hover': {
-                                  borderColor: '#10b981',
-                                  color: '#10b981',
-                                  bgcolor: 'rgba(16, 185, 129, 0.1)'
-                                }
-                              }}
-                            >
-                              Tools
+                              🚀 Command Center
                             </Button>
                           </Box>
                         </CardContent>
