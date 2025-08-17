@@ -473,75 +473,27 @@ const ChatbotProfilesPageContent: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a', overflow: 'hidden' }}>
       {/* Main Content Area */}
       <Box 
         sx={{ 
           flex: rightPanelType ? '0 0 60%' : 1,
           transition: 'flex 0.3s ease-in-out',
-          overflow: 'auto'
+          overflow: 'auto',
+          height: '100vh'
         }}
       >
-        <Container sx={{ py: 4 }}>
-          {/* Header - Only show when NOT in workspace mode */}
-          {!isWorkspaceMode && (
-            <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                <Box>
-                  <Typography variant="h4" component="h1" sx={{ color: 'white', fontWeight: 'bold' }}>
-                    My Chatbots ({filteredChatbots.length})
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', mt: 1 }}>
-                    Manage and monitor your AI-powered chatbots
-                  </Typography>
-                </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={handleCreateNew}
-                  sx={{
-                    bgcolor: '#3b82f6',
-                    '&:hover': { bgcolor: '#2563eb' },
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1.5,
-                  }}
-                >
-                  Create New Chatbot
-                </Button>
-              </Box>
-
-              {/* Filter Tabs */}
-              <Box sx={{ mb: 4 }}>
-                <Tabs 
-                  value={filterTab} 
-                  onChange={(e, newValue) => setFilterTab(newValue)}
-                  sx={{
-                    '& .MuiTab-root': { 
-                      color: '#64748b',
-                      '&.Mui-selected': { color: '#3b82f6' }
-                    },
-                    '& .MuiTabs-indicator': { bgcolor: '#3b82f6' }
-                  }}
-                >
-                  <Tab label={`All (${chatbotProfiles.length})`} />
-                  <Tab label={`Hosted API (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Hosted API').length})`} />
-                  <Tab label={`BYOK (${chatbotProfiles.filter(c => getGovernanceType(c) === 'BYOK').length})`} />
-                  <Tab label={`Enterprise (${chatbotProfiles.filter(c => getGovernanceType(c) === 'Enterprise').length})`} />
-                </Tabs>
-              </Box>
-            </>
-          )}
-
+        <Container sx={{ py: 2, height: '100%' }}>
           {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
           {!isWorkspaceMode && (
-            <Grid container spacing={3}>
-              {filteredChatbots.map((chatbot) => {
-                const metrics = getMockMetrics(chatbot);
-                const governanceType = getGovernanceType(chatbot);
-                const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
-                const isNativeAgent = governanceType === 'BYOK';
-                const isSelected = selectedChatbot?.identity.id === chatbot.identity.id;
+            <Box sx={{ height: '100%', overflow: 'auto' }}>
+              <Grid container spacing={3}>
+                {filteredChatbots.map((chatbot) => {
+                  const metrics = getMockMetrics(chatbot);
+                  const governanceType = getGovernanceType(chatbot);
+                  const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
+                  const isNativeAgent = governanceType === 'BYOK';
+                  const isSelected = selectedChatbot?.identity.id === chatbot.identity.id;
               
               return (
                 <Grid item xs={12} sm={6} lg={4} key={chatbot.identity.id}>
@@ -724,31 +676,32 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 </Grid>
               );
             })}
-          </Grid>
+              </Grid>
+            </Box>
           )}
 
           {/* Chat Interface - Only show when IN workspace mode */}
           {isWorkspaceMode && selectedChatbot && (
-            <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               {/* Breadcrumbs */}
-              <Box sx={{ mb: 2, p: 1.5 }}>
-                <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }} onClick={closeRightPanel}>
+              <Box sx={{ mb: 1, p: 1 }}>
+                <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: '#3b82f6' }, fontSize: '0.875rem' }} onClick={closeRightPanel}>
                   ← Chatbots
                 </Typography>
               </Box>
 
               {/* Chat Interface */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155', minHeight: 0 }}>
                 {/* Chat Header */}
-                <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
-                  <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
+                  <Typography variant="h6" sx={{ color: 'white', mb: 0.5, fontSize: '1.1rem' }}>
                     Chat with Your Agent
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>
                     {selectedChatbot.identity.name}
                   </Typography>
                   {activeSession && (
-                    <Typography variant="caption" sx={{ color: '#64748b', float: 'right' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', float: 'right', fontSize: '0.75rem' }}>
                       Session: {activeSession.sessionId.slice(-8)}
                     </Typography>
                   )}
@@ -869,8 +822,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
             bgcolor: '#1e293b',
             color: 'white',
             borderLeft: '1px solid #334155',
-            overflow: 'auto',
+            overflow: 'hidden',
             position: 'relative',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {selectedChatbot && (
@@ -878,20 +833,18 @@ const ChatbotProfilesPageContent: React.FC = () => {
               {/* Panel Header */}
               <Box
                 sx={{
-                  p: 3,
+                  p: 2,
                   borderBottom: '1px solid #334155',
                   bgcolor: '#0f172a',
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 1,
+                  flexShrink: 0
                 }}
               >
                 <Box display="flex" justifyContent="between" alignItems="center">
                   <Box flex={1}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '1rem' }}>
                       🤖 {selectedChatbot.identity.name} • {getModelProvider(selectedChatbot.configuration?.selectedModel || '')}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.8rem' }}>
                       {getMockMetrics(selectedChatbot).healthScore}% Health • {selectedChatbot.isDeployed ? 'Live' : 'Offline'} • {getGovernanceType(selectedChatbot)}
                     </Typography>
                   </Box>
@@ -903,254 +856,273 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
               {/* Scorecard Buttons - Only show in workspace mode */}
               {isWorkspaceMode && (
-                <Box sx={{ p: 3, borderBottom: '1px solid #334155', bgcolor: '#0f172a' }}>
+                <Box sx={{ p: 2, borderBottom: '1px solid #334155', bgcolor: '#0f172a', flexShrink: 0 }}>
                   {/* Agent Metrics */}
-                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid container spacing={1} sx={{ mb: 2 }}>
                     <Grid item xs={4}>
-                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
                           Health
                         </Typography>
-                        <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>
                           {getMockMetrics(selectedChatbot).healthScore}%
                         </Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={4}>
-                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
                           Trust Score
                         </Typography>
-                        <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.9rem' }}>
                           {getMockMetrics(selectedChatbot).trustScore}/100
                         </Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={4}>
-                      <Box textAlign="center" p={1.5} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
+                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
                           Messages
                         </Typography>
-                        <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 600, fontSize: '0.9rem' }}>
                           {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
                         </Typography>
                       </Box>
                     </Grid>
                   </Grid>
 
-                  {/* Scorecard Navigation Buttons */}
-                  <Grid container spacing={1} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'analytics' ? 'contained' : 'outlined'}
+                  {/* Compact Icon Navigation */}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+                    <Tooltip title="Analytics">
+                      <IconButton
                         size="small"
-                        startIcon={<Analytics />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('analytics');
                           setRightPanelType('analytics');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'analytics' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'analytics' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'analytics' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'analytics' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Analytics
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'customize' ? 'contained' : 'outlined'}
+                        <Analytics fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Customize">
+                      <IconButton
                         size="small"
-                        startIcon={<Palette />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('customize');
                           setRightPanelType('customize');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'customize' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'customize' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'customize' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'customize' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Customize
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'personality' ? 'contained' : 'outlined'}
+                        <Palette fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Personality">
+                      <IconButton
                         size="small"
-                        startIcon={<SmartToy />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('personality');
                           setRightPanelType('personality');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'personality' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'personality' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'personality' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'personality' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Personality
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'ai_knowledge' ? 'contained' : 'outlined'}
+                        <SmartToy fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="AI Knowledge">
+                      <IconButton
                         size="small"
-                        startIcon={<Psychology />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('ai_knowledge');
                           setRightPanelType('ai_knowledge');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'ai_knowledge' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        AI Knowledge
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'tools' ? 'contained' : 'outlined'}
+                        <Psychology fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Tools">
+                      <IconButton
                         size="small"
-                        startIcon={<Settings />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('tools');
                           setRightPanelType('tools');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'tools' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'tools' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'tools' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'tools' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Tools
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'automation' ? 'contained' : 'outlined'}
+                        <Settings fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Automation">
+                      <IconButton
                         size="small"
-                        startIcon={<AutoAwesome />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('automation');
                           setRightPanelType('automation');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'automation' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'automation' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'automation' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'automation' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Automation
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'receipts' ? 'contained' : 'outlined'}
+                        <AutoAwesome fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Receipts">
+                      <IconButton
                         size="small"
-                        startIcon={<Receipt />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('receipts');
                           setRightPanelType('receipts');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'receipts' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'receipts' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'receipts' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'receipts' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Receipts
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'memory' ? 'contained' : 'outlined'}
+                        <Receipt fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Memory">
+                      <IconButton
                         size="small"
-                        startIcon={<Memory />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('memory');
                           setRightPanelType('memory');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'memory' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'memory' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'memory' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'memory' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Memory
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'sandbox' ? 'contained' : 'outlined'}
+                        <Memory fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Sandbox">
+                      <IconButton
                         size="small"
-                        startIcon={<Computer />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('sandbox');
                           setRightPanelType('sandbox');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'sandbox' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'sandbox' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'sandbox' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'sandbox' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Sandbox
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant={workspaceSelectedTab === 'governance' ? 'contained' : 'outlined'}
+                        <Computer fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Governance">
+                      <IconButton
                         size="small"
-                        startIcon={<Security />}
-                        fullWidth
                         onClick={() => {
                           setWorkspaceSelectedTab('governance');
                           setRightPanelType('governance');
                         }}
                         sx={{
-                          borderColor: '#374151',
                           color: workspaceSelectedTab === 'governance' ? 'white' : '#94a3b8',
                           bgcolor: workspaceSelectedTab === 'governance' ? '#3b82f6' : 'transparent',
-                          '&:hover': { borderColor: '#4b5563', bgcolor: workspaceSelectedTab === 'governance' ? '#2563eb' : '#1e293b' },
-                          fontSize: '0.75rem',
+                          border: '1px solid #374151',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: workspaceSelectedTab === 'governance' ? '#2563eb' : '#1e293b' 
+                          },
+                          width: 32,
+                          height: 32,
                         }}
                       >
-                        Governance
-                      </Button>
-                    </Grid>
-                  </Grid>
+                        <Security fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
 
                   {/* Chat and Deploy Buttons */}
                   <Grid container spacing={1}>
@@ -1193,22 +1165,22 @@ const ChatbotProfilesPageContent: React.FC = () => {
               )}
 
               {/* Panel Content */}
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
                 {rightPanelType === 'analytics' && (
                   <Box>
-                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
                       Analytics Dashboard
                     </Typography>
                     
                     {/* Key Metrics */}
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
-                          <CardContent sx={{ p: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
                               Response Time
                             </Typography>
-                            <Typography variant="h5" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getMockMetrics(selectedChatbot).responseTime.toFixed(1)}s
                             </Typography>
                           </CardContent>
@@ -1216,11 +1188,11 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       </Grid>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
-                          <CardContent sx={{ p: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
                               Satisfaction
                             </Typography>
-                            <Typography variant="h5" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getMockMetrics(selectedChatbot).satisfactionScore.toFixed(1)}/5
                             </Typography>
                           </CardContent>
