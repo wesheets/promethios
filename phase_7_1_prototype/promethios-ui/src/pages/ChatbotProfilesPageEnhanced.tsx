@@ -154,8 +154,6 @@ const ChatbotProfilesPageContent: React.FC = () => {
   
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   // Mock metrics for analytics
