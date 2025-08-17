@@ -14,7 +14,7 @@ import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory 
 import { PredictiveGovernanceExtension, RiskPrediction } from '../extensions/PredictiveGovernanceExtension';
 import { InteractiveReceiptExtension } from '../extensions/InteractiveReceiptExtension';
 import { ReceiptIntegrationService } from '../components/receipts/ReceiptIntegrationService';
-import { auth } from '../config/firebase';
+import { auth } from '../firebase/config';
 
 // Chat Panel Response Types
 interface ChatMessage {

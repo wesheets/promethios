@@ -513,9 +513,15 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      height: '100vh', 
+      maxHeight: '100vh',
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
       {/* Header */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
+      <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar sx={{ bgcolor: '#3b82f6' }}>
@@ -571,7 +577,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Search */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
+      <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
         <TextField
           fullWidth
           placeholder="Search tools..."
@@ -593,7 +599,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Category Tabs */}
-      <Box sx={{ borderBottom: '1px solid #334155' }}>
+      <Box sx={{ borderBottom: '1px solid #334155', flexShrink: 0 }}>
         <Tabs
           value={selectedTab}
           onChange={(e, newValue) => setSelectedTab(newValue)}
@@ -627,7 +633,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+      <Box sx={{ p: 3, borderTop: '1px solid #334155', flexShrink: 0 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
