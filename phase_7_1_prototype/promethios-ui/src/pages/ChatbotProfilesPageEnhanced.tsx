@@ -25,6 +25,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Menu,
   Slider,
   FormControlLabel,
   Checkbox,
