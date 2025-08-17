@@ -203,14 +203,23 @@ export class ChatPanelGovernanceService {
         
         for (const file of attachments) {
           try {
+            // Compress images before sending to backend to avoid 413 Payload Too Large errors
+            let processedFile = file;
+            if (file.type.startsWith('image/')) {
+              console.log(`🖼️ [ChatPanel] Compressing image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+              processedFile = await this.compressImage(file);
+              console.log(`✅ [ChatPanel] Image compressed: ${processedFile.name} (${(processedFile.size / 1024 / 1024).toFixed(2)}MB)`);
+            }
+            
             // Convert file to base64 for transmission
-            const fileData = await this.fileToBase64(file);
+            const fileData = await this.fileToBase64(processedFile);
             attachmentData.push({
               name: file.name,
               type: file.type,
-              size: file.size,
+              size: processedFile.size,
               data: fileData,
-              lastModified: file.lastModified
+              lastModified: file.lastModified,
+              compressed: file.type.startsWith('image/') && processedFile.size < file.size
             });
           } catch (error) {
             console.warn(`⚠️ [ChatPanel] Failed to process attachment ${file.name}:`, error);
@@ -284,6 +293,58 @@ export class ChatPanelGovernanceService {
       };
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
+    });
+  }
+
+  private async compressImage(file: File, maxWidth: number = 1024, maxHeight: number = 1024, quality: number = 0.8): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress image
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              // Create new File object with compressed data
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: file.lastModified
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          },
+          file.type,
+          quality
+        );
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image for compression'));
+      img.src = URL.createObjectURL(file);
     });
   }
 
