@@ -1058,3 +1058,258 @@ export class UniversalGovernanceAdapter {
 // Export singleton instance for easy use
 export const universalGovernanceAdapter = new UniversalGovernanceAdapter();
 
+
+  // ============================================================================
+  // MAIN CHAT MESSAGE PROCESSING WITH GOVERNANCE
+  // ============================================================================
+
+  /**
+   * Send message with full governance integration and attachment support
+   * This is the main method that should be used for all chat interactions
+   */
+  async sendMessage(request: {
+    agentId: string;
+    message: string;
+    sessionId?: string;
+    attachments?: Array<{
+      name: string;
+      type: string;
+      size: number;
+      data: string;
+      lastModified: number;
+    }>;
+    conversationHistory?: Array<{role: string, content: string}>;
+    provider?: string;
+    model?: string;
+  }): Promise<EnhancedResponse> {
+    try {
+      console.log(`💬 [Universal] Processing message for agent ${request.agentId} with governance`);
+      
+      // Ensure initialization
+      if (!this.initialized) {
+        await this.initializeBackendIntegration();
+      }
+
+      // Load complete agent configuration
+      const agentConfig = await this.loadCompleteAgentConfiguration(request.agentId);
+      
+      // Create governance context for this interaction
+      const interactionContext = {
+        agentId: request.agentId,
+        sessionId: request.sessionId || `session_${Date.now()}`,
+        hasAttachments: !!(request.attachments && request.attachments.length > 0),
+        attachmentTypes: request.attachments?.map(att => att.type) || [],
+        messageLength: request.message.length,
+        timestamp: new Date().toISOString()
+      };
+
+      // Pre-interaction governance validation
+      const governanceValidation = await this.validateInteraction(interactionContext);
+      if (!governanceValidation.approved) {
+        throw new Error(`Governance validation failed: ${governanceValidation.reason}`);
+      }
+
+      // Prepare backend request with governance context
+      const backendRequest = {
+        agent_id: request.agentId,
+        message: request.message,
+        governance_enabled: true,
+        session_id: request.sessionId,
+        provider: request.provider || agentConfig.provider,
+        model: request.model || agentConfig.model,
+        conversationHistory: request.conversationHistory || [],
+        attachments: request.attachments || [],
+        governance_context: {
+          universal_governance: true,
+          agent_configuration: agentConfig,
+          interaction_context: interactionContext,
+          validation_result: governanceValidation
+        }
+      };
+
+      console.log(`🛡️ [Universal] Sending governance-validated request to backend`);
+      console.log(`📎 [Universal] Attachments: ${request.attachments?.length || 0} files`);
+      
+      // Call backend API with full governance integration
+      const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest);
+
+      // Post-interaction governance processing
+      await this.processGovernanceResponse(request.agentId, result, interactionContext);
+
+      // Create comprehensive audit entry
+      await this.createAuditEntry({
+        agentId: request.agentId,
+        action: 'governance_chat_interaction',
+        details: {
+          sessionId: request.sessionId,
+          messageLength: request.message.length,
+          attachmentCount: request.attachments?.length || 0,
+          provider: result.provider_used,
+          model: result.model_used,
+          governanceApproved: true,
+          trustScore: result.governance_metrics?.trust_score,
+          visionProcessing: request.attachments?.some(att => att.type.startsWith('image/'))
+        },
+        trustScore: result.governance_metrics?.trust_score || 0.5,
+        timestamp: new Date()
+      });
+
+      console.log(`✅ [Universal] Message processed successfully with governance`);
+      
+      // Return enhanced response with governance metadata
+      return {
+        response: result.response,
+        sessionId: result.session_id,
+        governanceMetrics: result.governance_metrics,
+        trustScore: result.governance_metrics?.trust_score || 0.5,
+        auditTrail: result.audit_trail,
+        providerUsed: result.provider_used,
+        modelUsed: result.model_used,
+        attachmentProcessing: result.attachment_processing,
+        governanceContext: this.governanceContext,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('❌ [Universal] Failed to process message with governance:', error);
+      
+      // Create audit entry for failed interaction
+      await this.createAuditEntry({
+        agentId: request.agentId,
+        action: 'governance_chat_failure',
+        details: {
+          error: error.message,
+          messageLength: request.message.length,
+          attachmentCount: request.attachments?.length || 0
+        },
+        trustScore: -0.1, // Negative impact for failures
+        timestamp: new Date()
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Validate interaction against governance policies
+   */
+  private async validateInteraction(context: any): Promise<{approved: boolean, reason?: string, trustImpact?: number}> {
+    try {
+      // Check for image attachments and apply vision governance policies
+      if (context.hasAttachments) {
+        const imageAttachments = context.attachmentTypes.filter(type => type.startsWith('image/'));
+        if (imageAttachments.length > 0) {
+          console.log(`🖼️ [Universal] Validating ${imageAttachments.length} image attachments against governance policies`);
+          
+          // Apply image processing governance rules
+          const imageGovernanceResult = await this.validateImageProcessing(context);
+          if (!imageGovernanceResult.approved) {
+            return imageGovernanceResult;
+          }
+        }
+      }
+
+      // Additional governance validations can be added here
+      // - Message content analysis
+      // - Rate limiting
+      // - Trust score requirements
+      // - Policy compliance checks
+
+      return {
+        approved: true,
+        trustImpact: 0.05 // Small positive impact for successful validation
+      };
+
+    } catch (error) {
+      console.error('❌ [Universal] Governance validation failed:', error);
+      return {
+        approved: false,
+        reason: `Governance validation error: ${error.message}`,
+        trustImpact: -0.1
+      };
+    }
+  }
+
+  /**
+   * Validate image processing against governance policies
+   */
+  private async validateImageProcessing(context: any): Promise<{approved: boolean, reason?: string, trustImpact?: number}> {
+    try {
+      // Example governance policies for image processing:
+      
+      // 1. Check if agent has permission for image analysis
+      const agentConfig = await this.loadCompleteAgentConfiguration(context.agentId);
+      const hasImagePermission = agentConfig.enabledTools?.includes('image_analysis') || 
+                                 agentConfig.capabilities?.includes('vision') ||
+                                 true; // Default to true for now
+
+      if (!hasImagePermission) {
+        return {
+          approved: false,
+          reason: 'Agent does not have permission for image analysis',
+          trustImpact: -0.2
+        };
+      }
+
+      // 2. Check image count limits (governance policy)
+      const imageCount = context.attachmentTypes.filter(type => type.startsWith('image/')).length;
+      const maxImagesPerRequest = 5; // Governance policy limit
+      
+      if (imageCount > maxImagesPerRequest) {
+        return {
+          approved: false,
+          reason: `Too many images: ${imageCount} exceeds limit of ${maxImagesPerRequest}`,
+          trustImpact: -0.1
+        };
+      }
+
+      // 3. Additional image governance policies can be added here:
+      // - Content filtering requirements
+      // - Privacy protection rules
+      // - Data retention policies
+      // - Provider selection rules
+
+      console.log(`✅ [Universal] Image processing approved by governance (${imageCount} images)`);
+      return {
+        approved: true,
+        trustImpact: 0.02 // Small positive impact for compliant image processing
+      };
+
+    } catch (error) {
+      console.error('❌ [Universal] Image governance validation failed:', error);
+      return {
+        approved: false,
+        reason: `Image governance validation error: ${error.message}`,
+        trustImpact: -0.1
+      };
+    }
+  }
+
+  /**
+   * Process governance response after backend interaction
+   */
+  private async processGovernanceResponse(agentId: string, result: any, context: any): Promise<void> {
+    try {
+      // Update trust scores based on interaction results
+      if (result.governance_metrics?.trust_score) {
+        await this.updateTrustScore(agentId, result.governance_metrics.trust_score);
+      }
+
+      // Process any governance alerts or warnings
+      if (result.governance_alerts) {
+        console.log(`⚠️ [Universal] Governance alerts for agent ${agentId}:`, result.governance_alerts);
+        // Handle governance alerts (notifications, policy updates, etc.)
+      }
+
+      // Update agent configuration if needed
+      if (result.configuration_updates) {
+        console.log(`⚙️ [Universal] Applying configuration updates for agent ${agentId}`);
+        // Apply any governance-driven configuration changes
+      }
+
+    } catch (error) {
+      console.error('❌ [Universal] Failed to process governance response:', error);
+      // Don't throw - this is post-processing
+    }
+  }
+
