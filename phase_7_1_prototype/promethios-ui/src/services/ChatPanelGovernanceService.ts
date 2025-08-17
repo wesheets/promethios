@@ -14,6 +14,7 @@ import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory 
 import { PredictiveGovernanceExtension, RiskPrediction } from '../extensions/PredictiveGovernanceExtension';
 import { InteractiveReceiptExtension } from '../extensions/InteractiveReceiptExtension';
 import { ReceiptIntegrationService } from '../components/receipts/ReceiptIntegrationService';
+import { auth } from '../config/firebase';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -70,6 +71,14 @@ export class ChatPanelGovernanceService {
     this.receiptIntegration = new ReceiptIntegrationService();
     
     console.log('✅ [ChatPanel] All extensions initialized successfully');
+  }
+
+  // ============================================================================
+  // AUTHENTICATION HELPERS
+  // ============================================================================
+
+  private async getCurrentUser() {
+    return auth.currentUser;
   }
 
   // ============================================================================
@@ -228,7 +237,9 @@ export class ChatPanelGovernanceService {
       console.log(`🚀 [ChatPanel] Starting chat session for agent ${chatbot.identity.id}`);
       
       // Initialize chat storage service with current user
-      await this.chatStorageService.setCurrentUser('current-user'); // TODO: Get actual user ID
+      // Get the actual authenticated user ID from Firebase Auth
+      const currentUser = await this.getCurrentUser();
+      await this.chatStorageService.setCurrentUser(currentUser?.uid || 'anonymous');
       
       // Load existing chat history for this agent
       console.log(`📚 [ChatPanel] Loading chat history for agent: ${chatbot.identity.id}`);
@@ -467,7 +478,7 @@ export class ChatPanelGovernanceService {
         }
       };
       
-      await this.chatStorageService.saveMessage(session.agentId, userMessage);
+      await this.chatStorageService.saveMessage(userMessage, session.agentId);
       
       // Save agent response
       const agentMessage: StoredChatMessage = {
@@ -484,7 +495,7 @@ export class ChatPanelGovernanceService {
         }
       };
       
-      await this.chatStorageService.saveMessage(session.agentId, agentMessage);
+      await this.chatStorageService.saveMessage(agentMessage, session.agentId);
       
       // Update local conversation history
       this.conversationHistory.push(
