@@ -574,6 +574,12 @@ def universal_governance_chat():
         agent_configuration = data.get('agent_configuration', {})
         context = data.get('context', {})
         
+        # Extract provider and model information for identity transparency
+        provider = data.get('provider') or agent_configuration.get('provider', 'openai')
+        model = data.get('model') or agent_configuration.get('model', 'gpt-4')
+        
+        logger.info(f"🤖 [UniversalChat] Provider: {provider}, Model: {model}")
+        
         logger.info(f"🤖 [UniversalChat] Processing chat for agent {agent_id}")
         logger.info(f"📝 [UniversalChat] Message: {message[:100]}...")
         logger.info(f"📎 [UniversalChat] Attachments: {len(attachments)} files")
@@ -587,7 +593,15 @@ def universal_governance_chat():
             processed_context['attachments'] = attachments
             logger.info(f"📎 [UniversalChat] Added {len(attachments)} attachments to context")
         
-        # Generate response using the service
+        # Add model identity information to context for transparency
+        processed_context.update({
+            'provider': provider,
+            'model': model,
+            'governance_framework': 'promethios',
+            'identity_transparency': True
+        })
+        
+        # Generate response using the service with model identity context
         response_data = service.generate_response(
             agent_id=agent_id,
             user_id=context.get('userId', 'anonymous'),
