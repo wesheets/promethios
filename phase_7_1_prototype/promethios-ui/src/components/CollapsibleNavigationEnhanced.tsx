@@ -50,6 +50,8 @@ import {
   Verified as AttestationsIcon,
   FlashOn,
   Person as ProfileIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
   Tune as PreferencesIcon,
   Business as OrganizationIcon,
   Extension as IntegrationsIcon,
@@ -654,8 +656,8 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         '& .MuiDrawer-paper': {
           width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH,
           boxSizing: 'border-box',
-          top: '64px', // Account for header height
-          height: 'calc(100vh - 64px)',
+          top: 0, // Remove header height offset
+          height: '100vh', // Full height
           position: 'fixed',
           zIndex: 1200,
         },
@@ -684,12 +686,39 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {/* Footer section for collapsed state */}
       {collapsed && (
         <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid #2d3748' }}>
+          <Tooltip title="Profile" placement="right" arrow>
+            <IconButton 
+              sx={{ color: 'white', width: '100%', mb: 0.5 }}
+              onClick={() => handleNavigation('/ui/profile')}
+            >
+              <PersonIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Settings" placement="right" arrow>
             <IconButton 
-              sx={{ color: 'white', width: '100%' }}
+              sx={{ color: 'white', width: '100%', mb: 0.5 }}
               onClick={() => handleNavigation('/ui/settings')}
             >
               <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Help" placement="right" arrow>
+            <IconButton 
+              sx={{ color: 'white', width: '100%', mb: 0.5 }}
+              onClick={() => handleNavigation('/ui/help')}
+            >
+              <HelpIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Logout" placement="right" arrow>
+            <IconButton 
+              sx={{ color: 'white', width: '100%' }}
+              onClick={() => {
+                // Add logout logic here
+                window.location.href = '/';
+              }}
+            >
+              <LogoutIcon />
             </IconButton>
           </Tooltip>
         </Box>
@@ -700,6 +729,14 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         <Box sx={{ mt: 'auto' }}>
           <Divider sx={{ borderColor: '#2d3748' }} />
           <List>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/profile')}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Profile" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings')}>
                 <ListItemIcon sx={{ color: 'white' }}>
@@ -714,6 +751,17 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                   <HelpIcon />
                 </ListItemIcon>
                 <ListItemText primary="Help & Support" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => {
+                // Add logout logic here
+                window.location.href = '/';
+              }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Logout" sx={{ color: 'white' }} />
               </ListItemButton>
             </ListItem>
           </List>

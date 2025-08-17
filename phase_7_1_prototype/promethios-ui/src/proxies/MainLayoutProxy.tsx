@@ -76,41 +76,31 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <CssBaseline />
       
-      {/* Header Navigation Bar for logged-in users */}
-      <HeaderNavigation 
-        isLoggedIn={true}
-        userName={currentUser.displayName || currentUser.email || 'User'}
-        userRole="User"
-        unreadNotifications={0}
-      />
-      
-      <Box sx={{ display: 'flex', flex: 1, height: 'calc(100vh - 64px)' }}>
+      <Box sx={{ display: 'flex', flex: 1, height: '100vh' }}>
         {/* Collapsible Left Navigation for logged-in users */}
         <CollapsibleNavigationEnhanced 
           userPermissions={['view']}
           isAdmin={isAdmin}
         />
         
-        {/* Main content area - adjust margin to account for collapsible nav and header */}
+        {/* Main content area - adjust margin to account for collapsible nav only */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
             ml: preferences.navigationCollapsed ? '60px' : '260px',
-            pt: 5, // Increased top padding to prevent content cutoff under header
-            px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Horizontal padding for content spacing
-            pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2, // Bottom padding
+            pt: 0, // Remove top padding since no header
+            px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
+            pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
             transition: theme => theme.transitions.create(['margin', 'padding'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
-            backgroundColor: '#1a202c', // Dark background to match the theme
-            height: '100%', // Full height of the flex container
-            overflow: 'auto', // Allow scrolling within the content area if needed
-            color: 'white', // Light text for dark background
-            // Ensure proper content positioning
-            minHeight: 'calc(100vh - 64px)', // Account for header height
-            // Remove any potential margin/padding conflicts
+            backgroundColor: '#1a202c',
+            height: '100%',
+            overflow: 'auto',
+            color: 'white',
+            minHeight: '100vh', // Full height since no header
             margin: 0,
             position: 'relative',
           }}
