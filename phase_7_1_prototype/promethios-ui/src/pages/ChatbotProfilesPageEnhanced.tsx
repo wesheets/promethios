@@ -295,10 +295,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
     }
   }, [searchQuery, chatbotProfiles]);
 
-  // Handle chatbot selection
+  // Handle chatbot selection - Open command center
   const handleChatbotSelect = (chatbot: ChatbotProfile) => {
     setSelectedChatbot(chatbot);
-    setRightPanelType('chat');
+    setIsWorkspaceMode(true); // Enable workspace mode for command center
+    setRightPanelType('analytics'); // Default to analytics panel
+    setWorkspaceSelectedTab('analytics');
   };
 
   // Handle right panel actions
@@ -370,46 +372,266 @@ const ChatbotProfilesPageContent: React.FC = () => {
           height: '100vh'
         }}
       >
-        {isWorkspaceMode ? (
-          <Box sx={{ height: '100%', width: '100%' }}>
-            {/* Workspace Mode Content */}
-            <Container sx={{ py: 4 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
-                  Agent Workspace
-                </Typography>
+        {isWorkspaceMode && selectedChatbot ? (
+          /* Command Center Layout - Chat on Left, Panels on Right */
+          <Box sx={{ display: 'flex', height: '100%' }}>
+            {/* Left Side - Chat Interface */}
+            <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#1e293b' }}>
+              {/* Chat Header */}
+              <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                    Chat with Your Agent
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    {selectedChatbot.identity.name}
+                  </Typography>
+                </Box>
                 <Button
                   variant="outlined"
+                  size="small"
                   onClick={() => setIsWorkspaceMode(false)}
                   sx={{ color: '#64748b', borderColor: '#64748b' }}
                 >
-                  Exit Workspace
+                  ← Back to Agents
                 </Button>
               </Box>
 
-              {/* Workspace Tabs */}
-              <Tabs
-                value={workspaceSelectedTab}
-                onChange={(_, newValue) => setWorkspaceSelectedTab(newValue)}
-                sx={{
-                  mb: 4,
-                  '& .MuiTab-root': { color: '#64748b' },
-                  '& .Mui-selected': { color: '#3b82f6' },
-                  '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
-                }}
-              >
-                <Tab label="Analytics" value="analytics" />
-                <Tab label="Collaboration" value="collaboration" />
-                <Tab label="Deployment" value="deployment" />
-              </Tabs>
-
-              {/* Workspace Content */}
-              <Box sx={{ bgcolor: '#1e293b', borderRadius: 2, p: 4 }}>
-                <Typography sx={{ color: '#64748b', textAlign: 'center' }}>
-                  Workspace functionality for {workspaceSelectedTab} coming soon...
-                </Typography>
+              {/* Chat Messages Area */}
+              <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+                {chatMessages.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', mt: 8 }}>
+                    <Avatar
+                      src={selectedChatbot.identity.avatar}
+                      sx={{ width: 80, height: 80, mx: 'auto', mb: 3 }}
+                    >
+                      {selectedChatbot.identity.name.charAt(0)}
+                    </Avatar>
+                    <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
+                      {selectedChatbot.identity.name}
+                    </Typography>
+                    <Typography sx={{ color: '#64748b', mb: 4, maxWidth: 400, mx: 'auto' }}>
+                      {selectedChatbot.identity.description}
+                    </Typography>
+                    <Typography sx={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      Start a conversation with your AI agent
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={3}>
+                    {chatMessages.map((message) => (
+                      <Box
+                        key={message.id}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start'
+                        }}
+                      >
+                        <Paper
+                          sx={{
+                            p: 3,
+                            maxWidth: '75%',
+                            bgcolor: message.role === 'user' ? '#3b82f6' : '#374151',
+                            color: 'white',
+                            borderRadius: 2
+                          }}
+                        >
+                          <Typography variant="body1">
+                            {message.content}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                            {message.timestamp.toLocaleTimeString()}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    ))}
+                    {isTyping && (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <Paper sx={{ p: 3, bgcolor: '#374151', color: 'white', borderRadius: 2 }}>
+                          <Typography variant="body1">
+                            {selectedChatbot.identity.name} is typing...
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    )}
+                  </Stack>
+                )}
               </Box>
-            </Container>
+              
+              {/* Chat Input */}
+              <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    placeholder="Type your message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    variant="outlined"
+                    disabled={chatLoading}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#0f172a',
+                        color: 'white',
+                        '& fieldset': { borderColor: '#334155' },
+                        '&:hover fieldset': { borderColor: '#3b82f6' },
+                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim() || chatLoading}
+                    sx={{
+                      bgcolor: '#3b82f6',
+                      '&:hover': { bgcolor: '#2563eb' },
+                      minWidth: 'auto',
+                      px: 3
+                    }}
+                  >
+                    {chatLoading ? <CircularProgress size={20} /> : <Send />}
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Right Side - Command Panels */}
+            <Box sx={{ flex: '0 0 40%', bgcolor: '#1e293b', borderLeft: '1px solid #334155' }}>
+              {/* Panel Header */}
+              <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Avatar sx={{ bgcolor: '#3b82f6' }}>
+                    {selectedChatbot.identity.name.charAt(0)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                      {selectedChatbot.identity.name} • Custom
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      Live • Enterprise
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                {/* Command Panel Tabs */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {[
+                    { key: 'analytics', label: 'ANALYTICS' },
+                    { key: 'customize', label: 'CUSTOMIZE' },
+                    { key: 'personality', label: 'PERSONALITY' },
+                    { key: 'knowledge', label: 'AI KNOWLEDGE' },
+                    { key: 'tools', label: 'TOOLS' },
+                    { key: 'automation', label: 'AUTOMATION' },
+                    { key: 'receipts', label: 'RECEIPTS' },
+                    { key: 'memory', label: 'MEMORY' },
+                    { key: 'sandbox', label: 'SANDBOX' },
+                    { key: 'governance', label: 'GOVERNANCE' }
+                  ].map((tab) => (
+                    <Button
+                      key={tab.key}
+                      size="small"
+                      variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
+                      onClick={() => setRightPanelType(tab.key as RightPanelType)}
+                      sx={{
+                        fontSize: '0.7rem',
+                        px: 1.5,
+                        py: 0.5,
+                        minWidth: 'auto',
+                        borderColor: '#374151',
+                        color: rightPanelType === tab.key ? 'white' : '#94a3b8',
+                        bgcolor: rightPanelType === tab.key ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: rightPanelType === tab.key ? '#2563eb' : '#374151' 
+                        },
+                      }}
+                    >
+                      {tab.label}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Panel Content */}
+              <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                {rightPanelType === 'tools' && (
+                  <ToolConfigurationPanel />
+                )}
+                
+                {rightPanelType === 'customize' && (
+                  <WidgetCustomizer />
+                )}
+                
+                {rightPanelType === 'personality' && (
+                  <PersonalityEditor />
+                )}
+                
+                {rightPanelType === 'knowledge' && (
+                  <SimplifiedKnowledgeViewer />
+                )}
+                
+                {rightPanelType === 'receipts' && (
+                  <AgentReceiptViewer />
+                )}
+                
+                {rightPanelType === 'memory' && (
+                  <AgentMemoryViewer />
+                )}
+                
+                {rightPanelType === 'sandbox' && (
+                  <LiveAgentSandbox />
+                )}
+                
+                {rightPanelType === 'analytics' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Analytics Dashboard
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                          <CardContent>
+                            <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                              Performance Metrics
+                            </Typography>
+                            <Typography sx={{ color: '#64748b' }}>
+                              Real-time analytics coming soon...
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'governance' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Governance Controls
+                    </Typography>
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Trust & Safety
+                        </Typography>
+                        <Typography sx={{ color: '#64748b' }}>
+                          Governance controls coming soon...
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
+                {!rightPanelType && (
+                  <Box sx={{ textAlign: 'center', mt: 8 }}>
+                    <Typography sx={{ color: '#64748b' }}>
+                      Select a panel above to get started
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
           </Box>
         ) : (
           <Container sx={{ py: 2, height: '100%' }}>
