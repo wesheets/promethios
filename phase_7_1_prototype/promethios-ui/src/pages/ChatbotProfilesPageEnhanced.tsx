@@ -372,12 +372,13 @@ const ChatbotProfilesPageContent: React.FC = () => {
           height: '100vh'
         }}
       >
-        {isWorkspaceMode && selectedChatbot ? (
-          /* Command Center Layout - Chat on Left, Panels on Right */
-          <Box sx={{ display: 'flex', height: '100%' }}>
-            {/* Left Side - Chat Interface */}
-            <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#1e293b' }}>
-              {/* Chat Header */}
+        {isWorkspaceMode ? (
+          <Box sx={{ height: '100%', width: '100%' }}>
+            {/* Command Center Layout - Chat on Left, Panels on Right */}
+            <Box sx={{ display: 'flex', height: '100%' }}>
+              {/* Left Side - Chat Interface */}
+              <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#1e293b' }}>
+                {/* Chat Header */}
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
@@ -526,6 +527,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     { key: 'receipts', label: 'RECEIPTS' },
                     { key: 'memory', label: 'MEMORY' },
                     { key: 'sandbox', label: 'SANDBOX' },
+                    { key: 'live_agent', label: 'LIVE AGENT' },
                     { key: 'governance', label: 'GOVERNANCE' }
                   ].map((tab) => (
                     <Button
@@ -583,6 +585,62 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   <LiveAgentSandbox />
                 )}
                 
+                {rightPanelType === 'live_agent' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Live Agent Computer
+                    </Typography>
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Agent Activity Monitor
+                        </Typography>
+                        <Typography sx={{ color: '#64748b', mb: 3 }}>
+                          Watch what your agent is doing in real-time
+                        </Typography>
+                        
+                        {/* Computer Screen Simulation */}
+                        <Box sx={{ 
+                          bgcolor: '#000', 
+                          border: '2px solid #334155', 
+                          borderRadius: 2, 
+                          p: 2, 
+                          minHeight: '300px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          gap: 2
+                        }}>
+                          <Typography sx={{ color: '#10b981', fontFamily: 'monospace' }}>
+                            🖥️ Agent Computer Screen
+                          </Typography>
+                          <Typography sx={{ color: '#64748b', textAlign: 'center' }}>
+                            Live agent activity will appear here when the agent is working
+                          </Typography>
+                          <Box sx={{ 
+                            bgcolor: '#1e293b', 
+                            p: 2, 
+                            borderRadius: 1, 
+                            border: '1px solid #334155',
+                            width: '100%'
+                          }}>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ agent_status: idle
+                            </Typography>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ last_action: waiting_for_user_input
+                            </Typography>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ tools_available: {Math.floor(Math.random() * 20) + 15}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
                 {rightPanelType === 'analytics' && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
@@ -631,6 +689,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   </Box>
                 )}
               </Box>
+            </Box>
             </Box>
           </Box>
         ) : (
