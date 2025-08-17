@@ -516,8 +516,51 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
    * Discover Anthropic agent capabilities
    */
   private async discoverAnthropic(apiEndpoint: string, apiKey: string): Promise<Partial<AgentIntrospectionData>> {
+    console.log('🔍 Discovering Anthropic Claude models...');
+    
+    // Try to get available models from Anthropic API
+    let availableModels: string[] = [];
+    let defaultModel = 'claude-3-5-sonnet-20241022';
+    
+    try {
+      // Test API connection with a simple request
+      const testResponse = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 10,
+          messages: [{ role: 'user', content: 'test' }]
+        })
+      });
+
+      if (testResponse.ok || testResponse.status === 400) {
+        // API key is valid, use current model list
+        availableModels = [
+          'claude-3-5-sonnet-20241022',
+          'claude-3-5-haiku-20241022', 
+          'claude-3-opus-20240229'
+        ];
+        console.log('✅ Anthropic API connection successful, using current models');
+      } else {
+        console.warn('⚠️ Anthropic API test failed, using fallback models');
+        availableModels = ['claude-3-5-sonnet-20241022'];
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not test Anthropic API, using fallback models:', error);
+      availableModels = ['claude-3-5-sonnet-20241022'];
+    }
+
     const capabilities: AgentCapabilities = {
       canChat: true,
+      canGenerateText: true,
+      canAnswerQuestions: true,
+      canSummarize: true,
+      canTranslate: true,
       canGenerateCode: true,
       canAnalyzeData: true,
       canGenerateImages: false,
@@ -537,7 +580,7 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
     return {
       capabilities,
       availableTools: this.getAnthropicTools(),
-      modelSpecs: this.getAnthropicModelSpecs(),
+      modelSpecs: this.getAnthropicModelSpecs(defaultModel, availableModels),
       apiInfo: this.getAnthropicApiInfo(),
       governanceCompatibility: this.getAnthropicGovernanceCompatibility(),
       tags: ['anthropic', 'claude', 'constitutional-ai', 'safety'],
@@ -803,14 +846,15 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
 
   // Placeholder methods for other providers
   private getAnthropicTools(): AgentTool[] { return []; }
-  private getAnthropicModelSpecs(): AgentModelSpecs { 
+  private getAnthropicModelSpecs(defaultModel: string = 'claude-3-5-sonnet-20241022', availableModels: string[] = []): AgentModelSpecs { 
     return {
-      modelName: 'claude-3-sonnet',
+      modelName: defaultModel,
       provider: 'anthropic',
       maxContextLength: 200000,
       maxOutputTokens: 4096,
       supportedLanguages: ['en'],
-      knowledgeDomains: ['general']
+      knowledgeDomains: ['general'],
+      availableModels: availableModels.length > 0 ? availableModels : [defaultModel]
     };
   }
   private getAnthropicApiInfo(): ApiEndpointInfo {

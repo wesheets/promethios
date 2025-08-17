@@ -43,6 +43,12 @@ class PromethiosLLMRenderService:
             logger.info(f"🤖 [PromethiosLLM] Generating response with vision for agent {agent_id}")
             logger.info(f"🎭 [PromethiosLLM] Using provider: {provider}, model: {model}")
             
+            # Translate model name to working API name
+            translated_model = self._translate_model_name(provider, model)
+            if translated_model != model:
+                logger.info(f"🔄 [PromethiosLLM] Model translated: {model} → {translated_model}")
+                model = translated_model
+            
             # Check if there are attachments that need vision processing
             attachments = context.get('attachments', [])
             has_images = any(att.get('type', '').startswith('image/') for att in attachments)
@@ -185,6 +191,35 @@ class PromethiosLLMRenderService:
         model_name = provider_models.get(model.lower(), f"{provider.title()} {model}")
         
         return model_name
+    
+    def _translate_model_name(self, provider: str, model: str) -> str:
+        """Translate old/legacy model names to current working API names"""
+        model_translation_map = {
+            'anthropic': {
+                'claude-3-opus': 'claude-3-opus-20240229',
+                'claude-3-sonnet': 'claude-3-5-sonnet-20241022',
+                'claude-3-haiku': 'claude-3-5-haiku-20241022',
+                'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',
+                'claude-3-5-haiku': 'claude-3-5-haiku-20241022'
+            },
+            'openai': {
+                'gpt-4': 'gpt-4-0613',
+                'gpt-4-turbo': 'gpt-4-turbo-2024-04-09',
+                'gpt-3.5-turbo': 'gpt-3.5-turbo-0125'
+            },
+            'google': {
+                'gemini-pro': 'gemini-1.5-pro',
+                'gemini-pro-vision': 'gemini-1.5-pro'
+            }
+        }
+        
+        provider_translations = model_translation_map.get(provider.lower(), {})
+        translated_model = provider_translations.get(model.lower(), model)
+        
+        if translated_model != model:
+            logger.info(f"🔄 [ModelTranslation] {provider}: {model} → {translated_model}")
+        
+        return translated_model
     
     def _generate_identity_aware_response(self, message: str, model_identity: str, context: Dict[str, Any]) -> str:
         """Generate response with proper model identity transparency"""
