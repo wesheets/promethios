@@ -699,22 +699,26 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
                         }}
                       >
-                        <Paper
+                        <Box
                           sx={{
-                            p: 2.5,
                             maxWidth: '75%',
-                            bgcolor: message.sender === 'user' ? '#3b82f6' : '#374151',
-                            color: 'white',
-                            borderRadius: 2
+                            textAlign: message.sender === 'user' ? 'right' : 'left'
                           }}
                         >
-                          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                          <Typography variant="body2" sx={{ 
+                            fontSize: '0.9rem',
+                            color: 'white',
+                            mb: 0.5
+                          }}>
                             {message.content}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block', fontSize: '0.75rem' }}>
+                          <Typography variant="caption" sx={{ 
+                            color: '#94a3b8', 
+                            fontSize: '0.75rem'
+                          }}>
                             {message.timestamp.toLocaleTimeString()}
                           </Typography>
-                        </Paper>
+                        </Box>
                       </Box>
                     ))}
                     {isTyping && (
@@ -760,16 +764,37 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 {/* Attached Files Preview */}
                 {attachedFiles.length > 0 && (
                   <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', mb: 1, display: 'block' }}>
+                      Attached Files:
+                    </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
-                      {attachedFiles.map((file, index) => (
-                        <Chip
-                          key={index}
-                          label={file.name}
-                          onDelete={() => removeAttachedFile(index)}
-                          size="small"
-                          sx={{ bgcolor: '#374151', color: 'white' }}
-                        />
-                      ))}
+                      {attachedFiles.map((file, index) => {
+                        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+                        const getFileIcon = (ext: string) => {
+                          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️';
+                          if (['pdf'].includes(ext)) return '📄';
+                          if (['doc', 'docx'].includes(ext)) return '📝';
+                          if (['xls', 'xlsx'].includes(ext)) return '📊';
+                          if (['mp3', 'wav', 'ogg'].includes(ext)) return '🎵';
+                          if (['mp4', 'avi', 'mov'].includes(ext)) return '🎥';
+                          return '📎';
+                        };
+                        
+                        return (
+                          <Chip
+                            key={index}
+                            avatar={<span style={{ fontSize: '14px' }}>{getFileIcon(fileExtension)}</span>}
+                            label={file.name.length > 20 ? `${file.name.substring(0, 20)}...` : file.name}
+                            onDelete={() => removeAttachedFile(index)}
+                            size="small"
+                            sx={{ 
+                              bgcolor: '#374151', 
+                              color: 'white',
+                              '& .MuiChip-deleteIcon': { color: 'white' }
+                            }}
+                          />
+                        );
+                      })}
                     </Stack>
                   </Box>
                 )}
