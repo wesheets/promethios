@@ -109,7 +109,7 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Search the web for current information and answers',
     category: 'web_search',
     icon: 'Search',
-    enabled: false,
+    enabled: true, // Default tool - enabled by default
     tier: 'basic',
     configuration: {
       search_engine: 'google',
@@ -310,7 +310,7 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Generate PDF, Word, and other document formats',
     category: 'content',
     icon: 'FileText',
-    enabled: false,
+    enabled: true, // Default tool - enabled by default
     tier: 'basic',
     configuration: {
       formats: ['pdf', 'docx'],
@@ -383,11 +383,27 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Create charts, graphs, and visual reports',
     category: 'analytics',
     icon: 'PieChart',
-    enabled: false,
+    enabled: true, // Default tool - enabled by default
     tier: 'basic',
     configuration: {
       chart_types: ['bar', 'line', 'pie', 'scatter'],
       export_formats: ['png', 'svg', 'pdf']
+    }
+  },
+  {
+    id: 'coding_programming',
+    name: 'Coding & Programming',
+    description: 'Write, execute, and debug code in multiple programming languages',
+    category: 'content',
+    icon: 'Code',
+    enabled: true, // Default tool - enabled by default
+    tier: 'basic',
+    configuration: {
+      languages: ['python', 'javascript', 'typescript', 'html', 'css', 'sql'],
+      execution_timeout: 30,
+      memory_limit: '512MB',
+      allow_file_operations: true,
+      allow_network_access: false
     }
   },
 
@@ -423,6 +439,14 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
       execution_timeout: 300
     }
   }
+];
+
+// Default tools that should be enabled for all new agents
+export const DEFAULT_ENABLED_TOOLS = [
+  'web_search',
+  'document_generation', 
+  'data_visualization',
+  'coding_programming'
 ];
 
 export interface ToolUsageMetrics {
