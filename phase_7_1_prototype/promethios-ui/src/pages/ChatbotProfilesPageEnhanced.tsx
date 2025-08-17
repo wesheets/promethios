@@ -857,10 +857,29 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   <ToolConfigurationPanel
                     chatbot={selectedChatbot}
                     onClose={() => setRightPanelType(null)}
-                    onSave={(toolProfile: AgentToolProfile) => {
-                      console.log('Tool profile saved:', toolProfile);
-                      // Here you would save the tool configuration to the backend
-                      setRightPanelType(null);
+                    onSave={async (toolProfile: AgentToolProfile) => {
+                      try {
+                        console.log('Tool profile saved:', toolProfile);
+                        
+                        // Save the tool configuration to the backend
+                        const chatbotStorageService = ChatbotStorageService.getInstance();
+                        const updatedChatbot = await chatbotStorageService.updateChatbot(selectedChatbot.identity.id, {
+                          toolProfile: toolProfile
+                        });
+                        
+                        if (updatedChatbot) {
+                          // Update local state
+                          setChatbots(prev => prev.map(bot => 
+                            bot.identity.id === selectedChatbot.identity.id ? updatedChatbot : bot
+                          ));
+                          setSelectedChatbot(updatedChatbot);
+                          console.log('✅ Tool configuration saved successfully');
+                        }
+                        
+                        setRightPanelType(null);
+                      } catch (error) {
+                        console.error('❌ Failed to save tool configuration:', error);
+                      }
                     }}
                   />
                 )}

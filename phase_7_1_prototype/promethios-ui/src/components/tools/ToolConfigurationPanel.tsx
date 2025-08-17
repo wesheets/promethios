@@ -314,8 +314,8 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
           }
         }}
       >
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Avatar sx={{ bgcolor: getTierColor(tool.tier), width: 40, height: 40 }}>
                 <IconComponent sx={{ fontSize: 20 }} />
@@ -615,11 +615,11 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Tools Grid */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-        <Grid container spacing={3}>
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+        <Grid container spacing={2}>
           {getFilteredTools(selectedTab === 0 ? undefined : TOOL_CATEGORIES[selectedTab - 1]?.id)
             .map((tool) => (
-              <Grid item xs={12} sm={6} lg={4} key={tool.id}>
+              <Grid item xs={12} sm={12} md={6} key={tool.id}>
                 {renderToolCard(tool)}
               </Grid>
             ))}
