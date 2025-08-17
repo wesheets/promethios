@@ -625,7 +625,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
         <Grid container spacing={2}>
           {getFilteredTools(selectedTab === 0 ? undefined : TOOL_CATEGORIES[selectedTab - 1]?.id)
             .map((tool) => (
-              <Grid item xs={12} sm={12} md={6} key={tool.id}>
+              <Grid item xs={12} key={tool.id}>
                 {renderToolCard(tool)}
               </Grid>
             ))}

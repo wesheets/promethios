@@ -74,7 +74,10 @@ import {
   Delete,
   PlayArrow,
   Pause,
-  Stop
+  Stop,
+  Image as ImageIcon,
+  Code as CodeIcon,
+  Insights as InsightsIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
@@ -142,6 +145,13 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   
+  // Chat enhancements
+  const [addMenuAnchor, setAddMenuAnchor] = useState<null | HTMLElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -188,6 +198,62 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const getGovernanceType = (chatbot: ChatbotProfile) => {
     const types = ['BYOK', 'Hosted API', 'Enterprise'];
     return types[Math.floor(Math.random() * types.length)];
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const audioChunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioFile = new File([audioBlob], 'voice-message.wav', { type: 'audio/wav' });
+        setAttachedFiles(prev => [...prev, audioFile]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  // File handling functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setAttachedFiles(prev => [...prev, ...files]);
+  };
+
+  const handlePaste = (event: React.ClipboardEvent) => {
+    const items = Array.from(event.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    imageItems.forEach(item => {
+      const file = item.getAsFile();
+      if (file) {
+        setAttachedFiles(prev => [...prev, file]);
+      }
+    });
+  };
+
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // Mock model provider function
@@ -612,22 +678,22 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         key={message.id}
                         sx={{
                           display: 'flex',
-                          justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start'
+                          justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
                         }}
                       >
                         <Paper
                           sx={{
-                            p: 3,
+                            p: 2.5,
                             maxWidth: '75%',
-                            bgcolor: message.role === 'user' ? '#3b82f6' : '#374151',
+                            bgcolor: message.sender === 'user' ? '#3b82f6' : '#374151',
                             color: 'white',
                             borderRadius: 2
                           }}
                         >
-                          <Typography variant="body1">
+                          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
                             {message.content}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                          <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block', fontSize: '0.75rem' }}>
                             {message.timestamp.toLocaleTimeString()}
                           </Typography>
                         </Paper>
@@ -648,15 +714,43 @@ const ChatbotProfilesPageContent: React.FC = () => {
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                {/* Attached Files Preview */}
+                {attachedFiles.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {attachedFiles.map((file, index) => (
+                        <Chip
+                          key={index}
+                          label={file.name}
+                          onDelete={() => removeAttachedFile(index)}
+                          size="small"
+                          sx={{ bgcolor: '#374151', color: 'white' }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+                
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                  {/* Add Menu Button */}
+                  <IconButton
+                    onClick={(e) => setAddMenuAnchor(e.currentTarget)}
+                    sx={{ color: '#94a3b8', mb: 0.5 }}
+                  >
+                    <Add />
+                  </IconButton>
+                  
                   <TextField
                     fullWidth
                     placeholder="Type your message..."
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    onPaste={handlePaste}
                     variant="outlined"
                     disabled={chatLoading}
+                    multiline
+                    maxRows={4}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         bgcolor: '#0f172a',
@@ -667,10 +761,23 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       }
                     }}
                   />
+                  
+                  {/* Voice Recording Button */}
+                  <IconButton
+                    onClick={isRecording ? stopRecording : startRecording}
+                    sx={{ 
+                      color: isRecording ? '#ef4444' : '#94a3b8',
+                      mb: 0.5,
+                      '&:hover': { color: isRecording ? '#dc2626' : '#3b82f6' }
+                    }}
+                  >
+                    {isRecording ? <MicOff /> : <Mic />}
+                  </IconButton>
+                  
                   <Button
                     variant="contained"
                     onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || chatLoading}
+                    disabled={(!messageInput.trim() && attachedFiles.length === 0) || chatLoading}
                     sx={{
                       bgcolor: '#3b82f6',
                       '&:hover': { bgcolor: '#2563eb' },
@@ -681,6 +788,54 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     {chatLoading ? <CircularProgress size={20} /> : <Send />}
                   </Button>
                 </Box>
+                
+                {/* Add Menu */}
+                <Menu
+                  anchorEl={addMenuAnchor}
+                  open={Boolean(addMenuAnchor)}
+                  onClose={() => setAddMenuAnchor(null)}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: '#1e293b',
+                      border: '1px solid #334155',
+                      '& .MuiMenuItem-root': {
+                        color: 'white',
+                        '&:hover': { bgcolor: '#374151' }
+                      }
+                    }
+                  }}
+                >
+                  <MenuItem onClick={() => { fileInputRef.current?.click(); setAddMenuAnchor(null); }}>
+                    <AttachFile sx={{ mr: 2 }} />
+                    Add photos & files
+                  </MenuItem>
+                  <MenuItem onClick={() => setAddMenuAnchor(null)}>
+                    <SmartToy sx={{ mr: 2 }} />
+                    Agent mode
+                  </MenuItem>
+                  <MenuItem onClick={() => setAddMenuAnchor(null)}>
+                    <Search sx={{ mr: 2 }} />
+                    Deep research
+                  </MenuItem>
+                  <MenuItem onClick={() => setAddMenuAnchor(null)}>
+                    <ImageIcon sx={{ mr: 2 }} />
+                    Create image
+                  </MenuItem>
+                  <MenuItem onClick={() => setAddMenuAnchor(null)}>
+                    <CodeIcon sx={{ mr: 2 }} />
+                    Connected apps
+                  </MenuItem>
+                </Menu>
+                
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt"
+                  onChange={handleFileSelect}
+                  style={{ display: 'none' }}
+                />
               </Box>
             </Box>
 
