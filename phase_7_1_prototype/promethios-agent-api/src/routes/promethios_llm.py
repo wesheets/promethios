@@ -588,12 +588,15 @@ def universal_governance_chat():
             logger.info(f"📎 [UniversalChat] Added {len(attachments)} attachments to context")
         
         # Generate response using the service
-        response = asyncio.run(service.generate_response(
+        response_data = service.generate_response(
             agent_id=agent_id,
+            user_id=context.get('userId', 'anonymous'),
             message=message,
-            context=[processed_context] if processed_context else None,
-            agent_config=agent_configuration
-        ))
+            context=processed_context
+        )
+        
+        # Extract the response content
+        response = response_data.get('response', 'I apologize, but I encountered an issue processing your request.')
         
         # Calculate governance metrics
         governance_metrics = {
