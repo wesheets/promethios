@@ -61,38 +61,40 @@ class PromethiosLLMRenderService:
                 vision_results = []
                 for attachment in attachments:
                     try:
-                        # Convert attachment to format expected by vision service
-                        attachment_path = f"/tmp/{attachment.get('name', 'attachment')}"
+                        logger.info(f"🔍 [PromethiosLLM] Processing attachment: {attachment.get('name')} ({attachment.get('type')})")
                         
-                        # For base64 data, decode and save temporarily
-                        if 'data' in attachment:
-                            import base64
-                            file_data = base64.b64decode(attachment['data'])
-                            with open(attachment_path, 'wb') as f:
-                                f.write(file_data)
-                        
-                        # Analyze with Universal Vision Service
+                        # Analyze with Universal Vision Service using correct parameters
                         vision_result = await self.vision_service.analyze_image(
-                            image_path=attachment_path,
-                            user_query=message,
+                            image_data=attachment['data'],  # Use base64 data directly
+                            image_type=attachment.get('type', 'image/jpeg'),
+                            user_message=message,
                             provider=provider,
-                            governance_context={
-                                'agent_id': agent_id,
-                                'user_id': user_id,
-                                'session_context': context
-                            }
+                            agent_id=agent_id,
+                            session_id=context.get('session_id', f'session_{int(datetime.now().timestamp())}')
                         )
+                        
+                        logger.info(f"✅ [PromethiosLLM] Vision analysis completed for {attachment.get('name')}")
+                        logger.info(f"🔍 [PromethiosLLM] Vision result keys: {list(vision_result.keys()) if vision_result else 'None'}")
+                        
+                        # Check if vision analysis was successful
+                        if vision_result and vision_result.get('success', False):
+                            analysis_text = vision_result.get('analysis', 'No analysis provided')
+                            provider_used = vision_result.get('provider', provider)
+                            confidence = vision_result.get('confidence', 0.8)
+                        else:
+                            # Handle failed vision analysis
+                            error_msg = vision_result.get('error', 'Unknown error') if vision_result else 'No response from vision service'
+                            logger.error(f"❌ [PromethiosLLM] Vision analysis failed: {error_msg}")
+                            analysis_text = f"I was unable to analyze this image due to a technical issue: {error_msg}"
+                            provider_used = 'error'
+                            confidence = 0.0
                         
                         vision_results.append({
                             'filename': attachment.get('name'),
-                            'analysis': vision_result.get('analysis', 'Unable to analyze file'),
-                            'provider_used': vision_result.get('provider_used', provider),
-                            'confidence': vision_result.get('confidence', 0.8)
+                            'analysis': analysis_text,
+                            'provider_used': provider_used,
+                            'confidence': confidence
                         })
-                        
-                        # Clean up temporary file
-                        if os.path.exists(attachment_path):
-                            os.remove(attachment_path)
                             
                     except Exception as e:
                         logger.error(f"❌ [PromethiosLLM] Failed to process attachment {attachment.get('name')}: {e}")
