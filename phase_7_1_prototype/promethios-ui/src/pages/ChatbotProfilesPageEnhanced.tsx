@@ -162,6 +162,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
   // Chat history management
   const [currentChatSession, setCurrentChatSession] = useState<ChatHistorySession | null>(null);
+  const [currentChatName, setCurrentChatName] = useState<string | null>(null);
   const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
   
   // File attachment and voice recording states
@@ -595,7 +596,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                    Chat with Your Agent
+                    Chat with Your Agent{currentChatName ? ` - ${currentChatName}` : ''}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     {selectedChatbot.identity.name}
@@ -1250,6 +1251,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     currentSessionId={currentChatSession?.id}
                     onChatSelect={(session) => {
                       setCurrentChatSession(session);
+                      setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
                       // Load the chat messages into the current chat interface
                       setChatMessages(session.messages.map(msg => ({
                         id: msg.id,
@@ -1263,9 +1265,16 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         shadowGovernanceData: msg.shadowGovernanceData,
                       })));
                     }}
-                    onNewChat={() => {
-                      // Clear current chat and start fresh
-                      setCurrentChatSession(null);
+                    onNewChat={(session) => {
+                      if (session) {
+                        // New chat created - set the session and name
+                        setCurrentChatSession(session);
+                        setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
+                      } else {
+                        // Clear current chat and start fresh
+                        setCurrentChatSession(null);
+                        setCurrentChatName(null);
+                      }
                       setChatMessages([]);
                       setMessageInput('');
                       setAttachedFiles([]);

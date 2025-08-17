@@ -55,7 +55,7 @@ interface ChatHistoryPanelProps {
   agentId: string;
   agentName: string;
   onChatSelect: (session: ChatSession) => void;
-  onNewChat: () => void;
+  onNewChat: (session?: ChatSession) => void;
   onShareChat?: (contextId: string) => void;
   currentSessionId?: string;
 }
@@ -149,9 +149,9 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       // Refresh the list
       await loadChatSessions();
       
-      // Select the new chat
+      // Select the new chat and notify parent
       onChatSelect(session);
-      onNewChat();
+      onNewChat(session);
     } catch (error) {
       console.error('Failed to create new chat:', error);
     }
