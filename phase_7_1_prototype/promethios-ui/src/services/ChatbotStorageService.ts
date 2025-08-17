@@ -565,7 +565,7 @@ export class ChatbotStorageService {
           endpoint: 'https://api.anthropic.com/v1',
           key: 'byok-managed',
           provider: 'Anthropic',
-          selectedModel: 'claude-3-sonnet',
+          selectedModel: 'claude-3-5-sonnet-20241022',
         },
         chatbotConfig: {
           personality: 'friendly',

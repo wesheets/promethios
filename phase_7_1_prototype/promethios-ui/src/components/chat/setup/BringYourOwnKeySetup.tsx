@@ -99,7 +99,7 @@ const BringYourOwnKeySetup: React.FC = () => {
       id: 'anthropic',
       name: 'Anthropic',
       description: 'Claude 3 Opus, Sonnet, and Haiku models',
-      models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+      models: ['claude-3-opus-20240229', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
       keyFormat: 'sk-ant-...',
       testEndpoint: 'https://api.anthropic.com/v1/messages',
       documentation: 'https://docs.anthropic.com/claude/reference'

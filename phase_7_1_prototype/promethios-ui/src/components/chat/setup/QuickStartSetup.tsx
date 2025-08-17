@@ -121,7 +121,7 @@ const QuickStartSetup: React.FC = () => {
     // Anthropic Models
     { 
       provider: 'Anthropic', 
-      model: 'claude-3-opus', 
+      model: 'claude-3-opus-20240229', 
       name: 'Claude-3 Opus', 
       description: 'Excellent for analysis and reasoning', 
       price: '$0.04/message',
@@ -132,25 +132,25 @@ const QuickStartSetup: React.FC = () => {
     },
     { 
       provider: 'Anthropic', 
-      model: 'claude-3-sonnet', 
-      name: 'Claude-3 Sonnet', 
-      description: 'Balanced performance and speed', 
+      model: 'claude-3-5-sonnet-20241022', 
+      name: 'Claude-3.5 Sonnet', 
+      description: 'Latest and most capable Claude model', 
       price: '$0.02/message',
       costEffective: true,
-      pros: ['Good balance', 'Reliable performance', 'Moderate cost'],
-      cons: ['Not as powerful as Opus', 'Mid-tier capabilities'],
-      category: 'Balanced'
+      pros: ['Latest capabilities', 'Excellent reasoning', 'Fast responses'],
+      cons: ['Higher cost than Haiku', 'Premium model'],
+      category: 'Premium'
     },
     { 
       provider: 'Anthropic', 
-      model: 'claude-3-haiku', 
-      name: 'Claude-3 Haiku', 
-      description: 'Fast and economical for simple tasks', 
+      model: 'claude-3-5-haiku-20241022', 
+      name: 'Claude-3.5 Haiku', 
+      description: 'Fast and economical latest Claude model', 
       price: '$0.005/message',
       costEffective: true,
-      pros: ['Very fast', 'Most economical', 'Good for simple tasks'],
-      cons: ['Limited capabilities', 'Basic reasoning only'],
-      category: 'Economy'
+      pros: ['Very fast', 'Latest Haiku version', 'Good for most tasks'],
+      cons: ['Less capable than Sonnet', 'Newer model'],
+      category: 'Balanced'
     },
     
     // Google Models

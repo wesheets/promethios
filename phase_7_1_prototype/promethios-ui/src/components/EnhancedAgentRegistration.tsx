@@ -103,14 +103,13 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             description: 'Constitutional AI with strong reasoning and safety features',
             endpoint: 'https://api.anthropic.com/v1/messages',
             capabilities: ['chat', 'reasoning', 'analysis', 'constitutional_ai', 'document_analysis', 'creative_writing'],
-            models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus', 'claude-3.5-sonnet'],
+            models: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
             contextLength: 200000,
             supportsFunctions: false,
             pricing: {
-              'claude-3-haiku': { input: 0.00025, output: 0.00125 },
-              'claude-3-sonnet': { input: 0.003, output: 0.015 },
-              'claude-3-opus': { input: 0.015, output: 0.075 },
-              'claude-3.5-sonnet': { input: 0.003, output: 0.015 }
+              'claude-3-5-haiku-20241022': { input: 0.00025, output: 0.00125 },
+              'claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 },
+              'claude-3-opus-20240229': { input: 0.015, output: 0.075 }
             }
           };
           break;
