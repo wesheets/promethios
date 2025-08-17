@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: promethios-agent-api
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python src/main.py"
+    plan: starter
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PORT
+        value: "5004"
+      - key: FLASK_ENV
+        value: "production"
+

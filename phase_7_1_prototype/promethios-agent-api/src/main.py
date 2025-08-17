@@ -16,7 +16,7 @@ from src.routes.trust_boundaries import trust_boundaries_bp
 from src.routes.reporting_integration import reporting_bp
 from src.routes.veritas_enterprise import veritas_enterprise_bp
 from src.routes.deployment import deployment_bp
-from src.routes.native_llm import native_llm_bp
+# from src.routes.native_llm import native_llm_bp  # File doesn't exist - commented out
 from src.routes.promethios_llm import promethios_llm_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
@@ -127,5 +127,6 @@ def health_check():
     }, 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5004, debug=True)
+    port = int(os.environ.get('PORT', 5004))
+    app.run(host='0.0.0.0', port=port, debug=False)
 
