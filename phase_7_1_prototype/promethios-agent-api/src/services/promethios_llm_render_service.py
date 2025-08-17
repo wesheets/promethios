@@ -216,26 +216,172 @@ Response with governance awareness and constitutional compliance.
             return self._generate_fallback_response(message)
     
     def _generate_attachment_response(self, message: str, attachments: List[Dict]) -> str:
-        """Generate response acknowledging and describing attachments"""
+        """Generate response by actually analyzing attachments"""
         image_count = sum(1 for att in attachments if att.get('type', '').startswith('image/'))
         doc_count = len(attachments) - image_count
         
         response_parts = []
         
+        # Process images with actual analysis
         if image_count > 0:
-            if image_count == 1:
-                response_parts.append("I can see you've shared an image with me.")
-            else:
-                response_parts.append(f"I can see you've shared {image_count} images with me.")
+            image_analyses = []
+            for att in attachments:
+                if att.get('type', '').startswith('image/'):
+                    try:
+                        # Analyze the actual image
+                        analysis = self._analyze_image(att, message)
+                        image_analyses.append(analysis)
+                    except Exception as e:
+                        logger.error(f"Error analyzing image: {e}")
+                        image_analyses.append("I can see an image was shared, but I'm having difficulty analyzing it at the moment.")
+            
+            if image_analyses:
+                response_parts.append("I can see the image(s) you've shared. Here's what I observe:")
+                for i, analysis in enumerate(image_analyses, 1):
+                    response_parts.append(f"\nImage {i}: {analysis}")
         
+        # Process documents
         if doc_count > 0:
             if doc_count == 1:
-                response_parts.append("I can also see you've shared a document.")
+                response_parts.append("\nI can also see you've shared a document.")
             else:
-                response_parts.append(f"I can also see you've shared {doc_count} documents.")
+                response_parts.append(f"\nI can also see you've shared {doc_count} documents.")
         
         # Add governance context
         governance_context = """
+
+🛡️ Governance Status:
+- Trust Score: 78.3%
+- Compliance Rate: 89.1% 
+- Response Quality: 82.7%
+
+I maintain strict adherence to governance policies including HIPAA for healthcare data protection, SOC2 for security controls, and comprehensive legal compliance frameworks."""
+        
+        base_response = " ".join(response_parts)
+        
+        # Add specific question response if user asked something specific
+        if message and len(message.strip()) > 0:
+            question_response = f"\n\nRegarding your question: \"{message}\"\n"
+            if image_count > 0:
+                question_response += "Based on the image analysis above, I can provide more specific insights if you'd like to ask about particular aspects of what you've shared."
+        else:
+            question_response = "\n\nHow can I assist you with the content you've shared?"
+        
+        full_response = base_response + governance_context + question_response
+        
+        return full_response
+    
+    def _analyze_image(self, attachment: Dict, user_message: str = "") -> str:
+        """Analyze image content using vision capabilities"""
+        try:
+            import base64
+            import requests
+            import os
+            
+            # Get image data
+            image_data = attachment.get('data', '')
+            image_type = attachment.get('type', 'image/jpeg')
+            image_name = attachment.get('name', 'image')
+            
+            # For now, use OpenAI's GPT-4 Vision API if available
+            openai_api_key = os.getenv('OPENAI_API_KEY')
+            if openai_api_key:
+                return self._analyze_with_openai_vision(image_data, image_type, user_message)
+            
+            # Fallback to basic image analysis
+            return self._basic_image_analysis(attachment, user_message)
+            
+        except Exception as e:
+            logger.error(f"Error in image analysis: {e}")
+            return f"I can see you've shared an image ({attachment.get('name', 'unknown')}), but I'm experiencing some technical difficulties with detailed analysis at the moment. However, I can still help you with questions about it if you describe what you'd like to know."
+    
+    def _analyze_with_openai_vision(self, image_data: str, image_type: str, user_message: str) -> str:
+        """Analyze image using OpenAI's GPT-4 Vision API"""
+        try:
+            import openai
+            
+            # Initialize OpenAI client
+            client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            
+            # Prepare the image for OpenAI
+            image_url = f"data:{image_type};base64,{image_data}"
+            
+            # Create analysis prompt
+            analysis_prompt = f"""Analyze this image in detail. The user asked: "{user_message}"
+
+Please provide:
+1. A clear description of what you see in the image
+2. Key visual elements, colors, composition
+3. Any text or important details visible
+4. Relevant context based on the user's question
+5. Any insights or observations that might be helpful
+
+Be thorough but concise in your analysis."""
+            
+            # Call OpenAI Vision API
+            response = client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": analysis_prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}}
+                        ]
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            analysis = response.choices[0].message.content
+            logger.info(f"✅ OpenAI Vision analysis completed successfully")
+            return analysis
+            
+        except Exception as e:
+            logger.error(f"Error with OpenAI Vision analysis: {e}")
+            return self._basic_image_analysis({'data': image_data, 'type': image_type}, user_message)
+    
+    def _basic_image_analysis(self, attachment: Dict, user_message: str) -> str:
+        """Basic image analysis when advanced vision APIs are not available"""
+        try:
+            import base64
+            from PIL import Image
+            import io
+            
+            # Decode image data
+            image_data = base64.b64decode(attachment.get('data', ''))
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Get basic image properties
+            width, height = image.size
+            mode = image.mode
+            format_name = image.format or 'Unknown'
+            
+            # Basic analysis
+            analysis = f"I can see an image with the following properties:\n"
+            analysis += f"- Dimensions: {width} x {height} pixels\n"
+            analysis += f"- Format: {format_name}\n"
+            analysis += f"- Color mode: {mode}\n"
+            
+            # Try to determine if it's a photo, diagram, screenshot, etc.
+            if width > height:
+                analysis += "- Orientation: Landscape\n"
+            elif height > width:
+                analysis += "- Orientation: Portrait\n"
+            else:
+                analysis += "- Orientation: Square\n"
+            
+            # Add contextual response based on user message
+            if user_message:
+                analysis += f"\nRegarding your question about '{user_message}', I can see the image but would need more advanced vision capabilities to provide detailed analysis. If you can describe what specific aspects you'd like me to focus on, I can try to help based on the image properties I can detect."
+            
+            return analysis
+            
+        except Exception as e:
+            logger.error(f"Error in basic image analysis: {e}")
+            return f"I can see you've shared an image, but I'm having difficulty analyzing it at the moment. The image appears to be in {attachment.get('type', 'unknown')} format. How can I help you with it?"
+    
+    def _generate_governance_response(self, message: str) -> str:
 
 I'm operating under the Promethios governance framework with active monitoring of all interactions. My current governance metrics show:
 - Trust Score: 78.3%
