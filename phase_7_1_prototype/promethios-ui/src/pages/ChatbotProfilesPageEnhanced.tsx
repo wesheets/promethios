@@ -458,14 +458,15 @@ const ChatbotProfilesPageContent: React.FC = () => {
       console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
       
       // Send message through governance service
-      const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim());
+      const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
       // Add user message first
       const userMessage: ChatMessage = {
         id: `user_${Date.now()}`,
         content: messageInput.trim(),
         sender: 'user',
-        timestamp: new Date()
+        timestamp: new Date(),
+        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
       };
       
       // Update messages with user message and bot response
@@ -776,6 +777,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             textAlign: message.sender === 'user' ? 'right' : 'left'
                           }}
                         >
+                          {/* Message Content */}
                           <Typography variant="body2" sx={{ 
                             fontSize: '0.9rem',
                             color: 'white',
@@ -783,6 +785,65 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           }}>
                             {message.content}
                           </Typography>
+                          
+                          {/* Attachments Display */}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <Box sx={{ mt: 1, mb: 1 }}>
+                              {message.attachments.map((file, index) => {
+                                const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+                                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+                                
+                                if (isImage) {
+                                  // Display image preview
+                                  const imageUrl = URL.createObjectURL(file);
+                                  return (
+                                    <Box key={index} sx={{ mt: 1 }}>
+                                      <img
+                                        src={imageUrl}
+                                        alt={file.name}
+                                        style={{
+                                          maxWidth: '200px',
+                                          maxHeight: '200px',
+                                          borderRadius: '8px',
+                                          cursor: 'pointer'
+                                        }}
+                                        onClick={() => window.open(imageUrl, '_blank')}
+                                      />
+                                    </Box>
+                                  );
+                                } else {
+                                  // Display file as downloadable link
+                                  const fileUrl = URL.createObjectURL(file);
+                                  return (
+                                    <Box key={index} sx={{ mt: 1 }}>
+                                      <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                          const a = document.createElement('a');
+                                          a.href = fileUrl;
+                                          a.download = file.name;
+                                          a.click();
+                                        }}
+                                        sx={{
+                                          color: '#3b82f6',
+                                          borderColor: '#3b82f6',
+                                          '&:hover': {
+                                            borderColor: '#2563eb',
+                                            bgcolor: 'rgba(59, 130, 246, 0.1)'
+                                          }
+                                        }}
+                                      >
+                                        📎 {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
+                                      </Button>
+                                    </Box>
+                                  );
+                                }
+                              })}
+                            </Box>
+                          )}
+                          
+                          {/* Timestamp */}
                           <Typography variant="caption" sx={{ 
                             color: '#94a3b8', 
                             fontSize: '0.75rem'

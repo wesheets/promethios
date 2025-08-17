@@ -24,6 +24,8 @@ interface ChatMessage {
   timestamp: Date;
   trustScore?: number;
   governanceStatus?: string;
+  attachments?: File[];
+  isError?: boolean;
 }
 
 interface ChatSession {
@@ -182,8 +184,30 @@ export class ChatPanelGovernanceService {
     }
   }
 
-  private async generateChatResponse(sessionId: string, message: string, agentId: string, context: any): Promise<{ response: string; trustScore: number; governanceStatus: string; metadata: any }> {
+  private async generateChatResponse(sessionId: string, message: string, agentId: string, context: any, attachments?: File[]): Promise<{ response: string; trustScore: number; governanceStatus: string; metadata: any }> {
     try {
+      // Process attachments if provided
+      let attachmentData: any[] = [];
+      if (attachments && attachments.length > 0) {
+        console.log(`📎 [ChatPanel] Processing ${attachments.length} attachments`);
+        
+        for (const file of attachments) {
+          try {
+            // Convert file to base64 for transmission
+            const fileData = await this.fileToBase64(file);
+            attachmentData.push({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              data: fileData,
+              lastModified: file.lastModified
+            });
+          } catch (error) {
+            console.warn(`⚠️ [ChatPanel] Failed to process attachment ${file.name}:`, error);
+          }
+        }
+      }
+
       // Use the Universal Governance Adapter's enhanced response generation
       const enhancedResponse = await this.universalGovernance.enhanceResponseWithGovernance(
         agentId, // Agent ID first
@@ -193,6 +217,7 @@ export class ChatPanelGovernanceService {
           environment: 'chat_panel',
           governance_enabled: true,
           conversationHistory: context?.conversationHistory || [],
+          attachments: attachmentData, // Include attachment data
           ...context
         }
       );
@@ -226,6 +251,24 @@ export class ChatPanelGovernanceService {
     }
     
     return "Thank you for your message! I'm here to provide helpful, governance-compliant responses. Our system continuously monitors trust levels and policy compliance to ensure the highest standards of AI safety and reliability.";
+  }
+
+  // Helper method to convert File to base64
+  private async fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove the data URL prefix to get just the base64 data
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to read file as base64'));
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 
   // ============================================================================
@@ -345,7 +388,7 @@ export class ChatPanelGovernanceService {
     }
   }
 
-  async sendMessage(sessionId: string, message: string): Promise<ChatMessage> {
+  async sendMessage(sessionId: string, message: string, attachments?: File[]): Promise<ChatMessage> {
     try {
       console.log(`💬 [ChatPanel] Processing message in session: ${sessionId}`);
       
@@ -426,7 +469,7 @@ export class ChatPanelGovernanceService {
       }
 
       // 3. Generate Response
-      const chatResponse = await this.generateChatResponse(sessionId, message, session.agentId, { sessionId });
+      const chatResponse = await this.generateChatResponse(sessionId, message, session.agentId, { sessionId }, attachments);
       
       // 4. Generate Receipt for this interaction
       try {
