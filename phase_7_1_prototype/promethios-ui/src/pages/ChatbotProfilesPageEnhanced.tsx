@@ -96,10 +96,11 @@ import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
+import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
+type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -1203,6 +1204,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     { key: 'knowledge', label: 'AI KNOWLEDGE' },
                     { key: 'tools', label: 'TOOLS' },
                     { key: 'integrations', label: 'INTEGRATIONS' },
+                    { key: 'rag_policy', label: 'RAG + POLICY' },
                     { key: 'automation', label: 'AUTOMATION' },
                     { key: 'receipts', label: 'RECEIPTS' },
                     { key: 'memory', label: 'MEMORY' },
@@ -1918,6 +1920,222 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             </Typography>
                           </Grid>
                         </Grid>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
+                {rightPanelType === 'rag_policy' && (
+                  <RAGPolicyPanel
+                    agentId={selectedChatbot?.id || ''}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+
+                {rightPanelType === 'governance' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Governance Controls
+                    </Typography>
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Trust & Safety
+                        </Typography>
+                        <Typography sx={{ color: '#64748b' }}>
+                          Governance controls coming soon...
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                          </Grid>
+                        </Box>
+
+                        {/* Upload Knowledge Documents */}
+                        <Button
+                          variant="outlined"
+                          fullWidth
+                          component="label"
+                          sx={{
+                            mb: 2,
+                            borderColor: '#3b82f6',
+                            color: '#3b82f6',
+                            '&:hover': { borderColor: '#2563eb', bgcolor: 'rgba(59, 130, 246, 0.1)' }
+                          }}
+                        >
+                          📄 Upload Knowledge Documents
+                          <input
+                            type="file"
+                            hidden
+                            multiple
+                            accept=".pdf,.doc,.docx,.txt,.md"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              console.log('📚 [RAG] Uploading knowledge documents:', files.map(f => f.name));
+                              // TODO: Integrate with RAG service
+                            }}
+                          />
+                        </Button>
+
+                        {/* Knowledge Base Settings */}
+                        <Box sx={{ mt: 2 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Enable RAG for this agent"
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Auto-update knowledge base"
+                            sx={{ color: '#94a3b8', display: 'block' }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* Policy Management Section */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                          🛡️ Policy Management
+                        </Typography>
+
+                        {/* Standard Policies */}
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                            Standard Compliance Policies:
+                          </Typography>
+                          {['HIPAA', 'SOC2', 'GDPR', 'PCI DSS'].map((policy) => (
+                            <FormControlLabel
+                              key={policy}
+                              control={
+                                <Checkbox
+                                  defaultChecked={policy === 'SOC2'}
+                                  sx={{ color: '#3b82f6' }}
+                                />
+                              }
+                              label={policy}
+                              sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                            />
+                          ))}
+                        </Box>
+
+                        {/* Custom Policy Upload */}
+                        <Button
+                          variant="outlined"
+                          fullWidth
+                          component="label"
+                          sx={{
+                            mb: 2,
+                            borderColor: '#f59e0b',
+                            color: '#f59e0b',
+                            '&:hover': { borderColor: '#d97706', bgcolor: 'rgba(245, 158, 11, 0.1)' }
+                          }}
+                        >
+                          📋 Upload Custom Policies
+                          <input
+                            type="file"
+                            hidden
+                            multiple
+                            accept=".json,.yaml,.yml,.txt"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              console.log('🛡️ [Policy] Uploading custom policies:', files.map(f => f.name));
+                              // TODO: Integrate with PolicyExtension
+                            }}
+                          />
+                        </Button>
+
+                        {/* Policy Status */}
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                            Active Policies: 3 | Custom Policies: 1
+                          </Typography>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={85} 
+                            sx={{ 
+                              bgcolor: '#374151',
+                              '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                            }}
+                          />
+                          <Typography variant="caption" sx={{ color: '#10b981', mt: 1, display: 'block' }}>
+                            85% Policy Compliance
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* RAG + Policy Integration */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                          🔗 RAG + Policy Integration
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                          Governance-aware knowledge retrieval ensures all RAG responses comply with active policies.
+                        </Typography>
+
+                        {/* Integration Settings */}
+                        <Box sx={{ mb: 2 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Filter knowledge by policy compliance"
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Log all RAG retrievals for audit"
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Require approval for sensitive knowledge"
+                            sx={{ color: '#94a3b8', display: 'block' }}
+                          />
+                        </Box>
+
+                        {/* Apply Settings */}
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          onClick={() => {
+                            console.log('🔗 [RAG+Policy] Applying integration settings');
+                            // TODO: Integrate with UniversalGovernanceAdapter
+                          }}
+                          sx={{
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' }
+                          }}
+                        >
+                          Apply RAG + Policy Settings
+                        </Button>
                       </CardContent>
                     </Card>
                   </Box>
