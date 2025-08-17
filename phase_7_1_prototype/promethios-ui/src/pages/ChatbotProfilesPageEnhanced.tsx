@@ -1191,9 +1191,132 @@ const ChatbotProfilesPageContent: React.FC = () => {
               </Box>
             </Box>
           )}
-        {isWorkspaceMode ? (
           </Box>
         ) : (
+          <Container sx={{ py: 2, height: '100%' }}>
+            {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
+            {!isWorkspaceMode && (
+              <Box sx={{ height: '100%', overflow: 'auto' }}>
+                <Grid container spacing={3}>
+                  {filteredChatbots.map((chatbot) => {
+                    const metrics = getMockMetrics(chatbot);
+                    const governanceType = getGovernanceType(chatbot);
+                    const modelProvider = getModelProvider(chatbot.configuration?.selectedModel || '');
+                    const isNativeAgent = governanceType === 'BYOK';
+
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={chatbot.id}>
+                        <Card
+                          sx={{
+                            bgcolor: '#1e293b',
+                            border: '1px solid #334155',
+                            borderRadius: 2,
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              borderColor: '#3b82f6',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
+                            },
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                        >
+                          <CardContent sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            {/* Header */}
+                            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                              <Box flex={1}>
+                                <Typography variant="h6" sx={{ color: 'white', mb: 0.5, fontSize: '1rem', fontWeight: 600 }}>
+                                  {chatbot.identity.name}
+                                </Typography>
+                                <Box display="flex" gap={1} mb={1}>
+                                  <Chip
+                                    label={governanceType}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: governanceType === 'BYOK' ? '#065f46' : governanceType === 'Hosted API' ? '#1e40af' : '#7c2d12',
+                                      color: 'white',
+                                      fontSize: '0.7rem',
+                                      height: '20px',
+                                    }}
+                                  />
+                                  <Chip
+                                    label={`${metrics.healthScore}% Health`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: metrics.healthScore >= 90 ? '#065f46' : metrics.healthScore >= 70 ? '#ca8a04' : '#dc2626',
+                                      color: 'white',
+                                      fontSize: '0.7rem',
+                                      height: '20px',
+                                    }}
+                                  />
+                                </Box>
+                              </Box>
+                              <IconButton
+                                size="small"
+                                sx={{ color: '#64748b', '&:hover': { color: 'white' } }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Add menu functionality here
+                                }}
+                              >
+                                <MoreVert fontSize="small" />
+                              </IconButton>
+                            </Box>
+
+                            {/* Metrics Grid */}
+                            <Grid container spacing={1} mb={2}>
+                              <Grid item xs={4}>
+                                <Box textAlign="center" p={1} bgcolor="#0f172a" borderRadius={1}>
+                                  <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                                    Trust Score
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 600 }}>
+                                    {metrics.trustScore}/100
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={4}>
+                                <Box textAlign="center" p={1} bgcolor="#0f172a" borderRadius={1}>
+                                  <Typography variant="body2" color="#64748b" fontSize="0.75rem">
+                                    Messages
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#8b5cf6', fontWeight: 600 }}>
+                                    {metrics.messageVolume.toLocaleString()}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
+
+                            {/* Primary Action - Command Center Only */}
+                            <Box mt={2}>
+                              <Button
+                                variant="contained"
+                                size="medium"
+                                startIcon={<Rocket />}
+                                fullWidth
+                                onClick={() => openRightPanel(chatbot, 'workspace')}
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  '&:hover': { bgcolor: '#2563eb' },
+                                  fontWeight: 600,
+                                  py: 1.5,
+                                  fontSize: '0.875rem',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                }}
+                              >
+                                🚀 Command Center
+                              </Button>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            )}
           </Container>
         )}
       </Box>
