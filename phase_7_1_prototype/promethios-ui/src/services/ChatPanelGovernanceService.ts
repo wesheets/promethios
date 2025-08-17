@@ -420,18 +420,24 @@ export class ChatPanelGovernanceService {
 
       // 1. Predictive Governance - Risk Assessment
       try {
-        // Check if predictRisk method exists before calling it
-        if (this.predictiveGovernance && typeof this.predictiveGovernance.predictRisk === 'function') {
-          const riskPrediction = await this.predictiveGovernance.predictRisk(session.agentId, {
+        // Check if predictActionRisk method exists before calling it
+        if (this.predictiveGovernance && typeof this.predictiveGovernance.predictActionRisk === 'function') {
+          const proposedAction = {
             toolName: 'chat',
             actionType: 'message_processing',
-            parameters: { message },
+            parameters: { message, attachments: attachments?.length || 0 },
             context: {
               sessionId,
-              conversationHistory: this.conversationHistory,
-              currentTrustScore: metrics.trustScore
-            }
-          });
+              previousActions: this.conversationHistory.slice(-5).map(msg => `${msg.sender}: ${msg.content.substring(0, 50)}...`),
+              userIntent: message.length > 100 ? 'detailed_query' : 'simple_query',
+              businessContext: 'chat_interaction',
+              timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening',
+              workloadLevel: this.conversationHistory.length > 10 ? 'high' : 'normal'
+            },
+            urgency: attachments && attachments.length > 0 ? 'medium' : 'low'
+          };
+          
+          const riskPrediction = await this.predictiveGovernance.predictActionRisk(session.agentId, proposedAction);
           
           console.log(`🔮 [ChatPanel] Risk prediction:`, riskPrediction);
           
@@ -449,7 +455,7 @@ export class ChatPanelGovernanceService {
             };
           }
         } else {
-          console.log(`🔮 [ChatPanel] Predictive governance not available, skipping risk assessment`);
+          console.log(`🔮 [ChatPanel] Predictive governance (predictActionRisk) not available, skipping risk assessment`);
         }
       } catch (error) {
         console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
