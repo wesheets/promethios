@@ -148,6 +148,31 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
+  // Mock metrics for analytics
+  interface ChatbotMetrics {
+    healthScore: number;
+    trustScore: number;
+    performanceRating: number;
+    messageVolume: number;
+    responseTime: number;
+    satisfactionScore: number;
+    resolutionRate: number;
+    lastActive: string;
+    governanceAlerts: number;
+  }
+
+  const getMockMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => ({
+    healthScore: Math.floor(Math.random() * 20) + 80, // 80-100%
+    trustScore: Math.floor(Math.random() * 15) + 85, // 85-100%
+    performanceRating: Math.floor(Math.random() * 25) + 75, // 75-100%
+    messageVolume: Math.floor(Math.random() * 5000) + 100, // 100-5100
+    responseTime: Math.random() * 2 + 0.5, // 0.5-2.5 seconds
+    satisfactionScore: Math.random() * 1 + 4, // 4.0-5.0
+    resolutionRate: Math.floor(Math.random() * 20) + 70, // 70-90%
+    lastActive: ['2 minutes ago', '5 minutes ago', '1 hour ago', '30 minutes ago'][Math.floor(Math.random() * 4)],
+    governanceAlerts: Math.floor(Math.random() * 3), // 0-2 alerts
+  });
+
   // Workspace mode management
   const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
   const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
@@ -730,8 +755,125 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
               {/* Panel Content */}
               <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                {rightPanelType === 'analytics' && selectedChatbot && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      Analytics Dashboard
+                    </Typography>
+                    
+                    {/* Key Metrics */}
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Response Time
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getMockMetrics(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Satisfaction
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getMockMetrics(selectedChatbot).satisfactionScore.toFixed(1)}/5
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Resolution Rate
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).resolutionRate}%
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Last Active
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).lastActive}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Performance Trends */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Trends
+                        </Typography>
+                        <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            📈 Interactive charts will be displayed here
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* Usage Statistics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Usage Statistics
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Total Conversations
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Governance Alerts
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getMockMetrics(selectedChatbot).governanceAlerts > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).governanceAlerts}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Health Score
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getMockMetrics(selectedChatbot).healthScore >= 90 ? '#10b981' : getMockMetrics(selectedChatbot).healthScore >= 80 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).healthScore}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
                 {rightPanelType === 'tools' && (
-                  <ToolConfigurationPanel />
+                  <ToolConfigurationPanel
+                    chatbot={selectedChatbot}
+                    onClose={() => setRightPanelType(null)}
+                    onSave={(toolProfile: AgentToolProfile) => {
+                      console.log('Tool profile saved:', toolProfile);
+                      // Here you would save the tool configuration to the backend
+                      setRightPanelType(null);
+                    }}
+                  />
                 )}
                 
                 {rightPanelType === 'customize' && (
@@ -849,23 +991,110 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 
                 {rightPanelType === 'analytics' && (
                   <Box>
-                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
                       Analytics Dashboard
                     </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
-                          <CardContent>
-                            <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                              Performance Metrics
+                    
+                    {/* Key Metrics */}
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Response Time
                             </Typography>
-                            <Typography sx={{ color: '#64748b' }}>
-                              Real-time analytics coming soon...
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getMockMetrics(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Satisfaction
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getMockMetrics(selectedChatbot).satisfactionScore.toFixed(1)}/5
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Resolution Rate
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).resolutionRate}%
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Last Active
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).lastActive}
                             </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
                     </Grid>
+                    
+                    {/* Performance Trends */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Trends
+                        </Typography>
+                        <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            📈 Interactive charts will be displayed here
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Usage Statistics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Usage Statistics
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Total Conversations
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Governance Alerts
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).governanceAlerts}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Health Score
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getMockMetrics(selectedChatbot).healthScore >= 90 ? '#10b981' : getMockMetrics(selectedChatbot).healthScore >= 80 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
+                              {getMockMetrics(selectedChatbot).healthScore}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
                 

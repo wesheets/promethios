@@ -61,6 +61,7 @@ import {
   LinkedIn as LinkedinIcon,
   PieChart as PieChartIcon,
   AccountTree as GitBranchIcon,
+  Code as CodeIcon,
 } from '@mui/icons-material';
 import { ChatbotProfile } from '../../types/ChatbotTypes';
 import { 
@@ -98,6 +99,7 @@ const getIconComponent = (iconName: string) => {
     Linkedin: LinkedinIcon,
     PieChart: PieChartIcon,
     GitBranch: GitBranchIcon,
+    Code: CodeIcon,
   };
   return iconMap[iconName] || SettingsIcon;
 };

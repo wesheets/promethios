@@ -1,9 +1,9 @@
-"""
-UI component for the Governance Visualization Dashboard.
-
-This module provides a React-based UI component for visualizing governance state,
-trust metrics, and health reports in an interactive dashboard.
-"""
+/**
+ * UI component for the Governance Visualization Dashboard.
+ * 
+ * This module provides a React-based UI component for visualizing governance state,
+ * trust metrics, and health reports in an interactive dashboard.
+ */
 
 import React, { useState, useEffect } from 'react';
 import { 
