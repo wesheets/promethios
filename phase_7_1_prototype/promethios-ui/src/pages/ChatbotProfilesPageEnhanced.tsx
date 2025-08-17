@@ -1,54 +1,70 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
+  Typography,
   Grid,
   Card,
   CardContent,
-  Typography,
-  Avatar,
-  Chip,
   Button,
+  Chip,
+  Avatar,
   IconButton,
-  TextField,
-  InputAdornment,
-  Slide,
   Paper,
+  Slide,
+  Stack,
   Divider,
   LinearProgress,
   Tooltip,
   Badge,
-  Menu,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  CircularProgress,
+  Tabs,
+  Tab,
   FormControl,
   InputLabel,
   Select,
-  Switch,
+  MenuItem,
+  Slider,
   FormControlLabel,
-  Tabs,
-  Tab,
-  Alert,
-  Snackbar
+  Checkbox,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
-  Search,
+  Analytics,
+  Palette,
+  Psychology,
+  Settings,
+  Close,
+  Chat,
+  Rocket,
+  MoreVert,
+  TrendingUp,
+  Speed,
+  ThumbUp,
+  Schedule,
+  Group,
+  Description,
+  CloudUpload,
+  AutoAwesome,
   Add,
+  Edit,
+  Send,
+  Api,
+  SmartToy,
+  CheckCircle,
+  Receipt,
+  Memory,
+  Computer,
+  Security,
+  AttachFile,
+  Mic,
+  MicOff,
+  Search,
   FilterList,
   Sort,
-  MoreVert,
-  Chat,
-  Settings,
   Visibility,
-  Close,
-  Send,
-  TrendingUp,
-  Security,
-  Speed,
-  CheckCircle,
   Warning,
   Error as ErrorIcon,
   Refresh,
@@ -56,82 +72,102 @@ import {
   Upload,
   Share,
   Delete,
-  Edit,
   PlayArrow,
   Pause,
   Stop
 } from '@mui/icons-material';
-
-// Import types and services
+import { useAuth } from '../context/AuthContext';
+import { ChatbotStorageService } from '../services/ChatbotStorageService';
+import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
+import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
+import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
+import { SimplifiedKnowledgeViewer } from '../components/knowledge/SimplifiedKnowledgeViewer';
 import { ChatbotProfile } from '../types/ChatbotTypes';
-import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
+import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
+import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
+import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
+import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
+import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
+import { AgentToolProfile } from '../types/ToolTypes';
 
-// Mock data for demonstration
-const mockChatbots: ChatbotProfile[] = [
-  {
-    id: 'agent-001',
-    identity: {
-      id: 'agent-001',
-      name: 'Sarah Analytics',
-      role: 'Data Analysis Specialist',
-      description: 'Expert in data visualization, statistical analysis, and business intelligence reporting.',
-      avatar: '/avatars/sarah.jpg',
-      personality: 'analytical',
-      expertise: ['Data Analysis', 'Visualization', 'Statistics']
-    },
-    configuration: {
-      selectedModel: 'gpt-4-turbo',
-      temperature: 0.3,
-      maxTokens: 4096,
-      systemPrompt: 'You are a data analysis expert...'
-    },
-    status: 'active',
-    createdAt: new Date('2024-01-15'),
-    lastActive: new Date()
-  },
-  {
-    id: 'agent-002',
-    identity: {
-      id: 'agent-002',
-      name: 'Marcus Creative',
-      role: 'Content Creator',
-      description: 'Specialized in creative writing, marketing copy, and brand storytelling.',
-      avatar: '/avatars/marcus.jpg',
-      personality: 'creative',
-      expertise: ['Creative Writing', 'Marketing', 'Branding']
-    },
-    configuration: {
-      selectedModel: 'gpt-4-turbo',
-      temperature: 0.8,
-      maxTokens: 4096,
-      systemPrompt: 'You are a creative writing expert...'
-    },
-    status: 'active',
-    createdAt: new Date('2024-01-20'),
-    lastActive: new Date()
-  }
-];
+// Right panel types
+type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
 
-interface ChatbotProfilesPageEnhancedProps {
-  // Add any props if needed
+interface ChatbotMetrics {
+  healthScore: number;
+  trustScore: number;
+  performanceRating: number;
+  messageVolume: number;
+  responseTime: number;
+  satisfactionScore: number;
+  resolutionRate: number;
+  lastActive: string;
+  governanceAlerts: number;
 }
 
-const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = () => {
-  // State management
-  const [chatbots, setChatbots] = useState<ChatbotProfile[]>(mockChatbots);
-  const [filteredChatbots, setFilteredChatbots] = useState<ChatbotProfile[]>(mockChatbots);
-  const [selectedChatbot, setSelectedChatbot] = useState<ChatbotProfile | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [rightPanelType, setRightPanelType] = useState<'chat' | 'configuration' | 'monitoring' | null>(null);
-  const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
+const ChatbotProfilesPageEnhanced: React.FC = () => {
+  return (
+    <WidgetCustomizerProvider>
+      <ChatbotProfilesPageContent />
+    </WidgetCustomizerProvider>
+  );
+};
 
-  // Mock metrics function
-  const getMockMetrics = (chatbot: ChatbotProfile) => ({
-    trustScore: Math.floor(Math.random() * 20) + 80,
-    responseTime: Math.floor(Math.random() * 200) + 100,
-    totalInteractions: Math.floor(Math.random() * 1000) + 500,
-    successRate: Math.floor(Math.random() * 15) + 85,
-    healthScore: Math.floor(Math.random() * 20) + 80
+const ChatbotProfilesPageContent: React.FC = () => {
+  console.log('🔍 ChatbotProfilesPageEnhanced component mounting...');
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser: user, loading: authLoading } = useAuth();
+  const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
+  console.log('🔍 ChatbotProfilesPageEnhanced - user from auth:', user?.uid);
+  console.log('🔍 ChatbotProfilesPageEnhanced - auth loading:', authLoading);
+  
+  const chatbotService = ChatbotStorageService.getInstance();
+  
+  // State management
+  const [chatbotProfiles, setChatbotProfiles] = useState<ChatbotProfile[]>([]);
+  const [filteredChatbots, setFilteredChatbots] = useState<ChatbotProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedChatbot, setSelectedChatbot] = useState<ChatbotProfile | null>(null);
+  const [rightPanelType, setRightPanelType] = useState<RightPanelType>(null);
+  const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Chat session management
+  const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  
+  // File attachment and voice recording states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
+  // Workspace mode management
+  const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
+  const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
+
+  // Governance sensitivity controls
+  const [governanceSensitivity, setGovernanceSensitivity] = useState<'low' | 'medium' | 'high'>('medium');
+  const [trustThreshold, setTrustThreshold] = useState<number>(70);
+  const [riskCategories, setRiskCategories] = useState<string[]>(['financial_transactions', 'data_access']);
+
+  // Mock metrics data - in real implementation, this would come from analytics service
+  const getMockMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => ({
+    healthScore: Math.floor(Math.random() * 20) + 80, // 80-100%
+    trustScore: Math.floor(Math.random() * 15) + 85, // 85-100%
+    performanceRating: Math.floor(Math.random() * 25) + 75, // 75-100%
+    messageVolume: Math.floor(Math.random() * 5000) + 100, // 100-5100
+    responseTime: Math.random() * 2 + 0.5, // 0.5-2.5 seconds
+    satisfactionScore: Math.random() * 1 + 4, // 4.0-5.0
+    resolutionRate: Math.floor(Math.random() * 20) + 70, // 70-90%
+    lastActive: ['2 minutes ago', '5 minutes ago', '1 hour ago', '30 minutes ago'][Math.floor(Math.random() * 4)],
+    governanceAlerts: Math.floor(Math.random() * 3), // 0-2 alerts
   });
 
   // Mock governance type function
@@ -150,25 +186,178 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
     return providers[model as keyof typeof providers] || { name: 'OpenAI', color: '#10b981' };
   };
 
-  // Handle chatbot selection
-  const handleChatbotSelect = (chatbot: ChatbotProfile) => {
-    setSelectedChatbot(chatbot);
-    setRightPanelType('chat');
-  };
+  const loadChatbots = useCallback(async () => {
+    console.log('🔍 loadChatbots called, user:', user?.uid);
+    console.log('🔍 loadChatbots called, authLoading:', authLoading);
+    console.log('🔍 ChatbotStorageService instance:', chatbotService);
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('🔍 Auth still loading, waiting...');
+      return;
+    }
+    
+    if (!user?.uid) {
+      console.log('🔍 No user UID after auth loaded, setting loading to false');
+      setLoading(false);
+      // Set mock data for demo purposes
+      const mockChatbots: ChatbotProfile[] = [
+        {
+          id: 'agent-001',
+          identity: {
+            id: 'agent-001',
+            name: 'Sarah Analytics',
+            role: 'Data Analysis Specialist',
+            description: 'Expert in data visualization, statistical analysis, and business intelligence reporting.',
+            avatar: '/avatars/sarah.jpg',
+            personality: 'analytical',
+            expertise: ['Data Analysis', 'Visualization', 'Statistics']
+          },
+          configuration: {
+            selectedModel: 'gpt-4-turbo',
+            temperature: 0.3,
+            maxTokens: 4096,
+            systemPrompt: 'You are a data analysis expert...'
+          },
+          status: 'active',
+          createdAt: new Date('2024-01-15'),
+          lastActive: new Date()
+        },
+        {
+          id: 'agent-002',
+          identity: {
+            id: 'agent-002',
+            name: 'Marcus Creative',
+            role: 'Content Creator',
+            description: 'Specialized in creative writing, marketing copy, and brand storytelling.',
+            avatar: '/avatars/marcus.jpg',
+            personality: 'creative',
+            expertise: ['Creative Writing', 'Marketing', 'Branding']
+          },
+          configuration: {
+            selectedModel: 'gpt-4-turbo',
+            temperature: 0.8,
+            maxTokens: 4096,
+            systemPrompt: 'You are a creative writing expert...'
+          },
+          status: 'active',
+          createdAt: new Date('2024-01-20'),
+          lastActive: new Date()
+        }
+      ];
+      setChatbotProfiles(mockChatbots);
+      setFilteredChatbots(mockChatbots);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('🔍 Calling chatbotService.getChatbots with user:', user.uid);
+      console.log('🔍 About to call getChatbots method...');
+      const chatbots = await chatbotService.getChatbots(user.uid);
+      console.log('🔍 getChatbots returned:', chatbots.length, 'chatbots');
+      console.log('🔍 Chatbot data:', chatbots);
+      setChatbotProfiles(chatbots);
+      setFilteredChatbots(chatbots);
+      console.log('🔍 setChatbotProfiles called with:', chatbots.length, 'chatbots');
+    } catch (error) {
+      console.error('❌ Failed to load chatbots:', error);
+      setError('Failed to load chatbots. Please try again.');
+      setChatbotProfiles([]);
+      setFilteredChatbots([]);
+    } finally {
+      setLoading(false);
+      console.log('🔍 Loading set to false');
+    }
+  }, [user?.uid, authLoading, chatbotService]);
+
+  // Load chatbots on component mount and when user changes
+  useEffect(() => {
+    console.log('🔍 ChatbotProfilesPageEnhanced useEffect triggered, user:', user?.uid);
+    console.log('🔍 User object:', user);
+    console.log('🔍 Auth loading:', authLoading);
+    console.log('🔍 About to call loadChatbots...');
+    loadChatbots();
+  }, [user?.uid, authLoading, loadChatbots]);
 
   // Filter chatbots based on search
   useEffect(() => {
     if (!searchQuery) {
-      setFilteredChatbots(chatbots);
+      setFilteredChatbots(chatbotProfiles);
     } else {
-      const filtered = chatbots.filter(chatbot =>
+      const filtered = chatbotProfiles.filter(chatbot =>
         chatbot.identity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chatbot.identity.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chatbot.identity.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredChatbots(filtered);
     }
-  }, [searchQuery, chatbots]);
+  }, [searchQuery, chatbotProfiles]);
+
+  // Handle chatbot selection
+  const handleChatbotSelect = (chatbot: ChatbotProfile) => {
+    setSelectedChatbot(chatbot);
+    setRightPanelType('chat');
+  };
+
+  // Handle right panel actions
+  const handleRightPanelAction = (type: RightPanelType, chatbot: ChatbotProfile) => {
+    setSelectedChatbot(chatbot);
+    setRightPanelType(type);
+  };
+
+  // Chat functionality
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedChatbot || chatLoading) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: messageInput,
+      role: 'user',
+      timestamp: new Date(),
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setMessageInput('');
+    setChatLoading(true);
+    setIsTyping(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const botResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `Hello! I'm ${selectedChatbot.identity.name}. I received your message: "${userMessage.content}". How can I help you today?`,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+
+      setChatMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setChatLoading(false);
+      setIsTyping(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#0f172a' }}>
+        <CircularProgress sx={{ color: '#3b82f6' }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#0f172a' }}>
+        <Typography sx={{ color: '#ef4444' }}>{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
@@ -183,14 +372,43 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
       >
         {isWorkspaceMode ? (
           <Box sx={{ height: '100%', width: '100%' }}>
-            {/* Workspace mode content will go here */}
+            {/* Workspace Mode Content */}
             <Container sx={{ py: 4 }}>
-              <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>
-                Workspace Mode
-              </Typography>
-              <Typography sx={{ color: '#64748b' }}>
-                Workspace functionality coming soon...
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
+                  Agent Workspace
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => setIsWorkspaceMode(false)}
+                  sx={{ color: '#64748b', borderColor: '#64748b' }}
+                >
+                  Exit Workspace
+                </Button>
+              </Box>
+
+              {/* Workspace Tabs */}
+              <Tabs
+                value={workspaceSelectedTab}
+                onChange={(_, newValue) => setWorkspaceSelectedTab(newValue)}
+                sx={{
+                  mb: 4,
+                  '& .MuiTab-root': { color: '#64748b' },
+                  '& .Mui-selected': { color: '#3b82f6' },
+                  '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
+                }}
+              >
+                <Tab label="Analytics" value="analytics" />
+                <Tab label="Collaboration" value="collaboration" />
+                <Tab label="Deployment" value="deployment" />
+              </Tabs>
+
+              {/* Workspace Content */}
+              <Box sx={{ bgcolor: '#1e293b', borderRadius: 2, p: 4 }}>
+                <Typography sx={{ color: '#64748b', textAlign: 'center' }}>
+                  Workspace functionality for {workspaceSelectedTab} coming soon...
+                </Typography>
+              </Box>
             </Container>
           </Box>
         ) : (
@@ -205,8 +423,8 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
               </Typography>
             </Box>
 
-            {/* Search and Filters */}
-            <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center' }}>
+            {/* Controls */}
+            <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
               <TextField
                 fullWidth
                 placeholder="Search agents..."
@@ -220,6 +438,7 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                   ),
                 }}
                 sx={{
+                  flex: 1,
                   '& .MuiOutlinedInput-root': {
                     bgcolor: '#1e293b',
                     color: 'white',
@@ -240,10 +459,40 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
               >
                 New Agent
               </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Computer />}
+                onClick={() => setIsWorkspaceMode(true)}
+                sx={{
+                  borderColor: '#64748b',
+                  color: '#64748b',
+                  '&:hover': { borderColor: '#3b82f6', color: '#3b82f6' },
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Workspace
+              </Button>
             </Box>
 
+            {/* Filter Tabs */}
+            <Tabs
+              value={filterTab}
+              onChange={(_, newValue) => setFilterTab(newValue)}
+              sx={{
+                mb: 4,
+                '& .MuiTab-root': { color: '#64748b' },
+                '& .Mui-selected': { color: '#3b82f6' },
+                '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
+              }}
+            >
+              <Tab label="All Agents" />
+              <Tab label="Hosted API" />
+              <Tab label="BYOK" />
+              <Tab label="Enterprise" />
+            </Tabs>
+
             {/* Chatbot Grid */}
-            <Box sx={{ height: '100%', overflow: 'auto' }}>
+            <Box sx={{ height: 'calc(100vh - 300px)', overflow: 'auto' }}>
               <Grid container spacing={3}>
                 {filteredChatbots.map((chatbot) => {
                   const metrics = getMockMetrics(chatbot);
@@ -261,6 +510,9 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                           borderRadius: '12px',
                           transition: 'all 0.2s ease',
                           cursor: 'pointer',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
                           '&:hover': {
                             transform: 'translateY(-2px)',
                             boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
@@ -269,7 +521,7 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                         }}
                         onClick={() => handleChatbotSelect(chatbot)}
                       >
-                        <CardContent sx={{ p: 3 }}>
+                        <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
                           {/* Header */}
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -294,6 +546,20 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                                 </Typography>
                               </Box>
                             </Box>
+                            <IconButton
+                              size="small"
+                              sx={{ color: '#64748b', '&:hover': { color: 'white' } }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Add menu functionality here
+                              }}
+                            >
+                              <MoreVert fontSize="small" />
+                            </IconButton>
+                          </Box>
+
+                          {/* Governance and Health Chips */}
+                          <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                             <Chip
                               label={governanceType}
                               size="small"
@@ -301,6 +567,15 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                                 bgcolor: isNativeAgent ? '#10b981' : '#3b82f6',
                                 color: 'white',
                                 fontWeight: 600,
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                            <Chip
+                              label={`${metrics.healthScore}% Health`}
+                              size="small"
+                              sx={{
+                                bgcolor: metrics.healthScore >= 90 ? '#065f46' : metrics.healthScore >= 70 ? '#ca8a04' : '#dc2626',
+                                color: 'white',
                                 fontSize: '0.7rem'
                               }}
                             />
@@ -316,51 +591,42 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden'
+                              overflow: 'hidden',
+                              flex: 1
                             }}
                           >
                             {chatbot.identity.description}
                           </Typography>
 
                           {/* Metrics Grid */}
-                          <Grid container spacing={2} sx={{ mb: 3 }}>
-                            <Grid item xs={6}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 700 }}>
+                          <Grid container spacing={1} sx={{ mb: 2 }}>
+                            <Grid item xs={4}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                  Trust
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
                                   {metrics.trustScore}%
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                  Trust Score
+                              </Box>
+                            </Grid>
+                            <Grid item xs={4}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                  Response
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '1rem' }}>
+                                  {Math.round(metrics.responseTime * 100)}ms
                                 </Typography>
                               </Box>
                             </Grid>
-                            <Grid item xs={6}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 700 }}>
-                                  {metrics.responseTime}ms
+                            <Grid item xs={4}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                  Success
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                  Avg Response
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid item xs={6}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 700 }}>
-                                  {metrics.totalInteractions}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                  Interactions
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid item xs={6}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 700 }}>
-                                  {metrics.successRate}%
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                  Success Rate
+                                <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '1rem' }}>
+                                  {metrics.resolutionRate}%
                                 </Typography>
                               </Box>
                             </Grid>
@@ -384,20 +650,21 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                           </Box>
 
                           {/* Action Buttons */}
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
                             <Button
                               variant="contained"
                               size="small"
                               startIcon={<Chat />}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleChatbotSelect(chatbot);
+                                handleRightPanelAction('chat', chatbot);
                               }}
                               sx={{
                                 flex: 1,
                                 bgcolor: '#3b82f6',
                                 '&:hover': { bgcolor: '#2563eb' },
-                                borderRadius: '8px'
+                                fontSize: '0.75rem',
+                                py: 0.5,
                               }}
                             >
                               Chat
@@ -408,21 +675,43 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                               startIcon={<Settings />}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setRightPanelType('configuration');
-                                setSelectedChatbot(chatbot);
+                                handleRightPanelAction('settings', chatbot);
                               }}
                               sx={{
                                 borderColor: '#64748b',
                                 color: '#64748b',
+                                fontSize: '0.75rem',
+                                py: 0.5,
                                 '&:hover': {
                                   borderColor: '#3b82f6',
                                   color: '#3b82f6',
                                   bgcolor: 'rgba(59, 130, 246, 0.1)'
-                                },
-                                borderRadius: '8px'
+                                }
                               }}
                             >
                               Config
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<Api />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRightPanelAction('tools', chatbot);
+                              }}
+                              sx={{
+                                borderColor: '#64748b',
+                                color: '#64748b',
+                                fontSize: '0.75rem',
+                                py: 0.5,
+                                '&:hover': {
+                                  borderColor: '#10b981',
+                                  color: '#10b981',
+                                  bgcolor: 'rgba(16, 185, 129, 0.1)'
+                                }
+                              }}
+                            >
+                              Tools
                             </Button>
                           </Box>
                         </CardContent>
@@ -457,8 +746,16 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
           <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
               {rightPanelType === 'chat' && 'Agent Chat'}
-              {rightPanelType === 'configuration' && 'Agent Configuration'}
-              {rightPanelType === 'monitoring' && 'Live Monitoring'}
+              {rightPanelType === 'analytics' && 'Analytics Dashboard'}
+              {rightPanelType === 'customize' && 'Widget Customizer'}
+              {rightPanelType === 'personality' && 'Personality Editor'}
+              {rightPanelType === 'knowledge' && 'Knowledge Base'}
+              {rightPanelType === 'tools' && 'Tool Configuration'}
+              {rightPanelType === 'settings' && 'Agent Settings'}
+              {rightPanelType === 'receipts' && 'Agent Receipts'}
+              {rightPanelType === 'memory' && 'Agent Memory'}
+              {rightPanelType === 'sandbox' && 'Live Sandbox'}
+              {rightPanelType === 'governance' && 'Governance Controls'}
             </Typography>
             <IconButton
               onClick={() => setRightPanelType(null)}
@@ -474,9 +771,62 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
               <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Chat Interface */}
                 <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
-                  <Typography sx={{ color: '#64748b', textAlign: 'center', mt: 4 }}>
-                    Chat interface with {selectedChatbot.identity.name}
-                  </Typography>
+                  {chatMessages.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', mt: 4 }}>
+                      <Avatar
+                        src={selectedChatbot.identity.avatar}
+                        sx={{ width: 64, height: 64, mx: 'auto', mb: 2 }}
+                      >
+                        {selectedChatbot.identity.name.charAt(0)}
+                      </Avatar>
+                      <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                        {selectedChatbot.identity.name}
+                      </Typography>
+                      <Typography sx={{ color: '#64748b', mb: 3 }}>
+                        {selectedChatbot.identity.description}
+                      </Typography>
+                      <Typography sx={{ color: '#64748b', fontSize: '0.9rem' }}>
+                        Start a conversation with your AI agent
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Stack spacing={2}>
+                      {chatMessages.map((message) => (
+                        <Box
+                          key={message.id}
+                          sx={{
+                            display: 'flex',
+                            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start'
+                          }}
+                        >
+                          <Paper
+                            sx={{
+                              p: 2,
+                              maxWidth: '80%',
+                              bgcolor: message.role === 'user' ? '#3b82f6' : '#374151',
+                              color: 'white'
+                            }}
+                          >
+                            <Typography variant="body2">
+                              {message.content}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1, display: 'block' }}>
+                              {message.timestamp.toLocaleTimeString()}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      ))}
+                      {isTyping && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                          <Paper sx={{ p: 2, bgcolor: '#374151', color: 'white' }}>
+                            <Typography variant="body2">
+                              {selectedChatbot.identity.name} is typing...
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      )}
+                    </Stack>
+                  )}
                 </Box>
                 
                 {/* Chat Input */}
@@ -485,8 +835,12 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                     <TextField
                       fullWidth
                       placeholder="Type your message..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       variant="outlined"
                       size="small"
+                      disabled={chatLoading}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           bgcolor: '#0f172a',
@@ -499,6 +853,8 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                     />
                     <Button
                       variant="contained"
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim() || chatLoading}
                       sx={{
                         bgcolor: '#3b82f6',
                         '&:hover': { bgcolor: '#2563eb' },
@@ -506,57 +862,123 @@ const ChatbotProfilesPageEnhanced: React.FC<ChatbotProfilesPageEnhancedProps> = 
                         px: 2
                       }}
                     >
-                      <Send sx={{ fontSize: 18 }} />
+                      {chatLoading ? <CircularProgress size={18} /> : <Send sx={{ fontSize: 18 }} />}
                     </Button>
                   </Box>
                 </Box>
               </Box>
             )}
 
-            {rightPanelType === 'configuration' && selectedChatbot && (
+            {rightPanelType === 'tools' && selectedChatbot && (
               <Box sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                  Configuration for {selectedChatbot.identity.name}
-                </Typography>
-                <Typography sx={{ color: '#64748b' }}>
-                  Configuration panel coming soon...
-                </Typography>
+                <ToolConfigurationPanel />
               </Box>
             )}
 
-            {rightPanelType === 'monitoring' && selectedChatbot && (
+            {rightPanelType === 'customize' && selectedChatbot && (
               <Box sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                  Live Monitoring - {selectedChatbot.identity.name}
+                <WidgetCustomizer />
+              </Box>
+            )}
+
+            {rightPanelType === 'personality' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <PersonalityEditor />
+              </Box>
+            )}
+
+            {rightPanelType === 'knowledge' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <SimplifiedKnowledgeViewer />
+              </Box>
+            )}
+
+            {rightPanelType === 'receipts' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <AgentReceiptViewer />
+              </Box>
+            )}
+
+            {rightPanelType === 'memory' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <AgentMemoryViewer />
+              </Box>
+            )}
+
+            {rightPanelType === 'sandbox' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <LiveAgentSandbox />
+              </Box>
+            )}
+
+            {rightPanelType === 'analytics' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                  Analytics Dashboard - {selectedChatbot.identity.name}
                 </Typography>
                 
-                {/* Status Indicator */}
-                <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155', mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <Box
-                        sx={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
-                          bgcolor: '#10b981',
-                          animation: 'pulse 2s infinite'
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>
-                        Agent Status: Online
+                {/* Analytics content */}
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Metrics
+                        </Typography>
+                        <Typography sx={{ color: '#64748b' }}>
+                          Detailed analytics coming soon...
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {rightPanelType === 'settings' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                  Agent Settings - {selectedChatbot.identity.name}
+                </Typography>
+                
+                {/* Settings content */}
+                <Stack spacing={3}>
+                  <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                    <CardContent>
+                      <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                        Model Configuration
                       </Typography>
-                    </Box>
-                    
-                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 1 }}>
-                      Last Activity: {new Date().toLocaleTimeString()}
-                    </Typography>
-                    
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>
-                      Response Time: 245ms | Memory Usage: 12.4MB
-                    </Typography>
-                  </CardContent>
-                </Card>
+                      <Typography sx={{ color: '#64748b', mb: 2 }}>
+                        Current Model: {selectedChatbot.configuration?.selectedModel || 'gpt-4-turbo'}
+                      </Typography>
+                      <Typography sx={{ color: '#64748b' }}>
+                        Configuration options coming soon...
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Stack>
+              </Box>
+            )}
+
+            {rightPanelType === 'governance' && selectedChatbot && (
+              <Box sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                  Governance Controls
+                </Typography>
+                
+                {/* Governance content */}
+                <Stack spacing={3}>
+                  <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                    <CardContent>
+                      <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                        Trust & Safety
+                      </Typography>
+                      <Typography sx={{ color: '#64748b' }}>
+                        Governance controls coming soon...
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Stack>
               </Box>
             )}
           </Box>
