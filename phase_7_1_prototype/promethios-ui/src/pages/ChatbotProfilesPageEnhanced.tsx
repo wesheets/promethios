@@ -692,11 +692,44 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 )}
                 
                 {rightPanelType === 'customize' && (
-                  <WidgetCustomizer />
+                  <WidgetCustomizer
+                    chatbot={selectedChatbot}
+                    onSave={(config) => {
+                      console.log('Widget config saved:', config);
+                      // Here you would save the configuration to the chatbot profile
+                      // For now, we'll just log it
+                    }}
+                    onClose={() => setRightPanelType(null)}
+                  />
                 )}
                 
                 {rightPanelType === 'personality' && (
-                  <PersonalityEditor />
+                  <PersonalityEditor
+                    chatbot={selectedChatbot}
+                    onSave={async (updates) => {
+                      try {
+                        console.log('Personality updates:', updates);
+                        
+                        // Update the chatbot using ChatbotStorageService
+                        const chatbotStorageService = ChatbotStorageService.getInstance();
+                        const updatedChatbot = await chatbotStorageService.updateChatbot(selectedChatbot.identity.id, updates);
+                        
+                        if (updatedChatbot) {
+                          // Update local state
+                          setChatbots(prev => prev.map(bot => 
+                            bot.identity.id === selectedChatbot.identity.id ? updatedChatbot : bot
+                          ));
+                          setSelectedChatbot(updatedChatbot);
+                          
+                          console.log('✅ Personality settings saved successfully');
+                          // You could show a success message here
+                        }
+                      } catch (error) {
+                        console.error('❌ Failed to save personality settings:', error);
+                      }
+                    }}
+                    onClose={() => setRightPanelType(null)}
+                  />
                 )}
                 
                 {rightPanelType === 'knowledge' && (
@@ -816,6 +849,247 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     <Typography sx={{ color: '#64748b' }}>
                       Select a panel above to get started
                     </Typography>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'automation' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Automation & Workflows
+                    </Typography>
+                    
+                    {/* Automation Stats */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 10) + 3}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Active Workflows
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 30) + 70}%
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Automation Rate
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Active Workflows */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6" sx={{ color: 'white' }}>
+                            Active Workflows
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            sx={{ bgcolor: '#8b5cf6' }}
+                          >
+                            Create
+                          </Button>
+                        </Box>
+                        
+                        <Stack spacing={2}>
+                          {[
+                            { name: 'Lead Qualification', trigger: 'New conversation', status: 'Active' },
+                            { name: 'Escalation to Human', trigger: 'Sentiment < 0.3', status: 'Active' },
+                            { name: 'Follow-up Email', trigger: 'Conversation ends', status: 'Paused' },
+                            { name: 'Data Collection', trigger: 'User provides email', status: 'Active' }
+                          ].map((workflow, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Avatar sx={{ bgcolor: '#8b5cf6', width: 32, height: 32 }}>
+                                  ⚡
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {workflow.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                    Trigger: {workflow.trigger}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                  label={workflow.status}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: workflow.status === 'Active' ? '#10b981' : '#f59e0b',
+                                    color: 'white',
+                                    fontSize: '0.75rem'
+                                  }}
+                                />
+                                <IconButton size="small" sx={{ color: '#64748b' }}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'governance' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Governance Sensitivity
+                    </Typography>
+                    
+                    {/* Governance Sensitivity Controls */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Approval Sensitivity
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                          Configure when the agent should ask for approval before taking actions
+                        </Typography>
+                        
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                          <InputLabel sx={{ color: '#94a3b8' }}>Sensitivity Level</InputLabel>
+                          <Select
+                            value={governanceSensitivity}
+                            onChange={(e) => setGovernanceSensitivity(e.target.value as 'low' | 'medium' | 'high')}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                              '& .MuiSvgIcon-root': { color: '#94a3b8' }
+                            }}
+                          >
+                            <MenuItem value="low">Low - Minimal approvals required</MenuItem>
+                            <MenuItem value="medium">Medium - Balanced approach</MenuItem>
+                            <MenuItem value="high">High - Frequent approval requests</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {/* Trust Threshold */}
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+                          Trust Threshold: {trustThreshold}%
+                        </Typography>
+                        <Slider
+                          value={trustThreshold}
+                          onChange={(_, value) => setTrustThreshold(value as number)}
+                          min={0}
+                          max={100}
+                          sx={{
+                            color: '#3b82f6',
+                            '& .MuiSlider-thumb': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-track': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-rail': { bgcolor: '#374151' }
+                          }}
+                        />
+
+                        {/* Risk Categories */}
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mt: 3, mb: 2 }}>
+                          Monitor these risk categories:
+                        </Typography>
+                        {['financial_transactions', 'data_access', 'external_communications', 'system_changes'].map(category => (
+                          <FormControlLabel
+                            key={category}
+                            control={
+                              <Checkbox
+                                checked={riskCategories.includes(category)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setRiskCategories([...riskCategories, category]);
+                                  } else {
+                                    setRiskCategories(riskCategories.filter(c => c !== category));
+                                  }
+                                }}
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label={category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                        ))}
+
+                        {/* Apply Button */}
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          onClick={() => {
+                            // Apply governance settings
+                            console.log('Applying governance settings:', {
+                              sensitivity: governanceSensitivity,
+                              trustThreshold,
+                              riskCategories
+                            });
+                          }}
+                          sx={{
+                            mt: 3,
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' }
+                          }}
+                        >
+                          Apply Governance Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Current Governance Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Current Governance Status
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Trust Score</Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              75%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Compliance</Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              100%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Violations</Typography>
+                            <Typography variant="h6" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              0
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Warnings</Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              0
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
                   </Box>
                 )}
               </Box>
