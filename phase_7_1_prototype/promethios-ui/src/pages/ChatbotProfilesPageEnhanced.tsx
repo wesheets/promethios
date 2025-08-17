@@ -474,7 +474,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
       setChatMessages(prev => [...prev, userMessage, response]);
       
       // Save messages to chat history if we have a current session
-      if (currentChatSession && selectedChatbot && currentUser?.uid) {
+      if (currentChatSession && selectedChatbot && user?.uid) {
         try {
           // Add user message to chat history
           await chatHistoryService.addMessageToSession(currentChatSession.id, {
@@ -501,13 +501,13 @@ const ChatbotProfilesPageContent: React.FC = () => {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
         }
-      } else if (!currentChatSession && selectedChatbot && currentUser?.uid) {
+      } else if (!currentChatSession && selectedChatbot && user?.uid) {
         // Auto-create a new chat session if none exists
         try {
           const newSession = await chatHistoryService.createChatSession(
             selectedChatbot.id,
             selectedChatbot.name,
-            currentUser.uid
+            user.uid
           );
           setCurrentChatSession(newSession);
           
@@ -543,16 +543,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
     } catch (error) {
       console.error(`❌ [ChatPanel] Failed to send message:`, error);
       
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: `error_${Date.now()}`,
-        content: 'Sorry, I encountered an error processing your message. Please try again.',
-        sender: 'assistant',
-        timestamp: new Date(),
-        isError: true
-      };
-      
-      setChatMessages(prev => [...prev, errorMessage]);
+      // Don't add a generic error message here since the service layer
+      // now provides proper fallback responses. The error is already logged.
+      // The service will return a proper response even in error conditions.
     } finally {
       setChatLoading(false);
       setIsTyping(false);
