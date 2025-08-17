@@ -295,12 +295,46 @@ const ChatbotProfilesPageContent: React.FC = () => {
     }
   }, [searchQuery, chatbotProfiles]);
 
-  // Handle chatbot selection - Open command center
-  const handleChatbotSelect = (chatbot: ChatbotProfile) => {
+    // Handle chatbot selection for command center
+  const handleChatbotSelect = async (chatbot: ChatbotProfile) => {
     setSelectedChatbot(chatbot);
     setIsWorkspaceMode(true); // Enable workspace mode for command center
     setRightPanelType('analytics'); // Default to analytics panel
     setWorkspaceSelectedTab('analytics');
+    
+    // Initialize chat session with governance
+    try {
+      setChatLoading(true);
+      console.log(`🚀 [Workspace] Initializing Command Center for ${chatbot.identity.name}`);
+      
+      // Start new chat session with governance
+      const session = await chatPanelGovernanceService.startChatSession(chatbot);
+      setActiveSession(session);
+      setChatMessages([]);
+      setMessageInput('');
+      
+      console.log(`✅ [Workspace] Command Center initialized:`, session.sessionId);
+    } catch (error) {
+      console.error(`❌ [Workspace] Failed to initialize Command Center:`, error);
+      // Create a fallback session for UI testing
+      const fallbackSession: ChatSession = {
+        sessionId: `fallback_${Date.now()}`,
+        agentId: chatbot.identity.id,
+        startTime: new Date(),
+        messageCount: 0,
+        trustScore: 0.75,
+        autonomyLevel: 'Supervised',
+        governanceMetrics: {
+          averageTrustScore: 0.75,
+          totalMessages: 0,
+          policyViolations: 0,
+          riskLevel: 'Low'
+        }
+      };
+      setActiveSession(fallbackSession);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   // Handle right panel actions
@@ -309,36 +343,45 @@ const ChatbotProfilesPageContent: React.FC = () => {
     setRightPanelType(type);
   };
 
-  // Chat functionality
+  // Chat functionality - Real Universal Governance Adapter Integration
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedChatbot || chatLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content: messageInput,
-      role: 'user',
-      timestamp: new Date(),
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    setMessageInput('');
-    setChatLoading(true);
-    setIsTyping(true);
+    if (!messageInput.trim() || !activeSession || chatLoading) return;
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setChatLoading(true);
+      setIsTyping(true);
       
-      const botResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: `Hello! I'm ${selectedChatbot.identity.name}. I received your message: "${userMessage.content}". How can I help you today?`,
-        role: 'assistant',
-        timestamp: new Date(),
+      console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
+      
+      // Send message through governance service
+      const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim());
+      
+      // Add user message first
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        content: messageInput.trim(),
+        sender: 'user',
+        timestamp: new Date()
       };
-
-      setChatMessages(prev => [...prev, botResponse]);
+      
+      // Update messages with user message and bot response
+      setChatMessages(prev => [...prev, userMessage, response]);
+      setMessageInput('');
+      
+      console.log(`✅ [ChatPanel] Message sent and response received`);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error(`❌ [ChatPanel] Failed to send message:`, error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `error_${Date.now()}`,
+        content: 'Sorry, I encountered an error processing your message. Please try again.',
+        sender: 'assistant',
+        timestamp: new Date(),
+        isError: true
+      };
+      
+      setChatMessages(prev => [...prev, errorMessage]);
     } finally {
       setChatLoading(false);
       setIsTyping(false);
