@@ -483,7 +483,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
           height: '100vh'
         }}
       >
-        <Container sx={{ py: 2, height: '100%' }}>
+        <Container sx={{ py: isWorkspaceMode ? 0 : 2, height: '100%', maxWidth: isWorkspaceMode ? 'none' : undefined, px: isWorkspaceMode ? 0 : undefined }}>
           {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
           {!isWorkspaceMode && (
             <Box sx={{ height: '100%', overflow: 'auto' }}>
@@ -684,14 +684,14 @@ const ChatbotProfilesPageContent: React.FC = () => {
           {isWorkspaceMode && selectedChatbot && (
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               {/* Breadcrumbs */}
-              <Box sx={{ mb: 1, p: 1 }}>
-                <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: '#3b82f6' }, fontSize: '0.875rem' }} onClick={closeRightPanel}>
+              <Box sx={{ mb: 0, p: 0, position: 'absolute', top: 8, left: 8, zIndex: 10 }}>
+                <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: '#3b82f6' }, fontSize: '0.875rem', bgcolor: 'rgba(15, 23, 42, 0.8)', px: 1, py: 0.5, borderRadius: 1 }} onClick={closeRightPanel}>
                   ← Chatbots
                 </Typography>
               </Box>
 
               {/* Chat Interface */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155', minHeight: 0 }}>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#1e293b', minHeight: 0 }}>
                 {/* Chat Header */}
                 <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
                   <Typography variant="h6" sx={{ color: 'white', mb: 0.5, fontSize: '1.1rem' }}>

@@ -745,12 +745,78 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                 <ListItemText primary="Settings" sx={{ color: 'white' }} />
               </ListItemButton>
             </ListItem>
+            {/* Settings Sub-Items */}
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/settings/preferences')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <PreferencesIcon />
+                </ListItemIcon>
+                <ListItemText primary="Preferences" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/settings/organization')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <OrganizationIcon />
+                </ListItemIcon>
+                <ListItemText primary="Organization" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/settings/integrations')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <IntegrationsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Integrations" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/settings/data')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <DataIcon />
+                </ListItemIcon>
+                <ListItemText primary="Data Management" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/settings/api-keys')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <ApiKeyIcon />
+                </ListItemIcon>
+                <ListItemText primary="API Keys" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/help')}>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <HelpIcon />
                 </ListItemIcon>
                 <ListItemText primary="Help & Support" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            {/* Help Sub-Items */}
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/help/tours')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <ToursIcon />
+                </ListItemIcon>
+                <ListItemText primary="Guided Tours" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/help/documentation')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <DocsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Documentation" sx={{ color: 'white' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/ui/help/support')} sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <SupportIcon />
+                </ListItemIcon>
+                <ListItemText primary="Support" sx={{ color: 'white' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
