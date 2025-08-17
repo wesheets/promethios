@@ -420,31 +420,40 @@ export class ChatPanelGovernanceService {
 
       // 1. Predictive Governance - Risk Assessment
       try {
-        const riskPrediction = await this.predictiveGovernance.predictRisk(session.agentId, {
-          toolName: 'chat',
-          actionType: 'message_processing',
-          parameters: { message },
-          context: {
-            sessionId,
-            conversationHistory: this.conversationHistory,
-            currentTrustScore: metrics.trustScore
-          },
-          urgency: 'medium'
-        });
-
-        console.log(`🔮 [ChatPanel] Risk prediction: ${riskPrediction.riskScore}/100 (confidence: ${riskPrediction.confidence})`);
-
-        // Check if action requires approval
-        if (riskPrediction.riskScore > 70) {
-          console.warn(`⚠️ [ChatPanel] High risk detected, requiring approval`);
+        // Check if predictRisk method exists before calling it
+        if (this.predictiveGovernance && typeof this.predictiveGovernance.predictRisk === 'function') {
+          const riskPrediction = await this.predictiveGovernance.predictRisk(session.agentId, {
+            toolName: 'chat',
+            actionType: 'message_processing',
+            parameters: { message },
+            context: {
+              sessionId,
+              conversationHistory: this.conversationHistory,
+              currentTrustScore: metrics.trustScore
+            }
+          });
           
-          return {
-            id: `approval_${Date.now()}`,
-            content: `This action has been flagged for review due to high risk (${riskPrediction.riskScore}/100). Recommendations: ${riskPrediction.recommendations.map(r => r.description).join(', ')}. Would you like to proceed?`,
-            sender: 'agent',
-            timestamp: new Date(),
-            trustScore: metrics.trustScore,
-            governanceStatus: 'pending_approval'
+          console.log(`🔮 [ChatPanel] Risk prediction:`, riskPrediction);
+          
+          // Handle high risk scenarios
+          if (riskPrediction.riskScore > 70) {
+            console.warn(`⚠️ [ChatPanel] High risk detected, requiring approval`);
+            
+            return {
+              id: `approval_${Date.now()}`,
+              content: `This action has been flagged for review due to high risk (${riskPrediction.riskScore}/100). Recommendations: ${riskPrediction.recommendations.map(r => r.description).join(', ')}. Would you like to proceed?`,
+              sender: 'agent',
+              timestamp: new Date(),
+              trustScore: metrics.trustScore,
+              governanceStatus: 'pending_approval'
+            };
+          }
+        } else {
+          console.log(`🔮 [ChatPanel] Predictive governance not available, skipping risk assessment`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
+      }
           };
         }
       } catch (error) {
@@ -489,17 +498,22 @@ export class ChatPanelGovernanceService {
       
       // 4. Generate Receipt for this interaction
       try {
-        const receipt = await this.receiptIntegration.generateReceipt({
-          toolName: 'chat',
-          action: 'message_processing',
-          parameters: { message, response: chatResponse.response },
-          result: { success: true, trustScore: chatResponse.trustScore },
-          agentId: session.agentId,
-          sessionId,
-          timestamp: new Date()
-        });
-        
-        console.log(`🧾 [ChatPanel] Receipt generated: ${receipt.id}`);
+        // Check if generateReceipt method exists before calling it
+        if (this.receiptIntegration && typeof this.receiptIntegration.generateReceipt === 'function') {
+          const receipt = await this.receiptIntegration.generateReceipt({
+            toolName: 'chat',
+            action: 'message_processing',
+            parameters: { message, response: chatResponse.response },
+            result: { success: true, trustScore: chatResponse.trustScore },
+            agentId: session.agentId,
+            sessionId,
+            timestamp: new Date()
+          });
+          
+          console.log(`🧾 [ChatPanel] Receipt generated: ${receipt.id}`);
+        } else {
+          console.log(`🧾 [ChatPanel] Receipt integration not available, skipping receipt generation`);
+        }
       } catch (error) {
         console.warn(`⚠️ [ChatPanel] Receipt generation failed:`, error);
       }
