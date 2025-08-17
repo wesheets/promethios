@@ -84,6 +84,8 @@ import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
+import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
+import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
@@ -97,7 +99,7 @@ import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 
 // Right panel types
-type RightPanelType = 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
+type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -157,6 +159,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
   const [selectedConnectedApps, setSelectedConnectedApps] = useState<ConnectedApp[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Chat history management
+  const [currentChatSession, setCurrentChatSession] = useState<ChatHistorySession | null>(null);
+  const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
   
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -464,7 +470,72 @@ const ChatbotProfilesPageContent: React.FC = () => {
       
       // Update messages with user message and bot response
       setChatMessages(prev => [...prev, userMessage, response]);
+      
+      // Save messages to chat history if we have a current session
+      if (currentChatSession && selectedChatbot && currentUser?.uid) {
+        try {
+          // Add user message to chat history
+          await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            id: userMessage.id,
+            content: userMessage.content,
+            sender: userMessage.sender,
+            timestamp: userMessage.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+          });
+          
+          // Add agent response to chat history
+          await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            id: response.id,
+            content: response.content,
+            sender: response.sender,
+            timestamp: response.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+            governanceData: response.governanceData,
+            shadowGovernanceData: response.shadowGovernanceData,
+          });
+        } catch (historyError) {
+          console.warn('Failed to save to chat history:', historyError);
+          // Don't break the chat flow if history fails
+        }
+      } else if (!currentChatSession && selectedChatbot && currentUser?.uid) {
+        // Auto-create a new chat session if none exists
+        try {
+          const newSession = await chatHistoryService.createChatSession(
+            selectedChatbot.id,
+            selectedChatbot.name,
+            currentUser.uid
+          );
+          setCurrentChatSession(newSession);
+          
+          // Add both messages to the new session
+          await chatHistoryService.addMessageToSession(newSession.id, {
+            id: userMessage.id,
+            content: userMessage.content,
+            sender: userMessage.sender,
+            timestamp: userMessage.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+          });
+          
+          await chatHistoryService.addMessageToSession(newSession.id, {
+            id: response.id,
+            content: response.content,
+            sender: response.sender,
+            timestamp: response.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+            governanceData: response.governanceData,
+            shadowGovernanceData: response.shadowGovernanceData,
+          });
+        } catch (sessionError) {
+          console.warn('Failed to create chat session:', sessionError);
+        }
+      }
+      
       setMessageInput('');
+      setAttachedFiles([]); // Clear attached files after sending
       
       console.log(`✅ [ChatPanel] Message sent and response received`);
     } catch (error) {
@@ -1070,6 +1141,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {[
+                    { key: 'chats', label: 'CHATS' },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
@@ -1110,6 +1182,41 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
               {/* Panel Content */}
               <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                {rightPanelType === 'chats' && selectedChatbot && (
+                  <ChatHistoryPanel
+                    agentId={selectedChatbot.id}
+                    agentName={selectedChatbot.name}
+                    currentSessionId={currentChatSession?.id}
+                    onChatSelect={(session) => {
+                      setCurrentChatSession(session);
+                      // Load the chat messages into the current chat interface
+                      setChatMessages(session.messages.map(msg => ({
+                        id: msg.id,
+                        content: msg.content,
+                        sender: msg.sender,
+                        timestamp: msg.timestamp,
+                        agentName: msg.agentName,
+                        agentId: msg.agentId,
+                        attachments: msg.attachments,
+                        governanceData: msg.governanceData,
+                        shadowGovernanceData: msg.shadowGovernanceData,
+                      })));
+                    }}
+                    onNewChat={() => {
+                      // Clear current chat and start fresh
+                      setCurrentChatSession(null);
+                      setChatMessages([]);
+                      setMessageInput('');
+                      setAttachedFiles([]);
+                    }}
+                    onShareChat={(contextId) => {
+                      setSharedChatContext(contextId);
+                      // Show success message or notification
+                      console.log('Chat shared with agent:', contextId);
+                    }}
+                  />
+                )}
+
                 {rightPanelType === 'analytics' && selectedChatbot && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
