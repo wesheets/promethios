@@ -247,27 +247,22 @@ export class ChatPanelGovernanceService {
       const currentUser = await this.getCurrentUser();
       const userId = currentUser?.uid || 'anonymous';
       
-      // Use the Universal Governance Adapter's enhanced response generation
-      const enhancedResponse = await this.universalGovernance.enhanceResponseWithGovernance(
-        agentId, // Agent ID first
-        message, // User message second
-        {
-          sessionId,
-          userId, // Add user ID for better context
-          environment: 'chat_panel',
-          governance_enabled: true,
-          conversationHistory: context?.conversationHistory || [],
-          attachments: attachmentData, // Include attachment data
-          userAuthenticated: !!currentUser, // Add authentication status
-          ...context
-        }
-      );
+      // Use the Universal Governance Adapter's sendMessage method for proper image processing
+      const enhancedResponse = await this.universalGovernance.sendMessage({
+        agentId: agentId,
+        message: message,
+        sessionId: sessionId,
+        attachments: attachmentData, // Include attachment data for image processing
+        conversationHistory: context?.conversationHistory || [],
+        provider: context?.provider, // Pass provider if available
+        model: context?.model // Pass model if available
+      });
       
       return {
-        response: enhancedResponse.enhancedMessage || this.generateFallbackResponse(message),
-        trustScore: enhancedResponse.governanceMetrics?.trustScore || 0.75,
+        response: enhancedResponse.response || this.generateFallbackResponse(message),
+        trustScore: enhancedResponse.trustScore || 0.75,
         governanceStatus: enhancedResponse.governanceMetrics?.blocked ? 'blocked' : 'approved',
-        metadata: enhancedResponse.metadata || { source: 'universal_governance' }
+        metadata: enhancedResponse.governanceContext || { source: 'universal_governance' }
       };
     } catch (error) {
       console.warn(`⚠️ [ChatPanel] Failed to generate chat response, using fallback:`, error);
