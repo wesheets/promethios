@@ -17,6 +17,7 @@ from src.routes.reporting_integration import reporting_bp
 from src.routes.veritas_enterprise import veritas_enterprise_bp
 from src.routes.deployment import deployment_bp
 from src.routes.native_llm import native_llm_bp
+from src.routes.promethios_llm import promethios_llm_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -34,6 +35,52 @@ app.register_blueprint(trust_boundaries_bp)
 app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
 app.register_blueprint(veritas_enterprise_bp)
 app.register_blueprint(deployment_bp, url_prefix='/api')
+app.register_blueprint(promethios_llm_bp, url_prefix='/api')
+
+# Register audit endpoint at root level for UniversalGovernanceAdapter
+@app.route('/audit/log', methods=['POST'])
+def root_audit_log():
+    """Root level audit log endpoint for UniversalGovernanceAdapter"""
+    from flask import request, jsonify
+    from datetime import datetime
+    import uuid
+    
+    try:
+        data = request.get_json()
+        
+        # Extract audit data
+        agent_id = data.get('agentId')
+        action = data.get('action')
+        details = data.get('details', {})
+        
+        print(f"📝 [Audit] Creating audit entry for agent {agent_id}: {action}")
+        
+        # Create audit log entry using existing models
+        audit_log = AgentLog(
+            agent_id=agent_id,
+            log_type='governance_audit',
+            message=f"Governance action: {action}",
+            metadata=details,
+            timestamp=datetime.utcnow()
+        )
+        
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        print(f"✅ [Audit] Audit entry created successfully")
+        
+        return jsonify({
+            'success': True,
+            'audit_id': audit_log.id,
+            'timestamp': audit_log.timestamp.isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ [Audit] Failed to create audit entry: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"

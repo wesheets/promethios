@@ -396,3 +396,51 @@ Trust Score: {self.governance_config.get('constitutional_compliance', 0.967):.3f
 # Global service instance
 promethios_llm_service = PrometheosLLMRenderService()
 
+
+    def generate_response(self, agent_id: str, user_id: str, message: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Synchronous wrapper for generate_response to maintain compatibility with existing routes
+        """
+        try:
+            # Convert to async call
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                result = loop.run_until_complete(self.chat_with_agent(agent_id, message, context))
+                
+                # Convert async result to expected format
+                return {
+                    'response': result.get('response', 'I apologize, but I encountered an issue processing your request.'),
+                    'agent_id': agent_id,
+                    'user_id': user_id,
+                    'governance_metrics': {
+                        'trust_score': result.get('trust_score', 0.75),
+                        'compliance_status': result.get('compliance_status', 'compliant'),
+                        'governance_score': result.get('governance_score', 0.8)
+                    },
+                    'timestamp': result.get('timestamp', datetime.utcnow().isoformat()),
+                    'success': True
+                }
+                
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            logger.error(f"Error in generate_response: {e}")
+            
+            # Return fallback response
+            return {
+                'response': self._generate_fallback_response(message),
+                'agent_id': agent_id,
+                'user_id': user_id,
+                'governance_metrics': {
+                    'trust_score': 0.75,
+                    'compliance_status': 'fallback',
+                    'governance_score': 0.7
+                },
+                'timestamp': datetime.utcnow().isoformat(),
+                'success': False,
+                'error': str(e)
+            }
+
