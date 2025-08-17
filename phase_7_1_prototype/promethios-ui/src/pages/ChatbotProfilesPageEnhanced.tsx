@@ -422,7 +422,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                       }}
                     >
-                      Hello {selectedChatbot?.identity.name || 'Ted Sheets'}
+                      Hello {user?.displayName || user?.email?.split('@')[0] || 'User'}
                     </Typography>
                     
                     <Typography 
