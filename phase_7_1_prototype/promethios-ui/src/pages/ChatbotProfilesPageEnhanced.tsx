@@ -56,6 +56,9 @@ import {
   Memory,
   Computer,
   Security,
+  AttachFile,
+  Mic,
+  MicOff,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { ChatbotStorageService } from '../services/ChatbotStorageService';
@@ -120,6 +123,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  
+  // File attachment and voice recording states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   // Workspace mode management
   const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
@@ -363,6 +372,72 @@ const ChatbotProfilesPageContent: React.FC = () => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
+    }
+  };
+
+  // File attachment functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // You can add file upload logic here
+      console.log('File selected:', file.name);
+      // For now, just add the file name to the message input
+      setMessageInput(prev => prev + `[Attached: ${file.name}] `);
+    }
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        setAudioBlob(audioBlob);
+        // You can add audio processing logic here
+        console.log('Recording stopped, audio blob created');
+        // For now, just add a placeholder to the message input
+        setMessageInput(prev => prev + '[Voice message recorded] ');
+        
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      console.log('Recording started');
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Could not access microphone. Please check your permissions.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+      console.log('Recording stopped');
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
 
@@ -713,6 +788,88 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                       <CircularProgress size={24} />
                     </Box>
+                  ) : chatMessages.length === 0 ? (
+                    /* Welcome Interface */
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        height: '100%',
+                        textAlign: 'center',
+                        px: 4
+                      }}
+                    >
+                      {/* Personalized Greeting */}
+                      <Typography 
+                        variant="h4" 
+                        sx={{ 
+                          color: 'white', 
+                          mb: 1, 
+                          fontWeight: 'bold',
+                          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' }
+                        }}
+                      >
+                        Hello {user?.displayName || user?.email?.split('@')[0] || 'there'}
+                      </Typography>
+                      
+                      <Typography 
+                        variant="h5" 
+                        sx={{ 
+                          color: '#94a3b8', 
+                          mb: 4,
+                          fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' }
+                        }}
+                      >
+                        What can I do for you?
+                      </Typography>
+
+                      {/* Suggestion Buttons */}
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          flexWrap: 'wrap', 
+                          gap: 2, 
+                          justifyContent: 'center',
+                          mb: 4,
+                          maxWidth: '600px'
+                        }}
+                      >
+                        {[
+                          { icon: '🖼️', label: 'Image', action: () => setMessageInput('Create an image of ') },
+                          { icon: '📊', label: 'Slides', action: () => setMessageInput('Create a presentation about ') },
+                          { icon: '🌐', label: 'Webpage', action: () => setMessageInput('Build a webpage for ') },
+                          { icon: '📈', label: 'Spreadsheet', action: () => setMessageInput('Create a spreadsheet for ') },
+                          { icon: '📊', label: 'Visualization', action: () => setMessageInput('Create a data visualization of ') },
+                          { icon: '➕', label: 'More', action: () => setMessageInput('Help me with ') }
+                        ].map((suggestion, index) => (
+                          <Button
+                            key={index}
+                            variant="outlined"
+                            onClick={suggestion.action}
+                            sx={{
+                              borderColor: '#334155',
+                              color: '#94a3b8',
+                              bgcolor: 'rgba(30, 41, 59, 0.5)',
+                              '&:hover': {
+                                borderColor: '#3b82f6',
+                                color: 'white',
+                                bgcolor: 'rgba(59, 130, 246, 0.1)'
+                              },
+                              px: 3,
+                              py: 1.5,
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            <Box sx={{ mr: 1 }}>{suggestion.icon}</Box>
+                            {suggestion.label}
+                          </Button>
+                        ))}
+                      </Box>
+                    </Box>
                   ) : (
                     <Stack spacing={2}>
                       {chatMessages.map((message) => (
@@ -754,8 +911,53 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
                 {/* Chat Input */}
                 <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                    {/* File Attachment Button */}
+                    <input
+                      type="file"
+                      id="file-upload"
+                      style={{ display: 'none' }}
+                      onChange={handleFileSelect}
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <Tooltip title="Attach file">
+                      <IconButton
+                        component="label"
+                        htmlFor="file-upload"
+                        sx={{
+                          color: selectedFile ? '#3b82f6' : '#64748b',
+                          '&:hover': { color: '#3b82f6', bgcolor: 'rgba(59, 130, 246, 0.1)' },
+                          width: 44,
+                          height: 44,
+                        }}
+                      >
+                        <AttachFile />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* Text Input */}
                     <Box sx={{ flex: 1, position: 'relative' }}>
+                      {selectedFile && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: -30, 
+                          left: 0, 
+                          bgcolor: '#374151', 
+                          px: 1, 
+                          py: 0.5, 
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          color: '#94a3b8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          📎 {selectedFile.name}
+                          <IconButton size="small" onClick={clearSelectedFile} sx={{ color: '#94a3b8', p: 0.25 }}>
+                            <Close sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
+                      )}
                       <Box
                         component="textarea"
                         value={messageInput}
@@ -773,7 +975,6 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           minHeight: '44px',
                           maxHeight: '120px',
                           p: 2,
-                          pr: 6,
                           bgcolor: '#0f172a',
                           border: '1px solid #334155',
                           borderRadius: 2,
@@ -791,6 +992,32 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         }}
                       />
                     </Box>
+
+                    {/* Voice Recording Button */}
+                    <Tooltip title={isRecording ? "Stop recording" : "Start voice recording"}>
+                      <IconButton
+                        onClick={toggleRecording}
+                        sx={{
+                          color: isRecording ? '#ef4444' : '#64748b',
+                          '&:hover': { 
+                            color: isRecording ? '#dc2626' : '#3b82f6', 
+                            bgcolor: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)' 
+                          },
+                          width: 44,
+                          height: 44,
+                          animation: isRecording ? 'pulse 1.5s infinite' : 'none',
+                          '@keyframes pulse': {
+                            '0%': { opacity: 1 },
+                            '50%': { opacity: 0.5 },
+                            '100%': { opacity: 1 },
+                          },
+                        }}
+                      >
+                        {isRecording ? <MicOff /> : <Mic />}
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* Send Button */}
                     <Button
                       variant="contained"
                       onClick={sendMessage}
