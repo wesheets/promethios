@@ -23,6 +23,8 @@ import {
   Tooltip,
   IconButton,
   Paper,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -33,8 +35,11 @@ import {
   Info,
   CheckCircle,
   Warning,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { ChatbotProfile } from '../../../services/ChatbotStorageService';
+import { AgentRoleManager } from '../../governance/AgentRoleManager';
+import { AgentRole, RoleContextualData } from '../../../services/AgentRoleService';
 
 interface PersonalityEditorProps {
   chatbot: ChatbotProfile;
@@ -159,6 +164,9 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({ chatbot, onSave, 
     (chatbot.chatbotConfig as any).customInstructions || ''
   );
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [assignedRoles, setAssignedRoles] = useState<AgentRole[]>([]);
+  const [roleContextualData, setRoleContextualData] = useState<RoleContextualData | null>(null);
 
   useEffect(() => {
     const originalPersonality = chatbot.chatbotConfig.personality as PersonalityType || 'professional';
@@ -195,6 +203,14 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({ chatbot, onSave, 
     setCustomInstructions((chatbot.chatbotConfig as any).customInstructions || '');
   };
 
+  const handleRoleChange = (roles: AgentRole[]) => {
+    setAssignedRoles(roles);
+  };
+
+  const handleContextualDataUpdate = (data: RoleContextualData | null) => {
+    setRoleContextualData(data);
+  };
+
   const selectedPersonality = personalityOptions.find(p => p.value === personality);
   const selectedBehavior = behaviorOptions.find(b => b.value === behavior);
   const selectedUseCase = useCaseOptions.find(u => u.value === useCase);
@@ -213,6 +229,57 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({ chatbot, onSave, 
           You have unsaved changes. Click "Save Changes" to apply them.
         </Alert>
       )}
+
+      {/* Role Context Display */}
+      {roleContextualData && (
+        <Alert severity="info" sx={{ mb: 3, bgcolor: '#0f172a', border: '1px solid #334155' }}>
+          <Typography variant="body2" sx={{ color: 'white' }}>
+            <strong>Active Role:</strong> {roleContextualData.roleName} | 
+            <strong> Trust Score:</strong> {(roleContextualData.governanceMetrics.trustScore * 100).toFixed(0)}% | 
+            <strong> Compliance:</strong> {(roleContextualData.governanceMetrics.complianceScore * 100).toFixed(0)}%
+          </Typography>
+        </Alert>
+      )}
+
+      {/* Tabs for Personality and Roles */}
+      <Tabs 
+        value={selectedTab} 
+        onChange={(_, newValue) => setSelectedTab(newValue)} 
+        sx={{ 
+          mb: 3,
+          '& .MuiTab-root': { color: '#64748b' },
+          '& .Mui-selected': { color: '#3b82f6' },
+          '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' }
+        }}
+      >
+        <Tab 
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Psychology sx={{ mr: 1 }} />
+              Personality
+            </Box>
+          } 
+        />
+        <Tab 
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <AssignmentIcon sx={{ mr: 1 }} />
+              Agent Roles
+              {assignedRoles.length > 0 && (
+                <Chip 
+                  label={assignedRoles.length} 
+                  size="small" 
+                  sx={{ ml: 1, bgcolor: '#3b82f6', color: 'white' }}
+                />
+              )}
+            </Box>
+          } 
+        />
+      </Tabs>
+
+      {/* Personality Tab */}
+      {selectedTab === 0 && (
+        <Box>
 
       {/* Personality Selection */}
       <Accordion defaultExpanded sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
@@ -492,6 +559,19 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({ chatbot, onSave, 
           Save Changes
         </Button>
       </Box>
+        </Box>
+      )}
+
+      {/* Agent Roles Tab */}
+      {selectedTab === 1 && (
+        <Box>
+          <AgentRoleManager
+            agentId={chatbot.id}
+            onRoleChange={handleRoleChange}
+            onContextualDataUpdate={handleContextualDataUpdate}
+          />
+        </Box>
+      )}
     </Box>
   );
 };
