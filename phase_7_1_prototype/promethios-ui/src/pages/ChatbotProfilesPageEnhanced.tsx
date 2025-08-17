@@ -182,18 +182,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [trustThreshold, setTrustThreshold] = useState<number>(70);
   const [riskCategories, setRiskCategories] = useState<string[]>(['financial_transactions', 'data_access']);
 
-  // Mock metrics data - in real implementation, this would come from analytics service
-  const getMockMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => ({
-    healthScore: Math.floor(Math.random() * 20) + 80, // 80-100%
-    trustScore: Math.floor(Math.random() * 15) + 85, // 85-100%
-    performanceRating: Math.floor(Math.random() * 25) + 75, // 75-100%
-    messageVolume: Math.floor(Math.random() * 5000) + 100, // 100-5100
-    responseTime: Math.random() * 2 + 0.5, // 0.5-2.5 seconds
-    satisfactionScore: Math.random() * 1 + 4, // 4.0-5.0
-    resolutionRate: Math.floor(Math.random() * 20) + 70, // 70-90%
-    lastActive: ['2 minutes ago', '5 minutes ago', '1 hour ago', '30 minutes ago'][Math.floor(Math.random() * 4)],
-    governanceAlerts: Math.floor(Math.random() * 3), // 0-2 alerts
-  });
+
 
   // Mock governance type function
   const getGovernanceType = (chatbot: ChatbotProfile) => {

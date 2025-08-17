@@ -64,7 +64,7 @@ export class MultiAgentGovernanceWrapper {
 
   private async initializeUniversalGovernance(): Promise<void> {
     try {
-      await this.universalGovernance.initialize();
+      // UniversalGovernanceAdapter initializes automatically in constructor
       console.log('✅ [MultiAgentGov] UniversalGovernanceAdapter initialized');
     } catch (error) {
       console.error('❌ [MultiAgentGov] Failed to initialize UniversalGovernanceAdapter:', error);
