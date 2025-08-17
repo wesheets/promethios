@@ -80,7 +80,17 @@ export class ChatPanelGovernanceService {
   // ============================================================================
 
   private async getCurrentUser() {
-    return auth.currentUser;
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn('⚠️ [ChatPanel] No authenticated user found, using anonymous mode');
+        return null;
+      }
+      return user;
+    } catch (error) {
+      console.error('❌ [ChatPanel] Failed to get current user:', error);
+      return null;
+    }
   }
 
   // ============================================================================
@@ -208,16 +218,22 @@ export class ChatPanelGovernanceService {
         }
       }
 
+      // Get current user for better context
+      const currentUser = await this.getCurrentUser();
+      const userId = currentUser?.uid || 'anonymous';
+      
       // Use the Universal Governance Adapter's enhanced response generation
       const enhancedResponse = await this.universalGovernance.enhanceResponseWithGovernance(
         agentId, // Agent ID first
         message, // User message second
         {
           sessionId,
+          userId, // Add user ID for better context
           environment: 'chat_panel',
           governance_enabled: true,
           conversationHistory: context?.conversationHistory || [],
           attachments: attachmentData, // Include attachment data
+          userAuthenticated: !!currentUser, // Add authentication status
           ...context
         }
       );

@@ -88,7 +88,8 @@ export class ChatHistoryService {
 
   private constructor() {
     this.receiptExtension = new ComprehensiveToolReceiptExtension();
-    this.initialize();
+    // Initialize synchronously - no async initialization needed
+    console.log('🗂️ ChatHistoryService initialized successfully');
   }
 
   static getInstance(): ChatHistoryService {
@@ -96,15 +97,6 @@ export class ChatHistoryService {
       ChatHistoryService.instance = new ChatHistoryService();
     }
     return ChatHistoryService.instance;
-  }
-
-  private async initialize(): Promise<void> {
-    try {
-      await this.receiptExtension.initialize();
-      console.log('🗂️ ChatHistoryService initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize ChatHistoryService:', error);
-    }
   }
 
   /**
