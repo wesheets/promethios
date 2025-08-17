@@ -841,11 +841,31 @@ const ChatbotProfilesPageContent: React.FC = () => {
               >
                 <Box display="flex" justifyContent="between" alignItems="center">
                   <Box flex={1}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '1rem' }}>
-                      🤖 {selectedChatbot.identity.name} • {getModelProvider(selectedChatbot.configuration?.selectedModel || '')}
-                    </Typography>
+                    <Box display="flex" alignItems="center" gap={2} mb={0.5}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                        🤖 {selectedChatbot.identity.name} • {getModelProvider(selectedChatbot.configuration?.selectedModel || '')}
+                      </Typography>
+                      {/* Inline Metrics */}
+                      <Box display="flex" gap={1}>
+                        <Box sx={{ px: 1, py: 0.25, bgcolor: '#1e293b', borderRadius: 0.5, border: '1px solid #334155' }}>
+                          <Typography variant="caption" sx={{ color: '#10b981', fontSize: '0.7rem', fontWeight: 600 }}>
+                            {getMockMetrics(selectedChatbot).healthScore}% Health
+                          </Typography>
+                        </Box>
+                        <Box sx={{ px: 1, py: 0.25, bgcolor: '#1e293b', borderRadius: 0.5, border: '1px solid #334155' }}>
+                          <Typography variant="caption" sx={{ color: '#3b82f6', fontSize: '0.7rem', fontWeight: 600 }}>
+                            {getMockMetrics(selectedChatbot).trustScore}/100 Trust
+                          </Typography>
+                        </Box>
+                        <Box sx={{ px: 1, py: 0.25, bgcolor: '#1e293b', borderRadius: 0.5, border: '1px solid #334155' }}>
+                          <Typography variant="caption" sx={{ color: '#8b5cf6', fontSize: '0.7rem', fontWeight: 600 }}>
+                            {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()} Msgs
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
                     <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.8rem' }}>
-                      {getMockMetrics(selectedChatbot).healthScore}% Health • {selectedChatbot.isDeployed ? 'Live' : 'Offline'} • {getGovernanceType(selectedChatbot)}
+                      {selectedChatbot.isDeployed ? 'Live' : 'Offline'} • {getGovernanceType(selectedChatbot)}
                     </Typography>
                   </Box>
                   <IconButton onClick={closeRightPanel} sx={{ color: '#64748b' }}>
@@ -857,310 +877,284 @@ const ChatbotProfilesPageContent: React.FC = () => {
               {/* Scorecard Buttons - Only show in workspace mode */}
               {isWorkspaceMode && (
                 <Box sx={{ p: 2, borderBottom: '1px solid #334155', bgcolor: '#0f172a', flexShrink: 0 }}>
-                  {/* Agent Metrics */}
-                  <Grid container spacing={1} sx={{ mb: 2 }}>
-                    <Grid item xs={4}>
-                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
-                          Health
-                        </Typography>
-                        <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>
-                          {getMockMetrics(selectedChatbot).healthScore}%
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
-                          Trust Score
-                        </Typography>
-                        <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.9rem' }}>
-                          {getMockMetrics(selectedChatbot).trustScore}/100
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Box textAlign="center" p={1} bgcolor="#1e293b" borderRadius={1}>
-                        <Typography variant="body2" color="#64748b" fontSize="0.7rem">
-                          Messages
-                        </Typography>
-                        <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 600, fontSize: '0.9rem' }}>
-                          {getMockMetrics(selectedChatbot).messageVolume.toLocaleString()}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
 
-                  {/* Compact Icon Navigation */}
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-                    <Tooltip title="Analytics">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('analytics');
-                          setRightPanelType('analytics');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'analytics' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'analytics' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'analytics' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Analytics fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                  {/* Compact Text Button Navigation */}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'analytics' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('analytics');
+                        setRightPanelType('analytics');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'analytics' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'analytics' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'analytics' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Analytics
+                    </Button>
                     
-                    <Tooltip title="Customize">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('customize');
-                          setRightPanelType('customize');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'customize' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'customize' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'customize' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Palette fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'customize' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('customize');
+                        setRightPanelType('customize');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'customize' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'customize' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'customize' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Customize
+                    </Button>
                     
-                    <Tooltip title="Personality">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('personality');
-                          setRightPanelType('personality');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'personality' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'personality' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'personality' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <SmartToy fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'personality' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('personality');
+                        setRightPanelType('personality');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'personality' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'personality' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'personality' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Personality
+                    </Button>
                     
-                    <Tooltip title="AI Knowledge">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('ai_knowledge');
-                          setRightPanelType('ai_knowledge');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'ai_knowledge' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Psychology fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'ai_knowledge' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('ai_knowledge');
+                        setRightPanelType('ai_knowledge');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'ai_knowledge' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'ai_knowledge' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      AI Knowledge
+                    </Button>
                     
-                    <Tooltip title="Tools">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('tools');
-                          setRightPanelType('tools');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'tools' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'tools' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'tools' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Settings fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'tools' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('tools');
+                        setRightPanelType('tools');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'tools' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'tools' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'tools' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Tools
+                    </Button>
                     
-                    <Tooltip title="Automation">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('automation');
-                          setRightPanelType('automation');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'automation' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'automation' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'automation' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <AutoAwesome fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'automation' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('automation');
+                        setRightPanelType('automation');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'automation' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'automation' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'automation' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Automation
+                    </Button>
                     
-                    <Tooltip title="Receipts">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('receipts');
-                          setRightPanelType('receipts');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'receipts' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'receipts' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'receipts' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Receipt fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'receipts' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('receipts');
+                        setRightPanelType('receipts');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'receipts' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'receipts' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'receipts' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Receipts
+                    </Button>
                     
-                    <Tooltip title="Memory">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('memory');
-                          setRightPanelType('memory');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'memory' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'memory' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'memory' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Memory fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'memory' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('memory');
+                        setRightPanelType('memory');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'memory' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'memory' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'memory' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Memory
+                    </Button>
                     
-                    <Tooltip title="Sandbox">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('sandbox');
-                          setRightPanelType('sandbox');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'sandbox' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'sandbox' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'sandbox' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Computer fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'sandbox' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('sandbox');
+                        setRightPanelType('sandbox');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'sandbox' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'sandbox' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'sandbox' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Sandbox
+                    </Button>
                     
-                    <Tooltip title="Governance">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWorkspaceSelectedTab('governance');
-                          setRightPanelType('governance');
-                        }}
-                        sx={{
-                          color: workspaceSelectedTab === 'governance' ? 'white' : '#94a3b8',
-                          bgcolor: workspaceSelectedTab === 'governance' ? '#3b82f6' : 'transparent',
-                          border: '1px solid #374151',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: workspaceSelectedTab === 'governance' ? '#2563eb' : '#1e293b' 
-                          },
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <Security fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'governance' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('governance');
+                        setRightPanelType('governance');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'governance' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'governance' ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'governance' ? '#2563eb' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Governance
+                    </Button>
+                    
+                    <Button
+                      size="small"
+                      variant={workspaceSelectedTab === 'deploy' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setWorkspaceSelectedTab('deploy');
+                        setRightPanelType('deploy');
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.7rem',
+                        height: 24,
+                        borderColor: '#374151',
+                        color: workspaceSelectedTab === 'deploy' ? 'white' : '#94a3b8',
+                        bgcolor: workspaceSelectedTab === 'deploy' ? '#10b981' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: workspaceSelectedTab === 'deploy' ? '#059669' : '#1e293b' 
+                        },
+                      }}
+                    >
+                      Deploy
+                    </Button>
                   </Box>
-
-                  {/* Chat and Deploy Buttons */}
-                  <Grid container spacing={1}>
-                    <Grid item xs={6}>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Chat />}
-                        fullWidth
-                        sx={{
-                          bgcolor: '#3b82f6',
-                          '&:hover': { bgcolor: '#2563eb' },
-                          fontWeight: 600,
-                        }}
-                      >
-                        Chat
-                      </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Rocket />}
-                        fullWidth
-                        onClick={() => {
-                          setWorkspaceSelectedTab('deployment');
-                          setRightPanelType('deployment');
-                        }}
-                        sx={{
-                          bgcolor: '#10b981',
-                          '&:hover': { bgcolor: '#059669' },
-                          fontWeight: 600,
-                        }}
-                      >
-                        Deploy
-                      </Button>
-                    </Grid>
-                  </Grid>
                 </Box>
               )}
 
