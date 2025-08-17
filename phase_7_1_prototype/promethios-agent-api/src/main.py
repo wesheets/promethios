@@ -37,7 +37,17 @@ app.register_blueprint(veritas_enterprise_bp)
 app.register_blueprint(deployment_bp, url_prefix='/api')
 app.register_blueprint(promethios_llm_bp, url_prefix='/api')
 
-# Register audit endpoint at root level for UniversalGovernanceAdapter
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database (using single db instance)
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
+# Register audit endpoint at root level for UniversalGovernanceAdapter (after DB init)
 @app.route('/audit/log', methods=['POST'])
 def root_audit_log():
     """Root level audit log endpoint for UniversalGovernanceAdapter"""
@@ -81,16 +91,6 @@ def root_audit_log():
             'success': False,
             'error': str(e)
         }), 500
-
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize database (using single db instance)
-db.init_app(app)
-
-with app.app_context():
-    db.create_all()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
