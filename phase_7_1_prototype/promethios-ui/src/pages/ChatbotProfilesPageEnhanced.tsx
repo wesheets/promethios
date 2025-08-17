@@ -558,7 +558,11 @@ const ChatbotProfilesPageContent: React.FC = () => {
           height: '100vh'
         }}
       >
-        <Container sx={{ py: isWorkspaceMode ? 0 : 2, height: '100%', maxWidth: isWorkspaceMode ? 'none' : undefined, px: isWorkspaceMode ? 0 : undefined }}>
+        {isWorkspaceMode ? (
+          <Box sx={{ height: '100%', width: '100%' }}>
+        ) : (
+          <Container sx={{ py: 2, height: '100%' }}>
+        )}
           {/* Chatbot Scorecards Grid - Only show when NOT in workspace mode */}
           {!isWorkspaceMode && (
             <Box sx={{ height: '100%', overflow: 'auto' }}>
@@ -789,7 +793,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       <CircularProgress size={24} />
                     </Box>
                   ) : chatMessages.length === 0 ? (
-                    /* Welcome Interface */
+                    /* Welcome Interface - Manus Style */
                     <Box 
                       sx={{ 
                         display: 'flex', 
@@ -803,37 +807,164 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     >
                       {/* Personalized Greeting */}
                       <Typography 
-                        variant="h4" 
+                        variant="h3" 
                         sx={{ 
                           color: 'white', 
                           mb: 1, 
-                          fontWeight: 'bold',
-                          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' }
+                          fontWeight: 500,
+                          fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                         }}
                       >
-                        Hello {user?.displayName || user?.email?.split('@')[0] || 'there'}
+                        Hello {user?.displayName || user?.email?.split('@')[0] || 'Ted Sheets'}
                       </Typography>
                       
                       <Typography 
                         variant="h5" 
                         sx={{ 
                           color: '#94a3b8', 
-                          mb: 4,
-                          fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' }
+                          mb: 6,
+                          fontWeight: 400,
+                          fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }
                         }}
                       >
                         What can I do for you?
                       </Typography>
 
-                      {/* Suggestion Buttons */}
+                      {/* Centered Chat Input Box */}
+                      <Box 
+                        sx={{ 
+                          width: '100%',
+                          maxWidth: '700px',
+                          mb: 4
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            bgcolor: '#374151',
+                            borderRadius: '24px',
+                            border: '1px solid #4b5563',
+                            overflow: 'hidden',
+                            '&:focus-within': {
+                              borderColor: '#3b82f6',
+                              boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                            }
+                          }}
+                        >
+                          {/* File Upload Input */}
+                          <input
+                            type="file"
+                            id="welcome-file-upload"
+                            style={{ display: 'none' }}
+                            onChange={handleFileSelect}
+                            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                          />
+                          
+                          {/* Selected File Preview */}
+                          {selectedFile && (
+                            <Box sx={{ 
+                              position: 'absolute', 
+                              top: -40, 
+                              left: 20, 
+                              bgcolor: '#1f2937', 
+                              px: 2, 
+                              py: 1, 
+                              borderRadius: '12px',
+                              fontSize: '0.875rem',
+                              color: '#d1d5db',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              border: '1px solid #374151'
+                            }}>
+                              📎 {selectedFile.name}
+                              <IconButton size="small" onClick={clearSelectedFile} sx={{ color: '#9ca3af', p: 0.5 }}>
+                                <Close sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          )}
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+                            {/* Attachment Button */}
+                            <Tooltip title="Attach file">
+                              <IconButton
+                                component="label"
+                                htmlFor="welcome-file-upload"
+                                sx={{
+                                  color: selectedFile ? '#3b82f6' : '#9ca3af',
+                                  '&:hover': { 
+                                    color: '#3b82f6', 
+                                    bgcolor: 'rgba(59, 130, 246, 0.1)' 
+                                  },
+                                  ml: 1
+                                }}
+                              >
+                                <AttachFile sx={{ fontSize: 20 }} />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* Text Input */}
+                            <Box
+                              component="textarea"
+                              value={messageInput}
+                              onChange={(e) => setMessageInput(e.target.value)}
+                              onKeyPress={handleKeyPress}
+                              placeholder="Assign a task or ask anything..."
+                              disabled={chatLoading}
+                              sx={{
+                                flex: 1,
+                                border: 'none',
+                                outline: 'none',
+                                bgcolor: 'transparent',
+                                color: 'white',
+                                fontSize: '16px',
+                                fontFamily: 'inherit',
+                                resize: 'none',
+                                minHeight: '24px',
+                                maxHeight: '120px',
+                                py: 2,
+                                px: 2,
+                                '&::placeholder': {
+                                  color: '#9ca3af',
+                                },
+                              }}
+                              rows={1}
+                            />
+
+                            {/* Voice Recording Button */}
+                            <Tooltip title={isRecording ? "Stop recording" : "Start voice recording"}>
+                              <IconButton
+                                onClick={toggleRecording}
+                                sx={{
+                                  color: isRecording ? '#ef4444' : '#9ca3af',
+                                  '&:hover': { 
+                                    color: isRecording ? '#dc2626' : '#3b82f6', 
+                                    bgcolor: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)' 
+                                  },
+                                  mr: 1,
+                                  animation: isRecording ? 'pulse 1.5s infinite' : 'none',
+                                  '@keyframes pulse': {
+                                    '0%': { opacity: 1 },
+                                    '50%': { opacity: 0.5 },
+                                    '100%': { opacity: 1 },
+                                  },
+                                }}
+                              >
+                                {isRecording ? <MicOff sx={{ fontSize: 20 }} /> : <Mic sx={{ fontSize: 20 }} />}
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      {/* Refined Suggestion Buttons */}
                       <Box 
                         sx={{ 
                           display: 'flex', 
                           flexWrap: 'wrap', 
                           gap: 2, 
                           justifyContent: 'center',
-                          mb: 4,
-                          maxWidth: '600px'
+                          maxWidth: '700px'
                         }}
                       >
                         {[
@@ -849,22 +980,24 @@ const ChatbotProfilesPageContent: React.FC = () => {
                             variant="outlined"
                             onClick={suggestion.action}
                             sx={{
-                              borderColor: '#334155',
-                              color: '#94a3b8',
-                              bgcolor: 'rgba(30, 41, 59, 0.5)',
+                              borderColor: '#4b5563',
+                              color: '#d1d5db',
+                              bgcolor: 'rgba(55, 65, 81, 0.5)',
                               '&:hover': {
-                                borderColor: '#3b82f6',
+                                borderColor: '#6b7280',
                                 color: 'white',
-                                bgcolor: 'rgba(59, 130, 246, 0.1)'
+                                bgcolor: 'rgba(75, 85, 99, 0.8)'
                               },
                               px: 3,
                               py: 1.5,
-                              borderRadius: 2,
+                              borderRadius: '12px',
                               textTransform: 'none',
-                              fontSize: '0.875rem'
+                              fontSize: '0.875rem',
+                              fontWeight: 500,
+                              minWidth: 'auto'
                             }}
                           >
-                            <Box sx={{ mr: 1 }}>{suggestion.icon}</Box>
+                            <Box sx={{ mr: 1.5, fontSize: '1rem' }}>{suggestion.icon}</Box>
                             {suggestion.label}
                           </Button>
                         ))}
@@ -911,53 +1044,74 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
                 {/* Chat Input */}
                 <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                    {/* File Attachment Button */}
+                  <Box sx={{ position: 'relative' }}>
+                    {/* File Upload Input */}
                     <input
                       type="file"
-                      id="file-upload"
+                      id="chat-file-upload"
                       style={{ display: 'none' }}
                       onChange={handleFileSelect}
                       accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
                     />
-                    <Tooltip title="Attach file">
-                      <IconButton
-                        component="label"
-                        htmlFor="file-upload"
-                        sx={{
-                          color: selectedFile ? '#3b82f6' : '#64748b',
-                          '&:hover': { color: '#3b82f6', bgcolor: 'rgba(59, 130, 246, 0.1)' },
-                          width: 44,
-                          height: 44,
-                        }}
-                      >
-                        <AttachFile />
-                      </IconButton>
-                    </Tooltip>
+                    
+                    {/* Selected File Preview */}
+                    {selectedFile && (
+                      <Box sx={{ 
+                        position: 'absolute', 
+                        top: -35, 
+                        left: 0, 
+                        bgcolor: '#1f2937', 
+                        px: 2, 
+                        py: 1, 
+                        borderRadius: '8px',
+                        fontSize: '0.75rem',
+                        color: '#d1d5db',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        border: '1px solid #374151'
+                      }}>
+                        📎 {selectedFile.name}
+                        <IconButton size="small" onClick={clearSelectedFile} sx={{ color: '#9ca3af', p: 0.25 }}>
+                          <Close sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    )}
 
-                    {/* Text Input */}
-                    <Box sx={{ flex: 1, position: 'relative' }}>
-                      {selectedFile && (
-                        <Box sx={{ 
-                          position: 'absolute', 
-                          top: -30, 
-                          left: 0, 
-                          bgcolor: '#374151', 
-                          px: 1, 
-                          py: 0.5, 
-                          borderRadius: 1,
-                          fontSize: '0.75rem',
-                          color: '#94a3b8',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}>
-                          📎 {selectedFile.name}
-                          <IconButton size="small" onClick={clearSelectedFile} sx={{ color: '#94a3b8', p: 0.25 }}>
-                            <Close sx={{ fontSize: 14 }} />
-                          </IconButton>
-                        </Box>
-                      )}
+                    {/* Integrated Input Box */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        bgcolor: '#0f172a',
+                        border: '1px solid #334155',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        '&:focus-within': {
+                          borderColor: '#3b82f6',
+                        }
+                      }}
+                    >
+                      {/* Attachment Button */}
+                      <Tooltip title="Attach file">
+                        <IconButton
+                          component="label"
+                          htmlFor="chat-file-upload"
+                          sx={{
+                            color: selectedFile ? '#3b82f6' : '#64748b',
+                            '&:hover': { 
+                              color: '#3b82f6', 
+                              bgcolor: 'rgba(59, 130, 246, 0.1)' 
+                            },
+                            m: 1,
+                            p: 1
+                          }}
+                        >
+                          <AttachFile sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* Text Input */}
                       <Box
                         component="textarea"
                         value={messageInput}
@@ -971,73 +1125,77 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         placeholder="Type your message..."
                         disabled={chatLoading}
                         sx={{
-                          width: '100%',
-                          minHeight: '44px',
-                          maxHeight: '120px',
-                          p: 2,
-                          bgcolor: '#0f172a',
-                          border: '1px solid #334155',
-                          borderRadius: 2,
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          bgcolor: 'transparent',
                           color: 'white',
                           fontSize: '14px',
                           fontFamily: 'inherit',
-                          resize: 'vertical',
-                          '&:focus': {
-                            outline: 'none',
-                            borderColor: '#3b82f6',
-                          },
+                          resize: 'none',
+                          minHeight: '20px',
+                          maxHeight: '120px',
+                          py: 2,
+                          px: 1,
                           '&::placeholder': {
                             color: '#64748b',
                           },
                         }}
+                        rows={1}
                       />
-                    </Box>
 
-                    {/* Voice Recording Button */}
-                    <Tooltip title={isRecording ? "Stop recording" : "Start voice recording"}>
-                      <IconButton
-                        onClick={toggleRecording}
+                      {/* Voice Recording Button */}
+                      <Tooltip title={isRecording ? "Stop recording" : "Start voice recording"}>
+                        <IconButton
+                          onClick={toggleRecording}
+                          sx={{
+                            color: isRecording ? '#ef4444' : '#64748b',
+                            '&:hover': { 
+                              color: isRecording ? '#dc2626' : '#3b82f6', 
+                              bgcolor: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)' 
+                            },
+                            m: 1,
+                            p: 1,
+                            animation: isRecording ? 'pulse 1.5s infinite' : 'none',
+                            '@keyframes pulse': {
+                              '0%': { opacity: 1 },
+                              '50%': { opacity: 0.5 },
+                              '100%': { opacity: 1 },
+                            },
+                          }}
+                        >
+                          {isRecording ? <MicOff sx={{ fontSize: 18 }} /> : <Mic sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* Send Button */}
+                      <Button
+                        variant="contained"
+                        onClick={sendMessage}
+                        disabled={!messageInput.trim() || chatLoading}
                         sx={{
-                          color: isRecording ? '#ef4444' : '#64748b',
-                          '&:hover': { 
-                            color: isRecording ? '#dc2626' : '#3b82f6', 
-                            bgcolor: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)' 
-                          },
-                          width: 44,
-                          height: 44,
-                          animation: isRecording ? 'pulse 1.5s infinite' : 'none',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.5 },
-                            '100%': { opacity: 1 },
-                          },
+                          minWidth: '40px',
+                          height: '40px',
+                          bgcolor: '#3b82f6',
+                          '&:hover': { bgcolor: '#2563eb' },
+                          '&:disabled': { bgcolor: '#374151' },
+                          m: 1,
+                          borderRadius: '8px'
                         }}
                       >
-                        {isRecording ? <MicOff /> : <Mic />}
-                      </IconButton>
-                    </Tooltip>
-
-                    {/* Send Button */}
-                    <Button
-                      variant="contained"
-                      onClick={sendMessage}
-                      disabled={!messageInput.trim() || chatLoading}
-                      sx={{
-                        minWidth: '44px',
-                        height: '44px',
-                        bgcolor: '#3b82f6',
-                        '&:hover': { bgcolor: '#2563eb' },
-                        '&:disabled': { bgcolor: '#374151' },
-                      }}
-                    >
-                      <Send sx={{ fontSize: 20 }} />
-                    </Button>
+                        <Send sx={{ fontSize: 18 }} />
+                      </Button>
+                    </Box>
                   </Box>
                 </Box>
               </Box>
             </Box>
           )}
-        </Container>
+        {isWorkspaceMode ? (
+          </Box>
+        ) : (
+          </Container>
+        )}
       </Box>
 
       {/* Right Panel */}
