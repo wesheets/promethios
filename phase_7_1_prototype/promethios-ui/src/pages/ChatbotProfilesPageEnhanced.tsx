@@ -401,22 +401,152 @@ const ChatbotProfilesPageContent: React.FC = () => {
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
                 {chatMessages.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', mt: 8 }}>
-                    <Avatar
-                      src={selectedChatbot.identity.avatar}
-                      sx={{ width: 80, height: 80, mx: 'auto', mb: 3 }}
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      height: '100%',
+                      textAlign: 'center',
+                      px: 4
+                    }}
+                  >
+                    {/* Personalized Greeting */}
+                    <Typography 
+                      variant="h3" 
+                      sx={{ 
+                        color: 'white', 
+                        mb: 1, 
+                        fontWeight: 500,
+                        fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                      }}
                     >
-                      {selectedChatbot.identity.name.charAt(0)}
-                    </Avatar>
-                    <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
-                      {selectedChatbot.identity.name}
+                      Hello {selectedChatbot?.identity.name || 'Ted Sheets'}
                     </Typography>
-                    <Typography sx={{ color: '#64748b', mb: 4, maxWidth: 400, mx: 'auto' }}>
-                      {selectedChatbot.identity.description}
+                    
+                    <Typography 
+                      variant="h5" 
+                      sx={{ 
+                        color: '#94a3b8', 
+                        mb: 6,
+                        fontWeight: 400,
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }
+                      }}
+                    >
+                      What can I do for you?
                     </Typography>
-                    <Typography sx={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      Start a conversation with your AI agent
-                    </Typography>
+
+                    {/* Centered Chat Input Box */}
+                    <Box 
+                      sx={{ 
+                        width: '100%',
+                        maxWidth: '700px',
+                        mb: 4
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          bgcolor: '#374151',
+                          borderRadius: '24px',
+                          border: '1px solid #4b5563',
+                          overflow: 'hidden',
+                          '&:focus-within': {
+                            borderColor: '#3b82f6',
+                            boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+                          {/* Text Input */}
+                          <TextField
+                            fullWidth
+                            placeholder="Type your message..."
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                            variant="standard"
+                            disabled={chatLoading}
+                            InputProps={{
+                              disableUnderline: true,
+                              sx: {
+                                color: 'white',
+                                fontSize: '1rem',
+                                px: 2,
+                                py: 1.5,
+                                '& input::placeholder': {
+                                  color: '#9ca3af',
+                                  opacity: 1
+                                }
+                              }
+                            }}
+                          />
+                          
+                          {/* Send Button */}
+                          <IconButton
+                            onClick={handleSendMessage}
+                            disabled={!messageInput.trim() || chatLoading}
+                            sx={{
+                              color: messageInput.trim() ? '#3b82f6' : '#6b7280',
+                              '&:hover': { 
+                                color: '#2563eb', 
+                                bgcolor: 'rgba(59, 130, 246, 0.1)' 
+                              },
+                              mr: 1
+                            }}
+                          >
+                            {chatLoading ? <CircularProgress size={20} /> : <Send sx={{ fontSize: 20 }} />}
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    {/* Tool Suggestion Buttons */}
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: 2, 
+                        justifyContent: 'center',
+                        maxWidth: '700px'
+                      }}
+                    >
+                      {[
+                        { icon: '🖼️', label: 'Image', action: () => setMessageInput('Create an image of ') },
+                        { icon: '📊', label: 'Slides', action: () => setMessageInput('Create a presentation about ') },
+                        { icon: '🌐', label: 'Webpage', action: () => setMessageInput('Build a webpage for ') },
+                        { icon: '📈', label: 'Spreadsheet', action: () => setMessageInput('Create a spreadsheet for ') },
+                        { icon: '📊', label: 'Visualization', action: () => setMessageInput('Create a data visualization of ') },
+                        { icon: '➕', label: 'More', action: () => setMessageInput('Help me with ') }
+                      ].map((suggestion, index) => (
+                        <Button
+                          key={index}
+                          variant="outlined"
+                          onClick={suggestion.action}
+                          sx={{
+                            borderColor: '#4b5563',
+                            color: '#d1d5db',
+                            bgcolor: 'rgba(55, 65, 81, 0.5)',
+                            '&:hover': {
+                              borderColor: '#6b7280',
+                              color: 'white',
+                              bgcolor: 'rgba(75, 85, 99, 0.8)'
+                            },
+                            px: 3,
+                            py: 1.5,
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            minWidth: 'auto'
+                          }}
+                        >
+                          <Box sx={{ mr: 1.5, fontSize: '1rem' }}>{suggestion.icon}</Box>
+                          {suggestion.label}
+                        </Button>
+                      ))}
+                    </Box>
                   </Box>
                 ) : (
                   <Stack spacing={3}>
