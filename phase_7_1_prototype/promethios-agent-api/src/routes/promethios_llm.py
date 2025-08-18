@@ -499,6 +499,7 @@ async def universal_governance_chat():
         
         # Extract request data
         agent_id = data.get('agent_id', 'default_agent')
+        user_id = data.get('user_id', 'default_user')
         message = data.get('message', '')
         session_id = data.get('session_id', f'session_{int(time.time())}')
         attachments = data.get('attachments', [])

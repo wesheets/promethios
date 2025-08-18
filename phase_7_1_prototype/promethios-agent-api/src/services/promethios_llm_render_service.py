@@ -683,22 +683,51 @@ promethios_llm_service = PromethiosLLMRenderService()
                 message_content = response.choices[0].message
                 
                 if hasattr(message_content, 'tool_calls') and message_content.tool_calls:
-                    return {
-                        'content': message_content.content or '',
-                        'function_calls': [
-                            {
+                    logger.info(f"🔧 [ToolExecution] OpenAI returned {len(message_content.tool_calls)} tool calls")
+                    
+                    # Execute each tool call
+                    tool_results = []
+                    for tool_call in message_content.tool_calls:
+                        logger.info(f"🔧 [ToolExecution] Executing tool: {tool_call.function.name}")
+                        
+                        try:
+                            # Execute tool via existing endpoint
+                            result = await self._execute_tool(
+                                tool_call.function.name, 
+                                tool_call.function.arguments,
+                                agent_id,
+                                context
+                            )
+                            tool_results.append({
+                                'tool_call_id': tool_call.id,
                                 'name': tool_call.function.name,
-                                'arguments': tool_call.function.arguments
-                            }
-                            for tool_call in message_content.tool_calls
-                        ]
+                                'result': result
+                            })
+                            logger.info(f"✅ [ToolExecution] Tool {tool_call.function.name} executed successfully")
+                            
+                        except Exception as e:
+                            logger.error(f"❌ [ToolExecution] Tool {tool_call.function.name} failed: {str(e)}")
+                            tool_results.append({
+                                'tool_call_id': tool_call.id,
+                                'name': tool_call.function.name,
+                                'result': f"Error: {str(e)}"
+                            })
+                    
+                    # Feed tool results back to AI for final response
+                    logger.info(f"🔄 [ToolIntegration] Integrating {len(tool_results)} tool results")
+                    final_response = await self._integrate_tool_results_openai(
+                        tool_results, messages, message_content, provider, model
+                    )
+                    
+                    return {
+                        'content': final_response,
+                        'function_calls': [{'name': tr['name'], 'arguments': '', 'result': tr['result']} for tr in tool_results]
                     }
                 else:
                     return {
                         'content': message_content.content,
                         'function_calls': []
-                    }
-                    
+                    }                
             elif provider.lower() == 'anthropic':
                 import anthropic
                 
@@ -717,21 +746,60 @@ promethios_llm_service = PromethiosLLMRenderService()
                 
                 # Parse Anthropic response
                 content = ''
-                function_calls = []
+                tool_calls = []
                 
-                for content_block in response.content:
-                    if content_block.type == 'text':
-                        content += content_block.text
-                    elif content_block.type == 'tool_use':
-                        function_calls.append({
-                            'name': content_block.name,
-                            'arguments': json.dumps(content_block.input)
-                        })
+                for block in response.content:
+                    if block.type == 'text':
+                        content += block.text
+                    elif block.type == 'tool_use':
+                        tool_calls.append(block)
                 
-                return {
-                    'content': content,
-                    'function_calls': function_calls
-                }
+                if tool_calls:
+                    logger.info(f"🔧 [ToolExecution] Anthropic returned {len(tool_calls)} tool calls")
+                    
+                    # Execute each tool call
+                    tool_results = []
+                    for tool_call in tool_calls:
+                        logger.info(f"🔧 [ToolExecution] Executing tool: {tool_call.name}")
+                        
+                        try:
+                            # Execute tool via existing endpoint
+                            result = await self._execute_tool(
+                                tool_call.name, 
+                                json.dumps(tool_call.input),
+                                agent_id,
+                                context
+                            )
+                            tool_results.append({
+                                'tool_use_id': tool_call.id,
+                                'name': tool_call.name,
+                                'result': result
+                            })
+                            logger.info(f"✅ [ToolExecution] Tool {tool_call.name} executed successfully")
+                            
+                        except Exception as e:
+                            logger.error(f"❌ [ToolExecution] Tool {tool_call.name} failed: {str(e)}")
+                            tool_results.append({
+                                'tool_use_id': tool_call.id,
+                                'name': tool_call.name,
+                                'result': f"Error: {str(e)}"
+                            })
+                    
+                    # Feed tool results back to AI for final response
+                    logger.info(f"🔄 [ToolIntegration] Integrating {len(tool_results)} tool results")
+                    final_response = await self._integrate_tool_results_anthropic(
+                        tool_results, messages, response, provider, model
+                    )
+                    
+                    return {
+                        'content': final_response,
+                        'function_calls': [{'name': tr['name'], 'arguments': '', 'result': tr['result']} for tr in tool_results]
+                    }
+                else:
+                    return {
+                        'content': content,
+                        'function_calls': []
+                    }
                 
             else:
                 # Fallback for other providers - no function calling support yet
@@ -741,12 +809,167 @@ promethios_llm_service = PromethiosLLMRenderService()
                     'function_calls': []
                 }
                 
-        except Exception as e:
-            logger.error(f"❌ [FunctionCalling] AI call failed: {e}")
-            return {
-                'content': f"I encountered an error while trying to process your request: {str(e)}",
-                'function_calls': []
+    async def _execute_tool(self, tool_name: str, arguments: str, agent_id: str, context: Dict[str, Any]) -> str:
+        """
+        Bridge method to execute tools via the existing UniversalToolsService
+        
+        Args:
+            tool_name: Name of the tool to execute
+            arguments: JSON string of tool arguments
+            agent_id: Agent identifier for governance
+            context: Additional context for execution
+            
+        Returns:
+            String result from tool execution
+        """
+        try:
+            # Import the existing tool service
+            from .universal_tools_service import UniversalToolsService
+            
+            # Parse arguments
+            try:
+                params = json.loads(arguments) if isinstance(arguments, str) else arguments
+            except json.JSONDecodeError:
+                params = {"query": arguments}  # Fallback for simple string arguments
+            
+            # Create tool service instance
+            tools_service = UniversalToolsService()
+            
+            # Extract user message from context
+            user_message = context.get('user_message', 'Tool execution request')
+            
+            # Create governance context
+            governance_context = {
+                'agent_id': agent_id,
+                'session_id': context.get('session_id'),
+                'user_id': context.get('user_id', 'unknown'),
+                'timestamp': datetime.utcnow().isoformat(),
+                'tool_request_context': context
             }
+            
+            # Execute tool via existing service
+            result = await tools_service.execute_tool(
+                tool_id=tool_name,
+                parameters=params,
+                user_message=user_message,
+                governance_context=governance_context
+            )
+            
+            # Extract the actual result content
+            if result.get('success'):
+                tool_result = result.get('result', {})
+                if isinstance(tool_result, dict):
+                    # Format the result for AI consumption
+                    if 'content' in tool_result:
+                        return tool_result['content']
+                    elif 'data' in tool_result:
+                        return str(tool_result['data'])
+                    else:
+                        return json.dumps(tool_result, indent=2)
+                else:
+                    return str(tool_result)
+            else:
+                return f"Tool execution failed: {result.get('error', 'Unknown error')}"
+                
+        except Exception as e:
+            logger.error(f"❌ [ToolBridge] Failed to execute tool {tool_name}: {str(e)}")
+            return f"Error executing {tool_name}: {str(e)}"
+
+    async def _integrate_tool_results_openai(self, tool_results: List[Dict], messages: List[Dict], 
+                                           original_response, provider: str, model: str) -> str:
+        """
+        Integrate tool results back into OpenAI for final response
+        """
+        try:
+            import openai
+            
+            # Build messages with tool results
+            enhanced_messages = messages.copy()
+            enhanced_messages.append({
+                "role": "assistant", 
+                "content": original_response.content,
+                "tool_calls": [{"id": tr["tool_call_id"], "type": "function", 
+                               "function": {"name": tr["name"], "arguments": "{}"}} for tr in tool_results]
+            })
+            
+            # Add tool results as tool messages
+            for tool_result in tool_results:
+                enhanced_messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_result["tool_call_id"],
+                    "content": str(tool_result["result"])
+                })
+            
+            # Get final response from AI
+            final_response = await openai.ChatCompletion.acreate(
+                model=model,
+                messages=enhanced_messages
+            )
+            
+            return final_response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"❌ [ToolIntegration] OpenAI integration failed: {str(e)}")
+            # Fallback: return tool results directly
+            results_summary = "\n\n".join([f"**{tr['name']}:** {tr['result']}" for tr in tool_results])
+            return f"Based on the tool execution results:\n\n{results_summary}"
+
+    async def _integrate_tool_results_anthropic(self, tool_results: List[Dict], messages: List[Dict], 
+                                              original_response, provider: str, model: str) -> str:
+        """
+        Integrate tool results back into Anthropic for final response
+        """
+        try:
+            import anthropic
+            
+            # Build messages with tool results
+            enhanced_messages = messages.copy()
+            
+            # Add assistant message with tool use
+            assistant_content = []
+            for block in original_response.content:
+                assistant_content.append(block)
+            
+            enhanced_messages.append({
+                "role": "assistant",
+                "content": assistant_content
+            })
+            
+            # Add tool results as user message
+            tool_results_content = []
+            for tool_result in tool_results:
+                tool_results_content.append({
+                    "type": "tool_result",
+                    "tool_use_id": tool_result["tool_use_id"],
+                    "content": str(tool_result["result"])
+                })
+            
+            enhanced_messages.append({
+                "role": "user",
+                "content": tool_results_content
+            })
+            
+            # Get final response from AI
+            client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+            final_response = await client.messages.create(
+                model=model,
+                messages=enhanced_messages,
+                max_tokens=4000
+            )
+            
+            # Extract text content
+            final_content = ''
+            for block in final_response.content:
+                if block.type == 'text':
+                    final_content += block.text
+            
+            return final_content
+            
+        except Exception as e:
+            logger.error(f"❌ [ToolIntegration] Anthropic integration failed: {str(e)}")
+            # Fallback: return tool results directly
+            results_summary = "\n\n".join([f"**{tr['name']}:** {tr['result']}" for tr in tool_results])
+            return f"Based on the tool execution results:\n\n{results_summary}"
     
     async def _execute_function_calls(self, function_calls: list, agent_id: str, context: Dict[str, Any]) -> list:
         """Execute function calls by routing to tool endpoints"""
