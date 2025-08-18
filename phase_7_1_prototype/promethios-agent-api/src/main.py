@@ -84,6 +84,19 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# Register test endpoint for deployment verification
+@app.route('/test-deployment', methods=['GET'])
+def test_deployment():
+    """Test endpoint to verify new deployment is active"""
+    from flask import jsonify
+    return jsonify({
+        'status': 'success',
+        'message': 'New deployment is active - tool integration fixes deployed',
+        'timestamp': '2025-08-18-final-test',
+        'tools_blueprint_registered': 'universal_tools' in [bp.name for bp in app.blueprints.values()],
+        'available_blueprints': list(app.blueprints.keys())
+    })
+
 # Register audit endpoint at root level for UniversalGovernanceAdapter (after DB init)
 @app.route('/audit/log', methods=['POST'])
 def root_audit_log():
