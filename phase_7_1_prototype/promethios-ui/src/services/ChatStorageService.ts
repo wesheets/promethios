@@ -334,6 +334,29 @@ export class ChatStorageService {
   // Sync chat history to backend (placeholder for backend integration)
   private async syncToBackend(chatHistory: AgentChatHistory): Promise<void> {
     try {
+      // 🚨 EMERGENCY FIX: Limit chat history payload to prevent 413 errors
+      const limitedChatHistory = {
+        ...chatHistory,
+        messages: chatHistory.messages
+          .slice(-5) // Only sync last 5 messages
+          .map(msg => ({
+            ...msg,
+            content: msg.content?.substring(0, 200) + (msg.content?.length > 200 ? '...[truncated]' : ''),
+            attachments: msg.attachments ? [{
+              id: 'sync-placeholder',
+              name: `${msg.attachments.length} attachment(s)`,
+              type: 'metadata-only',
+              size: 0,
+              url: '',
+              data: undefined // Remove attachment data from sync
+            }] : undefined
+          }))
+      };
+
+      console.log('🚨 CHAT SYNC DEBUG: Original messages:', chatHistory.messages.length);
+      console.log('🚨 CHAT SYNC DEBUG: Limited messages:', limitedChatHistory.messages.length);
+      console.log('🚨 CHAT SYNC DEBUG: Payload size estimate:', JSON.stringify(limitedChatHistory).length, 'bytes');
+
       // In production, this would sync to your backend API
       const response = await fetch('/api/chat/history', {
         method: 'POST',
@@ -342,7 +365,7 @@ export class ChatStorageService {
         },
         body: JSON.stringify({
           userId: this.currentUserId,
-          chatHistory
+          chatHistory: limitedChatHistory // Use limited history
         })
       });
 
