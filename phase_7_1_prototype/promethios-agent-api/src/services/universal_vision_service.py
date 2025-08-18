@@ -37,8 +37,17 @@ class UniversalVisionService:
     """
     
     def __init__(self, governance_context: Optional[Dict] = None):
-        # Governance integration
-        self.governance_context = governance_context or {}
+        # Governance integration with permissive defaults
+        default_governance = {
+            'environment': 'production',
+            'allowed_vision_providers': [],  # Empty list means all providers allowed
+            'min_vision_quality': 'fair',
+            'require_vision_capability': True,
+            'max_image_size_mb': 10,
+            'allowed_image_types': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+            'max_message_length': 5000
+        }
+        self.governance_context = {**default_governance, **(governance_context or {})}
         self.audit_entries = []
         self.policy_violations = []
         
@@ -163,7 +172,7 @@ class UniversalVisionService:
         try:
             # Example governance policies (can be extended):
             
-            # 1. Check if provider is in allowed list
+            # 1. Check if provider is in allowed list (empty list means all allowed)
             allowed_providers = self.governance_context.get('allowed_vision_providers', [])
             if allowed_providers and provider_name not in allowed_providers:
                 self._log_policy_violation(f"Provider {provider_name} not in allowed list", provider_name)
@@ -190,6 +199,7 @@ class UniversalVisionService:
             # - Cost limitations
             # - Performance requirements
             
+            logger.info(f"✅ Provider {provider_name} passed all governance checks")
             return True
             
         except Exception as e:
