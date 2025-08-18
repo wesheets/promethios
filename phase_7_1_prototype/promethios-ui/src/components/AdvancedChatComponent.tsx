@@ -50,21 +50,25 @@ import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
 
 // 🚀 CLOUDFLARE FIX: Utility function to limit conversation history size
-const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 8, maxMessageLength = 800) => {
+const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 4, maxMessageLength = 400) => {
   if (!conversationHistory || !Array.isArray(conversationHistory)) {
     return [];
   }
 
-  // Take only the last N messages to prevent Cloudflare 413 errors
+  // Take only the last N messages to prevent Cloudflare 413 errors (reduced from 8 to 4)
   const recentMessages = conversationHistory.slice(-maxMessages);
   
-  // Truncate very long messages to prevent payload bloat
+  // Truncate very long messages to prevent payload bloat (reduced from 800 to 400)
   const truncatedMessages = recentMessages.map(msg => ({
     ...msg,
     content: msg.content && msg.content.length > maxMessageLength 
       ? msg.content.substring(0, maxMessageLength) + '...[truncated]'
       : msg.content
   }));
+
+  console.log(`🔧 ANTHROPIC DEBUG: Original history length: ${conversationHistory.length}`);
+  console.log(`🔧 ANTHROPIC DEBUG: Limited history length: ${truncatedMessages.length}`);
+  console.log(`🔧 ANTHROPIC DEBUG: Payload size estimate: ${JSON.stringify(truncatedMessages).length} bytes`);
 
   return truncatedMessages;
 };
