@@ -360,47 +360,8 @@ def health_check():
 
 
 
-@promethios_llm_bp.route('/audit/log', methods=['POST'])
-def create_audit_log():
-    """
-    Create audit log entry for governance tracking
-    """
-    try:
-        data = request.get_json()
-        
-        # Extract audit data
-        agent_id = data.get('agentId')
-        action = data.get('action')
-        details = data.get('details', {})
-        
-        logger.info(f"📝 [Audit] Creating audit entry for agent {agent_id}: {action}")
-        
-        # Create audit log entry using existing models
-        audit_log = AgentLog(
-            agent_id=agent_id,
-            log_type='governance_audit',
-            message=f"Governance action: {action}",
-            metadata=details,
-            timestamp=datetime.utcnow()
-        )
-        
-        db.session.add(audit_log)
-        db.session.commit()
-        
-        logger.info(f"✅ [Audit] Audit entry created successfully")
-        
-        return jsonify({
-            'success': True,
-            'audit_id': audit_log.id,
-            'timestamp': audit_log.timestamp.isoformat()
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"❌ [Audit] Failed to create audit entry: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# 🚀 AUDIT FIX: Removed duplicate audit route - using root route in main.py instead
+# This prevents route conflicts that were causing 404 errors for audit logging
 
 @promethios_llm_bp.route('/integrations', methods=['GET'])
 def get_integrations():
