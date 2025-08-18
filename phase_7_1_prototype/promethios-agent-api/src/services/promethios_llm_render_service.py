@@ -331,6 +331,7 @@ class PromethiosLLMRenderService:
                         tools=tools,
                         provider=provider,
                         model=model,
+                        agent_id=agent_id,
                         context=context
                     )             
                     # Check if AI wants to use tools
@@ -630,7 +631,7 @@ promethios_llm_service = PromethiosLLMRenderService()
             logger.info(f"🔄 [ToolConversion] Using OpenAI format for {provider} with {len(tools)} tools")
             return tools
 
-    async def _make_ai_call_with_tools(self, message: str, tools: list, provider: str, model: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _make_ai_call_with_tools(self, message: str, tools: list, provider: str, model: str, agent_id: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Make AI API call with function calling support"""
         try:
             logger.info(f"🤖 [FunctionCalling] Making AI call with {len(tools)} tools available")
