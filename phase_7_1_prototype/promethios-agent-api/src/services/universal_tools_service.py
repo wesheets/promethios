@@ -602,7 +602,8 @@ for i in range(5):
                 analysis_result['formatted_code'] = formatted_code
                 
             # Add comprehensive analysis
-            analysis_result['analysis'] = f"I processed {language} code with {len(code.split('\n'))} lines. The code has been analyzed for syntax, structure, and potential issues. The coding and programming tool is fully functional."
+            line_count = len(code.split('\n'))
+            analysis_result['analysis'] = f"I processed {language} code with {line_count} lines. The code has been analyzed for syntax, structure, and potential issues. The coding and programming tool is fully functional."
             
             return analysis_result
             
