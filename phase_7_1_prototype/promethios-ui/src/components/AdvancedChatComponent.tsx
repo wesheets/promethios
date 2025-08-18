@@ -48,6 +48,31 @@ import { ChatStorageService } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
 import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
+
+// 🚀 CLOUDFLARE FIX: Utility function to limit conversation history size
+const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 8, maxMessageLength = 800) => {
+  if (!conversationHistory || !Array.isArray(conversationHistory)) {
+    return [];
+  }
+
+  // Take only the last N messages to prevent Cloudflare 413 errors
+  const recentMessages = conversationHistory.slice(-maxMessages);
+  
+  // Truncate very long messages to prevent payload bloat
+  const truncatedMessages = recentMessages.map(msg => ({
+    ...msg,
+    content: msg.content && msg.content.length > maxMessageLength 
+      ? msg.content.substring(0, maxMessageLength) + '...[truncated]'
+      : msg.content
+  }));
+
+  return truncatedMessages;
+};
+
+// Calculate approximate payload size for debugging
+const estimatePayloadSize = (payload: any) => {
+  return JSON.stringify(payload).length;
+};
 import { NativeAgentMigration } from '../utils/NativeAgentMigration';
 import { VeritasService } from '../services/VeritasService';
 import { multiAgentChatIntegration, ChatSystemInfo, MultiAgentChatSession } from '../services/MultiAgentChatIntegrationService';
@@ -2095,11 +2120,14 @@ useEffect(() => {
           filteredMessages: anthropicHistoryMessages.length
         });
 
+        // 🚀 CLOUDFLARE FIX: Limit conversation history to prevent 413 errors
+        const limitedHistory = limitConversationHistory(anthropicHistoryMessages);
+
         const requestPayload = {
           agent_id: 'factual-agent', // Maps to Anthropic in backend
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
-          conversation_history: anthropicHistoryMessages, // Include conversation history
+          conversation_history: limitedHistory, // Use limited history instead of full history
           governance_enabled: governanceEnabled,
           // 🎯 CRITICAL FIX: Add attachments to request payload
           attachments: attachments.map(att => ({
@@ -2110,6 +2138,12 @@ useEffect(() => {
             data: att.data
           }))
         };
+
+        // 🔧 CLOUDFLARE DEBUG: Log payload size
+        const payloadSize = estimatePayloadSize(requestPayload);
+        console.log('🔧 ANTHROPIC DEBUG: Payload size:', payloadSize, 'bytes');
+        console.log('🔧 ANTHROPIC DEBUG: Original history length:', anthropicHistoryMessages.length);
+        console.log('🔧 ANTHROPIC DEBUG: Limited history length:', limitedHistory.length);
 
         console.log('🔧 ANTHROPIC DEBUG: Request payload prepared:', {
           agent_id: requestPayload.agent_id,
