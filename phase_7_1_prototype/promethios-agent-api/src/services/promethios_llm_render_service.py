@@ -321,9 +321,25 @@ class PromethiosLLMRenderService:
                 logger.info(f"🔍 [ToolDebug] Tools available: {len(tools)}")
                 logger.info(f"🔍 [ToolDebug] Provider: {provider}")
                 
+                # CHATGPT DEBUG POINT 1: Verify tools are actually passed to agent runtime
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] Tools passed to runtime: {len(tools) if tools else 0}")
+                if tools:
+                    for i, tool in enumerate(tools):
+                        tool_name = tool.get('function', {}).get('name', tool.get('name', 'Unknown'))
+                        logger.info(f"🧪 [CHATGPT-DEBUG-1] Tool {i+1}: {tool_name}")
+                else:
+                    logger.error(f"🚨 [CHATGPT-DEBUG-1] NO TOOLS PASSED TO RUNTIME!")
+                
                 if function_calling_enabled and tools:
                     logger.info(f"🛠️ [PromethiosLLM] Function calling enabled with {len(tools)} tools")
                     logger.info(f"🛠️ [PromethiosLLM] Tool names: {[t.get('function', {}).get('name', t.get('name', 'Unknown')) for t in tools]}")
+                    
+                    # CHATGPT DEBUG POINT 5: Verify session agent tools are populated
+                    logger.info(f"🧪 [CHATGPT-DEBUG-5] About to call AI with tools - verifying runtime state")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-5] Agent ID: {agent_id}")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-5] Provider: {provider}")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-5] Model: {model}")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-5] Tools count: {len(tools)}")
                     
                     # Generate response with function calling support
                     ai_response = await self._make_ai_call_with_tools(
@@ -334,9 +350,15 @@ class PromethiosLLMRenderService:
                         agent_id=agent_id,
                         context=context
                     )             
+                    
+                    # CHATGPT DEBUG POINT 3: Log tool call detection and execution
+                    logger.info(f"🧪 [CHATGPT-DEBUG-3] AI response received, checking for tool calls")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-3] AI response keys: {list(ai_response.keys()) if ai_response else 'None'}")
+                    
                     # Check if AI wants to use tools
                     if ai_response.get('function_calls'):
                         logger.info(f"🔧 [PromethiosLLM] AI requested {len(ai_response['function_calls'])} function calls")
+                        logger.info(f"🧪 [CHATGPT-DEBUG-3] Tool calls detected: {ai_response['function_calls']}")
                         
                         # Execute function calls
                         tool_results = await self._execute_function_calls(
@@ -654,6 +676,14 @@ promethios_llm_service = PromethiosLLMRenderService()
             base_system_message = f"You are {self._get_model_identity(provider, model)}, operating under the Promethios governance framework."
             system_message = create_system_message_with_tools(base_system_message)
             
+            # CHATGPT DEBUG POINT 2: Log the actual prompt sent to LLM
+            logger.info(f"🧪 [CHATGPT-DEBUG-2] System message length: {len(system_message)}")
+            logger.info(f"🧪 [CHATGPT-DEBUG-2] System message preview: {system_message[:200]}...")
+            if "FUNCTION CALLING CAPABILITIES" in system_message:
+                logger.info(f"🧪 [CHATGPT-DEBUG-2] ✅ Tool descriptions ARE included in prompt")
+            else:
+                logger.error(f"🧪 [CHATGPT-DEBUG-2] ❌ Tool descriptions NOT found in prompt!")
+            
             # Prepare messages
             messages = [
                 {"role": "system", "content": system_message},
@@ -673,6 +703,13 @@ promethios_llm_service = PromethiosLLMRenderService()
                 import os
                 openai.api_key = os.getenv('OPENAI_API_KEY')
                 
+                # CHATGPT DEBUG POINT 1 & 5: Verify tools are actually passed to AI API
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] About to call OpenAI API")
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] Model: {model}")
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] Messages count: {len(messages)}")
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] Tools passed to API: {len(converted_tools)}")
+                logger.info(f"🧪 [CHATGPT-DEBUG-1] Tool names in API call: {[t.get('function', {}).get('name', 'Unknown') for t in converted_tools]}")
+                
                 response = await openai.ChatCompletion.acreate(
                     model=model,
                     messages=messages,
@@ -680,11 +717,21 @@ promethios_llm_service = PromethiosLLMRenderService()
                     tool_choice="auto"
                 )
                 
+                # CHATGPT DEBUG POINT 3: Log AI response and tool call detection
+                logger.info(f"🧪 [CHATGPT-DEBUG-3] OpenAI API response received")
+                
                 # Parse OpenAI response
                 message_content = response.choices[0].message
                 
+                # CHATGPT DEBUG POINT 3: Check if AI tried to use tools
+                logger.info(f"🧪 [CHATGPT-DEBUG-3] Message content type: {type(message_content)}")
+                logger.info(f"🧪 [CHATGPT-DEBUG-3] Has tool_calls attribute: {hasattr(message_content, 'tool_calls')}")
+                if hasattr(message_content, 'tool_calls'):
+                    logger.info(f"🧪 [CHATGPT-DEBUG-3] Tool calls value: {message_content.tool_calls}")
+                
                 if hasattr(message_content, 'tool_calls') and message_content.tool_calls:
                     logger.info(f"🔧 [ToolExecution] OpenAI returned {len(message_content.tool_calls)} tool calls")
+                    logger.info(f"🧪 [CHATGPT-DEBUG-3] ✅ AI DID try to use tools!")
                     
                     # Execute each tool call
                     tool_results = []
