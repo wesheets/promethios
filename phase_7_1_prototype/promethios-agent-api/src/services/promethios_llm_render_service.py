@@ -27,6 +27,29 @@ class PromethiosLLMRenderService:
         self.vision_service = UniversalVisionService()
         logger.info("🤖 [PromethiosLLM] Service initialized with Universal Vision Service")
     
+    def _convert_tools_for_provider(self, tools: list, provider: str) -> list:
+        """Convert tool schemas to the correct format for each provider"""
+        if provider.lower() == 'anthropic':
+            # Convert OpenAI function format to Anthropic tool format
+            anthropic_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    anthropic_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "input_schema": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool:
+                    # Already in Anthropic format
+                    anthropic_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Anthropic format")
+            return anthropic_tools
+        else:
+            # OpenAI format (default)
+            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {len(tools)} tools")
+            return tools
+    
     async def generate_response_with_vision(
         self, 
         agent_id: str, 
@@ -253,13 +276,17 @@ class PromethiosLLMRenderService:
                     'vision_results': vision_results
                 }
             
-            else:
-                # No attachments - check for function calling support
+            else:                # Check if function calling is enabled and tools are available
                 function_calling_enabled = context.get('function_calling_enabled', False)
                 tools = context.get('tools', [])
                 
+                logger.info(f"🔍 [ToolDebug] Function calling enabled: {function_calling_enabled}")
+                logger.info(f"🔍 [ToolDebug] Tools available: {len(tools)}")
+                logger.info(f"🔍 [ToolDebug] Provider: {provider}")
+                
                 if function_calling_enabled and tools:
                     logger.info(f"🛠️ [PromethiosLLM] Function calling enabled with {len(tools)} tools")
+                    logger.info(f"🛠️ [PromethiosLLM] Tool names: {[t.get('function', {}).get('name', t.get('name', 'Unknown')) for t in tools]}")
                     
                     # Generate response with function calling support
                     ai_response = await self._make_ai_call_with_tools(
@@ -268,8 +295,7 @@ class PromethiosLLMRenderService:
                         provider=provider,
                         model=model,
                         context=context
-                    )
-                    
+                    )             
                     # Check if AI wants to use tools
                     if ai_response.get('function_calls'):
                         logger.info(f"🔧 [PromethiosLLM] AI requested {len(ai_response['function_calls'])} function calls")
@@ -507,10 +533,46 @@ How can I assist you today?"""
 promethios_llm_service = PromethiosLLMRenderService()
 
 
+    def _convert_tools_for_provider(self, tools: list, provider: str) -> list:
+        """Convert tool schemas to the correct format for each provider"""
+        if provider.lower() == 'anthropic':
+            # Convert OpenAI function format to Anthropic tool format
+            anthropic_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    anthropic_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "input_schema": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool:
+                    # Already in Anthropic format
+                    anthropic_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Anthropic format")
+            return anthropic_tools
+        else:
+            # OpenAI format (default)
+            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {len(tools)} tools")
+            return tools
+
     async def _make_ai_call_with_tools(self, message: str, tools: list, provider: str, model: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Make AI API call with function calling support"""
         try:
             logger.info(f"🤖 [FunctionCalling] Making AI call with {len(tools)} tools available")
+            logger.info(f"🤖 [FunctionCalling] Provider: {provider}, Model: {model}")
+            
+            # Convert tools to correct format for provider
+            converted_tools = self._convert_tools_for_provider(tools, provider)
+            logger.info(f"🛠️ [FunctionCalling] Converted tools format for {provider}")
+            
+            # Log tool details for debugging
+            for i, tool in enumerate(converted_tools):
+                if provider.lower() == 'anthropic':
+                    logger.info(f"🛠️ [Tool {i+1}] Name: {tool.get('name')}, Description: {tool.get('description', '')[:50]}...")
+                else:
+                    func = tool.get('function', {})
+                    logger.info(f"🛠️ [Tool {i+1}] Name: {func.get('name')}, Description: {func.get('description', '')[:50]}...")
             
             # Create system message with tool instructions
             from src.routes.enhanced_chat import create_system_message_with_tools
@@ -539,7 +601,7 @@ promethios_llm_service = PromethiosLLMRenderService()
                 response = await openai.ChatCompletion.acreate(
                     model=model,
                     messages=messages,
-                    tools=tools,
+                    tools=converted_tools,
                     tool_choice="auto"
                 )
                 
@@ -574,7 +636,7 @@ promethios_llm_service = PromethiosLLMRenderService()
                     model=model,
                     messages=messages[1:],  # Anthropic doesn't use system messages in the same way
                     system=messages[0]['content'],
-                    tools=tools,
+                    tools=converted_tools,
                     tool_choice={"type": "auto"},
                     max_tokens=4000
                 )
@@ -645,7 +707,11 @@ promethios_llm_service = PromethiosLLMRenderService()
                 
                 # Call the tool endpoint
                 import requests
-                tool_response = requests.post('http://localhost:5004/api/tools/execute', json={
+                import os
+                tool_endpoint = os.getenv('TOOL_ENDPOINT', 'http://localhost:5004/api/tools/execute')
+                logger.info(f"🔧 [ToolExecution] Calling tool endpoint: {tool_endpoint}")
+                
+                tool_response = requests.post(tool_endpoint, json={
                     'tool_id': tool_id,
                     'parameters': arguments,
                     'agent_id': agent_id,
