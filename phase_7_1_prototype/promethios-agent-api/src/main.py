@@ -20,6 +20,8 @@ from src.routes.deployment import deployment_bp
 # from src.routes.native_llm import native_llm_bp  # File doesn't exist - commented out
 from src.routes.promethios_llm import promethios_llm_bp
 from src.routes.universal_tools import universal_tools_bp
+from src.routes.debug_tools import debug_tools_bp
+from src.routes.enhanced_chat import enhanced_chat_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -34,19 +36,28 @@ app.config['JSON_AS_ASCII'] = False
 CORS(app, 
      origins="*", 
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With"],
+     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin"],
      supports_credentials=True,
      max_age=86400)  # Cache preflight for 24 hours
 
-# Add explicit OPTIONS handler for preflight requests
+# Add comprehensive OPTIONS handler for preflight requests
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,x-api-key,X-Requested-With")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,x-api-key,X-Requested-With,Accept,Origin")
         response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        response.headers.add('Access-Control-Max-Age', "86400")
         return response
+
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-api-key,X-Requested-With,Accept,Origin')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # Register blueprints
 app.register_blueprint(user_bp, url_prefix='/api/user')
@@ -60,6 +71,8 @@ app.register_blueprint(veritas_enterprise_bp)
 app.register_blueprint(deployment_bp, url_prefix='/api')
 app.register_blueprint(promethios_llm_bp, url_prefix='/api')
 app.register_blueprint(universal_tools_bp)
+app.register_blueprint(debug_tools_bp, url_prefix='/api/debug')
+app.register_blueprint(enhanced_chat_bp, url_prefix='/api')
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
