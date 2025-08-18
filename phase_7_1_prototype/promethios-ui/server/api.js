@@ -423,4 +423,77 @@ function simulateGovernance(text, features, role, scenario) {
   };
 }
 
+// 🚨 EMERGENCY: Add catch-all proxy for missing API endpoints
+// This forwards unhandled API requests to the backend API server
+apiRouter.all('*', async (req, res) => {
+  console.log('🚨 [API-PROXY-DEBUG] Catch-all proxy called');
+  console.log('🚨 [API-PROXY-DEBUG] Method:', req.method);
+  console.log('🚨 [API-PROXY-DEBUG] Path:', req.path);
+  console.log('🚨 [API-PROXY-DEBUG] Original URL:', req.originalUrl);
+  
+  // Log payload size for debugging
+  if (req.body) {
+    const bodySize = JSON.stringify(req.body).length;
+    console.log(`🚨 [API-PROXY-DEBUG] Body size: ${bodySize} bytes`);
+    if (bodySize > 100000) { // > 100KB
+      console.log(`🚨 [API-PROXY-DEBUG] LARGE PAYLOAD: ${bodySize} bytes to ${req.path}`);
+    }
+  }
+  
+  try {
+    // Build the backend URL
+    const backendUrl = `${BACKEND_API_URL}${req.originalUrl}`;
+    console.log('🚨 [API-PROXY-DEBUG] Proxying to:', backendUrl);
+    
+    const options = {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward important headers
+        ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
+        ...(req.headers['x-api-key'] && { 'x-api-key': req.headers['x-api-key'] }),
+      }
+    };
+    
+    // Add body for POST, PUT, PATCH requests
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
+      options.body = JSON.stringify(req.body);
+      console.log('🚨 [API-PROXY-DEBUG] Forwarding body to backend');
+    }
+    
+    const response = await fetch(backendUrl, options);
+    const data = await response.text(); // Use text() first to handle both JSON and non-JSON responses
+    
+    console.log(`🚨 [API-PROXY-DEBUG] Backend response status: ${response.status}`);
+    console.log(`🚨 [API-PROXY-DEBUG] Backend response size: ${data.length} bytes`);
+    
+    // Try to parse as JSON, fallback to text
+    let responseData;
+    try {
+      responseData = JSON.parse(data);
+    } catch (e) {
+      responseData = data;
+    }
+    
+    // Forward the response with the same status code
+    res.status(response.status);
+    
+    // Set appropriate content type
+    if (typeof responseData === 'object') {
+      res.json(responseData);
+    } else {
+      res.send(responseData);
+    }
+    
+  } catch (error) {
+    console.error('🚨 [API-PROXY-DEBUG] Proxy error:', error);
+    res.status(500).json({ 
+      error: 'API proxy error', 
+      message: error.message,
+      path: req.path,
+      method: req.method
+    });
+  }
+});
+
 export default apiRouter;
