@@ -2151,33 +2151,33 @@ useEffect(() => {
           system_message: systemMessage, // Pass the limited governance system message
           conversation_history: limitedHistory, // Use limited history instead of full history
           governance_enabled: governanceEnabled,
-          // 🚀 ULTRA-AGGRESSIVE FIX: Limit attachment data to prevent 413 errors
-          attachments: attachments.slice(0, 2).map(att => ({ // Only first 2 attachments
-            id: att.id,
-            name: att.name,
-            type: att.type,
-            size: Math.min(att.size || 0, 50000), // Limit size info
-            // Only include data for small files, otherwise just metadata
-            data: (att.data && att.data.length < 10000) ? att.data : null
-          }))
+          // 🚨 EMERGENCY FIX: Remove attachment data completely to prevent 413 errors
+          attachments: attachments.length > 0 ? [{
+            id: 'attachment-placeholder',
+            name: `${attachments.length} attachment(s) uploaded`,
+            type: 'metadata-only',
+            size: 0,
+            data: null // No data sent in request
+          }] : []
         };
 
-        // 🔧 ULTRA-AGGRESSIVE DEBUG: Log payload size and limitations
+        // 🚨 EMERGENCY DEBUG: Log payload size after removing attachment data
         const payloadSize = estimatePayloadSize(requestPayload);
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Final payload size:', payloadSize, 'bytes');
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Original history length:', anthropicHistoryMessages.length);
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Limited history length:', limitedHistory.length);
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Original attachments:', attachments.length);
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Limited attachments:', requestPayload.attachments.length);
+        console.log('🚨 EMERGENCY DEBUG: Final payload size after removing attachments:', payloadSize, 'bytes');
+        console.log('🚨 EMERGENCY DEBUG: Original history length:', anthropicHistoryMessages.length);
+        console.log('🚨 EMERGENCY DEBUG: Limited history length:', limitedHistory.length);
+        console.log('🚨 EMERGENCY DEBUG: Original attachments:', attachments.length);
+        console.log('🚨 EMERGENCY DEBUG: Attachment data removed - only metadata sent');
 
-        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Request payload summary:', {
+        console.log('🚨 EMERGENCY DEBUG: Request payload summary:', {
           agent_id: requestPayload.agent_id,
           messageLength: requestPayload.message?.length,
           systemMessageLength: requestPayload.system_message?.length,
           historyCount: requestPayload.conversation_history?.length,
           governance_enabled: requestPayload.governance_enabled,
           attachmentCount: requestPayload.attachments?.length,
-          totalPayloadSize: payloadSize
+          totalPayloadSize: payloadSize,
+          attachmentDataRemoved: true
         });
 
         const apiUrl = `${API_BASE_URL}/api/chat`;
