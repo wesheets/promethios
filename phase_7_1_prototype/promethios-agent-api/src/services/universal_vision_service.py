@@ -155,7 +155,9 @@ class UniversalVisionService:
                 'vision_quality': 'fair',
                 'priority': 12
             }
-              # Initialize available providers with governance validation
+        }
+        
+        # Initialize available providers with governance validation
         self.available_providers = self._check_available_providers()
         logger.info(f"🔍 Universal Vision Service initialized with {len(self.available_providers)} providers: {list(self.available_providers.keys())}")
         logger.info(f"🛡️ Governance context: {self.governance_context.get('environment', 'default')}")
@@ -470,6 +472,11 @@ class UniversalVisionService:
         # If requested provider not available, select best alternative
         logger.warning(f"⚠️ Requested provider {requested_provider} not available, selecting alternative")
         return self._select_best_provider()
+    
+    async def analyze_image(self, 
+                          image_data: str, 
+                          image_type: str, 
+                          user_message: str,
                           provider: str = "auto",
                           model: str = None) -> Dict[str, Any]:
         """
