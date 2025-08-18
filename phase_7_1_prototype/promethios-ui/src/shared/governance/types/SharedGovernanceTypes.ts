@@ -445,6 +445,21 @@ export interface MessageContext {
   conversationHistory: ConversationMessage[];
   topicSensitivity: SensitivityAssessment;
   timestamp: Date;
+  // File attachment support for vision processing and document analysis
+  attachments?: FileAttachment[];
+  sessionId?: string;
+  agentId?: string;
+}
+
+// File attachment interface for vision processing
+export interface FileAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url?: string;
+  data: string; // Base64 encoded data
+  lastModified?: number;
 }
 
 export interface UserContext {

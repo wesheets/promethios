@@ -78,6 +78,8 @@ import AutonomousThinkingChecker from './AutonomousThinkingChecker';
 import { ModernChatGovernanceAdapter } from '../services/ModernChatGovernanceAdapter';
 import { ModernChatGovernedInsightsQAService } from '../services/ModernChatGovernedInsightsQAService';
 import { EnhancedAuditLoggingService } from '../services/EnhancedAuditLoggingService';
+import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
+import { MessageContext } from '../shared/governance/types/SharedGovernanceTypes';
 
 // Dark theme colors
 export const DARK_THEME = {
@@ -431,6 +433,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
   const governedInsightsQAService = useMemo(() => ModernChatGovernedInsightsQAService.getInstance(), []);
   const enhancedAuditLoggingService = useMemo(() => EnhancedAuditLoggingService.getInstance(), []);
+  const universalGovernanceAdapter = useMemo(() => new UniversalGovernanceAdapter(), []);
 
   // NEW: Initialize missing extensions
   const auditLogAccessExtension = useMemo(() => AuditLogAccessExtension.getInstance(), []);
@@ -2088,7 +2091,15 @@ useEffect(() => {
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
           conversation_history: anthropicHistoryMessages, // Include conversation history
-          governance_enabled: governanceEnabled
+          governance_enabled: governanceEnabled,
+          // 🎯 CRITICAL FIX: Add attachments to request payload
+          attachments: attachments.map(att => ({
+            id: att.id,
+            name: att.name,
+            type: att.type,
+            size: att.size,
+            data: att.data
+          }))
         };
 
         console.log('🔧 ANTHROPIC DEBUG: Request payload prepared:', {
@@ -2096,7 +2107,8 @@ useEffect(() => {
           messageLength: requestPayload.message?.length,
           systemMessageLength: requestPayload.system_message?.length,
           historyCount: requestPayload.conversation_history?.length,
-          governance_enabled: requestPayload.governance_enabled
+          governance_enabled: requestPayload.governance_enabled,
+          attachmentCount: requestPayload.attachments?.length // 🎯 NEW: Log attachment count
         });
 
         const apiUrl = `${API_BASE_URL}/api/chat`;
@@ -2186,7 +2198,15 @@ useEffect(() => {
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
           conversation_history: historyMessages, // Include conversation history
-          governance_enabled: governanceEnabled
+          governance_enabled: governanceEnabled,
+          // 🎯 CRITICAL FIX: Add attachments to request payload
+          attachments: attachments.map(att => ({
+            id: att.id,
+            name: att.name,
+            type: att.type,
+            size: att.size,
+            data: att.data
+          }))
         };
 
         console.log('🔧 COHERE DEBUG: Request payload prepared:', {
@@ -2194,7 +2214,8 @@ useEffect(() => {
           messageLength: requestPayload.message?.length,
           systemMessageLength: requestPayload.system_message?.length,
           historyCount: requestPayload.conversation_history?.length,
-          governance_enabled: requestPayload.governance_enabled
+          governance_enabled: requestPayload.governance_enabled,
+          attachmentCount: requestPayload.attachments?.length // 🎯 NEW: Log attachment count
         });
 
         const apiUrl = `${API_BASE_URL}/api/chat`;
@@ -3427,6 +3448,7 @@ useEffect(() => {
         let agentResponse;
         
         try {
+          // Use standard agent API call for all commercial LLMs (OpenAI, Anthropic, Cohere, etc.)
           agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
           const responseTime = Date.now() - startTime;
           
