@@ -49,28 +49,41 @@ import { GovernanceService } from '../services/GovernanceService';
 import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
 
-// 🚀 CLOUDFLARE FIX: Utility function to limit conversation history size
-const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 4, maxMessageLength = 400) => {
+// 🚀 ULTRA-AGGRESSIVE CLOUDFLARE FIX: Minimize payload to prevent 413 errors
+const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 2, maxMessageLength = 200) => {
   if (!conversationHistory || !Array.isArray(conversationHistory)) {
     return [];
   }
 
-  // Take only the last N messages to prevent Cloudflare 413 errors (reduced from 8 to 4)
+  // Take only the last 2 messages to prevent Cloudflare 413 errors (reduced from 4 to 2)
   const recentMessages = conversationHistory.slice(-maxMessages);
   
-  // Truncate very long messages to prevent payload bloat (reduced from 800 to 400)
+  // Truncate very long messages to prevent payload bloat (reduced from 400 to 200)
   const truncatedMessages = recentMessages.map(msg => ({
-    ...msg,
+    role: msg.role,
     content: msg.content && msg.content.length > maxMessageLength 
       ? msg.content.substring(0, maxMessageLength) + '...[truncated]'
       : msg.content
   }));
 
-  console.log(`🔧 ANTHROPIC DEBUG: Original history length: ${conversationHistory.length}`);
-  console.log(`🔧 ANTHROPIC DEBUG: Limited history length: ${truncatedMessages.length}`);
-  console.log(`🔧 ANTHROPIC DEBUG: Payload size estimate: ${JSON.stringify(truncatedMessages).length} bytes`);
+  console.log(`🔧 ULTRA-AGGRESSIVE DEBUG: Original history length: ${conversationHistory.length}`);
+  console.log(`🔧 ULTRA-AGGRESSIVE DEBUG: Limited history length: ${truncatedMessages.length}`);
+  console.log(`🔧 ULTRA-AGGRESSIVE DEBUG: Payload size estimate: ${JSON.stringify(truncatedMessages).length} bytes`);
 
   return truncatedMessages;
+};
+
+// 🚀 SYSTEM MESSAGE LIMITER: Prevent governance kernel from being too large
+const limitSystemMessage = (systemMessage: string, maxLength = 1000) => {
+  if (!systemMessage) return systemMessage;
+  
+  if (systemMessage.length > maxLength) {
+    const truncated = systemMessage.substring(0, maxLength) + '...[system message truncated for payload size]';
+    console.log(`🔧 SYSTEM MESSAGE DEBUG: Truncated from ${systemMessage.length} to ${truncated.length} characters`);
+    return truncated;
+  }
+  
+  return systemMessage;
 };
 
 // Calculate approximate payload size for debugging
@@ -2101,12 +2114,17 @@ useEffect(() => {
         if (governanceEnabled) {
           console.log('🔧 ANTHROPIC DEBUG: Creating governance system message...');
           // Use Promethios governance kernel for governed agents with real-time metrics
-          systemMessage = await createPromethiosSystemMessage(agent.id, currentUser?.uid);
-          console.log('🔧 ANTHROPIC DEBUG: Governance system message created, length:', systemMessage?.length);
+          const fullSystemMessage = await createPromethiosSystemMessage(agent.id, currentUser?.uid);
+          console.log('🔧 ANTHROPIC DEBUG: Full governance system message created, length:', fullSystemMessage?.length);
+          
+          // 🚀 ULTRA-AGGRESSIVE FIX: Limit system message to prevent 413 errors
+          systemMessage = limitSystemMessage(fullSystemMessage, 800); // Reduced from 1000 to 800
+          console.log('🔧 ANTHROPIC DEBUG: Limited system message length:', systemMessage?.length);
         } else {
           console.log('🔧 ANTHROPIC DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          const basicMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          systemMessage = limitSystemMessage(basicMessage, 500); // Also limit basic messages
           console.log('🔧 ANTHROPIC DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
@@ -2130,32 +2148,36 @@ useEffect(() => {
         const requestPayload = {
           agent_id: 'factual-agent', // Maps to Anthropic in backend
           message: messageContent,
-          system_message: systemMessage, // Pass the governance system message
+          system_message: systemMessage, // Pass the limited governance system message
           conversation_history: limitedHistory, // Use limited history instead of full history
           governance_enabled: governanceEnabled,
-          // 🎯 CRITICAL FIX: Add attachments to request payload
-          attachments: attachments.map(att => ({
+          // 🚀 ULTRA-AGGRESSIVE FIX: Limit attachment data to prevent 413 errors
+          attachments: attachments.slice(0, 2).map(att => ({ // Only first 2 attachments
             id: att.id,
             name: att.name,
             type: att.type,
-            size: att.size,
-            data: att.data
+            size: Math.min(att.size || 0, 50000), // Limit size info
+            // Only include data for small files, otherwise just metadata
+            data: (att.data && att.data.length < 10000) ? att.data : null
           }))
         };
 
-        // 🔧 CLOUDFLARE DEBUG: Log payload size
+        // 🔧 ULTRA-AGGRESSIVE DEBUG: Log payload size and limitations
         const payloadSize = estimatePayloadSize(requestPayload);
-        console.log('🔧 ANTHROPIC DEBUG: Payload size:', payloadSize, 'bytes');
-        console.log('🔧 ANTHROPIC DEBUG: Original history length:', anthropicHistoryMessages.length);
-        console.log('🔧 ANTHROPIC DEBUG: Limited history length:', limitedHistory.length);
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Final payload size:', payloadSize, 'bytes');
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Original history length:', anthropicHistoryMessages.length);
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Limited history length:', limitedHistory.length);
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Original attachments:', attachments.length);
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Limited attachments:', requestPayload.attachments.length);
 
-        console.log('🔧 ANTHROPIC DEBUG: Request payload prepared:', {
+        console.log('🔧 ULTRA-AGGRESSIVE DEBUG: Request payload summary:', {
           agent_id: requestPayload.agent_id,
           messageLength: requestPayload.message?.length,
           systemMessageLength: requestPayload.system_message?.length,
           historyCount: requestPayload.conversation_history?.length,
           governance_enabled: requestPayload.governance_enabled,
-          attachmentCount: requestPayload.attachments?.length // 🎯 NEW: Log attachment count
+          attachmentCount: requestPayload.attachments?.length,
+          totalPayloadSize: payloadSize
         });
 
         const apiUrl = `${API_BASE_URL}/api/chat`;
