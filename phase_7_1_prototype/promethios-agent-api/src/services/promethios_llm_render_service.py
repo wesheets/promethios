@@ -105,8 +105,12 @@ class PromethiosLLMRenderService:
                             'confidence': 0.0
                         })
                 
-                # Build comprehensive response with vision analysis
+                # Build comprehensive response with vision analysis and identity transparency
                 response_parts = []
+                
+                # Add identity transparency at the beginning
+                model_identity = self._get_model_identity(provider, model)
+                response_parts.append(f"I'm {model_identity}, operating under the Promethios governance framework.")
                 
                 # Add vision analysis results
                 if vision_results:

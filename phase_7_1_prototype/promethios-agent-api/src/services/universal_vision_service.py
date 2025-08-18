@@ -1,7 +1,5 @@
 """
 Universal Vision Service for Promethios
-"""
-Universal Vision Service
 
 Provides image analysis across all AI providers with full governance integration.
 Supports OpenAI GPT-4 Vision, Claude 3 Vision, Gemini Pro Vision, and 9+ other providers.
@@ -11,9 +9,17 @@ Includes comprehensive governance, audit logging, and policy enforcement.
 import os
 import base64
 import logging
+import io
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import asyncio
+
+# Import PIL for image processing
+try:
+    from PIL import Image
+except ImportError:
+    logger.warning("⚠️ PIL (Pillow) not available - basic image analysis will be limited")
+    Image = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -623,12 +629,16 @@ class UniversalVisionService:
         try:
             import google.generativeai as genai
             
+            # Check if PIL is available
+            if Image is None:
+                raise ImportError("PIL (Pillow) is required for Gemini vision processing")
+            
             # Configure Gemini
             genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
             
             # Select model
             if not model:
-                model = "gemini-pro-vision"
+                model = "gemini-1.5-pro"  # Updated to current model
             
             # Initialize model
             gemini_model = genai.GenerativeModel(model)
@@ -660,8 +670,20 @@ class UniversalVisionService:
             raise e
     
     def _create_analysis_prompt(self, user_message: str, model_name: str) -> str:
-        """Create a comprehensive analysis prompt for any vision model"""
-        base_prompt = f"""You are {model_name}, an advanced AI with computer vision capabilities. Analyze this image in detail.
+        """Create a comprehensive analysis prompt for any vision model with identity transparency"""
+        
+        # Map model names to proper identities
+        identity_map = {
+            'OpenAI GPT-4 Vision': 'GPT-4 with vision capabilities',
+            'Claude 3 Vision': 'Claude 3.5 Sonnet with vision capabilities', 
+            'Gemini Pro Vision': 'Gemini Pro with vision capabilities'
+        }
+        
+        model_identity = identity_map.get(model_name, model_name)
+        
+        base_prompt = f"""You are {model_identity}, operating under the Promethios governance framework. You have advanced computer vision capabilities and can analyze images in detail.
+
+IMPORTANT: Always maintain your identity as {model_identity} throughout your response. When asked about your identity, clearly state that you are {model_identity}.
 
 User's question: "{user_message}"
 
@@ -676,13 +698,51 @@ Please provide a comprehensive analysis including:
 7. **User Question Response**: Specific answer to the user's question
 8. **Additional Insights**: Anything else noteworthy or relevant
 
-Be thorough but concise. Focus on accuracy and helpful details."""
+Remember: You are {model_identity} with vision capabilities, operating under Promethios governance. Be thorough but concise, focusing on accuracy and helpful details."""
 
         return base_prompt
     
     async def _basic_image_analysis(self, image_data: str, image_type: str, user_message: str) -> Dict[str, Any]:
         """Fallback basic image analysis when no AI providers are available"""
         try:
+            # Check if PIL is available
+            if Image is None:
+                # Fallback when PIL is not available
+                file_size_kb = len(base64.b64decode(image_data)) / 1024
+                
+                analysis = f"""**Basic Image Analysis** (Limited - PIL not available)
+
+**Technical Properties:**
+- Image Type: {image_type}
+- File Size: {file_size_kb:.1f} KB
+
+**User Question:** "{user_message}"
+
+I can see you've shared an image, but I currently don't have access to image processing libraries or AI vision capabilities to provide detailed analysis.
+
+To get detailed image analysis, please ensure that:
+1. PIL (Pillow) is installed for basic image processing
+2. At least one AI provider API key is configured:
+   - OpenAI API key for GPT-4 Vision
+   - Anthropic API key for Claude 3 Vision  
+   - Google API key for Gemini Pro Vision
+
+If you can describe what you see in the image, I'd be happy to help answer questions about it!"""
+                
+                return {
+                    'success': True,
+                    'analysis': analysis,
+                    'provider': 'basic',
+                    'model': 'no-PIL',
+                    'confidence': 0.30,
+                    'processing_time_ms': 0,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'technical_details': {
+                        'image_type': image_type,
+                        'file_size_kb': file_size_kb
+                    }
+                }
+            
             # Decode image data
             image_bytes = base64.b64decode(image_data)
             image = Image.open(io.BytesIO(image_bytes))
