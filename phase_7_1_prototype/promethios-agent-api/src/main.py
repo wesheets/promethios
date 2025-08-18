@@ -4,7 +4,7 @@ import os
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, make_response, request
 from flask_cors import CORS
 from src.models.user import db
 from src.models.agent_data import AgentMetrics, AgentViolation, AgentLog, AgentHeartbeat
@@ -24,12 +24,29 @@ from src.routes.universal_tools import universal_tools_bp
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 
+# Configure Flask for larger file uploads and payloads
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+app.config['JSON_AS_ASCII'] = False
+
 # Enable CORS for all routes to allow frontend communication
 # Include x-api-key header for tools integration API access
 CORS(app, 
      origins="*", 
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With"])
+     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With"],
+     supports_credentials=True,
+     max_age=86400)  # Cache preflight for 24 hours
+
+# Add explicit OPTIONS handler for preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,x-api-key,X-Requested-With")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        return response
 
 # Register blueprints
 app.register_blueprint(user_bp, url_prefix='/api/user')
@@ -114,6 +131,181 @@ def serve(path):
             return send_from_directory(static_folder_path, 'index.html')
         else:
             return "index.html not found", 404
+
+# Chat History Persistence Endpoints
+@app.route('/api/chat/history', methods=['GET', 'POST'])
+def chat_history():
+    """Chat history persistence endpoint"""
+    from flask import request, jsonify
+    from datetime import datetime
+    import json
+    
+    if request.method == 'GET':
+        # Get chat history for an agent
+        agent_id = request.args.get('agent_id')
+        session_id = request.args.get('session_id')
+        
+        if not agent_id:
+            return jsonify({'error': 'agent_id is required'}), 400
+        
+        try:
+            # Query chat logs for the agent
+            logs = AgentLog.query.filter_by(
+                agent_id=agent_id,
+                log_type='chat_message'
+            ).order_by(AgentLog.timestamp.desc()).limit(100).all()
+            
+            chat_history = []
+            for log in logs:
+                chat_history.append({
+                    'id': log.id,
+                    'message': log.message,
+                    'metadata': log.metadata,
+                    'timestamp': log.timestamp.isoformat()
+                })
+            
+            return jsonify({
+                'success': True,
+                'agent_id': agent_id,
+                'session_id': session_id,
+                'history': chat_history
+            }), 200
+            
+        except Exception as e:
+            print(f"❌ [ChatHistory] Failed to get chat history: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    elif request.method == 'POST':
+        # Save chat message to history
+        try:
+            data = request.get_json()
+            
+            agent_id = data.get('agent_id')
+            session_id = data.get('session_id')
+            message_data = data.get('message_data', {})
+            
+            if not agent_id:
+                return jsonify({'error': 'agent_id is required'}), 400
+            
+            # Create chat log entry
+            chat_log = AgentLog(
+                agent_id=agent_id,
+                log_type='chat_message',
+                message=message_data.get('content', ''),
+                metadata={
+                    'session_id': session_id,
+                    'role': message_data.get('role', 'user'),
+                    'timestamp': message_data.get('timestamp'),
+                    'attachments': message_data.get('attachments', []),
+                    'governance_data': message_data.get('governance_data', {})
+                },
+                timestamp=datetime.utcnow()
+            )
+            
+            db.session.add(chat_log)
+            db.session.commit()
+            
+            print(f"✅ [ChatHistory] Chat message saved for agent {agent_id}")
+            
+            return jsonify({
+                'success': True,
+                'message_id': chat_log.id,
+                'timestamp': chat_log.timestamp.isoformat()
+            }), 200
+            
+        except Exception as e:
+            print(f"❌ [ChatHistory] Failed to save chat message: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+@app.route('/api/chat/sessions', methods=['GET', 'POST'])
+def chat_sessions():
+    """Chat session management endpoint"""
+    from flask import request, jsonify
+    from datetime import datetime
+    import uuid
+    
+    if request.method == 'GET':
+        # Get chat sessions for an agent
+        agent_id = request.args.get('agent_id')
+        
+        if not agent_id:
+            return jsonify({'error': 'agent_id is required'}), 400
+        
+        try:
+            # Get unique session IDs from chat logs
+            sessions = db.session.query(AgentLog.metadata).filter(
+                AgentLog.agent_id == agent_id,
+                AgentLog.log_type == 'chat_message'
+            ).distinct().all()
+            
+            session_list = []
+            for session in sessions:
+                if session.metadata and 'session_id' in session.metadata:
+                    session_list.append({
+                        'session_id': session.metadata['session_id'],
+                        'agent_id': agent_id
+                    })
+            
+            return jsonify({
+                'success': True,
+                'agent_id': agent_id,
+                'sessions': session_list
+            }), 200
+            
+        except Exception as e:
+            print(f"❌ [ChatSessions] Failed to get chat sessions: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    elif request.method == 'POST':
+        # Create new chat session
+        try:
+            data = request.get_json()
+            agent_id = data.get('agent_id')
+            
+            if not agent_id:
+                return jsonify({'error': 'agent_id is required'}), 400
+            
+            session_id = f"session_{int(datetime.now().timestamp())}_{str(uuid.uuid4())[:8]}"
+            
+            # Create session start log
+            session_log = AgentLog(
+                agent_id=agent_id,
+                log_type='chat_session',
+                message=f"Chat session started: {session_id}",
+                metadata={
+                    'session_id': session_id,
+                    'action': 'session_start'
+                },
+                timestamp=datetime.utcnow()
+            )
+            
+            db.session.add(session_log)
+            db.session.commit()
+            
+            print(f"✅ [ChatSessions] New chat session created: {session_id}")
+            
+            return jsonify({
+                'success': True,
+                'session_id': session_id,
+                'agent_id': agent_id,
+                'timestamp': session_log.timestamp.isoformat()
+            }), 200
+            
+        except Exception as e:
+            print(f"❌ [ChatSessions] Failed to create chat session: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
