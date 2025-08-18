@@ -29,7 +29,9 @@ class PromethiosLLMRenderService:
     
     def _convert_tools_for_provider(self, tools: list, provider: str) -> list:
         """Convert tool schemas to the correct format for each provider"""
-        if provider.lower() == 'anthropic':
+        provider_lower = provider.lower()
+        
+        if provider_lower == 'anthropic':
             # Convert OpenAI function format to Anthropic tool format
             anthropic_tools = []
             for tool in tools:
@@ -45,9 +47,44 @@ class PromethiosLLMRenderService:
                     anthropic_tools.append(tool)
             logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Anthropic format")
             return anthropic_tools
+            
+        elif provider_lower in ['google', 'gemini']:
+            # Convert OpenAI function format to Gemini tool format
+            gemini_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    gemini_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "parameters": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool and 'parameters' in tool:
+                    # Already in Gemini format
+                    gemini_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Gemini format")
+            return gemini_tools
+            
+        elif provider_lower == 'cohere':
+            # Convert OpenAI function format to Cohere tool format (same as Gemini)
+            cohere_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    cohere_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "parameters": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool and 'parameters' in tool:
+                    # Already in Cohere format
+                    cohere_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Cohere format")
+            return cohere_tools
+            
         else:
-            # OpenAI format (default)
-            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {len(tools)} tools")
+            # OpenAI format (default for OpenAI, Hugging Face, Perplexity, etc.)
+            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {provider} with {len(tools)} tools")
             return tools
     
     async def generate_response_with_vision(
@@ -535,7 +572,9 @@ promethios_llm_service = PromethiosLLMRenderService()
 
     def _convert_tools_for_provider(self, tools: list, provider: str) -> list:
         """Convert tool schemas to the correct format for each provider"""
-        if provider.lower() == 'anthropic':
+        provider_lower = provider.lower()
+        
+        if provider_lower == 'anthropic':
             # Convert OpenAI function format to Anthropic tool format
             anthropic_tools = []
             for tool in tools:
@@ -551,9 +590,44 @@ promethios_llm_service = PromethiosLLMRenderService()
                     anthropic_tools.append(tool)
             logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Anthropic format")
             return anthropic_tools
+            
+        elif provider_lower in ['google', 'gemini']:
+            # Convert OpenAI function format to Gemini tool format
+            gemini_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    gemini_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "parameters": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool and 'parameters' in tool:
+                    # Already in Gemini format
+                    gemini_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Gemini format")
+            return gemini_tools
+            
+        elif provider_lower == 'cohere':
+            # Convert OpenAI function format to Cohere tool format (same as Gemini)
+            cohere_tools = []
+            for tool in tools:
+                if tool.get('type') == 'function' and 'function' in tool:
+                    func = tool['function']
+                    cohere_tools.append({
+                        "name": func['name'],
+                        "description": func['description'],
+                        "parameters": func['parameters']
+                    })
+                elif 'name' in tool and 'description' in tool and 'parameters' in tool:
+                    # Already in Cohere format
+                    cohere_tools.append(tool)
+            logger.info(f"🔄 [ToolConversion] Converted {len(tools)} tools to Cohere format")
+            return cohere_tools
+            
         else:
-            # OpenAI format (default)
-            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {len(tools)} tools")
+            # OpenAI format (default for OpenAI, Hugging Face, Perplexity, etc.)
+            logger.info(f"🔄 [ToolConversion] Using OpenAI format for {provider} with {len(tools)} tools")
             return tools
 
     async def _make_ai_call_with_tools(self, message: str, tools: list, provider: str, model: str, context: Dict[str, Any]) -> Dict[str, Any]:
