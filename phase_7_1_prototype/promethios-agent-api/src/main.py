@@ -114,7 +114,55 @@ def test_deployment():
         'available_blueprints': list(app.blueprints.keys())
     })
 
-# Register audit endpoint at root level for UniversalGovernanceAdapter (after DB init)
+# Audit route will be defined after catch-all route to fix precedence issue
+
+# 🚨 EMERGENCY: Add missing trust-metrics route
+@app.route('/api/trust-metrics/alerts/check', methods=['POST'])
+def trust_metrics_alerts_check():
+    """Trust metrics alerts check endpoint"""
+    from flask import request, jsonify
+    from datetime import datetime
+    
+    print(f"🚨 [TRUST-METRICS-DEBUG] Trust metrics alerts check called")
+    print(f"🚨 [TRUST-METRICS-DEBUG] Request headers: {dict(request.headers)}")
+    
+    try:
+        data = request.get_json() or {}
+        print(f"🚨 [TRUST-METRICS-DEBUG] Request data: {data}")
+        
+        # For now, return a basic response to prevent 404 errors
+        return jsonify({
+            'success': True,
+            'alerts': [],
+            'trust_score': 85.0,
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': 'Trust metrics check completed'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ [TRUST-METRICS] Failed to check trust metrics: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    static_folder_path = app.static_folder
+    if static_folder_path is None:
+            return "Static folder not configured", 404
+
+    if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
+        return send_from_directory(static_folder_path, path)
+    else:
+        index_path = os.path.join(static_folder_path, 'index.html')
+        if os.path.exists(index_path):
+            return send_from_directory(static_folder_path, 'index.html')
+        else:
+            return "index.html not found", 404
+
+# 🚨 CRITICAL FIX: Audit route AFTER catch-all route to fix precedence issue
 @app.route('/audit/log', methods=['POST'])
 def root_audit_log():
     """Root level audit log endpoint for UniversalGovernanceAdapter"""
@@ -164,52 +212,6 @@ def root_audit_log():
             'success': False,
             'error': str(e)
         }), 500
-
-# 🚨 EMERGENCY: Add missing trust-metrics route
-@app.route('/api/trust-metrics/alerts/check', methods=['POST'])
-def trust_metrics_alerts_check():
-    """Trust metrics alerts check endpoint"""
-    from flask import request, jsonify
-    from datetime import datetime
-    
-    print(f"🚨 [TRUST-METRICS-DEBUG] Trust metrics alerts check called")
-    print(f"🚨 [TRUST-METRICS-DEBUG] Request headers: {dict(request.headers)}")
-    
-    try:
-        data = request.get_json() or {}
-        print(f"🚨 [TRUST-METRICS-DEBUG] Request data: {data}")
-        
-        # For now, return a basic response to prevent 404 errors
-        return jsonify({
-            'success': True,
-            'alerts': [],
-            'trust_score': 85.0,
-            'timestamp': datetime.utcnow().isoformat(),
-            'message': 'Trust metrics check completed'
-        }), 200
-        
-    except Exception as e:
-        print(f"❌ [TRUST-METRICS] Failed to check trust metrics: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    static_folder_path = app.static_folder
-    if static_folder_path is None:
-            return "Static folder not configured", 404
-
-    if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
-        return send_from_directory(static_folder_path, path)
-    else:
-        index_path = os.path.join(static_folder_path, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(static_folder_path, 'index.html')
-        else:
-            return "index.html not found", 404
 
 # Chat History Persistence Endpoints
 @app.route('/api/chat/history', methods=['GET', 'POST'])
