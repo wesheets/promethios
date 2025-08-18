@@ -57,13 +57,66 @@ class PromethiosLLMRenderService:
             if has_images or has_documents:
                 logger.info(f"🖼️ [PromethiosLLM] Processing {len(attachments)} attachments with vision service")
                 
+                # Add comprehensive debugging for file processing
+                logger.info(f"🔍 [FileDebug] Starting file attachment debugging")
+                logger.info(f"🔍 [FileDebug] Total attachments: {len(attachments)}")
+                logger.info(f"🔍 [FileDebug] Has images: {has_images}")
+                logger.info(f"🔍 [FileDebug] Has documents: {has_documents}")
+                
+                for i, attachment in enumerate(attachments):
+                    logger.info(f"🔍 [FileDebug] Attachment {i+1}:")
+                    logger.info(f"  - Name: {attachment.get('name', 'Unknown')}")
+                    logger.info(f"  - Type: {attachment.get('type', 'Unknown')}")
+                    logger.info(f"  - Size: {attachment.get('size', 0)} bytes")
+                    logger.info(f"  - Has data: {'data' in attachment}")
+                    logger.info(f"  - Data length: {len(attachment.get('data', '')) if attachment.get('data') else 0}")
+                    logger.info(f"  - Data type: {type(attachment.get('data', ''))}")
+                    
+                    # Check if data looks like base64
+                    data = attachment.get('data', '')
+                    if data:
+                        is_base64_like = data.startswith('data:') or (len(data) % 4 == 0 and all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=' for c in data[:100]))
+                        logger.info(f"  - Appears to be base64: {is_base64_like}")
+                        if data.startswith('data:'):
+                            logger.info(f"  - Data URL prefix: {data[:50]}...")
+                
+                # Check vision service initialization
+                logger.info(f"🔍 [FileDebug] Vision service type: {type(self.vision_service)}")
+                logger.info(f"🔍 [FileDebug] Vision service initialized: {hasattr(self, 'vision_service') and self.vision_service is not None}")
+                
+                # Check environment variables for API keys
+                import os
+                openai_key = os.getenv('OPENAI_API_KEY')
+                anthropic_key = os.getenv('ANTHROPIC_API_KEY')
+                google_key = os.getenv('GOOGLE_API_KEY')
+                
+                logger.info(f"🔍 [FileDebug] OpenAI API Key: {'Present' if openai_key else 'Missing'}")
+                logger.info(f"🔍 [FileDebug] Anthropic API Key: {'Present' if anthropic_key else 'Missing'}")
+                logger.info(f"🔍 [FileDebug] Google API Key: {'Present' if google_key else 'Missing'}")
+                
+                if openai_key:
+                    logger.info(f"🔍 [FileDebug] OpenAI Key length: {len(openai_key)}")
+                    logger.info(f"🔍 [FileDebug] OpenAI Key prefix: {openai_key[:10]}...")
+                
                 # Process attachments with Universal Vision Service
                 vision_results = []
                 for attachment in attachments:
                     try:
                         logger.info(f"🔍 [PromethiosLLM] Processing attachment: {attachment.get('name')} ({attachment.get('type')})")
                         
+                        # Add detailed debugging before vision service call
+                        logger.info(f"🔍 [VisionDebug] About to call vision service for {attachment.get('name')}")
+                        logger.info(f"🔍 [VisionDebug] Vision service method: analyze_image")
+                        logger.info(f"🔍 [VisionDebug] Parameters:")
+                        logger.info(f"  - image_data length: {len(attachment.get('data', ''))}")
+                        logger.info(f"  - image_type: {attachment.get('type', 'image/jpeg')}")
+                        logger.info(f"  - user_message: {message[:100]}...")
+                        logger.info(f"  - provider: {provider}")
+                        logger.info(f"  - agent_id: {agent_id}")
+                        logger.info(f"  - session_id: {context.get('session_id', f'session_{int(datetime.now().timestamp())}')}")
+                        
                         # Analyze with Universal Vision Service using correct parameters
+                        logger.info(f"🔍 [VisionDebug] Calling vision service...")
                         vision_result = await self.vision_service.analyze_image(
                             image_data=attachment['data'],  # Use base64 data directly
                             image_type=attachment.get('type', 'image/jpeg'),
@@ -76,16 +129,48 @@ class PromethiosLLMRenderService:
                         logger.info(f"✅ [PromethiosLLM] Vision analysis completed for {attachment.get('name')}")
                         logger.info(f"🔍 [PromethiosLLM] Vision result keys: {list(vision_result.keys()) if vision_result else 'None'}")
                         
+                        # Add detailed debugging of vision result
+                        logger.info(f"🔍 [VisionDebug] Vision service returned:")
+                        logger.info(f"  - Result type: {type(vision_result)}")
+                        logger.info(f"  - Result is None: {vision_result is None}")
+                        if vision_result:
+                            logger.info(f"  - Result keys: {list(vision_result.keys())}")
+                            logger.info(f"  - Success: {vision_result.get('success', 'Not specified')}")
+                            logger.info(f"  - Error: {vision_result.get('error', 'None')}")
+                            logger.info(f"  - Analysis length: {len(vision_result.get('analysis', '')) if vision_result.get('analysis') else 0}")
+                            logger.info(f"  - Provider used: {vision_result.get('provider', 'Not specified')}")
+                            logger.info(f"  - Confidence: {vision_result.get('confidence', 'Not specified')}")
+                        
                         # Check if vision analysis was successful
                         if vision_result and vision_result.get('success', False):
                             analysis_text = vision_result.get('analysis', 'No analysis provided')
                             provider_used = vision_result.get('provider', provider)
                             confidence = vision_result.get('confidence', 0.8)
                         else:
-                            # Handle failed vision analysis
+                            # Handle failed vision analysis with detailed debugging
                             error_msg = vision_result.get('error', 'Unknown error') if vision_result else 'No response from vision service'
                             logger.error(f"❌ [PromethiosLLM] Vision analysis failed: {error_msg}")
-                            analysis_text = f"I was unable to analyze this image due to a technical issue: {error_msg}"
+                            
+                            # Add detailed failure debugging
+                            logger.error(f"🔍 [VisionFailure] Detailed failure analysis:")
+                            logger.error(f"  - Vision result exists: {vision_result is not None}")
+                            if vision_result:
+                                logger.error(f"  - Success flag: {vision_result.get('success', 'Missing')}")
+                                logger.error(f"  - Error message: {vision_result.get('error', 'No error message')}")
+                                logger.error(f"  - Full result: {json.dumps(vision_result, indent=2) if isinstance(vision_result, dict) else str(vision_result)}")
+                            else:
+                                logger.error(f"  - Vision service returned None - possible service failure")
+                            
+                            # Check if this is an API key issue
+                            if 'api' in error_msg.lower() or 'key' in error_msg.lower() or 'auth' in error_msg.lower():
+                                logger.error(f"🔍 [VisionFailure] Possible API key issue detected")
+                                analysis_text = f"I was unable to analyze this image due to an API authentication issue. Please check that the vision service has proper API keys configured."
+                            elif 'timeout' in error_msg.lower() or 'connection' in error_msg.lower():
+                                logger.error(f"🔍 [VisionFailure] Possible network/timeout issue detected")
+                                analysis_text = f"I was unable to analyze this image due to a network connectivity issue. Please try again."
+                            else:
+                                analysis_text = f"I was unable to analyze this image due to a technical issue: {error_msg}"
+                            
                             provider_used = 'error'
                             confidence = 0.0
                         
@@ -98,11 +183,41 @@ class PromethiosLLMRenderService:
                             
                     except Exception as e:
                         logger.error(f"❌ [PromethiosLLM] Failed to process attachment {attachment.get('name')}: {e}")
+                        
+                        # Add detailed exception debugging
+                        logger.error(f"🔍 [AttachmentException] Detailed exception analysis:")
+                        logger.error(f"  - Exception type: {type(e).__name__}")
+                        logger.error(f"  - Exception message: {str(e)}")
+                        logger.error(f"  - Attachment name: {attachment.get('name', 'Unknown')}")
+                        logger.error(f"  - Attachment type: {attachment.get('type', 'Unknown')}")
+                        logger.error(f"  - Has attachment data: {'data' in attachment}")
+                        
+                        import traceback
+                        logger.error(f"🔍 [AttachmentException] Full traceback:")
+                        logger.error(traceback.format_exc())
+                        
+                        # Provide helpful error message based on exception type
+                        if 'timeout' in str(e).lower():
+                            error_analysis = f'Processing timeout for this file. The file might be too large or the service is overloaded.'
+                        elif 'memory' in str(e).lower() or 'size' in str(e).lower():
+                            error_analysis = f'File size issue. The file might be too large to process.'
+                        elif 'format' in str(e).lower() or 'decode' in str(e).lower():
+                            error_analysis = f'File format issue. The file might be corrupted or in an unsupported format.'
+                        elif 'api' in str(e).lower() or 'key' in str(e).lower():
+                            error_analysis = f'API configuration issue. Please check service credentials.'
+                        else:
+                            error_analysis = f'Unexpected error: {str(e)}'
+                        
                         vision_results.append({
                             'filename': attachment.get('name'),
-                            'analysis': f'Unable to process this file: {str(e)}',
+                            'analysis': f'Unable to process this file: {error_analysis}',
                             'provider_used': 'error',
-                            'confidence': 0.0
+                            'confidence': 0.0,
+                            'error_details': {
+                                'exception_type': type(e).__name__,
+                                'exception_message': str(e),
+                                'processing_stage': 'vision_service_call'
+                            }
                         })
                 
                 # Build comprehensive response with vision analysis and identity transparency
@@ -139,15 +254,77 @@ class PromethiosLLMRenderService:
                 }
             
             else:
-                # No attachments - generate regular response with model identity
-                model_identity = self._get_model_identity(provider, model)
-                response = self._generate_identity_aware_response(message, model_identity, context)
+                # No attachments - check for function calling support
+                function_calling_enabled = context.get('function_calling_enabled', False)
+                tools = context.get('tools', [])
                 
-                return {
-                    'response': response,
-                    'vision_processing': False,
-                    'attachments_processed': 0,
-                    'provider_used': provider,
+                if function_calling_enabled and tools:
+                    logger.info(f"🛠️ [PromethiosLLM] Function calling enabled with {len(tools)} tools")
+                    
+                    # Generate response with function calling support
+                    ai_response = await self._make_ai_call_with_tools(
+                        message=message,
+                        tools=tools,
+                        provider=provider,
+                        model=model,
+                        context=context
+                    )
+                    
+                    # Check if AI wants to use tools
+                    if ai_response.get('function_calls'):
+                        logger.info(f"🔧 [PromethiosLLM] AI requested {len(ai_response['function_calls'])} function calls")
+                        
+                        # Execute function calls
+                        tool_results = await self._execute_function_calls(
+                            ai_response['function_calls'],
+                            agent_id,
+                            context
+                        )
+                        
+                        # Generate final response with tool results
+                        final_response = await self._integrate_tool_results(
+                            ai_response,
+                            tool_results,
+                            provider,
+                            model,
+                            context
+                        )
+                        
+                        return {
+                            'response': final_response,
+                            'vision_processing': False,
+                            'function_calling': True,
+                            'tools_used': len(tool_results),
+                            'tool_results': tool_results,
+                            'attachments_processed': 0,
+                            'provider_used': provider,
+                            'model_used': model,
+                            'governance_compliant': True
+                        }
+                    else:
+                        # No function calls requested
+                        return {
+                            'response': ai_response.get('content', ai_response.get('response', 'No response generated')),
+                            'vision_processing': False,
+                            'function_calling': False,
+                            'tools_used': 0,
+                            'attachments_processed': 0,
+                            'provider_used': provider,
+                            'model_used': model,
+                            'governance_compliant': True
+                        }
+                else:
+                    # No function calling - generate regular response with model identity
+                    model_identity = self._get_model_identity(provider, model)
+                    response = self._generate_identity_aware_response(message, model_identity, context)
+                    
+                    return {
+                        'response': response,
+                        'vision_processing': False,
+                        'function_calling': False,
+                        'tools_used': 0,
+                        'attachments_processed': 0,
+                        'provider_used': provider,
                     'model_used': model,
                     'governance_compliant': True
                 }
@@ -328,4 +505,261 @@ How can I assist you today?"""
 
 # Create singleton instance
 promethios_llm_service = PromethiosLLMRenderService()
+
+
+    async def _make_ai_call_with_tools(self, message: str, tools: list, provider: str, model: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Make AI API call with function calling support"""
+        try:
+            logger.info(f"🤖 [FunctionCalling] Making AI call with {len(tools)} tools available")
+            
+            # Create system message with tool instructions
+            from src.routes.enhanced_chat import create_system_message_with_tools
+            base_system_message = f"You are {self._get_model_identity(provider, model)}, operating under the Promethios governance framework."
+            system_message = create_system_message_with_tools(base_system_message)
+            
+            # Prepare messages
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": message}
+            ]
+            
+            # Add conversation history if available
+            conversation_history = context.get('conversation_history', [])
+            if conversation_history:
+                # Insert conversation history before the current message
+                messages = [messages[0]] + conversation_history + [messages[1]]
+            
+            if provider.lower() == 'openai':
+                import openai
+                
+                # Set API key from environment
+                import os
+                openai.api_key = os.getenv('OPENAI_API_KEY')
+                
+                response = await openai.ChatCompletion.acreate(
+                    model=model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto"
+                )
+                
+                # Parse OpenAI response
+                message_content = response.choices[0].message
+                
+                if hasattr(message_content, 'tool_calls') and message_content.tool_calls:
+                    return {
+                        'content': message_content.content or '',
+                        'function_calls': [
+                            {
+                                'name': tool_call.function.name,
+                                'arguments': tool_call.function.arguments
+                            }
+                            for tool_call in message_content.tool_calls
+                        ]
+                    }
+                else:
+                    return {
+                        'content': message_content.content,
+                        'function_calls': []
+                    }
+                    
+            elif provider.lower() == 'anthropic':
+                import anthropic
+                
+                # Set API key from environment
+                import os
+                client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+                
+                response = await client.messages.create(
+                    model=model,
+                    messages=messages[1:],  # Anthropic doesn't use system messages in the same way
+                    system=messages[0]['content'],
+                    tools=tools,
+                    tool_choice={"type": "auto"},
+                    max_tokens=4000
+                )
+                
+                # Parse Anthropic response
+                content = ''
+                function_calls = []
+                
+                for content_block in response.content:
+                    if content_block.type == 'text':
+                        content += content_block.text
+                    elif content_block.type == 'tool_use':
+                        function_calls.append({
+                            'name': content_block.name,
+                            'arguments': json.dumps(content_block.input)
+                        })
+                
+                return {
+                    'content': content,
+                    'function_calls': function_calls
+                }
+                
+            else:
+                # Fallback for other providers - no function calling support yet
+                logger.warning(f"⚠️ [FunctionCalling] Provider {provider} doesn't support function calling yet")
+                return {
+                    'content': f"I'm {self._get_model_identity(provider, model)} and I have access to tools, but function calling isn't implemented for {provider} yet.",
+                    'function_calls': []
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ [FunctionCalling] AI call failed: {e}")
+            return {
+                'content': f"I encountered an error while trying to process your request: {str(e)}",
+                'function_calls': []
+            }
+    
+    async def _execute_function_calls(self, function_calls: list, agent_id: str, context: Dict[str, Any]) -> list:
+        """Execute function calls by routing to tool endpoints"""
+        results = []
+        
+        for function_call in function_calls:
+            try:
+                logger.info(f"🔧 [ToolExecution] Executing {function_call['name']}")
+                
+                # Parse function arguments
+                try:
+                    arguments = json.loads(function_call['arguments']) if isinstance(function_call['arguments'], str) else function_call['arguments']
+                except json.JSONDecodeError:
+                    arguments = {}
+                
+                # Map function names to tool IDs
+                tool_mapping = {
+                    'web_search': 'web_search',
+                    'generate_document': 'document_generation',
+                    'create_visualization': 'data_visualization',
+                    'analyze_code': 'coding_programming'
+                }
+                
+                tool_id = tool_mapping.get(function_call['name'])
+                if not tool_id:
+                    results.append({
+                        'function_name': function_call['name'],
+                        'success': False,
+                        'error': f"Unknown function: {function_call['name']}"
+                    })
+                    continue
+                
+                # Call the tool endpoint
+                import requests
+                tool_response = requests.post('http://localhost:5004/api/tools/execute', json={
+                    'tool_id': tool_id,
+                    'parameters': arguments,
+                    'agent_id': agent_id,
+                    'governance_enabled': True
+                })
+                
+                if tool_response.status_code == 200:
+                    tool_result = tool_response.json()
+                    results.append({
+                        'function_name': function_call['name'],
+                        'success': True,
+                        'result': tool_result
+                    })
+                    logger.info(f"✅ [ToolExecution] {function_call['name']} completed successfully")
+                else:
+                    results.append({
+                        'function_name': function_call['name'],
+                        'success': False,
+                        'error': f"Tool execution failed: {tool_response.status_code}"
+                    })
+                    logger.error(f"❌ [ToolExecution] {function_call['name']} failed: {tool_response.status_code}")
+                    
+            except Exception as e:
+                logger.error(f"❌ [ToolExecution] Error executing {function_call['name']}: {e}")
+                results.append({
+                    'function_name': function_call['name'],
+                    'success': False,
+                    'error': str(e)
+                })
+        
+        return results
+    
+    async def _integrate_tool_results(self, ai_response: Dict[str, Any], tool_results: list, provider: str, model: str, context: Dict[str, Any]) -> str:
+        """Integrate tool results into final AI response"""
+        try:
+            logger.info(f"🔗 [ResultIntegration] Integrating {len(tool_results)} tool results")
+            
+            # Build context for final response
+            tool_context = "Tool execution results:\n\n"
+            for result in tool_results:
+                if result['success']:
+                    tool_context += f"✅ {result['function_name']}: {json.dumps(result['result'], indent=2)}\n\n"
+                else:
+                    tool_context += f"❌ {result['function_name']}: {result['error']}\n\n"
+            
+            # Create follow-up message to integrate results
+            integration_message = f"""Based on the tool execution results, please provide a comprehensive response to the user's original request.
+
+Original AI response: {ai_response.get('content', '')}
+
+{tool_context}
+
+Please integrate these results into a helpful, coherent response for the user."""
+            
+            # Make another AI call to integrate results
+            messages = [
+                {"role": "system", "content": f"You are {self._get_model_identity(provider, model)}, operating under the Promethios governance framework. Integrate tool results into a helpful response."},
+                {"role": "user", "content": integration_message}
+            ]
+            
+            if provider.lower() == 'openai':
+                import openai
+                import os
+                openai.api_key = os.getenv('OPENAI_API_KEY')
+                
+                response = await openai.ChatCompletion.acreate(
+                    model=model,
+                    messages=messages,
+                    max_tokens=2000
+                )
+                
+                return response.choices[0].message.content
+                
+            elif provider.lower() == 'anthropic':
+                import anthropic
+                import os
+                client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+                
+                response = await client.messages.create(
+                    model=model,
+                    messages=messages[1:],
+                    system=messages[0]['content'],
+                    max_tokens=2000
+                )
+                
+                return ''.join([block.text for block in response.content if block.type == 'text'])
+                
+            else:
+                # Fallback - simple text integration
+                final_response = ai_response.get('content', '')
+                final_response += "\n\nTool Results:\n"
+                for result in tool_results:
+                    if result['success']:
+                        final_response += f"✅ {result['function_name']}: Completed successfully\n"
+                    else:
+                        final_response += f"❌ {result['function_name']}: {result['error']}\n"
+                
+                return final_response
+                
+        except Exception as e:
+            logger.error(f"❌ [ResultIntegration] Failed to integrate results: {e}")
+            # Fallback response
+            return f"{ai_response.get('content', '')} \n\n[Tool execution completed with {len([r for r in tool_results if r['success']])} successful operations]"
+
+
+                
+                # Add final debugging summary
+                logger.info(f"🔍 [FileDebug] File processing summary:")
+                logger.info(f"  - Total attachments processed: {len(vision_results)}")
+                logger.info(f"  - Successful analyses: {len([r for r in vision_results if r['provider_used'] != 'error'])}")
+                logger.info(f"  - Failed analyses: {len([r for r in vision_results if r['provider_used'] == 'error'])}")
+                
+                for i, result in enumerate(vision_results):
+                    logger.info(f"  - Result {i+1}: {result['filename']} - {'SUCCESS' if result['provider_used'] != 'error' else 'FAILED'}")
+                    if result['provider_used'] == 'error' and 'error_details' in result:
+                        logger.info(f"    Error: {result['error_details']['exception_type']} - {result['error_details']['exception_message']}")
 

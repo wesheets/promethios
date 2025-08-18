@@ -531,10 +531,17 @@ async def universal_governance_chat():
             'identity_transparency': True
         })
         
-        # Generate response using the service with model identity context and Universal Vision Service
+        # Import function calling support
+        from src.routes.enhanced_chat import TOOL_FUNCTION_SCHEMAS, create_system_message_with_tools, FunctionCallHandler
+        
+        # Add function calling support to context
+        processed_context['tools'] = TOOL_FUNCTION_SCHEMAS
+        processed_context['function_calling_enabled'] = True
+        
+        # Generate response using the service with model identity context, Universal Vision Service, and function calling
         response_data = await service.generate_response_with_vision(
             agent_id=agent_id,
-            user_id=context.get('userId', 'anonymous'),
+            user_id=user_id,
             message=message,
             context=processed_context,
             provider=provider,
