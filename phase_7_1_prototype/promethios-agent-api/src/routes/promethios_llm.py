@@ -405,7 +405,7 @@ def create_audit_log():
 @promethios_llm_bp.route('/integrations', methods=['GET'])
 def get_integrations():
     """
-    Get available integrations for CORS testing
+    Get available integrations and tools for agent capabilities
     """
     try:
         integrations = {
@@ -421,10 +421,60 @@ def get_integrations():
                     'type': 'ai_provider',
                     'status': 'active',
                     'endpoints': ['/agent/<id>/chat', '/model/info']
+                },
+                {
+                    'name': 'Universal Vision Service',
+                    'type': 'vision_processing',
+                    'status': 'active',
+                    'endpoints': ['/api/vision/analyze']
+                }
+            ],
+            'available_tools': [
+                {
+                    'name': 'Web Search',
+                    'id': 'web_search',
+                    'type': 'search',
+                    'status': 'enabled',
+                    'description': 'Search the web for current information and answers',
+                    'capabilities': ['real_time_search', 'fact_checking', 'current_events']
+                },
+                {
+                    'name': 'Document Generation',
+                    'id': 'document_generation',
+                    'type': 'productivity',
+                    'status': 'enabled',
+                    'description': 'Generate PDF, Word, Markdown, and HTML documents',
+                    'capabilities': ['pdf_creation', 'word_documents', 'markdown_formatting', 'html_generation']
+                },
+                {
+                    'name': 'Data Visualization',
+                    'id': 'data_visualization',
+                    'type': 'analytics',
+                    'status': 'enabled',
+                    'description': 'Create charts, graphs, and visual reports from data',
+                    'capabilities': ['chart_creation', 'graph_generation', 'data_analysis', 'visual_reports']
+                },
+                {
+                    'name': 'Coding & Programming',
+                    'id': 'coding_programming',
+                    'type': 'development',
+                    'status': 'enabled',
+                    'description': 'Write, analyze, debug, and execute code in multiple languages',
+                    'capabilities': ['code_generation', 'debugging', 'code_analysis', 'multi_language_support']
+                },
+                {
+                    'name': 'Vision Processing',
+                    'id': 'vision_processing',
+                    'type': 'ai_capability',
+                    'status': 'enabled',
+                    'description': 'Analyze and interpret images, documents, and visual content',
+                    'capabilities': ['image_analysis', 'document_reading', 'visual_understanding', 'ocr']
                 }
             ],
             'cors_enabled': True,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.utcnow().isoformat(),
+            'governance_enabled': True,
+            'tools_count': 5
         }
         
         return jsonify(integrations), 200

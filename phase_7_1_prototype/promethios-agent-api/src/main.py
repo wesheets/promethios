@@ -25,7 +25,11 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 
 # Enable CORS for all routes to allow frontend communication
-CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+# Include x-api-key header for tools integration API access
+CORS(app, 
+     origins="*", 
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With"])
 
 # Register blueprints
 app.register_blueprint(user_bp, url_prefix='/api/user')
