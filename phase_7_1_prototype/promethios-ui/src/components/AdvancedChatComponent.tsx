@@ -2051,6 +2051,15 @@ useEffect(() => {
       } else if (provider === 'anthropic') {
         console.log('🔧 ANTHROPIC DEBUG: Taking Anthropic path...');
         console.log('🔧 ANTHROPIC DEBUG: API_BASE_URL:', API_BASE_URL);
+        console.log('🔧 ANTHROPIC DEBUG: Full API URL:', `${API_BASE_URL}/api/chat`);
+        console.log('🔧 ANTHROPIC DEBUG: Request payload:', JSON.stringify({
+          agent_id: selectedAgent?.id || 'default',
+          user_id: currentUser?.uid || 'anonymous',
+          message: message,
+          provider: 'anthropic',
+          model: selectedModel,
+          conversation_history: conversationHistory
+        }, null, 2));
         console.log('🔧 ANTHROPIC DEBUG: Agent details:', {
           id: agent.id,
           name: agent.agentName || agent.identity?.name,
