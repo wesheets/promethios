@@ -115,7 +115,7 @@ def test_deployment():
     })
 
 # Register audit endpoint at root level for UniversalGovernanceAdapter (after DB init)
-@app.route('/audit/log', methods=['POST'])
+@app.route('/api/audit/log', methods=['POST'])
 def root_audit_log():
     """Root level audit log endpoint for UniversalGovernanceAdapter"""
     from flask import request, jsonify
