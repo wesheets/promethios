@@ -105,15 +105,21 @@ def root_audit_log():
     from datetime import datetime
     import uuid
     
+    print(f"🚨 [AUDIT-DEBUG] Audit route called! Method: {request.method}")
+    print(f"🚨 [AUDIT-DEBUG] Request headers: {dict(request.headers)}")
+    print(f"🚨 [AUDIT-DEBUG] Request content type: {request.content_type}")
+    
     try:
         data = request.get_json()
+        print(f"🚨 [AUDIT-DEBUG] Request data: {data}")
         
         # Extract audit data
-        agent_id = data.get('agentId')
-        action = data.get('action')
-        details = data.get('details', {})
+        agent_id = data.get('agentId') if data else None
+        action = data.get('action') if data else None
+        details = data.get('details', {}) if data else {}
         
         print(f"📝 [Audit] Creating audit entry for agent {agent_id}: {action}")
+        print(f"🚨 [AUDIT-DEBUG] About to create AgentLog with db: {db}")
         
         # Create audit log entry using existing models
         audit_log = AgentLog(
