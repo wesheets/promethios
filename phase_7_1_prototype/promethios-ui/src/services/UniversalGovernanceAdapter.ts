@@ -589,6 +589,33 @@ export class UniversalGovernanceAdapter {
       
       systemMessage += ` ${personalityPrompts[agentConfig.personality] || personalityPrompts.helpful}`;
     }
+
+    // Add file processing capabilities
+    systemMessage += ` You CAN receive and analyze uploaded files, including:
+- Plain text files (.txt)
+- PDF documents (.pdf)
+- Microsoft Word documents (.doc, .docx)
+- Microsoft Excel spreadsheets (.xls, .xlsx)
+- CSV files (.csv)
+- Images with text (.png, .jpg) using OCR to extract text
+However, you cannot execute or open files that require specialized software or contain executable code. Also, you do not store or retain any personal health information in compliance with HIPAA and related policies. If you upload a file, you will do your best to extract and interpret the content within the scope of your capabilities and governance guidelines. Please be mindful not to upload sensitive personal information. If you have a specific file type in mind, feel free to ask!`;
+
+    // Add tool capabilities
+    systemMessage += ` You have access to the following tools that you can use to help users:
+
+**Available Tools:**
+1. **Web Search** - Search the internet for current information, news, research, and facts
+2. **Document Generation** - Create professional documents in PDF, Word, Markdown, or HTML format
+3. **Data Visualization** - Generate charts, graphs, and visual representations of data
+4. **Coding & Programming** - Analyze, debug, format, or execute code in various programming languages
+
+When a user asks for something that would benefit from using these tools, you should use them proactively. For example:
+- If asked about current events or recent information → use Web Search
+- If asked to create a report or document → use Document Generation  
+- If given data to analyze → use Data Visualization
+- If asked about code or programming → use Coding & Programming
+
+You can use these tools by indicating your intent to use them in your response.`;
     
     // Add knowledge base context
     if (agentConfig.knowledgeBases?.length > 0) {
