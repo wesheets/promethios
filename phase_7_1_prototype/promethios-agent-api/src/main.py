@@ -1,5 +1,6 @@
 import os
 import sys
+import os
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -18,6 +19,7 @@ from src.routes.veritas_enterprise import veritas_enterprise_bp
 from src.routes.deployment import deployment_bp
 # from src.routes.native_llm import native_llm_bp  # File doesn't exist - commented out
 from src.routes.promethios_llm import promethios_llm_bp
+from src.routes.universal_tools import universal_tools_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -36,6 +38,7 @@ app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
 app.register_blueprint(veritas_enterprise_bp)
 app.register_blueprint(deployment_bp, url_prefix='/api')
 app.register_blueprint(promethios_llm_bp, url_prefix='/api')
+app.register_blueprint(universal_tools_bp)
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"

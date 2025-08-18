@@ -99,6 +99,226 @@ export class UniversalGovernanceAdapter {
   }
 
   // ============================================================================
+  // TOOL EXECUTION INTEGRATION
+  // ============================================================================
+
+  /**
+   * Execute a tool with governance integration
+   */
+  async executeToolWithGovernance(
+    toolId: string,
+    parameters: Record<string, any>,
+    userMessage: string,
+    agentId: string,
+    context?: MessageContext
+  ): Promise<EnhancedResponse> {
+    try {
+      console.log(`🛠️ [Universal] Executing tool: ${toolId} for agent: ${agentId}`);
+      
+      // Ensure initialization
+      if (!this.initialized) {
+        await this.initializeBackendIntegration();
+      }
+
+      // Load agent configuration for governance context
+      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId);
+      
+      // Prepare tool execution request
+      const toolRequest = {
+        tool_id: toolId,
+        parameters: parameters,
+        user_message: userMessage,
+        governance_context: {
+          agent_id: agentId,
+          session_id: context?.sessionId || `tool_${Date.now()}`,
+          agent_configuration: fullAgentConfig,
+          governance_enabled: true,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      console.log(`📤 [Universal] Tool request:`, {
+        tool_id: toolId,
+        parameters: Object.keys(parameters),
+        agent_id: agentId,
+        governance_enabled: true
+      });
+
+      // Call backend tool API
+      const toolResponse = await this.callBackendAPI('/api/tools/execute', toolRequest);
+      
+      // Convert tool response to EnhancedResponse format
+      const enhancedResponse: EnhancedResponse = {
+        originalMessage: userMessage,
+        enhancedMessage: this.formatToolResponse(toolResponse),
+        governanceMetrics: {
+          trustScore: toolResponse.governance_metadata?.trust_metrics?.tool_reliability || 0.95,
+          complianceScore: toolResponse.governance_metadata?.trust_metrics?.governance_adherence || 0.98,
+          riskLevel: this.mapRiskLevel(toolResponse.governance_metadata?.tool_governance?.risk_level || 1),
+          policyViolations: 0,
+          governanceEnabled: true,
+          blocked: false
+        },
+        context: {
+          agentId: agentId,
+          sessionId: context?.sessionId || toolResponse.governance_metadata?.execution_context?.session_id,
+          timestamp: new Date(toolResponse.timestamp),
+          governanceEnabled: true
+        },
+        metadata: {
+          processingTime: toolResponse.execution_time_ms || 0,
+          governanceVersion: '2.0',
+          enhancementApplied: true,
+          backendIntegration: true,
+          toolExecution: {
+            toolId: toolId,
+            success: toolResponse.success,
+            executionTime: toolResponse.execution_time_ms
+          }
+        }
+      };
+
+      console.log(`✅ [Universal] Tool executed successfully:`, {
+        toolId: toolId,
+        success: toolResponse.success,
+        executionTime: toolResponse.execution_time_ms,
+        trustScore: enhancedResponse.governanceMetrics.trustScore
+      });
+
+      return enhancedResponse;
+      
+    } catch (error) {
+      console.error(`❌ [Universal] Tool execution failed for ${toolId}:`, error);
+      
+      // Fallback response for tool execution failure
+      return {
+        originalMessage: userMessage,
+        enhancedMessage: `I encountered an issue while trying to use the ${toolId} tool. The tool execution failed, but I'm still here to help in other ways. Please try again or let me know if you'd like to approach this differently.`,
+        governanceMetrics: {
+          trustScore: 0.6,
+          complianceScore: 0.8,
+          riskLevel: 'medium',
+          policyViolations: 0,
+          governanceEnabled: true,
+          blocked: false
+        },
+        context: {
+          agentId: agentId,
+          sessionId: context?.sessionId || `tool_error_${Date.now()}`,
+          timestamp: new Date(),
+          governanceEnabled: true
+        },
+        metadata: {
+          processingTime: 0,
+          governanceVersion: '2.0',
+          enhancementApplied: true,
+          backendIntegration: false,
+          toolExecution: {
+            toolId: toolId,
+            success: false,
+            error: error.message
+          }
+        }
+      };
+    }
+  }
+
+  /**
+   * Get available tools for an agent
+   */
+  async getAvailableTools(agentId: string): Promise<any> {
+    try {
+      console.log(`📋 [Universal] Fetching available tools for agent: ${agentId}`);
+      
+      // Ensure initialization
+      if (!this.initialized) {
+        await this.initializeBackendIntegration();
+      }
+
+      // Call backend tools API
+      const toolsResponse = await this.callBackendAPI('/api/tools/available', {
+        agent_id: agentId
+      });
+      
+      console.log(`✅ [Universal] Available tools fetched:`, {
+        totalTools: toolsResponse.total_tools,
+        enabledTools: toolsResponse.enabled_tools
+      });
+
+      return toolsResponse;
+      
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to fetch available tools:`, error);
+      
+      // Return default tools if backend fails
+      return {
+        tools: {
+          web_search: { name: 'Web Search', enabled: true, tier: 'basic' },
+          document_generation: { name: 'Document Generation', enabled: true, tier: 'basic' },
+          data_visualization: { name: 'Data Visualization', enabled: true, tier: 'basic' },
+          coding_programming: { name: 'Coding & Programming', enabled: true, tier: 'basic' }
+        },
+        total_tools: 4,
+        enabled_tools: 4,
+        governance_framework: 'promethios_universal'
+      };
+    }
+  }
+
+  /**
+   * Format tool response for display
+   */
+  private formatToolResponse(toolResponse: any): string {
+    if (!toolResponse.success) {
+      return `Tool execution failed: ${toolResponse.error}`;
+    }
+
+    const result = toolResponse.result;
+    const toolName = toolResponse.tool_name;
+    
+    let formattedResponse = `I used the ${toolName} tool to help with your request.\n\n`;
+    
+    // Format based on tool type
+    if (toolResponse.tool_id === 'web_search') {
+      formattedResponse += `**Search Results:**\n`;
+      formattedResponse += `Query: "${result.query}"\n`;
+      formattedResponse += `Found ${result.results_count} results\n\n`;
+      formattedResponse += result.analysis;
+    } else if (toolResponse.tool_id === 'document_generation') {
+      formattedResponse += `**Document Generated:**\n`;
+      formattedResponse += `Title: ${result.title}\n`;
+      formattedResponse += `Format: ${result.format}\n`;
+      formattedResponse += `Word Count: ${result.word_count}\n\n`;
+      formattedResponse += result.analysis;
+    } else if (toolResponse.tool_id === 'data_visualization') {
+      formattedResponse += `**Data Visualization Created:**\n`;
+      formattedResponse += `Chart Type: ${result.chart_type}\n`;
+      formattedResponse += `Data Points: ${result.data_points}\n`;
+      formattedResponse += `Statistics: Total=${result.statistics.total}, Average=${result.statistics.average}\n\n`;
+      formattedResponse += result.analysis;
+    } else if (toolResponse.tool_id === 'coding_programming') {
+      formattedResponse += `**Code Analysis:**\n`;
+      formattedResponse += `Language: ${result.language}\n`;
+      formattedResponse += `Lines: ${result.line_count}\n`;
+      formattedResponse += `Complexity: ${result.estimated_complexity}\n\n`;
+      formattedResponse += result.analysis;
+    } else {
+      formattedResponse += JSON.stringify(result, null, 2);
+    }
+    
+    return formattedResponse;
+  }
+
+  /**
+   * Map numeric risk level to string
+   */
+  private mapRiskLevel(riskLevel: number): 'low' | 'medium' | 'high' {
+    if (riskLevel <= 2) return 'low';
+    if (riskLevel <= 5) return 'medium';
+    return 'high';
+  }
+
+  // ============================================================================
   // BACKEND API INTEGRATION
   // ============================================================================
 
