@@ -4956,7 +4956,7 @@ useEffect(() => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.md,.rtf,.odt,.ppt,.pptx,.xls,.xlsx,.csv,.json,.xml,.html,.htm,.zip,.rar,.7z"
           onChange={handleFileUpload}
         />
       </MainChatArea>
