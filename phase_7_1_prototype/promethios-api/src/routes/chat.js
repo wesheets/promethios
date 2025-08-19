@@ -280,12 +280,29 @@ router.post('/', async (req, res) => {
                             ...conversationHistory,
                             { role: 'user', content: message }
                         ],
-                        model: model || 'gpt-4',
+                        model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
                         attachments: attachments
                     };
                     
-                    // Determine provider based on model or default to openai
-                    const providerId = provider || (model?.includes('claude') ? 'claude' : 'openai');
+                    // Determine provider from agent configuration or fallback logic
+                    let providerId = provider; // Use explicit provider if provided
+                    
+                    // If no explicit provider, try to get from agent configuration
+                    if (!providerId && agent_configuration?.apiDetails?.provider) {
+                        providerId = agent_configuration.apiDetails.provider.toLowerCase();
+                        console.log(`🔧 [Chat] Using provider from agent configuration: ${providerId}`);
+                    }
+                    
+                    // If still no provider, use model-based detection as fallback
+                    if (!providerId) {
+                        providerId = model?.includes('claude') ? 'anthropic' : 'openai';
+                        console.log(`🔧 [Chat] Using model-based provider detection: ${providerId}`);
+                    }
+                    
+                    // Normalize provider names
+                    if (providerId === 'claude') providerId = 'anthropic';
+                    if (providerId === 'openai') providerId = 'openai';
+                    if (providerId === 'anthropic') providerId = 'anthropic';
                     
                     // Debug: Log the start of tool-enabled chat request
                     addDebugLog('info', 'chat', `Starting chat request with tool support`, {
@@ -424,12 +441,29 @@ router.post('/', async (req, res) => {
                     ...conversationHistory,
                     { role: 'user', content: message }
                 ],
-                model: model || 'gpt-4',
+                model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
                 attachments: attachments
             };
             
-            // Determine provider based on model or default to openai
-            const providerId = provider || (model?.includes('claude') ? 'claude' : 'openai');
+            // Determine provider from agent configuration or fallback logic
+            let providerId = provider; // Use explicit provider if provided
+            
+            // If no explicit provider, try to get from agent configuration
+            if (!providerId && agent_configuration?.apiDetails?.provider) {
+                providerId = agent_configuration.apiDetails.provider.toLowerCase();
+                console.log(`🔧 [Chat] Using provider from agent configuration: ${providerId}`);
+            }
+            
+            // If still no provider, use model-based detection as fallback
+            if (!providerId) {
+                providerId = model?.includes('claude') ? 'anthropic' : 'openai';
+                console.log(`🔧 [Chat] Using model-based provider detection: ${providerId}`);
+            }
+            
+            // Normalize provider names
+            if (providerId === 'claude') providerId = 'anthropic';
+            if (providerId === 'openai') providerId = 'openai';
+            if (providerId === 'anthropic') providerId = 'anthropic';
             
             try {
                 console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
