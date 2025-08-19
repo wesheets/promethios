@@ -64,6 +64,7 @@ app.use('/api/promethios-policy', require('./routes/policies'));
 app.use('/api/policy-assignments', require('./routes/policyAssignments'));
 app.use('/api/compliance', require('./routes/complianceMonitoring'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/tools', require('./routes/tools'));
 app.use('/api/cryptographic-audit', require('./routes/cryptographicAudit'));
 app.use('/api/agent-identity', require('./routes/agentIdentity'));
 app.use('/api/agent-logs', require('./routes/agentLogSegregation'));

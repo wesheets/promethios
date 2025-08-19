@@ -100,6 +100,7 @@ import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
 import { AgentMetricsWidget } from './AgentMetricsWidget';
+import { toolIntegrationService, ToolCall, ToolResult } from '../services/ToolIntegrationService';
 import { isPromethiosNativeChatEnabled } from '../config/features';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
