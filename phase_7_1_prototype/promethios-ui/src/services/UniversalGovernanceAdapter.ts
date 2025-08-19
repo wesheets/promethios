@@ -498,9 +498,13 @@ export class UniversalGovernanceAdapter {
         personality: mergedConfig.personality,
         behavior: mergedConfig.behavior,
         knowledgeBasesCount: mergedConfig.knowledgeBases.length,
-        automationRulesCount: mergedConfig.automationRules.length,
-        enabledToolsCount: mergedConfig.enabledTools?.length || 0
+        provider: mergedConfig.provider,
+        model: mergedConfig.model
       });
+      
+      // DEBUGGER: Let's see the final merged configuration
+      debugger;
+      console.log('🚨 DEBUGGER: Final merged config:', mergedConfig);
       
       return mergedConfig;
       
@@ -547,6 +551,10 @@ export class UniversalGovernanceAdapter {
           fullApiDetails: chatbot.apiDetails,
           fullChatbotConfig: chatbot.chatbotConfig
         });
+        
+        // DEBUGGER: Let's see the exact chatbot data structure
+        debugger;
+        console.log('🚨 DEBUGGER: Full chatbot object:', chatbot);
         
         return {
           personality: chatbot.chatbotConfig.personality,
@@ -692,6 +700,8 @@ You can use these tools by indicating your intent to use them in your response.`
       };
 
       // Call real backend API (same as modern chat) with actual userId
+      console.log('🚨 DEBUGGER: About to call backend with chatRequest:', chatRequest);
+      debugger;
       const backendResponse: BackendChatResponse = await this.callBackendAPI(CHAT_ENDPOINT, chatRequest, userId);
       
       // Convert backend response to EnhancedResponse format
