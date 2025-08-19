@@ -98,6 +98,7 @@ import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } fr
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
+import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
 
 // Right panel types
@@ -215,6 +216,15 @@ const ChatbotProfilesPageContent: React.FC = () => {
     };
   };
 
+  // Modal state for chatbot management
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
+
+  const handleManageChatbot = (chatbotId: string) => {
+    setSelectedChatbotId(chatbotId);
+    setManageModalOpen(true);
+  };
+
   // Workspace mode management
   const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
   const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
@@ -288,41 +298,53 @@ const ChatbotProfilesPageContent: React.FC = () => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Get real model provider from chatbot configuration
+  // Get real model provider from chatbot configuration - only show working providers
   const getModelProvider = (chatbot: ChatbotProfile) => {
     // Use real provider from apiDetails if available
     const realProvider = chatbot.apiDetails?.provider;
     const realModel = chatbot.apiDetails?.selectedModel || chatbot.configuration?.selectedModel;
     
+    console.log('🔍 CHATBOT PROVIDER DEBUG:', {
+      chatbotId: chatbot.id,
+      realProvider,
+      realModel,
+      apiDetails: chatbot.apiDetails,
+      configuration: chatbot.configuration
+    });
+    
     if (realProvider) {
-      // Map provider names to display format with neutral colors
-      const providerMap: { [key: string]: { name: string, color: string } } = {
-        'google': { name: 'Google', color: '#6b7280' },
-        'openai': { name: 'OpenAI', color: '#6b7280' },
-        'anthropic': { name: 'Anthropic', color: '#6b7280' },
-        'cohere': { name: 'Cohere', color: '#6b7280' },
-        'huggingface': { name: 'HuggingFace', color: '#6b7280' },
-        'grok': { name: 'Grok', color: '#6b7280' },
-        'perplexity': { name: 'Perplexity', color: '#6b7280' }
+      // Only map providers that are actually working (based on startup logs)
+      const workingProviderMap: { [key: string]: { name: string, color: string } } = {
+        'openai': { name: 'OpenAI', color: '#10b981' },
+        'anthropic': { name: 'Anthropic', color: '#f59e0b' },
+        'cohere': { name: 'Cohere', color: '#8b5cf6' },
+        'google': { name: 'Google', color: '#3b82f6' },
+        'gemini': { name: 'Google', color: '#3b82f6' }
       };
       
-      return providerMap[realProvider.toLowerCase()] || { name: realProvider, color: '#6b7280' };
+      const provider = workingProviderMap[realProvider.toLowerCase()];
+      if (provider) {
+        return provider;
+      }
     }
     
-    // Fallback: try to infer from model name
+    // Fallback: try to infer from model name - only for working providers
     if (realModel) {
       if (realModel.includes('gpt') || realModel.includes('openai')) {
-        return { name: 'OpenAI', color: '#6b7280' };
+        return { name: 'OpenAI', color: '#10b981' };
       }
       if (realModel.includes('claude') || realModel.includes('anthropic')) {
-        return { name: 'Anthropic', color: '#6b7280' };
+        return { name: 'Anthropic', color: '#f59e0b' };
       }
       if (realModel.includes('gemini') || realModel.includes('google')) {
-        return { name: 'Google', color: '#6b7280' };
+        return { name: 'Google', color: '#3b82f6' };
+      }
+      if (realModel.includes('cohere')) {
+        return { name: 'Cohere', color: '#8b5cf6' };
       }
     }
     
-    // Final fallback
+    // Final fallback - show as unknown instead of defaulting to a working provider
     return { name: 'Unknown', color: '#6b7280' };
   };
 
@@ -2220,18 +2242,18 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     <Grid item xs={12} sm={6} md={4} key={chatbot.id}>
                       <Card
                         sx={{
-                          bgcolor: isSelected ? '#374151' : '#2d3748',
-                          border: isSelected ? '2px solid #6b7280' : '1px solid #4a5568',
-                          borderRadius: '8px',
+                          bgcolor: isSelected ? '#2563eb' : '#1e293b',
+                          border: isSelected ? '2px solid #3b82f6' : '1px solid #334155',
+                          borderRadius: '12px',
                           transition: 'all 0.2s ease',
                           cursor: 'pointer',
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
                           '&:hover': {
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            borderColor: '#6b7280'
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
+                            borderColor: '#3b82f6'
                           }
                         }}
                         onClick={() => handleChatbotSelect(chatbot)}
@@ -2243,19 +2265,20 @@ const ChatbotProfilesPageContent: React.FC = () => {
                               <Avatar
                                 src={chatbot.identity.avatar}
                                 sx={{
-                                  width: 40,
-                                  height: 40,
-                                  bgcolor: '#6b7280',
-                                  border: '1px solid #4a5568'
+                                  width: 48,
+                                  height: 48,
+                                  bgcolor: modelProvider.color,
+                                  border: '2px solid',
+                                  borderColor: modelProvider.color
                                 }}
                               >
                                 {chatbot.identity.name.charAt(0)}
                               </Avatar>
                               <Box>
-                                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '1rem' }}>
+                                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem' }}>
                                   {chatbot.identity.name}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                                <Typography variant="body2" sx={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
                                   {chatbot.identity.role}
                                 </Typography>
                               </Box>
@@ -2278,9 +2301,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
                               label={governanceType}
                               size="small"
                               sx={{
-                                bgcolor: '#4b5563',
+                                bgcolor: governanceType === 'BYOK' ? '#10b981' : governanceType === 'Enterprise' ? '#3b82f6' : '#f59e0b',
                                 color: 'white',
-                                fontWeight: 500,
+                                fontWeight: 600,
                                 fontSize: '0.75rem'
                               }}
                             />
@@ -2288,7 +2311,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                               label={`${metrics.healthScore}% Health`}
                               size="small"
                               sx={{
-                                bgcolor: metrics.healthScore >= 90 ? '#374151' : metrics.healthScore >= 70 ? '#6b7280' : '#7f1d1d',
+                                bgcolor: metrics.healthScore >= 90 ? '#065f46' : metrics.healthScore >= 70 ? '#ca8a04' : '#dc2626',
                                 color: 'white',
                                 fontSize: '0.75rem'
                               }}
@@ -2340,31 +2363,31 @@ const ChatbotProfilesPageContent: React.FC = () => {
                           {/* Metrics Grid */}
                           <Grid container spacing={1} sx={{ mb: 2 }}>
                             <Grid item xs={4}>
-                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#1f2937', borderRadius: 1 }}>
-                                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
                                   Trust
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#d1d5db', fontWeight: 600, fontSize: '0.875rem' }}>
+                                <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
                                   {metrics.trustScore}%
                                 </Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={4}>
-                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#1f2937', borderRadius: 1 }}>
-                                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
                                   Response
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#d1d5db', fontWeight: 600, fontSize: '0.875rem' }}>
+                                <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '1rem' }}>
                                   {Math.round(metrics.responseTime * 1000)}ms
                                 </Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={4}>
-                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#1f2937', borderRadius: 1 }}>
-                                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                              <Box sx={{ textAlign: 'center', p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
                                   Success
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#d1d5db', fontWeight: 600, fontSize: '0.875rem' }}>
+                                <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '1rem' }}>
                                   {metrics.resolutionRate}%
                                 </Typography>
                               </Box>
@@ -2406,7 +2429,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Add manage functionality
+                                handleManageChatbot(chatbot.id);
                               }}
                             >
                               Manage
@@ -2439,6 +2462,24 @@ const ChatbotProfilesPageContent: React.FC = () => {
             </Box>
           </Container>
         )}
+
+        {/* Chatbot Management Modal */}
+        <AgentManageModal
+          open={manageModalOpen}
+          onClose={() => {
+            setManageModalOpen(false);
+            setSelectedChatbotId(null);
+          }}
+          agentId={selectedChatbotId}
+          onAgentUpdated={async (updatedAgent) => {
+            // Refresh the chatbots list to show updated data
+            await loadChatbots();
+          }}
+          onAgentDeleted={async (deletedAgentId) => {
+            // Refresh the chatbots list to remove deleted agent
+            await loadChatbots();
+          }}
+        />
       </Box>
     </Box>
   );
