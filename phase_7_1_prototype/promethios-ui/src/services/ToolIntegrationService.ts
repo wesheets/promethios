@@ -45,13 +45,83 @@ class ToolIntegrationService {
   }
 
   /**
-   * Initialize with default enabled tools
+   * Load available tools from backend
+   */
+  async loadAvailableTools(): Promise<void> {
+    try {
+      console.log('🛠️ [ToolIntegration] Loading available tools from backend...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/tools/available`);
+      if (!response.ok) {
+        throw new Error(`Failed to load tools: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load tools');
+      }
+      
+      // Convert backend tools to frontend format
+      this.enabledTools = result.tools.map((tool: any) => ({
+        id: tool.id,
+        name: tool.name,
+        description: tool.description,
+        category: tool.category,
+        enabled: tool.enabled,
+        tier: 'basic',
+        riskLevel: 2,
+        permissions: ['execute'],
+        governanceRules: {
+          requiresApproval: false,
+          auditRequired: true,
+          restrictedEnvironments: []
+        }
+      }));
+      
+      console.log(`✅ [ToolIntegration] Loaded ${this.enabledTools.length} tools from backend`);
+      
+    } catch (error) {
+      console.error('❌ [ToolIntegration] Failed to load tools from backend:', error);
+      // Fall back to default tools if backend fails
+      this.initializeDefaultTools();
+    }
+  }
+
+  /**
+   * Load tool schemas from backend
+   */
+  async loadToolSchemas(): Promise<AIToolSchema[]> {
+    try {
+      console.log('🛠️ [ToolIntegration] Loading tool schemas from backend...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/tools/schemas`);
+      if (!response.ok) {
+        throw new Error(`Failed to load schemas: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load schemas');
+      }
+      
+      console.log(`✅ [ToolIntegration] Loaded ${result.schemas.length} tool schemas from backend`);
+      return result.schemas;
+      
+    } catch (error) {
+      console.error('❌ [ToolIntegration] Failed to load schemas from backend:', error);
+      // Fall back to generated schemas
+      return this.generateToolSchemas();
+    }
+  }
+
+  /**
+   * Initialize with default enabled tools (fallback)
    */
   private initializeDefaultTools(): void {
     this.enabledTools = AVAILABLE_TOOLS.filter(tool => 
       DEFAULT_ENABLED_TOOLS.includes(tool.id) || tool.enabled
     );
-    console.log(`🛠️ [ToolIntegration] Initialized with ${this.enabledTools.length} enabled tools`);
+    console.log(`🛠️ [ToolIntegration] Initialized with ${this.enabledTools.length} default tools`);
   }
 
   /**

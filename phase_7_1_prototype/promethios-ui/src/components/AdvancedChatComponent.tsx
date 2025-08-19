@@ -48,6 +48,24 @@ import { ChatStorageService } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
 import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
+import { ToolIntegrationService } from '../services/ToolIntegrationService';
+
+// Tool types
+interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+interface ToolResult {
+  tool_call_id: string;
+  role: 'tool';
+  name: string;
+  content: string;
+}
 
 // 🚀 ULTRA-AGGRESSIVE CLOUDFLARE FIX: Minimize payload to prevent 413 errors
 const limitConversationHistory = (conversationHistory: ChatMessage[], maxMessages = 2, maxMessageLength = 200) => {
@@ -471,6 +489,7 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const chatStorageService = useMemo(() => new ChatStorageService(), []);
   const governanceService = useMemo(() => new GovernanceService(), []);
   const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
+  const toolIntegrationService = useMemo(() => new ToolIntegrationService(), []);
 
   // ✨ ENHANCED GOVERNANCE SERVICES (Added alongside existing services)
   const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
@@ -2057,7 +2076,17 @@ useEffect(() => {
         } else {
           console.log('🔧 OPENAI DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          // Load tool schemas and add to system message
+          const toolSchemas = await toolIntegrationService.loadToolSchemas();
+          const toolInstructions = toolIntegrationService.generateToolInstructions(agentIdToUse);
+          
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
+
+${toolInstructions}
+
+Available tools: ${toolSchemas.map(schema => schema.function.name).join(', ')}
+
+To use a tool, call it using standard function calling format. The system will execute the tool and provide results.`;
           console.log('🔧 OPENAI DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
@@ -2245,7 +2274,17 @@ useEffect(() => {
         } else {
           console.log('🔧 COHERE DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          // Load tool schemas and add to system message
+          const toolSchemas = await toolIntegrationService.loadToolSchemas();
+          const toolInstructions = toolIntegrationService.generateToolInstructions(agentIdToUse);
+          
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
+
+${toolInstructions}
+
+Available tools: ${toolSchemas.map(schema => schema.function.name).join(', ')}
+
+To use a tool, call it using standard function calling format. The system will execute the tool and provide results.`;
           console.log('🔧 COHERE DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
@@ -2350,7 +2389,17 @@ useEffect(() => {
         } else {
           console.log('🔧 HUGGINGFACE DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have access to tools and can process file attachments.`;
+          // Load tool schemas and add to system message
+          const toolSchemas = await toolIntegrationService.loadToolSchemas();
+          const toolInstructions = toolIntegrationService.generateToolInstructions(agentIdToUse);
+          
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
+
+${toolInstructions}
+
+Available tools: ${toolSchemas.map(schema => schema.function.name).join(', ')}
+
+To use a tool, call it using standard function calling format. The system will execute the tool and provide results.`;
           console.log('🔧 HUGGINGFACE DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
@@ -3521,6 +3570,91 @@ useEffect(() => {
           // Use standard agent API call for all commercial LLMs (OpenAI, Anthropic, Cohere, etc.)
           agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
           const responseTime = Date.now() - startTime;
+          
+          // 🛠️ TOOL EXECUTION: Check if the response contains tool calls
+          console.log('🛠️ [ToolExecution] Checking response for tool calls...');
+          const toolCalls = toolIntegrationService.parseToolCalls(agentResponse);
+          
+          if (toolCalls.length > 0) {
+            console.log(`🛠️ [ToolExecution] Found ${toolCalls.length} tool calls, executing...`);
+            
+            // Add a message showing tool execution
+            const toolExecutionMessage: ChatMessage = {
+              id: `msg_${Date.now()}_tool_execution`,
+              content: `🛠️ Executing ${toolCalls.length} tool(s): ${toolCalls.map(tc => tc.function.name).join(', ')}...`,
+              sender: 'system',
+              timestamp: new Date(),
+              agentName: 'System',
+              agentId: 'system'
+            };
+            setMessages(prev => [...prev, toolExecutionMessage]);
+            
+            // Execute all tool calls
+            const toolResults: ToolResult[] = [];
+            for (const toolCall of toolCalls) {
+              try {
+                const result = await toolIntegrationService.executeToolCall(
+                  toolCall, 
+                  userMessage.content,
+                  { agentId: selectedAgent.identity.id, userId: currentUser?.uid }
+                );
+                toolResults.push(result);
+                
+                // Add individual tool result message
+                const toolResultMessage: ChatMessage = {
+                  id: `msg_${Date.now()}_tool_result_${toolCall.id}`,
+                  content: `✅ **${toolCall.function.name}** completed:\n\`\`\`json\n${result.content}\n\`\`\``,
+                  sender: 'system',
+                  timestamp: new Date(),
+                  agentName: 'Tool System',
+                  agentId: 'tool-system'
+                };
+                setMessages(prev => [...prev, toolResultMessage]);
+                
+              } catch (error) {
+                console.error(`❌ [ToolExecution] Tool ${toolCall.function.name} failed:`, error);
+                const errorResult: ToolResult = {
+                  tool_call_id: toolCall.id,
+                  role: 'tool',
+                  name: toolCall.function.name,
+                  content: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+                };
+                toolResults.push(errorResult);
+                
+                // Add error message
+                const errorMessage: ChatMessage = {
+                  id: `msg_${Date.now()}_tool_error_${toolCall.id}`,
+                  content: `❌ **${toolCall.function.name}** failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  sender: 'system',
+                  timestamp: new Date(),
+                  agentName: 'Tool System',
+                  agentId: 'tool-system'
+                };
+                setMessages(prev => [...prev, errorMessage]);
+              }
+            }
+            
+            // If we have tool results, send them back to the AI for a final response
+            if (toolResults.length > 0) {
+              console.log('🛠️ [ToolExecution] Sending tool results back to AI for final response...');
+              
+              // Create a follow-up message with tool results
+              const toolResultsMessage = `Tool execution results:\n${toolResults.map(result => 
+                `- ${result.name}: ${result.content}`
+              ).join('\n')}\n\nPlease provide a summary or analysis of these results.`;
+              
+              try {
+                const finalResponse = await callAgentAPI(toolResultsMessage, selectedAgent, [], messages);
+                agentResponse = finalResponse; // Use the final response instead of the original
+                console.log('✅ [ToolExecution] Received final response from AI after tool execution');
+              } catch (error) {
+                console.error('❌ [ToolExecution] Failed to get final response:', error);
+                agentResponse += `\n\n[Tool execution completed, but failed to get final analysis: ${error instanceof Error ? error.message : 'Unknown error'}]`;
+              }
+            }
+          } else {
+            console.log('🛠️ [ToolExecution] No tool calls found in response');
+          }
           
           // Update agent telemetry with successful interaction
           try {
