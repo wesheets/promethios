@@ -23,18 +23,34 @@ const initializeProviderRegistry = async () => {
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
     
-    // Register providers with error handling for missing API keys
+    // Register providers with their respective API keys from environment variables
     const providers = [
-      { id: 'openai', instance: new OpenAIProvider() },
-      { id: 'anthropic', instance: new AnthropicProvider() },
-      { id: 'cohere', instance: new CohereProvider() },
-      { id: 'gemini', instance: new GeminiProvider() }
+      { 
+        id: 'openai', 
+        instance: new OpenAIProvider(),
+        config: { apiKey: process.env.OPENAI_API_KEY }
+      },
+      { 
+        id: 'anthropic', 
+        instance: new AnthropicProvider(),
+        config: { apiKey: process.env.ANTHROPIC_API_KEY }
+      },
+      { 
+        id: 'cohere', 
+        instance: new CohereProvider(),
+        config: { apiKey: process.env.COHERE_API_KEY }
+      },
+      { 
+        id: 'gemini', 
+        instance: new GeminiProvider(),
+        config: { apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY }
+      }
     ];
     
     let successCount = 0;
     for (const provider of providers) {
       try {
-        await providerRegistry.registerProvider(provider.id, provider.instance);
+        await providerRegistry.registerProvider(provider.id, provider.instance, provider.config);
         console.log(`✅ [Chat] Successfully registered ${provider.id} provider`);
         successCount++;
       } catch (error) {
