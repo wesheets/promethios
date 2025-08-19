@@ -14,19 +14,28 @@ const GeminiProvider = require('../services/providers/GeminiProvider');
 
 const providerRegistry = new ProviderRegistry();
 
-// Initialize providers immediately
-(async () => {
+// Initialize providers synchronously and track initialization status
+let isProviderRegistryInitialized = false;
+
+const initializeProviderRegistry = async () => {
+  if (isProviderRegistryInitialized) return;
+  
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
     await providerRegistry.registerProvider(new OpenAIProvider());
     await providerRegistry.registerProvider(new AnthropicProvider());
     await providerRegistry.registerProvider(new CohereProvider());
     await providerRegistry.registerProvider(new GeminiProvider());
+    isProviderRegistryInitialized = true;
     console.log('✅ [Chat] Provider Registry initialized with all providers');
   } catch (error) {
     console.error('❌ [Chat] Failed to initialize Provider Registry:', error);
+    throw error;
   }
-})();
+};
+
+// Initialize immediately
+initializeProviderRegistry().catch(console.error);
 
 // Import debug logging
 const { addDebugLog } = require('./debug');
@@ -350,6 +359,12 @@ router.post('/', async (req, res) => {
                     
                     try {
                         console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
+                        
+                        // Ensure Provider Registry is initialized before use
+                        if (!isProviderRegistryInitialized) {
+                            console.log('⏳ [Chat] Provider Registry not initialized, initializing now...');
+                            await initializeProviderRegistry();
+                        }
                         
                         // Debug: Log before Provider Registry call
                         addDebugLog('debug', 'provider', `Calling Provider Registry generateResponse`, {
