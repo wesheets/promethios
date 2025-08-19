@@ -56,7 +56,7 @@ class AnthropicProvider extends ProviderPlugin {
         note: 'Fine-tuning not yet available'
       }
     ];
-    this.capabilities = ['chat', 'completion', 'fine-tuning-planned'];
+    this.capabilities = ['chat', 'completion', 'fine-tuning-planned', 'tool_calling'];
   }
 
   /**
@@ -705,6 +705,132 @@ class AnthropicProvider extends ProviderPlugin {
       'claude-instant-1.2': 0.0016
     };
     return costs[model] || 0.008;
+  }
+
+  // ============================================================================
+  // PROVIDER PLUGIN INTERFACE METHODS
+  // ============================================================================
+
+  /**
+   * Call the Anthropic API (required by ProviderPlugin base class)
+   * @param {Object} requestData - Request data including messages, model, tools, etc.
+   * @returns {Object} Raw API response
+   */
+  async callProviderAPI(requestData) {
+    try {
+      console.log(`🤖 AnthropicProvider: Making API call with model ${requestData.model}`);
+      
+      // Prepare Anthropic request configuration
+      const requestConfig = {
+        model: requestData.model || 'claude-3-sonnet-20240229',
+        max_tokens: requestData.maxTokens || 1000,
+        temperature: requestData.temperature || 0.7,
+        messages: requestData.messages || []
+      };
+
+      // Add tools if provided and supported
+      if (requestData.tools && requestData.tools.length > 0) {
+        console.log(`🛠️ AnthropicProvider: Adding ${requestData.tools.length} tools to request`);
+        requestConfig.tools = requestData.tools;
+        requestConfig.tool_choice = { type: 'auto' }; // Let Claude decide when to use tools
+      }
+
+      // Make the API call
+      const response = await this.client.messages.create(requestConfig);
+      
+      console.log(`✅ AnthropicProvider: API call successful`);
+      return response;
+      
+    } catch (error) {
+      console.error(`❌ AnthropicProvider: API call failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Post-process the raw API response
+   * @param {Object} rawResponse - Raw API response
+   * @param {Object} requestData - Original request data
+   * @returns {Object} Processed response
+   */
+  async postprocessResponse(rawResponse, requestData) {
+    try {
+      if (!rawResponse.content || rawResponse.content.length === 0) {
+        throw new Error('No content in Anthropic response');
+      }
+
+      // Extract text content
+      const textContent = rawResponse.content
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('\n');
+
+      const processedResponse = {
+        content: textContent,
+        role: 'assistant',
+        usage: rawResponse.usage
+      };
+
+      // Handle tool calls if present
+      const toolUseBlocks = rawResponse.content.filter(block => block.type === 'tool_use');
+      if (toolUseBlocks.length > 0) {
+        console.log(`🛠️ AnthropicProvider: Found ${toolUseBlocks.length} tool calls`);
+        
+        // Convert Claude's tool_use format to OpenAI-compatible format
+        processedResponse.tool_calls = toolUseBlocks.map((block, index) => ({
+          id: block.id || `call_${index}`,
+          type: 'function',
+          function: {
+            name: block.name,
+            arguments: JSON.stringify(block.input)
+          }
+        }));
+      }
+
+      return processedResponse;
+      
+    } catch (error) {
+      console.error(`❌ AnthropicProvider: Response post-processing failed:`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // TOOL INTEGRATION METHODS
+  // ============================================================================
+
+  /**
+   * Check if this provider supports tool calling
+   * @returns {boolean} True if provider supports tools
+   */
+  supportsTools() {
+    return true; // Claude 3 supports tool calling
+  }
+
+  /**
+   * Format tool schemas for Claude's API format
+   * @param {Array} toolSchemas - Array of tool schemas
+   * @returns {Array} Claude-specific tool format
+   */
+  formatToolsForProvider(toolSchemas) {
+    return toolSchemas.map(schema => ({
+      name: schema.name,
+      description: schema.description,
+      input_schema: schema.parameters || {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    }));
+  }
+
+  /**
+   * Extract tool calls from Claude response
+   * @param {Object} response - Provider response
+   * @returns {Array} Array of tool calls
+   */
+  extractToolCalls(response) {
+    return response.tool_calls || [];
   }
 }
 

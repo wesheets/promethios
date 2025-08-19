@@ -68,7 +68,7 @@ class ProviderPlugin {
 
   /**
    * Generate response using this provider
-   * @param {Object} requestData - Request data including messages, model, etc.
+   * @param {Object} requestData - Request data including messages, model, tools, etc.
    * @returns {Object} Provider response
    */
   async generateResponse(requestData) {
@@ -81,6 +81,11 @@ class ProviderPlugin {
     try {
       console.log(`🔧 ProviderPlugin: Generating response with ${this.providerName}`);
       
+      // Log tool availability
+      if (requestData.tools && requestData.tools.length > 0) {
+        console.log(`🛠️ ProviderPlugin: ${requestData.tools.length} tools available for ${this.providerName}`);
+      }
+      
       // Validate request data
       this.validateRequestData(requestData);
       
@@ -90,7 +95,7 @@ class ProviderPlugin {
       // Generate response using provider-specific implementation
       const rawResponse = await this.callProviderAPI(processedRequest);
       
-      // Post-process response
+      // Post-process response (handle tool calls if present)
       const processedResponse = await this.postprocessResponse(rawResponse, requestData);
       
       // Add provider metadata
@@ -100,7 +105,8 @@ class ProviderPlugin {
           id: this.providerId,
           name: this.providerName,
           model: requestData.model,
-          responseTime: Date.now() - startTime
+          responseTime: Date.now() - startTime,
+          toolsEnabled: !!(requestData.tools && requestData.tools.length > 0)
         }
       };
       
@@ -112,6 +118,8 @@ class ProviderPlugin {
         model: requestData.model,
         responseTime: Date.now() - startTime,
         responseLength: finalResponse.content?.length || 0,
+        toolsEnabled: !!(requestData.tools && requestData.tools.length > 0),
+        toolCallsCount: finalResponse.tool_calls?.length || 0,
         timestamp: new Date().toISOString()
       });
       
@@ -706,6 +714,99 @@ class ProviderPlugin {
     
     removeSensitiveFields(sanitized);
     return sanitized;
+  }
+
+  // ============================================================================
+  // TOOL INTEGRATION METHODS
+  // ============================================================================
+
+  /**
+   * Check if this provider supports tool calling
+   * @returns {boolean} True if provider supports tools
+   */
+  supportsTools() {
+    return this.capabilities.includes('function_calling') || this.capabilities.includes('tool_calling');
+  }
+
+  /**
+   * Format tool schemas for this provider's API format
+   * @param {Array} toolSchemas - Array of tool schemas
+   * @returns {Array} Provider-specific tool format
+   */
+  formatToolsForProvider(toolSchemas) {
+    // Default implementation - override in provider-specific classes
+    return toolSchemas;
+  }
+
+  /**
+   * Extract tool calls from provider response
+   * @param {Object} response - Provider response
+   * @returns {Array} Array of tool calls
+   */
+  extractToolCalls(response) {
+    // Default implementation - override in provider-specific classes
+    return response.tool_calls || [];
+  }
+
+  /**
+   * Check if response contains tool calls
+   * @param {Object} response - Provider response
+   * @returns {boolean} True if response contains tool calls
+   */
+  hasToolCalls(response) {
+    const toolCalls = this.extractToolCalls(response);
+    return toolCalls && toolCalls.length > 0;
+  }
+
+  /**
+   * Process tool calls and execute them
+   * @param {Array} toolCalls - Array of tool calls
+   * @param {Object} context - Execution context
+   * @returns {Array} Array of tool results
+   */
+  async processToolCalls(toolCalls, context = {}) {
+    console.log(`🛠️ ProviderPlugin: Processing ${toolCalls.length} tool calls for ${this.providerName}`);
+    
+    const toolResults = [];
+    
+    for (const toolCall of toolCalls) {
+      try {
+        console.log(`🛠️ ProviderPlugin: Executing tool: ${toolCall.function?.name || toolCall.name}`);
+        
+        // This will be handled by the Universal Governance Adapter
+        const result = await this.executeToolCall(toolCall, context);
+        toolResults.push(result);
+        
+      } catch (error) {
+        console.error(`❌ ProviderPlugin: Tool execution failed:`, error);
+        
+        // Create error result
+        const errorResult = {
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          name: toolCall.function?.name || toolCall.name,
+          content: JSON.stringify({
+            error: error.message,
+            timestamp: new Date().toISOString()
+          })
+        };
+        
+        toolResults.push(errorResult);
+      }
+    }
+    
+    return toolResults;
+  }
+
+  /**
+   * Execute a single tool call (to be implemented by registry/governance layer)
+   * @param {Object} toolCall - Tool call to execute
+   * @param {Object} context - Execution context
+   * @returns {Object} Tool execution result
+   */
+  async executeToolCall(toolCall, context = {}) {
+    // This method should be overridden by the registry or governance layer
+    throw new Error(`Tool execution not implemented for provider ${this.providerName}. This should be handled by the registry or governance layer.`);
   }
 }
 

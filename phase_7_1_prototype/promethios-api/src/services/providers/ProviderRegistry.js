@@ -169,6 +169,19 @@ class ProviderRegistry {
         timestamp: new Date().toISOString()
       });
       
+      // Load tool schemas if provider supports tools
+      let toolSchemas = [];
+      if (provider.supportsTools()) {
+        try {
+          console.log(`🛠️ ProviderRegistry: Loading tool schemas for provider ${providerId}`);
+          toolSchemas = await this.loadToolSchemas();
+          console.log(`🛠️ ProviderRegistry: Loaded ${toolSchemas.length} tool schemas`);
+        } catch (error) {
+          console.warn(`⚠️ ProviderRegistry: Failed to load tool schemas:`, error);
+          // Continue without tools if loading fails
+        }
+      }
+      
       // Inject governance context if enabled
       let enhancedRequestData = requestData;
       if (config.governanceEnabled) {
@@ -177,8 +190,42 @@ class ProviderRegistry {
         );
       }
       
+      // Add tool schemas to request data
+      if (toolSchemas.length > 0) {
+        enhancedRequestData = {
+          ...enhancedRequestData,
+          tools: provider.formatToolsForProvider(toolSchemas)
+        };
+      }
+      
       // Generate response using provider
       const response = await provider.generateResponse(enhancedRequestData);
+      
+      // Process tool calls if present
+      if (provider.hasToolCalls(response)) {
+        console.log(`🛠️ ProviderRegistry: Processing tool calls from provider ${providerId}`);
+        
+        // Set up tool execution context
+        const toolContext = {
+          agentId,
+          userId,
+          providerId,
+          auditEventId
+        };
+        
+        // Override the provider's executeToolCall method to use our registry
+        provider.executeToolCall = async (toolCall, context) => {
+          return await this.executeToolCall(toolCall, { ...toolContext, ...context });
+        };
+        
+        // Process tool calls
+        const toolCalls = provider.extractToolCalls(response);
+        const toolResults = await provider.processToolCalls(toolCalls, toolContext);
+        
+        // Add tool results to response
+        response.tool_results = toolResults;
+        response.has_tool_calls = true;
+      }
       
       // Record successful request
       this.recordRequestSuccess(providerId, Date.now() - startTime);
@@ -190,6 +237,8 @@ class ProviderRegistry {
         userId,
         responseTime: Date.now() - startTime,
         responseLength: response.content?.length || 0,
+        toolsEnabled: toolSchemas.length > 0,
+        toolCallsCount: response.tool_calls?.length || 0,
         timestamp: new Date().toISOString()
       });
       
@@ -506,6 +555,118 @@ class ProviderRegistry {
     }
     
     return statistics;
+  }
+
+  // ============================================================================
+  // TOOL INTEGRATION METHODS
+  // ============================================================================
+
+  /**
+   * Load tool schemas from the tools API
+   * @returns {Array} Array of tool schemas
+   */
+  async loadToolSchemas() {
+    try {
+      console.log('🛠️ ProviderRegistry: Loading tool schemas from tools API');
+      
+      // Make request to tools API to get schemas
+      const response = await fetch('http://localhost:3001/api/tools/schemas', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Tools API responded with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success || !Array.isArray(data.schemas)) {
+        throw new Error('Invalid response format from tools API');
+      }
+      
+      console.log(`✅ ProviderRegistry: Loaded ${data.schemas.length} tool schemas`);
+      return data.schemas;
+      
+    } catch (error) {
+      console.error('❌ ProviderRegistry: Failed to load tool schemas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a tool call through the Universal Governance Adapter
+   * @param {Object} toolCall - Tool call to execute
+   * @param {Object} context - Execution context
+   * @returns {Object} Tool execution result
+   */
+  async executeToolCall(toolCall, context = {}) {
+    try {
+      console.log(`🛠️ ProviderRegistry: Executing tool call: ${toolCall.function?.name || toolCall.name}`);
+      
+      // Extract tool information
+      const toolName = toolCall.function?.name || toolCall.name;
+      const toolParameters = toolCall.function?.arguments 
+        ? (typeof toolCall.function.arguments === 'string' 
+           ? JSON.parse(toolCall.function.arguments) 
+           : toolCall.function.arguments)
+        : toolCall.parameters || {};
+      
+      // Make request to tools API to execute the tool
+      const response = await fetch('http://localhost:3001/api/tools/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tool_id: toolName,
+          parameters: toolParameters,
+          user_message: context.userMessage || '',
+          governance_context: {
+            agentId: context.agentId,
+            userId: context.userId,
+            providerId: context.providerId,
+            auditEventId: context.auditEventId
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Tool execution API responded with status ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Tool execution failed');
+      }
+      
+      console.log(`✅ ProviderRegistry: Tool executed successfully: ${toolName}`);
+      
+      // Return in the format expected by providers
+      return {
+        tool_call_id: toolCall.id,
+        role: 'tool',
+        name: toolName,
+        content: JSON.stringify(result.data)
+      };
+      
+    } catch (error) {
+      console.error(`❌ ProviderRegistry: Tool execution failed:`, error);
+      
+      // Return error result
+      return {
+        tool_call_id: toolCall.id,
+        role: 'tool',
+        name: toolCall.function?.name || toolCall.name,
+        content: JSON.stringify({
+          error: error.message,
+          timestamp: new Date().toISOString()
+        })
+      };
+    }
   }
 }
 

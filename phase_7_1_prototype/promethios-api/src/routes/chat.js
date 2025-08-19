@@ -5,6 +5,10 @@ const policyEnforcementService = require('../services/policyEnforcementService')
 const governanceContextService = require('../services/governanceContextService'); // CRITICAL FIX: Import governance context service
 const ragService = require('../services/ragService'); // RAG service for knowledge base integration
 
+// Import Provider Registry for tool-enabled LLM calls
+const ProviderRegistry = require('../services/providers/ProviderRegistry');
+const providerRegistry = new ProviderRegistry();
+
 // Import the real Promethios GovernanceCore
 const { spawn } = require('child_process');
 const path = require('path');
@@ -266,12 +270,47 @@ router.post('/', async (req, res) => {
                     // Combine governance context with RAG context
                     const finalSystemMessage = governanceEnhancedSystemMessage + ragContext;
                     
-                    response = await llmService.generateResponse(agent_id, message, finalSystemMessage, userId, {
-                        attachments: attachments,
-                        provider: provider,
-                        model: model,
-                        conversationHistory: conversationHistory
-                    });
+                    // Use Provider Registry for tool-enabled response generation
+                    const requestData = {
+                        messages: [
+                            { role: 'system', content: finalSystemMessage },
+                            ...conversationHistory,
+                            { role: 'user', content: message }
+                        ],
+                        model: model || 'gpt-4',
+                        attachments: attachments
+                    };
+                    
+                    // Determine provider based on model or default to openai
+                    const providerId = provider || (model?.includes('claude') ? 'claude' : 'openai');
+                    
+                    try {
+                        console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
+                        const providerResponse = await providerRegistry.generateResponse(
+                            providerId, 
+                            agent_id, 
+                            userId, 
+                            requestData
+                        );
+                        
+                        response = providerResponse.content || providerResponse.response;
+                        
+                        // Handle tool calls if present
+                        if (providerResponse.has_tool_calls && providerResponse.tool_results) {
+                            console.log(`🛠️ [Chat] Tool calls executed: ${providerResponse.tool_results.length} results`);
+                            // Tool results are already processed by the provider
+                        }
+                        
+                    } catch (providerError) {
+                        console.warn(`⚠️ [Chat] Provider Registry failed, falling back to LLM service:`, providerError);
+                        // Fallback to direct LLM service if provider fails
+                        response = await llmService.generateResponse(agent_id, message, finalSystemMessage, userId, {
+                            attachments: attachments,
+                            provider: provider,
+                            model: model,
+                            conversationHistory: conversationHistory
+                        });
+                    }
                     
                     // Apply governance filtering for high-risk content
                     if (governance_metrics.risk_level === 'high') {
@@ -303,13 +342,72 @@ router.post('/', async (req, res) => {
             }
 
         } else {
-            // Direct LLM call without governance
-            response = await llmService.generateResponse(agent_id, message, system_message, userId, {
-                attachments: attachments,
-                provider: provider,
-                model: model,
-                conversationHistory: conversationHistory
-            });
+            // Direct Provider Registry call without governance (but still with tools)
+            console.log(`🔧 [Chat] Direct Provider Registry call (no governance) for agent ${agent_id}`);
+            
+            // Build agent-specific system message
+            const agentSpecificSystemMessage = buildAgentSystemMessage(
+                system_message || 'You are a helpful AI assistant.',
+                agent_configuration
+            );
+            
+            // RAG INTEGRATION: Retrieve knowledge base context if agent has knowledge bases
+            let ragContext = '';
+            if (agent_configuration?.knowledgeBases?.length > 0) {
+                console.log(`🧠 [Chat] Retrieving knowledge base context for agent ${agent_id}`);
+                
+                // Process knowledge base if not already processed
+                await ragService.processKnowledgeBase(agent_id, agent_configuration.knowledgeBases);
+                
+                // Retrieve relevant knowledge for user query
+                ragContext = await ragService.generateRAGContext(agent_id, message);
+                
+                console.log(`✅ [Chat] RAG context generated: ${ragContext.length} characters`);
+            }
+            
+            const finalSystemMessage = agentSpecificSystemMessage + ragContext;
+            
+            const requestData = {
+                messages: [
+                    { role: 'system', content: finalSystemMessage },
+                    ...conversationHistory,
+                    { role: 'user', content: message }
+                ],
+                model: model || 'gpt-4',
+                attachments: attachments
+            };
+            
+            // Determine provider based on model or default to openai
+            const providerId = provider || (model?.includes('claude') ? 'claude' : 'openai');
+            
+            try {
+                console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
+                const providerResponse = await providerRegistry.generateResponse(
+                    providerId, 
+                    agent_id, 
+                    userId, 
+                    requestData
+                );
+                
+                response = providerResponse.content || providerResponse.response;
+                
+                // Handle tool calls if present
+                if (providerResponse.has_tool_calls && providerResponse.tool_results) {
+                    console.log(`🛠️ [Chat] Tool calls executed: ${providerResponse.tool_results.length} results`);
+                    // Tool results are already processed by the provider
+                }
+                
+            } catch (providerError) {
+                console.warn(`⚠️ [Chat] Provider Registry failed, falling back to LLM service:`, providerError);
+                // Fallback to direct LLM service if provider fails
+                response = await llmService.generateResponse(agent_id, message, finalSystemMessage, userId, {
+                    attachments: attachments,
+                    provider: provider,
+                    model: model,
+                    conversationHistory: conversationHistory
+                });
+            }
+            
             governance_metrics = {
                 trust_score: null,
                 compliance_score: null,

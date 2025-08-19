@@ -2075,17 +2075,10 @@ useEffect(() => {
         } else {
           console.log('🔧 OPENAI DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          // Load tool schemas and add to system message
-          const toolSchemas = await toolIntegrationService.loadToolSchemas();
-          const toolInstructions = toolIntegrationService.generateToolInstructions(agentIdToUse);
-          
+          // Note: Tool integration is now handled by the backend Provider Registry
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
 
-${toolInstructions}
-
-Available tools: ${toolSchemas.map(schema => schema.function.name).join(', ')}
-
-To use a tool, call it using standard function calling format. The system will execute the tool and provide results.`;
+You have access to various tools that can help you assist users. When you need to use a tool, simply call it using standard function calling format and the system will execute it for you.`;
           console.log('🔧 OPENAI DEBUG: Basic system message created, length:', systemMessage?.length);
         }
 
@@ -3570,90 +3563,14 @@ To use a tool, call it using standard function calling format. The system will e
           agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
           const responseTime = Date.now() - startTime;
           
-          // 🛠️ TOOL EXECUTION: Check if the response contains tool calls
-          console.log('🛠️ [ToolExecution] Checking response for tool calls...');
-          const toolCalls = toolIntegrationService.parseToolCalls(agentResponse);
+          // 🛠️ TOOL EXECUTION: Now handled natively by the backend Provider Registry
+          console.log('✅ [Backend] Response received, tool execution handled by backend');
           
-          if (toolCalls.length > 0) {
-            console.log(`🛠️ [ToolExecution] Found ${toolCalls.length} tool calls, executing...`);
-            
-            // Add a message showing tool execution
-            const toolExecutionMessage: ChatMessage = {
-              id: `msg_${Date.now()}_tool_execution`,
-              content: `🛠️ Executing ${toolCalls.length} tool(s): ${toolCalls.map(tc => tc.function.name).join(', ')}...`,
-              sender: 'system',
-              timestamp: new Date(),
-              agentName: 'System',
-              agentId: 'system'
-            };
-            setMessages(prev => [...prev, toolExecutionMessage]);
-            
-            // Execute all tool calls
-            const toolResults: ToolResult[] = [];
-            for (const toolCall of toolCalls) {
-              try {
-                const result = await toolIntegrationService.executeToolCall(
-                  toolCall, 
-                  userMessage.content,
-                  { agentId: selectedAgent.identity.id, userId: currentUser?.uid }
-                );
-                toolResults.push(result);
-                
-                // Add individual tool result message
-                const toolResultMessage: ChatMessage = {
-                  id: `msg_${Date.now()}_tool_result_${toolCall.id}`,
-                  content: `✅ **${toolCall.function.name}** completed:\n\`\`\`json\n${result.content}\n\`\`\``,
-                  sender: 'system',
-                  timestamp: new Date(),
-                  agentName: 'Tool System',
-                  agentId: 'tool-system'
-                };
-                setMessages(prev => [...prev, toolResultMessage]);
-                
-              } catch (error) {
-                console.error(`❌ [ToolExecution] Tool ${toolCall.function.name} failed:`, error);
-                const errorResult: ToolResult = {
-                  tool_call_id: toolCall.id,
-                  role: 'tool',
-                  name: toolCall.function.name,
-                  content: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
-                };
-                toolResults.push(errorResult);
-                
-                // Add error message
-                const errorMessage: ChatMessage = {
-                  id: `msg_${Date.now()}_tool_error_${toolCall.id}`,
-                  content: `❌ **${toolCall.function.name}** failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                  sender: 'system',
-                  timestamp: new Date(),
-                  agentName: 'Tool System',
-                  agentId: 'tool-system'
-                };
-                setMessages(prev => [...prev, errorMessage]);
-              }
-            }
-            
-            // If we have tool results, send them back to the AI for a final response
-            if (toolResults.length > 0) {
-              console.log('🛠️ [ToolExecution] Sending tool results back to AI for final response...');
-              
-              // Create a follow-up message with tool results
-              const toolResultsMessage = `Tool execution results:\n${toolResults.map(result => 
-                `- ${result.name}: ${result.content}`
-              ).join('\n')}\n\nPlease provide a summary or analysis of these results.`;
-              
-              try {
-                const finalResponse = await callAgentAPI(toolResultsMessage, selectedAgent, [], messages);
-                agentResponse = finalResponse; // Use the final response instead of the original
-                console.log('✅ [ToolExecution] Received final response from AI after tool execution');
-              } catch (error) {
-                console.error('❌ [ToolExecution] Failed to get final response:', error);
-                agentResponse += `\n\n[Tool execution completed, but failed to get final analysis: ${error instanceof Error ? error.message : 'Unknown error'}]`;
-              }
-            }
-          } else {
-            console.log('🛠️ [ToolExecution] No tool calls found in response');
-          }
+          // Note: The backend Provider Registry now automatically:
+          // 1. Loads tool schemas for supported providers
+          // 2. Includes tools in LLM API calls (OpenAI functions, Claude tools)
+          // 3. Executes tool calls through Universal Governance Adapter
+          // 4. Returns final response with tool results integrated
           
           // Update agent telemetry with successful interaction
           try {

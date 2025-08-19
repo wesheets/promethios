@@ -45,7 +45,7 @@ class OpenAIProvider extends ProviderPlugin {
         capabilities: ['chat', 'completion', 'fine-tuning']
       }
     ];
-    this.capabilities = ['chat', 'completion', 'fine-tuning'];
+    this.capabilities = ['chat', 'completion', 'fine-tuning', 'function_calling'];
   }
 
   /**
@@ -776,6 +776,124 @@ class OpenAIProvider extends ProviderPlugin {
       'gpt-3.5-turbo-16k': 0.004
     };
     return costs[model] || 0.002;
+  }
+
+  // ============================================================================
+  // PROVIDER PLUGIN INTERFACE METHODS
+  // ============================================================================
+
+  /**
+   * Call the OpenAI API (required by ProviderPlugin base class)
+   * @param {Object} requestData - Request data including messages, model, tools, etc.
+   * @returns {Object} Raw API response
+   */
+  async callProviderAPI(requestData) {
+    try {
+      console.log(`🤖 OpenAIProvider: Making API call with model ${requestData.model}`);
+      
+      // Prepare OpenAI request configuration
+      const requestConfig = {
+        model: requestData.model || 'gpt-4',
+        messages: requestData.messages || [],
+        max_tokens: requestData.maxTokens || 1000,
+        temperature: requestData.temperature || 0.7,
+        top_p: requestData.topP || 1.0,
+        frequency_penalty: requestData.frequencyPenalty || 0,
+        presence_penalty: requestData.presencePenalty || 0
+      };
+
+      // Add tools if provided and supported
+      if (requestData.tools && requestData.tools.length > 0) {
+        console.log(`🛠️ OpenAIProvider: Adding ${requestData.tools.length} tools to request`);
+        requestConfig.tools = requestData.tools;
+        requestConfig.tool_choice = 'auto'; // Let OpenAI decide when to use tools
+      }
+
+      // Make the API call
+      const response = await this.client.chat.completions.create(requestConfig);
+      
+      console.log(`✅ OpenAIProvider: API call successful`);
+      return response;
+      
+    } catch (error) {
+      console.error(`❌ OpenAIProvider: API call failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Post-process the raw API response
+   * @param {Object} rawResponse - Raw API response
+   * @param {Object} requestData - Original request data
+   * @returns {Object} Processed response
+   */
+  async postprocessResponse(rawResponse, requestData) {
+    try {
+      const message = rawResponse.choices[0]?.message;
+      
+      if (!message) {
+        throw new Error('No message in OpenAI response');
+      }
+
+      const processedResponse = {
+        content: message.content,
+        role: message.role,
+        usage: rawResponse.usage
+      };
+
+      // Handle tool calls if present
+      if (message.tool_calls && message.tool_calls.length > 0) {
+        console.log(`🛠️ OpenAIProvider: Found ${message.tool_calls.length} tool calls`);
+        processedResponse.tool_calls = message.tool_calls;
+      }
+
+      return processedResponse;
+      
+    } catch (error) {
+      console.error(`❌ OpenAIProvider: Response post-processing failed:`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // TOOL INTEGRATION METHODS
+  // ============================================================================
+
+  /**
+   * Check if this provider supports tool calling
+   * @returns {boolean} True if provider supports tools
+   */
+  supportsTools() {
+    return true; // OpenAI supports function calling
+  }
+
+  /**
+   * Format tool schemas for OpenAI's API format
+   * @param {Array} toolSchemas - Array of tool schemas
+   * @returns {Array} OpenAI-specific tool format
+   */
+  formatToolsForProvider(toolSchemas) {
+    return toolSchemas.map(schema => ({
+      type: 'function',
+      function: {
+        name: schema.name,
+        description: schema.description,
+        parameters: schema.parameters || {
+          type: 'object',
+          properties: {},
+          required: []
+        }
+      }
+    }));
+  }
+
+  /**
+   * Extract tool calls from OpenAI response
+   * @param {Object} response - Provider response
+   * @returns {Array} Array of tool calls
+   */
+  extractToolCalls(response) {
+    return response.tool_calls || [];
   }
 }
 
