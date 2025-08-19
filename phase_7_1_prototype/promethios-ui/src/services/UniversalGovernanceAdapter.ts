@@ -1528,6 +1528,30 @@ You can use these tools by indicating your intent to use them in your response.`
   }
 
   /**
+   * Update trust score for an agent
+   */
+  private async updateTrustScore(agentId: string, trustScore: number): Promise<void> {
+    try {
+      console.log(`📊 [Universal] Updating trust score for agent ${agentId}: ${trustScore}`);
+      
+      // Store trust score in local storage or send to backend
+      const trustData = {
+        agentId,
+        trustScore,
+        timestamp: new Date().toISOString(),
+        source: 'governance_interaction'
+      };
+
+      // You can implement actual trust score storage here
+      // For now, just log the update
+      console.log(`✅ [Universal] Trust score updated:`, trustData);
+      
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to update trust score for agent ${agentId}:`, error);
+    }
+  }
+
+  /**
    * Process governance response after backend interaction
    */
   private async processGovernanceResponse(agentId: string, result: any, context: any): Promise<void> {

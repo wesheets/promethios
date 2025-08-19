@@ -276,19 +276,17 @@ export class ChatHistoryService {
 
   /**
    * Get chat sessions for user with filtering
-   */
-  async getChatSessions(
+   *  async getUserChatHistory(
     userId: string,
     filter?: ChatHistoryFilter
   ): Promise<ChatSession[]> {
     try {
       // Get all chat sessions for user
-      const userChatKeys = await unifiedStorage.getKeys(`chats/${userId}`, 'firebase');
+      const userChatKeys = await unifiedStorage.getKeys(`${userId}`, 'chats');
       const sessions: ChatSession[] = [];
-
       for (const key of userChatKeys) {
         try {
-          const sessionData = await unifiedStorage.retrieve(key, 'firebase');
+          const sessionData = await unifiedStorage.retrieve(key, 'chats');
           if (sessionData) {
             const session = this.deserializeChatSession(sessionData);
             
@@ -338,7 +336,7 @@ export class ChatHistoryService {
     }
 
     // Remove from unified storage
-    await unifiedStorage.delete(`chats/${session.userId}/${sessionId}`, 'firebase');
+    await unifiedStorage.delete(`${session.userId}/${sessionId}`, 'chats');
 
     // Remove from active sessions
     this.activeSessions.delete(sessionId);
@@ -390,8 +388,8 @@ export class ChatHistoryService {
     // Load from storage
     try {
       const sessionData = await unifiedStorage.retrieve(
-        `chats/sessions/${sessionId}`,
-        'firebase'
+        `sessions/${sessionId}`,
+        'chats'
       );
       
       if (sessionData) {
@@ -410,16 +408,16 @@ export class ChatHistoryService {
     try {
       // Save to user's chat collection
       await unifiedStorage.store(
-        `chats/${session.userId}/${session.id}`,
+        `${session.userId}/${session.id}`,
         this.serializeChatSession(session),
-        'firebase'
+        'chats'
       );
 
       // Also save to sessions collection for direct access
       await unifiedStorage.store(
-        `chats/sessions/${session.id}`,
+        `sessions/${session.id}`,
         this.serializeChatSession(session),
-        'firebase'
+        'chats'
       );
 
       // Update active session
