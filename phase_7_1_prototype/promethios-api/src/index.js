@@ -70,6 +70,67 @@ app.use('/api/agent-logs', require('./routes/agentLogSegregation'));
 app.use('/api/enterprise-transparency', require('./routes/enterpriseTransparency'));
 app.use('/api/multi-agent-audit', require('./routes/multiAgentAudit'));
 
+// 🚨 CRITICAL FIX: Add direct /audit/log route for Universal Governance Adapter
+// This route is called directly by the frontend governance system (not under /api)
+app.post('/audit/log', async (req, res) => {
+  try {
+    console.log('🚨 [AUDIT-DEBUG] Direct /audit/log route called!');
+    console.log('🚨 [AUDIT-DEBUG] Request body:', JSON.stringify(req.body, null, 2));
+
+    const { 
+      agent_id, 
+      event_type, 
+      details = {}, 
+      metadata = {},
+      user_id,
+      timestamp 
+    } = req.body;
+
+    // Validate required fields
+    if (!agent_id || !event_type) {
+      console.log('❌ [AUDIT] Missing required fields');
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: agent_id, event_type'
+      });
+    }
+
+    console.log(`📝 [Audit] Creating audit entry for agent ${agent_id}`);
+
+    // Create audit entry using existing audit service
+    const auditService = require('./services/auditService');
+    const auditEntry = auditService.logEvent(
+      event_type, 
+      user_id || agent_id, 
+      {
+        agent_id,
+        ...details
+      }, 
+      {
+        timestamp: timestamp || new Date().toISOString(),
+        source: 'universal_governance_adapter',
+        ...metadata
+      }
+    );
+
+    console.log('✅ [Audit] Audit entry created successfully');
+
+    res.status(200).json({
+      success: true,
+      audit_id: auditEntry.id,
+      timestamp: auditEntry.timestamp
+    });
+
+  } catch (error) {
+    console.error('❌ [Audit] Failed to create audit entry:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create audit entry',
+      details: error.message
+    });
+  }
+});
+
 // Health check endpoints (both /health and /api/health for compatibility)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Promethios Phase 7.1 API is running' });
