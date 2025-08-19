@@ -1,14 +1,25 @@
 /**
  * ProviderRegistry.js
- * 
- * Core registry service for managing LLM provider plugins
+ * /**
+ * ProviderRegistry - Central registry for LLM providers
  * Provides provider discovery, registration, and lifecycle management
  * Integrates with existing Promethios governance and audit services
  */
 
-const governanceContextService = require('../governanceContextService');
-const auditService = require('../auditService');
-const cryptographicAuditService = require('../cryptographicAuditService');
+const ProviderPlugin = require('./ProviderPlugin');
+const AuditService = require('../auditService');
+const CryptographicAuditService = require('../cryptographicAuditService');
+
+// Import debug logging
+let addDebugLog;
+try {
+  addDebugLog = require('../../routes/debug').addDebugLog;
+} catch (error) {
+  // Fallback if debug route not available
+  addDebugLog = (level, category, message, data) => {
+    console.log(`[${level.toUpperCase()}] [${category}] ${message}`, data);
+  };
+}
 
 class ProviderRegistry {
   constructor() {
@@ -148,11 +159,21 @@ class ProviderRegistry {
     const startTime = Date.now();
     let auditEventId = null;
     
+    // Debug: Log the start of generateResponse
+    addDebugLog('info', 'provider', `Starting generateResponse`, {
+      providerId,
+      agentId,
+      userId,
+      model: requestData.model,
+      messageCount: requestData.messages?.length || 0
+    });
+    
     try {
       console.log(`🔧 ProviderRegistry: Generating response with provider ${providerId} for agent ${agentId}`);
       
       // Check circuit breaker
       if (!this.isCircuitBreakerClosed(providerId)) {
+        addDebugLog('error', 'provider', `Circuit breaker is open for provider`, { providerId });
         throw new Error(`Provider ${providerId} circuit breaker is open`);
       }
       
@@ -174,12 +195,27 @@ class ProviderRegistry {
       if (provider.supportsTools()) {
         try {
           console.log(`🛠️ ProviderRegistry: Loading tool schemas for provider ${providerId}`);
+          addDebugLog('debug', 'tool_schema', `Provider supports tools, loading schemas`, { providerId });
+          
           toolSchemas = await this.loadToolSchemas();
+          
+          addDebugLog('info', 'tool_schema', `Tool schemas loaded successfully`, {
+            providerId,
+            schemaCount: toolSchemas.length,
+            toolNames: toolSchemas.map(schema => schema.function?.name || schema.name)
+          });
+          
           console.log(`🛠️ ProviderRegistry: Loaded ${toolSchemas.length} tool schemas`);
         } catch (error) {
+          addDebugLog('error', 'tool_schema', `Failed to load tool schemas`, {
+            providerId,
+            error: error.message
+          });
           console.warn(`⚠️ ProviderRegistry: Failed to load tool schemas:`, error);
           // Continue without tools if loading fails
         }
+      } else {
+        addDebugLog('warn', 'tool_schema', `Provider does not support tools`, { providerId });
       }
       
       // Inject governance context if enabled
@@ -192,17 +228,44 @@ class ProviderRegistry {
       
       // Add tool schemas to request data
       if (toolSchemas.length > 0) {
+        const formattedTools = provider.formatToolsForProvider(toolSchemas);
         enhancedRequestData = {
           ...enhancedRequestData,
-          tools: provider.formatToolsForProvider(toolSchemas)
+          tools: formattedTools
         };
+        
+        addDebugLog('debug', 'tool_schema', `Tools added to request data`, {
+          providerId,
+          toolCount: formattedTools.length,
+          sampleTool: formattedTools[0]?.function?.name || formattedTools[0]?.name
+        });
       }
+      
+      // Debug: Log before calling provider
+      addDebugLog('debug', 'provider', `Calling provider generateResponse`, {
+        providerId,
+        hasTools: toolSchemas.length > 0,
+        requestDataKeys: Object.keys(enhancedRequestData)
+      });
       
       // Generate response using provider
       const response = await provider.generateResponse(enhancedRequestData);
       
+      // Debug: Log provider response
+      addDebugLog('info', 'provider', `Provider response received`, {
+        providerId,
+        hasContent: !!response.content,
+        contentLength: response.content?.length || 0,
+        responseKeys: Object.keys(response)
+      });
+      
       // Process tool calls if present
       if (provider.hasToolCalls(response)) {
+        addDebugLog('info', 'tool_execution', `Tool calls detected in provider response`, {
+          providerId,
+          responseType: typeof response
+        });
+        
         console.log(`🛠️ ProviderRegistry: Processing tool calls from provider ${providerId}`);
         
         // Set up tool execution context
@@ -220,11 +283,30 @@ class ProviderRegistry {
         
         // Process tool calls
         const toolCalls = provider.extractToolCalls(response);
+        
+        addDebugLog('debug', 'tool_execution', `Extracted tool calls from response`, {
+          providerId,
+          toolCallsCount: toolCalls?.length || 0,
+          toolNames: toolCalls?.map(call => call.function?.name || call.name) || []
+        });
+        
         const toolResults = await provider.processToolCalls(toolCalls, toolContext);
+        
+        addDebugLog('info', 'tool_execution', `Tool calls processed successfully`, {
+          providerId,
+          toolResultsCount: toolResults?.length || 0,
+          successfulCalls: toolResults?.filter(result => !result.content?.includes('error')).length || 0
+        });
         
         // Add tool results to response
         response.tool_results = toolResults;
         response.has_tool_calls = true;
+      } else {
+        addDebugLog('debug', 'tool_execution', `No tool calls detected in response`, {
+          providerId,
+          hasToolCallsMethod: !!provider.hasToolCalls,
+          responseContent: response.content?.substring(0, 100) + '...'
+        });
       }
       
       // Record successful request

@@ -9,6 +9,9 @@ const ragService = require('../services/ragService'); // RAG service for knowled
 const ProviderRegistry = require('../services/providers/ProviderRegistry');
 const providerRegistry = new ProviderRegistry();
 
+// Import debug logging
+const { addDebugLog } = require('./debug');
+
 // Import the real Promethios GovernanceCore
 const { spawn } = require('child_process');
 const path = require('path');
@@ -284,8 +287,29 @@ router.post('/', async (req, res) => {
                     // Determine provider based on model or default to openai
                     const providerId = provider || (model?.includes('claude') ? 'claude' : 'openai');
                     
+                    // Debug: Log the start of tool-enabled chat request
+                    addDebugLog('info', 'chat', `Starting chat request with tool support`, {
+                        agent_id,
+                        providerId,
+                        model,
+                        messageLength: message.length,
+                        hasAttachments: attachments.length > 0,
+                        governanceEnabled: governance_enabled
+                    });
+                    
                     try {
                         console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
+                        
+                        // Debug: Log before Provider Registry call
+                        addDebugLog('debug', 'provider', `Calling Provider Registry generateResponse`, {
+                            providerId,
+                            requestData: {
+                                model: requestData.model,
+                                messagesCount: requestData.messages?.length,
+                                hasTools: 'will be determined by provider'
+                            }
+                        });
+                        
                         const providerResponse = await providerRegistry.generateResponse(
                             providerId, 
                             agent_id, 
@@ -293,13 +317,40 @@ router.post('/', async (req, res) => {
                             requestData
                         );
                         
+                        // Debug: Log Provider Registry response
+                        addDebugLog('info', 'provider', `Provider Registry response received`, {
+                            providerId,
+                            hasContent: !!providerResponse.content,
+                            hasToolCalls: !!providerResponse.has_tool_calls,
+                            toolResultsCount: providerResponse.tool_results?.length || 0,
+                            responseLength: providerResponse.content?.length || 0
+                        });
+                        
                         response = providerResponse.content || providerResponse.response;
                         
                         // Handle tool calls if present
                         if (providerResponse.has_tool_calls && providerResponse.tool_results) {
                             console.log(`🛠️ [Chat] Tool calls executed: ${providerResponse.tool_results.length} results`);
-                            // Tool results are already processed by the provider
+                            
+                            // Debug: Log successful tool execution
+                            addDebugLog('info', 'tool_execution', `Tool calls successfully executed`, {
+                                toolCount: providerResponse.tool_results.length,
+                                tools: providerResponse.tool_results.map(result => ({
+                                    name: result.name,
+                                    success: !result.content?.includes('error')
+                                }))
+                            });
+                        } else {
+                            // Debug: Log when no tool calls were made
+                            addDebugLog('warn', 'tool_execution', `No tool calls detected in response`, {
+                                providerId,
+                                responseHasToolCalls: !!providerResponse.has_tool_calls,
+                                responseHasToolResults: !!providerResponse.tool_results,
+                                responseKeys: Object.keys(providerResponse)
+                            });
                         }
+                        
+                        // Tool results are already processed by the provider
                         
                     } catch (providerError) {
                         console.warn(`⚠️ [Chat] Provider Registry failed, falling back to LLM service:`, providerError);

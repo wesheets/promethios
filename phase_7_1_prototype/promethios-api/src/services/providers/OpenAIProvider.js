@@ -9,6 +9,17 @@
 const ProviderPlugin = require('./ProviderPlugin');
 const OpenAI = require('openai');
 
+// Import debug logging
+let addDebugLog;
+try {
+  addDebugLog = require('../../routes/debug').addDebugLog;
+} catch (error) {
+  // Fallback if debug route not available
+  addDebugLog = (level, category, message, data) => {
+    console.log(`[${level.toUpperCase()}] [${category}] ${message}`, data);
+  };
+}
+
 class OpenAIProvider extends ProviderPlugin {
   constructor() {
     super('openai', 'OpenAI');
@@ -893,7 +904,16 @@ class OpenAIProvider extends ProviderPlugin {
    * @returns {boolean} True if response has tool calls
    */
   hasToolCalls(response) {
-    return response.tool_calls && Array.isArray(response.tool_calls) && response.tool_calls.length > 0;
+    const hasTools = response.tool_calls && Array.isArray(response.tool_calls) && response.tool_calls.length > 0;
+    
+    addDebugLog('debug', 'openai_provider', `Checking for tool calls in response`, {
+      hasToolCalls: hasTools,
+      toolCallsCount: response.tool_calls?.length || 0,
+      responseKeys: Object.keys(response),
+      toolCallsType: typeof response.tool_calls
+    });
+    
+    return hasTools;
   }
 
   /**
@@ -902,7 +922,19 @@ class OpenAIProvider extends ProviderPlugin {
    * @returns {Array} Array of tool calls
    */
   extractToolCalls(response) {
-    return response.tool_calls || [];
+    const toolCalls = response.tool_calls || [];
+    
+    addDebugLog('debug', 'openai_provider', `Extracting tool calls from response`, {
+      toolCallsCount: toolCalls.length,
+      toolNames: toolCalls.map(call => call.function?.name),
+      sampleToolCall: toolCalls[0] ? {
+        id: toolCalls[0].id,
+        type: toolCalls[0].type,
+        functionName: toolCalls[0].function?.name
+      } : null
+    });
+    
+    return toolCalls;
   }
 
   /**
