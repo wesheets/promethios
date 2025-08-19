@@ -1,3 +1,24 @@
+/**
+ * ⚠️  DEPRECATED LLM SERVICE - DO NOT USE FOR NEW FEATURES
+ * 
+ * This is the legacy LLM service that provides direct API client access.
+ * 
+ * 🚨 IMPORTANT: All new LLM functionality should use the Provider Registry system:
+ *    - Located in: src/services/providers/ProviderRegistry.js
+ *    - Provides: Tool integration, governance, audit trails, monitoring
+ *    - Used by: Chat routes for tool-enabled responses
+ * 
+ * This legacy service is only used as a FALLBACK when Provider Registry fails.
+ * 
+ * Migration Path:
+ * 1. Use ProviderRegistry.generateResponse() for all new LLM calls
+ * 2. Provider plugins handle: OpenAI, Anthropic, Cohere, Gemini
+ * 3. This service will be removed in future versions
+ * 
+ * Last Updated: 2025-08-19
+ * Status: DEPRECATED - Fallback only
+ */
+
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { CohereClient } = require('cohere-ai');

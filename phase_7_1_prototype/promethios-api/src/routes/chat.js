@@ -6,6 +6,8 @@ const governanceContextService = require('../services/governanceContextService')
 const ragService = require('../services/ragService'); // RAG service for knowledge base integration
 
 // Import Provider Registry for tool-enabled LLM calls
+// 🎯 OFFICIAL FLOW: All LLM calls should go through Provider Registry
+// See: ../PROVIDER_ARCHITECTURE.md for complete documentation
 const ProviderRegistry = require('../services/providers/ProviderRegistry');
 const OpenAIProvider = require('../services/providers/OpenAIProvider');
 const AnthropicProvider = require('../services/providers/AnthropicProvider');
