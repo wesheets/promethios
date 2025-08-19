@@ -537,10 +537,19 @@ export class UniversalGovernanceAdapter {
       const chatbotService = ChatbotStorageService.getInstance();
       
       // Load chatbot profile which contains the wrapper configuration
-      // Use provided userId or fallback to 'anonymous-user' for now
-      const actualUserId = userId || 'anonymous-user'; // CRITICAL FIX: Use anonymous-user instead of current-user
+      // CRITICAL FIX: Use actual Firebase user ID to load correct chatbot configuration
+      const actualUserId = userId || 'anonymous-user'; // Only fallback to anonymous if no userId provided
+      console.log(`🔍 [Universal] Loading chatbot for user: ${actualUserId}, agentId: ${agentId}`);
+      
       const chatbots = await chatbotService.getChatbots(actualUserId);
+      console.log(`🔍 [Universal] Found ${chatbots.length} chatbots for user ${actualUserId}`);
+      
       const chatbot = chatbots.find(c => c.identity.id === agentId);
+      console.log(`🔍 [Universal] Chatbot search result:`, {
+        agentId,
+        found: !!chatbot,
+        chatbotIds: chatbots.map(c => c.identity.id)
+      });
       
       if (chatbot) {
         console.log(`🔧 [Universal] Found chatbot configuration:`, {
