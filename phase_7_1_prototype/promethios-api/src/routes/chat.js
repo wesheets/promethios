@@ -22,10 +22,10 @@ const initializeProviderRegistry = async () => {
   
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
-    await providerRegistry.registerProvider(new OpenAIProvider());
-    await providerRegistry.registerProvider(new AnthropicProvider());
-    await providerRegistry.registerProvider(new CohereProvider());
-    await providerRegistry.registerProvider(new GeminiProvider());
+    await providerRegistry.registerProvider('openai', new OpenAIProvider());
+    await providerRegistry.registerProvider('anthropic', new AnthropicProvider());
+    await providerRegistry.registerProvider('cohere', new CohereProvider());
+    await providerRegistry.registerProvider('gemini', new GeminiProvider());
     isProviderRegistryInitialized = true;
     console.log('✅ [Chat] Provider Registry initialized with all providers');
   } catch (error) {
