@@ -254,13 +254,19 @@ async function callCohere(message, systemMessage, options = {}) {
 // Gemini implementation
 async function callGemini(message, systemMessage, options = {}) {
   console.log('🔧 GEMINI DEBUG: Starting Gemini call');
+  console.log('🚨 GEMINI DEBUG: Options received:', {
+    model: options.model,
+    hasModel: !!options.model,
+    optionsKeys: Object.keys(options)
+  });
   
   if (!gemini) {
     throw new Error('Gemini client not initialized - API key missing');
   }
 
   try {
-    const model = options.model || 'gemini-pro';
+    // CRITICAL FIX: Change default from gemini-pro to gemini-1.5-pro
+    const model = options.model || 'gemini-1.5-pro';
     
     console.log('🔧 GEMINI DEBUG: Calling Gemini API with model:', model);
     
