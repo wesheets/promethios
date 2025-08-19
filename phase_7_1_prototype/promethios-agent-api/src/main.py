@@ -8,20 +8,57 @@ from flask import Flask, send_from_directory, make_response, request
 from flask_cors import CORS
 from src.models.user import db
 from src.models.agent_data import AgentMetrics, AgentViolation, AgentLog, AgentHeartbeat
+# 🚨 EARLY DEBUG: Starting Flask app initialization
+print("🚨 [STARTUP-DEBUG] Starting Flask app imports...")
+
 from src.routes.user import user_bp
+print("🚨 [STARTUP-DEBUG] ✅ user_bp imported")
+
 from src.routes.agent_metrics import agent_metrics_bp
+print("🚨 [STARTUP-DEBUG] ✅ agent_metrics_bp imported")
+
 from src.routes.policy_enhancement import policy_enhancement_bp
+print("🚨 [STARTUP-DEBUG] ✅ policy_enhancement_bp imported")
+
 from src.routes.promethios_policy_integration import promethios_policy_bp
+print("🚨 [STARTUP-DEBUG] ✅ promethios_policy_bp imported")
+
 from src.routes.trust_metrics_integration import trust_metrics_bp
+print("🚨 [STARTUP-DEBUG] ✅ trust_metrics_bp imported")
+
 from src.routes.trust_boundaries import trust_boundaries_bp
-from src.routes.reporting_integration import reporting_bp
+print("🚨 [STARTUP-DEBUG] ✅ trust_boundaries_bp imported")
+
+# 🚨 CRITICAL FIX: Make reporting_integration optional due to flask_socketio dependency
+try:
+    from src.routes.reporting_integration import reporting_bp
+    print("🚨 [STARTUP-DEBUG] ✅ reporting_bp imported")
+    REPORTING_AVAILABLE = True
+except ImportError as e:
+    print(f"🚨 [STARTUP-DEBUG] ⚠️ reporting_bp import failed: {e}")
+    reporting_bp = None
+    REPORTING_AVAILABLE = False
+
 from src.routes.veritas_enterprise import veritas_enterprise_bp
+print("🚨 [STARTUP-DEBUG] ✅ veritas_enterprise_bp imported")
+
 from src.routes.deployment import deployment_bp
+print("🚨 [STARTUP-DEBUG] ✅ deployment_bp imported")
+
 # from src.routes.native_llm import native_llm_bp  # File doesn't exist - commented out
 from src.routes.promethios_llm import promethios_llm_bp
+print("🚨 [STARTUP-DEBUG] ✅ promethios_llm_bp imported")
+
 from src.routes.universal_tools import universal_tools_bp
+print("🚨 [STARTUP-DEBUG] ✅ universal_tools_bp imported")
+
 from src.routes.debug_tools import debug_tools_bp
+print("🚨 [STARTUP-DEBUG] ✅ debug_tools_bp imported")
+
 from src.routes.enhanced_chat import enhanced_chat_bp
+print("🚨 [STARTUP-DEBUG] ✅ enhanced_chat_bp imported")
+
+print("🚨 [STARTUP-DEBUG] All imports completed successfully!")
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -77,19 +114,52 @@ def after_request(response):
     return response
 
 # Register blueprints
+print("🚨 [STARTUP-DEBUG] Starting blueprint registration...")
+
 app.register_blueprint(user_bp, url_prefix='/api/user')
+print("🚨 [STARTUP-DEBUG] ✅ user_bp registered")
+
 app.register_blueprint(agent_metrics_bp, url_prefix='/api/agent-metrics')
+print("🚨 [STARTUP-DEBUG] ✅ agent_metrics_bp registered")
+
 app.register_blueprint(policy_enhancement_bp, url_prefix='/api/policy-enhancement')
+print("🚨 [STARTUP-DEBUG] ✅ policy_enhancement_bp registered")
+
 app.register_blueprint(promethios_policy_bp, url_prefix='/api/promethios-policy')
+print("🚨 [STARTUP-DEBUG] ✅ promethios_policy_bp registered")
+
 app.register_blueprint(trust_metrics_bp, url_prefix='/api/trust-metrics')
+print("🚨 [STARTUP-DEBUG] ✅ trust_metrics_bp registered")
+
 app.register_blueprint(trust_boundaries_bp)
-app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
+print("🚨 [STARTUP-DEBUG] ✅ trust_boundaries_bp registered")
+
+# 🚨 CRITICAL FIX: Only register reporting_bp if it imported successfully
+if REPORTING_AVAILABLE and reporting_bp:
+    app.register_blueprint(reporting_bp, url_prefix='/api/reporting')
+    print("🚨 [STARTUP-DEBUG] ✅ reporting_bp registered")
+else:
+    print("🚨 [STARTUP-DEBUG] ⚠️ reporting_bp skipped (not available)")
+
 app.register_blueprint(veritas_enterprise_bp)
+print("🚨 [STARTUP-DEBUG] ✅ veritas_enterprise_bp registered")
+
 app.register_blueprint(deployment_bp, url_prefix='/api')
+print("🚨 [STARTUP-DEBUG] ✅ deployment_bp registered")
+
 app.register_blueprint(promethios_llm_bp, url_prefix='/api')
+print("🚨 [STARTUP-DEBUG] ✅ promethios_llm_bp registered")
+
 app.register_blueprint(universal_tools_bp)
+print("🚨 [STARTUP-DEBUG] ✅ universal_tools_bp registered")
+
 app.register_blueprint(debug_tools_bp, url_prefix='/api/debug')
+print("🚨 [STARTUP-DEBUG] ✅ debug_tools_bp registered")
+
 app.register_blueprint(enhanced_chat_bp, url_prefix='/api')
+print("🚨 [STARTUP-DEBUG] ✅ enhanced_chat_bp registered")
+
+print("🚨 [STARTUP-DEBUG] All blueprints registered successfully!")
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
@@ -163,6 +233,8 @@ def serve(path):
             return "index.html not found", 404
 
 # 🚨 CRITICAL FIX: Audit route AFTER catch-all route to fix precedence issue
+print("🚨 [STARTUP-DEBUG] Registering audit route...")
+
 @app.route('/audit/log', methods=['POST'])
 def root_audit_log():
     """Root level audit log endpoint for UniversalGovernanceAdapter"""
@@ -212,6 +284,8 @@ def root_audit_log():
             'success': False,
             'error': str(e)
         }), 500
+
+print("🚨 [STARTUP-DEBUG] ✅ Audit route registered successfully!")
 
 # Chat History Persistence Endpoints
 @app.route('/api/chat/history', methods=['GET', 'POST'])
@@ -406,7 +480,11 @@ def health_check():
         }
     }, 200
 
+print("🚨 [STARTUP-DEBUG] 🎉 Flask app initialization completed successfully!")
+print("🚨 [STARTUP-DEBUG] 🎯 All routes should now be available, including /audit/log")
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5004))
+    print(f"🚨 [STARTUP-DEBUG] Starting Flask server on port {port}...")
     app.run(host='0.0.0.0', port=port, debug=False)
 
