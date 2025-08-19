@@ -204,7 +204,7 @@ const ChatbotWrappingWizard: React.FC = () => {
           endpoint: chatbotData.apiEndpoint || chatbotData.endpoint || 'https://api.openai.com/v1',
           key: chatbotData.apiKey || chatbotData.key || '',
           provider: chatbotData.provider || 'OpenAI',
-          selectedModel: chatbotData.selectedModel || chatbotData.model || (chatbotData.provider === 'Anthropic' ? 'claude-3-5-sonnet-20241022' : 'gpt-4'),
+          selectedModel: chatbotData.selectedModel || chatbotData.model || 'model-not-specified',
           selectedCapabilities: chatbotData.capabilities || [],
           selectedContextLength: chatbotData.contextLength || 4096,
           discoveredInfo: chatbotData.discoveredInfo || null,
@@ -515,7 +515,7 @@ const ChatbotWrappingWizard: React.FC = () => {
                     </Typography>
                     <Typography sx={{ color: 'white' }}><strong>Name:</strong> {chatbotData.agentName || 'Governed Chatbot'}</Typography>
                     <Typography sx={{ color: 'white' }}><strong>Provider:</strong> {chatbotData.provider || 'OpenAI'}</Typography>
-                    <Typography sx={{ color: 'white' }}><strong>Model:</strong> {chatbotData.model || 'GPT-4'}</Typography>
+                    <Typography sx={{ color: 'white' }}><strong>Model:</strong> {chatbotData.selectedModel || chatbotData.model || 'Model not specified'}</Typography>
                     <Typography sx={{ color: 'white' }}><strong>Personality:</strong> {
                       chatbotData.personality === 'no_modification' ? 'No Modification (Keep Original)' : 
                       (chatbotData.personality || 'No Modification')
