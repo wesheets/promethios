@@ -23,10 +23,23 @@ const providerRegistry = new ProviderRegistry();
 let isProviderRegistryInitialized = false;
 
 const initializeProviderRegistry = async () => {
-  if (isProviderRegistryInitialized) return;
+  if (isProviderRegistryInitialized) {
+    console.log('🔧 [Chat] Provider Registry already initialized, skipping...');
+    return;
+  }
   
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
+    console.log('🔧 [Chat] Environment check:', {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'SET' : 'MISSING',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? 'SET' : 'MISSING',
+      COHERE_API_KEY: process.env.COHERE_API_KEY ? 'SET' : 'MISSING',
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ? 'SET' : 'MISSING',
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'SET' : 'MISSING',
+      HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY ? 'SET' : 'MISSING',
+      GROK_API_KEY: process.env.GROK_API_KEY ? 'SET' : 'MISSING',
+      PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY ? 'SET' : 'MISSING'
+    });
     
     // Register all providers with their respective API keys from environment variables
     const providers = [
@@ -68,31 +81,55 @@ const initializeProviderRegistry = async () => {
     ];
     
     let successCount = 0;
+    let failureDetails = [];
+    
     for (const provider of providers) {
       try {
+        console.log(`🔧 [Chat] Attempting to register ${provider.id} provider...`);
         await providerRegistry.registerProvider(provider.id, provider.instance, provider.config);
         console.log(`✅ [Chat] Successfully registered ${provider.id} provider`);
         successCount++;
       } catch (error) {
-        console.warn(`⚠️ [Chat] Failed to register ${provider.id} provider: ${error.message}`);
+        const errorMsg = `Failed to register ${provider.id}: ${error.message}`;
+        console.warn(`⚠️ [Chat] ${errorMsg}`);
+        failureDetails.push(errorMsg);
         // Continue with other providers even if one fails
       }
+    }
+    
+    console.log(`📊 [Chat] Provider Registry Summary: ${successCount}/${providers.length} providers registered`);
+    if (failureDetails.length > 0) {
+      console.log(`❌ [Chat] Failed providers:`, failureDetails);
     }
     
     if (successCount > 0) {
       isProviderRegistryInitialized = true;
       console.log(`✅ [Chat] Provider Registry initialized with ${successCount}/${providers.length} providers`);
     } else {
-      throw new Error('No providers could be initialized');
+      throw new Error(`No providers could be initialized. Failures: ${failureDetails.join(', ')}`);
     }
   } catch (error) {
     console.error('❌ [Chat] Failed to initialize Provider Registry:', error);
+    console.error('❌ [Chat] Error details:', error.stack);
     throw error;
   }
 };
 
-// Initialize immediately
-initializeProviderRegistry().catch(console.error);
+// Initialize immediately with better error handling and logging
+(async () => {
+  try {
+    console.log('🚀 [STARTUP] Starting Provider Registry initialization...');
+    await initializeProviderRegistry();
+    console.log('✅ [STARTUP] Provider Registry initialization completed successfully');
+  } catch (error) {
+    console.error('❌ [STARTUP] CRITICAL: Provider Registry initialization failed:', error);
+    console.error('❌ [STARTUP] Stack trace:', error.stack);
+    console.error('⚠️ [STARTUP] System will continue with LLM service fallback only');
+    
+    // Don't exit the process, but make it clear that Provider Registry is unavailable
+    isProviderRegistryInitialized = false;
+  }
+})();
 
 // Import debug logging
 const { addDebugLog } = require('./debug');
