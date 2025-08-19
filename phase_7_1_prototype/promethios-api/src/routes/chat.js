@@ -7,7 +7,26 @@ const ragService = require('../services/ragService'); // RAG service for knowled
 
 // Import Provider Registry for tool-enabled LLM calls
 const ProviderRegistry = require('../services/providers/ProviderRegistry');
+const OpenAIProvider = require('../services/providers/OpenAIProvider');
+const AnthropicProvider = require('../services/providers/AnthropicProvider');
+const CohereProvider = require('../services/providers/CohereProvider');
+const GeminiProvider = require('../services/providers/GeminiProvider');
+
 const providerRegistry = new ProviderRegistry();
+
+// Initialize providers immediately
+(async () => {
+  try {
+    console.log('🔧 [Chat] Initializing Provider Registry...');
+    await providerRegistry.registerProvider(new OpenAIProvider());
+    await providerRegistry.registerProvider(new AnthropicProvider());
+    await providerRegistry.registerProvider(new CohereProvider());
+    await providerRegistry.registerProvider(new GeminiProvider());
+    console.log('✅ [Chat] Provider Registry initialized with all providers');
+  } catch (error) {
+    console.error('❌ [Chat] Failed to initialize Provider Registry:', error);
+  }
+})();
 
 // Import debug logging
 const { addDebugLog } = require('./debug');
