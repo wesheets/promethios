@@ -78,32 +78,40 @@ app.post('/audit/log', async (req, res) => {
     console.log('🚨 [AUDIT-DEBUG] Request body:', JSON.stringify(req.body, null, 2));
 
     const { 
-      agent_id, 
-      event_type, 
+      agentId,        // Frontend sends agentId (camelCase)
+      agent_id,       // Support both formats
+      action,         // Frontend sends action
+      event_type,     // Support both formats
       details = {}, 
       metadata = {},
       user_id,
       timestamp 
     } = req.body;
 
-    // Validate required fields
-    if (!agent_id || !event_type) {
+    // Use whichever format is provided
+    const finalAgentId = agentId || agent_id;
+    const finalEventType = action || event_type;
+
+    // Validate required fields (using either format)
+    if (!finalAgentId || !finalEventType) {
       console.log('❌ [AUDIT] Missing required fields');
+      console.log('❌ [AUDIT] Received agentId:', finalAgentId);
+      console.log('❌ [AUDIT] Received event_type/action:', finalEventType);
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: agent_id, event_type'
+        error: 'Missing required fields: agentId/agent_id, action/event_type'
       });
     }
 
-    console.log(`📝 [Audit] Creating audit entry for agent ${agent_id}`);
+    console.log(`📝 [Audit] Creating audit entry for agent ${finalAgentId}`);
 
     // Create audit entry using existing audit service
     const auditService = require('./services/auditService');
     const auditEntry = auditService.logEvent(
-      event_type, 
-      user_id || agent_id, 
+      finalEventType, 
+      user_id || finalAgentId, 
       {
-        agent_id,
+        agent_id: finalAgentId,  // Store as agent_id internally
         ...details
       }, 
       {
