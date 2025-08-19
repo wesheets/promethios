@@ -98,9 +98,10 @@ import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } fr
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
+import DebugPanel from '../components/DebugPanel';
 
 // Right panel types
-type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | null;
+type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -1210,7 +1211,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     { key: 'memory', label: 'MEMORY' },
                     { key: 'sandbox', label: 'SANDBOX' },
                     { key: 'live_agent', label: 'LIVE AGENT' },
-                    { key: 'governance', label: 'GOVERNANCE' }
+                    { key: 'governance', label: 'GOVERNANCE' },
+                    { key: 'debug', label: 'DEBUG' }
                   ].map((tab) => (
                     <Button
                       key={tab.key}
@@ -1906,6 +1908,22 @@ const ChatbotProfilesPageContent: React.FC = () => {
                       </CardContent>
                     </Card>
                   </Box>
+                )}
+
+                {rightPanelType === 'debug' && (
+                  <DebugPanel darkTheme={{
+                    background: '#1e293b',
+                    border: '#334155',
+                    text: {
+                      primary: 'white',
+                      secondary: '#94a3b8'
+                    },
+                    primary: '#3b82f6',
+                    success: '#10b981',
+                    warning: '#f59e0b',
+                    error: '#ef4444',
+                    hover: '#334155'
+                  }} />
                 )}
 
                 {rightPanelType === 'rag_policy' && (
