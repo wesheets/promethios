@@ -1333,6 +1333,7 @@ You can use these tools by indicating your intent to use them in your response.`
     agentId: string;
     message: string;
     sessionId?: string;
+    userId?: string; // CRITICAL FIX: Add userId parameter to interface
     attachments?: Array<{
       name: string;
       type: string;
@@ -1393,7 +1394,7 @@ You can use these tools by indicating your intent to use them in your response.`
       console.log(`📎 [Universal] Attachments: ${request.attachments?.length || 0} files`);
       
       // Call backend API with full governance integration
-      const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest);
+      const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest, request.userId);
 
       // Post-interaction governance processing
       await this.processGovernanceResponse(request.agentId, result, interactionContext);

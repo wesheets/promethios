@@ -252,6 +252,7 @@ export class ChatPanelGovernanceService {
         agentId: agentId,
         message: message,
         sessionId: sessionId,
+        userId: userId, // CRITICAL FIX: Pass the actual user ID instead of letting it default to 'unknown'
         attachments: attachmentData, // Include attachment data for image processing
         conversationHistory: context?.conversationHistory || [],
         provider: context?.provider, // Pass provider if available
