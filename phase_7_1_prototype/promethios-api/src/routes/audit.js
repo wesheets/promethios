@@ -353,3 +353,65 @@ router.delete('/logs/cleanup', async (req, res) => {
 
 module.exports = router;
 
+/**
+ * CRITICAL FIX: Add /audit/log route for Universal Governance Adapter compatibility
+ * This route is called directly by the frontend governance system
+ */
+router.post('/log', async (req, res) => {
+  try {
+    console.log('🚨 [AUDIT-DEBUG] /audit/log route called!');
+    console.log('🚨 [AUDIT-DEBUG] Request body:', JSON.stringify(req.body, null, 2));
+
+    const { 
+      agent_id, 
+      event_type, 
+      details = {}, 
+      metadata = {},
+      user_id,
+      timestamp 
+    } = req.body;
+
+    // Validate required fields
+    if (!agent_id || !event_type) {
+      console.log('❌ [AUDIT] Missing required fields');
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: agent_id, event_type'
+      });
+    }
+
+    console.log(`📝 [Audit] Creating audit entry for agent ${agent_id}`);
+
+    // Create audit entry using existing service
+    const auditEntry = auditService.logEvent(
+      event_type, 
+      user_id || agent_id, 
+      {
+        agent_id,
+        ...details
+      }, 
+      {
+        timestamp: timestamp || new Date().toISOString(),
+        source: 'universal_governance_adapter',
+        ...metadata
+      }
+    );
+
+    console.log('✅ [Audit] Audit entry created successfully');
+
+    res.status(200).json({
+      success: true,
+      audit_id: auditEntry.id,
+      timestamp: auditEntry.timestamp
+    });
+
+  } catch (error) {
+    console.error('❌ [Audit] Failed to create audit entry:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create audit entry',
+      details: error.message
+    });
+  }
+});
+
