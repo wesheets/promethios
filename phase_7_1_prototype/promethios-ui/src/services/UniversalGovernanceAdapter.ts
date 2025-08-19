@@ -121,7 +121,7 @@ export class UniversalGovernanceAdapter {
       }
 
       // Load agent configuration for governance context
-      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId);
+      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId, 'system-message-builder');
       
       // Prepare tool execution request
       const toolRequest = {
@@ -1366,7 +1366,7 @@ You can use these tools by indicating your intent to use them in your response.`
       }
 
       // Load complete agent configuration
-      const agentConfig = await this.loadCompleteAgentConfiguration(request.agentId);
+      const agentConfig = await this.loadCompleteAgentConfiguration(request.agentId, request.userId);
       
       // Create governance context for this interaction
       const interactionContext = {
@@ -1513,7 +1513,7 @@ You can use these tools by indicating your intent to use them in your response.`
       // Example governance policies for image processing:
       
       // 1. Check if agent has permission for image analysis
-      const agentConfig = await this.loadCompleteAgentConfiguration(context.agentId);
+      const agentConfig = await this.loadCompleteAgentConfiguration(context.agentId, 'interaction-validator');
       const hasImagePermission = agentConfig.enabledTools?.includes('image_analysis') || 
                                  agentConfig.capabilities?.includes('vision') ||
                                  true; // Default to true for now
