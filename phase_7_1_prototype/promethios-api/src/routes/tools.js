@@ -23,6 +23,39 @@ const AVAILABLE_TOOLS = {
 };
 
 /**
+ * Get available tools (root endpoint)
+ * GET /api/tools
+ */
+router.get('/', (req, res) => {
+  try {
+    const tools = Object.keys(AVAILABLE_TOOLS).map(toolId => {
+      const tool = AVAILABLE_TOOLS[toolId];
+      return {
+        id: toolId,
+        name: tool.name || toolId,
+        description: tool.description || 'No description available',
+        category: tool.category || 'general',
+        enabled: true
+      };
+    });
+    
+    res.json({
+      success: true,
+      tools,
+      count: tools.length
+    });
+    
+  } catch (error) {
+    console.error('❌ [Tools] Failed to get available tools:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get available tools'
+    });
+  }
+});
+
+/**
  * Execute a tool
  * POST /api/tools/execute
  */

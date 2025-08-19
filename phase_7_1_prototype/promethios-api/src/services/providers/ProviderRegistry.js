@@ -569,8 +569,14 @@ class ProviderRegistry {
     try {
       console.log('🛠️ ProviderRegistry: Loading tool schemas from tools API');
       
+      // Use environment variable or default to deployed API URL
+      const apiBaseUrl = process.env.API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com';
+      const toolsUrl = `${apiBaseUrl}/api/tools/schemas`;
+      
+      console.log(`🛠️ ProviderRegistry: Fetching tool schemas from ${toolsUrl}`);
+      
       // Make request to tools API to get schemas
-      const response = await fetch('http://localhost:3001/api/tools/schemas', {
+      const response = await fetch(toolsUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -592,13 +598,16 @@ class ProviderRegistry {
       
     } catch (error) {
       console.error('❌ ProviderRegistry: Failed to load tool schemas:', error);
-      throw error;
+      
+      // Return empty array as fallback to prevent breaking the system
+      console.log('🛠️ ProviderRegistry: Returning empty tool schemas array as fallback');
+      return [];
     }
   }
 
   /**
-   * Execute a tool call through the Universal Governance Adapter
-   * @param {Object} toolCall - Tool call to execute
+   * Execute a tool call with governance and audit integration
+   * @param {Object} toolCall - Tool call object
    * @param {Object} context - Execution context
    * @returns {Object} Tool execution result
    */
@@ -614,8 +623,14 @@ class ProviderRegistry {
            : toolCall.function.arguments)
         : toolCall.parameters || {};
       
+      // Use environment variable or default to deployed API URL
+      const apiBaseUrl = process.env.API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com';
+      const executeUrl = `${apiBaseUrl}/api/tools/execute`;
+      
+      console.log(`🛠️ ProviderRegistry: Executing tool via ${executeUrl}`);
+      
       // Make request to tools API to execute the tool
-      const response = await fetch('http://localhost:3001/api/tools/execute', {
+      const response = await fetch(executeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

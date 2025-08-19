@@ -825,12 +825,57 @@ class AnthropicProvider extends ProviderPlugin {
   }
 
   /**
-   * Extract tool calls from Claude response
+   * Check if response contains tool calls
+   * @param {Object} response - Provider response
+   * @returns {boolean} True if response has tool calls
+   */
+  hasToolCalls(response) {
+    return response.tool_calls && Array.isArray(response.tool_calls) && response.tool_calls.length > 0;
+  }
+
+  /**
+   * Extract tool calls from Anthropic response
    * @param {Object} response - Provider response
    * @returns {Array} Array of tool calls
    */
   extractToolCalls(response) {
     return response.tool_calls || [];
+  }
+
+  /**
+   * Process tool calls and return results
+   * @param {Array} toolCalls - Array of tool calls
+   * @param {Object} context - Execution context
+   * @returns {Array} Array of tool results
+   */
+  async processToolCalls(toolCalls, context) {
+    const results = [];
+    
+    for (const toolCall of toolCalls) {
+      try {
+        console.log(`🛠️ Anthropic Provider: Processing tool call ${toolCall.function?.name || toolCall.name}`);
+        
+        // Execute tool call using the executeToolCall method
+        const result = await this.executeToolCall(toolCall, context);
+        results.push(result);
+        
+      } catch (error) {
+        console.error(`❌ Anthropic Provider: Tool call failed:`, error);
+        
+        // Add error result
+        results.push({
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          name: toolCall.function?.name || toolCall.name,
+          content: JSON.stringify({
+            error: error.message,
+            timestamp: new Date().toISOString()
+          })
+        });
+      }
+    }
+    
+    return results;
   }
 }
 
