@@ -402,7 +402,7 @@ export class UniversalGovernanceAdapter {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': userId || 'universal-governance-adapter',
+          'x-user-id': userId || 'anonymous-user',
         },
         body: JSON.stringify(data),
       });
@@ -478,10 +478,8 @@ export class UniversalGovernanceAdapter {
         brandSettings: chatbotConfig?.brandSettings || {},
         governanceMetrics: chatbotConfig?.governanceMetrics || {},
         // CRITICAL FIX: Use actual provider and model from chatbot configuration
-        provider: chatbotConfig?.provider || 'openai',
-        model: chatbotConfig?.model || (chatbotConfig?.provider === 'google' || chatbotConfig?.provider === 'gemini' ? 'gemini-1.5-pro' : 
-                                       chatbotConfig?.provider === 'anthropic' || chatbotConfig?.provider === 'claude' ? 'claude-3-5-sonnet-20241022' :
-                                       'gpt-4'),
+        provider: chatbotConfig?.provider || this.getDefaultProvider(chatbotConfig),
+        model: chatbotConfig?.model || this.getDefaultModel(chatbotConfig?.provider || this.getDefaultProvider(chatbotConfig)),
         
         // Scorecard overrides (if available)
         ...(scorecardConfig && {
@@ -519,8 +517,8 @@ export class UniversalGovernanceAdapter {
         brandSettings: {},
         governanceMetrics: {},
         enabledTools: [],
-        provider: 'openai',
-        model: 'gpt-4.1-mini'
+        provider: 'gpt', // Generic fallback instead of specific provider
+        model: 'gpt-4' // Generic model fallback
       };
     }
   }
@@ -669,8 +667,8 @@ You can use these tools by indicating your intent to use them in your response.`
         governance_enabled: true,
         session_id: context?.sessionId || `universal_${Date.now()}`,
         system_message: this.buildSystemMessage(fullAgentConfig),
-        provider: fullAgentConfig.provider || 'openai',
-        model: fullAgentConfig.model || 'gpt-4',
+        provider: fullAgentConfig.provider || this.getDefaultProvider(fullAgentConfig),
+        model: fullAgentConfig.model || this.getDefaultModel(fullAgentConfig.provider || this.getDefaultProvider(fullAgentConfig)),
         conversationHistory: context?.conversationHistory || [],
         attachments: context?.attachments || [], // Include file attachments
         // CRITICAL: Pass complete agent configuration to backend
@@ -1598,6 +1596,47 @@ You can use these tools by indicating your intent to use them in your response.`
     } catch (error) {
       console.error('❌ [Universal] Failed to process governance response:', error);
       // Don't throw - this is post-processing
+    }
+  }
+
+  /**
+   * Get appropriate default provider based on configuration
+   */
+  private getDefaultProvider(config: any): string {
+    // If we have API details, use the provider from there
+    if (config?.apiDetails?.provider) {
+      return config.apiDetails.provider.toLowerCase();
+    }
+    
+    // If we have a model that indicates the provider
+    if (config?.model) {
+      const model = config.model.toLowerCase();
+      if (model.includes('gemini') || model.includes('google')) return 'google';
+      if (model.includes('claude') || model.includes('anthropic')) return 'anthropic';
+      if (model.includes('gpt') || model.includes('openai')) return 'openai';
+    }
+    
+    // Default fallback
+    return 'openai';
+  }
+
+  /**
+   * Get appropriate default model based on provider
+   */
+  private getDefaultModel(provider: string): string {
+    const normalizedProvider = provider?.toLowerCase();
+    
+    switch (normalizedProvider) {
+      case 'google':
+      case 'gemini':
+        return 'gemini-1.5-pro';
+      case 'anthropic':
+      case 'claude':
+        return 'claude-3-5-sonnet-20241022';
+      case 'openai':
+      case 'gpt':
+      default:
+        return 'gpt-4';
     }
   }
 }

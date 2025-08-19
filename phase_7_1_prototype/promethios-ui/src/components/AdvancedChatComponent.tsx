@@ -140,6 +140,7 @@ import { ModernChatGovernedInsightsQAService } from '../services/ModernChatGover
 import { EnhancedAuditLoggingService } from '../services/EnhancedAuditLoggingService';
 import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
 import { MessageContext } from '../shared/governance/types/SharedGovernanceTypes';
+import { AgentMetricsWidget } from './AgentMetricsWidget';
 
 // Dark theme colors
 export const DARK_THEME = {
