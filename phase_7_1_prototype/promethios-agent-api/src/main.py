@@ -1,13 +1,30 @@
-import os
+# 🚨 ULTRA-EARLY DEBUG: Starting Python process
+print("🚨 [ULTRA-EARLY-DEBUG] Python process started, beginning imports...")
+
 import sys
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ sys imported")
+
 import os
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ os imported")
+
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ sys.path configured")
 
+print("🚨 [ULTRA-EARLY-DEBUG] Starting Flask imports...")
 from flask import Flask, send_from_directory, make_response, request
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ Flask imported")
+
 from flask_cors import CORS
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ CORS imported")
+
+print("🚨 [ULTRA-EARLY-DEBUG] Starting model imports...")
 from src.models.user import db
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ user model imported")
+
 from src.models.agent_data import AgentMetrics, AgentViolation, AgentLog, AgentHeartbeat
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ agent_data models imported")
+
 # 🚨 EARLY DEBUG: Starting Flask app initialization
 print("🚨 [STARTUP-DEBUG] Starting Flask app imports...")
 
