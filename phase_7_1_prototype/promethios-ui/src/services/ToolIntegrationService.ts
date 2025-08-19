@@ -372,6 +372,7 @@ Available tools are governed by compliance policies and may require approval for
   }
 }
 
-// Export singleton instance
+// Export the class and singleton instance
+export { ToolIntegrationService };
 export const toolIntegrationService = new ToolIntegrationService();
 
