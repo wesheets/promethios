@@ -131,8 +131,14 @@ class OpenAIProvider extends ProviderPlugin {
         throw new Error('OpenAI client not initialized');
       }
 
-      // Validate model supports fine-tuning
-      const model = options.model || 'gpt-3.5-turbo';
+      // Use the model specified in options, no default fallback
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
+      if (!model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
       const modelInfo = this.supportedModels.find(m => m.id === model);
       if (!modelInfo || !modelInfo.supportsFineTuning) {
         throw new Error(`Model ${model} does not support fine-tuning`);
@@ -457,7 +463,10 @@ class OpenAIProvider extends ProviderPlugin {
       }
 
       // OpenAI fine-tuning pricing (as of 2024)
-      const model = options.model || 'gpt-3.5-turbo';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.0080; // $0.0080 per 1K tokens for gpt-3.5-turbo training
       
       if (model.includes('gpt-4')) {
@@ -504,9 +513,14 @@ class OpenAIProvider extends ProviderPlugin {
         enhancedPrompt = await this.applyGovernanceContext(prompt, options.governanceContext);
       }
 
+      // Use the model specified in options, no default fallback
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+
       // Prepare OpenAI request
       const requestConfig = {
-        model: options.model || 'gpt-3.5-turbo',
+        model: options.model,
         messages: [
           {
             role: 'user',

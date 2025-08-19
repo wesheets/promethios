@@ -14,14 +14,14 @@ class GeminiProvider extends ProviderPlugin {
     this.client = null;
     this.supportedModels = [
       { 
-        id: 'gemini-pro', 
+        id: 'gemini-1.5-pro', 
         name: 'Gemini Pro', 
         supportsFineTuning: true,
         capabilities: ['chat', 'completion', 'fine-tuning'],
         note: 'Via Vertex AI'
       },
       { 
-        id: 'gemini-pro-vision', 
+        id: 'gemini-1.5-pro-vision', 
         name: 'Gemini Pro Vision', 
         supportsFineTuning: false,
         capabilities: ['chat', 'completion', 'vision'],
@@ -122,7 +122,11 @@ class GeminiProvider extends ProviderPlugin {
       }
 
       // Get the model
-      const modelName = options.model || 'gemini-pro';
+      // Use the model specified in options, no default fallback
+      const modelName = options.model;
+      if (!modelName) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
       const model = this.client.getGenerativeModel({ model: modelName });
 
       // Prepare generation config
@@ -291,8 +295,8 @@ class GeminiProvider extends ProviderPlugin {
         throw new Error('Client not initialized');
       }
 
-      // Simple test request to verify API connectivity
-      const model = this.client.getGenerativeModel({ model: 'gemini-pro' });
+      // Simple test request to verify API connectivity using a known working model
+      const model = this.client.getGenerativeModel({ model: 'gemini-1.5-pro' });
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: 'Test' }] }],
         generationConfig: { maxOutputTokens: 5 }
@@ -306,7 +310,7 @@ class GeminiProvider extends ProviderPlugin {
       return {
         healthy: true,
         latency: Date.now() - this.lastHealthCheck.getTime(),
-        model: 'gemini-pro'
+        model: 'gemini-1.5-pro'
       };
       
     } catch (error) {
@@ -337,7 +341,7 @@ class GeminiProvider extends ProviderPlugin {
         required: false,
         description: 'Default model to use',
         enum: this.supportedModels,
-        default: 'gemini-pro'
+        default: 'gemini-1.5-pro'
       },
       timeout: {
         type: 'number',
@@ -380,7 +384,10 @@ class GeminiProvider extends ProviderPlugin {
   async createFineTuningJob(trainingData, options = {}) {
     try {
       // Validate model supports fine-tuning
-      const model = options.model || 'gemini-pro';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const modelInfo = this.supportedModels.find(m => m.id === model);
       if (!modelInfo || !modelInfo.supportsFineTuning) {
         throw new Error(`Model ${model} does not support fine-tuning`);
@@ -454,7 +461,7 @@ class GeminiProvider extends ProviderPlugin {
       const job = {
         id: jobId,
         status: 'running', // queued, running, succeeded, failed, cancelled
-        model: 'gemini-pro',
+        model: 'gemini-1.5-pro',
         display_name: `custom-gemini-${jobId}`,
         progress: 65,
         created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
@@ -494,7 +501,7 @@ class GeminiProvider extends ProviderPlugin {
         {
           id: `gemini-ft-${Date.now() - 86400000}`,
           status: 'succeeded',
-          model: 'gemini-pro',
+          model: 'gemini-1.5-pro',
           display_name: 'custom-gemini-legal',
           created_at: new Date(Date.now() - 86400000).toISOString(),
           completed_at: new Date(Date.now() - 82800000).toISOString(),
@@ -622,7 +629,7 @@ class GeminiProvider extends ProviderPlugin {
       const model = {
         id: modelId,
         display_name: `custom-gemini-${modelId}`,
-        base_model: 'gemini-pro',
+        base_model: 'gemini-1.5-pro',
         status: 'deployed',
         created_at: new Date(Date.now() - 86400000).toISOString(),
         deployed_at: new Date(Date.now() - 82800000).toISOString(),
@@ -759,7 +766,10 @@ class GeminiProvider extends ProviderPlugin {
       }
 
       // Vertex AI fine-tuning pricing (estimated)
-      const model = options.model || 'gemini-pro';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.001; // $0.001 per 1K tokens (estimated)
       
       if (model.includes('1.5-pro')) {
@@ -824,8 +834,8 @@ class GeminiProvider extends ProviderPlugin {
    */
   getModelDescription(model) {
     const descriptions = {
-      'gemini-pro': 'Google\'s most capable model for text tasks',
-      'gemini-pro-vision': 'Gemini Pro with vision capabilities',
+      'gemini-1.5-pro': 'Google\'s most capable model for text tasks',
+      'gemini-1.5-pro-vision': 'Gemini Pro with vision capabilities',
       'gemini-1.5-pro': 'Latest Gemini Pro with enhanced capabilities',
       'gemini-1.5-flash': 'Fast and efficient Gemini variant',
       'gemini-ultra': 'Most powerful Gemini model (when available)'
@@ -838,8 +848,8 @@ class GeminiProvider extends ProviderPlugin {
    */
   getModelContextLength(model) {
     const contextLengths = {
-      'gemini-pro': 32768,
-      'gemini-pro-vision': 16384,
+      'gemini-1.5-pro': 32768,
+      'gemini-1.5-pro-vision': 16384,
       'gemini-1.5-pro': 1000000,
       'gemini-1.5-flash': 1000000,
       'gemini-ultra': 32768
@@ -852,8 +862,8 @@ class GeminiProvider extends ProviderPlugin {
    */
   getModelCost(model) {
     const costs = {
-      'gemini-pro': 0.0005,
-      'gemini-pro-vision': 0.0025,
+      'gemini-1.5-pro': 0.0005,
+      'gemini-1.5-pro-vision': 0.0025,
       'gemini-1.5-pro': 0.0035,
       'gemini-1.5-flash': 0.00035,
       'gemini-ultra': 0.01

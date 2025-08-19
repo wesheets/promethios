@@ -127,7 +127,7 @@ class CohereProvider extends ProviderPlugin {
 
       // Prepare Cohere request
       const requestConfig = {
-        model: options.model || 'command-r-plus',
+        model: options.model,
         message: enhancedPrompt,
         max_tokens: options.maxTokens || 1000,
         temperature: options.temperature || 0.7,
@@ -377,7 +377,10 @@ class CohereProvider extends ProviderPlugin {
       }
 
       // Validate model supports fine-tuning
-      const model = options.model || 'command';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const modelInfo = this.supportedModels.find(m => m.id === model);
       if (!modelInfo || !modelInfo.supportsFineTuning) {
         throw new Error(`Model ${model} does not support fine-tuning`);
@@ -722,7 +725,10 @@ class CohereProvider extends ProviderPlugin {
       }
 
       // Cohere fine-tuning pricing (estimated)
-      const model = options.model || 'command';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.002; // $0.002 per 1K tokens (estimated)
       
       if (model.includes('command-r')) {

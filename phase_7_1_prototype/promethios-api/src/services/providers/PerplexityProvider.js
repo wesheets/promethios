@@ -127,7 +127,10 @@ class PerplexityProvider extends ProviderPlugin {
         throw new Error('Perplexity Provider not initialized');
       }
 
-      const model = options.model || 'llama-3.1-sonar-small-128k-online';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const maxTokens = options.maxTokens || 512;
       const temperature = options.temperature || 0.7;
 
@@ -265,7 +268,10 @@ class PerplexityProvider extends ProviderPlugin {
   async createFineTuningJob(trainingData, options = {}) {
     try {
       // Validate model supports fine-tuning
-      const model = options.model || 'llama-3.1-8b-instruct';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const modelInfo = this.supportedModels.find(m => m.id === model);
       if (!modelInfo || !modelInfo.supportsFineTuning) {
         throw new Error(`Model ${model} does not support fine-tuning. Use base models like llama-3.1-8b-instruct instead of Sonar models.`);
@@ -629,7 +635,10 @@ class PerplexityProvider extends ProviderPlugin {
       }
 
       // Perplexity fine-tuning pricing (estimated competitive rates)
-      const model = options.model || 'llama-3.1-8b-instruct';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.003; // $0.003 per 1K tokens (estimated)
       
       if (model.includes('70b')) {

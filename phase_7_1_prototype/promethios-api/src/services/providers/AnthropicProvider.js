@@ -144,9 +144,14 @@ class AnthropicProvider extends ProviderPlugin {
         enhancedPrompt = await this.applyGovernanceContext(prompt, options.governanceContext);
       }
 
+      // Use the model specified in options, no default fallback
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+
       // Prepare Anthropic request
       const requestConfig = {
-        model: options.model || 'claude-3-sonnet-20240229',
+        model: options.model,
         max_tokens: options.maxTokens || 1000,
         temperature: options.temperature || 0.7,
         top_p: options.topP || 1.0,
@@ -612,7 +617,10 @@ class AnthropicProvider extends ProviderPlugin {
       }
 
       // Placeholder pricing (estimated based on Claude's inference costs)
-      const model = options.model || 'claude-3-sonnet-20240229';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.020; // Estimated higher cost for fine-tuning
       
       if (model.includes('opus')) {

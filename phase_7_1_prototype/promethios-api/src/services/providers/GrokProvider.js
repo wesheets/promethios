@@ -106,7 +106,10 @@ class GrokProvider extends ProviderPlugin {
         throw new Error('Grok Provider not initialized');
       }
 
-      const model = options.model || 'grok-beta';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const maxTokens = options.maxTokens || 512;
       const temperature = options.temperature || 0.7;
 
@@ -458,7 +461,10 @@ class GrokProvider extends ProviderPlugin {
       }
 
       // Placeholder pricing (estimated based on Grok's inference costs)
-      const model = options.model || 'grok-beta';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let costPerToken = 0.015; // Estimated competitive pricing
       
       if (model.includes('1.5')) {

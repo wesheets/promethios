@@ -122,7 +122,10 @@ class HuggingFaceProvider extends ProviderPlugin {
         throw new Error('HuggingFace Provider not initialized');
       }
 
-      const model = options.model || 'meta-llama/Llama-2-7b-chat-hf';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const maxTokens = options.maxTokens || 512;
       const temperature = options.temperature || 0.7;
 
@@ -239,7 +242,10 @@ class HuggingFaceProvider extends ProviderPlugin {
   async createFineTuningJob(trainingData, options = {}) {
     try {
       // Validate model supports fine-tuning
-      const model = options.model || 'meta-llama/Llama-2-7b-chat-hf';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       const modelInfo = this.supportedModels.find(m => m.id === model);
       if (!modelInfo || !modelInfo.supportsFineTuning) {
         throw new Error(`Model ${model} does not support fine-tuning`);
@@ -679,7 +685,10 @@ class HuggingFaceProvider extends ProviderPlugin {
       const costPerHour = hardwareCosts[hardware] || 0.50;
       
       // Estimate training time based on data size and model
-      const model = options.model || 'meta-llama/Llama-2-7b-chat-hf';
+      if (!options.model) {
+        throw new Error('Model must be specified in options - no default model available');
+      }
+      const model = options.model;
       let estimatedHours = 1; // Base time
       
       // Adjust for data size
