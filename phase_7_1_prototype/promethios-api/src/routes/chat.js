@@ -22,12 +22,33 @@ const initializeProviderRegistry = async () => {
   
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
-    await providerRegistry.registerProvider('openai', new OpenAIProvider());
-    await providerRegistry.registerProvider('anthropic', new AnthropicProvider());
-    await providerRegistry.registerProvider('cohere', new CohereProvider());
-    await providerRegistry.registerProvider('gemini', new GeminiProvider());
-    isProviderRegistryInitialized = true;
-    console.log('✅ [Chat] Provider Registry initialized with all providers');
+    
+    // Register providers with error handling for missing API keys
+    const providers = [
+      { id: 'openai', instance: new OpenAIProvider() },
+      { id: 'anthropic', instance: new AnthropicProvider() },
+      { id: 'cohere', instance: new CohereProvider() },
+      { id: 'gemini', instance: new GeminiProvider() }
+    ];
+    
+    let successCount = 0;
+    for (const provider of providers) {
+      try {
+        await providerRegistry.registerProvider(provider.id, provider.instance);
+        console.log(`✅ [Chat] Successfully registered ${provider.id} provider`);
+        successCount++;
+      } catch (error) {
+        console.warn(`⚠️ [Chat] Failed to register ${provider.id} provider: ${error.message}`);
+        // Continue with other providers even if one fails
+      }
+    }
+    
+    if (successCount > 0) {
+      isProviderRegistryInitialized = true;
+      console.log(`✅ [Chat] Provider Registry initialized with ${successCount}/${providers.length} providers`);
+    } else {
+      throw new Error('No providers could be initialized');
+    }
   } catch (error) {
     console.error('❌ [Chat] Failed to initialize Provider Registry:', error);
     throw error;
