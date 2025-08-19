@@ -197,7 +197,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ darkTheme }) => {
     : logs.filter(log => log.category === currentFilter);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%', minHeight: '700px' }}>
       <Typography variant="h6" sx={{ color: darkTheme.text.primary, display: 'flex', alignItems: 'center', gap: 1 }}>
         <BugReportIcon sx={{ fontSize: 20 }} />
         Tool Debug Monitor
@@ -295,7 +295,8 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ darkTheme }) => {
       <Box sx={{ 
         flex: 1, 
         overflow: 'auto', 
-        maxHeight: '400px',
+        minHeight: '600px',
+        maxHeight: '80vh',
         border: `1px solid ${darkTheme.border}`,
         borderRadius: 1,
         bgcolor: darkTheme.background

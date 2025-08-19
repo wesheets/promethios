@@ -299,10 +299,25 @@ router.post('/', async (req, res) => {
                         console.log(`🔧 [Chat] Using model-based provider detection: ${providerId}`);
                     }
                     
-                    // Normalize provider names
-                    if (providerId === 'claude') providerId = 'anthropic';
-                    if (providerId === 'openai') providerId = 'openai';
-                    if (providerId === 'anthropic') providerId = 'anthropic';
+                    // Normalize provider names to match registered provider IDs
+                    const providerMapping = {
+                        'claude': 'anthropic',
+                        'anthropic': 'anthropic',
+                        'openai': 'openai',
+                        'gpt': 'openai',
+                        'gemini': 'gemini',
+                        'google': 'gemini',
+                        'cohere': 'cohere',
+                        'grok': 'grok',
+                        'xai': 'grok',
+                        'huggingface': 'huggingface',
+                        'hf': 'huggingface',
+                        'perplexity': 'perplexity'
+                    };
+                    
+                    if (providerMapping[providerId?.toLowerCase()]) {
+                        providerId = providerMapping[providerId.toLowerCase()];
+                    }
                     
                     // Debug: Log the start of tool-enabled chat request
                     addDebugLog('info', 'chat', `Starting chat request with tool support`, {
@@ -460,10 +475,25 @@ router.post('/', async (req, res) => {
                 console.log(`🔧 [Chat] Using model-based provider detection: ${providerId}`);
             }
             
-            // Normalize provider names
-            if (providerId === 'claude') providerId = 'anthropic';
-            if (providerId === 'openai') providerId = 'openai';
-            if (providerId === 'anthropic') providerId = 'anthropic';
+            // Normalize provider names to match registered provider IDs
+            const providerMapping = {
+                'claude': 'anthropic',
+                'anthropic': 'anthropic',
+                'openai': 'openai',
+                'gpt': 'openai',
+                'gemini': 'gemini',
+                'google': 'gemini',
+                'cohere': 'cohere',
+                'grok': 'grok',
+                'xai': 'grok',
+                'huggingface': 'huggingface',
+                'hf': 'huggingface',
+                'perplexity': 'perplexity'
+            };
+            
+            if (providerMapping[providerId?.toLowerCase()]) {
+                providerId = providerMapping[providerId.toLowerCase()];
+            }
             
             try {
                 console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
