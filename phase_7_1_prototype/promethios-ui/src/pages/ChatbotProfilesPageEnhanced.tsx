@@ -221,6 +221,25 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
 
   const handleManageChatbot = (chatbotId: string) => {
+    console.log('🔧 handleManageChatbot called with ID:', chatbotId);
+    
+    // Find the chatbot to check if it's real or mock data
+    const chatbot = chatbotProfiles.find(c => c.id === chatbotId);
+    console.log('🔧 Found chatbot:', chatbot);
+    
+    if (!chatbot) {
+      console.warn('🔧 Chatbot not found with ID:', chatbotId);
+      return;
+    }
+    
+    // Check if this is mock data (mock IDs start with 'agent-')
+    if (chatbotId.startsWith('agent-') && !user?.uid) {
+      console.log('🔧 Mock chatbot detected, showing mock management');
+      alert('This is a demo chatbot. Please log in to manage real chatbots.');
+      return;
+    }
+    
+    // For real chatbots, open the manage modal
     setSelectedChatbotId(chatbotId);
     setManageModalOpen(true);
   };
@@ -2463,23 +2482,25 @@ const ChatbotProfilesPageContent: React.FC = () => {
           </Container>
         )}
 
-        {/* Chatbot Management Modal */}
-        <AgentManageModal
-          open={manageModalOpen}
-          onClose={() => {
-            setManageModalOpen(false);
-            setSelectedChatbotId(null);
-          }}
-          agentId={selectedChatbotId}
-          onAgentUpdated={async (updatedAgent) => {
-            // Refresh the chatbots list to show updated data
-            await loadChatbots();
-          }}
-          onAgentDeleted={async (deletedAgentId) => {
-            // Refresh the chatbots list to remove deleted agent
-            await loadChatbots();
-          }}
-        />
+        {/* Chatbot Management Modal - Only show for real chatbots */}
+        {manageModalOpen && selectedChatbotId && user?.uid && (
+          <AgentManageModal
+            open={manageModalOpen}
+            onClose={() => {
+              setManageModalOpen(false);
+              setSelectedChatbotId(null);
+            }}
+            agentId={selectedChatbotId}
+            onAgentUpdated={async (updatedAgent) => {
+              // Refresh the chatbots list to show updated data
+              await loadChatbots();
+            }}
+            onAgentDeleted={async (deletedAgentId) => {
+              // Refresh the chatbots list to remove deleted agent
+              await loadChatbots();
+            }}
+          />
+        )}
       </Box>
     </Box>
   );
