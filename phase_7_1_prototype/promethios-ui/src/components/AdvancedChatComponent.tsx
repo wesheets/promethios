@@ -118,7 +118,6 @@ import { useAuth } from '../context/AuthContext';
 import { useAgentMetrics } from '../hooks/useAgentMetrics';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
 import { toolIntegrationService, ToolIntegrationService, ToolCall, ToolResult } from '../services/ToolIntegrationService';
-import DebugPanel from './DebugPanel';
 import { isPromethiosNativeChatEnabled } from '../config/features';
 import optimizedAgentLoader, { LoadingProgress } from '../services/OptimizedAgentLoader';
 import OptimizedChatLoader from './loading/OptimizedChatLoader';
@@ -5107,7 +5106,6 @@ To use a tool, call it using standard function calling format. The system will e
             <Tab label="Safety Settings" />
             <Tab label="Autonomous Cognition" />
             <Tab label="Extension Status" />
-            <Tab label="Debug" />
           </Tabs>
         </Box>
 
