@@ -1394,7 +1394,13 @@ You can use these tools by indicating your intent to use them in your response.`
         model: request.model || agentConfig.model,
         conversationHistory: request.conversationHistory || [],
         attachments: request.attachments || [],
-        agent_configuration: agentConfig, // CRITICAL FIX: Add at root level for backend compatibility
+        agent_configuration: {
+          ...agentConfig,
+          apiDetails: {
+            provider: agentConfig.provider,
+            selectedModel: agentConfig.model
+          }
+        }, // CRITICAL FIX: Structure to match backend expectations
         governance_context: {
           universal_governance: true,
           agent_configuration: agentConfig,
@@ -1405,6 +1411,17 @@ You can use these tools by indicating your intent to use them in your response.`
 
       console.log(`🛡️ [Universal] Sending governance-validated request to backend`);
       console.log(`📎 [Universal] Attachments: ${request.attachments?.length || 0} files`);
+      
+      // DEBUGGER: Let's see the exact backend request structure
+      console.log('🚨 DEBUGGER: Backend request structure:', {
+        provider: backendRequest.provider,
+        model: backendRequest.model,
+        agent_configuration: backendRequest.agent_configuration,
+        agentConfigProvider: agentConfig?.provider,
+        agentConfigModel: agentConfig?.model,
+        agentConfigApiDetails: agentConfig?.apiDetails
+      });
+      debugger;
       
       // Call backend API with full governance integration
       const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest, request.userId);

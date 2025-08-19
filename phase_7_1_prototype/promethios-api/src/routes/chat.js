@@ -460,6 +460,14 @@ router.post('/', async (req, res) => {
                 attachments: attachments
             };
             
+            // DEBUGGER: Let's see what model is being used
+            console.log('🚨 BACKEND DEBUGGER: Model resolution:', {
+                requestModel: model,
+                agentConfigModel: agent_configuration?.apiDetails?.selectedModel,
+                finalModel: requestData.model,
+                agentConfiguration: agent_configuration
+            });
+            
             // Determine provider from agent configuration or fallback logic
             let providerId = provider; // Use explicit provider if provided
             
