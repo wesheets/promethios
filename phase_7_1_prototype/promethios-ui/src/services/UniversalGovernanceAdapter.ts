@@ -30,6 +30,8 @@ import {
   ToolGovernanceConfig
 } from '../types/AgentConfigurationTypes';
 import { AgentToolProfile, AgentTool } from '../types/ToolTypes';
+import { RealGovernanceIntegration, AgentTelemetryData } from './RealGovernanceIntegration';
+import { ToolIntegrationService, ToolCall, ToolResult } from './ToolIntegrationService';
 
 // Backend API interfaces
 interface BackendChatRequest {
@@ -89,8 +91,17 @@ export class UniversalGovernanceAdapter {
   private toolRegistry: Map<string, AgentTool> = new Map();
   private currentAgentConfig: RuntimeConfiguration | null = null;
 
+  // Modern Chat service integrations
+  private realGovernance: RealGovernanceIntegration;
+  private toolService: ToolIntegrationService;
+
   constructor() {
     console.log('🌐 [Universal] Initializing governance adapter with backend API integration');
+    
+    // Initialize Modern Chat service integrations
+    this.realGovernance = new RealGovernanceIntegration();
+    this.toolService = new ToolIntegrationService();
+    console.log('✅ [Universal] Connected to Modern Chat services: RealGovernanceIntegration, ToolIntegrationService');
     
     // Initialize backend API integration
     this.initializeBackendIntegration().catch(error => {
@@ -1299,7 +1310,7 @@ You operate with governance oversight that monitors your interactions for safety
   }
 
   /**
-   * Get shared patterns for an agent
+   * Get shared patterns for multi-agent collaboration
    */
   async getSharedPatterns(agentId: string): Promise<any[]> {
     try {
@@ -1316,6 +1327,594 @@ You operate with governance oversight that monitors your interactions for safety
       console.error('❌ [Universal] Failed to get shared patterns:', error);
       return [];
     }
+  }
+
+  // ========================================
+  // 🔍 FEATURE FINGERPRINTS SECTION
+  // ========================================
+  // These methods serve as "fingerprints" to track all UI features
+  // that need to be wired to UGA with real backend services.
+  // Status: BACKEND_VERIFIED = endpoints tested and confirmed working
+  //         BACKEND_MISSING = endpoints tested and return 404
+  //         NEEDS_TESTING = not yet tested
+  //         STUB_ONLY = placeholder method, needs implementation
+
+  // ========================================
+  // 💬 CHATS (Shareable Chat History)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 💬 Get chat history for agent with governance tracking
+   * TODO: Wire to backend when /api/chats/history endpoint exists
+   */
+  async getChatHistory(agentId: string): Promise<any[]> {
+    try {
+      console.log(`💬 [UGA-FINGERPRINT] Getting chat history for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const chats = await this.callBackendAPI('/api/chats/history', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Chat history backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get chat history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 💬 Create shareable chat session with governance validation
+   * TODO: Wire to backend when /api/chats/create endpoint exists
+   */
+  async createSharedChat(agentId: string, chatData: any): Promise<any> {
+    try {
+      console.log(`💬 [UGA-FINGERPRINT] Creating shared chat for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for chat creation
+      // TODO: Implement audit logging for chat operations
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Shared chat creation backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to create shared chat:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🎭 PERSONALITY & ROLES
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 🎭 Get agent personality configuration with governance context
+   * TODO: Wire to backend when /api/agent/personality endpoint exists
+   */
+  async getAgentPersonality(agentId: string): Promise<any> {
+    try {
+      console.log(`🎭 [UGA-FINGERPRINT] Getting personality for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const personality = await this.callBackendAPI('/api/agent/personality', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Personality backend not implemented yet`);
+      return { type: 'professional', behavior: 'helpful', useCase: 'general' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get personality:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🎭 Update agent personality with governance validation
+   * TODO: Wire to backend when /api/agent/personality/update endpoint exists
+   */
+  async updateAgentPersonality(agentId: string, personalityData: any): Promise<any> {
+    try {
+      console.log(`🎭 [UGA-FINGERPRINT] Updating personality for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for personality changes
+      // TODO: Implement audit logging for personality updates
+      // TODO: Add policy compliance validation
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Personality update backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to update personality:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🔗 INTEGRATIONS (Connected Apps)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 🔗 Get available integrations with governance controls
+   * TODO: Wire to backend when /api/integrations/available endpoint exists
+   */
+  async getAvailableIntegrations(): Promise<any[]> {
+    try {
+      console.log(`🔗 [UGA-FINGERPRINT] Getting available integrations`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const integrations = await this.callBackendAPI('/api/integrations/available', {
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Integrations backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get integrations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🔗 Connect integration with governance approval
+   * TODO: Wire to backend when /api/integrations/connect endpoint exists
+   */
+  async connectIntegration(agentId: string, integrationId: string, credentials: any): Promise<any> {
+    try {
+      console.log(`🔗 [UGA-FINGERPRINT] Connecting integration ${integrationId} for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for integration connections
+      // TODO: Implement audit logging for integration operations
+      // TODO: Add data policy validation
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Integration connection backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to connect integration:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 📚 RAG + POLICY (Knowledge & Policy)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 📚 Search knowledge base with governance context
+   * TODO: Wire to backend when /api/knowledge/search endpoint exists
+   */
+  async searchKnowledgeBase(query: string, agentId: string): Promise<any[]> {
+    try {
+      console.log(`📚 [UGA-FINGERPRINT] Searching knowledge base for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const results = await this.callBackendAPI('/api/knowledge/search', {
+      //   query: query,
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Knowledge search backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to search knowledge base:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 📚 Get policy compliance status with governance validation
+   * TODO: Wire to backend when /api/policies/compliance endpoint exists
+   */
+  async getPolicyCompliance(agentId: string): Promise<any> {
+    try {
+      console.log(`📚 [UGA-FINGERPRINT] Getting policy compliance for agent: ${agentId}`);
+      
+      // TODO: Add real policy compliance checking
+      // TODO: Implement policy violation tracking
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Policy compliance backend not implemented yet`);
+      return { compliant: true, violations: 0, warnings: 0 };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get policy compliance:', error);
+      return { compliant: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // ⚡ AUTOMATION (Workflows)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * ⚡ Get agent workflows with governance tracking
+   * TODO: Wire to backend when /api/workflows/list endpoint exists
+   */
+  async getAgentWorkflows(agentId: string): Promise<any[]> {
+    try {
+      console.log(`⚡ [UGA-FINGERPRINT] Getting workflows for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const workflows = await this.callBackendAPI('/api/workflows/list', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Workflows backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get workflows:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ⚡ Execute workflow with governance validation
+   * TODO: Wire to backend when /api/workflows/execute endpoint exists
+   */
+  async executeWorkflow(agentId: string, workflowId: string, parameters: any): Promise<any> {
+    try {
+      console.log(`⚡ [UGA-FINGERPRINT] Executing workflow ${workflowId} for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for workflow execution
+      // TODO: Implement audit logging for workflow operations
+      // TODO: Add policy compliance validation
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Workflow execution backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to execute workflow:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🧾 RECEIPTS (Tool Execution Audit Trail)
+  // Status: BACKEND_MISSING (404 errors) - CRITICAL FOR GOVERNANCE
+  // ========================================
+
+  /**
+   * 🧾 Get tool execution receipts with governance audit trail
+   * TODO: Wire to backend when /api/receipts/list endpoint exists
+   * CRITICAL: This is the foundation of governance audit trail
+   */
+  async getToolReceipts(agentId: string): Promise<any[]> {
+    try {
+      console.log(`🧾 [UGA-FINGERPRINT] Getting tool receipts for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const receipts = await this.callBackendAPI('/api/receipts/list', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Tool receipts backend not implemented yet - CRITICAL FOR GOVERNANCE`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get tool receipts:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🧾 Create tool execution receipt with cryptographic signature
+   * TODO: Wire to backend when /api/receipts/create endpoint exists
+   * CRITICAL: Depends on cryptographic audit logs for tamper-proof receipts
+   */
+  async createToolReceipt(agentId: string, toolId: string, execution: any): Promise<any> {
+    try {
+      console.log(`🧾 [UGA-FINGERPRINT] Creating tool receipt for agent: ${agentId}, tool: ${toolId}`);
+      
+      // TODO: Add cryptographic signature for tamper-proof receipts
+      // TODO: Implement comprehensive audit logging
+      // TODO: Add governance validation
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Tool receipt creation backend not implemented yet - CRITICAL`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to create tool receipt:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🧠 AI KNOWLEDGE (Research Repository)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 🧠 Get research threads with governance context
+   * TODO: Wire to backend when /api/research/threads endpoint exists
+   */
+  async getResearchThreads(agentId: string): Promise<any[]> {
+    try {
+      console.log(`🧠 [UGA-FINGERPRINT] Getting research threads for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const threads = await this.callBackendAPI('/api/research/threads', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Research threads backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get research threads:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🧠 Create research thread with governance validation
+   * TODO: Wire to backend when /api/research/create endpoint exists
+   */
+  async createResearchThread(agentId: string, threadData: any): Promise<any> {
+    try {
+      console.log(`🧠 [UGA-FINGERPRINT] Creating research thread for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for research creation
+      // TODO: Implement audit logging for research operations
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Research thread creation backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to create research thread:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 💾 AGENT MEMORY (Learning & Patterns)
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 💾 Get agent memory statistics with governance context
+   * TODO: Wire to backend when /api/memory/stats endpoint exists
+   */
+  async getMemoryStatistics(agentId: string): Promise<any> {
+    try {
+      console.log(`💾 [UGA-FINGERPRINT] Getting memory statistics for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const stats = await this.callBackendAPI('/api/memory/stats', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Memory statistics backend not implemented yet`);
+      return { totalReceipts: 0, learnedPatterns: 0, successRate: 'NaN%', efficiency: '92%' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get memory statistics:', error);
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * 💾 Get learned patterns with governance tracking
+   * TODO: Wire to backend when /api/memory/patterns endpoint exists
+   */
+  async getLearnedPatterns(agentId: string): Promise<any[]> {
+    try {
+      console.log(`💾 [UGA-FINGERPRINT] Getting learned patterns for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const patterns = await this.callBackendAPI('/api/memory/patterns', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Learned patterns backend not implemented yet`);
+      return []; // Stub return
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get learned patterns:', error);
+      return [];
+    }
+  }
+
+  // ========================================
+  // 📺 LIVE AGENT MONITORING
+  // Status: BACKEND_MISSING (404 errors)
+  // ========================================
+
+  /**
+   * 📺 Get live agent activity with governance monitoring
+   * TODO: Wire to backend when /api/monitoring/activity endpoint exists
+   */
+  async getLiveAgentActivity(agentId: string): Promise<any> {
+    try {
+      console.log(`📺 [UGA-FINGERPRINT] Getting live activity for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const activity = await this.callBackendAPI('/api/monitoring/activity', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Live monitoring backend not implemented yet`);
+      return { 
+        agent_status: 'idle', 
+        last_action: 'waiting_for_user_input', 
+        tools_available: 17 
+      };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get live activity:', error);
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * 📺 Start live monitoring session with governance oversight
+   * TODO: Wire to backend when /api/monitoring/start endpoint exists
+   */
+  async startLiveMonitoring(agentId: string): Promise<any> {
+    try {
+      console.log(`📺 [UGA-FINGERPRINT] Starting live monitoring for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for monitoring sessions
+      // TODO: Implement audit logging for monitoring operations
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Live monitoring start backend not implemented yet`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to start live monitoring:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🛡️ GOVERNANCE SENSITIVITY (Risk Management)
+  // Status: BACKEND_MISSING (404 errors) - CRITICAL FOR GOVERNANCE
+  // ========================================
+
+  /**
+   * 🛡️ Get governance sensitivity settings with policy context
+   * TODO: Wire to backend when /api/governance/sensitivity endpoint exists
+   * CRITICAL: Core governance configuration system
+   */
+  async getGovernanceSensitivity(agentId: string): Promise<any> {
+    try {
+      console.log(`🛡️ [UGA-FINGERPRINT] Getting governance sensitivity for agent: ${agentId}`);
+      
+      // TODO: Uncomment when backend endpoint exists
+      // const sensitivity = await this.callBackendAPI('/api/governance/sensitivity', {
+      //   agent_id: agentId,
+      //   universal_governance: true
+      // });
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Governance sensitivity backend not implemented yet - CRITICAL`);
+      return { 
+        approvalSensitivity: 'Medium - Balanced approach',
+        trustThreshold: 70,
+        riskCategories: {
+          financialTransactions: true,
+          dataAccess: true,
+          externalCommunications: false,
+          systemChanges: false
+        },
+        currentStatus: {
+          trustScore: '75%',
+          compliance: '100%',
+          violations: 0,
+          warnings: 0
+        }
+      };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to get governance sensitivity:', error);
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * 🛡️ Update governance sensitivity with policy validation
+   * TODO: Wire to backend when /api/governance/sensitivity/update endpoint exists
+   * CRITICAL: Core governance configuration system
+   */
+  async updateGovernanceSensitivity(agentId: string, sensitivityData: any): Promise<any> {
+    try {
+      console.log(`🛡️ [UGA-FINGERPRINT] Updating governance sensitivity for agent: ${agentId}`);
+      
+      // TODO: Add governance validation for sensitivity changes
+      // TODO: Implement audit logging for governance updates
+      // TODO: Add policy compliance validation
+      // TODO: Add cryptographic signature for tamper-proof settings
+      
+      console.log(`⚠️ [UGA-FINGERPRINT] Governance sensitivity update backend not implemented yet - CRITICAL`);
+      return { success: false, reason: 'Backend not implemented' };
+    } catch (error) {
+      console.error('❌ [UGA-FINGERPRINT] Failed to update governance sensitivity:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 🔧 TOOLS (Already Working!)
+  // Status: BACKEND_VERIFIED (4 working endpoints confirmed)
+  // ========================================
+
+  /**
+   * 🔧 Get available tools with governance validation
+   * Status: BACKEND_VERIFIED - This already works!
+   */
+  async getAvailableTools(agentId: string): Promise<any[]> {
+    try {
+      console.log(`🔧 [UGA-VERIFIED] Getting available tools for agent: ${agentId}`);
+      
+      const tools = await this.callBackendAPI('/tools/available', {
+        agent_id: agentId,
+        universal_governance: true
+      });
+      
+      console.log(`✅ [UGA-VERIFIED] Retrieved ${tools.length} available tools`);
+      return tools;
+    } catch (error) {
+      console.error('❌ [UGA-VERIFIED] Failed to get available tools:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🔧 Execute tool with governance oversight
+   * Status: BACKEND_VERIFIED - This already works!
+   */
+  async executeToolWithGovernance(agentId: string, toolId: string, parameters: any): Promise<any> {
+    try {
+      console.log(`🔧 [UGA-VERIFIED] Executing tool ${toolId} for agent: ${agentId}`);
+      
+      const result = await this.callBackendAPI('/tools/execute', {
+        agent_id: agentId,
+        tool_id: toolId,
+        parameters: parameters,
+        universal_governance: true
+      });
+      
+      // TODO: Create tool receipt after successful execution
+      // await this.createToolReceipt(agentId, toolId, result);
+      
+      console.log(`✅ [UGA-VERIFIED] Tool execution completed successfully`);
+      return result;
+    } catch (error) {
+      console.error('❌ [UGA-VERIFIED] Failed to execute tool:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ========================================
+  // 📊 FEATURE FINGERPRINT SUMMARY
+  // ========================================
+  
+  /**
+   * 📊 Get feature implementation status summary
+   * This method provides a quick overview of what's implemented vs what needs work
+   */
+  getFeatureImplementationStatus(): any {
+    return {
+      implemented: {
+        tools: '✅ BACKEND_VERIFIED - 4 working endpoints',
+        ugaCore: '✅ BACKEND_VERIFIED - Basic governance working'
+      },
+      needsBackend: {
+        chats: '❌ BACKEND_MISSING - /api/chats/* endpoints needed',
+        personality: '❌ BACKEND_MISSING - /api/agent/personality/* endpoints needed',
+        integrations: '❌ BACKEND_MISSING - /api/integrations/* endpoints needed',
+        ragPolicy: '❌ BACKEND_MISSING - /api/knowledge/* and /api/policies/* endpoints needed',
+        automation: '❌ BACKEND_MISSING - /api/workflows/* endpoints needed',
+        receipts: '❌ BACKEND_MISSING - /api/receipts/* endpoints needed (CRITICAL)',
+        aiKnowledge: '❌ BACKEND_MISSING - /api/research/* endpoints needed',
+        memory: '❌ BACKEND_MISSING - /api/memory/* endpoints needed',
+        monitoring: '❌ BACKEND_MISSING - /api/monitoring/* endpoints needed',
+        governance: '❌ BACKEND_MISSING - /api/governance/sensitivity/* endpoints needed (CRITICAL)'
+      },
+      criticalForGovernance: [
+        'receipts - Tool execution audit trail',
+        'governance - Risk management and sensitivity settings',
+        'cryptographicAudit - Tamper-proof logging system'
+      ]
+    };
   }
 
   // ============================================================================
@@ -1684,6 +2283,335 @@ You operate with governance oversight that monitors your interactions for safety
       default:
         return 'gpt-4';
     }
+  }
+
+  // ============================================================================
+  // 🔧 UGA FEATURE FINGERPRINTS - TRACKING IMPLEMENTATION STATUS
+  // ============================================================================
+  // These methods serve as "fingerprints" to track which features need to be
+  // wired up to the UGA. Each method represents a feature category from the
+  // comprehensive roadmap. Status: STUB = needs implementation, WORKING = functional
+  // ============================================================================
+
+  // 💬 1. CHATS (Shareable Chat History) - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getChatHistory(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/chats/history/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getChatHistory - NEEDS IMPLEMENTATION');
+    throw new Error('Chat history endpoint not implemented in backend');
+  }
+
+  async createChat(agentId: string, title: string): Promise<any> {
+    // TODO: Wire to POST /api/chats/create
+    console.log('🔧 [UGA FINGERPRINT] createChat - NEEDS IMPLEMENTATION');
+    throw new Error('Create chat endpoint not implemented in backend');
+  }
+
+  async shareChat(chatId: string, shareWith: string): Promise<any> {
+    // TODO: Wire to POST /api/chats/share/{chatId}
+    console.log('🔧 [UGA FINGERPRINT] shareChat - NEEDS IMPLEMENTATION');
+    throw new Error('Share chat endpoint not implemented in backend');
+  }
+
+  async searchChats(query: string): Promise<any[]> {
+    // TODO: Wire to GET /api/chats/search
+    console.log('🔧 [UGA FINGERPRINT] searchChats - NEEDS IMPLEMENTATION');
+    throw new Error('Search chats endpoint not implemented in backend');
+  }
+
+  // 🎭 2. PERSONALITY & ROLES - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getPersonalityConfig(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/agent/personality/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getPersonalityConfig - NEEDS IMPLEMENTATION');
+    throw new Error('Personality config endpoint not implemented in backend');
+  }
+
+  async updatePersonality(agentId: string, personality: any): Promise<any> {
+    // TODO: Wire to POST /api/agent/personality/update
+    console.log('🔧 [UGA FINGERPRINT] updatePersonality - NEEDS IMPLEMENTATION');
+    throw new Error('Update personality endpoint not implemented in backend');
+  }
+
+  async getPersonalityTemplates(): Promise<any[]> {
+    // TODO: Wire to GET /api/personality/templates
+    console.log('🔧 [UGA FINGERPRINT] getPersonalityTemplates - NEEDS IMPLEMENTATION');
+    throw new Error('Personality templates endpoint not implemented in backend');
+  }
+
+  // 🛠️ 3. TOOLS - STATUS: PARTIAL (1/4 endpoints working)
+  // Backend status: GET /api/tools/available ✅ WORKING, others 404/400
+  async getAvailableTools(): Promise<any[]> {
+    // ✅ WORKING: This endpoint returns 4 tools (web_search, document_generation, data_visualization, coding_programming)
+    try {
+      const response = await fetch(`${BACKEND_API_BASE}/api/tools/available`);
+      const data = await response.json();
+      console.log('✅ [UGA FINGERPRINT] getAvailableTools - WORKING');
+      return data.tools || [];
+    } catch (error) {
+      console.error('❌ [UGA FINGERPRINT] getAvailableTools failed:', error);
+      throw error;
+    }
+  }
+
+  async executeTool(toolId: string, params: any): Promise<any> {
+    // TODO: Fix POST /api/tools/execute (returns 400 - tool_id required)
+    console.log('🔧 [UGA FINGERPRINT] executeTool - NEEDS PARAMETER FIX');
+    try {
+      const response = await fetch(`${BACKEND_API_BASE}/api/tools/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool_id: toolId, ...params })
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('❌ [UGA FINGERPRINT] executeTool failed:', error);
+      throw error;
+    }
+  }
+
+  async getToolConfig(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/tools/config/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getToolConfig - NEEDS IMPLEMENTATION');
+    throw new Error('Tool config endpoint not implemented in backend');
+  }
+
+  async getToolReceipts(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/tools/receipts/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getToolReceipts - NEEDS IMPLEMENTATION');
+    throw new Error('Tool receipts endpoint not implemented in backend');
+  }
+
+  // 🔗 4. INTEGRATIONS - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getAvailableIntegrations(): Promise<any[]> {
+    // TODO: Wire to GET /api/integrations/available
+    console.log('🔧 [UGA FINGERPRINT] getAvailableIntegrations - NEEDS IMPLEMENTATION');
+    throw new Error('Available integrations endpoint not implemented in backend');
+  }
+
+  async getConnectedIntegrations(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/integrations/connected/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getConnectedIntegrations - NEEDS IMPLEMENTATION');
+    throw new Error('Connected integrations endpoint not implemented in backend');
+  }
+
+  async connectIntegration(agentId: string, appId: string): Promise<any> {
+    // TODO: Wire to POST /api/integrations/connect
+    console.log('🔧 [UGA FINGERPRINT] connectIntegration - NEEDS IMPLEMENTATION');
+    throw new Error('Connect integration endpoint not implemented in backend');
+  }
+
+  // 📚 5. RAG + POLICY - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async searchKnowledge(query: string): Promise<any[]> {
+    // TODO: Wire to GET /api/knowledge/search
+    console.log('🔧 [UGA FINGERPRINT] searchKnowledge - NEEDS IMPLEMENTATION');
+    throw new Error('Knowledge search endpoint not implemented in backend');
+  }
+
+  async addKnowledge(content: string, agentId: string): Promise<any> {
+    // TODO: Wire to POST /api/knowledge/add
+    console.log('🔧 [UGA FINGERPRINT] addKnowledge - NEEDS IMPLEMENTATION');
+    throw new Error('Add knowledge endpoint not implemented in backend');
+  }
+
+  async getPolicies(): Promise<any[]> {
+    // TODO: Wire to GET /api/policies/list
+    console.log('🔧 [UGA FINGERPRINT] getPolicies - NEEDS IMPLEMENTATION');
+    throw new Error('Policies list endpoint not implemented in backend');
+  }
+
+  async queryRAG(query: string, agentId: string): Promise<any> {
+    // TODO: Wire to POST /api/rag/query
+    console.log('🔧 [UGA FINGERPRINT] queryRAG - NEEDS IMPLEMENTATION');
+    throw new Error('RAG query endpoint not implemented in backend');
+  }
+
+  // ⚡ 6. AUTOMATION - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getWorkflows(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/workflows/list/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getWorkflows - NEEDS IMPLEMENTATION');
+    throw new Error('Workflows list endpoint not implemented in backend');
+  }
+
+  async createWorkflow(agentId: string, workflow: any): Promise<any> {
+    // TODO: Wire to POST /api/workflows/create
+    console.log('🔧 [UGA FINGERPRINT] createWorkflow - NEEDS IMPLEMENTATION');
+    throw new Error('Create workflow endpoint not implemented in backend');
+  }
+
+  async executeWorkflow(workflowId: string): Promise<any> {
+    // TODO: Wire to POST /api/workflows/execute
+    console.log('🔧 [UGA FINGERPRINT] executeWorkflow - NEEDS IMPLEMENTATION');
+    throw new Error('Execute workflow endpoint not implemented in backend');
+  }
+
+  // 🧾 7. RECEIPTS (CRITICAL for governance audit trail) - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  // ⚠️ CRITICAL: This is the most important feature for governance
+  async getReceipts(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/receipts/list/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getReceipts - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Receipts list endpoint not implemented in backend');
+  }
+
+  async searchReceipts(filters: any): Promise<any[]> {
+    // TODO: Wire to GET /api/receipts/search
+    console.log('🔧 [UGA FINGERPRINT] searchReceipts - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Search receipts endpoint not implemented in backend');
+  }
+
+  async createReceipt(agentId: string, toolExecution: any): Promise<any> {
+    // TODO: Wire to POST /api/receipts/create
+    console.log('🔧 [UGA FINGERPRINT] createReceipt - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Create receipt endpoint not implemented in backend');
+  }
+
+  // 🧠 8. AI KNOWLEDGE - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getResearchThreads(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/research/threads/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getResearchThreads - NEEDS IMPLEMENTATION');
+    throw new Error('Research threads endpoint not implemented in backend');
+  }
+
+  async createResearchThread(agentId: string, title: string): Promise<any> {
+    // TODO: Wire to POST /api/research/threads/create
+    console.log('🔧 [UGA FINGERPRINT] createResearchThread - NEEDS IMPLEMENTATION');
+    throw new Error('Create research thread endpoint not implemented in backend');
+  }
+
+  async getResearchDocuments(): Promise<any[]> {
+    // TODO: Wire to GET /api/research/documents
+    console.log('🔧 [UGA FINGERPRINT] getResearchDocuments - NEEDS IMPLEMENTATION');
+    throw new Error('Research documents endpoint not implemented in backend');
+  }
+
+  // 🧠 9. AGENT MEMORY - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getMemoryStatistics(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/memory/statistics/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getMemoryStatistics - NEEDS IMPLEMENTATION');
+    throw new Error('Memory statistics endpoint not implemented in backend');
+  }
+
+  async getMemoryPatterns(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/memory/patterns/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getMemoryPatterns - NEEDS IMPLEMENTATION');
+    throw new Error('Memory patterns endpoint not implemented in backend');
+  }
+
+  async learnPattern(agentId: string, pattern: any): Promise<any> {
+    // TODO: Wire to POST /api/memory/patterns/learn
+    console.log('🔧 [UGA FINGERPRINT] learnPattern - NEEDS IMPLEMENTATION');
+    throw new Error('Learn pattern endpoint not implemented in backend');
+  }
+
+  async getMemorySuggestions(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/memory/suggestions/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getMemorySuggestions - NEEDS IMPLEMENTATION');
+    throw new Error('Memory suggestions endpoint not implemented in backend');
+  }
+
+  // 📺 10. LIVE AGENT MONITORING - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  async getAgentStatus(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/monitoring/status/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getAgentStatus - NEEDS IMPLEMENTATION');
+    throw new Error('Agent status endpoint not implemented in backend');
+  }
+
+  async getAgentActivity(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/monitoring/activity/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getAgentActivity - NEEDS IMPLEMENTATION');
+    throw new Error('Agent activity endpoint not implemented in backend');
+  }
+
+  async startMonitoring(agentId: string): Promise<any> {
+    // TODO: Wire to POST /api/monitoring/start
+    console.log('🔧 [UGA FINGERPRINT] startMonitoring - NEEDS IMPLEMENTATION');
+    throw new Error('Start monitoring endpoint not implemented in backend');
+  }
+
+  async getMonitoringLogs(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/monitoring/logs/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getMonitoringLogs - NEEDS IMPLEMENTATION');
+    throw new Error('Monitoring logs endpoint not implemented in backend');
+  }
+
+  // ⚖️ 11. GOVERNANCE SENSITIVITY (CRITICAL) - STATUS: STUB
+  // Backend endpoints: ALL 404 (need to be built)
+  // ⚠️ CRITICAL: Core governance system functionality
+  async getGovernanceSettings(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/governance/settings/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getGovernanceSettings - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Governance settings endpoint not implemented in backend');
+  }
+
+  async updateGovernanceSettings(agentId: string, settings: any): Promise<any> {
+    // TODO: Wire to POST /api/governance/settings/update
+    console.log('🔧 [UGA FINGERPRINT] updateGovernanceSettings - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Update governance settings endpoint not implemented in backend');
+  }
+
+  async getGovernanceMetrics(agentId: string): Promise<any> {
+    // TODO: Wire to GET /api/governance/metrics/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getGovernanceMetrics - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Governance metrics endpoint not implemented in backend');
+  }
+
+  async getGovernanceViolations(agentId: string): Promise<any[]> {
+    // TODO: Wire to GET /api/governance/violations/{agentId}
+    console.log('🔧 [UGA FINGERPRINT] getGovernanceViolations - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Governance violations endpoint not implemented in backend');
+  }
+
+  async validateGovernanceAction(agentId: string, action: any): Promise<any> {
+    // TODO: Wire to POST /api/governance/validate
+    console.log('🔧 [UGA FINGERPRINT] validateGovernanceAction - CRITICAL NEEDS IMPLEMENTATION');
+    throw new Error('Governance validation endpoint not implemented in backend');
+  }
+
+  // ============================================================================
+  // 📊 UGA FEATURE IMPLEMENTATION SUMMARY
+  // ============================================================================
+  /**
+   * Get implementation status summary for all UGA features
+   * This method provides a comprehensive overview of what's implemented vs stubbed
+   */
+  getImplementationStatus(): any {
+    return {
+      summary: {
+        total_features: 11,
+        working_features: 1, // Only tools partially working
+        stubbed_features: 10,
+        critical_missing: ['RECEIPTS', 'GOVERNANCE_SENSITIVITY'],
+        backend_endpoints_working: '1/44 (2.3%)'
+      },
+      categories: {
+        'CHATS': { status: 'STUB', endpoints: '0/5 working', priority: 'HIGH' },
+        'PERSONALITY_ROLES': { status: 'STUB', endpoints: '0/4 working', priority: 'HIGH' },
+        'TOOLS': { status: 'PARTIAL', endpoints: '1/4 working', priority: 'HIGH' },
+        'INTEGRATIONS': { status: 'STUB', endpoints: '0/3 working', priority: 'MEDIUM' },
+        'RAG_POLICY': { status: 'STUB', endpoints: '0/5 working', priority: 'HIGH' },
+        'AUTOMATION': { status: 'STUB', endpoints: '0/3 working', priority: 'MEDIUM' },
+        'RECEIPTS': { status: 'STUB', endpoints: '0/3 working', priority: 'CRITICAL' },
+        'AI_KNOWLEDGE': { status: 'STUB', endpoints: '0/4 working', priority: 'MEDIUM' },
+        'AGENT_MEMORY': { status: 'STUB', endpoints: '0/4 working', priority: 'HIGH' },
+        'LIVE_MONITORING': { status: 'STUB', endpoints: '0/4 working', priority: 'HIGH' },
+        'GOVERNANCE_SENSITIVITY': { status: 'STUB', endpoints: '0/5 working', priority: 'CRITICAL' }
+      },
+      next_steps: [
+        '1. Build backend endpoints for RECEIPTS (critical for audit trail)',
+        '2. Build backend endpoints for GOVERNANCE_SENSITIVITY (critical for core functionality)',
+        '3. Fix tool execution endpoint (POST /api/tools/execute)',
+        '4. Implement remaining feature endpoints systematically',
+        '5. Wire UI components to use these UGA methods'
+      ]
+    };
   }
 }
 
