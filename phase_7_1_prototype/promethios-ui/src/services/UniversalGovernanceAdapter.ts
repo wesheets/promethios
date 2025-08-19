@@ -394,7 +394,7 @@ export class UniversalGovernanceAdapter {
         model: data.model,
         governance_enabled: data.governance_enabled,
         session_id: data.session_id,
-        userId: userId || 'universal-governance-adapter'
+        userId: userId || 'anonymous-user' // CRITICAL FIX: Use anonymous-user instead of universal-governance-adapter
       });
       console.log(`📤 [Universal] Full request body:`, JSON.stringify(data, null, 2));
 
@@ -533,8 +533,8 @@ export class UniversalGovernanceAdapter {
       const chatbotService = ChatbotStorageService.getInstance();
       
       // Load chatbot profile which contains the wrapper configuration
-      // Use provided userId or fallback to 'current-user' for now
-      const actualUserId = userId || 'current-user'; // TODO: Get actual user ID from auth context
+      // Use provided userId or fallback to 'anonymous-user' for now
+      const actualUserId = userId || 'anonymous-user'; // CRITICAL FIX: Use anonymous-user instead of current-user
       const chatbots = await chatbotService.getChatbots(actualUserId);
       const chatbot = chatbots.find(c => c.identity.id === agentId);
       
@@ -543,7 +543,9 @@ export class UniversalGovernanceAdapter {
           agentId,
           provider: chatbot.apiDetails?.provider,
           model: chatbot.apiDetails?.selectedModel,
-          personality: chatbot.chatbotConfig.personality
+          personality: chatbot.chatbotConfig.personality,
+          fullApiDetails: chatbot.apiDetails,
+          fullChatbotConfig: chatbot.chatbotConfig
         });
         
         return {
