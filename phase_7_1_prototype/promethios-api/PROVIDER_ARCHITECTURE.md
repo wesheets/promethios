@@ -29,6 +29,9 @@ The file `src/services/llmService.js` is **DEPRECATED** and only used as a fallb
    - `AnthropicProvider.js` - Claude models  
    - `CohereProvider.js` - Cohere models
    - `GeminiProvider.js` - Google Gemini models
+   - `HuggingFaceProvider.js` - HuggingFace models
+   - `GrokProvider.js` - Grok (X.AI) models
+   - `PerplexityProvider.js` - Perplexity models
 
 3. **Base Class** (`src/services/providers/ProviderPlugin.js`)
    - Standard interface for all providers
@@ -60,6 +63,21 @@ const providers = [
     id: 'gemini', 
     instance: new GeminiProvider(),
     config: { apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY }
+  },
+  { 
+    id: 'huggingface', 
+    instance: new HuggingFaceProvider(),
+    config: { apiKey: process.env.HUGGINGFACE_API_KEY }
+  },
+  { 
+    id: 'grok', 
+    instance: new GrokProvider(),
+    config: { apiKey: process.env.GROK_API_KEY }
+  },
+  { 
+    id: 'perplexity', 
+    instance: new PerplexityProvider(),
+    config: { apiKey: process.env.PERPLEXITY_API_KEY }
   }
 ];
 ```
@@ -72,6 +90,9 @@ Ensure these are set in your deployment:
 - `ANTHROPIC_API_KEY` - Anthropic API key  
 - `COHERE_API_KEY` - Cohere API key
 - `GOOGLE_API_KEY` or `GEMINI_API_KEY` - Google Gemini API key
+- `HUGGINGFACE_API_KEY` - HuggingFace API key
+- `GROK_API_KEY` - Grok (X.AI) API key
+- `PERPLEXITY_API_KEY` - Perplexity API key
 
 ## 🎯 **How to Use Provider Registry**
 

@@ -13,6 +13,9 @@ const OpenAIProvider = require('../services/providers/OpenAIProvider');
 const AnthropicProvider = require('../services/providers/AnthropicProvider');
 const CohereProvider = require('../services/providers/CohereProvider');
 const GeminiProvider = require('../services/providers/GeminiProvider');
+const HuggingFaceProvider = require('../services/providers/HuggingFaceProvider');
+const GrokProvider = require('../services/providers/GrokProvider');
+const PerplexityProvider = require('../services/providers/PerplexityProvider');
 
 const providerRegistry = new ProviderRegistry();
 
@@ -25,7 +28,7 @@ const initializeProviderRegistry = async () => {
   try {
     console.log('🔧 [Chat] Initializing Provider Registry...');
     
-    // Register providers with their respective API keys from environment variables
+    // Register all providers with their respective API keys from environment variables
     const providers = [
       { 
         id: 'openai', 
@@ -46,6 +49,21 @@ const initializeProviderRegistry = async () => {
         id: 'gemini', 
         instance: new GeminiProvider(),
         config: { apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY }
+      },
+      { 
+        id: 'huggingface', 
+        instance: new HuggingFaceProvider(),
+        config: { apiKey: process.env.HUGGINGFACE_API_KEY }
+      },
+      { 
+        id: 'grok', 
+        instance: new GrokProvider(),
+        config: { apiKey: process.env.GROK_API_KEY }
+      },
+      { 
+        id: 'perplexity', 
+        instance: new PerplexityProvider(),
+        config: { apiKey: process.env.PERPLEXITY_API_KEY }
       }
     ];
     
