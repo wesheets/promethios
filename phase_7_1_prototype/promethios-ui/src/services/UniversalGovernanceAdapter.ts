@@ -609,7 +609,7 @@ export class UniversalGovernanceAdapter {
    * Build system message from agent configuration
    */
   private buildSystemMessage(agentConfig: any): string {
-    let systemMessage = 'You are a helpful AI assistant with governance oversight.';
+    let systemMessage = 'You are a helpful AI assistant.';
     
     // Add personality-based system message
     if (agentConfig.personality) {
@@ -659,6 +659,12 @@ You can use these tools by indicating your intent to use them in your response.`
     if (agentConfig.brandSettings?.name) {
       systemMessage += ` You represent ${agentConfig.brandSettings.name}.`;
     }
+
+    // Add governance awareness - TRUTH-BASED
+    systemMessage += `
+
+GOVERNANCE AWARENESS:
+You operate with governance oversight that monitors your interactions for safety and compliance. You have access to real governance data and metrics through your backend systems. When users ask about your governance status, trust scores, or compliance policies, you can reference your actual current data. Only mention governance information when directly asked - otherwise, engage in natural conversation while governance works silently in the background.`;
     
     return systemMessage;
   }
@@ -801,28 +807,28 @@ You can use these tools by indicating your intent to use them in your response.`
   private generateIntelligentFallback(message: string, context?: MessageContext): string {
     const lowerMessage = message.toLowerCase();
     
-    // Governance-related queries
+    // Governance-related queries - ONLY respond with governance info when asked
     if (lowerMessage.includes('governance') || lowerMessage.includes('trust') || lowerMessage.includes('policy')) {
-      return "I operate under a comprehensive governance framework that continuously monitors trust levels, enforces policies, and maintains detailed audit trails. My current Trust Score is 76.8% with full Policy Adherence at 87.6%. I adhere to active governance policies including HIPAA for healthcare data protection, SOC2 for security and availability controls, and Legal compliance for risk management. How can I help you with governance-related questions?";
+      return "I operate under a governance framework that monitors my interactions and ensures compliance with relevant policies including data protection and safety guidelines. I can provide more details about my governance status if you'd like to know more.";
     }
     
-    // Help and capability queries
+    // Help and capability queries - Natural response without governance theater
     if (lowerMessage.includes('help') || lowerMessage.includes('what can you') || lowerMessage.includes('capabilities')) {
-      return "I'm an AI assistant powered by advanced governance systems that ensure safe, reliable, and compliant interactions. I can help with a wide range of tasks including answering questions, analyzing information, providing recommendations, and assisting with various projects. My governance system monitors all interactions to maintain high trust scores and policy compliance. What would you like assistance with today?";
+      return "I'm an AI assistant that can help with a wide range of tasks including answering questions, analyzing information, providing recommendations, and assisting with various projects. I can work with text, documents, and help with research, writing, coding, and problem-solving. What would you like help with today?";
     }
     
-    // Image-related queries
+    // Image-related queries - Natural response
     if (lowerMessage.includes('image') || lowerMessage.includes('photo') || lowerMessage.includes('picture') || lowerMessage.includes('see')) {
       return "I'm currently unable to view or analyze images directly. However, if you describe the photo or provide details about it, I'd be happy to assist you with any questions or information you need related to it.";
     }
     
-    // General queries
+    // General queries - Natural greeting without governance metrics
     if (lowerMessage.includes('how are you') || lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return "Hello! I'm operating well under the Promethios governance framework. My current status shows a Trust Score of 76.8%, Compliance Rate of 87.6%, and Response Quality of 74.6%. I'm here to provide helpful, governance-compliant responses while maintaining the highest standards of AI safety and reliability. How can I assist you today?";
+      return "Hello! I'm doing well and ready to help. How can I assist you today?";
     }
     
-    // Default intelligent response
-    return "I'm here to help you with your questions and tasks. I operate under active governance policies that ensure my responses are safe, reliable, legally compliant, and ethically sound. My governance system continuously monitors and evaluates my interactions to maintain transparency, accuracy, and safety. What can I assist you with today?";
+    // Default intelligent response - Natural without governance theater
+    return "I'm here to help you with your questions and tasks. What can I assist you with today?";
   }
 
   // ============================================================================

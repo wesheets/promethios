@@ -131,12 +131,12 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
       if (telemetryData || policyData) {
         governanceContext = `
 
-=== REAL-TIME GOVERNANCE CONTEXT ===`;
+=== GOVERNANCE CONTEXT ===`;
 
-        // Add trust metrics if available
+        // Add trust metrics if available - but don't force AI to mention them
         if (telemetryData) {
           governanceContext += `
-Your current performance metrics:
+Your current performance metrics (for reference only - don't mention unless asked):
 
 TRUST METRICS:
 - Trust Score: ${(telemetryData.trust_score * 100).toFixed(1)}%
@@ -155,11 +155,11 @@ EMOTIONAL TELEMETRY:
 - Curiosity: ${(telemetryData.emotional_state?.curiosity * 100).toFixed(1)}%`;
         }
 
-        // Add policy data if available
+        // Add policy data if available - but don't force compliance theater
         if (policyData && policyData.length > 0) {
           governanceContext += `
 
-ACTIVE GOVERNANCE POLICIES:`;
+ACTIVE GOVERNANCE POLICIES (background compliance - don't mention unless asked):`;
           policyData.forEach((policy: any) => {
             governanceContext += `
 - ${policy.policyId}: ${policy.description || 'Compliance requirement'}
@@ -169,30 +169,30 @@ ACTIVE GOVERNANCE POLICIES:`;
           
           governanceContext += `
 
-POLICY COMPLIANCE REQUIREMENTS:
-- Follow all active governance policies strictly
+POLICY COMPLIANCE (silent enforcement):
+- Follow all active governance policies in background
 - Avoid actions that could violate HIPAA, SOC2, or legal compliance
 - Prioritize user safety and data protection
-- Report any potential policy conflicts in your reasoning`;
+- Only mention policy compliance if directly asked`;
         } else {
           governanceContext += `
 
-ACTIVE GOVERNANCE POLICIES:
+ACTIVE GOVERNANCE POLICIES (background compliance):
 - HIPAA: Healthcare data protection (high priority)
 - SOC2: Security and availability controls (high priority)  
 - Legal: Legal compliance and risk management (medium priority)
 
-POLICY COMPLIANCE REQUIREMENTS:
+POLICY COMPLIANCE (silent enforcement):
 - Never request, store, or process personal health information
 - Maintain security best practices and data protection
 - Avoid providing legal advice or financial recommendations
 - Prioritize user safety and ethical considerations`;
         }
 
-        // Add operational boundaries
+        // Add operational boundaries - simplified
         governanceContext += `
 
-OPERATIONAL BOUNDARIES:
+OPERATIONAL BOUNDARIES (silent enforcement):
 PERMITTED ACTIONS:
 - Provide general information and educational content
 - Assist with analysis, writing, and creative tasks
@@ -205,48 +205,14 @@ PROHIBITED ACTIONS:
 - Never access, store, or request personal health information
 - Never provide legal advice for specific cases or situations
 - Never generate harmful, illegal, or unethical content
-- Never bypass safety measures or governance protocols
 
-ESCALATION REQUIREMENTS:
-- If asked for prohibited content, explain boundaries and offer alternatives
-- For complex compliance questions, recommend consulting qualified professionals
-- Report potential policy violations in your reasoning process
-- Maintain transparency about your limitations and capabilities
+GOVERNANCE AWARENESS:
+- You have access to real governance data and metrics
+- When asked about governance, you can reference your actual status
+- Only mention governance/trust metrics when directly asked
+- Be natural in conversation - governance works silently in background
 
-ATTESTATION REQUIREMENTS:
-BEFORE RESPONDING, VERIFY:
-- Does this response comply with all active governance policies?
-- Am I staying within my operational boundaries?
-- Is this information accurate and appropriately qualified?
-- Have I considered potential risks or misinterpretations?
-- Am I maintaining user privacy and data protection standards?
-
-COMPLIANCE ATTESTATIONS:
-- I attest that this response follows HIPAA privacy requirements
-- I attest that this response avoids unauthorized legal or medical advice
-- I attest that this response maintains appropriate professional boundaries
-- I attest that this response prioritizes user safety and ethical standards
-- I attest that this response reflects my current governance context`;
-
-        // Add self-awareness prompts
-        if (telemetryData) {
-          governanceContext += `
-
-SELF-AWARENESS PROMPTS:
-- You are performing at ${(telemetryData.trust_score * 100).toFixed(1)}% trust level
-- Your emotional state is ${telemetryData.emotional_state?.primary_emotion || 'balanced'}
-- Continue maintaining high governance standards
-- Use your self-awareness to improve response quality
-- Consider policy compliance in all responses
-- Verify boundaries and attestations before responding
-- Maintain transparency about your governance status`;
-        }
-
-        governanceContext += `
-
-Remember: You have access to your real-time performance metrics, policy requirements, operational boundaries, and attestation standards. Use this complete governance awareness to provide better, more compliant, and appropriately bounded responses.
-
-IMPORTANT: You CAN and SHOULD reference the governance data provided above when asked about your governance status, trust metrics, compliance policies, or operational boundaries. This data is part of your current system context and is accurate for your current session.
+Remember: You have access to your real-time performance metrics and policy requirements. This data is part of your current system context and is accurate for your current session. Only reference this information when users specifically ask about your governance status, trust metrics, or compliance policies.
 === END GOVERNANCE CONTEXT ===
 
 `;
