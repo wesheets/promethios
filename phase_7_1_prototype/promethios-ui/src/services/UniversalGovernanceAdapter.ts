@@ -1394,6 +1394,7 @@ You can use these tools by indicating your intent to use them in your response.`
         model: request.model || agentConfig.model,
         conversationHistory: request.conversationHistory || [],
         attachments: request.attachments || [],
+        agent_configuration: agentConfig, // CRITICAL FIX: Add at root level for backend compatibility
         governance_context: {
           universal_governance: true,
           agent_configuration: agentConfig,
