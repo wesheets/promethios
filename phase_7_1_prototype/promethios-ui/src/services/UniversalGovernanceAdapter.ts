@@ -383,7 +383,7 @@ export class UniversalGovernanceAdapter {
     }
   }
 
-  private async callBackendAPI(endpoint: string, data: any): Promise<any> {
+  private async callBackendAPI(endpoint: string, data: any, userId?: string): Promise<any> {
     try {
       const url = `${BACKEND_API_BASE}${endpoint}`;
       console.log(`🌐 [Universal] Calling backend API: ${url}`);
@@ -393,7 +393,8 @@ export class UniversalGovernanceAdapter {
         provider: data.provider,
         model: data.model,
         governance_enabled: data.governance_enabled,
-        session_id: data.session_id
+        session_id: data.session_id,
+        userId: userId || 'universal-governance-adapter'
       });
       console.log(`📤 [Universal] Full request body:`, JSON.stringify(data, null, 2));
 
@@ -401,7 +402,7 @@ export class UniversalGovernanceAdapter {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'universal-governance-adapter',
+          'x-user-id': userId || 'universal-governance-adapter',
         },
         body: JSON.stringify(data),
       });
@@ -441,15 +442,17 @@ export class UniversalGovernanceAdapter {
    * Load complete agent configuration from both chatbot wrapper and scorecard
    * Priority: Scorecard settings override chatbot wrapper settings
    */
-  private async loadCompleteAgentConfiguration(agentId: string): Promise<any> {
+  private async loadCompleteAgentConfiguration(agentId: string, userId?: string): Promise<any> {
     try {
       console.log(`🔧 [Universal] Loading complete configuration for agent ${agentId}`);
       
       // 1. Load from chatbot wrapper (initial configuration)
-      const chatbotConfig = await this.loadChatbotWrapperConfig(agentId);
+      const chatbotConfig = await this.loadChatbotWrapperConfig(agentId, userId);
       console.log(`📦 [Universal] Chatbot wrapper config loaded:`, {
         personality: chatbotConfig?.personality,
         behavior: chatbotConfig?.behavior,
+        provider: chatbotConfig?.provider,
+        model: chatbotConfig?.model,
         hasKnowledgeBases: chatbotConfig?.knowledgeBases?.length > 0,
         hasAutomationRules: chatbotConfig?.automationRules?.length > 0
       });
@@ -474,8 +477,11 @@ export class UniversalGovernanceAdapter {
         responseTemplates: chatbotConfig?.responseTemplates || [],
         brandSettings: chatbotConfig?.brandSettings || {},
         governanceMetrics: chatbotConfig?.governanceMetrics || {},
+        // CRITICAL FIX: Use actual provider and model from chatbot configuration
         provider: chatbotConfig?.provider || 'openai',
-        model: chatbotConfig?.model || 'gpt-4.1-mini',
+        model: chatbotConfig?.model || (chatbotConfig?.provider === 'google' || chatbotConfig?.provider === 'gemini' ? 'gemini-1.5-pro' : 
+                                       chatbotConfig?.provider === 'anthropic' || chatbotConfig?.provider === 'claude' ? 'claude-3-5-sonnet-20241022' :
+                                       'gpt-4'),
         
         // Scorecard overrides (if available)
         ...(scorecardConfig && {
@@ -522,17 +528,26 @@ export class UniversalGovernanceAdapter {
   /**
    * Load configuration from chatbot wrapper (initial settings)
    */
-  private async loadChatbotWrapperConfig(agentId: string): Promise<any> {
+  private async loadChatbotWrapperConfig(agentId: string, userId?: string): Promise<any> {
     try {
       // Import ChatbotStorageService dynamically to avoid circular dependencies
       const { ChatbotStorageService } = await import('./ChatbotStorageService');
       const chatbotService = ChatbotStorageService.getInstance();
       
       // Load chatbot profile which contains the wrapper configuration
-      const chatbots = await chatbotService.getChatbots('current-user'); // TODO: Get actual user ID
+      // Use provided userId or fallback to 'current-user' for now
+      const actualUserId = userId || 'current-user'; // TODO: Get actual user ID from auth context
+      const chatbots = await chatbotService.getChatbots(actualUserId);
       const chatbot = chatbots.find(c => c.identity.id === agentId);
       
       if (chatbot) {
+        console.log(`🔧 [Universal] Found chatbot configuration:`, {
+          agentId,
+          provider: chatbot.apiDetails?.provider,
+          model: chatbot.apiDetails?.selectedModel,
+          personality: chatbot.chatbotConfig.personality
+        });
+        
         return {
           personality: chatbot.chatbotConfig.personality,
           behavior: chatbot.chatbotConfig.personality, // Map personality to behavior for now
@@ -546,6 +561,7 @@ export class UniversalGovernanceAdapter {
         };
       }
       
+      console.log(`⚠️ [Universal] No chatbot found with ID: ${agentId}`);
       return null;
     } catch (error) {
       console.error(`❌ [Universal] Failed to load chatbot wrapper config:`, error);
@@ -637,13 +653,14 @@ You can use these tools by indicating your intent to use them in your response.`
   async enhanceResponseWithGovernance(
     agentId: string,
     message: string,
-    context?: MessageContext
+    context?: MessageContext,
+    userId?: string
   ): Promise<EnhancedResponse> {
     try {
       console.log(`🤖 [Universal] Generating governance-enhanced response for agent ${agentId}`);
       
       // CRITICAL: Load complete agent configuration (chatbot wrapper + scorecard)
-      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId);
+      const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId, userId);
       
       // Prepare backend chat request with full agent configuration
       const chatRequest: BackendChatRequest = {
@@ -653,7 +670,7 @@ You can use these tools by indicating your intent to use them in your response.`
         session_id: context?.sessionId || `universal_${Date.now()}`,
         system_message: this.buildSystemMessage(fullAgentConfig),
         provider: fullAgentConfig.provider || 'openai',
-        model: fullAgentConfig.model || 'gpt-4.1-mini',
+        model: fullAgentConfig.model || 'gpt-4',
         conversationHistory: context?.conversationHistory || [],
         attachments: context?.attachments || [], // Include file attachments
         // CRITICAL: Pass complete agent configuration to backend
@@ -665,12 +682,17 @@ You can use these tools by indicating your intent to use them in your response.`
           automationRules: fullAgentConfig.automationRules,
           governanceMetrics: fullAgentConfig.governanceMetrics,
           responseTemplates: fullAgentConfig.responseTemplates,
-          brandSettings: fullAgentConfig.brandSettings
+          brandSettings: fullAgentConfig.brandSettings,
+          // CRITICAL: Include API details for proper provider routing
+          apiDetails: {
+            provider: fullAgentConfig.provider,
+            selectedModel: fullAgentConfig.model
+          }
         }
       };
 
-      // Call real backend API (same as modern chat)
-      const backendResponse: BackendChatResponse = await this.callBackendAPI(CHAT_ENDPOINT, chatRequest);
+      // Call real backend API (same as modern chat) with actual userId
+      const backendResponse: BackendChatResponse = await this.callBackendAPI(CHAT_ENDPOINT, chatRequest, userId);
       
       // Convert backend response to EnhancedResponse format
       const enhancedResponse: EnhancedResponse = {
