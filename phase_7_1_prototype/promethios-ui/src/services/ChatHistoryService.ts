@@ -264,11 +264,7 @@ export class ChatHistoryService {
     await this.saveChatSession(session);
 
     // Store shareable context separately for agent access
-    await unifiedStorage.store(
-      `shareable_contexts/${contextId}`,
-      shareableContext,
-      'firebase'
-    );
+    await unifiedStorage.set('firebase', `shareable_contexts/${contextId}`, shareableContext);
 
     console.log(`🔗 Created shareable context: ${contextId} for session ${sessionId}`);
     return shareableContext;
@@ -276,33 +272,73 @@ export class ChatHistoryService {
 
   /**
    * Get chat sessions for user with filtering
-   *  async getUserChatHistory(
+   */
+  async getUserChatHistory(
     userId: string,
     filter?: ChatHistoryFilter
   ): Promise<ChatSession[]> {
     try {
-      // Get all chat sessions for user
-      const userChatKeys = await unifiedStorage.getKeys(`${userId}`, 'chats');
+      console.log(`📚 Loading chat history for user: ${userId}`);
+      
+      // Get all chat sessions for user from unified storage
       const sessions: ChatSession[] = [];
-      for (const key of userChatKeys) {
-        try {
-          const sessionData = await unifiedStorage.retrieve(key, 'chats');
-          if (sessionData) {
-            const session = this.deserializeChatSession(sessionData);
-            
-            // Apply filters
-            if (this.matchesFilter(session, filter)) {
-              sessions.push(session);
+      
+      try {
+        // Try to get user's chat index first
+        const userChatIndex = await unifiedStorage.get('chats', `${userId}/index`);
+        
+        if (userChatIndex && Array.isArray(userChatIndex)) {
+          // Load sessions from index
+          for (const sessionId of userChatIndex) {
+            try {
+              const sessionData = await unifiedStorage.get('chats', `${userId}/${sessionId}`);
+              if (sessionData) {
+                const session = this.deserializeChatSession(sessionData);
+                
+                // Apply filters
+                if (this.matchesFilter(session, filter)) {
+                  sessions.push(session);
+                }
+              }
+            } catch (error) {
+              console.warn(`Failed to load chat session ${sessionId}:`, error);
             }
           }
-        } catch (error) {
-          console.warn(`Failed to load chat session ${key}:`, error);
+        } else {
+          // Fallback: try to load sessions directly (less efficient but works)
+          console.log('📚 No chat index found, attempting direct session loading');
+          
+          // Try common session patterns
+          for (let i = 0; i < 100; i++) { // Limit to prevent infinite loops
+            try {
+              const sessionData = await unifiedStorage.get('chats', `${userId}/chat_${i}`);
+              if (sessionData) {
+                const session = this.deserializeChatSession(sessionData);
+                if (this.matchesFilter(session, filter)) {
+                  sessions.push(session);
+                }
+              }
+            } catch (error) {
+              // Session doesn't exist, continue
+              break;
+            }
+          }
+        }
+      } catch (storageError) {
+        console.warn('Storage access error, trying alternative approach:', storageError);
+        
+        // Try to get sessions from active sessions cache
+        for (const [sessionId, session] of this.activeSessions) {
+          if (session.userId === userId && this.matchesFilter(session, filter)) {
+            sessions.push(session);
+          }
         }
       }
 
-      // Sort by last updated (most recent first)
+      // Sort by last updated (most recent first) - chronological order
       sessions.sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime());
 
+      console.log(`📚 Loaded ${sessions.length} chat sessions for user ${userId}`);
       return sessions;
     } catch (error) {
       console.error('❌ Failed to get chat sessions:', error);
@@ -335,18 +371,39 @@ export class ChatHistoryService {
       return; // Already deleted
     }
 
-    // Remove from unified storage
-    await unifiedStorage.delete(`${session.userId}/${sessionId}`, 'chats');
+    try {
+      // Remove from unified storage using correct API
+      await unifiedStorage.delete('chats', `${session.userId}/${sessionId}`);
+      await unifiedStorage.delete('chats', `sessions/${sessionId}`);
 
-    // Remove from active sessions
-    this.activeSessions.delete(sessionId);
+      // Update user's chat index
+      await this.removeFromUserChatIndex(session.userId, sessionId);
 
-    // Remove shareable context if exists
-    if (session.shareableId) {
-      await unifiedStorage.delete(`shareable_contexts/${session.shareableId}`, 'firebase');
+      // Remove from active sessions
+      this.activeSessions.delete(sessionId);
+
+      // Remove shareable context if exists
+      if (session.shareableId) {
+        await unifiedStorage.delete('firebase', `shareable_contexts/${session.shareableId}`);
+      }
+
+      console.log(`🗑️ Deleted chat session: ${sessionId}`);
+    } catch (error) {
+      console.error('❌ Failed to delete chat session:', error);
+      throw error;
     }
+  }
 
-    console.log(`🗑️ Deleted chat session: ${sessionId}`);
+  private async removeFromUserChatIndex(userId: string, sessionId: string): Promise<void> {
+    try {
+      const existingIndex = await unifiedStorage.get('chats', `${userId}/index`) || [];
+      const index = Array.isArray(existingIndex) ? existingIndex : [];
+      
+      const updatedIndex = index.filter(id => id !== sessionId);
+      await unifiedStorage.set('chats', `${userId}/index`, updatedIndex);
+    } catch (error) {
+      console.warn('Failed to update user chat index on deletion:', error);
+    }
   }
 
   /**
@@ -354,10 +411,7 @@ export class ChatHistoryService {
    */
   async getShareableContext(contextId: string): Promise<ShareableChatContext | null> {
     try {
-      const context = await unifiedStorage.retrieve(
-        `shareable_contexts/${contextId}`,
-        'firebase'
-      );
+      const context = await unifiedStorage.get('firebase', `shareable_contexts/${contextId}`);
       return context ? context as ShareableChatContext : null;
     } catch (error) {
       console.error('❌ Failed to get shareable context:', error);
@@ -385,12 +439,9 @@ export class ChatHistoryService {
       return this.activeSessions.get(sessionId)!;
     }
 
-    // Load from storage
+    // Load from storage using correct API
     try {
-      const sessionData = await unifiedStorage.retrieve(
-        `sessions/${sessionId}`,
-        'chats'
-      );
+      const sessionData = await unifiedStorage.get('chats', `sessions/${sessionId}`);
       
       if (sessionData) {
         const session = this.deserializeChatSession(sessionData);
@@ -406,25 +457,47 @@ export class ChatHistoryService {
 
   private async saveChatSession(session: ChatSession): Promise<void> {
     try {
-      // Save to user's chat collection
-      await unifiedStorage.store(
-        `${session.userId}/${session.id}`,
-        this.serializeChatSession(session),
-        'chats'
-      );
+      const serializedSession = this.serializeChatSession(session);
+      
+      // Save to user's chat collection using correct API
+      await unifiedStorage.set('chats', `${session.userId}/${session.id}`, serializedSession);
 
       // Also save to sessions collection for direct access
-      await unifiedStorage.store(
-        `sessions/${session.id}`,
-        this.serializeChatSession(session),
-        'chats'
-      );
+      await unifiedStorage.set('chats', `sessions/${session.id}`, serializedSession);
+
+      // Update user's chat index for efficient loading
+      await this.updateUserChatIndex(session.userId, session.id);
 
       // Update active session
       this.activeSessions.set(session.id, session);
+      
+      console.log(`💾 Saved chat session: ${session.name} (${session.id})`);
     } catch (error) {
       console.error('❌ Failed to save chat session:', error);
       throw error;
+    }
+  }
+
+  private async updateUserChatIndex(userId: string, sessionId: string): Promise<void> {
+    try {
+      // Get existing index
+      const existingIndex = await unifiedStorage.get('chats', `${userId}/index`) || [];
+      const index = Array.isArray(existingIndex) ? existingIndex : [];
+      
+      // Add session ID if not already present
+      if (!index.includes(sessionId)) {
+        index.unshift(sessionId); // Add to beginning for chronological order
+        
+        // Limit to last 100 sessions to prevent unlimited growth
+        if (index.length > 100) {
+          index.splice(100);
+        }
+        
+        await unifiedStorage.set('chats', `${userId}/index`, index);
+      }
+    } catch (error) {
+      console.warn('Failed to update user chat index:', error);
+      // Don't throw - this is not critical for chat functionality
     }
   }
 
