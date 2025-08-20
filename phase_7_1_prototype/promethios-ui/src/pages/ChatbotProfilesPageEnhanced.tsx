@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -118,6 +118,17 @@ interface ChatbotMetrics {
   governanceAlerts: number;
 }
 
+// Bot-specific state interface for persistence
+interface BotState {
+  rightPanelType: RightPanelType;
+  chatMessages: any[];
+  currentChatSession: any;
+  currentChatName: string;
+  activeSession: any;
+  isWorkspaceMode: boolean;
+  chatHistoryRefreshTrigger: number;
+}
+
 const ChatbotProfilesPageEnhanced: React.FC = () => {
   return (
     <WidgetCustomizerProvider>
@@ -131,6 +142,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
   const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
   console.log('🔍 ChatbotProfilesPageEnhanced - user from auth:', user?.uid);
@@ -138,19 +150,26 @@ const ChatbotProfilesPageContent: React.FC = () => {
   
   const chatbotService = ChatbotStorageService.getInstance();
   
+  // Bot-specific state management
+  const [botStates, setBotStates] = useState<Map<string, BotState>>(new Map());
+  
   // State management
   const [chatbotProfiles, setChatbotProfiles] = useState<ChatbotProfile[]>([]);
   const [filteredChatbots, setFilteredChatbots] = useState<ChatbotProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedChatbot, setSelectedChatbot] = useState<ChatbotProfile | null>(null);
-  const [rightPanelType, setRightPanelType] = useState<RightPanelType>(null);
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Chat session management
-  const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  // Current bot state (derived from botStates map)
+  const currentBotState = selectedChatbot ? botStates.get(selectedChatbot.id) : null;
+  const rightPanelType = currentBotState?.rightPanelType || null;
+  const chatMessages = currentBotState?.chatMessages || [];
+  const activeSession = currentBotState?.activeSession || null;
+  const isWorkspaceMode = currentBotState?.isWorkspaceMode || false;
+  
+  // Remaining global state (not bot-specific)
   const [isTyping, setIsTyping] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -164,29 +183,32 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
   const [selectedConnectedApps, setSelectedConnectedApps] = useState<ConnectedApp[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Chat history management
-  const [currentChatSession, setCurrentChatSession] = useState<ChatHistorySession | null>(null);
-  const [currentChatName, setCurrentChatName] = useState<string | null>(null);
-  const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
-  const [chatHistoryRefreshTrigger, setChatHistoryRefreshTrigger] = useState<number>(0); // Add refresh trigger
   
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
-  // Mock metrics for analytics
-  interface ChatbotMetrics {
-    healthScore: number;
-    trustScore: number;
-    performanceRating: number;
-    messageVolume: number;
-    responseTime: number;
-    satisfactionScore: number;
-    resolutionRate: number;
-    lastActive: string;
-    governanceAlerts: number;
-  }
+  // Bot state helper functions
+  const initializeBotState = (botId: string): BotState => {
+    return {
+      rightPanelType: null,
+      chatMessages: [],
+      currentChatSession: null,
+      currentChatName: '',
+      activeSession: null,
+      isWorkspaceMode: false,
+      chatHistoryRefreshTrigger: 0,
+    };
+  };
+
+  const updateBotState = (botId: string, updates: Partial<BotState>) => {
+    setBotStates(prev => {
+      const newStates = new Map(prev);
+      const currentState = newStates.get(botId) || initializeBotState(botId);
+      newStates.set(botId, { ...currentState, ...updates });
+      return newStates;
+    });
+  };
 
   // Get real metrics from chatbot data instead of mock data
   const getRealMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => {
