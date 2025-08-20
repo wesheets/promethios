@@ -984,7 +984,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
             <Box sx={{ mt: 2, p: 1, bgcolor: '#1e293b', borderRadius: 1 }}>
               <Typography variant="caption" sx={{ color: '#6b7280' }}>
                 💡 Search Tips: Use "tool:web_search" for specific tools, "status:success" for status, 
-                "trust:trust:>0.8gt;0.8" for trust scores, or combine with AND/OR operators
+                "trust:&gt;0.8" for trust scores, or combine with AND/OR operators
               </Typography>
             </Box>
           </Box>
