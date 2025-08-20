@@ -95,6 +95,7 @@ import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
+import { ChatSharingService } from '../services/ChatSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
@@ -568,6 +569,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
       // Check if this is a receipt search query
       const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(messageInput.trim());
       
+      // Check if this is a chat reference (for agent processing)
+      const chatSharingService = ChatSharingService.getInstance();
+      const chatReferenceId = chatSharingService.detectChatReference(messageInput.trim());
+      
       if (isReceiptSearch && selectedChatbot && user?.uid) {
         console.log('🔍 [ReceiptSearch] Detected receipt search query');
         
@@ -626,6 +631,73 @@ const ChatbotProfilesPageContent: React.FC = () => {
             });
           } catch (historyError) {
             console.warn('Failed to save receipt search to chat history:', historyError);
+          }
+        }
+        
+        // Clear input and attachments
+        setMessageInput('');
+        setAttachedFiles([]);
+        setChatLoading(false);
+        setIsTyping(false);
+        
+        return;
+      } else if (chatReferenceId && selectedChatbot && user?.uid) {
+        console.log('🗨️ [ChatReference] Detected chat reference:', chatReferenceId);
+        
+        // Process chat reference for agent context loading
+        const chatContext = await chatSharingService.processChatReference(
+          chatReferenceId,
+          user.uid,
+          selectedChatbot.id
+        );
+        
+        // Add user message
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          content: messageInput.trim(),
+          sender: 'user',
+          timestamp: new Date(),
+          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+        };
+        
+        // Create agent response with chat context
+        const agentResponse: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          content: chatContext.agentResponse,
+          sender: 'assistant',
+          timestamp: new Date(),
+          metadata: {
+            chatContext: chatContext.context,
+            originalChatId: chatContext.originalChatId,
+            continuationOptions: chatContext.continuationOptions
+          }
+        };
+        
+        // Update chat messages
+        setChatMessages(prev => [...prev, userMessage, agentResponse]);
+        
+        // Save to chat history
+        if (currentChatSession) {
+          try {
+            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+              id: userMessage.id,
+              content: userMessage.content,
+              sender: userMessage.sender,
+              timestamp: userMessage.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            });
+            
+            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+              id: agentResponse.id,
+              content: agentResponse.content,
+              sender: agentResponse.sender,
+              timestamp: agentResponse.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            });
+          } catch (historyError) {
+            console.warn('Failed to save chat reference to chat history:', historyError);
           }
         }
         

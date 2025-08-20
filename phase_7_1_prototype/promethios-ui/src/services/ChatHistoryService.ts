@@ -347,6 +347,13 @@ export class ChatHistoryService {
   }
 
   /**
+   * Get chat session by ID (public method for sharing service)
+   */
+  async getChatSessionById(sessionId: string): Promise<ChatSession | null> {
+    return await this.getChatSession(sessionId);
+  }
+
+  /**
    * Rename chat session
    */
   async renameChatSession(sessionId: string, newName: string): Promise<void> {

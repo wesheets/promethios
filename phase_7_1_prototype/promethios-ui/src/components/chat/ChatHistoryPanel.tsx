@@ -49,6 +49,7 @@ import {
   Warning,
 } from '@mui/icons-material';
 import { ChatHistoryService, ChatSession, ChatHistoryFilter } from '../../services/ChatHistoryService';
+import { ChatSharingService } from '../../services/ChatSharingService';
 import { useAuth } from '../../context/AuthContext';
 
 interface ChatHistoryPanelProps {
@@ -90,6 +91,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
 
   const chatHistoryService = ChatHistoryService.getInstance();
+  const chatSharingService = ChatSharingService.getInstance();
 
   // Load chat sessions
   const loadChatSessions = useCallback(async () => {
@@ -196,24 +198,36 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     }
   };
 
-  // Share chat with agent
+  // Share chat with agent (enhanced with ChatSharingService)
   const handleShareChat = async (sessionId: string) => {
+    if (!currentUser?.uid) return;
+
     try {
       setShareLoading(sessionId);
       
-      const shareableContext = await chatHistoryService.createShareableContext(sessionId);
+      // Generate shareable chat reference using new sharing service
+      const shareableReference = await chatSharingService.generateChatShareReference(
+        sessionId,
+        currentUser.uid,
+        agentId
+      );
+      
+      // Generate user-friendly share message
+      const shareMessage = chatSharingService.generateChatShareMessage(shareableReference);
       
       setShareSuccess(sessionId);
       setTimeout(() => setShareSuccess(null), 3000);
       
+      // Copy share message to clipboard
+      await navigator.clipboard.writeText(shareMessage);
+      
       if (onShareChat) {
-        onShareChat(shareableContext.contextId);
+        onShareChat(shareableReference.shareableId);
       }
       
-      // Refresh the list to show updated share status
-      await loadChatSessions();
+      console.log(`✅ Chat shared successfully: ${shareableReference.shareableId}`);
     } catch (error) {
-      console.error('Failed to share chat:', error);
+      console.error('❌ Failed to share chat:', error);
     } finally {
       setShareLoading(null);
     }
