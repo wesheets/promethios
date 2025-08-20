@@ -59,6 +59,7 @@ interface ChatHistoryPanelProps {
   onNewChat: (session?: ChatSession) => void;
   onShareChat?: (contextId: string) => void;
   currentSessionId?: string;
+  refreshTrigger?: number; // Add refresh trigger prop
 }
 
 const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
@@ -68,6 +69,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   onNewChat,
   onShareChat,
   currentSessionId,
+  refreshTrigger, // Add refresh trigger prop
 }) => {
   const { currentUser } = useAuth();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -131,6 +133,13 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   useEffect(() => {
     loadChatSessions();
   }, [loadChatSessions]);
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined) {
+      loadChatSessions();
+    }
+  }, [refreshTrigger, loadChatSessions]);
 
   // Create new chat
   const handleCreateNewChat = async () => {

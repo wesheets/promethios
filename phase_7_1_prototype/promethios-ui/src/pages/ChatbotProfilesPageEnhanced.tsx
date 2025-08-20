@@ -169,6 +169,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [currentChatSession, setCurrentChatSession] = useState<ChatHistorySession | null>(null);
   const [currentChatName, setCurrentChatName] = useState<string | null>(null);
   const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
+  const [chatHistoryRefreshTrigger, setChatHistoryRefreshTrigger] = useState<number>(0); // Add refresh trigger
   
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -762,6 +763,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
             user.uid
           );
           setCurrentChatSession(newSession);
+          
+          // Trigger chat history panel refresh
+          setChatHistoryRefreshTrigger(prev => prev + 1);
           
           // Add both messages to the new session
           await chatHistoryService.addMessageToSession(newSession.id, {
@@ -1500,6 +1504,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     agentId={selectedChatbot.id}
                     agentName={selectedChatbot.name}
                     currentSessionId={currentChatSession?.id}
+                    refreshTrigger={chatHistoryRefreshTrigger} // Add refresh trigger prop
                     onChatSelect={(session) => {
                       setCurrentChatSession(session);
                       setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
@@ -1521,6 +1526,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         // New chat created - set the session and name
                         setCurrentChatSession(session);
                         setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
+                        // Trigger chat history panel refresh
+                        setChatHistoryRefreshTrigger(prev => prev + 1);
                       } else {
                         // Clear current chat and start fresh
                         setCurrentChatSession(null);

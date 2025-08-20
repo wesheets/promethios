@@ -604,16 +604,38 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
       
     } catch (err) {
       console.error('❌ Failed to load receipt data from audit logs:', err);
-      setError('Failed to load receipt data. Please try again.');
       
       // Fallback to existing service for backwards compatibility
       try {
+        console.log('🔄 Attempting fallback to legacy service...');
         const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
         const agentReceipts = await chatPanelGovernanceService.getAgentReceipts(agentId, 100);
-        setReceipts(agentReceipts);
-        console.log(`⚠️ Fallback: Loaded ${agentReceipts.length} receipts from legacy service`);
+        
+        // Transform legacy receipts to new format
+        const transformedReceipts = agentReceipts.map((receipt: any) => ({
+          receiptId: receipt.receiptId || receipt.id,
+          toolName: receipt.toolName || 'Unknown Tool',
+          actionType: receipt.actionType || 'execute',
+          timestamp: new Date(receipt.timestamp),
+          status: receipt.status || 'unknown',
+          cryptographicHash: receipt.cryptographicHash || '',
+          trustScore: receipt.trustScore || 0,
+          governanceStatus: receipt.governanceStatus || 'unknown',
+          auditData: receipt
+        }));
+        
+        setReceipts(transformedReceipts);
+        setResearchItems([]);
+        setDocumentItems([]);
+        setError(null); // Clear error since fallback worked
+        console.log(`⚠️ Fallback: Loaded ${transformedReceipts.length} receipts from legacy service`);
       } catch (fallbackErr) {
         console.error('❌ Fallback also failed:', fallbackErr);
+        setError(`Failed to load receipt data from both primary and fallback sources. Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        // Set empty arrays so UI doesn't break
+        setReceipts([]);
+        setResearchItems([]);
+        setDocumentItems([]);
       }
     } finally {
       setLoading(false);
@@ -680,6 +702,65 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
         <Typography variant="body2" sx={{ ml: 2, color: '#94a3b8' }}>
           Loading receipts...
         </Typography>
+      </Box>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <Box sx={{ p: 3, bgcolor: '#0f172a', color: '#e2e8f0', minHeight: '100vh' }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Box>
+            <Typography variant="h5" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
+              Agent Receipts & Artifacts
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              {agentName} • Error loading data
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={loadAllReceiptData}
+            sx={{
+              borderColor: '#374151',
+              color: '#94a3b8',
+              '&:hover': { borderColor: '#4b5563', bgcolor: '#1e293b' },
+            }}
+          >
+            Retry
+          </Button>
+        </Box>
+        
+        <Alert 
+          severity="error" 
+          sx={{ 
+            bgcolor: '#7f1d1d', 
+            color: '#fecaca',
+            border: '1px solid #dc2626',
+            '& .MuiAlert-icon': { color: '#fecaca' }
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Failed to Load Receipt Data
+          </Typography>
+          <Typography variant="body2">
+            {error}
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <Button
+              variant="contained"
+              onClick={loadAllReceiptData}
+              sx={{
+                bgcolor: '#dc2626',
+                '&:hover': { bgcolor: '#b91c1c' },
+              }}
+            >
+              Try Again
+            </Button>
+          </Box>
+        </Alert>
       </Box>
     );
   }
