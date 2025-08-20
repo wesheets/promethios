@@ -95,16 +95,17 @@ const browserCrypto = {
 };
 
 export interface ComprehensiveToolAction extends ToolAction {
-  toolCategory: 'communication' | 'crm' | 'ecommerce' | 'financial' | 'data' | 'file' | 'web' | 'ai' | 'security' | 'integration';
+  toolCategory: 'communication' | 'crm' | 'ecommerce' | 'financial' | 'data' | 'file' | 'web' | 'ai' | 'security' | 'integration' | 'collaboration' | 'workflow' | 'governance' | 'learning';
   riskLevel: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   complianceRequirements: string[];
   dataClassification: 'public' | 'internal' | 'confidential' | 'restricted';
+  userIntent: string;
+  expectedOutcome: string;
+  businessContext: BusinessContext;
+  sessionId?: string;
 }
 
 export interface ToolExecutionMetadata {
-  executionId: string;
-  startTime: number;
-  endTime: number;
   resourcesUsed: string[];
   performanceMetrics: {
     executionTime: number;

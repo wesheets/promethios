@@ -166,6 +166,261 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   const [contextMenuReceiptId, setContextMenuReceiptId] = useState<string | null>(null);
   const [interactiveExtension] = useState(() => InteractiveReceiptExtension.getInstance());
 
+  // Grouped receipt categories for smart UI organization
+  const receiptGroups = {
+    operations: ['integration', 'workflow', 'ai', 'data'], // Tools, Workflows, Integrations
+    research: ['web', 'learning'], // Web searches, Data gathering, Learning
+    content: ['file', 'collaboration', 'governance'] // Documents, Collaboration, Governance
+  };
+  
+  const tabLabels = [
+    { label: 'Operations', icon: '🔧', categories: receiptGroups.operations },
+    { label: 'Research', icon: '🔍', categories: receiptGroups.research },
+    { label: 'Content', icon: '📄', categories: receiptGroups.content }
+  ];
+  
+  // Secondary filter options for each tab
+  const secondaryFilterOptions = {
+    0: [ // Operations
+      { value: 'all', label: 'All Operations' },
+      { value: 'integration', label: 'Tool Executions' },
+      { value: 'workflow', label: 'Workflows' },
+      { value: 'ai', label: 'AI Operations' },
+      { value: 'data', label: 'Data Processing' }
+    ],
+    1: [ // Research
+      { value: 'all', label: 'All Research' },
+      { value: 'web', label: 'Web Search' },
+      { value: 'learning', label: 'Learning/Insights' }
+    ],
+    2: [ // Content
+      { value: 'all', label: 'All Content' },
+      { value: 'file', label: 'Documents' },
+      { value: 'collaboration', label: 'Collaboration' },
+      { value: 'governance', label: 'Governance/Compliance' }
+    ]
+  };
+  
+  // Secondary filter state
+  const [secondaryFilter, setSecondaryFilter] = useState<string>('all');
+
+  // Helper function to get count for each grouped tab
+  const getTabCount = (tabIndex: number): number => {
+    const categories = tabLabels[tabIndex]?.categories || [];
+    
+    switch (tabIndex) {
+      case 0: // Operations
+        return receipts.filter(r => categories.includes(r.toolCategory)).length;
+      case 1: // Research  
+        return researchItems.length + receipts.filter(r => categories.includes(r.toolCategory)).length;
+      case 2: // Content
+        return documentItems.length + receipts.filter(r => categories.includes(r.toolCategory)).length;
+      default:
+        return 0;
+    }
+  };
+
+  // Helper functions for comprehensive filtering
+  const applyQuickFilter = (filterType: string) => {
+    const newQuickFilters = quickFilters.includes(filterType)
+      ? quickFilters.filter(f => f !== filterType)
+      : [...quickFilters, filterType];
+    
+    setQuickFilters(newQuickFilters);
+    
+    // Apply specific filter logic
+    switch (filterType) {
+      case 'high_trust':
+        setTrustScoreRange([0.8, 1.0]);
+        break;
+      case 'recent':
+        setDateFilter('last_day');
+        break;
+      case 'failed':
+        setStatusFilter('failure');
+        break;
+      case 'compliance_issues':
+        setGovernanceFilter('violation');
+        break;
+      case 'web_search':
+        setSecondaryFilter('web');
+        break;
+      case 'documents':
+        setSecondaryFilter('file');
+        break;
+    }
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setDateFilter('all');
+    setStatusFilter('all');
+    setGovernanceFilter('all');
+    setCognitiveFilter('all');
+    setEmotionalFilter('all');
+    setSecondaryFilter('all');
+    setTrustScoreRange([0, 1]);
+    setQuickFilters([]);
+  };
+
+  // Enhanced filtering function that uses all filter criteria
+  const getFilteredData = () => {
+    const currentTabCategories = tabLabels[activeTab]?.categories || [];
+    let allData: any[] = [];
+    
+    // Combine data based on current tab
+    switch (activeTab) {
+      case 0: // Operations
+        allData = receipts.filter(r => currentTabCategories.includes(r.toolCategory));
+        break;
+      case 1: // Research
+        allData = [
+          ...researchItems,
+          ...receipts.filter(r => currentTabCategories.includes(r.toolCategory))
+        ];
+        break;
+      case 2: // Content
+        allData = [
+          ...documentItems,
+          ...receipts.filter(r => currentTabCategories.includes(r.toolCategory))
+        ];
+        break;
+      default:
+        allData = receipts;
+    }
+    
+    // Apply secondary filter
+    if (secondaryFilter !== 'all') {
+      allData = allData.filter(item => {
+        if ('toolCategory' in item) {
+          return item.toolCategory === secondaryFilter;
+        }
+        // For research/document items, check their type
+        return secondaryFilter === 'web' || secondaryFilter === 'file';
+      });
+    }
+    
+    // Apply search term across all 69 audit fields
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      allData = allData.filter(item => {
+        // Search in basic fields
+        const basicSearch = [
+          item.title || item.toolName || '',
+          item.description || item.actionType || '',
+          item.receiptId || item.id || '',
+          JSON.stringify(item.auditData || {})
+        ].some(field => field.toLowerCase().includes(searchLower));
+        
+        // Advanced search patterns
+        if (searchTerm.includes(':')) {
+          const [key, value] = searchTerm.split(':');
+          switch (key.toLowerCase()) {
+            case 'tool':
+              return (item.toolName || '').toLowerCase().includes(value.toLowerCase());
+            case 'status':
+              return (item.outcome || item.status || '').toLowerCase().includes(value.toLowerCase());
+            case 'trust':
+              const trustValue = parseFloat(value.replace('>', '').replace('<', ''));
+              const itemTrust = item.trustScore || 0;
+              if (value.startsWith('>')) return itemTrust > trustValue;
+              if (value.startsWith('<')) return itemTrust < trustValue;
+              return itemTrust === trustValue;
+            default:
+              return basicSearch;
+          }
+        }
+        
+        return basicSearch;
+      });
+    }
+    
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (dateFilter) {
+        case 'last_hour':
+          filterDate.setHours(now.getHours() - 1);
+          break;
+        case 'last_day':
+          filterDate.setDate(now.getDate() - 1);
+          break;
+        case 'last_week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'last_month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+      }
+      
+      allData = allData.filter(item => {
+        const itemDate = new Date(item.timestamp);
+        return itemDate >= filterDate;
+      });
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      allData = allData.filter(item => 
+        (item.outcome || item.status || '').toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+    
+    // Apply trust score filter
+    allData = allData.filter(item => {
+      const trust = item.trustScore || 0;
+      return trust >= trustScoreRange[0] && trust <= trustScoreRange[1];
+    });
+    
+    // Apply governance filter
+    if (governanceFilter !== 'all') {
+      allData = allData.filter(item => {
+        const governance = item.governanceStatus || 'compliant';
+        return governance === governanceFilter;
+      });
+    }
+    
+    // Apply cognitive filter
+    if (cognitiveFilter !== 'all') {
+      allData = allData.filter(item => {
+        const cognitive = item.auditData?.cognitiveLoad || 'normal';
+        switch (cognitiveFilter) {
+          case 'high_confidence':
+            return (item.auditData?.confidenceScore || 0) > 0.8;
+          case 'uncertain':
+            return (item.auditData?.uncertaintyLevel || 0) > 0.5;
+          case 'complex':
+            return cognitive === 'high';
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply emotional filter
+    if (emotionalFilter !== 'all') {
+      allData = allData.filter(item => {
+        const emotions = item.auditData?.emotionalVeritas || {};
+        switch (emotionalFilter) {
+          case 'confident':
+            return emotions.confidence > 0.7;
+          case 'curious':
+            return emotions.curiosity > 0.7;
+          case 'concerned':
+            return emotions.concern > 0.7;
+          case 'excited':
+            return emotions.excitement > 0.7;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    return allData;
+  };
+
   useEffect(() => {
     loadAllReceiptData();
     
@@ -606,52 +861,73 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
       <Paper sx={{ mb: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
         <Tabs
           value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{
-            '& .MuiTab-root': { color: '#94a3b8' },
-            '& .Mui-selected': { color: '#3b82f6' },
-            '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
+          onChange={(_, newValue) => {
+            setActiveTab(newValue);
+            setSecondaryFilter('all'); // Reset secondary filter when switching tabs
           }}
+          variant="fullWidth"
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab
-            icon={<ToolIcon />}
-            label={
-              <Badge badgeContent={receipts.length} color="primary">
-                Tool Executions
-              </Badge>
-            }
-          />
-          <Tab
-            icon={<ResearchIcon />}
-            label={
-              <Badge badgeContent={researchItems.length} color="primary">
-                Research
-              </Badge>
-            }
-          />
-          <Tab
-            icon={<DocumentIcon />}
-            label={
-              <Badge badgeContent={documentItems.length} color="primary">
-                Documents
-              </Badge>
-            }
-          />
+          {tabLabels.map((tab, index) => (
+            <Tab
+              key={index}
+              icon={<span style={{ fontSize: '16px' }}>{tab.icon}</span>}
+              label={
+                <Badge 
+                  badgeContent={getTabCount(index)} 
+                  color="primary"
+                  sx={{ '& .MuiBadge-badge': { fontSize: '10px', minWidth: '16px', height: '16px' } }}
+                >
+                  {tab.label}
+                </Badge>
+              }
+            />
+          ))}
         </Tabs>
+        
+        {/* Secondary Filter Dropdown */}
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Filter by Type</InputLabel>
+            <Select
+              value={secondaryFilter}
+              onChange={(e) => setSecondaryFilter(e.target.value)}
+              label="Filter by Type"
+            >
+              {secondaryFilterOptions[activeTab as keyof typeof secondaryFilterOptions]?.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       </Paper>
 
-      {/* Filters */}
+      {/* Comprehensive Search and Filters */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+        {/* Primary Search Row */}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search receipts..."
+              placeholder="Search across all receipt fields..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
                 startAdornment: <Search sx={{ color: '#6b7280', mr: 1 }} />,
+                endAdornment: (
+                  <Tooltip title="Advanced Search">
+                    <IconButton
+                      size="small"
+                      onClick={() => setAdvancedSearchMode(!advancedSearchMode)}
+                      sx={{ color: advancedSearchMode ? '#3b82f6' : '#6b7280' }}
+                    >
+                      <FilterList />
+                    </IconButton>
+                  </Tooltip>
+                ),
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -664,12 +940,12 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel sx={{ color: '#94a3b8' }}>Tool</InputLabel>
+              <InputLabel sx={{ color: '#94a3b8' }}>Date Range</InputLabel>
               <Select
-                value={toolFilter}
-                onChange={(e) => setToolFilter(e.target.value)}
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
                 sx={{
                   bgcolor: '#0f172a',
                   color: '#e2e8f0',
@@ -678,14 +954,16 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3b82f6' },
                 }}
               >
-                <MenuItem value="all">All Tools</MenuItem>
-                {uniqueTools.map(tool => (
-                  <MenuItem key={tool} value={tool}>{tool}</MenuItem>
-                ))}
+                <MenuItem value="all">All Time</MenuItem>
+                <MenuItem value="last_hour">Last Hour</MenuItem>
+                <MenuItem value="last_day">Last Day</MenuItem>
+                <MenuItem value="last_week">Last Week</MenuItem>
+                <MenuItem value="last_month">Last Month</MenuItem>
+                <MenuItem value="custom">Custom Range</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel sx={{ color: '#94a3b8' }}>Status</InputLabel>
               <Select
@@ -700,18 +978,187 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
                 }}
               >
                 <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="success">Success</MenuItem>
-                <MenuItem value="failure">Failure</MenuItem>
-                <MenuItem value="partial">Partial</MenuItem>
+                <MenuItem value="success">✅ Success</MenuItem>
+                <MenuItem value="failure">❌ Failure</MenuItem>
+                <MenuItem value="partial">⚠️ Partial</MenuItem>
+                <MenuItem value="pending">⏳ Pending</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
             <Typography variant="body2" sx={{ color: '#94a3b8', textAlign: 'center' }}>
-              {filteredReceipts.length} results
+              {getFilteredData().length} results
             </Typography>
           </Grid>
         </Grid>
+
+        {/* Advanced Search Panel */}
+        {advancedSearchMode && (
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#0f172a', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: '#e2e8f0', mb: 2 }}>
+              🔍 Advanced Search & Filters
+            </Typography>
+            
+            <Grid container spacing={2}>
+              {/* Trust Score Range */}
+              <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+                  Trust Score: {Math.round(trustScoreRange[0] * 100)}% - {Math.round(trustScoreRange[1] * 100)}%
+                </Typography>
+                <Box sx={{ px: 1 }}>
+                  {/* Trust score slider would go here */}
+                  <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                    Filter by cryptographic trust score
+                  </Typography>
+                </Box>
+              </Grid>
+
+              {/* Governance Status */}
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ color: '#94a3b8' }}>Governance</InputLabel>
+                  <Select
+                    value={governanceFilter}
+                    onChange={(e) => setGovernanceFilter(e.target.value)}
+                    sx={{
+                      bgcolor: '#1e293b',
+                      color: '#e2e8f0',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                    }}
+                  >
+                    <MenuItem value="all">All Compliance</MenuItem>
+                    <MenuItem value="compliant">✅ Compliant</MenuItem>
+                    <MenuItem value="warning">⚠️ Warning</MenuItem>
+                    <MenuItem value="violation">❌ Violation</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Cognitive Context */}
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ color: '#94a3b8' }}>Cognitive State</InputLabel>
+                  <Select
+                    value={cognitiveFilter}
+                    onChange={(e) => setCognitiveFilter(e.target.value)}
+                    sx={{
+                      bgcolor: '#1e293b',
+                      color: '#e2e8f0',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                    }}
+                  >
+                    <MenuItem value="all">All States</MenuItem>
+                    <MenuItem value="high_confidence">🎯 High Confidence</MenuItem>
+                    <MenuItem value="uncertain">🤔 Uncertain</MenuItem>
+                    <MenuItem value="complex">🧠 Complex Reasoning</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Emotional Context */}
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ color: '#94a3b8' }}>Emotional State</InputLabel>
+                  <Select
+                    value={emotionalFilter}
+                    onChange={(e) => setEmotionalFilter(e.target.value)}
+                    sx={{
+                      bgcolor: '#1e293b',
+                      color: '#e2e8f0',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                    }}
+                  >
+                    <MenuItem value="all">All Emotions</MenuItem>
+                    <MenuItem value="confident">😊 Confident</MenuItem>
+                    <MenuItem value="curious">🤔 Curious</MenuItem>
+                    <MenuItem value="concerned">😟 Concerned</MenuItem>
+                    <MenuItem value="excited">🚀 Excited</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {/* Quick Filter Chips */}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+                Quick Filters:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {[
+                  { label: 'High Trust (>80%)', filter: 'high_trust' },
+                  { label: 'Recent (24h)', filter: 'recent' },
+                  { label: 'Failed Operations', filter: 'failed' },
+                  { label: 'Compliance Issues', filter: 'compliance_issues' },
+                  { label: 'Web Searches', filter: 'web_search' },
+                  { label: 'Document Creation', filter: 'documents' },
+                ].map((chip) => (
+                  <Chip
+                    key={chip.filter}
+                    label={chip.label}
+                    size="small"
+                    clickable
+                    onClick={() => applyQuickFilter(chip.filter)}
+                    sx={{
+                      bgcolor: quickFilters.includes(chip.filter) ? '#3b82f6' : '#374151',
+                      color: '#e2e8f0',
+                      '&:hover': { bgcolor: quickFilters.includes(chip.filter) ? '#2563eb' : '#4b5563' },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            {/* Search Tips */}
+            <Box sx={{ mt: 2, p: 1, bgcolor: '#1e293b', borderRadius: 1 }}>
+              <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                💡 Search Tips: Use "tool:web_search" for specific tools, "status:success" for status, 
+                "trust:>0.8" for trust scores, or combine with AND/OR operators
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        {/* Active Filters Display */}
+        {(searchTerm || dateFilter !== 'all' || statusFilter !== 'all' || governanceFilter !== 'all' || quickFilters.length > 0) && (
+          <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: '#374151' }}>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+              Active Filters:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {searchTerm && (
+                <Chip
+                  label={`Search: "${searchTerm}"`}
+                  size="small"
+                  onDelete={() => setSearchTerm('')}
+                  sx={{ bgcolor: '#374151', color: '#e2e8f0' }}
+                />
+              )}
+              {dateFilter !== 'all' && (
+                <Chip
+                  label={`Date: ${dateFilter.replace('_', ' ')}`}
+                  size="small"
+                  onDelete={() => setDateFilter('all')}
+                  sx={{ bgcolor: '#374151', color: '#e2e8f0' }}
+                />
+              )}
+              {statusFilter !== 'all' && (
+                <Chip
+                  label={`Status: ${statusFilter}`}
+                  size="small"
+                  onDelete={() => setStatusFilter('all')}
+                  sx={{ bgcolor: '#374151', color: '#e2e8f0' }}
+                />
+              )}
+              <Button
+                size="small"
+                onClick={clearAllFilters}
+                sx={{ color: '#ef4444', textTransform: 'none' }}
+              >
+                Clear All
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Paper>
 
       {/* Receipts List */}
