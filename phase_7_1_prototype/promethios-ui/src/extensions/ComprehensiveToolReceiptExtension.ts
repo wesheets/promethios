@@ -235,11 +235,10 @@ export interface ContinuationOption {
  */
 export class ComprehensiveToolReceiptExtension extends Extension {
   private static instance: ComprehensiveToolReceiptExtension;
-  private universalGovernance: UniversalGovernanceAdapter;
 
   constructor() {
     super();
-    this.universalGovernance = new UniversalGovernanceAdapter();
+    // No initialization needed - using dynamic imports for UGA access
   }
 
   static getInstance(): ComprehensiveToolReceiptExtension {
