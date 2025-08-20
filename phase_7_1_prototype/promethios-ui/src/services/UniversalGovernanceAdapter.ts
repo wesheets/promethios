@@ -1857,31 +1857,7 @@ You operate with governance oversight that monitors your interactions for safety
     }
   }
 
-  /**
-   * 🔧 Execute tool with governance oversight
-   * Status: BACKEND_VERIFIED - This already works!
-   */
-  async executeToolWithGovernance(agentId: string, toolId: string, parameters: any): Promise<any> {
-    try {
-      console.log(`🔧 [UGA-VERIFIED] Executing tool ${toolId} for agent: ${agentId}`);
-      
-      const result = await this.callBackendAPI('/tools/execute', {
-        agent_id: agentId,
-        tool_id: toolId,
-        parameters: parameters,
-        universal_governance: true
-      });
-      
-      // TODO: Create tool receipt after successful execution
-      // await this.createToolReceipt(agentId, toolId, result);
-      
-      console.log(`✅ [UGA-VERIFIED] Tool execution completed successfully`);
-      return result;
-    } catch (error) {
-      console.error('❌ [UGA-VERIFIED] Failed to execute tool:', error);
-      return { success: false, error: error.message };
-    }
-  }
+  // REMOVED DUPLICATE: executeToolWithGovernance (kept the more complete version at line 119)
 
   // ========================================
   // 📊 FEATURE FINGERPRINT SUMMARY
@@ -2448,20 +2424,7 @@ You operate with governance oversight that monitors your interactions for safety
     throw new Error('Personality templates endpoint not implemented in backend');
   }
 
-  // 🛠️ 3. TOOLS - STATUS: PARTIAL (1/4 endpoints working)
-  // Backend status: GET /api/tools/available ✅ WORKING, others 404/400
-  async getAvailableTools(): Promise<any[]> {
-    // ✅ WORKING: This endpoint returns 4 tools (web_search, document_generation, data_visualization, coding_programming)
-    try {
-      const response = await fetch(`${BACKEND_API_BASE}/api/tools/available`);
-      const data = await response.json();
-      console.log('✅ [UGA FINGERPRINT] getAvailableTools - WORKING');
-      return data.tools || [];
-    } catch (error) {
-      console.error('❌ [UGA FINGERPRINT] getAvailableTools failed:', error);
-      throw error;
-    }
-  }
+  // REMOVED DUPLICATE: getAvailableTools() (kept the version with agentId parameter at line 1843)
 
   async executeTool(toolId: string, params: any): Promise<any> {
     // TODO: Fix POST /api/tools/execute (returns 400 - tool_id required)
