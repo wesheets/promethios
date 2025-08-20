@@ -621,134 +621,8 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   };
 
   // Comprehensive filtering function for massive receipt datasets
-  const getFilteredData = () => {
-    const currentData = activeTab === 0 ? receipts : activeTab === 1 ? researchItems : documentItems;
-    
-    return currentData.filter((item: any) => {
-      // Text search across all fields
-      const searchableText = JSON.stringify(item).toLowerCase();
-      const matchesSearch = searchTerm === '' || searchableText.includes(searchTerm.toLowerCase());
-      
-      // Date filtering
-      const itemDate = new Date(item.timestamp);
-      const now = new Date();
-      let matchesDate = true;
-      
-      switch (dateFilter) {
-        case 'last_hour':
-          matchesDate = (now.getTime() - itemDate.getTime()) <= 3600000;
-          break;
-        case 'last_day':
-          matchesDate = (now.getTime() - itemDate.getTime()) <= 86400000;
-          break;
-        case 'last_week':
-          matchesDate = (now.getTime() - itemDate.getTime()) <= 604800000;
-          break;
-        case 'last_month':
-          matchesDate = (now.getTime() - itemDate.getTime()) <= 2592000000;
-          break;
-        case 'custom':
-          if (customDateRange.start && customDateRange.end) {
-            matchesDate = itemDate >= customDateRange.start && itemDate <= customDateRange.end;
-          }
-          break;
-        default:
-          matchesDate = true;
-      }
-      
-      // Tool type filtering (for receipts tab)
-      const matchesTool = activeTab === 0 ? 
-        (toolFilter === 'all' || (item as EnhancedToolReceipt).toolName === toolFilter) : true;
-      
-      // Status filtering
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      
-      // Trust score filtering (for receipts)
-      const matchesTrustScore = activeTab === 0 ? 
-        ((item as EnhancedToolReceipt).trustScore >= trustScoreRange[0] && 
-         (item as EnhancedToolReceipt).trustScore <= trustScoreRange[1]) : true;
-      
-      // Governance filtering
-      const matchesGovernance = activeTab === 0 ? 
-        (governanceFilter === 'all' || (item as EnhancedToolReceipt).governanceStatus === governanceFilter) : true;
-      
-      // Session filtering
-      const matchesSession = sessionFilter === 'all' || item.sessionId === sessionFilter;
-      
-      return matchesSearch && matchesDate && matchesTool && matchesStatus && 
-             matchesTrustScore && matchesGovernance && matchesSession;
-    }).sort((a: any, b: any) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'timestamp':
-          aValue = new Date(a.timestamp).getTime();
-          bValue = new Date(b.timestamp).getTime();
-          break;
-        case 'trust_score':
-          aValue = a.trustScore || 0;
-          bValue = b.trustScore || 0;
-          break;
-        case 'tool_name':
-          aValue = a.toolName || a.title || '';
-          bValue = b.toolName || b.title || '';
-          break;
-        default:
-          aValue = a.timestamp;
-          bValue = b.timestamp;
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-  };
 
   // Quick filter functions
-  const applyQuickFilter = (filterType: string) => {
-    switch (filterType) {
-      case 'today':
-        setDateFilter('last_day');
-        break;
-      case 'successful':
-        setStatusFilter('success');
-        break;
-      case 'high_trust':
-        setTrustScoreRange([0.8, 1]);
-        break;
-      case 'violations':
-        setGovernanceFilter('violation');
-        break;
-      case 'research_only':
-        setActiveTab(1);
-        break;
-      case 'documents_only':
-        setActiveTab(2);
-        break;
-      default:
-        break;
-    }
-  };
-
-  // Clear all filters
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setToolFilter('all');
-    setStatusFilter('all');
-    setDateFilter('all');
-    setCustomDateRange({start: null, end: null});
-    setTrustScoreRange([0, 1]);
-    setGovernanceFilter('all');
-    setCognitiveFilter('all');
-    setEmotionalFilter('all');
-    setSessionFilter('all');
-    setQuickFilters([]);
-  };
-
-  const filteredData = getFilteredData();
-
   // Get unique values for filter dropdowns
   const uniqueTools = [...new Set(receipts.map(r => r.toolName))];
   const uniqueSessions = [...new Set([...receipts.map(r => r.sessionId || ''), ...researchItems.map(r => r.sessionId), ...documentItems.map(r => r.sessionId)])];
@@ -792,14 +666,12 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `receipt_${receipt.receiptId}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const uniqueTools = [...new Set(receipts.map(r => r.toolName))];
 
   if (loading) {
     return (
@@ -1112,7 +984,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
             <Box sx={{ mt: 2, p: 1, bgcolor: '#1e293b', borderRadius: 1 }}>
               <Typography variant="caption" sx={{ color: '#6b7280' }}>
                 💡 Search Tips: Use "tool:web_search" for specific tools, "status:success" for status, 
-                "trust:>0.8" for trust scores, or combine with AND/OR operators
+                "trust:trust:>0.8gt;0.8" for trust scores, or combine with AND/OR operators
               </Typography>
             </Box>
           </Box>
