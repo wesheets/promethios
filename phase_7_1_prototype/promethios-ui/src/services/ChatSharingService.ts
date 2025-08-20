@@ -1,5 +1,4 @@
 import { ChatHistoryService } from './ChatHistoryService';
-import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
 export interface ShareableChatReference {
   chatId: string;
@@ -39,11 +38,10 @@ export interface ChatContextForAgent {
 export class ChatSharingService {
   private static instance: ChatSharingService | null = null;
   private chatHistoryService: ChatHistoryService;
-  private universalGovernanceAdapter: UniversalGovernanceAdapter;
 
   private constructor() {
     this.chatHistoryService = ChatHistoryService.getInstance();
-    this.universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
+    // Removed UGA instantiation to avoid module loading order issues
   }
 
   public static getInstance(): ChatSharingService {
@@ -185,8 +183,10 @@ ${messageCount} messages • ${timeAgo}
     const continuationOptions = this.generateContinuationOptions(chatSession.messages);
     const nextSteps = this.generateNextSteps(chatSession.messages);
 
-    // Get audit trail from governance adapter
-    const auditTrail = await this.universalGovernanceAdapter.searchAuditLogs({
+    // Get audit trail from governance adapter using dynamic import
+    const { UniversalGovernanceAdapter } = await import('./UniversalGovernanceAdapter');
+    const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
+    const auditTrail = await universalGovernanceAdapter.searchAuditLogs({
       agentId,
       contextType: 'chat_session',
       contextId: chatId,
