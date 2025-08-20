@@ -98,6 +98,7 @@ import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } fr
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
+import { conversationalReceiptSearchService } from '../services/ConversationalReceiptSearchService';
 import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
 
@@ -311,6 +312,22 @@ const ChatbotProfilesPageContent: React.FC = () => {
         setAttachedFiles(prev => [...prev, file]);
       }
     });
+  };
+
+  const handleSearchReceiptsClick = () => {
+    // Add "Search Receipts+" to the message input
+    setMessageInput('Search Receipts+ ');
+    setAddMenuAnchor(null);
+    
+    // Focus on the message input for user to continue typing
+    setTimeout(() => {
+      const messageInput = document.querySelector('input[placeholder="Type your message..."]') as HTMLInputElement;
+      if (messageInput) {
+        messageInput.focus();
+        // Position cursor at the end
+        messageInput.setSelectionRange(messageInput.value.length, messageInput.value.length);
+      }
+    }, 100);
   };
 
   const removeAttachedFile = (index: number) => {
@@ -548,7 +565,80 @@ const ChatbotProfilesPageContent: React.FC = () => {
       
       console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
       
-      // Send message through governance service
+      // Check if this is a receipt search query
+      const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(messageInput.trim());
+      
+      if (isReceiptSearch && selectedChatbot && user?.uid) {
+        console.log('🔍 [ReceiptSearch] Detected receipt search query');
+        
+        // Process conversational receipt search
+        const searchResponse = await conversationalReceiptSearchService.processConversationalSearch(
+          messageInput.trim(),
+          selectedChatbot.id,
+          user.uid
+        );
+        
+        // Add user message
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          content: messageInput.trim(),
+          sender: 'user',
+          timestamp: new Date(),
+          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+        };
+        
+        // Create agent response with search results
+        const agentResponse: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          content: searchResponse.agentResponse,
+          sender: 'assistant',
+          timestamp: new Date(),
+          metadata: {
+            searchResults: searchResponse.results,
+            searchQuery: searchResponse.query,
+            searchTime: searchResponse.searchTime
+          }
+        };
+        
+        // Update chat messages
+        setChatMessages(prev => [...prev, userMessage, agentResponse]);
+        
+        // Save to chat history
+        if (currentChatSession) {
+          try {
+            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+              id: userMessage.id,
+              content: userMessage.content,
+              sender: userMessage.sender,
+              timestamp: userMessage.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            });
+            
+            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+              id: agentResponse.id,
+              content: agentResponse.content,
+              sender: agentResponse.sender,
+              timestamp: agentResponse.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+              metadata: agentResponse.metadata
+            });
+          } catch (historyError) {
+            console.warn('Failed to save receipt search to chat history:', historyError);
+          }
+        }
+        
+        // Clear input and attachments
+        setMessageInput('');
+        setAttachedFiles([]);
+        setChatLoading(false);
+        setIsTyping(false);
+        
+        return;
+      }
+      
+      // Regular message processing (existing logic)
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
       // Add user message first
@@ -1096,6 +1186,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   <MenuItem onClick={() => setAddMenuAnchor(null)}>
                     <SmartToy sx={{ mr: 2 }} />
                     Agent mode
+                  </MenuItem>
+                  <MenuItem onClick={() => handleSearchReceiptsClick()}>
+                    <Receipt sx={{ mr: 2 }} />
+                    Search Receipts
                   </MenuItem>
                   <MenuItem onClick={() => setAddMenuAnchor(null)}>
                     <Search sx={{ mr: 2 }} />
