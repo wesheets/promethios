@@ -269,8 +269,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     setManageModalOpen(true);
   };
 
-  // Workspace mode management
-  const [isWorkspaceMode, setIsWorkspaceMode] = useState(false);
+  // Workspace mode management (now managed per-bot in botStates)
   const [workspaceSelectedTab, setWorkspaceSelectedTab] = useState<string>('analytics');
 
   // Governance sensitivity controls
