@@ -517,6 +517,34 @@ const ChatbotProfilesPageContent: React.FC = () => {
     loadConnectedApps();
   }, [user?.uid, authLoading, loadChatbots]);
 
+  // Restore state from URL parameters after chatbots are loaded
+  useEffect(() => {
+    const agentId = searchParams.get('agent');
+    const panelType = searchParams.get('panel') as RightPanelType;
+    
+    if (agentId && chatbotProfiles.length > 0) {
+      const chatbot = chatbotProfiles.find(bot => bot.id === agentId);
+      if (chatbot) {
+        console.log(`🔄 Restoring state for agent: ${agentId}, panel: ${panelType}`);
+        
+        // Initialize bot state if it doesn't exist
+        if (!botStates.has(agentId)) {
+          const newState = initializeBotState(agentId);
+          if (panelType) {
+            newState.rightPanelType = panelType;
+          }
+          newState.isWorkspaceMode = true;
+          setBotStates(prev => new Map(prev).set(agentId, newState));
+        } else if (panelType) {
+          updateBotState(agentId, { rightPanelType: panelType });
+        }
+        
+        // Set selected chatbot to restore workspace
+        setSelectedChatbot(chatbot);
+      }
+    }
+  }, [chatbotProfiles, searchParams, botStates]);
+
   // Filter chatbots based on search
   useEffect(() => {
     if (!searchQuery) {
@@ -534,8 +562,27 @@ const ChatbotProfilesPageContent: React.FC = () => {
     // Handle chatbot selection for command center
   const handleChatbotSelect = async (chatbot: ChatbotProfile) => {
     setSelectedChatbot(chatbot);
-    setIsWorkspaceMode(true); // Enable workspace mode for command center
-    setRightPanelType('analytics'); // Default to analytics panel
+    
+    // Initialize bot state if it doesn't exist
+    if (!botStates.has(chatbot.id)) {
+      const newState = initializeBotState(chatbot.id);
+      newState.isWorkspaceMode = true;
+      newState.rightPanelType = 'analytics'; // Default to analytics panel
+      setBotStates(prev => new Map(prev).set(chatbot.id, newState));
+    } else {
+      // Update existing state to workspace mode
+      updateBotState(chatbot.id, { 
+        isWorkspaceMode: true,
+        rightPanelType: currentBotState?.rightPanelType || 'analytics'
+      });
+    }
+    
+    // Update URL parameters for deep linking
+    setSearchParams({ 
+      agent: chatbot.id, 
+      panel: currentBotState?.rightPanelType || 'analytics' 
+    });
+    
     setWorkspaceSelectedTab('analytics');
     
     // Initialize chat session with governance
@@ -545,8 +592,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
       
       // Start new chat session with governance
       const session = await chatPanelGovernanceService.startChatSession(chatbot);
-      setActiveSession(session);
-      setChatMessages([]);
+      updateBotState(chatbot.id, { 
+        activeSession: session,
+        chatMessages: []
+      });
       setMessageInput('');
       
       console.log(`✅ [Workspace] Command Center initialized:`, session.sessionId);
@@ -567,7 +616,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
           riskLevel: 'Low'
         }
       };
-      setActiveSession(fallbackSession);
+      updateBotState(chatbot.id, { activeSession: fallbackSession });
     } finally {
       setChatLoading(false);
     }
@@ -576,7 +625,18 @@ const ChatbotProfilesPageContent: React.FC = () => {
   // Handle right panel actions
   const handleRightPanelAction = (type: RightPanelType, chatbot: ChatbotProfile) => {
     setSelectedChatbot(chatbot);
-    setRightPanelType(type);
+    
+    // Update bot state with new panel type
+    updateBotState(chatbot.id, { 
+      rightPanelType: type,
+      isWorkspaceMode: true 
+    });
+    
+    // Update URL parameters for deep linking
+    setSearchParams({ 
+      agent: chatbot.id, 
+      panel: type || 'analytics' 
+    });
   };
 
   // Chat functionality - Real Universal Governance Adapter Integration
@@ -628,8 +688,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
           }
         };
         
-        // Update chat messages
-        setChatMessages(prev => [...prev, userMessage, agentResponse]);
+        // Update chat messages in bot state
+        if (selectedChatbot) {
+          updateBotState(selectedChatbot.id, {
+            chatMessages: [...chatMessages, userMessage, agentResponse]
+          });
+        }
         
         // Save to chat history
         if (currentChatSession) {
@@ -696,8 +760,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
           }
         };
         
-        // Update chat messages
-        setChatMessages(prev => [...prev, userMessage, agentResponse]);
+        // Update chat messages in bot state
+        if (selectedChatbot) {
+          updateBotState(selectedChatbot.id, {
+            chatMessages: [...chatMessages, userMessage, agentResponse]
+          });
+        }
         
         // Save to chat history
         if (currentChatSession) {
@@ -745,8 +813,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
         attachments: attachedFiles.length > 0 ? attachedFiles : undefined
       };
       
-      // Update messages with user message and bot response
-      setChatMessages(prev => [...prev, userMessage, response]);
+      // Update messages with user message and bot response in bot state
+      if (selectedChatbot) {
+        updateBotState(selectedChatbot.id, {
+          chatMessages: [...chatMessages, userMessage, response]
+        });
+      }
       
       // Save messages to chat history if we have a current session
       if (currentChatSession && selectedChatbot && user?.uid) {
