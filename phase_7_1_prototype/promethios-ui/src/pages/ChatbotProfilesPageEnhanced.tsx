@@ -567,10 +567,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
       const newState = initializeBotState(chatbot.id);
       newState.isWorkspaceMode = true;
       newState.rightPanelType = 'analytics'; // Default to analytics panel
-      setBotStates(prev => new Map(prev).set(chatbot.id, newState));
+      setBotStates(prev => new Map(prev).set(chatbot.identity?.id || chatbot.key || chatbot.id, newState));
     } else {
       // Update existing state to workspace mode
-      updateBotState(chatbot.id, { 
+      updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { 
         isWorkspaceMode: true,
         rightPanelType: currentBotState?.rightPanelType || 'analytics'
       });
@@ -578,7 +578,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     
     // Update URL parameters for deep linking
     setSearchParams({ 
-      agent: chatbot.id, 
+      agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
       panel: currentBotState?.rightPanelType || 'analytics' 
     });
     
@@ -591,7 +591,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
       
       // Start new chat session with governance
       const session = await chatPanelGovernanceService.startChatSession(chatbot);
-      updateBotState(chatbot.id, { 
+      updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { 
         activeSession: session,
         chatMessages: []
       });
@@ -615,7 +615,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
           riskLevel: 'Low'
         }
       };
-      updateBotState(chatbot.id, { activeSession: fallbackSession });
+      updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { activeSession: fallbackSession });
     } finally {
       setChatLoading(false);
     }
@@ -633,7 +633,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     
     // Update URL parameters for deep linking
     setSearchParams({ 
-      agent: chatbot.id, 
+      agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
       panel: type || 'analytics' 
     });
   };
